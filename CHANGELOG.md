@@ -5,6 +5,31 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [2.5.0] — 2026-08-28
+
+Refonte typographique — c'est la police condensée qui donnait à l'outil son côté
+« documentation industrielle ».
+
+### Changé
+- **Titres : Open Sans Condensed → Archivo** (600/700/800). Le condensé compressait tout et
+  évoquait la fiche technique ; Archivo a de la présence aux grandes tailles.
+- **Chiffres : Courier New → IBM Plex Mono**, dessiné pour les contextes techniques. Dans un
+  outil de mesure, les chiffres sont le sujet principal.
+- **Corps de texte : Open Sans conservé** — c'est la police de la charte SPK, et les documents
+  générés partent chez Stellantis sous cette identité.
+- Tracking resserré aux grandes tailles, et chiffres tabulaires forcés partout où des nombres
+  s'alignent en colonne (ils ne dansent plus d'une ligne à l'autre).
+
+### Corrigé
+- Nom de scénario tronqué dans l'en-tête (« Mixte T50013 — bol CBN + piste céramiq… ») :
+  Archivo étant plus large, le champ occupe désormais sa propre ligne pleine largeur.
+
+### Documentation
+- Mode d'emploi PDF refait en 6 pages : adresse en ligne en couverture, nouvelle section
+  « Lire un scénario » (ordre verdict → chiffres → graphique → essais → configuration),
+  mode atelier, suivi Marposs, dossier local photos, suggestions avec image, installation
+  en application sur Edge et sur iPad.
+
 ## [2.4.0] — 2026-08-28
 
 Refonte de la hiérarchie de lecture et arrivée du mode atelier. L'outil ne se contente plus
