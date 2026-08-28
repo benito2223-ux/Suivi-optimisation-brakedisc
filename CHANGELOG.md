@@ -5,6 +5,20 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [2.2.0] — 2026-08-28
+
+Deuxième passage design, plus marqué que le 2.1.0 — "loin d'être radical" était le retour, donc
+changements à effet visuel net cette fois plutôt qu'incrémental.
+
+### Changé
+- Onglets Ligne de production / Référence disque / OP transformés en **contrôle segmenté**
+  (piste grise, segment actif élevé en pilule blanche avec ombre douce) — remplace les
+  rectangles bordés bleu-sur-bleu.
+- Chiffres clés (coût/pièce, coût/arête, temps de cycle) fortement agrandis (25px → 38px, plus
+  gras) avec libellés réduits au-dessus, pour un vrai contraste "chiffre héros / légende".
+- Cartes comparatives de scénarios (`tab-card`) : coins plus généreux, ombre portée douce,
+  anneau bleu net sur la carte active (au lieu d'un bord rouge/bleu sans signification claire).
+
 ## [2.1.0] — 2026-08-28
 
 Passage design "élégance dans la simplicité" — pas de nouvelle fonctionnalité, ni de rupture,
