@@ -1,0 +1,4 @@
+# Exports de donnees (essais, prelevements, prix...) : jamais versionnes, restent locaux
+*.json
+*.csv
+compte_rendu_OP10.html
