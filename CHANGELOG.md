@@ -5,6 +5,21 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [2.1.0] — 2026-08-28
+
+Passage design "élégance dans la simplicité" — pas de nouvelle fonctionnalité, ni de rupture,
+mais un changement visuel assez large pour mériter son propre numéro.
+
+### Changé
+- Nouveaux tokens de rayon (`--radius-lg/--radius/--radius-sm`) : coins plus doux sur les
+  cartes, panneaux et contrôles (avant : 3px partout, très anguleux).
+- Boutons repensés : fond neutre discret par défaut, couleur pleine réservée aux actions
+  principales (Exporter, Ajouter un scénario), forme plus arrondie, léger effet de survol.
+- Icônes de la barre d'outils et des sections Marposs/Photos remplacées par des icônes traits
+  fins cohérentes (au lieu d'emojis).
+- Titres de section : bleu appuyé remplacé par un gris neutre — la couleur ne reste que pour ce
+  qui est interactif.
+
 ## [2.0.0] — 2026-08-28
 
 Version de consolidation : marque le passage d'un usage exploratoire à un outil structuré,
