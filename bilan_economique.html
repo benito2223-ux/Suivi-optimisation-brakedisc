@@ -90,6 +90,20 @@ button.danger:hover{border-color:transparent; color:var(--red); background:var(-
 .icon{width:15px; height:15px; display:inline-block; vertical-align:-3px; margin-right:6px; fill:none; stroke:currentColor; stroke-width:1.6;}
 button.primary .icon, button.save .icon{stroke-width:1.8;}
 .toolbar-actions{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+/* barre d'outils simplifiee : seules les actions les plus frequentes (Exporter, Importer,
+   Ajouter un scenario) restent visibles en permanence ; tout le reste (CSV, synthese,
+   suggestions, options, PDF, rapport, historique, dossier local, reinitialiser...) se range
+   dans un menu "•••" — avant, les 13 boutons visibles en meme temps faisaient beaucoup de bruit
+   visuel des l'ouverture de l'outil, quel que soit leur style individuel. */
+.toolbar-more-wrap{position:relative;}
+#moreBtn{padding:8px 12px;}
+.toolbar-more{position:absolute; top:calc(100% + 8px); right:0; z-index:45; width:270px; max-height:min(70vh,560px); overflow-y:auto; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow-pop); padding:10px; display:flex; flex-direction:column; gap:2px;}
+.toolbar-more[hidden]{display:none;}
+.toolbar-more button{width:100%; display:flex; align-items:center; justify-content:flex-start; text-align:left;}
+.toolbar-more-hint{font-size:11.5px; color:var(--ink-faint); margin:2px 6px 10px; line-height:1.5;}
+.toolbar-more-sep{height:1px; background:var(--border); margin:8px 6px;}
+.toolbar-more #photosDirStatus, .toolbar-more #revisionStatus{margin:2px 6px; display:block;}
+.toolbar-more #auteurInput{margin:4px 6px 6px; width:calc(100% - 12px);}
 .save-status{font-family:var(--font-mono); font-size:11.5px; color:var(--ink-faint); white-space:nowrap;}
 .save-status.dirty{color:var(--amber);}
 .save-status.saved{color:var(--green);}
@@ -482,26 +496,32 @@ select.log-equipe:focus{border-color:var(--blue); outline:none; background:var(-
   <div class="note confid-note"><b>Confidentiel</b> — document interne au projet, réservé à l'équipe Stellantis Sept Fons et à CeramTec. Ne pas transmettre en dehors de l'équipe projet.</div>
 
   <div class="toolbar" id="toolbarWrap">
-    <p>Un onglet par scénario, un essai par campagne menée jusqu'à la charnière, un prélèvement par disque contrôlé. La grandeur suivie et sa tolérance se règlent dans <b>⚙ Options</b>. Déplier « Comment ça marche » ci-dessous en cas de doute.</p>
     <div class="toolbar-actions">
       <span class="save-status" id="saveStatus"></span>
-      <span class="save-status" id="revisionStatus"></span>
-      <input type="text" id="auteurInput" class="limit-label" style="min-width:110px;" placeholder="Votre nom" title="Utilisé pour tracer qui a exporté chaque révision">
       <button class="save" id="exportBtn" title="Enregistre un fichier .json à archiver ou à envoyer par e-mail"><svg class="icon" viewBox="0 0 18 18"><path d="M9 2v9M5.5 8 9 11.5 12.5 8M3 14.5h12" stroke-linecap="round" stroke-linejoin="round"/></svg>Exporter le suivi</button>
       <button class="ghost" id="importBtn" title="Recharge un fichier .json reçu ou archivé"><svg class="icon" viewBox="0 0 18 18"><path d="M2.5 5.5a1 1 0 0 1 1-1H7l1.5 1.8H14.5a1 1 0 0 1 1 1V13a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1V5.5Z" stroke-linejoin="round"/></svg>Importer</button>
-      <button class="ghost" id="csvBtn" title="Tous les prélèvements en tableau, pour Excel ou le système qualité"><svg class="icon" viewBox="0 0 18 18"><rect x="2.5" y="2.5" width="13" height="13" rx="1.5"/><path d="M2.5 7h13M2.5 11.5h13M7 2.5v13"/></svg>Export CSV</button>
       <input type="file" id="importInput" accept=".json,application/json" hidden>
-      <button class="ghost" id="syntheseBtn" title="Comparer tous les scénarios dans un tableau, et superposer leurs courbes de tendance"><svg class="icon" viewBox="0 0 18 18"><rect x="4" y="3" width="10" height="12" rx="1.5"/><path d="M6.5 7h5M6.5 10h5M6.5 13h3" stroke-linecap="round"/></svg>Vue de synthèse</button>
-      <button class="ghost" id="backlogBtn" title="Noter une idée ou un problème rencontré sur l'outil"><svg class="icon" viewBox="0 0 18 18"><path d="M9 2.5a4.5 4.5 0 0 0-2.5 8.2c.4.3.6.7.6 1.2v.6h3.8v-.6c0-.5.2-.9.6-1.2A4.5 4.5 0 0 0 9 2.5Z" stroke-linejoin="round"/><path d="M7.2 15h3.6" stroke-linecap="round"/></svg>Suggestions</button>
       <button class="primary" id="addBtn">+ Ajouter un scénario</button>
-      <button class="ghost" id="optionsBtn" title="Activer les modules de calcul complémentaires"><svg class="icon" viewBox="0 0 18 18"><path d="M2.5 5h8M13.5 5h2M2.5 13h2M7.5 13h8" stroke-linecap="round"/><circle cx="11.5" cy="5" r="1.6"/><circle cx="5.5" cy="13" r="1.6"/></svg>Options</button>
-      <button class="pdf" id="pdfBtn"><svg class="icon" viewBox="0 0 18 18"><path d="M5 2.5h5l3 3V15a.8.8 0 0 1-.8.8H5.8a.8.8 0 0 1-.8-.8V2.5Z" stroke-linejoin="round"/><path d="M9 8v4.5M7 10.5 9 12.5 11 10.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Générer le PDF</button>
-      <button class="ghost" id="rapportBtn" title="Génère un rapport HTML autonome du scénario affiché — prêt à envoyer par e-mail à Stellantis"><svg class="icon" viewBox="0 0 18 18"><path d="M2.5 9 15 3.5 10.5 15.5 8 9.5 2.5 9Z" stroke-linejoin="round"/></svg>Rapport de validation</button>
-      <button class="ghost" id="historyBtn" title="Voir les sauvegardes automatiques précédentes (filet de sécurité, en plus de l'export)"><svg class="icon" viewBox="0 0 18 18"><circle cx="9" cy="9" r="6.5"/><path d="M9 5.5V9l3 2" stroke-linecap="round" stroke-linejoin="round"/></svg>Historique</button>
-      <button class="ghost photos-connect-btn" id="photosDirBtn" title="Connecter un dossier local pour les photos d'essai et un backup automatique (Edge/Chrome, version en ligne)"><svg class="icon" viewBox="0 0 18 18"><path d="M2.5 5.5a1 1 0 0 1 1-1H7l1.5 1.8H14.5a1 1 0 0 1 1 1V13a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1V5.5Z" stroke-linejoin="round"/></svg>Dossier local</button>
-      <span class="save-status" id="photosDirStatus"></span>
-      <button class="ghost danger" id="resetBtn">Réinitialiser</button>
-      <button class="ghost danger" id="restoreBtn" title="Restaurer l'état d'avant la dernière réinitialisation ou importation" hidden>↺ Restaurer</button>
+      <div class="toolbar-more-wrap">
+        <button class="ghost" id="moreBtn" title="Plus d'actions"><svg class="icon" viewBox="0 0 18 18" style="margin-right:0;"><circle cx="4" cy="9" r="1.4"/><circle cx="9" cy="9" r="1.4"/><circle cx="14" cy="9" r="1.4"/></svg></button>
+        <div class="toolbar-more" id="toolbarMore" hidden>
+          <p class="toolbar-more-hint">Un onglet par scénario, un essai par campagne menée jusqu'à la charnière, un prélèvement par disque contrôlé. La grandeur suivie et sa tolérance se règlent dans Options.</p>
+          <button class="ghost" id="csvBtn" title="Tous les prélèvements en tableau, pour Excel ou le système qualité"><svg class="icon" viewBox="0 0 18 18"><rect x="2.5" y="2.5" width="13" height="13" rx="1.5"/><path d="M2.5 7h13M2.5 11.5h13M7 2.5v13"/></svg>Export CSV</button>
+          <button class="ghost" id="syntheseBtn" title="Comparer tous les scénarios dans un tableau, et superposer leurs courbes de tendance"><svg class="icon" viewBox="0 0 18 18"><rect x="4" y="3" width="10" height="12" rx="1.5"/><path d="M6.5 7h5M6.5 10h5M6.5 13h3" stroke-linecap="round"/></svg>Vue de synthèse</button>
+          <button class="ghost" id="backlogBtn" title="Noter une idée ou un problème rencontré sur l'outil"><svg class="icon" viewBox="0 0 18 18"><path d="M9 2.5a4.5 4.5 0 0 0-2.5 8.2c.4.3.6.7.6 1.2v.6h3.8v-.6c0-.5.2-.9.6-1.2A4.5 4.5 0 0 0 9 2.5Z" stroke-linejoin="round"/><path d="M7.2 15h3.6" stroke-linecap="round"/></svg>Suggestions</button>
+          <button class="ghost" id="optionsBtn" title="Activer les modules de calcul complémentaires"><svg class="icon" viewBox="0 0 18 18"><path d="M2.5 5h8M13.5 5h2M2.5 13h2M7.5 13h8" stroke-linecap="round"/><circle cx="11.5" cy="5" r="1.6"/><circle cx="5.5" cy="13" r="1.6"/></svg>Options</button>
+          <button class="ghost" id="pdfBtn"><svg class="icon" viewBox="0 0 18 18"><path d="M5 2.5h5l3 3V15a.8.8 0 0 1-.8.8H5.8a.8.8 0 0 1-.8-.8V2.5Z" stroke-linejoin="round"/><path d="M9 8v4.5M7 10.5 9 12.5 11 10.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Générer le PDF</button>
+          <button class="ghost" id="rapportBtn" title="Génère un rapport HTML autonome du scénario affiché — prêt à envoyer par e-mail à Stellantis"><svg class="icon" viewBox="0 0 18 18"><path d="M2.5 9 15 3.5 10.5 15.5 8 9.5 2.5 9Z" stroke-linejoin="round"/></svg>Rapport de validation</button>
+          <button class="ghost" id="historyBtn" title="Voir les sauvegardes automatiques précédentes (filet de sécurité, en plus de l'export)"><svg class="icon" viewBox="0 0 18 18"><circle cx="9" cy="9" r="6.5"/><path d="M9 5.5V9l3 2" stroke-linecap="round" stroke-linejoin="round"/></svg>Historique</button>
+          <button class="ghost photos-connect-btn" id="photosDirBtn" title="Connecter un dossier local pour les photos d'essai et un backup automatique (Edge/Chrome, version en ligne)"><svg class="icon" viewBox="0 0 18 18"><path d="M2.5 5.5a1 1 0 0 1 1-1H7l1.5 1.8H14.5a1 1 0 0 1 1 1V13a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1V5.5Z" stroke-linejoin="round"/></svg>Dossier local</button>
+          <span class="save-status" id="photosDirStatus"></span>
+          <div class="toolbar-more-sep"></div>
+          <span class="save-status" id="revisionStatus"></span>
+          <input type="text" id="auteurInput" class="limit-label" placeholder="Votre nom" title="Utilisé pour tracer qui a exporté chaque révision">
+          <button class="ghost danger" id="resetBtn">Réinitialiser</button>
+          <button class="ghost danger" id="restoreBtn" title="Restaurer l'état d'avant la dernière réinitialisation ou importation" hidden>↺ Restaurer</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -649,7 +669,7 @@ select.log-equipe:focus{border-color:var(--blue); outline:none; background:var(-
 </div>
 
 <script>
-const TOOL_VERSION = "2.2.0";
+const TOOL_VERSION = "2.3.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -2286,24 +2306,27 @@ function scenarioBlockHTML(sc, interactive){
       </div>
   ` : `<span class="sc-name-print">${escapeAttr(sc.name)}${sc.baseline ? " — Référence" : ""}</span>`;
 
-  const posColspan = interactive ? 15 : 14;
-  // largeurs explicites : sans elles le navigateur repartit les 14-15 colonnes a peu pres
-  // egalement, ce qui coupe "Reference plaquette" (texte le plus long) et laisse des
-  // colonnes numeriques courtes (Aretes, ap...) bien trop larges
+  // rayon de bec / ap ne servent qu'a l'affinage Fr·Fa (module optionnel, rarement actif — voir
+  // Options) : les masquer par defaut allege le tableau de 2 colonnes sur 14. κr, lui, reste
+  // toujours visible car il alimente aussi le widget K (suivi thermique), utile meme sans Fr·Fa.
+  const showFrFa = !!config.forceRatioActif;
+  const posColspan = (interactive ? 15 : 14) - (showFrFa ? 0 : 2);
+  // largeurs explicites : sans elles le navigateur repartit les colonnes a peu pres egalement,
+  // ce qui coupe "Reference plaquette" (texte le plus long) et laisse des colonnes numeriques
+  // courtes (Aretes, ap...) bien trop larges
   const posCols = `
     <colgroup>
       <col style="width:6%">
       <col style="width:7%">
-      <col style="width:20%">
+      <col style="width:${showFrFa ? 20 : 30}%">
       <col style="width:5%">
       <col style="width:4%">
       <col style="width:6%">
-      <col style="width:9%">
+      <col style="width:${showFrFa ? 9 : 10}%">
+      <col style="width:${showFrFa ? 5 : 6}%">
+      <col style="width:${showFrFa ? 5 : 6}%">
       <col style="width:5%">
-      <col style="width:5%">
-      <col style="width:4%">
-      <col style="width:7%">
-      <col style="width:4%">
+      ${showFrFa ? '<col style="width:7%"><col style="width:4%">' : ""}
       <col style="width:6%">
       <col style="width:6%">
       ${interactive ? '<col style="width:2%">' : ""}
@@ -2325,19 +2348,19 @@ function scenarioBlockHTML(sc, interactive){
             <th class="num">Vc (m/min)</th>
             <th class="num">f (mm/rev)</th>
             <th class="num">κr (°)</th>
-            <th class="num">Rayon de bec rε (mm)</th>
-            <th class="num">ap (mm)</th>
+            ${showFrFa ? '<th class="num">Rayon de bec rε (mm)</th><th class="num">ap (mm)</th>' : ""}
             <th class="num">€ / arête</th>
             <th class="num">€ / pièce</th>
             ${interactive ? "<th></th>" : ""}
           </tr>
         </thead>
         <tbody>
-          ${sc.outils.map((o, oi) => outilRowsHTML(sc, o, oi, interactive)).join("") || `<tr><td colspan="${posColspan}" class="log-empty">Aucun outil configuré</td></tr>`}
+          ${sc.outils.map((o, oi) => outilRowsHTML(sc, o, oi, interactive, showFrFa)).join("") || `<tr><td colspan="${posColspan}" class="log-empty">Aucun outil configuré</td></tr>`}
         </tbody>
       </table>
     </div>
     ${interactive ? `<button class="ghost outil-add" data-id="${sc.id}" style="margin-top:8px;">+ Ajouter un outil</button>` : ""}
+    ${!showFrFa ? `<p class="panel-hint" style="margin:6px 2px 0;">Rayon de bec et ap (affinage Fr·Fa) sont masqués — activez le module Fr·Fa dans <b>Options</b> si votre référence en a besoin.</p>` : ""}
   `;
 
   const cost = scenarioCost(sc);
@@ -2830,15 +2853,15 @@ function prelevementRowHTML(sc, essai, row, interactive, snapLogements, showLoge
 /* un outil peut avoir plusieurs logements (positions plaquette) ; chaque logement est
    independant (sa propre charniere, geometrie...). Couleur par outil pour identifier
    d'un coup d'oeil quelles lignes appartiennent au meme outil physique. */
-function outilRowsHTML(sc, o, oi, interactive){
+function outilRowsHTML(sc, o, oi, interactive, showFrFa){
   const couleur = OUTIL_COLORS[oi % OUTIL_COLORS.length];
-  const rows = o.logements.map(l => logementRowHTML(sc, o, l, couleur, interactive)).join("");
+  const rows = o.logements.map(l => logementRowHTML(sc, o, l, couleur, interactive, showFrFa)).join("");
   const addRow = interactive
-    ? `<tr class="outil-add-row"><td colspan="14" style="padding:4px 12px; border-left:4px solid ${couleur};"><button class="ghost small logement-add" data-id="${sc.id}" data-outil="${o.id}">+ Logement pour ${escapeAttr(o.numero || "cet outil")}</button></td></tr>`
+    ? `<tr class="outil-add-row"><td colspan="${14 - (showFrFa ? 0 : 3)}" style="padding:4px 12px; border-left:4px solid ${couleur};"><button class="ghost small logement-add" data-id="${sc.id}" data-outil="${o.id}">+ Logement pour ${escapeAttr(o.numero || "cet outil")}</button></td></tr>`
     : "";
   return rows + addRow;
 }
-function logementRowHTML(sc, o, l, couleur, interactive){
+function logementRowHTML(sc, o, l, couleur, interactive, showFrFa){
   const perEdge = posCostPerEdge(l);
   const perPiece = posCost(l);
   if(interactive){
@@ -2859,8 +2882,9 @@ function logementRowHTML(sc, o, l, couleur, interactive){
         <td class="num"><input class="cell" data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}" data-field="vc" type="number" step="10" value="${l.vc ?? ""}"></td>
         <td class="num"><input class="cell" data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}" data-field="f" type="number" step="0.01" value="${l.f ?? ""}"></td>
         <td class="num"><input class="cell" data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}" data-field="kappaR" type="number" step="1" min="0" max="90" value="${l.kappaR ?? ""}"></td>
+        ${showFrFa ? `
         <td class="num"><input class="cell" data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}" data-field="rayonBec" type="number" step="0.1" min="0" value="${l.rayonBec ?? ""}"></td>
-        <td class="num"><input class="cell" data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}" data-field="apPiste" type="number" step="0.1" min="0" value="${l.apPiste ?? ""}"></td>
+        <td class="num"><input class="cell" data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}" data-field="apPiste" type="number" step="0.1" min="0" value="${l.apPiste ?? ""}"></td>` : ""}
         <td class="computed">${perEdge === null ? "—" : fmt(perEdge,3)}</td>
         <td class="computed">${perPiece === null ? "—" : fmt(perPiece,4)}</td>
         <td><button class="log-del logement-del" data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}">✕</button></td>
@@ -2879,8 +2903,9 @@ function logementRowHTML(sc, o, l, couleur, interactive){
       <td class="num">${l.vc === "" ? "—" : l.vc ?? "—"}</td>
       <td class="num">${l.f === "" ? "—" : l.f ?? "—"}</td>
       <td class="num">${l.kappaR === "" || l.kappaR == null ? "—" : l.kappaR}</td>
+      ${showFrFa ? `
       <td class="num">${l.rayonBec === "" || l.rayonBec == null ? "—" : l.rayonBec}</td>
-      <td class="num">${l.apPiste === "" || l.apPiste == null ? "—" : l.apPiste}</td>
+      <td class="num">${l.apPiste === "" || l.apPiste == null ? "—" : l.apPiste}</td>` : ""}
       <td class="computed">${perEdge === null ? "—" : fmt(perEdge,3)}</td>
       <td class="computed">${perPiece === null ? "—" : fmt(perPiece,4)}</td>
     </tr>
@@ -3600,9 +3625,23 @@ function fermerPanneaux(){
   document.getElementById("backlogWrap").hidden = true;
   document.getElementById("historyPanel").hidden = true;
   document.getElementById("csvPanel").hidden = true;
+  document.getElementById("toolbarMore").hidden = true;
 }
 document.getElementById("panelBackdrop").addEventListener("click", fermerPanneaux);
 document.addEventListener("keydown", (e) => { if(e.key === "Escape") fermerPanneaux(); });
+/* menu "•••" : toggle au clic sur le bouton, fermeture au clic ailleurs ou sur une action
+   du menu (chaque bouton a l'interieur ouvre de toute facon son propre panneau ensuite) */
+document.getElementById("moreBtn").addEventListener("click", (e) => {
+  e.stopPropagation();
+  document.getElementById("toolbarMore").hidden = !document.getElementById("toolbarMore").hidden;
+});
+document.getElementById("toolbarMore").addEventListener("click", (e) => {
+  if(e.target.closest("button")) document.getElementById("toolbarMore").hidden = true;
+});
+document.addEventListener("click", (e) => {
+  const more = document.getElementById("toolbarMore");
+  if(!more.hidden && !e.target.closest(".toolbar-more-wrap")) more.hidden = true;
+});
 
 /* Options — modules de calcul */
 const optCoutRebut = document.getElementById("optCoutRebut");

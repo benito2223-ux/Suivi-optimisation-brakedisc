@@ -5,6 +5,20 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [2.3.0] — 2026-08-28
+
+Simplification structurelle, pas seulement visuelle — "loin d'être radical" puis "sois plus
+radical pour simplifier" ont motivé ce passage : réduire ce qui est visible en permanence,
+pas seulement le restyler.
+
+### Changé
+- Barre d'outils réduite de 13 à 3 boutons visibles (Exporter, Importer, + Ajouter un
+  scénario) ; tout le reste (CSV, Synthèse, Suggestions, Options, PDF, Rapport, Historique,
+  Dossier local, Réinitialiser, Restaurer, nom de l'exportateur) déplacé dans un menu "•••".
+- Tableau des outils/logements : colonnes Rayon de bec et ap (affinage Fr·Fa) masquées par
+  défaut tant que ce module optionnel n'est pas activé — 13 colonnes au lieu de 15. κr reste
+  toujours visible (utilisé aussi par le widget K, indépendant de Fr·Fa).
+
 ## [2.2.0] — 2026-08-28
 
 Deuxième passage design, plus marqué que le 2.1.0 — "loin d'être radical" était le retour, donc
