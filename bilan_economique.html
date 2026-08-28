@@ -280,6 +280,18 @@ tr.row-bad td{background:var(--red-bg);}
 .marposs-kpis .l{display:block; font-size:10px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-faint);}
 .marposs-kpis .v{font-family:var(--font-disp); font-weight:700; font-size:20px; color:#0e7490;}
 
+/* photos par essai — fichiers reels dans un dossier local, jamais dans le JSON */
+.photos-block{border:1px solid var(--border); border-left:3px solid var(--amber); border-radius:0 3px 3px 0; background:var(--surface); margin-top:14px;}
+.photos-block summary{cursor:pointer; padding:10px 14px; font-family:var(--font-body); font-weight:600; font-size:12.5px; color:var(--amber); list-style:none; display:flex; align-items:center; gap:8px;}
+.photos-block summary::-webkit-details-marker{display:none;}
+.photos-body{padding:4px 14px 16px;}
+.photos-grid{display:flex; flex-wrap:wrap; gap:10px; margin-top:10px;}
+.photo-thumb{position:relative; width:120px; height:90px; border-radius:3px; overflow:hidden; border:1px solid var(--border); background:var(--surface-alt);}
+.photo-thumb img{width:100%; height:100%; object-fit:cover; display:block;}
+.photo-thumb img.photo-missing{opacity:.35;}
+.photo-del{position:absolute; top:3px; right:3px; padding:1px 6px; font-size:11px; line-height:1.6; background:rgba(20,24,22,.55); color:#fff; border:none; border-radius:3px;}
+.photo-del:hover{background:var(--red);}
+
 /* panneaux modaux (options / impression) */
 .panel-backdrop{position:fixed; inset:0; background:rgba(20,24,22,.45); z-index:40;}
 .panel{
@@ -472,6 +484,8 @@ select.log-equipe:focus{border-color:var(--blue); outline:none; background:var(-
       <button class="pdf" id="pdfBtn">⤓ Générer le PDF</button>
       <button class="ghost" id="rapportBtn" title="Génère un rapport HTML autonome du scénario affiché — prêt à envoyer par e-mail à Stellantis">📩 Rapport de validation</button>
       <button class="ghost" id="historyBtn" title="Voir les sauvegardes automatiques précédentes (filet de sécurité, en plus de l'export)">🕐 Historique</button>
+      <button class="ghost photos-connect-btn" id="photosDirBtn" title="Connecter un dossier local pour les photos d'essai et un backup automatique (Edge/Chrome, version en ligne)">📁 Dossier local</button>
+      <span class="save-status" id="photosDirStatus"></span>
       <button class="ghost danger" id="resetBtn">Réinitialiser</button>
       <button class="ghost danger" id="restoreBtn" title="Restaurer l'état d'avant la dernière réinitialisation ou importation" hidden>↺ Restaurer</button>
     </div>
@@ -621,9 +635,140 @@ select.log-equipe:focus{border-color:var(--blue); outline:none; background:var(-
 </div>
 
 <script>
-const TOOL_VERSION = "1.0";
+const TOOL_VERSION = "2.0.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
+
+/* ---- dossier local (photos + backup) ----
+   Les photos ne doivent JAMAIS gonfler le localStorage/JSON echange entre collegues : elles
+   sont ecrites comme de vrais fichiers dans un dossier choisi sur le disque (API File System
+   Access, Edge/Chrome uniquement, necessite https:// ou localhost). Seule une reference legere
+   (nom de fichier) est gardee dans les donnees. Disponible seulement depuis la version en ligne
+   (Surge) ou un serveur local — pas depuis le fichier ouvert en file://. */
+let photosDirHandle = null;
+function fsPhotosSupported(){ return typeof window.showDirectoryPicker === "function"; }
+function idbOpenFs(){
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open("spk_suivi_fs", 1);
+    req.onupgradeneeded = () => req.result.createObjectStore("handles");
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function idbSetHandle(key, handle){
+  const db = await idbOpenFs();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction("handles", "readwrite");
+    tx.objectStore("handles").put(handle, key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+async function idbGetHandle(key){
+  const db = await idbOpenFs();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction("handles", "readonly");
+    const req = tx.objectStore("handles").get(key);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
+}
+function slugify(txt){
+  return String(txt||"").normalize("NFD").replace(/[̀-ͯ]/g,"")
+    .replace(/[^a-zA-Z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,40) || "x";
+}
+/* redimensionne cote client avant ecriture : une photo de telephone peut peser plusieurs
+   Mo, inutile de la garder brute pour une consultation a l'ecran */
+function compressImageFile(file, maxDim, quality){
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = () => {
+      img.onload = () => {
+        const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("compression échouée")), "image/jpeg", quality);
+      };
+      img.onerror = reject;
+      img.src = reader.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+async function connectPhotosDir(){
+  if(!fsPhotosSupported()){
+    alert("Cette fonction (dossier photos local) nécessite Edge ou Chrome sur ordinateur, et d'ouvrir l'outil via son adresse en ligne (https://...) plutôt que le fichier local.");
+    return;
+  }
+  try{
+    const handle = await window.showDirectoryPicker({ id: "spk-photos", mode: "readwrite" });
+    photosDirHandle = handle;
+    await idbSetHandle("photosDir", handle);
+    updatePhotosDirUI();
+    render();
+  }catch(e){ /* utilisateur a annulé la sélection */ }
+}
+async function tryReconnectPhotosDir(){
+  if(!fsPhotosSupported()) return;
+  try{
+    const handle = await idbGetHandle("photosDir");
+    if(!handle) return;
+    const perm = await handle.queryPermission({ mode: "readwrite" });
+    if(perm === "granted"){ photosDirHandle = handle; }
+    updatePhotosDirUI();
+  }catch(e){}
+}
+function updatePhotosDirUI(){
+  const el = document.getElementById("photosDirStatus");
+  if(!el) return;
+  if(!fsPhotosSupported()){ el.textContent = ""; return; }
+  el.textContent = photosDirHandle ? "📁 Dossier photos connecté (" + photosDirHandle.name + ")" : "📁 Dossier photos non connecté";
+  el.className = "save-status" + (photosDirHandle ? " saved" : "");
+}
+async function writePhotoBlob(filename, blob){
+  const fh = await photosDirHandle.getFileHandle(filename, { create: true });
+  const w = await fh.createWritable();
+  await w.write(blob);
+  await w.close();
+}
+async function readPhotoURL(filename){
+  try{
+    const fh = await photosDirHandle.getFileHandle(filename);
+    const file = await fh.getFile();
+    return URL.createObjectURL(file);
+  }catch(e){ return null; }
+}
+async function deletePhotoFile(filename){
+  try{ await photosDirHandle.removeEntry(filename); }catch(e){}
+}
+/* backup general dans le meme dossier (sous-dossier backups/), independant du localStorage :
+   filet de securite supplementaire, au plus 1 ecriture toutes les 5 minutes, 20 fichiers gardes */
+let lastFolderBackupAt = 0;
+async function writeBackupToFolder(){
+  if(!photosDirHandle) return;
+  const now = Date.now();
+  if(now - lastFolderBackupAt < 5*60*1000) return;
+  lastFolderBackupAt = now;
+  try{
+    const backupsDir = await photosDirHandle.getDirectoryHandle("backups", { create: true });
+    const stamp = new Date().toISOString().replace(/[:.]/g,"-");
+    const payload = { outil:"SPK Suivi optimisation", format:5, toolVersion:TOOL_VERSION, revision, exporteLe:new Date().toISOString(), exportePar:auteurNom, lignes, backlog };
+    const fh = await backupsDir.getFileHandle(stamp + ".json", { create: true });
+    const w = await fh.createWritable();
+    await w.write(JSON.stringify(payload));
+    await w.close();
+    // purge : ne garde que les 20 plus recents (tri par nom = tri chronologique, stamp ISO)
+    const noms = [];
+    for await (const [name] of backupsDir.entries()) noms.push(name);
+    noms.sort();
+    const trop = noms.length - 20;
+    for(let i=0;i<trop;i++){ try{ await backupsDir.removeEntry(noms[i]); }catch(e){} }
+  }catch(e){}
+}
 
 /* Modules optionnels — activés seulement si le besoin s'en fait sentir */
 const defaultConfig = {
@@ -835,10 +980,11 @@ function normalizeScenario(sc){
       }] : [] };
     }
     const marposs = Object.assign({ debut:"", fin:"", releves:[] }, e.marposs || {});
+    const photos = (e.photos || []).map(p => Object.assign({ id: p.id || ("ph"+Math.random().toString(36).slice(2)), filename:"", addedAt:"" }, p));
     return Object.assign(
       { id: e.id || ("e"+Math.random().toString(36).slice(2)), titre:"", date:"", equipe:"", operateur:"", observations:"", maturiteBruts:"", prelevements:[] },
       e,
-      { params, marposs, prelevements: (e.prelevements || []).map(r => {
+      { params, marposs, photos, prelevements: (e.prelevements || []).map(r => {
         const row = Object.assign({ id: r.id || ("p"+Math.random().toString(36).slice(2)), piece:"", batt:"", battD:"", battG:"", logementId:"", pointMesure:"" }, r);
         // anciennes saisies (avant le split Droite/Gauche d'EMAG 1) : la mesure vivait
         // seule dans "batt". Si le scenario est en mode EMAG 1, on la reporte sur les deux
@@ -999,6 +1145,7 @@ function saveData(){
     storageOk = true;
     lastSavedAt = new Date();
     pushHistory();
+    writeBackupToFolder();
   }catch(e){
     storageOk = false;
   }
@@ -1083,6 +1230,12 @@ document.getElementById("historyBtn").addEventListener("click", () => {
   ouvrirPanneau("historyPanel");
   renderHistoryPanel();
 });
+document.getElementById("photosDirBtn").addEventListener("click", connectPhotosDir);
+if(!fsPhotosSupported()){
+  const b = document.getElementById("photosDirBtn");
+  if(b) b.title = "Fonction disponible sur Edge/Chrome (ordinateur), via l'adresse en ligne de l'outil.";
+}
+tryReconnectPhotosDir();
 
 function updateSaveUI(){
   const status = document.getElementById("saveStatus");
@@ -2480,6 +2633,43 @@ function marpossHTML(sc, essai){
   `;
 }
 
+/* ---- photos par essai : fichiers reels dans le dossier local connecte, jamais dans le
+   JSON echange (seule une reference legere y voyage) ---- */
+function photosHTML(sc, essai){
+  if(!essai.photos) essai.photos = [];
+  const photos = essai.photos;
+  const thumbs = photos.map(p => `
+    <div class="photo-thumb">
+      <img data-photo-filename="${escapeAttr(p.filename)}" alt="${escapeAttr(p.filename)}">
+      <button class="photo-del" data-essai="${essai.id}" data-photo="${p.id}" title="Supprimer">✕</button>
+    </div>
+  `).join("");
+  const uploadZone = !fsPhotosSupported()
+    ? `<p class="panel-hint">Fonction disponible sur Edge/Chrome (ordinateur), via l'adresse en ligne de l'outil.</p>`
+    : !photosDirHandle
+      ? `<button class="ghost photos-connect-btn">📁 Connecter le dossier photos</button>`
+      : `<label class="backlog-image-add">＋ Ajouter des photos<input type="file" accept="image/*" multiple class="photo-input" data-essai="${essai.id}" hidden></label>`;
+  return `
+    <details class="photos-block" ${photos.length ? "open" : ""}>
+      <summary>📷 Photos ${photos.length ? `<span class="badge muted">${photos.length}</span>` : ""}</summary>
+      <div class="photos-body">
+        ${uploadZone}
+        ${thumbs ? `<div class="photos-grid">${thumbs}</div>` : ""}
+      </div>
+    </details>
+  `;
+}
+async function loadPhotoThumbnails(){
+  if(!photosDirHandle) return;
+  const imgs = document.querySelectorAll("img[data-photo-filename]");
+  for(const img of imgs){
+    const filename = img.getAttribute("data-photo-filename");
+    if(!filename) continue;
+    const url = await readPhotoURL(filename);
+    if(url) img.src = url; else img.classList.add("photo-missing");
+  }
+}
+
 function equipeOptions(selected){
   return ["", "Matin", "Après-midi", "Nuit"].map(o =>
     `<option value="${o}" ${selected === o ? "selected" : ""}>${o || "—"}</option>`).join("");
@@ -2572,6 +2762,7 @@ function essaiCardHTML(sc, essai, interactive){
       </div>
       ${addPrelBtn}
       <div class="essai-progress-multi">${progressRows || ""}</div>
+      ${interactive ? photosHTML(sc, essai) : ""}
       ${interactive ? marpossHTML(sc, essai) : ""}
     </div>
   `;
@@ -2688,6 +2879,7 @@ function renderDetail(){
   if(!sc){ wrap.innerHTML = ""; return; }
   wrap.innerHTML = scenarioBlockHTML(sc, true);
   attachDetailHandlers(sc);
+  loadPhotoThumbnails();
 }
 function renderAll(){
   const soloActif = document.getElementById("prtActifSeul") && document.getElementById("prtActifSeul").checked;
@@ -2989,6 +3181,7 @@ function updateHeader(){
 function render(){
   if(!data.find(s => s.id === activeId)) activeId = data[0] ? data[0].id : null;
   updateHeader();
+  updatePhotosDirUI();
   renderLignes();
   renderReferences();
   renderOps();
@@ -3060,6 +3253,39 @@ function attachDetailHandlers(sc){
       if(!es || !es.marposs) return;
       if(!confirm("Vider les " + es.marposs.releves.length + " relevé(s) Marposs de cet essai ?")) return;
       es.marposs.releves = [];
+      saveData(); render();
+    });
+  });
+  root.querySelectorAll(".photos-connect-btn").forEach(btn => btn.addEventListener("click", connectPhotosDir));
+  root.querySelectorAll(".photo-input").forEach(inp => {
+    inp.addEventListener("change", async () => {
+      const essaiId = inp.getAttribute("data-essai");
+      const es = sc.essais.find(e => e.id === essaiId);
+      if(!es || !photosDirHandle) return;
+      if(!es.photos) es.photos = [];
+      const files = [...inp.files];
+      for(const file of files){
+        try{
+          const blob = await compressImageFile(file, 1600, 0.82);
+          const stamp = Date.now() + "-" + Math.random().toString(36).slice(2,6);
+          const filename = slugify(sc.name) + "_" + slugify(es.titre) + "_" + stamp + ".jpg";
+          await writePhotoBlob(filename, blob);
+          es.photos.push({ id: "ph"+Math.random().toString(36).slice(2), filename, addedAt: new Date().toISOString() });
+        }catch(err){ alert("Échec de l'enregistrement d'une photo : " + err.message); }
+      }
+      saveData(); render();
+    });
+  });
+  root.querySelectorAll(".photo-del").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const essaiId = btn.getAttribute("data-essai"), photoId = btn.getAttribute("data-photo");
+      const es = sc.essais.find(e => e.id === essaiId);
+      if(!es) return;
+      const p = (es.photos||[]).find(x => x.id === photoId);
+      if(!p) return;
+      if(!confirm("Supprimer cette photo ?")) return;
+      if(photosDirHandle) await deletePhotoFile(p.filename);
+      es.photos = es.photos.filter(x => x.id !== photoId);
       saveData(); render();
     });
   });
@@ -3144,6 +3370,7 @@ function attachDetailHandlers(sc){
         date: today, equipe: "", operateur: "", observations: "", maturiteBruts: "",
         params: { logements: snapshotLogements(sc) },
         marposs: { debut:"", fin:"", releves:[] },
+        photos: [],
         prelevements: [] });
       saveData(); render();
     });
