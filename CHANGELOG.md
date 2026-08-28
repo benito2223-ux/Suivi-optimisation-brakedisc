@@ -5,6 +5,42 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [2.4.0] — 2026-08-28
+
+Refonte de la hiérarchie de lecture et arrivée du mode atelier. L'outil ne se contente plus
+d'afficher des données : il énonce sa conclusion.
+
+### Ajouté
+- **Bandeau verdict** en tête de chaque scénario : le gain formulé en une phrase
+  (« −46,7 % de coût outil par pièce · 2× la durée de vie d'arête · validation en cours »),
+  avec chips coût/pièce, durée de vie et taux hors tolérance. Le scénario de référence
+  s'affiche comme « Référence de production — base 100 ».
+- **Mode atelier** : saisie plein écran conçue pour être utilisée debout devant la machine,
+  avec des gants. Champs de mesure à 78px, n° de pièce deviné à partir du pas réel de
+  prélèvement, sélecteurs de logement et de point de mesure en gros boutons, barre de
+  progression vers la charnière, retour immédiat conforme / hors tolérance après chaque
+  validation, Entrée pour enregistrer. Écrit dans les mêmes données que la saisie tableau.
+- Support tactile réel : `@media (pointer: coarse)` avec cibles à 44px minimum sur écrans
+  tactiles uniquement, et breakpoint < 720px (KPI sur 2 colonnes, barre d'outils pleine
+  largeur).
+
+### Changé
+- Nouvel ordre de lecture d'un scénario : verdict → chiffres clés → graphique → essais →
+  configuration → rebut. La preuve visuelle passe avant les détails de configuration.
+- Le tableau outils/logements se replie une fois la campagne lancée (déplié automatiquement
+  tant qu'une référence plaquette manque, et toujours déplié à l'impression).
+- Couleurs Marposs tokenisées (`--teal`, `--teal-strong`) et éclaircies en thème sombre.
+
+### Corrigé
+- **`<meta viewport>` absent** : sur iPhone/iPad la page se rendait en 980px puis rétrécissait,
+  rendant l'outil inutilisable au doigt. C'était le blocage principal pour l'usage tablette.
+- **`<meta charset>` absent** : risque d'accents cassés à l'ouverture du fichier en local.
+- **Graphique vide à la première ouverture** sur les scénarios EMAG 1 : les données de départ
+  ne passaient pas par `normalizeScenario`, donc la mesure restait dans `batt` sans être
+  reportée sur Droite/Gauche.
+- Contraste insuffisant du teal Marposs en thème sombre (3,03:1 → conforme).
+- Flèches d'incrément désactivées en mode atelier (le piège qui rendait la saisie pénible).
+
 ## [2.3.0] — 2026-08-28
 
 Simplification structurelle, pas seulement visuelle — "loin d'être radical" puis "sois plus
