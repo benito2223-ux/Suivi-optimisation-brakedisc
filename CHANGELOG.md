@@ -5,6 +5,38 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [3.0.0] — 2026-08-29
+
+Refonte visuelle + coquille applicative — le plan de travail gagne un rail de navigation
+permanent, et l'en-tête, le verdict et les chiffres clés sont retravaillés dans la charte SPK.
+Changement structurel (nouvelle disposition en grille), d'où le passage en version majeure.
+
+### Changé
+- **Nouvelle coquille applicative** : rail sombre collé à gauche (`#0f2740`), plan de travail à
+  droite. Le rail contient le logo, la sélection Ligne › Référence › OP, la liste des scénarios
+  (coût/pièce et delta visibles sans naviguer) et les actions (export/import, PDF, réinitialisation).
+  Sous 1080px, le rail repasse en flux normal au-dessus du contenu.
+- Sélecteurs Ligne / Référence / OP regroupés dans un conteneur commun (`.ctx-rail`), collé en
+  haut de son conteneur ; se replie automatiquement si les trois listes sont vides.
+- En-tête transformé en carte à filet bleu SPK, eyebrow précédé d'un tiret rouge, titre en
+  Archivo 800.
+- Bandeau verdict : fond teinté plat (au lieu du dégradé) + barre d'accent de 5px à gauche selon
+  l'état (référence / conforme / hors tolérance / en attente).
+- Chiffres clés de pied de scénario agrandis (jusqu'à 44px), deltas présentés en pastilles.
+- Cartes de scénario, encarts (notes, aide, Marposs, photos, backlog) et boutons harmonisés :
+  rayons plus généreux, ombres portées cohérentes, repères de section en tiret rouge.
+- Menu `•••` de la barre d'outils : s'ouvre désormais vers le haut depuis le pied du rail.
+
+### Non affecté
+- Aucune donnée, clé de stockage ou logique métier modifiée : sélection, saisie, mode atelier,
+  suivi Marposs, export/import JSON/CSV/PDF, historique local — tout est inchangé.
+- Rendu impression / export PDF inchangé (le rail est masqué à l'impression).
+- Thème sombre (`prefers-color-scheme: dark` / `[data-theme="dark"]`) préservé tel quel.
+
+### À vérifier
+- Rendu non testé visuellement avant intégration (contrainte de l'outil de conception utilisé).
+  À valider dans un navigateur réel (Edge/Chrome desktop, puis tablette) avant diffusion large.
+
 ## [2.5.0] — 2026-08-28
 
 Refonte typographique — c'est la police condensée qui donnait à l'outil son côté

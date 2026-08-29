@@ -630,6 +630,240 @@ body.atelier-on{overflow:hidden;}
   .badge{ font-size:9px; padding:1px 6px; }
   .note{ font-size:10.5px; break-inside:avoid; }
   .foot{ font-size:9px; }
+  .ctx-rail{ display:none !important; }
+}
+
+/* ============================================================
+   v3.0 — refonte visuelle (ecran uniquement)
+   Meme charte SPK (bleu/rouge/gris, Archivo + IBM Plex Mono), mais une hierarchie
+   spatiale differente : en-tete en carte, rail de contexte colle en haut, chiffres
+   traites comme le sujet principal, accents rouges reserves aux reperes de lecture.
+   ============================================================ */
+@media screen{
+
+  /* --- fond de page un peu plus profond : les cartes blanches ressortent --- */
+  :root{
+    --shadow-card:0 1px 2px rgba(15,39,64,.05), 0 8px 24px rgba(15,39,64,.07);
+    --shadow-pop:0 20px 60px rgba(15,39,64,.24);
+    --shadow-lift:0 2px 4px rgba(15,39,64,.06), 0 16px 36px rgba(15,39,64,.11);
+  }
+  @media (prefers-color-scheme: light){ :root:not([data-theme="dark"]){ --bg:#dce0e6; } }
+  :root[data-theme="light"]{ --bg:#dce0e6; }
+
+  .wrap{max-width:1280px; padding:0 22px 96px;}
+
+  /* --- en-tete : carte posee sur la page, filet bleu en haut (charte SPK) --- */
+  .hd{
+    background:var(--surface); border:1px solid var(--border); border-top:4px solid var(--blue);
+    border-bottom:1px solid var(--border); border-radius:0 0 20px 20px;
+    padding:24px 28px 22px; margin:0 0 16px; box-shadow:var(--shadow-card);
+    align-items:center;
+  }
+  .hd-left{gap:22px;}
+  .hd-left img{height:46px;}
+  .hd-eyebrow{display:flex; align-items:center; gap:11px; margin-bottom:7px; font-size:10.5px; letter-spacing:.16em;}
+  .hd-eyebrow::before{content:""; width:26px; height:3px; border-radius:2px; background:var(--red); flex:0 0 auto;}
+  .hd h1{font-size:clamp(26px,3.5vw,38px); font-weight:800; letter-spacing:-.028em;}
+  .hd-meta{font-size:11.5px; line-height:1.85; color:var(--ink-faint);}
+  .hd-meta b{font-weight:600;}
+
+  /* --- barre d'outils : plateau, pas une rangee de boutons flottants --- */
+  .toolbar{
+    background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    padding:10px 12px; box-shadow:var(--shadow-card); margin-bottom:14px;
+  }
+  button{border-radius:999px; font-size:12.5px; padding:9px 16px;}
+  button.primary{box-shadow:0 6px 18px rgba(27,94,166,.26);}
+  button.save{box-shadow:0 6px 18px rgba(26,122,63,.22);}
+  .toolbar-more{border-radius:16px; padding:12px;}
+
+  /* --- rail de contexte : ligne > reference > OP, colle en haut au defilement --- */
+  .ctx-rail{
+    position:sticky; top:0; z-index:30;
+    display:flex; flex-wrap:wrap; align-items:center; gap:10px;
+    padding:9px 12px; margin:0 0 16px;
+    background:color-mix(in srgb, var(--surface) 86%, transparent);
+    -webkit-backdrop-filter:saturate(1.5) blur(12px); backdrop-filter:saturate(1.5) blur(12px);
+    border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow-card);
+  }
+  .ctx-rail > div:empty{display:none;}
+  .ctx-rail:not(:has(> div:not(:empty))){display:none;}
+  .ligne-strip, .reference-strip{margin-bottom:0; border-color:transparent; background:var(--surface-alt);}
+  .ligne-tab, .reference-tab{font-size:12.5px; border-radius:999px; padding:7px 15px;}
+  .ligne-tab.active, .reference-tab.active{box-shadow:0 1px 2px rgba(15,39,64,.1), 0 3px 8px rgba(15,39,64,.1);}
+
+  /* --- cartes de scenario (selecteur) --- */
+  .tabs-strip{gap:13px; margin-bottom:22px; grid-template-columns:repeat(auto-fit,minmax(228px,1fr));}
+  .tab-card{position:relative; overflow:hidden; padding:18px 20px 17px; border-radius:16px; gap:9px;}
+  .tab-card::before{content:""; position:absolute; left:0; right:0; top:0; height:3px; background:transparent; transition:background .15s ease;}
+  .tab-card:hover{transform:translateY(-2px); box-shadow:var(--shadow-lift);}
+  .tab-card.active{border-color:var(--blue); box-shadow:0 0 0 1px var(--blue), 0 14px 34px rgba(27,94,166,.16);}
+  .tab-card.active::before{background:var(--blue);}
+  .tab-card.is-baseline::before{background:var(--red);}
+  .tc-name{font-size:18px; font-weight:800; letter-spacing:-.02em;}
+  .tc-val{font-size:16px;}
+  .tc-label{font-family:var(--font-mono); letter-spacing:.08em;}
+  .tc-delta{padding:1px 7px; border-radius:999px;}
+  .tc-delta.neg{background:var(--green-bg);}
+  .tc-delta.pos{background:var(--red-bg);}
+
+  /* --- le scenario lui-meme --- */
+  .scenario{border-radius:20px; border-top-width:1px; box-shadow:var(--shadow-card);}
+  .scenario.baseline{box-shadow:0 0 0 1px var(--blue), var(--shadow-card);}
+  .scenario-head{background:var(--surface); padding:16px 22px 12px;}
+  .scenario-head input.sc-name{font-size:21px; font-weight:800; letter-spacing:-.025em;}
+  .baseline-pill{border-radius:999px; padding:4px 11px;}
+
+  /* --- verdict : la conclusion, traitee comme un titre de rapport --- */
+  .verdict{
+    position:relative; align-items:flex-start; gap:28px;
+    padding:26px 28px 26px 32px; background:var(--surface-alt);
+  }
+  .verdict::before{content:""; position:absolute; left:0; top:0; bottom:0; width:5px; background:var(--ink-faint);}
+  .verdict.ref{background:var(--blue-bg);}   .verdict.ref::before{background:var(--blue);}
+  .verdict.ok{background:var(--green-bg);}   .verdict.ok::before{background:var(--green);}
+  .verdict.bad{background:var(--red-bg);}    .verdict.bad::before{background:var(--red);}
+  .verdict.pending{background:var(--amber-bg);} .verdict.pending::before{background:var(--amber);}
+  .verdict-titre{font-family:var(--font-disp); font-weight:800; font-size:clamp(24px,3.1vw,36px); letter-spacing:-.03em; line-height:1.08;}
+  .verdict-sous{font-size:13.5px; max-width:62ch;}
+  .verdict-chips{gap:10px;}
+  .vchip{border-radius:13px; padding:11px 16px; min-width:118px; box-shadow:0 1px 2px rgba(15,39,64,.05);}
+  .vchip .l{font-family:var(--font-mono); letter-spacing:.09em; font-size:9px;}
+  .vchip .v{font-size:19px; margin-top:5px;}
+
+  /* --- chiffres cles : le sujet principal de l'outil --- */
+  .scenario-foot{border-top:1px solid var(--border); background:var(--surface);}
+  .foot-cell{padding:18px 22px 20px;}
+  .foot-cell .l{font-family:var(--font-mono); font-size:9.5px; letter-spacing:.1em; margin-bottom:9px;}
+  .foot-cell .v, .foot-cell input.cell-cycle{font-size:clamp(32px,3.4vw,44px); letter-spacing:-.035em;}
+  .foot-cell .delta{display:inline-block; margin-top:9px; padding:3px 10px; border-radius:999px; font-size:11.5px;}
+  .delta.neg{background:var(--green-bg);}
+  .delta.pos{background:var(--red-bg);}
+  .delta.zero{background:var(--surface-alt);}
+  .foot-sub{font-size:11px;}
+
+  /* --- reperes de section : petit tiret rouge (charte SPK) au lieu du carre bleu --- */
+  .synthese-block h3::before, .backlog-block h3::before, .log-section h3::before, .chart-block h3::before{
+    width:18px; height:3px; border-radius:2px; background:var(--red);
+  }
+  .synthese-block h3, .log-section h3, .chart-block h3, .backlog-block h3{
+    font-family:var(--font-mono); font-size:11px; letter-spacing:.11em; color:var(--ink-faint);
+  }
+  .synthese-block{border-radius:18px; padding:20px 22px; box-shadow:var(--shadow-card);}
+  .log-section, .chart-block{padding:20px 22px;}
+
+  /* --- essais, encarts, panneaux --- */
+  .essai-card{border-radius:16px; border-left-width:4px;}
+  .essai-titre{font-size:15.5px; font-weight:800; letter-spacing:-.015em;}
+  .aide{border-radius:16px; border-left-width:4px; box-shadow:var(--shadow-card);}
+  .note{background:var(--surface); border-color:var(--border); border-left-width:4px; border-radius:14px; box-shadow:var(--shadow-card); font-size:13px; padding:14px 18px;}
+  .note.confid-note{border-left-color:var(--red);}
+  .note.confid-note b{color:var(--red);}
+  .marposs-block, .photos-block{border-radius:14px; border-left-width:4px;}
+  .panel{border-radius:20px; border-top-width:4px;}
+  .backlog-card{border-radius:16px;}
+
+  /* --- tableaux : entetes en mono, plus calmes --- */
+  th{font-family:var(--font-mono); font-size:10.5px; letter-spacing:.07em; text-transform:uppercase; color:var(--ink-faint);}
+
+  .foot{margin-top:56px;}
+}
+
+/* ============================================================
+   v4.0 — coquille applicative : rail de commande sombre a gauche,
+   plan de travail a droite. On quitte le document deroulant pour une
+   application : le contexte (ligne > reference > OP) et la liste des
+   scenarios restent visibles en permanence pendant qu'on lit un scenario.
+   ============================================================ */
+@media screen{
+  .app{display:grid; grid-template-columns:312px minmax(0,1fr); align-items:start; min-height:100vh;}
+  .app > .wrap{max-width:1220px; padding:22px 30px 96px; margin:0;}
+
+  .rail{
+    position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto; overscroll-behavior:contain;
+    display:flex; flex-direction:column; gap:22px;
+    padding:20px 18px 22px; background:#0f2740; color:#fff;
+    box-shadow:inset -1px 0 0 rgba(255,255,255,.07), 4px 0 28px rgba(15,39,64,.16);
+    scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.22) transparent;
+  }
+  .rail::-webkit-scrollbar{width:8px;}
+  .rail::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18); border-radius:99px;}
+
+  .rail-brand{display:flex; align-items:center; gap:13px; padding:4px 6px 18px; border-bottom:1px solid rgba(255,255,255,.1);}
+  .rail-brand img{height:30px; width:auto; filter:brightness(0) invert(1); opacity:.94;}
+  .rail-brand-t{font-family:var(--font-disp); font-weight:700; font-size:14px; line-height:1.2; letter-spacing:-.01em;}
+  .rail-brand-t span{display:block; margin-top:3px; font-family:var(--font-mono); font-weight:400; font-size:9.5px;
+    letter-spacing:.13em; text-transform:uppercase; color:rgba(255,255,255,.45);}
+
+  .rail-sec{display:flex; flex-direction:column; gap:11px;}
+  .rail-lab{display:flex; align-items:center; gap:9px; font-family:var(--font-mono); font-size:9.5px;
+    letter-spacing:.16em; text-transform:uppercase; color:rgba(255,255,255,.42); padding:0 6px;}
+  .rail-lab::after{content:""; flex:1; height:1px; background:rgba(255,255,255,.1);}
+
+  /* contexte : ligne > reference > OP, empiles verticalement */
+  .rail .ctx-rail{position:static; display:flex; flex-direction:column; align-items:stretch; gap:7px;
+    padding:0; margin:0; background:none; border:none; box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none;}
+  .rail .ligne-strip, .rail .reference-strip{display:flex; flex-direction:column; align-items:stretch; gap:3px;
+    width:100%; padding:5px; margin:0; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.07); border-radius:12px;}
+  .rail .ligne-tab, .rail .reference-tab{justify-content:space-between; width:100%; padding:8px 12px;
+    border-radius:9px; font-size:12.5px; color:rgba(255,255,255,.66); background:transparent; box-shadow:none;}
+  .rail .ligne-tab:hover, .rail .reference-tab:hover{background:rgba(255,255,255,.07); color:#fff;}
+  .rail .ligne-tab.active, .rail .reference-tab.active{background:#fff; color:#0f2740; box-shadow:0 2px 8px rgba(0,0,0,.28);}
+  .rail .ligne-tab.add, .rail .reference-tab.add{color:rgba(255,255,255,.4);}
+  .rail .ligne-tab.add:hover, .rail .reference-tab.add:hover{color:#fff;}
+  .rail .tab-del, .rail .tab-ren{color:inherit; opacity:.55;}
+  .rail .tab-del:hover{color:var(--red); opacity:1;}
+
+  /* liste des scenarios : le sommaire permanent de la campagne */
+  .rail .tabs-strip{display:flex; flex-direction:column; gap:8px; margin:0;}
+  .rail .tab-card{padding:13px 15px; gap:7px; border-radius:13px;
+    background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); box-shadow:none;}
+  .rail .tab-card:hover{transform:none; background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.16); box-shadow:none;}
+  .rail .tab-card.active{background:#fff; border-color:#fff; box-shadow:0 8px 26px rgba(0,0,0,.32);}
+  .rail .tab-card::before{background:transparent;}
+  .rail .tab-card.is-baseline::before{background:var(--red);}
+  .rail .tab-card.active::before{background:var(--blue);}
+  .rail .tc-name{font-size:14.5px; color:#fff; line-height:1.25;}
+  .rail .tab-card.active .tc-name{color:#0f2740;}
+  .rail .tc-label{color:rgba(255,255,255,.42);}
+  .rail .tc-val{font-size:14px; color:#fff;}
+  .rail .tab-card.active .tc-label{color:var(--ink-faint);}
+  .rail .tab-card.active .tc-val{color:var(--ink);}
+  .rail .tc-delta.neg{background:rgba(95,191,136,.16); color:#7fd6a3;}
+  .rail .tc-delta.pos{background:rgba(229,103,122,.16); color:#f09aa7;}
+  .rail .tab-card.active .tc-delta.neg{background:var(--green-bg); color:var(--green);}
+  .rail .tab-card.active .tc-delta.pos{background:var(--red-bg); color:var(--red);}
+
+  /* pied du rail : les actions */
+  .rail-foot{margin-top:auto; padding-top:18px; border-top:1px solid rgba(255,255,255,.1);}
+  .rail .toolbar{background:none; border:none; box-shadow:none; padding:0; margin:0;}
+  .rail .toolbar-actions{flex-direction:column; align-items:stretch; gap:7px; width:100%;}
+  .rail .toolbar-actions > button{width:100%; justify-content:center;}
+  .rail .toolbar-more-wrap{width:100%;}
+  .rail #moreBtn{width:100%;}
+  .rail button.ghost{background:rgba(255,255,255,.07); color:rgba(255,255,255,.78); border-color:transparent;}
+  .rail button.ghost:hover{background:rgba(255,255,255,.14); color:#fff; border-color:transparent; box-shadow:none;}
+  .rail .save-status{color:rgba(255,255,255,.5); padding:0 4px;}
+  .rail .toolbar-more{left:0; right:auto; bottom:calc(100% + 8px); top:auto; width:262px; color:var(--ink);}
+  .rail .toolbar-more button.ghost{background:transparent; color:var(--ink-soft);}
+  .rail .toolbar-more button.ghost:hover{background:var(--surface-alt); color:var(--ink);}
+  .rail .toolbar-more .save-status{color:var(--ink-faint);}
+
+  /* en-tete du plan de travail : plus de logo (il est dans le rail), du blanc et un titre */
+  .app .hd{border-radius:20px; border-top-width:4px; padding:22px 26px 20px; margin-bottom:16px;}
+  .app .hd-left img{display:none;}
+
+  @media (max-width:1080px){
+    .app{grid-template-columns:minmax(0,1fr);}
+    .rail{position:static; height:auto; flex-direction:column; padding:16px;
+      box-shadow:0 10px 30px rgba(15,39,64,.18);}
+    .rail-foot{margin-top:8px;}
+    .app > .wrap{padding:18px 16px 80px;}
+  }
+}
+@media print{
+  .app{display:block !important;}
+  .rail{display:none !important;}
 }
 </style>
 
@@ -803,9 +1037,11 @@ body.atelier-on{overflow:hidden;}
     <span><i class="dot blue"></i>Calculé automatiquement</span>
   </div>
 
-  <div class="ligne-strip" id="ligneStrip"></div>
-  <div class="reference-strip" id="referenceStrip"></div>
-  <div class="reference-strip" id="opStrip"></div>
+  <div class="ctx-rail" id="ctxRail">
+    <div class="ligne-strip" id="ligneStrip"></div>
+    <div class="reference-strip" id="referenceStrip"></div>
+    <div class="reference-strip" id="opStrip"></div>
+  </div>
   <div class="tabs-strip" id="tabsStrip"></div>
   <div class="synthese-wrap" id="syntheseWrap" hidden></div>
   <div class="panel backlog-wrap" id="backlogWrap" hidden></div>
@@ -827,7 +1063,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "2.5.0";
+const TOOL_VERSION = "3.0.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -4161,4 +4397,58 @@ updateSaveUI();
 updateRestoreUI();
 updateRevisionUI();
 document.getElementById("footToolName").textContent = "Suivi_optimisation_SPK v" + TOOL_VERSION + " — SPK by CeramTec";
+</script>
+
+<script>
+/* v4.0 — coquille applicative. Ne cree aucune donnee et ne touche a aucun identifiant :
+   deplace simplement des blocs deja rendus (contexte, liste des scenarios, actions) dans un
+   rail lateral persistant. L'application continue de les re-rendre par innerHTML comme avant. */
+(function(){
+  var wrap = document.querySelector(".wrap");
+  if(!wrap || document.querySelector(".app")) return;
+
+  var app = document.createElement("div");
+  app.className = "app";
+  wrap.parentNode.insertBefore(app, wrap);
+
+  var rail = document.createElement("aside");
+  rail.className = "rail";
+  app.appendChild(rail);
+  app.appendChild(wrap);
+
+  var brand = document.createElement("div");
+  brand.className = "rail-brand";
+  var logo = document.querySelector(".hd-left img");
+  if(logo){
+    var copie = logo.cloneNode(true);
+    copie.removeAttribute("id");
+    brand.appendChild(copie);
+  }
+  var bt = document.createElement("div");
+  bt.className = "rail-brand-t";
+  bt.innerHTML = "Suivi optimisation<span>SPK by CeramTec</span>";
+  brand.appendChild(bt);
+  rail.appendChild(brand);
+
+  function section(titre, noeud){
+    if(!noeud) return;
+    var s = document.createElement("div");
+    s.className = "rail-sec";
+    var l = document.createElement("div");
+    l.className = "rail-lab";
+    l.textContent = titre;
+    s.appendChild(l);
+    s.appendChild(noeud);
+    rail.appendChild(s);
+  }
+
+  section("Contexte", document.getElementById("ctxRail"));
+  section("Scénarios", document.getElementById("tabsStrip"));
+
+  var pied = document.createElement("div");
+  pied.className = "rail-foot";
+  var barre = document.getElementById("toolbarWrap");
+  if(barre) pied.appendChild(barre);
+  rail.appendChild(pied);
+})();
 </script>
