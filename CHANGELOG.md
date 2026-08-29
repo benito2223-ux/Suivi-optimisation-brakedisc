@@ -5,6 +5,28 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [3.3.0] — 2026-08-29
+
+Toggle de comparaison graphique v2.5 / v3.2 — **temporaire**, le temps de recueillir l'avis
+de Matis (Stellantis) sur la refonte avant de basculer `main` dessus.
+
+### Ajouté
+- Un bouton flottant en bas à droite ("🎨 Voir l'ancien design" / "🎨 Voir le nouveau design")
+  bascule entre l'habillage v2.5.0 (en-tête classique, pas de rail) et la refonte v3.0+
+  (rail sombre, en-tête en carte, verdict retravaillé). Le choix est mémorisé
+  (`localStorage`) et survit à la fermeture du fichier.
+- Techniquement additif comme la refonte elle-même : les deux blocs CSS `@media screen`
+  de la refonte sont conditionnés à `html:not([data-layout="classic"])` (CSS nesting), et
+  le script qui construit le rail s'arrête tôt si le mode classique est actif. Rien n'a été
+  dupliqué ni retiré de l'ancien CSS.
+- Les évolutions fonctionnelles apportées depuis (essais en tuiles, icônes aide/légende,
+  menu ligne) restent actives dans les deux habillages — seul l'agencement visuel change.
+
+### À faire une fois le choix arbitré
+- Retirer le bouton, le script de bootstrap en tête de fichier, et les deux conditions
+  `html:not([data-layout="classic"])` (en gardant leur contenu tel quel si v3.2 est retenu ;
+  en supprimant les deux blocs `@media screen` de la refonte si l'ancien design est retenu).
+
 ## [3.2.0] — 2026-08-29
 
 Essais en tuiles + informations de ligne — deux ajouts après retour terrain sur la v3.1 :
