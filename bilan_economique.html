@@ -227,9 +227,9 @@ input.cell.sub{font-size:10.5px; color:var(--ink-faint);}
 .ligne-tab.active, .reference-tab.active{background:var(--surface); color:var(--ink); box-shadow:0 1px 1px rgba(20,24,22,.08), 0 2px 5px rgba(20,24,22,.1);}
 .ligne-tab.add, .reference-tab.add{color:var(--ink-faint); font-weight:500;}
 .ligne-tab.add:hover, .reference-tab.add:hover{color:var(--blue-dark);}
-.tab-del, .tab-ren{font-size:11px; color:var(--ink-faint); padding:0 2px;}
+.tab-del, .tab-ren, .tab-cfg{font-size:11px; color:var(--ink-faint); padding:0 2px;}
 .tab-del:hover{color:var(--red);}
-.tab-ren:hover{color:var(--blue);}
+.tab-ren:hover, .tab-cfg:hover{color:var(--blue);}
 
 /* tabs strip (also acts as comparative KPI summary) */
 .tabs-strip{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px; margin-bottom:18px;}
@@ -329,6 +329,7 @@ tr.row-bad td{background:var(--red-bg);}
 .aide-body h4{font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-faint); margin:16px 0 6px;}
 .aide-body ul{margin:0; padding-left:20px;}
 .aide-body li{margin:5px 0; line-height:1.5;}
+.aide-body p{margin:0; line-height:1.5;}
 .aide-body b{color:var(--ink);}
 
 /* suivi Marposs — accent teal dedie, distinct du bleu (aide/UI) et du rouge/vert/ambre
@@ -412,8 +413,27 @@ tr.row-bad td{background:var(--red-bg);}
 .essais-list{display:flex; flex-direction:column; gap:12px; margin:14px 0;}
 .essai-card{border:1px solid var(--border); border-left:3px solid var(--border); border-radius:var(--radius-lg); background:var(--surface-alt); overflow:hidden;}
 .essai-card.ok{border-left-color:var(--green);}
-.essai-card.bad{border-left-color:var(--red);}
+.essai-card.risk{border-left-color:var(--red);}
 .essai-card.pending{border-left-color:var(--amber);}
+
+/* essai replie en tuile : le detail (parametres, tableau, photos, marposs) ne se voit
+   qu'a la demande — evite d'ouvrir l'ecran sur tous les essais deplies en meme temps */
+.essai-card > summary{
+  cursor:pointer; list-style:none; display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  padding:13px 16px; background:var(--surface);
+}
+.essai-card > summary::-webkit-details-marker{display:none;}
+.essai-card > summary::before{content:"›"; font-size:18px; line-height:1; color:var(--ink-faint); transition:transform .15s ease; flex:0 0 auto;}
+.essai-card[open] > summary::before{transform:rotate(90deg);}
+.essai-card.ok > summary{background:var(--green-bg);}
+.essai-card.risk > summary{background:var(--red-bg);}
+.essai-card.pending > summary{background:var(--amber-bg);}
+.essai-card > summary:hover{filter:brightness(.97);}
+.essai-card > summary:focus-visible{outline:2px solid var(--blue); outline-offset:-2px;}
+.essai-tile-title{font-family:var(--font-disp); font-weight:800; font-size:15px; color:var(--ink);}
+.essai-tile-meta{font-family:var(--font-mono); font-size:11.5px; color:var(--ink-soft);}
+.essai-card > summary .status-badge{margin-left:auto;}
+.essai-body{padding:14px 16px 16px;}
 .essai-head{display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:10px 12px; border-bottom:1px solid var(--border);}
 .essai-titre{font-family:var(--font-disp); font-weight:700; font-size:15px; min-width:110px; flex:1 1 140px; background:transparent; border:1px solid transparent; border-radius:var(--radius-sm); padding:4px 6px; color:var(--ink);}
 .essai-titre:hover{border-color:var(--border);}
@@ -839,7 +859,7 @@ body.atelier-on{overflow:hidden;}
   .rail .ligne-tab.active, .rail .reference-tab.active{background:#fff; color:#0f2740; box-shadow:0 2px 8px rgba(0,0,0,.28);}
   .rail .ligne-tab.add, .rail .reference-tab.add{color:rgba(255,255,255,.4);}
   .rail .ligne-tab.add:hover, .rail .reference-tab.add:hover{color:#fff;}
-  .rail .tab-del, .rail .tab-ren{color:inherit; opacity:.55;}
+  .rail .tab-del, .rail .tab-ren, .rail .tab-cfg{color:inherit; opacity:.55;}
   .rail .tab-del:hover{color:var(--red); opacity:1;}
 
   /* liste des scenarios : le sommaire permanent de la campagne */
@@ -1050,6 +1070,12 @@ body.atelier-on{overflow:hidden;}
         <li><b>Affinage par rayon de bec</b> (optionnel, champs "Rayon de bec rε" et "ap piste") — quand la profondeur de passe ap est plus petite que le rayon de bec rε, la coupe se fait uniquement sur la partie arrondie du bec, dont l'angle local passe progressivement de 0° à κr nominal. L'angle effectif utilisé alors pour Fr/Fa est <code>κr_eff = arccos(1 − ap/rε)</code> ; au-delà de cette profondeur de transition, l'arête droite domine et κr_eff revient à κr nominal. Sans rayon de bec ni ap renseignés, Fr/Fa utilise directement κr nominal.</li>
         <li>Ces deux indices restent des <b>indices comparatifs</b>, pas un modèle physique absolu (pas de coefficients Kienzle, pas d'effet d'usure) — ils servent à situer un scénario par rapport aux points déjà éprouvés en production, pas à prédire un effort en Newtons ou une température en °C.</li>
       </ul>
+
+      <h4>Sauvegarde</h4>
+      <p>Cet outil fonctionne entièrement sur votre poste : aucune donnée n'est envoyée sur internet. Vos saisies sont conservées automatiquement dans ce navigateur, et retrouvées à la réouverture du fichier. Pour archiver le suivi ou l'envoyer par e-mail, utilisez <b>💾 Exporter le suivi</b> (fichier .json) ; le destinataire le recharge avec <b>📂 Importer</b>. Exportez en fin de séance : le stockage navigateur peut être vidé par un nettoyage de cache ou un changement de poste.</p>
+
+      <h4>Méthode de calcul</h4>
+      <p>Le coût/pièce ne couvre que la plaquette (prix ÷ (arêtes × charnière)), sommé sur les deux positions. Le temps de cycle (base 100 = scénario de référence) se recalcule automatiquement dès que vous changez Vc ou f en piste ; vous pouvez toujours le corriger à la main si le relevé terrain diffère du calcul théorique.</p>
     </div>
   </details>
   <button type="button" class="legend-btn" title="Point bleu = calculé automatiquement · point clair = champ éditable" aria-label="Légende des couleurs de champs"><i class="dot editable"></i><i class="dot blue"></i></button>
@@ -1065,6 +1091,26 @@ body.atelier-on{overflow:hidden;}
   <div class="panel backlog-wrap" id="backlogWrap" hidden></div>
   <div class="panel" id="historyPanel" hidden></div>
   <div class="panel" id="csvPanel" hidden></div>
+  <div class="panel" id="ligneInfoPanel" hidden>
+    <h3 id="ligneInfoTitle">Informations de ligne</h3>
+    <div class="opt-field on" style="padding-left:0;">
+      <label for="ligneCoutHoraire">Coût horaire (€/h)</label>
+      <input type="number" step="0.5" min="0" id="ligneCoutHoraire" style="width:130px;" placeholder="ex. 45">
+      <span class="opt-note">Coût machine + opérateur de cette ligne.</span>
+    </div>
+    <div class="opt-field on" style="padding-left:0;">
+      <label for="ligneObservations">Observations</label>
+      <textarea class="backlog-desc" id="ligneObservations" rows="3" placeholder="Particularités de la ligne, contraintes, historique..."></textarea>
+    </div>
+    <div class="opt-field on" style="padding-left:0;">
+      <label for="ligneMaintenanceDate">Dernière maintenance</label>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <input type="date" id="ligneMaintenanceDate" style="width:150px; text-align:left; font-family:var(--font-body);">
+        <input type="text" id="ligneMaintenanceType" style="flex:1; min-width:180px; width:auto; text-align:left; font-family:var(--font-body);" placeholder="Type d'intervention (ex. changement broche, révision générale...)">
+      </div>
+    </div>
+    <div class="panel-actions"><button class="primary" id="ligneInfoClose">Fermer</button></div>
+  </div>
   <div class="atelier" id="atelierPanel" hidden></div>
   <div class="scenario-detail" id="scenarioDetail"></div>
   <div class="scenario-all" id="scenarioAll"></div>
@@ -1074,10 +1120,6 @@ body.atelier-on{overflow:hidden;}
     <b>CONFIDENTIEL</b> — document interne au projet, ne pas diffuser hors de l'équipe projet
   </div>
 
-  <div class="note"><b>Sauvegarde</b> — cet outil fonctionne entièrement sur votre poste : aucune donnée n'est envoyée sur internet. Vos saisies sont conservées automatiquement dans ce navigateur, et retrouvées à la réouverture du fichier. Pour archiver le suivi ou l'envoyer par e-mail, utilisez <b>💾 Exporter le suivi</b> (fichier .json) ; le destinataire le recharge avec <b>📂 Importer</b>. Exportez en fin de séance : le stockage navigateur peut être vidé par un nettoyage de cache ou un changement de poste.</div>
-
-  <div class="note"><b>Méthode de calcul</b> — le coût/pièce ne couvre que la plaquette (prix ÷ (arêtes × charnière)), sommé sur les deux positions. Le temps de cycle (base 100 = scénario de référence) se recalcule automatiquement dès que vous changez Vc ou f en piste ; vous pouvez toujours le corriger à la main si le relevé terrain diffère du calcul théorique.</div>
-
   <div class="foot">
     <span id="footToolName">Suivi_optimisation_SPK</span>
     <span>Confidentiel — Benjamin Rouquette 2026</span>
@@ -1086,7 +1128,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "3.1.0";
+const TOOL_VERSION = "3.2.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -1297,6 +1339,10 @@ let activeOpId = null;
 let data = [];
 let config = {};
 let activeId = null;
+// essais repliés en tuiles : quels id restent "dépliés" d'un render() a l'autre
+// (chaque saisie de mesure regenere tout le HTML - sans ca, une tuile ouverte se
+// refermerait a chaque champ valide).
+let essaisOuverts = new Set();
 
 function normalizeBacklogItem(b){
   return Object.assign({ id: b.id || ("b"+Math.random().toString(36).slice(2)), date:"", auteur:"", type:"amelioration", titre:"", description:"", statut:"nouveau", image:"" }, b);
@@ -1321,7 +1367,7 @@ function normalizeReference(r){
   return { id: r.id || ("r"+Math.random().toString(36).slice(2)), nom: r.nom || "", ops };
 }
 function normalizeLigne(l){
-  return Object.assign({ id: l.id || ("l"+Math.random().toString(36).slice(2)), nom:"" }, l, {
+  return Object.assign({ id: l.id || ("l"+Math.random().toString(36).slice(2)), nom:"", coutHoraire:"", observations:"", maintenanceDate:"", maintenanceType:"" }, l, {
     references: (l.references || []).map(normalizeReference)
   });
 }
@@ -3150,7 +3196,10 @@ function scenarioBlockHTML(sc, interactive){
   const configSection = interactive ? `
     <details class="config-block"${sc.outils.some(o => o.logements.some(l => !l.ref)) ? " open" : ""}>
       <summary>Conditions de coupe et plaquettes<span class="config-resume">${
-        sc.outils.flatMap(o => o.logements.map(l => escapeAttr((o.numero||"?") + " · " + (l.nom||"—")))).join(" &nbsp;·&nbsp; ") || "aucun outil"
+        sc.outils.flatMap(o => o.logements.map(l => {
+          const pc = posCost(l);
+          return escapeAttr((o.numero||"?") + " · " + (l.nom||"—") + (l.ref ? " · " + l.ref : " · réf. manquante") + (pc !== null ? " · " + fmt(pc,4) + " €/pièce" : ""));
+        })).join(" &nbsp;·&nbsp; ") || "aucun outil"
       }</span></summary>
       <div class="config-body">${kvfWidgetHTML(sc)}${posTable}</div>
     </details>
@@ -3444,8 +3493,7 @@ function essaiCardHTML(sc, essai, interactive){
       </div>`;
   }).join("");
 
-  return `
-    <div class="essai-card ${badgeClass}">
+  const body = `
       <div class="essai-head">${head}</div>
       ${paramsRow}
       ${obsRow}
@@ -3459,7 +3507,27 @@ function essaiCardHTML(sc, essai, interactive){
       <div class="essai-progress-multi">${progressRows || ""}</div>
       ${interactive ? photosHTML(sc, essai) : ""}
       ${interactive ? marpossHTML(sc, essai) : ""}
-    </div>
+  `;
+
+  if(!interactive){
+    return `<div class="essai-card ${badgeClass}">${body}</div>`;
+  }
+
+  // replie en tuile par defaut : le detail (parametres, tableau, photos, marposs) ne
+  // s'affiche qu'a la demande, pour ne pas ouvrir l'ecran sur tous les essais a la fois.
+  // Cle composee scenario+essai : certains jeux de donnees reutilisent le meme id d'essai
+  // (ex. "e1") d'un scenario a l'autre.
+  const tileKey = sc.id + "|" + essai.id;
+  const tileMeta = [essai.date, essai.equipe].filter(Boolean).join(" · ");
+  return `
+    <details class="essai-card ${badgeClass}" data-essai-id="${essai.id}"${essaisOuverts.has(tileKey) ? " open" : ""}>
+      <summary>
+        <span class="essai-tile-title">${escapeAttr(essai.titre || "Essai")}</span>
+        ${tileMeta ? `<span class="essai-tile-meta">${escapeAttr(tileMeta)}</span>` : ""}
+        <span class="status-badge ${badgeClass}">${badgeText}</span>
+      </summary>
+      <div class="essai-body">${body}</div>
+    </details>
   `;
 }
 
@@ -3593,15 +3661,21 @@ function renderLignes(){
   el.innerHTML = lignes.map(l => `
     <span class="ligne-tab ${l.id === activeLigneId ? "active" : ""}" data-ligne="${l.id}">
       <span class="ligne-label" data-ligne-label="${l.id}">${escapeAttr(l.nom || "Sans nom")}</span>
-      ${l.id === activeLigneId ? `<span class="tab-ren" data-ren-ligne="${l.id}" title="Renommer la ligne">✎</span>${lignes.length > 1 ? `<span class="tab-del" data-del-ligne="${l.id}" title="Supprimer la ligne">✕</span>` : ""}` : ""}
+      ${l.id === activeLigneId ? `<span class="tab-cfg" data-cfg-ligne="${l.id}" title="Coût horaire, observations, maintenance">⚙</span><span class="tab-ren" data-ren-ligne="${l.id}" title="Renommer la ligne">✎</span>${lignes.length > 1 ? `<span class="tab-del" data-del-ligne="${l.id}" title="Supprimer la ligne">✕</span>` : ""}` : ""}
     </span>
   `).join("") + `<span class="ligne-tab add" id="addLigneBtn">+ Ligne de production</span>`;
 
   el.querySelectorAll("[data-ligne]").forEach(b => {
     b.addEventListener("click", (e) => {
-      if(e.target.closest("[data-ren-ligne],[data-del-ligne]")) return;
+      if(e.target.closest("[data-ren-ligne],[data-del-ligne],[data-cfg-ligne]")) return;
       const l = lignes.find(x => x.id === b.getAttribute("data-ligne"));
       if(l) switchReference(l.id, l.references[0] ? l.references[0].id : null);
+    });
+  });
+  el.querySelectorAll("[data-cfg-ligne]").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      ouvrirLigneInfo(btn.getAttribute("data-cfg-ligne"));
     });
   });
   el.querySelectorAll("[data-ren-ligne]").forEach(btn => {
@@ -3894,6 +3968,13 @@ function render(){
 
 function attachDetailHandlers(sc){
   const root = document.getElementById("scenarioDetail");
+  root.querySelectorAll("details.essai-card[data-essai-id]").forEach(det => {
+    det.addEventListener("toggle", () => {
+      const key = sc.id + "|" + det.getAttribute("data-essai-id");
+      if(det.open) essaisOuverts.add(key);
+      else essaisOuverts.delete(key);
+    });
+  });
   root.querySelectorAll("input.cell, input.sc-name, input.cell-cycle, input.limit-label, input.limit-value, input.essai-obs, select.log-equipe").forEach(inp => {
     inp.addEventListener("change", onInputChange);
     // a chaque caractere : on ecrit juste la valeur (pas de reconstruction de l'ecran).
@@ -4063,13 +4144,18 @@ function attachDetailHandlers(sc){
     el.addEventListener("click", () => {
       const today = new Date().toISOString().slice(0,10);
       sc.essais = sc.essais || [];
-      sc.essais.push({ id: "e"+Math.random().toString(36).slice(2), titre: "Essai " + (sc.essais.length+1),
+      const nouvelId = "e"+Math.random().toString(36).slice(2);
+      sc.essais.push({ id: nouvelId, titre: "Essai " + (sc.essais.length+1),
         date: today, equipe: "", operateur: "", observations: "", maturiteBruts: "",
         params: { logements: snapshotLogements(sc) },
         marposs: { debut:"", fin:"", releves:[] },
         photos: [],
         prelevements: [] });
+      // le nouvel essai s'ouvre deplie (saisie immediate) ; les autres restent en tuile
+      essaisOuverts.add(sc.id + "|" + nouvelId);
       saveData(); render();
+      const det = document.querySelector(`details.essai-card[data-essai-id="${nouvelId}"]`);
+      if(det) det.scrollIntoView({block:"center", behavior:"smooth"});
     });
   });
   root.querySelectorAll(".essai-del").forEach(el => {
@@ -4079,6 +4165,7 @@ function attachDetailHandlers(sc){
       const n = es ? (es.prelevements||[]).length : 0;
       if(!confirm("Supprimer l'essai « " + (es ? es.titre : "") + " » ?" + (n ? "\n\nSes " + n + " prélèvement(s) seront perdus." : ""))) return;
       sc.essais = sc.essais.filter(e => e.id !== essaiId);
+      essaisOuverts.delete(sc.id + "|" + essaiId);
       saveData(); render();
     });
   });
@@ -4286,6 +4373,7 @@ function fermerPanneaux(){
   document.getElementById("backlogWrap").hidden = true;
   document.getElementById("historyPanel").hidden = true;
   document.getElementById("csvPanel").hidden = true;
+  document.getElementById("ligneInfoPanel").hidden = true;
   document.getElementById("toolbarMore").hidden = true;
 }
 document.getElementById("panelBackdrop").addEventListener("click", fermerPanneaux);
@@ -4343,6 +4431,33 @@ function appliquerOptions(){
 });
 document.getElementById("optionsBtn").addEventListener("click", () => { syncOptionsUI(); ouvrirPanneau("optionsPanel"); });
 document.getElementById("optionsClose").addEventListener("click", fermerPanneaux);
+
+/* Informations de ligne — cout horaire, observations, derniere maintenance */
+let ligneInfoTargetId = null;
+function ouvrirLigneInfo(ligneId){
+  const l = lignes.find(x => x.id === ligneId);
+  if(!l) return;
+  ligneInfoTargetId = ligneId;
+  document.getElementById("ligneInfoTitle").textContent = "Informations — " + (l.nom || "ligne");
+  document.getElementById("ligneCoutHoraire").value = l.coutHoraire ?? "";
+  document.getElementById("ligneObservations").value = l.observations ?? "";
+  document.getElementById("ligneMaintenanceDate").value = l.maintenanceDate ?? "";
+  document.getElementById("ligneMaintenanceType").value = l.maintenanceType ?? "";
+  ouvrirPanneau("ligneInfoPanel");
+}
+function appliquerLigneInfo(){
+  const l = lignes.find(x => x.id === ligneInfoTargetId);
+  if(!l) return;
+  l.coutHoraire = document.getElementById("ligneCoutHoraire").value;
+  l.observations = document.getElementById("ligneObservations").value;
+  l.maintenanceDate = document.getElementById("ligneMaintenanceDate").value;
+  l.maintenanceType = document.getElementById("ligneMaintenanceType").value;
+  saveData();
+}
+["ligneCoutHoraire","ligneObservations","ligneMaintenanceDate","ligneMaintenanceType"].forEach(id => {
+  document.getElementById(id).addEventListener("change", appliquerLigneInfo);
+});
+document.getElementById("ligneInfoClose").addEventListener("click", () => { appliquerLigneInfo(); fermerPanneaux(); });
 
 /* Impression — choix du contenu */
 document.getElementById("pdfBtn").addEventListener("click", () => ouvrirPanneau("printPanel"));

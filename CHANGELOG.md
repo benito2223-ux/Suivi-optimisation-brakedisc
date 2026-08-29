@@ -5,6 +5,37 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [3.2.0] — 2026-08-29
+
+Essais en tuiles + informations de ligne — deux ajouts après retour terrain sur la v3.1 :
+l'écran d'un scénario affichait tous ses essais entièrement dépliés (tableau, graphique
+Marposs, photos) en permanence, ce qui devenait confus dès qu'une campagne comptait
+plusieurs essais.
+
+### Ajouté
+- **Informations de ligne** : une icône ⚙ sur l'onglet de ligne actif (à côté de ✎ renommer)
+  ouvre un panneau avec coût horaire (€/h), observations libres, et dernière maintenance
+  (date + type d'intervention en texte libre). Champs préparatoires — pas encore intégrés
+  au calcul du coût/pièce.
+- Les deux paragraphes "Sauvegarde" et "Méthode de calcul", auparavant fixes en bas de page,
+  sont maintenant deux sections du panneau "Comment ça marche" (même icône ⓘ).
+
+### Changé
+- **Essais en tuiles** : chaque essai est replié par défaut (titre, date, badge de statut
+  coloré selon l'état — conforme / non conforme / en cours). Cliquer la tuile déplie les
+  détails (conditions de coupe, tableau de prélèvements, photos, suivi Marposs). Un essai
+  nouvellement créé s'ouvre automatiquement pour la saisie ; les autres restent repliés.
+  L'état ouvert/fermé de chaque tuile survit à la ressaisie d'une mesure (qui redessine
+  l'écran) grâce à un suivi séparé, scénario + essai.
+- Le résumé (fermé) du tiroir "Conditions de coupe et plaquettes" affiche maintenant la
+  référence plaquette et le coût/pièce de chaque logement, plutôt que le numéro d'outil
+  seul — l'info reste lisible sans avoir à déplier le tableau à 13 colonnes.
+
+### Corrigé
+- La coloration rouge du filet gauche d'un essai non conforme ne s'appliquait jamais
+  (la classe posée par le code, `risk`, ne correspondait pas à la classe attendue par le
+  CSS, `bad`) — corrigé au passage.
+
 ## [3.1.0] — 2026-08-29
 
 Décluttering de l'écran de travail — les informations d'attribution (site, interlocuteurs,
