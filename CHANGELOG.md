@@ -5,6 +5,35 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [3.1.0] — 2026-08-29
+
+Décluttering de l'écran de travail — les informations d'attribution (site, interlocuteurs,
+mention confidentielle) et les aides secondaires n'ont pas leur place en permanence sous les
+yeux ; elles sont soit déplacées en pied de document, soit rangées derrière une icône.
+
+### Changé
+- **En-tête écran** : le bloc site / interlocuteurs Stellantis / interlocuteur CeramTec est
+  retiré de l'écran. Cette information reste dans les documents imprimés et exportés, mais
+  déplacée en pied de page plutôt qu'en haut.
+- **Bandeau « Confidentiel »** : retiré de l'écran (redondant avec le fait que l'outil ne
+  quitte jamais le poste local). Conservé uniquement en pied des documents imprimés et du
+  rapport de validation exporté, à côté de la mention site/interlocuteurs.
+- **« Comment ça marche »** : réduit à une icône (rond bleu au survol/ouverture) au lieu d'une
+  carte pleine largeur avec son intitulé en toutes lettres. Le contenu ne change pas, seul son
+  déclencheur devient discret.
+- **Légende champ éditable / calculé automatiquement** : les deux lignes de texte permanentes
+  sont remplacées par un bouton compact (les deux pastilles de couleur) avec l'explication en
+  info-bulle, posé à côté de l'icône d'aide.
+- **Statut de sauvegarde** (barre d'outils) : le texte descriptif devient une pastille colorée
+  (gris neutre / ambre en cours / vert exporté / rouge bloqué), le détail complet passant en
+  info-bulle. Les indicateurs de la même famille dans le menu `•••` (dossier photos, révision)
+  ne sont pas concernés, ils sont déjà dans un menu secondaire.
+
+### Non affecté
+- Aucune donnée, logique de calcul ou de validation modifiée.
+- Le rapport de validation exporté et l'impression conservent l'intégralité de l'information
+  (site, interlocuteurs, confidentialité), simplement repositionnée en pied de document.
+
 ## [3.0.0] — 2026-08-29
 
 Refonte visuelle + coquille applicative — le plan de travail gagne un rail de navigation

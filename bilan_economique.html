@@ -128,10 +128,22 @@ button.primary .icon, button.save .icon{stroke-width:1.8;}
 .save-status.dirty{color:var(--amber);}
 .save-status.saved{color:var(--green);}
 .save-status.error{color:var(--red);}
+/* #saveStatus seul (barre d'outils) : texte réduit à une pastille colorée, détail en tooltip */
+#saveStatus{
+  display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px;
+  border-radius:50%; border:1px solid var(--border); background:var(--surface-alt);
+  font-size:0; line-height:0; color:transparent; cursor:help; flex:0 0 auto;
+}
+#saveStatus::before{content:""; display:block; width:8px; height:8px; border-radius:50%; background:var(--ink-faint);}
+#saveStatus.dirty::before{background:var(--amber);}
+#saveStatus.saved::before{background:var(--green);}
+#saveStatus.error{border-color:var(--red); background:var(--red-bg);}
+#saveStatus.error::before{background:var(--red);}
 button:focus-visible{outline:2px solid var(--blue); outline-offset:2px;}
 
-/* print-only header, hidden on screen */
+/* print-only header/footer, hidden on screen */
 .print-head{display:none;}
+.print-foot{display:none;}
 
 /* scenario cards */
 .scenarios{display:flex; flex-direction:column; gap:18px;}
@@ -295,14 +307,20 @@ tr.row-bad td{background:var(--red-bg);}
 .log-del:hover{background:var(--red-bg); border-color:var(--red);}
 .log-empty{color:var(--ink-faint); font-style:italic; text-align:center;}
 .log-add{margin-top:10px;}
-/* aide intégrée */
-.aide{border:1px solid var(--border); border-left:3px solid var(--blue); border-radius:0 var(--radius) var(--radius) 0; background:var(--surface); margin-bottom:18px;}
-.aide summary{cursor:pointer; padding:12px 18px; font-family:var(--font-body); font-weight:600; font-size:13.5px; color:var(--blue-dark); list-style:none;}
+/* aide intégrée : réduite à une icône, ne devient une carte qu'une fois ouverte */
+.aide{margin-bottom:14px;}
+.aide summary{
+  cursor:pointer; list-style:none; display:inline-flex; align-items:center; justify-content:center;
+  width:30px; height:30px; border-radius:999px; border:1px solid var(--border); background:var(--surface-alt); color:var(--ink-soft);
+}
+.aide summary svg{width:15px; height:15px; margin:0;}
 .aide summary::-webkit-details-marker{display:none;}
-.aide summary::before{content:"▸ "; color:var(--blue);}
-.aide[open] summary::before{content:"▾ ";}
-.aide summary:focus-visible{outline:2px solid var(--blue); outline-offset:-2px;}
-.aide-body{padding:2px 18px 18px; font-size:13.5px; color:var(--ink-soft);}
+.aide summary:hover{background:var(--blue-bg); border-color:var(--blue); color:var(--blue-dark);}
+.aide summary:focus-visible{outline:2px solid var(--blue); outline-offset:2px;}
+.aide[open] summary{background:var(--blue); border-color:var(--blue); color:#fff;}
+.aide[open]{border:1px solid var(--border); border-left:3px solid var(--blue); border-radius:0 var(--radius) var(--radius) 0; background:var(--surface);}
+.aide[open] summary{margin:10px 0 0 12px;}
+.aide-body{padding:10px 18px 18px; font-size:13.5px; color:var(--ink-soft);}
 .aide-flow{display:flex; align-items:stretch; gap:10px; flex-wrap:wrap; margin-bottom:20px;}
 .aide-step{flex:1 1 190px; background:var(--surface-alt); border:1px solid var(--border); border-radius:var(--radius); padding:11px 13px;}
 .aide-step b{display:block; font-family:var(--font-disp); font-size:17px; color:var(--blue-dark); margin-bottom:3px;}
@@ -426,8 +444,13 @@ select.log-equipe{font-family:var(--font-body); font-size:12.5px; border:1px sol
 select.log-equipe:hover{border-color:var(--border);}
 select.log-equipe:focus{border-color:var(--blue); outline:none; background:var(--surface);}
 
-.legend{display:flex; gap:18px; flex-wrap:wrap; margin:18px 0 6px; font-size:12px; color:var(--ink-faint);}
-.legend span{display:inline-flex; align-items:center; gap:6px;}
+.util-row{display:flex; align-items:flex-start; gap:8px; margin-bottom:14px;}
+.legend-btn{
+  display:inline-flex; align-items:center; gap:5px; height:30px; padding:0 12px;
+  border-radius:999px; border:1px solid var(--border); background:var(--surface-alt); cursor:help;
+}
+.legend-btn:hover{background:var(--blue-bg); border-color:var(--blue);}
+.legend-btn:focus-visible{outline:2px solid var(--blue); outline-offset:2px;}
 .dot{width:8px; height:8px; border-radius:2px; display:inline-block;}
 .dot.blue{background:var(--blue);}
 .dot.editable{border:1px solid var(--border); background:var(--surface);}
@@ -585,7 +608,7 @@ body.atelier-on{overflow:hidden;}
   *{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   body{ background:#fff; font-size:11.5px; }
   .wrap{ max-width:none; padding:0; }
-  .hd, .toolbar, .legend, .sc-actions, .baseline-pill, #resetBtn, #restoreBtn, #historyBtn, #addBtn, #pdfBtn, #rapportBtn, #syntheseBtn, #backlogBtn,
+  .hd, .toolbar, .util-row, .sc-actions, .baseline-pill, #resetBtn, #restoreBtn, #historyBtn, #addBtn, #pdfBtn, #rapportBtn, #syntheseBtn, #backlogBtn,
   .ligne-strip, .reference-strip, .tabs-strip, #syntheseWrap, #backlogWrap, #scenarioDetail, .panel, .panel-backdrop, .aide{ display:none !important; }
   .synthese-block{ break-inside:avoid; padding:10px 12px; margin-bottom:10px; }
   table.synthese td, table.synthese th{ font-size:9.5px; padding:4px 6px; }
@@ -609,6 +632,11 @@ body.atelier-on{overflow:hidden;}
   .print-eyebrow{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--blue); font-weight:600; margin:0; }
   .print-head h1{ font-family:var(--font-disp); font-weight:700; font-size:24px; margin:2px 0; color:var(--ink); }
   .print-meta{ font-family:var(--font-mono); font-size:9px; color:var(--ink-soft); margin:0; }
+  .print-foot{
+    display:block; margin-top:16px; padding-top:8px; border-top:1px solid var(--border);
+    font-family:var(--font-mono); font-size:8.5px; line-height:1.6; color:var(--ink-faint);
+  }
+  .print-foot b{ color:var(--red); }
   .scenario{ border:1px solid var(--border); break-inside:avoid; page-break-inside:avoid; }
   .scenario.baseline{ border-color:var(--blue); border-width:1.5px; }
   .scenario-head{ padding:8px 12px; }
@@ -755,7 +783,7 @@ body.atelier-on{overflow:hidden;}
   /* --- essais, encarts, panneaux --- */
   .essai-card{border-radius:16px; border-left-width:4px;}
   .essai-titre{font-size:15.5px; font-weight:800; letter-spacing:-.015em;}
-  .aide{border-radius:16px; border-left-width:4px; box-shadow:var(--shadow-card);}
+  .aide[open]{border-radius:16px; border-left-width:4px; box-shadow:var(--shadow-card);}
   .note{background:var(--surface); border-color:var(--border); border-left-width:4px; border-radius:14px; box-shadow:var(--shadow-card); font-size:13px; padding:14px 18px;}
   .note.confid-note{border-left-color:var(--red);}
   .note.confid-note b{color:var(--red);}
@@ -844,6 +872,7 @@ body.atelier-on{overflow:hidden;}
   .rail button.ghost{background:rgba(255,255,255,.07); color:rgba(255,255,255,.78); border-color:transparent;}
   .rail button.ghost:hover{background:rgba(255,255,255,.14); color:#fff; border-color:transparent; box-shadow:none;}
   .rail .save-status{color:rgba(255,255,255,.5); padding:0 4px;}
+  .rail #saveStatus{padding:0; background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.2);}
   .rail .toolbar-more{left:0; right:auto; bottom:calc(100% + 8px); top:auto; width:262px; color:var(--ink);}
   .rail .toolbar-more button.ghost{background:transparent; color:var(--ink-soft);}
   .rail .toolbar-more button.ghost:hover{background:var(--surface-alt); color:var(--ink);}
@@ -876,19 +905,11 @@ body.atelier-on{overflow:hidden;}
         <h1 id="hdTitle">&nbsp;</h1>
       </div>
     </div>
-    <div class="hd-meta">
-      Site <b>Stellantis Sept Fons</b><br>
-      Interlocuteurs Stellantis <b>Matis Hernu</b> · <b>Arthur Alves</b><br>
-      Interlocuteur CeramTec <b>Benjamin Rouquette</b><br>
-      <span id="lastEdit">26/08/2026</span>
-    </div>
   </div>
-
-  <div class="note confid-note"><b>Confidentiel</b> — document interne au projet, réservé à l'équipe Stellantis Sept Fons et à CeramTec. Ne pas transmettre en dehors de l'équipe projet.</div>
 
   <div class="toolbar" id="toolbarWrap">
     <div class="toolbar-actions">
-      <span class="save-status" id="saveStatus"></span>
+      <span class="save-status" id="saveStatus" role="status"></span>
       <button class="save" id="exportBtn" title="Enregistre un fichier .json à archiver ou à envoyer par e-mail"><svg class="icon" viewBox="0 0 18 18"><path d="M9 2v9M5.5 8 9 11.5 12.5 8M3 14.5h12" stroke-linecap="round" stroke-linejoin="round"/></svg>Exporter le suivi</button>
       <button class="ghost" id="importBtn" title="Recharge un fichier .json reçu ou archivé"><svg class="icon" viewBox="0 0 18 18"><path d="M2.5 5.5a1 1 0 0 1 1-1H7l1.5 1.8H14.5a1 1 0 0 1 1 1V13a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1V5.5Z" stroke-linejoin="round"/></svg>Importer</button>
       <input type="file" id="importInput" accept=".json,application/json" hidden>
@@ -991,13 +1012,13 @@ body.atelier-on{overflow:hidden;}
     <div class="print-head-text">
       <p class="print-eyebrow" id="printEyebrow">Suivi_optimisation_SPK — Amélioration Process</p>
       <h1 id="printTitle">&nbsp;</h1>
-      <p class="print-meta">Site Stellantis Sept Fons — Interlocuteurs Stellantis : Matis Hernu, Arthur Alves — Interlocuteur CeramTec : Benjamin Rouquette — <span id="printDate">26/08/2026</span></p>
-      <p class="print-meta" style="color:var(--red); font-weight:600;">CONFIDENTIEL — document interne au projet, ne pas diffuser hors de l'équipe projet</p>
+      <p class="print-meta"><span id="printDate">26/08/2026</span></p>
     </div>
   </div>
 
+  <div class="util-row">
   <details class="aide" id="aideBlock">
-    <summary>Comment ça marche</summary>
+    <summary title="Comment ça marche" aria-label="Comment ça marche"><svg class="icon" viewBox="0 0 18 18" style="margin-right:0;"><circle cx="9" cy="9" r="6.5"/><path d="M6.9 7.1a2.2 2.2 0 1 1 3.3 1.9c-.7.4-1.1.9-1.1 1.7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="12.6" r=".25" fill="currentColor" stroke="none"/></svg></summary>
     <div class="aide-body">
       <div class="aide-flow">
         <div class="aide-step"><b>Scénario</b><span>Une configuration outil : plaquettes bol et piste, prix, arêtes, charnière, Vc, f. Un onglet par scénario en haut de page.</span></div>
@@ -1031,10 +1052,7 @@ body.atelier-on{overflow:hidden;}
       </ul>
     </div>
   </details>
-
-  <div class="legend">
-    <span><i class="dot editable"></i>Champ éditable</span>
-    <span><i class="dot blue"></i>Calculé automatiquement</span>
+  <button type="button" class="legend-btn" title="Point bleu = calculé automatiquement · point clair = champ éditable" aria-label="Légende des couleurs de champs"><i class="dot editable"></i><i class="dot blue"></i></button>
   </div>
 
   <div class="ctx-rail" id="ctxRail">
@@ -1051,6 +1069,11 @@ body.atelier-on{overflow:hidden;}
   <div class="scenario-detail" id="scenarioDetail"></div>
   <div class="scenario-all" id="scenarioAll"></div>
 
+  <div class="print-foot">
+    Site Stellantis Sept Fons — Interlocuteurs Stellantis : Matis Hernu, Arthur Alves — Interlocuteur CeramTec : Benjamin Rouquette<br>
+    <b>CONFIDENTIEL</b> — document interne au projet, ne pas diffuser hors de l'équipe projet
+  </div>
+
   <div class="note"><b>Sauvegarde</b> — cet outil fonctionne entièrement sur votre poste : aucune donnée n'est envoyée sur internet. Vos saisies sont conservées automatiquement dans ce navigateur, et retrouvées à la réouverture du fichier. Pour archiver le suivi ou l'envoyer par e-mail, utilisez <b>💾 Exporter le suivi</b> (fichier .json) ; le destinataire le recharge avec <b>📂 Importer</b>. Exportez en fin de séance : le stockage navigateur peut être vidé par un nettoyage de cache ou un changement de poste.</div>
 
   <div class="note"><b>Méthode de calcul</b> — le coût/pièce ne couvre que la plaquette (prix ÷ (arêtes × charnière)), sommé sur les deux positions. Le temps de cycle (base 100 = scénario de référence) se recalcule automatiquement dès que vous changez Vc ou f en piste ; vous pouvez toujours le corriger à la main si le relevé terrain diffère du calcul théorique.</div>
@@ -1063,7 +1086,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "3.0.0";
+const TOOL_VERSION = "3.1.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -1671,22 +1694,23 @@ tryReconnectPhotosDir();
 function updateSaveUI(){
   const status = document.getElementById("saveStatus");
   if(!status) return;
+  const setMsg = (msg) => { status.title = msg; status.setAttribute("aria-label", msg); };
   const heure = lastSavedAt ? lastSavedAt.toLocaleTimeString("fr-FR", {hour:"2-digit", minute:"2-digit"}) : null;
   if(!storageOk){
-    status.textContent = unexported
+    setMsg(unexported
       ? "⚠ Sauvegarde navigateur bloquée — exportez avant de fermer"
-      : "⚠ Sauvegarde navigateur bloquée — exporté à " + heure + ", réexportez avant de fermer";
+      : "⚠ Sauvegarde navigateur bloquée — exporté à " + heure + ", réexportez avant de fermer");
     status.className = "save-status error";
     return;
   }
   if(unexported){
-    status.textContent = (heure ? "Enregistré dans ce navigateur à " + heure : "Enregistré dans ce navigateur") + " · non exporté";
+    setMsg((heure ? "Enregistré dans ce navigateur à " + heure : "Enregistré dans ce navigateur") + " · non exporté");
     status.className = "save-status dirty";
   } else if(heure){
-    status.textContent = "Exporté à " + heure;
+    setMsg("Exporté à " + heure);
     status.className = "save-status saved";
   } else {
-    status.textContent = "Sauvegarde automatique dans ce navigateur";
+    setMsg("Sauvegarde automatique dans ce navigateur");
     status.className = "save-status";
   }
 }
@@ -1936,8 +1960,7 @@ function rapportValidationHTML(sc){
 </style></head><body>
   <p style="font-family:Consolas,monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:#1b5ea6;">${escapeAttr([ligneActive && ligneActive.nom, refActive && refActive.nom, opActive && opActive.nom].filter(Boolean).join(" — "))} — Rapport de validation</p>
   <h1>${escapeAttr(sc.name)}${sc.baseline ? " — Référence" : ""}</h1>
-  <p style="color:#4b524c;">Site Stellantis Sept Fons — Interlocuteurs Stellantis : Matis Hernu, Arthur Alves — Interlocuteur CeramTec : Benjamin Rouquette — ${new Date().toLocaleDateString("fr-FR")}</p>
-  <p style="color:#b8001a; font-weight:600; font-size:12px;">CONFIDENTIEL — document interne au projet, ne pas diffuser hors de l'équipe projet</p>
+  <p style="color:#4b524c;">${new Date().toLocaleDateString("fr-FR")}</p>
 
   <div class="verdict ${concl.classe}">${concl.label}</div>
   <p>${concl.detail}</p>
@@ -1968,7 +1991,11 @@ function rapportValidationHTML(sc){
     <div><div class="l">Essais conformes</div><div class="v">${stats.validCount} / ${sc.validationThreshold || "—"}</div></div>
   </div>
 
-  <footer>Rapport généré automatiquement par l'outil de suivi SPK OP10 (bilan_economique.html) — ${new Date().toLocaleString("fr-FR")}. Document 100% local, aucune donnée transmise.<br>Confidentiel — Benjamin Rouquette 2026</footer>
+  <footer>
+    Rapport généré automatiquement par l'outil de suivi SPK OP10 (bilan_economique.html) — ${new Date().toLocaleString("fr-FR")}. Document 100% local, aucune donnée transmise.<br>
+    Site Stellantis Sept Fons — Interlocuteurs Stellantis : Matis Hernu, Arthur Alves — Interlocuteur CeramTec : Benjamin Rouquette<br>
+    <b style="color:#b8001a;">CONFIDENTIEL</b> — document interne au projet, ne pas diffuser hors de l'équipe projet
+  </footer>
 </body></html>`;
 }
 
