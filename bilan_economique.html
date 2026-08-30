@@ -421,6 +421,12 @@ tr.row-bad td{background:var(--red-bg);}
 .essai-obs:focus{outline:none;}
 .essai-obs::placeholder{color:color-mix(in srgb, var(--amber) 70%, var(--ink-faint));}
 .essai-obs-print{font-size:12px; color:var(--ink-soft); padding:6px 12px; font-style:italic; background:var(--amber-bg); border-left:3px solid var(--amber); margin:8px 12px;}
+.essai-but-wrap{display:flex; align-items:center; gap:8px; margin:10px 12px 0; background:var(--blue-bg); border:1px solid color-mix(in srgb, var(--blue) 35%, transparent); border-left:3px solid var(--blue); border-radius:var(--radius-sm); padding:2px 4px 2px 10px;}
+.essai-but-icon{font-size:13px; color:var(--blue); flex-shrink:0;}
+.essai-but{width:100%; font-family:var(--font-body); font-size:12.5px; color:var(--ink); background:transparent; border:none; border-radius:var(--radius-sm); padding:8px 6px;}
+.essai-but:focus{outline:none;}
+.essai-but::placeholder{color:color-mix(in srgb, var(--blue) 70%, var(--ink-faint));}
+.essai-but-print{font-size:12px; color:var(--ink-soft); padding:6px 12px; font-style:italic; background:var(--blue-bg); border-left:3px solid var(--blue); margin:8px 12px 0;}
 
 .essais-list{display:flex; flex-direction:column; gap:12px; margin:14px 0;}
 .essai-card{border:1px solid var(--border); border-left:3px solid var(--border); border-radius:var(--radius-lg); background:var(--surface-alt); overflow:hidden;}
@@ -1164,7 +1170,7 @@ html:not([data-layout="classic"]){
 </div>
 
 <script>
-const TOOL_VERSION = "3.3.0";
+const TOOL_VERSION = "3.4.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -1476,8 +1482,17 @@ function normalizeOutil(o){
 function snapshotLogements(sc){
   return sc.outils.flatMap(o => o.logements.map(l => ({
     outilId: o.id, logementId: l.id, outilNumero: o.numero, logementNom: l.nom,
-    vc: l.vc, f: l.f, charniere: l.charniere
+    vc: l.vc, f: l.f, charniere: l.charniere, ref: l.ref, prix: l.prix
   })));
+}
+/* reference plaquette au moment de l'essai. Les essais crees avant l'ajout de "ref" au
+   snapshot n'ont pas cette valeur figee : on retombe alors sur la reference actuelle du
+   scenario pour ce logement (meilleur effort, mais peut differer si elle a change depuis). */
+function refLogementEssai(sc, lp){
+  if(lp.ref) return lp.ref;
+  const o = sc.outils.find(x => x.id === lp.outilId);
+  const l = o && o.logements.find(x => x.id === lp.logementId);
+  return l ? l.ref : "";
 }
 function normalizeScenario(sc){
   const merged = Object.assign({ emag1:false, limitOverride:false, limitLabel:"Battement (mm)", limitValue:0.12, validationThreshold:5, essais:[], scrapLog:[] }, sc);
@@ -1565,16 +1580,29 @@ function migrerTolerancesOp(op){
 }
 
 /* Un essai porte-t-il encore les réglages actuels du scénario ? */
-function paramsDivergents(sc, essai){
+/* liste precise de ce qui a change entre les conditions figees a la creation de l'essai
+   et les conditions actuelles du scenario — pour que "le scenario a change" dise QUOI,
+   pas seulement QUE. Tableau vide = rien n'a divergé. */
+function paramsDivergences(sc, essai){
   const snap = (essai.params && essai.params.logements) || [];
   const courant = snapshotLogements(sc);
   const memeVal = (a,b) => String(a ?? "") === String(b ?? "");
-  if(snap.length !== courant.length) return true;
-  return snap.some(s => {
+  const aff = v => (v === "" || v == null) ? "—" : v;
+  const diffs = [];
+  snap.forEach(s => {
     const cur = courant.find(c => c.logementId === s.logementId);
-    if(!cur) return true;
-    return !memeVal(s.vc, cur.vc) || !memeVal(s.f, cur.f) || !memeVal(s.charniere, cur.charniere);
+    const nom = (s.outilNumero||"?") + " · " + (s.logementNom||"—");
+    if(!cur){ diffs.push(nom + " (retiré du scénario)"); return; }
+    const champs = [];
+    if(!memeVal(s.vc, cur.vc)) champs.push("Vc " + aff(s.vc) + "→" + aff(cur.vc));
+    if(!memeVal(s.f, cur.f)) champs.push("f " + aff(s.f) + "→" + aff(cur.f));
+    if(!memeVal(s.charniere, cur.charniere)) champs.push("charnière " + aff(s.charniere) + "→" + aff(cur.charniere));
+    if(champs.length) diffs.push(nom + " — " + champs.join(", "));
   });
+  courant.forEach(c => {
+    if(!snap.find(s => s.logementId === c.logementId)) diffs.push((c.outilNumero||"?") + " · " + (c.logementNom||"—") + " (ajouté au scénario)");
+  });
+  return diffs;
 }
 /* compte total de prelevements dans tout l'arbre : sert de garde-fou au chargement
    (voir plus bas) pour ne jamais afficher silencieusement un fichier vide alors qu'une
@@ -2090,6 +2118,153 @@ function telechargerRapport(sc){
   const stamp = d.getFullYear() + String(d.getMonth()+1).padStart(2,"0") + String(d.getDate()).padStart(2,"0");
   a.href = url;
   a.download = "Rapport_" + sc.name.replace(/[^a-z0-9]+/gi,"_") + "_" + stamp + ".html";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+/* rapport HTML autonome d'UN essai (pas tout le scenario) : interlocuteurs, but de
+   l'essai, plaquettes utilisees (avec leur reference, figee au moment de l'essai quand
+   disponible), conditions de coupe, prelevements, observations. Mise en page reprend les
+   tokens du design system SPK (Archivo/IBM Plex Mono, bleu/rouge de la charte). */
+function essaiRapportHTML(sc, essai){
+  const ligneActive = getActiveLigne(), refActive = getActiveReference(), opActive = getActiveOp();
+  const chemin = [ligneActive && ligneActive.nom, refActive && refActive.nom, opActive && opActive.nom].filter(Boolean).join(" — ");
+  const est = essaiStats(sc, essai);
+  const badgeClass = est.status === "ok" ? "ok" : est.status === "bad" ? "bad" : "pending";
+  const badgeLabel = est.status === "ok" ? "Conforme" : est.status === "bad" ? "Non conforme" : "En cours";
+  const snap = (essai.params && essai.params.logements) || [];
+  const dateAff = essai.date ? new Date(essai.date + "T00:00").toLocaleDateString("fr-FR") : "—";
+  const logoSrc = (document.querySelector(".hd-left img") || {}).getAttribute ? document.querySelector(".hd-left img").getAttribute("src") : "";
+
+  const plaquettesRows = snap.map(lp => `
+    <tr>
+      <td>${escapeAttr(lp.outilNumero)}</td>
+      <td>${escapeAttr(lp.logementNom)}</td>
+      <td>${escapeAttr(refLogementEssai(sc, lp)) || "—"}</td>
+      <td>${lp.vc === "" || lp.vc == null ? "—" : lp.vc}</td>
+      <td>${lp.f === "" || lp.f == null ? "—" : lp.f}</td>
+      <td>${lp.charniere === "" || lp.charniere == null ? "—" : lp.charniere}</td>
+    </tr>`).join("") || `<tr><td colspan="6" style="text-align:center; color:#888;">Aucun outil configuré</td></tr>`;
+
+  const mesureLabel = escapeAttr(libelleDe(sc));
+  const showLogementCol = snap.length > 1;
+  const prelRows = (essai.prelevements || []).slice()
+    .sort((a,b) => (parseFloat(a.piece)||0) - (parseFloat(b.piece)||0))
+    .map(r => {
+      const exempte = !toleranceRequisePour(sc, r);
+      const conform = checkConform(sc, r);
+      const statut = exempte ? "Charnière seule" : conform === null ? "—" : conform ? "OK" : "Hors tolérance";
+      const lp = snap.find(l => l.logementId === r.logementId);
+      const logementTxt = lp ? (String(lp.outilNumero||"?") + " · " + String(lp.logementNom||"")).trim() : "—";
+      const valeur = sc.emag1 ? ("Droite " + fmtBatt(r.battD) + " / Gauche " + fmtBatt(r.battG)) : fmtBatt(r.batt);
+      return `<tr>
+        <td>${escapeAttr(r.piece)}</td>
+        ${showLogementCol ? `<td>${escapeAttr(logementTxt)}</td>` : ""}
+        <td>${escapeAttr(r.pointMesure) || "—"}</td>
+        <td>${valeur}</td>
+        <td>${statut}</td>
+      </tr>`;
+    }).join("");
+
+  return `<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<title>Rapport d'essai — ${escapeAttr(essai.titre)} — ${escapeAttr(sc.name)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Open+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --blue:#1b5ea6; --blue-dark:#154d8a; --blue-bg:#e8f0fb;
+    --green:#1a7a3f; --green-bg:#edf7f1;
+    --amber:#b45309; --amber-bg:#fff8ed;
+    --red:#e2001a; --red-bg:#fce8ea;
+    --ink:#1a1a1a; --ink-soft:#555555; --ink-faint:#888888;
+    --border:#e5e5e5; --surface-alt:#f4f4f4;
+  }
+  *{box-sizing:border-box;}
+  body{font-family:'Open Sans',Arial,sans-serif; color:var(--ink); max-width:860px; margin:36px auto; padding:0 24px 60px; line-height:1.5; font-size:14px;}
+  .hd{display:flex; align-items:center; gap:18px; border-bottom:4px solid var(--blue); padding-bottom:16px; margin-bottom:20px;}
+  .hd img{height:44px; width:auto; flex-shrink:0;}
+  .hd-eyebrow{font-family:'IBM Plex Mono',Consolas,monospace; font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--blue); font-weight:600; margin:0 0 5px; display:flex; align-items:center; gap:9px;}
+  .hd-eyebrow::before{content:""; width:20px; height:3px; border-radius:2px; background:var(--red); flex-shrink:0;}
+  h1{font-family:'Archivo',Arial,sans-serif; font-weight:800; font-size:26px; margin:0; letter-spacing:-.02em; line-height:1.1;}
+  .hd-meta{font-family:'IBM Plex Mono',Consolas,monospace; font-size:11px; color:var(--ink-soft); margin-left:auto; text-align:right; line-height:1.8; white-space:nowrap;}
+  .verdict{display:inline-flex; align-items:center; gap:8px; font-family:'IBM Plex Mono',Consolas,monospace; font-weight:700; font-size:11.5px; letter-spacing:.05em; text-transform:uppercase; padding:7px 16px; border-radius:999px; margin-bottom:22px;}
+  .verdict.ok{background:var(--green-bg); color:var(--green);}
+  .verdict.bad{background:var(--red-bg); color:var(--red);}
+  .verdict.pending{background:var(--amber-bg); color:var(--amber);}
+  h2{font-family:'IBM Plex Mono',Consolas,monospace; font-size:11px; text-transform:uppercase; letter-spacing:.1em; color:var(--ink-faint); margin:26px 0 10px; padding-bottom:6px; border-bottom:1px solid var(--border);}
+  .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:16px 24px;}
+  .grid .l{font-family:'IBM Plex Mono',Consolas,monospace; font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:3px;}
+  .grid .v{font-size:14px; color:var(--ink); font-weight:500;}
+  .but-box{background:var(--blue-bg); border-left:4px solid var(--blue); border-radius:0 8px 8px 0; padding:14px 18px; font-size:14px; color:var(--ink);}
+  .obs-box{background:var(--amber-bg); border-left:4px solid var(--amber); border-radius:0 8px 8px 0; padding:14px 18px; font-size:13.5px; color:var(--ink); font-style:italic;}
+  table{border-collapse:collapse; width:100%; margin-top:6px;}
+  th,td{border-bottom:1px solid var(--border); padding:7px 10px; font-size:12.5px; text-align:left;}
+  td{font-family:'IBM Plex Mono',Consolas,monospace;}
+  th{font-family:'IBM Plex Mono',Consolas,monospace; font-size:10px; letter-spacing:.07em; text-transform:uppercase; color:var(--ink-faint); background:var(--surface-alt); font-weight:600;}
+  footer{margin-top:40px; padding-top:14px; border-top:1px solid var(--border); font-family:'IBM Plex Mono',Consolas,monospace; font-size:10.5px; color:var(--ink-faint); line-height:1.8;}
+  footer b{color:var(--red);}
+</style></head><body>
+
+  <div class="hd">
+    ${logoSrc ? `<img src="${logoSrc}" alt="SPK by CeramTec">` : ""}
+    <div>
+      <p class="hd-eyebrow">${escapeAttr(chemin)} — Rapport d'essai</p>
+      <h1>${escapeAttr(essai.titre || "Essai")}</h1>
+    </div>
+    <div class="hd-meta">${escapeAttr(sc.name)}<br>${dateAff}</div>
+  </div>
+
+  <span class="verdict ${badgeClass}">${badgeLabel}${est.raison ? " — " + escapeAttr(est.raison) : ""}</span>
+
+  <h2>Interlocuteurs</h2>
+  <div class="grid">
+    <div><div class="l">Site</div><div class="v">Stellantis Sept Fons</div></div>
+    <div><div class="l">Interlocuteurs Stellantis</div><div class="v">Matis Hernu · Arthur Alves</div></div>
+    <div><div class="l">Interlocuteur CeramTec</div><div class="v">Benjamin Rouquette</div></div>
+  </div>
+
+  ${essai.but ? `<h2>But de l'essai</h2><div class="but-box">${escapeAttr(essai.but)}</div>` : ""}
+
+  <h2>Informations essai</h2>
+  <div class="grid">
+    <div><div class="l">Date</div><div class="v">${dateAff}</div></div>
+    <div><div class="l">Équipe</div><div class="v">${escapeAttr(essai.equipe) || "—"}</div></div>
+    <div><div class="l">Opérateur</div><div class="v">${escapeAttr(essai.operateur) || "—"}</div></div>
+    <div><div class="l">Maturité des bruts</div><div class="v">${essai.maturiteBruts === "" || essai.maturiteBruts == null ? "—" : essai.maturiteBruts + " jour(s)"}</div></div>
+  </div>
+
+  <h2>Plaquettes utilisées</h2>
+  <table>
+    <tr><th>N° outil</th><th>Logement</th><th>Référence plaquette</th><th>Vc (m/min)</th><th>f (mm/rev)</th><th>Charnière (p/arête)</th></tr>
+    ${plaquettesRows}
+  </table>
+
+  <h2>Prélèvements — ${mesureLabel}</h2>
+  <table>
+    <tr><th>N° pièce</th>${showLogementCol ? "<th>Logement</th>" : ""}<th>Point de mesure</th><th>Valeur</th><th>Statut</th></tr>
+    ${prelRows || `<tr><td colspan="${4 + (showLogementCol?1:0)}" style="text-align:center; color:#888;">Aucun prélèvement enregistré</td></tr>`}
+  </table>
+
+  ${essai.observations ? `<h2>Observations</h2><div class="obs-box">${escapeAttr(essai.observations)}</div>` : ""}
+
+  <footer>
+    Rapport d'essai généré automatiquement par l'outil de suivi SPK OP10 (bilan_economique.html) — ${new Date().toLocaleString("fr-FR")}. Document 100% local, aucune donnée transmise.<br>
+    <b>CONFIDENTIEL</b> — document interne au projet, ne pas diffuser hors de l'équipe projet
+  </footer>
+</body></html>`;
+}
+
+function telechargerRapportEssai(sc, essai){
+  const html = essaiRapportHTML(sc, essai);
+  const blob = new Blob([html], {type:"text/html;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const d = new Date();
+  const stamp = d.getFullYear() + String(d.getMonth()+1).padStart(2,"0") + String(d.getDate()).padStart(2,"0");
+  a.href = url;
+  a.download = "Rapport_essai_" + (sc.name + "_" + essai.titre).replace(/[^a-z0-9]+/gi,"_") + "_" + stamp + ".html";
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
@@ -3474,6 +3649,11 @@ function essaiCardHTML(sc, essai, interactive){
     <span class="status-badge ${badgeClass}">${badgeText}</span>
   `;
 
+  const butRow = interactive
+    ? `<div class="essai-but-wrap"><span class="essai-but-icon">◎</span><input class="essai-but" data-id="${sc.id}" data-essai="${essai.id}" data-field="but"
+         value="${escapeAttr(essai.but)}" placeholder="But de l'essai : ce qu'on cherche à valider..."></div>`
+    : (essai.but ? `<div class="essai-but-print">But : ${escapeAttr(essai.but)}</div>` : "");
+
   const obsRow = interactive
     ? `<div class="essai-obs-wrap"><span class="essai-obs-icon">✎</span><input class="essai-obs" data-id="${sc.id}" data-essai="${essai.id}" data-field="observations"
          value="${escapeAttr(essai.observations)}" placeholder="Observations : mode d'usure, entaille, incident, lot de fonte…"></div>`
@@ -3481,17 +3661,17 @@ function essaiCardHTML(sc, essai, interactive){
 
   // conditions de coupe de chaque logement, telles qu'elles etaient au moment de l'essai
   const snap = (essai.params && essai.params.logements) || [];
-  const diverge = paramsDivergents(sc, essai);
+  const diverge = paramsDivergences(sc, essai);
   const chips = snap.map(lp => {
     const oi = sc.outils.findIndex(o => o.id === lp.outilId);
     const couleur = oi >= 0 ? OUTIL_COLORS[oi % OUTIL_COLORS.length] : "var(--ink-faint)";
     return `<b style="border-left:3px solid ${couleur}; padding-left:6px;">${escapeAttr(lp.outilNumero||"—")} · ${escapeAttr(lp.logementNom||"—")} — Vc ${lp.vc === "" || lp.vc == null ? "—" : lp.vc} f ${lp.f === "" || lp.f == null ? "—" : lp.f} charnière ${lp.charniere === "" || lp.charniere == null ? "—" : lp.charniere} p</b>`;
   }).join("");
   const paramsRow = `
-    <div class="essai-params${diverge ? " diverge" : ""}" style="flex-wrap:wrap;">
+    <div class="essai-params${diverge.length ? " diverge" : ""}" style="flex-wrap:wrap;">
       <span>Conditions de l'essai —</span>
       ${chips || `<span style="color:var(--ink-faint);">aucun outil configuré</span>`}
-      ${diverge ? `<span class="essai-diverge">⚠ le scénario a été modifié depuis${interactive ? ` <button class="params-sync" data-id="${sc.id}" data-essai="${essai.id}">Aligner sur le scénario</button>` : ""}</span>` : ""}
+      ${diverge.length ? `<span class="essai-diverge">⚠ modifié depuis : ${escapeAttr(diverge.join(" · "))}${interactive ? ` <button class="params-sync" data-id="${sc.id}" data-essai="${essai.id}">Aligner sur le scénario</button>` : ""}</span>` : ""}
     </div>
     <div class="essai-params">
       <span>Maturité des bruts —</span>
@@ -3514,7 +3694,8 @@ function essaiCardHTML(sc, essai, interactive){
     : (essai.prelevements||[]).slice().sort((a,b) => (parseFloat(a.piece)||0) - (parseFloat(b.piece)||0));
   const prelRows = prelListe.map(p => prelevementRowHTML(sc, essai, p, interactive, snapLogements, showLogementCol)).join("");
   const addPrelBtn = interactive ? `<button class="ghost prel-add" data-id="${sc.id}" data-essai="${essai.id}">+ Ajouter un prélèvement</button>
-    <button class="primary atelier-open" data-id="${sc.id}" data-essai="${essai.id}" title="Saisie plein écran, gros champs — pour mesurer devant la machine"><svg class="icon" viewBox="0 0 18 18"><path d="M3.5 3.5h11v11h-11z" stroke-linejoin="round"/><path d="M6.5 9h5M9 6.5v5" stroke-linecap="round"/></svg>Mode atelier</button>` : "";
+    <button class="primary atelier-open" data-id="${sc.id}" data-essai="${essai.id}" title="Saisie plein écran, gros champs — pour mesurer devant la machine"><svg class="icon" viewBox="0 0 18 18"><path d="M3.5 3.5h11v11h-11z" stroke-linejoin="round"/><path d="M6.5 9h5M9 6.5v5" stroke-linecap="round"/></svg>Mode atelier</button>
+    <button class="ghost essai-rapport" data-id="${sc.id}" data-essai="${essai.id}" title="Génère un rapport HTML autonome de cet essai — interlocuteurs, but, plaquettes, mesures"><svg class="icon" viewBox="0 0 18 18"><path d="M5 2.5h5l3 3V15a.8.8 0 0 1-.8.8H5.8a.8.8 0 0 1-.8-.8V2.5Z" stroke-linejoin="round"/><path d="M6.5 9h5M6.5 11.5h5M6.5 6.5h2"/></svg>Rapport de l'essai</button>` : "";
   const emptyColspan = (sc.emag1 ? 5 : 4) + (showLogementCol?1:0) + (interactive?1:0);
 
   // une progression independante par logement : un outil peut atteindre sa charniere
@@ -3532,6 +3713,7 @@ function essaiCardHTML(sc, essai, interactive){
   const body = `
       <div class="essai-head">${head}</div>
       ${paramsRow}
+      ${butRow}
       ${obsRow}
       <div class="tbl-wrap">
         <table>
@@ -4011,7 +4193,7 @@ function attachDetailHandlers(sc){
       else essaisOuverts.delete(key);
     });
   });
-  root.querySelectorAll("input.cell, input.sc-name, input.cell-cycle, input.limit-label, input.limit-value, input.essai-obs, select.log-equipe").forEach(inp => {
+  root.querySelectorAll("input.cell, input.sc-name, input.cell-cycle, input.limit-label, input.limit-value, input.essai-obs, input.essai-but, select.log-equipe").forEach(inp => {
     inp.addEventListener("change", onInputChange);
     // a chaque caractere : on ecrit juste la valeur (pas de reconstruction de l'ecran).
     // Reconstruire tout l'affichage a chaque frappe (badges, couts, graphique...) rendait
@@ -4182,7 +4364,7 @@ function attachDetailHandlers(sc){
       sc.essais = sc.essais || [];
       const nouvelId = "e"+Math.random().toString(36).slice(2);
       sc.essais.push({ id: nouvelId, titre: "Essai " + (sc.essais.length+1),
-        date: today, equipe: "", operateur: "", observations: "", maturiteBruts: "",
+        date: today, equipe: "", operateur: "", but: "", observations: "", maturiteBruts: "",
         params: { logements: snapshotLogements(sc) },
         marposs: { debut:"", fin:"", releves:[] },
         photos: [],
@@ -4207,6 +4389,12 @@ function attachDetailHandlers(sc){
   });
   root.querySelectorAll(".atelier-open").forEach(el => {
     el.addEventListener("click", () => ouvrirAtelier(el.getAttribute("data-id"), el.getAttribute("data-essai")));
+  });
+  root.querySelectorAll(".essai-rapport").forEach(el => {
+    el.addEventListener("click", () => {
+      const es = sc.essais.find(e => e.id === el.getAttribute("data-essai"));
+      if(es) telechargerRapportEssai(sc, es);
+    });
   });
   root.querySelectorAll(".prel-add").forEach(el => {
     el.addEventListener("click", () => {

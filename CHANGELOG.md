@@ -5,6 +5,29 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [3.4.0] — 2026-08-30
+
+Rapport par essai + message de divergence explicite.
+
+### Ajouté
+- **Rapport de l'essai** : bouton dans chaque essai qui génère un rapport HTML autonome
+  dédié à cet essai — interlocuteurs (site, contacts Stellantis et CeramTec), but de
+  l'essai, plaquettes utilisées (référence, Vc, f, charnière), tableau des prélèvements
+  avec statut, observations. Mise en page reprenant les tokens du design system SPK
+  (Archivo/IBM Plex Mono, bleu/rouge de la charte, logo).
+- **But de l'essai** : nouveau champ libre par essai (bandeau bleu, à côté des
+  observations), repris dans le rapport ci-dessus.
+- La référence plaquette est désormais figée dans l'instantané de l'essai à sa création
+  (elle ne l'était pas avant, seuls Vc/f/charnière l'étaient) — nécessaire pour que le
+  rapport reste exact même si la référence change plus tard dans le scénario. Pour les
+  essais déjà existants qui n'ont pas cette valeur figée, le rapport retombe sur la
+  référence actuelle du scénario (meilleur effort).
+
+### Changé
+- **Message « le scénario a été modifié depuis »** : disait qu'un écart existait sans dire
+  lequel. Indique maintenant précisément quoi (ex. « T513.1 · Piste — Vc 900→950, f
+  0.5→0.45 ») avant de proposer d'aligner l'essai sur le scénario.
+
 ## [3.3.0] — 2026-08-29
 
 Toggle de comparaison graphique v2.5 / v3.2 — **temporaire**, le temps de recueillir l'avis
