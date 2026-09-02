@@ -5,6 +5,34 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [3.8.0] — 2026-09-02
+
+L'outil annonce lui-même ses évolutions, et le menu d'aide rattrape les fonctionnalités
+ajoutées depuis la v3.4.
+
+### Ajouté
+- **Fenêtre « Nouveautés »**, ouverte automatiquement quand la version affichée diffère de
+  la dernière vue sur ce poste. Objectif : ne plus avoir à envoyer un e-mail à chaque mise
+  à jour. Fermer la fenêtre vaut « lu » — elle ne revient qu'à la version suivante.
+  Reste consultable à tout moment via le menu `•••` → **Nouveautés**.
+  Une case « ne plus afficher » est proposée en secours ; la cocher revient à ne plus être
+  prévenu des évolutions suivantes, d'où le choix de ne pas en faire le fonctionnement
+  normal. Aucune version enregistrée = la fenêtre s'affiche, ce qui garantit que le premier
+  déploiement de la fonction atteint bien tout le monde.
+- Le contenu est maintenu dans la constante `NOUVEAUTES`, en tête du bloc correspondant :
+  **3 à 5 points par version, lisibles par quelqu'un qui n'a pas suivi le développement**.
+  Le CHANGELOG reste trop technique pour cet usage, les deux ne se remplacent pas.
+
+### Changé
+- **Menu « Comment ça marche » complété.** Cinq sections nouvelles : coût complet et ses
+  modules d'Options (dont la part réellement coupante du cycle), seuil de bascule, charnière
+  visée face à la charnière atteinte, statuts de scénario, tableau de bord. La section
+  « Méthode de calcul » précise désormais que le coût plaquette seul est le comportement par
+  défaut, pas la vérité complète.
+- « Bon à savoir » mentionne les essais repliés en tuiles, le scénario ouvert placé en tête
+  de liste avec son numéro stable, et le rôle du graphique de tendance — montrer la
+  répétabilité entre essais, pas détailler un essai isolé.
+
 ## [3.7.0] — 2026-09-02
 
 Retour à l'habillage d'origine et réorganisation de l'écran de travail autour du scénario

@@ -625,6 +625,16 @@ select.log-equipe:focus{border-color:var(--blue); outline:none; background:var(-
 .tc-val.tc-gain{color:var(--green);}
 .tc-val.tc-perte{color:var(--red);}
 
+/* --- nouveautes de version --- */
+.nv-bloc{border-left:3px solid var(--border); padding:2px 0 2px 14px; margin:14px 0;}
+.nv-bloc.nv-actuelle{border-left-color:var(--blue);}
+.nv-tete{display:flex; align-items:baseline; gap:10px; margin-bottom:5px;}
+.nv-version{font-family:var(--font-disp); font-weight:800; font-size:14px; color:var(--ink);}
+.nv-bloc.nv-actuelle .nv-version{color:var(--blue-dark);}
+.nv-date{font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint);}
+.nv-bloc ul{margin:0; padding-left:18px;}
+.nv-bloc li{margin:4px 0; line-height:1.5; font-size:13px; color:var(--ink-soft);}
+
 /* --- tableau de bord multi-lignes --- */
 .panel.panel-large{max-width:1120px;}
 .db-kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px; margin:16px 0 22px;}
@@ -889,6 +899,7 @@ body.atelier-on{overflow:hidden;}
           <p class="toolbar-more-hint">Un onglet par scénario, un essai par campagne menée jusqu'à la charnière, un prélèvement par disque contrôlé. La grandeur suivie et sa tolérance se règlent dans Options.</p>
           <button class="ghost" id="csvBtn" title="Tous les prélèvements en tableau, pour Excel ou le système qualité"><svg class="icon" viewBox="0 0 18 18"><rect x="2.5" y="2.5" width="13" height="13" rx="1.5"/><path d="M2.5 7h13M2.5 11.5h13M7 2.5v13"/></svg>Export CSV</button>
           <button class="ghost" id="syntheseBtn" title="Comparer tous les scénarios dans un tableau, et superposer leurs courbes de tendance"><svg class="icon" viewBox="0 0 18 18"><rect x="4" y="3" width="10" height="12" rx="1.5"/><path d="M6.5 7h5M6.5 10h5M6.5 13h3" stroke-linecap="round"/></svg>Vue de synthèse</button>
+          <button class="ghost" id="nouveautesBtn" title="Ce qui a changé dans les dernières versions de l'outil"><svg class="icon" viewBox="0 0 18 18"><path d="M9 2.5 10.7 6.6 15 7l-3.2 3 .9 4.3L9 12.2 5.3 14.3l.9-4.3L3 7l4.3-.4Z" stroke-linejoin="round"/></svg>Nouveautés</button>
           <button class="ghost" id="dashboardBtn" title="Toutes les lignes, références et OP : avancement des optimisations et gains cumulés"><svg class="icon" viewBox="0 0 18 18"><rect x="2.5" y="2.5" width="5.5" height="7" rx="1"/><rect x="10" y="2.5" width="5.5" height="4" rx="1"/><rect x="2.5" y="11.5" width="5.5" height="4" rx="1"/><rect x="10" y="8.5" width="5.5" height="7" rx="1"/></svg>Tableau de bord</button>
           <button class="ghost" id="backlogBtn" title="Noter une idée ou un problème rencontré sur l'outil"><svg class="icon" viewBox="0 0 18 18"><path d="M9 2.5a4.5 4.5 0 0 0-2.5 8.2c.4.3.6.7.6 1.2v.6h3.8v-.6c0-.5.2-.9.6-1.2A4.5 4.5 0 0 0 9 2.5Z" stroke-linejoin="round"/><path d="M7.2 15h3.6" stroke-linecap="round"/></svg>Suggestions</button>
           <button class="ghost" id="optionsBtn" title="Activer les modules de calcul complémentaires"><svg class="icon" viewBox="0 0 18 18"><path d="M2.5 5h8M13.5 5h2M2.5 13h2M7.5 13h8" stroke-linecap="round"/><circle cx="11.5" cy="5" r="1.6"/><circle cx="5.5" cy="13" r="1.6"/></svg>Options</button>
@@ -1045,6 +1056,9 @@ body.atelier-on{overflow:hidden;}
         <li>La <b>grandeur suivie et sa tolérance</b> se règlent une fois pour toutes dans <b>⚙ Options</b> — battement en OP10, Ra en OP40, ce que vous voulez. Un scénario peut déclarer une exception, mais la comparaison perd alors sa validité.</li>
         <li>Le <b>temps de cycle</b> est un indice base 100 calé sur le scénario de référence (★). Il se recalcule depuis Vc et f, et reste corrigeable à la main.</li>
         <li>Le <b>suivi rebut équipe</b> est distinct des prélèvements : il compte toutes les pièces produites, pas seulement les disques contrôlés.</li>
+        <li>Les <b>essais sont repliés en tuiles</b>, colorées selon leur état. Cliquer la tuile déplie tout le détail : conditions figées à l'essai, prélèvements, photos, suivi Marposs. Un essai que vous venez de créer s'ouvre automatiquement ; les autres restent fermés.</li>
+        <li>Le <b>scénario ouvert</b> passe en tête de la liste des tuiles, en plus grand. Le numéro de chaque tuile est celui de sa création : il ne bouge pas quand l'ordre d'affichage change.</li>
+        <li>Le <b>graphique de tendance</b> superpose tous les essais du scénario : sa raison d'être est de montrer la répétabilité d'un essai à l'autre, pas de détailler un essai isolé.</li>
         <li>Vos saisies restent sur ce poste. <b>💾 Exporter le suivi</b> en fin de séance : c'est le fichier à archiver ou à envoyer.</li>
       </ul>
 
@@ -1060,7 +1074,32 @@ body.atelier-on{overflow:hidden;}
       <p>Cet outil fonctionne entièrement sur votre poste : aucune donnée n'est envoyée sur internet. Vos saisies sont conservées automatiquement dans ce navigateur, et retrouvées à la réouverture du fichier. Pour archiver le suivi ou l'envoyer par e-mail, utilisez <b>💾 Exporter le suivi</b> (fichier .json) ; le destinataire le recharge avec <b>📂 Importer</b>. Exportez en fin de séance : le stockage navigateur peut être vidé par un nettoyage de cache ou un changement de poste.</p>
 
       <h4>Méthode de calcul</h4>
-      <p>Le coût/pièce ne couvre que la plaquette (prix ÷ (arêtes × charnière)), sommé sur les deux positions. Le temps de cycle (base 100 = scénario de référence) se recalcule automatiquement dès que vous changez Vc ou f en piste ; vous pouvez toujours le corriger à la main si le relevé terrain diffère du calcul théorique.</p>
+      <p>Par défaut, le coût/pièce ne couvre que la plaquette : <b>prix ÷ (arêtes × charnière)</b>, sommé sur tous les logements. Le temps de cycle (base 100 = scénario de référence) se recalcule depuis Vc et f, et reste corrigeable à la main si le relevé terrain diffère du calcul théorique.</p>
+
+      <h4>Coût complet — les modules d'Options</h4>
+      <p>Le prix des plaquettes ne dit pas tout : un scénario moins cher en outil mais plus lent peut coûter plus cher au total. Quatre modules, à activer dans <b>Options</b>, complètent le calcul. Tant qu'ils sont éteints, rien ne change à l'écran.</p>
+      <ul>
+        <li><b>Temps machine</b> — convertit l'écart de temps de cycle en euros, à partir du coût horaire de la ligne (icône ⚙ sur son onglet). C'est ce qui rend comparables un scénario économe en plaquettes mais lent, et un scénario rapide mais gourmand en outil.</li>
+        <li><b>Part réellement coupante du cycle</b> — l'indice de cycle se calcule sur Vc·f : il ne décrit que la <b>coupe</b>. Chargement, approche et retrait ne bougent pas quand Vc ou f changent ; les compter comme s'ils ralentissaient aussi surestimerait fortement la pénalité. C'est le paramètre le plus sensible de tout le calcul.</li>
+        <li><b>Pièces détachées</b> — cales, vis, corps d'outil, brides : amorties sur leur propre charnière de remplacement, et rattachées au porte-outil.</li>
+        <li><b>Volume annuel</b> — se règle par référence disque. Traduit chaque écart en €/an et en heures machine/an, et donne la consommation annuelle de plaquettes par logement.</li>
+        <li><b>Coût du rebut</b> — ajoute le coût des disques rebutés, à partir du suivi rebut équipe.</li>
+      </ul>
+      <p>Dès que plusieurs postes sont actifs, le <b>coût total</b> devient le chiffre de tête partout — verdict, chiffres clés, tuiles, vue de synthèse et rapport de validation — avec une barre montrant où part l'argent. Le coût plaquette reste affiché en dessous.</p>
+
+      <h4>Seuil de bascule</h4>
+      <p>Quand le temps machine est actif, l'outil indique le <b>temps de cycle maximum</b> pour qu'un scénario reste gagnant, et le facteur qu'il faudrait appliquer aux charnières pour revenir à l'équilibre. Si le temps machine dépasse à lui seul le coût total de la référence, il le dit franchement : aucune durée de vie d'arête ne compensera, le levier est ailleurs.</p>
+
+      <h4>Charnière visée et charnière atteinte</h4>
+      <p>La charnière saisie est un <b>objectif</b>. En face, l'outil calcule celle réellement observée : le dernier prélèvement conforme avant une sortie de tolérance, moyenné sur les essais. Elle s'affiche sous la valeur visée dans le tableau des plaquettes.</p>
+      <p>Tant qu'aucun essai n'est sorti de tolérance, la valeur est précédée de <b>≥</b> : les essais s'arrêtent à la charnière visée, on ne sait donc rien de ce qui se serait passé au-delà. Dès qu'un essai lâche avant la cible, la valeur devient ferme et un encart signale l'écart avec le coût réel correspondant.</p>
+
+      <h4>Statut d'un scénario</h4>
+      <p>Chaque scénario porte un statut, modifiable dans son en-tête : <b>à l'étude</b>, <b>en essai</b>, <b>validé</b>, <b>en série</b>, <b>abandonné</b> (avec son motif). Il colore sa tuile et alimente le tableau de bord.</p>
+      <p>« Validé » et « en série » ne se confondent pas : un scénario peut être techniquement conforme sans jamais avoir été déployé. Distinguer les deux permet de voir le gain déjà acquis d'un côté, celui qui attend un feu vert de l'autre. Et un scénario abandonné garde son motif — c'est ce qui évite de reparcourir la même impasse deux ans plus tard.</p>
+
+      <h4>Tableau de bord</h4>
+      <p>Dans le menu <b>•••</b>, le <b>Tableau de bord</b> rassemble toutes les lignes, références et OP du fichier dans un seul écran : statut de chaque scénario, avancement de ses essais, coût pièce, écart et gain annuel. En tête, le cumul du <b>gain déjà acquis</b> (scénarios en série) face à celui <b>qui reste à déployer</b> (validés, pas encore passés en série). Les gains annuels n'apparaissent que pour les références dont le volume est renseigné.</p>
     </div>
   </details>
   <button type="button" class="legend-btn" title="Point bleu = calculé automatiquement · point clair = champ éditable" aria-label="Légende des couleurs de champs"><i class="dot editable"></i><i class="dot blue"></i></button>
@@ -1076,6 +1115,7 @@ body.atelier-on{overflow:hidden;}
   <div class="panel backlog-wrap" id="backlogWrap" hidden></div>
   <div class="panel" id="historyPanel" hidden></div>
   <div class="panel" id="csvPanel" hidden></div>
+  <div class="panel" id="nouveautesPanel" hidden></div>
   <div class="panel panel-large" id="dashboardPanel" hidden></div>
   <div class="panel" id="ligneInfoPanel" hidden>
     <h3 id="ligneInfoTitle">Informations de ligne</h3>
@@ -1114,7 +1154,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "3.7.0";
+const TOOL_VERSION = "3.8.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -5029,12 +5069,14 @@ function fermerPanneaux(){
   document.getElementById("csvPanel").hidden = true;
   document.getElementById("ligneInfoPanel").hidden = true;
   document.getElementById("dashboardPanel").hidden = true;
+  document.getElementById("nouveautesPanel").hidden = true;
   document.getElementById("toolbarMore").hidden = true;
 }
 document.getElementById("dashboardBtn").addEventListener("click", () => {
   renderDashboard();
   ouvrirPanneau("dashboardPanel");
 });
+document.getElementById("nouveautesBtn").addEventListener("click", ouvrirNouveautes);
 document.getElementById("panelBackdrop").addEventListener("click", fermerPanneaux);
 document.addEventListener("keydown", (e) => { if(e.key === "Escape") fermerPanneaux(); });
 /* menu "•••" : toggle au clic sur le bouton, fermeture au clic ailleurs ou sur une action
@@ -5126,6 +5168,85 @@ function appliquerOptions(){
 });
 document.getElementById("optionsBtn").addEventListener("click", () => { syncOptionsUI(); ouvrirPanneau("optionsPanel"); });
 document.getElementById("optionsClose").addEventListener("click", fermerPanneaux);
+
+/* ---- nouveautes de version ----
+   Evite d'envoyer un e-mail a chaque mise a jour : l'outil annonce lui-meme ce qui a
+   change, une seule fois par version. Fermer la fenetre vaut "lu" — inutile de cocher
+   quoi que ce soit. La case "ne plus afficher" est un secours, pas le fonctionnement
+   normal : la cocher revient a ne plus etre prevenu des evolutions suivantes.
+   A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
+   n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
+const NOUVEAUTES = [
+  { version:"3.8.0", date:"02/09/2026", points:[
+    "L'outil annonce lui-même ce qui change à chaque nouvelle version : cette fenêtre s'ouvre une fois, puis plus jusqu'à la prochaine mise à jour. Elle reste consultable dans le menu <b>•••</b> → <b>Nouveautés</b>.",
+    "Le menu <b>Comment ça marche</b> (icône <b>?</b>) a été complété : coût complet, seuil de bascule, charnière atteinte, statuts et tableau de bord y sont expliqués."
+  ]},
+  { version:"3.7.0", date:"02/09/2026", points:[
+    "Le <b>scénario ouvert</b> passe en tête de la liste, en plus grand et légèrement bleuté. Chaque tuile porte son numéro et une couleur donnant son statut.",
+    "La <b>composition du scénario</b> (outils, plaquettes, pièces détachées, conditions de coupe) remonte juste sous les chiffres clés, et s'affiche dépliée.",
+    "La <b>production annuelle</b> apparaît en grand en haut à droite de cette composition, dès que le volume est renseigné.",
+    "Correction : le séparateur des milliers ne s'affichait pas — « 200 000 » apparaissait collé."
+  ]},
+  { version:"3.5.0 — 3.6.0", date:"02/09/2026", points:[
+    "<b>Le coût complet par pièce.</b> L'outil sait maintenant ajouter au prix des plaquettes le temps machine, les pièces détachées du porte-outil et le coût du rebut. Un scénario moins cher en outil mais plus lent peut se révéler perdant : à activer dans <b>Options</b>.",
+    "<b>Gain annuel en euros</b> et écart d'heures machine sur l'année, dès que le volume de production de la référence est renseigné.",
+    "<b>Seuil de bascule</b> : le temps de cycle maximum pour qu'un scénario reste gagnant.",
+    "<b>Charnière réellement atteinte</b>, calculée depuis les essais et affichée sous la charnière visée.",
+    "<b>Statuts de scénario</b> (à l'étude, en essai, validé, en série, abandonné) et <b>tableau de bord</b> reprenant toutes les lignes et références d'un coup.",
+    "L'outil ne va plus chercher aucune ressource sur internet : il s'ouvre à l'identique sans réseau, sur clé USB ou derrière un proxy d'usine."
+  ]},
+  { version:"3.4.0", date:"30/08/2026", points:[
+    "<b>Rapport par essai</b> : une page autonome reprenant interlocuteurs, plaquettes, but de l'essai, conditions de coupe, prélèvements et verdict.",
+    "Les essais sont repliés en <b>tuiles</b> colorées selon leur état ; on les déplie au clic."
+  ]}
+];
+const CLE_VERSION_VUE = "spk_derniere_version_vue";
+const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
+
+function nouveautesHTML(){
+  return NOUVEAUTES.map((n, i) => `
+    <div class="nv-bloc${i === 0 ? " nv-actuelle" : ""}">
+      <div class="nv-tete">
+        <span class="nv-version">Version ${n.version}</span>
+        <span class="nv-date">${n.date}</span>
+      </div>
+      <ul>${n.points.map(p => `<li>${p}</li>`).join("")}</ul>
+    </div>`).join("");
+}
+function ouvrirNouveautes(){
+  const wrap = document.getElementById("nouveautesPanel");
+  const masquees = (() => { try { return localStorage.getItem(CLE_NOUVEAUTES_OFF) === "1"; } catch(e){ return false; } })();
+  wrap.innerHTML = `
+    <h3>Nouveautés de l'outil</h3>
+    <p class="panel-hint">Vous utilisez la version <b>${TOOL_VERSION}</b>. Voici ce qui a changé depuis vos dernières utilisations — inutile d'attendre un e-mail.</p>
+    ${nouveautesHTML()}
+    <label class="opt-row" style="margin-top:18px;">
+      <input type="checkbox" id="nvMasquer" ${masquees ? "checked" : ""}>
+      <span><b>Ne plus afficher cette fenêtre automatiquement</b>
+      <em>Vous ne serez plus prévenu des évolutions suivantes. Les nouveautés resteront consultables dans le menu <b>•••</b>.</em></span>
+    </label>
+    <div class="panel-actions"><button class="primary" id="nvFermer">J'ai vu</button></div>`;
+  wrap.querySelector("#nvFermer").addEventListener("click", () => {
+    try {
+      localStorage.setItem(CLE_VERSION_VUE, TOOL_VERSION);
+      localStorage.setItem(CLE_NOUVEAUTES_OFF, wrap.querySelector("#nvMasquer").checked ? "1" : "0");
+    } catch(e){}
+    fermerPanneaux();
+  });
+  ouvrirPanneau("nouveautesPanel");
+}
+/* au chargement : on n'ouvre que si la version a change depuis la derniere lecture.
+   Aucune valeur enregistree = premiere fois qu'on croise cette fonction, on affiche
+   (c'est ce qui fait que le premier deploiement atteint bien tout le monde). */
+function verifierNouveautes(){
+  let vue = null, off = false;
+  try {
+    vue = localStorage.getItem(CLE_VERSION_VUE);
+    off = localStorage.getItem(CLE_NOUVEAUTES_OFF) === "1";
+  } catch(e){ return; }
+  if(off || vue === TOOL_VERSION) return;
+  ouvrirNouveautes();
+}
 
 /* ---- tableau de bord : toutes les lignes d'un coup ----
    Le moteur lit la tolerance et le scenario de reference dans les globales `config` et
@@ -5353,6 +5474,8 @@ updateSaveUI();
 updateRestoreUI();
 updateRevisionUI();
 document.getElementById("footToolName").textContent = "Suivi_optimisation_SPK v" + TOOL_VERSION + " — SPK by CeramTec";
+// en dernier : l'ecran doit etre pret derriere la fenetre des nouveautes
+verifierNouveautes();
 </script>
 
 <script>
