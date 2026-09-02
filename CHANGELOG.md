@@ -5,6 +5,45 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [3.6.0] — 2026-09-02
+
+Fiabilisation : plus aucun appel réseau, et le moteur économique est désormais couvert par
+des tests. Rien ne change à l'usage.
+
+### Corrigé
+- **Le rapport d'essai exporté n'appelle plus Google Fonts.** Son pied de page affirme
+  « Document 100 % local, aucune donnée transmise » alors qu'il chargeait trois polices
+  depuis Google à chaque ouverture — contradiction gênante pour un document envoyé à
+  Stellantis, et requête susceptible d'être bloquée par le proxy du site. Les piles de
+  polices du rapport retombent sur Arial / Consolas, présentes partout.
+
+### Ajouté
+- **49 tests du moteur économique**, embarqués dans le fichier et inertes par défaut : ils ne
+  s'exécutent qu'en ouvrant l'outil avec `#tests` à la fin de l'adresse, ou en tapant
+  `runTests()` dans la console. Ils travaillent sur des données fabriquées et restaurent
+  l'état réel ensuite — aucune sauvegarde n'est déclenchée, les données de travail ne sont
+  jamais touchées.
+  Couverture : `posCost`, `pieceCost`, `scenarioCost`, `recomputeCycles`, `cycleSecondes`
+  (formule part coupante, cas 0 / 50 / 100 %), `coutMachinePiece`, `coutRebutPiece`,
+  `coutPiecesDetachees`, `coutsDetail` (propagation des `null`, drapeau `multiPoste`),
+  `charniereReelle` (borne inférieure, sortie de tolérance, échec au premier prélèvement),
+  `ecartsCharniere`, `seuilBascule`, `bilanAnnuel`, `fmtEuroCourt`.
+  Vérifié en remettant l'ancienne formule de cycle fausse : 5 tests tombent, dont ceux de
+  `coutMachinePiece`, `coutsDetail` et `bilanAnnuel` — la cascade est bien détectée.
+
+### Changé
+- **Polices embarquées en base64, plus aucune dépendance réseau.** L'outil s'ouvre à
+  l'identique hors ligne, depuis une clé USB, ou derrière un proxy d'usine. Fin du blocage
+  de rendu pendant le délai d'attente réseau quand le poste atelier n'a pas Internet.
+  Coût : le fichier passe de 479 à 600 Ko.
+  Deux optimisations pour en arriver là plutôt qu'aux 510 Ko d'un embarquement naïf :
+  Archivo et Open Sans sont des **polices variables** — Google sert le même fichier pour
+  chaque graisse, les embarquer une par graisse aurait dupliqué 200 Ko à l'identique ; une
+  seule face couvre désormais toute la plage (`font-weight: 600 800` et `300 700`). Et
+  chaque police est **sous-ensemblée** au latin complet plus les symboles de l'interface
+  (≤ ★ ✓ → κ €). Un caractère hors de ce jeu retombe sur la pile système déclarée derrière,
+  sans casser la mise en page.
+
 ## [3.5.0] — 2026-09-01
 
 Coût complet et pilotage du portefeuille d'optimisations. L'outil ne comparait que le prix
