@@ -5,6 +5,18 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [3.9.5] — 2026-09-02
+
+### Corrigé
+- **Régression critique introduite en 3.9.1** : la lightbox d'agrandissement d'image
+  (`.img-lightbox`) déclarait `display:flex` dans sa règle CSS de base, ce qui court-circuite
+  l'attribut HTML `hidden` — une règle d'auteur avec `display` prime toujours sur le style
+  agent-utilisateur par défaut `[hidden]{display:none}`, quel que soit l'ordre dans la feuille
+  de style. Résultat : le voile plein écran (fond sombre à 85 % d'opacité) restait affiché en
+  permanence dès le chargement de la page, rendant l'outil quasi illisible. Ajout de la règle
+  `.img-lightbox[hidden]{display:none;}`, sur le modèle déjà suivi ailleurs dans le fichier
+  (`.toolbar-more[hidden]`, `.atelier[hidden]`).
+
 ## [3.9.4] — 2026-09-02
 
 ### Ajouté

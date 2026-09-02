@@ -328,6 +328,7 @@ select.backlog-type, select.backlog-statut{font-family:var(--font-body); font-si
 /* --- agrandissement plein ecran d'une image (suggestions) --- */
 .img-lightbox{position:fixed; inset:0; z-index:200; background:rgba(20,24,22,.85);
   display:flex; align-items:center; justify-content:center; padding:28px; cursor:zoom-out;}
+.img-lightbox[hidden]{display:none;}
 .img-lightbox img{max-width:100%; max-height:100%; border-radius:var(--radius); box-shadow:0 12px 40px rgba(0,0,0,.5);}
 
 /* relevé de contrôle */
@@ -1170,7 +1171,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "3.9.4";
+const TOOL_VERSION = "3.9.5";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -5310,6 +5311,9 @@ document.getElementById("optionsClose").addEventListener("click", fermerPanneaux
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"3.9.5", date:"02/09/2026", points:[
+    "<b>Correctif urgent</b> : l'agrandissement d'image ajouté en 3.9.2 était affiché en permanence par erreur (voile sombre plein écran dès l'ouverture, quoi que vous fassiez). Corrigé."
+  ]},
   { version:"3.9.4", date:"02/09/2026", points:[
     "Ajout d'un rappel bien visible dans <b>Options</b>, sous « Intégrer le temps machine au coût pièce » : pour que le temps de cycle pèse dans le gain annuel, il faut activer les deux modules cycle ET renseigner le coût horaire de la ligne ET le temps de cycle réel de la référence."
   ]},
