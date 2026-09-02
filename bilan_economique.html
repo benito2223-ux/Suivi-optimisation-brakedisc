@@ -970,6 +970,13 @@ body.atelier-on{overflow:hidden;}
         <em>Convertit l'écart de temps de cycle en euros, avec le coût horaire de la ligne. Sans lui, un scénario moins cher en plaquettes mais plus lent paraît gagnant alors qu'il peut être perdant.</em>
       </span>
     </label>
+    <div class="note" style="margin:0 0 14px;">
+      Pour que le <b>temps de cycle</b> pèse réellement dans les comparaisons de <b>gain annuel</b>, quatre choses sont
+      nécessaires ensemble : cocher <b>« Afficher le temps de cycle en secondes »</b> ET <b>« Intégrer le temps
+      machine au coût pièce »</b> ci-dessus, renseigner le <b>coût horaire de la ligne</b> (icône ⚙ de l'onglet de
+      ligne) et le <b>temps de cycle réel du scénario de référence (s)</b> juste en dessous. Il en manque une seule
+      et le gain annuel ignore silencieusement l'écart de cycle entre scénarios.
+    </div>
     <div class="opt-field" id="optCycleRefField">
       <label for="optCycleRefSec">Temps de cycle du scénario de référence (s)</label>
       <input type="number" step="0.1" min="0" id="optCycleRefSec" placeholder="ex. 42">
@@ -1163,7 +1170,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "3.9.3";
+const TOOL_VERSION = "3.9.4";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -5303,6 +5310,9 @@ document.getElementById("optionsClose").addEventListener("click", fermerPanneaux
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"3.9.4", date:"02/09/2026", points:[
+    "Ajout d'un rappel bien visible dans <b>Options</b>, sous « Intégrer le temps machine au coût pièce » : pour que le temps de cycle pèse dans le gain annuel, il faut activer les deux modules cycle ET renseigner le coût horaire de la ligne ET le temps de cycle réel de la référence."
+  ]},
   { version:"3.9.3", date:"02/09/2026", points:[
     "Le champ « Temps de cycle » du bloc scénario précise maintenant qu'il s'agit d'un <b>indice base 100</b> — il pouvait être confondu avec le temps réel en secondes affiché juste en dessous.",
     "Quand vous modifiez le temps de cycle sans avoir activé « Intégrer le temps machine au coût pièce » (module Options), le <b>gain annuel</b> ne bouge pas volontairement — un avertissement l'indique désormais directement sous le gain, au lieu de laisser croire à un bug."

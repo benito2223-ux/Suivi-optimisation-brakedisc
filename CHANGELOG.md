@@ -5,6 +5,16 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [3.9.4] — 2026-09-02
+
+### Ajouté
+- **Rappel permanent dans Options**, sous « Intégrer le temps machine au coût pièce » :
+  explique que le temps de cycle ne pèse dans le gain annuel que si les quatre conditions
+  sont réunies — « Afficher le temps de cycle en secondes » ET « Intégrer le temps machine
+  au coût pièce » cochés, coût horaire de la ligne renseigné, temps de cycle réel de la
+  référence renseigné. Complète l'avertissement conditionnel ajouté en 3.9.3 (celui-ci
+  n'apparaît qu'une fois le cycle déjà modifié).
+
 ## [3.9.3] — 2026-09-02
 
 ### Changé
