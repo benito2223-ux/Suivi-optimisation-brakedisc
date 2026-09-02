@@ -991,6 +991,25 @@ body.atelier-on{overflow:hidden;}
     </div>
 
     <label class="opt-row">
+      <input type="checkbox" id="optCycleDetail">
+      <span>
+        <b>Détailler le temps de cycle par logement (mesures machine)</b>
+        <em>Remplace l'indice base 100 par un temps coupe + un temps déplacement, relevés sur machine, pour chaque logement. Plus fidèle qu'un indice unique quand un scénario ne change qu'une partie de l'outillage (ex. un seul côté passe en céramique).</em>
+      </span>
+    </label>
+    <div class="opt-field on" id="optCycleDetailField">
+      <div class="note" style="margin:0 0 12px;">
+        <b>Calcul précis seulement si TOUS les logements du scénario sont renseignés</b> (temps coupe ET temps
+        déplacement, colonnes ajoutées à la composition du scénario). Il en manque un seul et le scénario retombe
+        silencieusement sur l'indice base 100 habituel — un statut l'indique alors sous le tableau. Extraire ces
+        temps machine par logement est un vrai relevé terrain : discutez-en avec Benjamin si besoin avant d'activer
+        ce module sur une référence.
+      </div>
+      <div id="ficheOutilWrap"></div>
+      <span class="opt-note">Fiche outil (PDF ou image) : n° d'outils et trajectoires par logement pour cette OP — sert de repère pendant la saisie des temps ci-dessus.</span>
+    </div>
+
+    <label class="opt-row">
       <input type="checkbox" id="optPieces">
       <span>
         <b>Pièces détachées par porte-outil</b>
@@ -1171,7 +1190,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "3.9.5";
+const TOOL_VERSION = "3.10.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -1317,6 +1336,8 @@ const defaultConfig = {
   coutMachineActif: false, // convertit l'ecart de temps de cycle en euros (coût horaire de la ligne)
   partCoupante: 100,       // % du cycle de reference reellement en coupe (le reste — chargement,
                            // approche, retrait — ne bouge pas quand Vc/f changent)
+  cycleDetailActif: false, // temps coupe + deplacement mesures machine, par logement, au lieu
+                           // d'un indice base 100 global (voir cycleDetailStatus)
   piecesActif: false,      // pieces detachees amorties par porte-outil
   volumeActif: false,      // volume annuel de la reference -> gains en €/an
   forceRatioActif: false   // affiche Fr/Fa (effort radial/axial) : specifique a certaines references (bruts peu matures...), pas systematique
@@ -1399,7 +1420,7 @@ function normalizeBacklogItem(b){
   return Object.assign({ id: b.id || ("b"+Math.random().toString(36).slice(2)), date:"", auteur:"", type:"amelioration", titre:"", description:"", statut:"nouveau", image:"" }, b);
 }
 function normalizeOp(o){
-  return Object.assign({ id: o.id || ("o"+Math.random().toString(36).slice(2)), nom:"", ordre: 10 }, o, {
+  return Object.assign({ id: o.id || ("o"+Math.random().toString(36).slice(2)), nom:"", ordre: 10, ficheOutil: null }, o, {
     config: Object.assign({}, defaultConfig, o.config || {}),
     scenarios: (o.scenarios || []).map(normalizeScenario)
   });
@@ -1464,6 +1485,7 @@ recomputeCycles();
 function normalizeLogement(l){
   return Object.assign({ id: l.id || ("g"+Math.random().toString(36).slice(2)), nom:"", ref:"", codeArticle:"",
     prix:"", aretes:8, charniere:"", vc:"", f:"", kappaR:"", rayonBec:"", apPiste:"",
+    tempsCoupe:"", tempsDeplacement:"", // mesures machine (s), module "detail du cycle par logement"
     suiviTolerance:true }, l); // la charniere se suit toujours ; la tolerance est desactivable par logement
 }
 /* retrouve un logement par son id, quel que soit l'outil qui le porte */
@@ -2951,8 +2973,43 @@ function coutPiecesDetachees(sc, cfg){
    cycle complet. L'appliquer au cycle entier surestime la penalite, puisque chargement,
    approche et retrait ne bougent pas avec Vc/f. On ne fait donc varier que la part
    coupante declaree. */
+/* ---- detail du cycle par logement : temps coupe + deplacement mesures machine ----
+   L'indice base 100 ci-dessus applique un seul ratio a tout le cycle coupant du scenario.
+   Ca tient quand tous les logements changent ensemble (process CBN -> ceramique integrale),
+   mais ne represente plus rien des qu'un scenario est mixte (un seul cote change, ex.
+   "bol CBN + piste ceramique") : le ratio global melange alors deux realites differentes.
+   Ce module remplace l'indice par une mesure reelle, par logement, releve sur machine —
+   uniquement si TOUS les logements du scenario sont renseignes (coupe ET deplacement) ;
+   sinon on retombe silencieusement sur l'indice base 100 pour ne jamais afficher un total
+   partiel qui aurait l'air complet. */
+function cycleDetailStatus(sc, cfg){
+  cfg = cfg || config;
+  const logements = (sc.outils||[]).flatMap(o => o.logements||[]);
+  let filled = 0, secs = 0;
+  logements.forEach(l => {
+    const c = parseFloat(l.tempsCoupe), d = parseFloat(l.tempsDeplacement);
+    if(!isNaN(c) && !isNaN(d)){ filled++; secs += c + d; }
+  });
+  const total = logements.length;
+  const complete = total > 0 && filled === total;
+  return { actif: !!(cfg && cfg.cycleDetailActif), complete, filled, total, secs: complete ? secs : null };
+}
+/* statut affiche sous la composition du scenario : dit clairement quel calcul est
+   REELLEMENT utilise pour ce scenario, puisque le detail par logement retombe
+   silencieusement sur l'indice base 100 des qu'un seul logement manque */
+function cycleDetailStatusHTML(sc){
+  const st = cycleDetailStatus(sc, config);
+  if(!st.total) return "";
+  return st.complete
+    ? `<p class="panel-hint" style="margin:6px 2px 0; color:var(--green);">✓ ${st.filled}/${st.total} logements renseignés — temps de cycle calculé sur mesures machine (${fmt(st.secs,1)} s).</p>`
+    : `<p class="panel-hint" style="margin:6px 2px 0; color:var(--amber);">⚠ ${st.filled}/${st.total} logements renseignés — incomplet, ce scénario retombe sur l'indice base 100 tant que tous ne sont pas remplis.</p>`;
+}
 function cycleSecondes(sc, cfg){
   cfg = cfg || config;
+  if(cfg.cycleDetailActif){
+    const det = cycleDetailStatus(sc, cfg);
+    if(det.complete) return det.secs;
+  }
   const ref = parseFloat(cfg.cycleRefSec);
   const idx = parseFloat(sc.cycle);
   if(isNaN(ref) || isNaN(idx)) return null;
@@ -3613,7 +3670,8 @@ function scenarioBlockHTML(sc, interactive){
   // Options) : les masquer par defaut allege le tableau de 2 colonnes sur 14. κr, lui, reste
   // toujours visible car il alimente aussi le widget K (suivi thermique), utile meme sans Fr·Fa.
   const showFrFa = !!config.forceRatioActif;
-  const posColspan = (interactive ? 15 : 14) - (showFrFa ? 0 : 2);
+  const showCycleDetail = !!config.cycleDetailActif;
+  const posColspan = (interactive ? 15 : 14) - (showFrFa ? 0 : 2) + (showCycleDetail ? 2 : 0);
   // largeurs explicites : sans elles le navigateur repartit les colonnes a peu pres egalement,
   // ce qui coupe "Reference plaquette" (texte le plus long) et laisse des colonnes numeriques
   // courtes (Aretes, ap...) bien trop larges
@@ -3630,6 +3688,7 @@ function scenarioBlockHTML(sc, interactive){
       <col style="width:${showFrFa ? 5 : 6}%">
       <col style="width:5%">
       ${showFrFa ? '<col style="width:7%"><col style="width:4%">' : ""}
+      ${showCycleDetail ? '<col style="width:6%"><col style="width:6%">' : ""}
       <col style="width:6%">
       <col style="width:6%">
       ${interactive ? '<col style="width:2%">' : ""}
@@ -3652,18 +3711,20 @@ function scenarioBlockHTML(sc, interactive){
             <th class="num">f (mm/rev)</th>
             <th class="num">κr (°)</th>
             ${showFrFa ? '<th class="num">Rayon de bec rε (mm)</th><th class="num">ap (mm)</th>' : ""}
+            ${showCycleDetail ? '<th class="num">Temps coupe (s)</th><th class="num">Temps déplacement (s)</th>' : ""}
             <th class="num">€ / arête</th>
             <th class="num">€ / pièce</th>
             ${interactive ? "<th></th>" : ""}
           </tr>
         </thead>
         <tbody>
-          ${sc.outils.map((o, oi) => outilRowsHTML(sc, o, oi, interactive, showFrFa)).join("") || `<tr><td colspan="${posColspan}" class="log-empty">Aucun outil configuré</td></tr>`}
+          ${sc.outils.map((o, oi) => outilRowsHTML(sc, o, oi, interactive, showFrFa, showCycleDetail)).join("") || `<tr><td colspan="${posColspan}" class="log-empty">Aucun outil configuré</td></tr>`}
         </tbody>
       </table>
     </div>
     ${interactive ? `<button class="ghost outil-add" data-id="${sc.id}" style="margin-top:8px;">+ Ajouter un outil</button>` : ""}
     ${!showFrFa ? `<p class="panel-hint" style="margin:6px 2px 0;">Rayon de bec et ap (affinage Fr·Fa) sont masqués — activez le module Fr·Fa dans <b>Options</b> si votre référence en a besoin.</p>` : ""}
+    ${showCycleDetail ? cycleDetailStatusHTML(sc) : ""}
     ${consommationAnnuelleHTML(sc)}
     ${piecesDetacheesHTML(sc, interactive)}
   `;
@@ -4334,11 +4395,11 @@ function piecesDetacheesHTML(sc, interactive){
     </div>`;
 }
 
-function outilRowsHTML(sc, o, oi, interactive, showFrFa){
+function outilRowsHTML(sc, o, oi, interactive, showFrFa, showCycleDetail){
   const couleur = OUTIL_COLORS[oi % OUTIL_COLORS.length];
-  const rows = o.logements.map(l => logementRowHTML(sc, o, l, couleur, interactive, showFrFa)).join("");
+  const rows = o.logements.map(l => logementRowHTML(sc, o, l, couleur, interactive, showFrFa, showCycleDetail)).join("");
   const addRow = interactive
-    ? `<tr class="outil-add-row"><td colspan="${14 - (showFrFa ? 0 : 3)}" style="padding:4px 12px; border-left:4px solid ${couleur};"><button class="ghost small logement-add" data-id="${sc.id}" data-outil="${o.id}">+ Logement pour ${escapeAttr(o.numero || "cet outil")}</button></td></tr>`
+    ? `<tr class="outil-add-row"><td colspan="${14 - (showFrFa ? 0 : 3) + (showCycleDetail ? 2 : 0)}" style="padding:4px 12px; border-left:4px solid ${couleur};"><button class="ghost small logement-add" data-id="${sc.id}" data-outil="${o.id}">+ Logement pour ${escapeAttr(o.numero || "cet outil")}</button></td></tr>`
     : "";
   return rows + addRow;
 }
@@ -4356,7 +4417,7 @@ function charniereSubHTML(sc, l){
   return `<div class="charniere-reel ${sous ? "bad" : "ok"}" title="${titre}">${info.borneInf ? "≥ " : ""}${fmt(info.moyenne,0)} réel <span>(${info.essais})</span></div>`;
 }
 
-function logementRowHTML(sc, o, l, couleur, interactive, showFrFa){
+function logementRowHTML(sc, o, l, couleur, interactive, showFrFa, showCycleDetail){
   const perEdge = posCostPerEdge(l);
   const perPiece = posCost(l);
   if(interactive){
@@ -4380,6 +4441,9 @@ function logementRowHTML(sc, o, l, couleur, interactive, showFrFa){
         ${showFrFa ? `
         <td class="num"><input class="cell" data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}" data-field="rayonBec" type="number" step="0.1" min="0" value="${l.rayonBec ?? ""}"></td>
         <td class="num"><input class="cell" data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}" data-field="apPiste" type="number" step="0.1" min="0" value="${l.apPiste ?? ""}"></td>` : ""}
+        ${showCycleDetail ? `
+        <td class="num"><input class="cell" data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}" data-field="tempsCoupe" type="number" step="0.1" min="0" value="${l.tempsCoupe ?? ""}"></td>
+        <td class="num"><input class="cell" data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}" data-field="tempsDeplacement" type="number" step="0.1" min="0" value="${l.tempsDeplacement ?? ""}"></td>` : ""}
         <td class="computed">${perEdge === null ? "—" : fmt(perEdge,3)}</td>
         <td class="computed">${perPiece === null ? "—" : fmt(perPiece,4)}</td>
         <td><button class="log-del logement-del" data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}">✕</button></td>
@@ -4401,6 +4465,9 @@ function logementRowHTML(sc, o, l, couleur, interactive, showFrFa){
       ${showFrFa ? `
       <td class="num">${l.rayonBec === "" || l.rayonBec == null ? "—" : l.rayonBec}</td>
       <td class="num">${l.apPiste === "" || l.apPiste == null ? "—" : l.apPiste}</td>` : ""}
+      ${showCycleDetail ? `
+      <td class="num">${l.tempsCoupe === "" || l.tempsCoupe == null ? "—" : l.tempsCoupe}</td>
+      <td class="num">${l.tempsDeplacement === "" || l.tempsDeplacement == null ? "—" : l.tempsDeplacement}</td>` : ""}
       <td class="computed">${perEdge === null ? "—" : fmt(perEdge,3)}</td>
       <td class="computed">${perPiece === null ? "—" : fmt(perPiece,4)}</td>
     </tr>
@@ -5237,6 +5304,7 @@ const optLimitValue = document.getElementById("optLimitValue");
 const optForceRatio = document.getElementById("optForceRatio");
 const optCoutMachine = document.getElementById("optCoutMachine");
 const optPartCoupante = document.getElementById("optPartCoupante");
+const optCycleDetail = document.getElementById("optCycleDetail");
 const optPieces = document.getElementById("optPieces");
 const optVolume = document.getElementById("optVolume");
 const optProductionAnnuelle = document.getElementById("optProductionAnnuelle");
@@ -5270,12 +5338,14 @@ function syncOptionsUI(){
   optCycleRefSec.value = config.cycleRefSec ?? "";
   optCoutMachine.checked = !!config.coutMachineActif;
   optPartCoupante.value = config.partCoupante ?? "";
+  optCycleDetail.checked = !!config.cycleDetailActif;
   optPieces.checked = !!config.piecesActif;
   optVolume.checked = !!config.volumeActif;
   const ref = getActiveReference();
   optProductionAnnuelle.value = ref ? (ref.productionAnnuelle ?? "") : "";
   optForceRatio.checked = !!config.forceRatioActif;
   majChampsOptions();
+  renderFicheOutil();
 }
 function appliquerOptions(){
   config.limitLabel = optLimitLabel.value;
@@ -5286,6 +5356,7 @@ function appliquerOptions(){
   config.cycleRefSec = optCycleRefSec.value === "" ? "" : parseFloat(optCycleRefSec.value);
   config.coutMachineActif = optCoutMachine.checked;
   config.partCoupante = optPartCoupante.value === "" ? 100 : parseFloat(optPartCoupante.value);
+  config.cycleDetailActif = optCycleDetail.checked;
   config.piecesActif = optPieces.checked;
   config.volumeActif = optVolume.checked;
   const ref = getActiveReference();
@@ -5295,13 +5366,55 @@ function appliquerOptions(){
   saveData();
   render();
 }
-[optCoutRebut, optCoutDisque, optCycleSec, optCycleRefSec, optCoutMachine, optPartCoupante,
+[optCoutRebut, optCoutDisque, optCycleSec, optCycleRefSec, optCoutMachine, optPartCoupante, optCycleDetail,
  optPieces, optVolume, optProductionAnnuelle, optLimitLabel, optLimitValue, optForceRatio].forEach(el => {
   el.addEventListener("change", appliquerOptions);
   el.addEventListener("input", () => { if(el.type === "number") appliquerOptions(); });
 });
 document.getElementById("optionsBtn").addEventListener("click", () => { syncOptionsUI(); ouvrirPanneau("optionsPanel"); });
 document.getElementById("optionsClose").addEventListener("click", fermerPanneaux);
+
+/* fiche outil (PDF ou image) : n° d'outils et trajectoires par logement, par OP.
+   Stockee en base64 directement dans l'OP — voyage avec l'export/import JSON, sans
+   dossier a part (contrairement aux photos d'essai, sur fichiers reels locaux). */
+function renderFicheOutil(){
+  const wrap = document.getElementById("ficheOutilWrap");
+  if(!wrap) return;
+  const op = getActiveOp();
+  const f = op && op.ficheOutil;
+  wrap.innerHTML = f
+    ? `<div class="backlog-image-preview" style="align-items:center;">
+         ${f.mime === "application/pdf"
+           ? `<span class="statut-pill">📄 ${escapeAttr(f.filename)}</span>`
+           : `<img src="${f.dataUrl}" alt="${escapeAttr(f.filename)}">`}
+         <button class="ghost" id="ficheOutilOpen" type="button">Ouvrir</button>
+         <button class="ghost" id="ficheOutilDel" type="button">Retirer</button>
+       </div>`
+    : `<label class="backlog-image-add">📎 Joindre la fiche outil (PDF ou image)<input type="file" accept=".pdf,image/*" id="ficheOutilInput" hidden></label>`;
+  if(f){
+    document.getElementById("ficheOutilOpen").addEventListener("click", () => window.open(f.dataUrl, "_blank"));
+    const img = wrap.querySelector("img");
+    if(img) img.addEventListener("click", () => ouvrirLightbox(f.dataUrl));
+    document.getElementById("ficheOutilDel").addEventListener("click", () => {
+      const op2 = getActiveOp();
+      if(op2) op2.ficheOutil = null;
+      saveData(); renderFicheOutil();
+    });
+  } else {
+    document.getElementById("ficheOutilInput").addEventListener("change", (e) => {
+      const file = e.target.files && e.target.files[0];
+      if(!file) return;
+      if(file.size > 6 * 1024 * 1024){ alert("Fichier trop volumineux (max 6 Mo) — réduisez-le avant de le joindre."); return; }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const op2 = getActiveOp();
+        if(op2) op2.ficheOutil = { filename: file.name, mime: file.type || "application/octet-stream", dataUrl: reader.result };
+        saveData(); renderFicheOutil();
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+}
 
 /* ---- nouveautes de version ----
    Evite d'envoyer un e-mail a chaque mise a jour : l'outil annonce lui-meme ce qui a
@@ -5311,6 +5424,11 @@ document.getElementById("optionsClose").addEventListener("click", fermerPanneaux
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"3.10.0", date:"02/09/2026", points:[
+    "Nouveau module <b>« Détailler le temps de cycle par logement »</b> (Options) : remplace l'indice base 100 par un temps coupe + un temps déplacement mesurés machine, saisis pour chaque logement dans la composition du scénario. Plus fidèle qu'un indice unique sur un scénario mixte (ex. un seul côté change de plaquette).",
+    "Le calcul détaillé ne s'applique que si <b>tous</b> les logements du scénario sont renseignés — sinon le scénario retombe automatiquement sur l'indice base 100, avec un statut visible sous le tableau qui le dit clairement.",
+    "Possibilité de <b>joindre une fiche outil (PDF ou image)</b> par OP, dans Options : n° d'outils et trajectoires par logement, comme repère pendant la saisie."
+  ]},
   { version:"3.9.5", date:"02/09/2026", points:[
     "<b>Correctif urgent</b> : l'agrandissement d'image ajouté en 3.9.2 était affiché en permanence par erreur (voile sombre plein écran dès l'ouverture, quoi que vous fassiez). Corrigé."
   ]},

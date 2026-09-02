@@ -5,6 +5,28 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [3.10.0] — 2026-09-02
+
+### Ajouté
+- **Module « Détailler le temps de cycle par logement »** (Options → module de calcul) :
+  au lieu d'un indice base 100 unique pour tout le scénario, chaque logement (bol, piste...)
+  peut recevoir un temps de coupe et un temps de déplacement mesurés machine. Corrige
+  l'incohérence de l'indice global sur les scénarios mixtes (un seul logement change de
+  plaquette) — voir la discussion du 2026-09-02 : un ratio unique appliqué à tout le cycle
+  coupant mélange deux réalités différentes dès qu'un seul côté de l'outil change.
+  - Deux colonnes ajoutées à « Composition du scénario » quand le module est actif :
+    Temps coupe (s) / Temps déplacement (s), par logement.
+  - Le calcul détaillé ne remplace l'indice base 100 que si **tous** les logements du
+    scénario sont renseignés ; sinon retombée automatique et silencieuse sur l'indice,
+    signalée par un statut explicite sous le tableau (✓ complet / ⚠ incomplet, X/Y).
+  - Message permanent dans Options prévenant que ces temps sont un relevé terrain réel,
+    pas une estimation, et invitant à en discuter avant d'activer le module sur une
+    référence.
+- **Fiche outil (PDF ou image) par OP**, dans Options : illustre les n° d'outils et
+  trajectoires par logement, pour aider à la saisie des temps ci-dessus. Ouverture en
+  plein écran (image) ou nouvel onglet (PDF), retrait possible. Stockée avec l'OP,
+  voyage donc avec l'export/import JSON.
+
 ## [3.9.5] — 2026-09-02
 
 ### Corrigé
