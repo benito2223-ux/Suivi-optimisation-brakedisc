@@ -5,6 +5,59 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [3.5.0] — 2026-09-01
+
+Coût complet et pilotage du portefeuille d'optimisations. L'outil ne comparait que le prix
+des plaquettes : un scénario deux fois plus lent mais moins cher en outil ressortait gagnant
+alors qu'il pouvait être largement perdant. Tous les modules ci-dessous sont **désactivés par
+défaut** — rien ne change tant qu'on ne les active pas dans Options, et une fois activés ils
+prennent leur place de façon permanente.
+
+### Ajouté — chaîne économique
+- **Temps machine dans le coût pièce.** Le coût horaire de la ligne (saisi via l'icône ⚙ de
+  l'onglet de ligne, existant depuis la v3.2) est enfin utilisé : il convertit l'écart de temps
+  de cycle en euros. Sur les données OP10 actuelles, la céramique intégrale passe de « −93,4 % »
+  à **+25 % de coût réel**, soit une perte de l'ordre de 37 k€/an à 200 000 disques.
+- **Part réellement coupante du cycle (%).** L'indice de cycle vaut `100 × (Vc·f réf)/(Vc·f)` :
+  c'est un indice de *temps coupant*, pas de cycle complet. L'appliquer au cycle entier
+  surestimait la pénalité, puisque chargement, approche et retrait ne bougent pas avec Vc/f.
+  On ne fait donc varier que la part déclarée comme coupante.
+- **Pièces détachées par porte-outil** — cales, vis, corps d'outil, brides, chacune amortie sur
+  sa propre charnière de remplacement et ajoutée au coût pièce.
+- **Volume annuel de production**, réglé par référence disque : convertit chaque écart en €/an
+  et en heures machine/an, et affiche la **consommation annuelle de plaquettes** par logement.
+- **Décomposition du coût** — barre empilée + légende sous le chiffre de tête (plaquettes /
+  pièces détachées / temps machine / rebut). Un chiffre agrégé seul n'est pas défendable.
+- **Seuil de bascule** — « X s de cycle maximum pour rester gagnant », et le facteur à appliquer
+  aux charnières pour revenir à l'équilibre. Quand le temps machine dépasse à lui seul la
+  référence entière, l'outil le dit explicitement : aucune durée de vie ne compensera.
+
+### Ajouté — suivi et pilotage
+- **Charnière réellement atteinte**, calculée à partir des essais : dernier prélèvement conforme
+  avant sortie de tolérance, moyenné sur les essais. Affichée sous la charnière visée dans le
+  tableau plaquettes. Tant qu'aucun essai n'est sorti de tolérance, la valeur est présentée
+  comme une borne inférieure (`≥ 150`) — les essais s'arrêtent à la cible, on ne sait rien
+  au-delà. Dès qu'un essai lâche avant la cible, un encart signale l'écart et recalcule le coût
+  réel correspondant.
+- **Statut de vie d'un scénario** : à l'étude / en essai / validé / en série / abandonné, avec
+  motif obligatoire à l'abandon et date de décision automatique. « Validé » et « en série » ne
+  se confondent plus, et une impasse documentée évite qu'on la reparcoure deux ans plus tard.
+- **Tableau de bord multi-lignes** (menu `•••`) : toutes les lignes, références et OP du fichier
+  dans une seule vue — avancement des essais, coût pièce, écart, gain annuel, et en tête le
+  cumul du gain acquis (scénarios en série) vs à déployer (validés pas encore passés en série).
+
+### Changé
+- Dès que plusieurs postes de coût sont actifs, **le coût total devient le chiffre de tête**
+  partout : verdict, pied de scénario, liste des scénarios dans le rail, vue de synthèse et
+  rapport de validation. Le coût plaquette reste affiché, en sous-ligne. Objectif : que le rail
+  n'annonce jamais −46 % pendant que la fiche ouverte affiche +33 %.
+- Le **rapport de validation** envoyé au client reprend le coût complet, la répartition
+  plaquettes / temps machine et le gain annuel — c'est le document qui engage, il ne pouvait pas
+  continuer à ne chiffrer que l'outil.
+- La vue de synthèse ajoute une ligne « statut du scénario » et une ligne « gain annuel ».
+- Le pied de scénario passe en grille auto-adaptative : il accueille le nombre de cellules
+  correspondant aux modules actifs, sans mise en page figée à 4 ou 5 colonnes.
+
 ## [3.4.0] — 2026-08-30
 
 Rapport par essai + message de divergence explicite.

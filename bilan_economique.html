@@ -212,8 +212,10 @@ table.postable label{white-space:nowrap; overflow:hidden; text-overflow:ellipsis
 input.cell.sub{font-size:10.5px; color:var(--ink-faint);}
 .ref-sub-print{font-size:10.5px; color:var(--ink-faint); font-style:italic;}
 
-.scenario-foot{display:grid; grid-template-columns:repeat(4,1fr); gap:0; border-top:2px solid var(--border);}
-.scenario-foot.five{grid-template-columns:repeat(5,1fr);}
+/* auto-fit : le pied s'adapte au nombre de cellules (qui depend des modules actifs) */
+.scenario-foot{display:grid; grid-template-columns:repeat(auto-fit,minmax(185px,1fr)); gap:0; border-top:2px solid var(--border);}
+.foot-cell-wide{grid-column:span 2;}
+@media (max-width:760px){ .foot-cell-wide{grid-column:span 1;} }
 .foot-sub{font-family:var(--font-mono); font-size:11.5px; color:var(--ink-faint); margin-top:4px;}
 .foot-cell{padding:14px 16px; border-right:1px solid var(--border);}
 .foot-cell:last-child{border-right:none;}
@@ -489,6 +491,126 @@ select.log-equipe:focus{border-color:var(--blue); outline:none; background:var(-
 }
 .legend-btn:hover{background:var(--blue-bg); border-color:var(--blue);}
 .legend-btn:focus-visible{outline:2px solid var(--blue); outline-offset:2px;}
+
+/* ============================================================
+   Economie : decomposition du cout, seuil de bascule, pieces detachees,
+   statut de scenario, tableau de bord. Un seul chiffre agrege n'est pas
+   defendable — on montre toujours de quoi il est fait.
+   ============================================================ */
+
+/* --- decomposition du cout piece --- */
+.cout-breakdown{margin-top:10px;}
+.cb-bar{display:flex; height:7px; border-radius:99px; overflow:hidden; background:var(--surface-alt); margin-bottom:8px;}
+.cb-seg{display:block; height:100%;}
+.cb-plaq{background:var(--blue);}
+.cb-pieces{background:var(--teal-strong);}
+.cb-machine{background:var(--amber);}
+.cb-rebut{background:var(--red);}
+.cb-legend{display:flex; flex-wrap:wrap; gap:4px 14px;}
+.cb-item{display:inline-flex; align-items:center; gap:5px; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint); white-space:nowrap;}
+.cb-item b{font-weight:600; color:var(--ink-soft); font-variant-numeric:tabular-nums;}
+.cb-dot{width:7px; height:7px; border-radius:2px; flex:0 0 auto;}
+
+/* --- seuil de bascule : la question que pose toujours l'atelier --- */
+.seuil-strip{display:flex; align-items:flex-start; gap:14px; flex-wrap:wrap;
+  padding:12px 18px; background:var(--surface-alt); border-top:1px solid var(--border);}
+.seuil-lab{font-family:var(--font-mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-faint); padding-top:3px; flex:0 0 auto;}
+.seuil-items{display:flex; flex-wrap:wrap; gap:10px 22px; flex:1 1 auto;}
+.seuil-item{display:flex; flex-direction:column; font-size:13px; color:var(--ink-soft);
+  border-left:3px solid var(--border); padding-left:10px; max-width:330px;}
+.seuil-item b{font-family:var(--font-mono); font-weight:600; color:var(--ink); font-variant-numeric:tabular-nums;}
+.seuil-item em{font-style:normal; font-family:var(--font-mono); font-size:11px; color:var(--ink-faint); margin-top:2px;}
+.seuil-item.ok{border-left-color:var(--green);}
+.seuil-item.bad{border-left-color:var(--red);}
+.seuil-item.bad b{color:var(--red);}
+
+/* --- rappel de realite : la duree de vie promise n'a pas tenu --- */
+.note.reality-note{border-left-color:var(--amber);}
+.note.reality-note ul{margin:8px 0 0; padding-left:18px;}
+.note.reality-note li{margin:3px 0; line-height:1.5;}
+
+/* --- charniere reellement observee, sous la cible saisie --- */
+.charniere-reel{font-family:var(--font-mono); font-size:10px; margin-top:2px; white-space:nowrap; cursor:help;}
+.charniere-reel.ok{color:var(--ink-faint);}
+.charniere-reel.bad{color:var(--red); font-weight:600;}
+.charniere-reel span{opacity:.65;}
+
+/* --- consommation annuelle de plaquettes : la meme donnee, vue approvisionnement --- */
+.conso-strip{display:flex; align-items:flex-start; gap:14px; flex-wrap:wrap; margin-top:14px;
+  padding:11px 14px; background:var(--blue-bg); border-radius:var(--radius-lg);}
+.conso-lab{font-family:var(--font-mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--blue-dark); padding-top:3px; flex:0 0 auto;}
+.conso-items{display:flex; flex-wrap:wrap; gap:8px 20px; flex:1 1 auto;}
+.conso-item{display:flex; flex-direction:column; font-size:13px; color:var(--ink-soft);}
+.conso-item b{font-family:var(--font-mono); font-weight:600; font-size:14px; color:var(--blue-dark); font-variant-numeric:tabular-nums;}
+.conso-item em{font-style:normal; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint); margin-top:1px;}
+.conso-vol{font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint); padding-top:3px;}
+
+/* --- pieces detachees par porte-outil --- */
+.pieces-block{margin-top:18px; padding-top:16px; border-top:1px solid var(--border);}
+.pieces-titre{font-family:var(--font-mono); font-size:11px; letter-spacing:.11em; text-transform:uppercase;
+  color:var(--ink-faint); margin:0 0 2px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+.pieces-cumul{font-size:11px; letter-spacing:0; text-transform:none; color:var(--teal-strong); font-weight:600;}
+.pieces-outil{background:var(--surface-alt); border:1px solid var(--border); border-radius:var(--radius-lg);
+  padding:12px 14px; margin-bottom:10px;}
+.pieces-head{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:8px;}
+.pieces-outil-nom{font-family:var(--font-disp); font-weight:700; font-size:14px; color:var(--ink);}
+.pieces-total{font-family:var(--font-mono); font-size:11.5px; color:var(--teal-strong); font-weight:600;}
+.pieces-vide{font-size:12px; color:var(--ink-faint);}
+.pieces-table{min-width:520px;}
+.pieces-table th{font-size:10px;}
+
+/* --- statut de vie d'un scenario --- */
+.statut-wrap{display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap;}
+.statut-select{font-family:var(--font-mono); font-size:10.5px; font-weight:600; text-transform:uppercase;
+  letter-spacing:.04em; padding:4px 9px; border-radius:var(--radius-sm); border:1px solid var(--border);
+  background:var(--surface); color:var(--ink-soft); cursor:pointer;}
+.statut-select:focus{outline:none; border-color:var(--blue);}
+.statut-select.valide{border-color:var(--green); color:var(--green);}
+.statut-select.serie{background:var(--green); border-color:var(--green); color:#fff;}
+.statut-select.abandonne{border-color:var(--red); color:var(--red);}
+.statut-select.etude{border-color:var(--border); color:var(--ink-faint);}
+.statut-motif{font-family:var(--font-body); font-size:12px; padding:4px 9px; min-width:230px;
+  border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); color:var(--ink);}
+.statut-motif:focus{outline:none; border-color:var(--red);}
+.statut-pill{display:inline-flex; align-items:center; font-family:var(--font-mono); font-size:10px; font-weight:600;
+  text-transform:uppercase; letter-spacing:.04em; padding:2px 8px; border-radius:999px;
+  background:var(--surface-alt); color:var(--ink-soft); border:1px solid var(--border); white-space:nowrap;}
+.statut-pill.valide{background:var(--green-bg); color:var(--green); border-color:var(--green);}
+.statut-pill.serie{background:var(--green); color:#fff; border-color:var(--green);}
+.statut-pill.abandonne{background:var(--red-bg); color:var(--red); border-color:var(--red);}
+.statut-pill.essai{background:var(--amber-bg); color:var(--amber); border-color:var(--amber);}
+
+/* gain/perte annuels dans la liste des scenarios (couleurs lisibles aussi sur le rail sombre) */
+.tc-val.tc-gain{color:var(--green);}
+.tc-val.tc-perte{color:var(--red);}
+
+/* --- tableau de bord multi-lignes --- */
+.panel.panel-large{max-width:1120px;}
+.db-kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px; margin:16px 0 22px;}
+.db-kpi{background:var(--surface-alt); border:1px solid var(--border); border-radius:var(--radius-lg); padding:13px 15px;
+  display:flex; flex-direction:column; gap:5px;}
+.db-kpi .l{font-family:var(--font-mono); font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint);}
+.db-kpi .v{font-family:var(--font-disp); font-weight:800; font-size:26px; line-height:1; color:var(--blue); letter-spacing:-.02em;}
+.db-kpi-sub{font-family:var(--font-mono); font-size:10px; color:var(--ink-faint);}
+.db-kpi-gain{background:var(--surface); border-color:var(--blue);}
+.db-ligne{margin-bottom:26px;}
+.db-ligne-titre{font-family:var(--font-disp); font-weight:800; font-size:19px; color:var(--ink); margin:0 0 10px;
+  padding-bottom:7px; border-bottom:2px solid var(--blue); display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;}
+.db-ligne-info{font-family:var(--font-mono); font-size:11px; font-weight:400; color:var(--ink-faint); letter-spacing:0;}
+.db-op{margin-bottom:14px;}
+.db-op-head{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:6px;}
+.db-op-ref{font-family:var(--font-disp); font-weight:700; font-size:14px; color:var(--ink);}
+.db-op-nom{font-family:var(--font-mono); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--blue);}
+.db-op-vol{font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint); margin-left:auto;}
+.db-table{min-width:640px;}
+.db-table td{vertical-align:middle;}
+.db-sc-nom{font-weight:600; color:var(--ink);}
+.db-ref-tag{color:var(--blue); font-size:12px;}
+.db-motif{font-size:11.5px; color:var(--red); margin-top:2px;}
+.db-prog{font-family:var(--font-mono); font-size:11.5px; color:var(--ink-soft); display:block; margin-bottom:3px;}
+.db-table .progress-track{margin:0 0 0 auto; max-width:70px;}
 .dot{width:8px; height:8px; border-radius:2px; display:inline-block;}
 .dot.blue{background:var(--blue);}
 .dot.editable{border:1px solid var(--border); background:var(--surface);}
@@ -627,7 +749,7 @@ body.atelier-on{overflow:hidden;}
   .wrap{padding:20px 14px 70px;}
   .hd{gap:14px;}
   .hd-meta{text-align:left;}
-  .scenario-foot, .scenario-foot.five{grid-template-columns:repeat(2,1fr);}
+  .scenario-foot{grid-template-columns:repeat(2,1fr);}
   .foot-cell{border-right:none; border-bottom:1px solid var(--border);}
   .toolbar-actions{width:100%;}
   .toolbar-more{width:min(300px, calc(100vw - 28px));}
@@ -896,6 +1018,11 @@ html:not([data-layout="classic"]){
   .rail .tab-card.active .tc-name{color:#0f2740;}
   .rail .tc-label{color:rgba(255,255,255,.42);}
   .rail .tc-val{font-size:14px; color:#fff;}
+  /* sur fond navy, les verts/rouges de la charte sont trop sombres : on les eclaircit */
+  .rail .tc-val.tc-gain{color:#7fd6a3;}
+  .rail .tc-val.tc-perte{color:#f09aa7;}
+  .rail .tab-card.active .tc-val.tc-gain{color:var(--green);}
+  .rail .tab-card.active .tc-val.tc-perte{color:var(--red);}
   .rail .tab-card.active .tc-label{color:var(--ink-faint);}
   .rail .tab-card.active .tc-val{color:var(--ink);}
   .rail .tc-delta.neg{background:rgba(95,191,136,.16); color:#7fd6a3;}
@@ -982,6 +1109,7 @@ html:not([data-layout="classic"]){
           <p class="toolbar-more-hint">Un onglet par scénario, un essai par campagne menée jusqu'à la charnière, un prélèvement par disque contrôlé. La grandeur suivie et sa tolérance se règlent dans Options.</p>
           <button class="ghost" id="csvBtn" title="Tous les prélèvements en tableau, pour Excel ou le système qualité"><svg class="icon" viewBox="0 0 18 18"><rect x="2.5" y="2.5" width="13" height="13" rx="1.5"/><path d="M2.5 7h13M2.5 11.5h13M7 2.5v13"/></svg>Export CSV</button>
           <button class="ghost" id="syntheseBtn" title="Comparer tous les scénarios dans un tableau, et superposer leurs courbes de tendance"><svg class="icon" viewBox="0 0 18 18"><rect x="4" y="3" width="10" height="12" rx="1.5"/><path d="M6.5 7h5M6.5 10h5M6.5 13h3" stroke-linecap="round"/></svg>Vue de synthèse</button>
+          <button class="ghost" id="dashboardBtn" title="Toutes les lignes, références et OP : avancement des optimisations et gains cumulés"><svg class="icon" viewBox="0 0 18 18"><rect x="2.5" y="2.5" width="5.5" height="7" rx="1"/><rect x="10" y="2.5" width="5.5" height="4" rx="1"/><rect x="2.5" y="11.5" width="5.5" height="4" rx="1"/><rect x="10" y="8.5" width="5.5" height="7" rx="1"/></svg>Tableau de bord</button>
           <button class="ghost" id="backlogBtn" title="Noter une idée ou un problème rencontré sur l'outil"><svg class="icon" viewBox="0 0 18 18"><path d="M9 2.5a4.5 4.5 0 0 0-2.5 8.2c.4.3.6.7.6 1.2v.6h3.8v-.6c0-.5.2-.9.6-1.2A4.5 4.5 0 0 0 9 2.5Z" stroke-linejoin="round"/><path d="M7.2 15h3.6" stroke-linecap="round"/></svg>Suggestions</button>
           <button class="ghost" id="optionsBtn" title="Activer les modules de calcul complémentaires"><svg class="icon" viewBox="0 0 18 18"><path d="M2.5 5h8M13.5 5h2M2.5 13h2M7.5 13h8" stroke-linecap="round"/><circle cx="11.5" cy="5" r="1.6"/><circle cx="5.5" cy="13" r="1.6"/></svg>Options</button>
           <button class="ghost" id="pdfBtn"><svg class="icon" viewBox="0 0 18 18"><path d="M5 2.5h5l3 3V15a.8.8 0 0 1-.8.8H5.8a.8.8 0 0 1-.8-.8V2.5Z" stroke-linejoin="round"/><path d="M9 8v4.5M7 10.5 9 12.5 11 10.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Générer le PDF</button>
@@ -1036,10 +1164,45 @@ html:not([data-layout="classic"]){
         <em>Convertit l'indice base 100 en secondes réelles et en cadence pièces/heure.</em>
       </span>
     </label>
-    <div class="opt-field" id="optCycleSecField">
+
+    <label class="opt-row">
+      <input type="checkbox" id="optCoutMachine">
+      <span>
+        <b>Intégrer le temps machine au coût pièce</b>
+        <em>Convertit l'écart de temps de cycle en euros, avec le coût horaire de la ligne. Sans lui, un scénario moins cher en plaquettes mais plus lent paraît gagnant alors qu'il peut être perdant.</em>
+      </span>
+    </label>
+    <div class="opt-field" id="optCycleRefField">
       <label for="optCycleRefSec">Temps de cycle du scénario de référence (s)</label>
       <input type="number" step="0.1" min="0" id="optCycleRefSec" placeholder="ex. 42">
       <span class="opt-note">Mesuré machine sur le scénario marqué ★.</span>
+    </div>
+    <div class="opt-field" id="optCoutMachineField">
+      <label for="optPartCoupante">Part réellement coupante de ce cycle (%)</label>
+      <input type="number" step="5" min="0" max="100" id="optPartCoupante" placeholder="100">
+      <span class="opt-note">L'indice de cycle se calcule sur Vc·f : il ne décrit que le temps de coupe. Chargement, approche et retrait ne bougent pas quand Vc ou f changent — les compter comme s'ils ralentissaient aussi surestimerait la pénalité. À 100 %, tout le cycle est considéré comme coupant.</span>
+      <span class="opt-note" id="optCoutHoraireRappel"></span>
+    </div>
+
+    <label class="opt-row">
+      <input type="checkbox" id="optPieces">
+      <span>
+        <b>Pièces détachées par porte-outil</b>
+        <em>Cales, vis, corps d'outil, brides… amorties sur leur propre charnière de remplacement et ajoutées au coût pièce.</em>
+      </span>
+    </label>
+
+    <label class="opt-row">
+      <input type="checkbox" id="optVolume">
+      <span>
+        <b>Volume annuel de production</b>
+        <em>Convertit chaque écart en €/an et en heures machine/an, et donne la consommation annuelle de plaquettes par scénario.</em>
+      </span>
+    </label>
+    <div class="opt-field" id="optVolumeField">
+      <label for="optProductionAnnuelle">Disques / an pour cette référence</label>
+      <input type="number" step="1000" min="0" id="optProductionAnnuelle" placeholder="ex. 200000">
+      <span class="opt-note">Se règle par référence disque (partagé entre toutes ses OP), pas par scénario.</span>
     </div>
 
     <label class="opt-row">
@@ -1133,6 +1296,7 @@ html:not([data-layout="classic"]){
   <div class="panel backlog-wrap" id="backlogWrap" hidden></div>
   <div class="panel" id="historyPanel" hidden></div>
   <div class="panel" id="csvPanel" hidden></div>
+  <div class="panel panel-large" id="dashboardPanel" hidden></div>
   <div class="panel" id="ligneInfoPanel" hidden>
     <h3 id="ligneInfoTitle">Informations de ligne</h3>
     <div class="opt-field on" style="padding-left:0;">
@@ -1170,7 +1334,7 @@ html:not([data-layout="classic"]){
 </div>
 
 <script>
-const TOOL_VERSION = "3.4.0";
+const TOOL_VERSION = "3.5.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -1313,6 +1477,11 @@ const defaultConfig = {
   coutDisque: "",          // € perdus par disque rebuté (matière + valeur ajoutée)
   cycleSecActif: false,    // convertit l'indice de cycle en secondes réelles
   cycleRefSec: "",         // temps de cycle du scénario de référence, en secondes
+  coutMachineActif: false, // convertit l'ecart de temps de cycle en euros (coût horaire de la ligne)
+  partCoupante: 100,       // % du cycle de reference reellement en coupe (le reste — chargement,
+                           // approche, retrait — ne bouge pas quand Vc/f changent)
+  piecesActif: false,      // pieces detachees amorties par porte-outil
+  volumeActif: false,      // volume annuel de la reference -> gains en €/an
   forceRatioActif: false   // affiche Fr/Fa (effort radial/axial) : specifique a certaines references (bruts peu matures...), pas systematique
 };
 let migrationTolerance = true;
@@ -1406,7 +1575,8 @@ function normalizeReference(r){
     ops = [ normalizeOp({ id: "o"+Math.random().toString(36).slice(2), nom: "OP10", ordre: 10, config: r.config, scenarios: r.scenarios }) ];
   }
   ops.sort((a,b) => (a.ordre||0) - (b.ordre||0));
-  return { id: r.id || ("r"+Math.random().toString(36).slice(2)), nom: r.nom || "", ops };
+  return { id: r.id || ("r"+Math.random().toString(36).slice(2)), nom: r.nom || "",
+           productionAnnuelle: r.productionAnnuelle ?? "", ops };
 }
 function normalizeLigne(l){
   return Object.assign({ id: l.id || ("l"+Math.random().toString(36).slice(2)), nom:"", coutHoraire:"", observations:"", maintenanceDate:"", maintenanceType:"" }, l, {
@@ -1472,9 +1642,16 @@ function toleranceRequisePour(sc, row){
   const l = logementParId(sc, row.logementId);
   return !l || l.suiviTolerance !== false;
 }
+/* piece detachee d'un porte-outil (cale, vis, corps, bride...) : meme logique
+   d'amortissement qu'une plaquette, mais sur sa propre charniere de remplacement */
+function normalizePieceDetachee(p){
+  return Object.assign({ id: p.id || ("pd"+Math.random().toString(36).slice(2)),
+    nom:"", ref:"", prix:"", charniere:"" }, p);
+}
 function normalizeOutil(o){
   return Object.assign({ id: o.id || ("t"+Math.random().toString(36).slice(2)), numero:"" }, o, {
-    logements: (o.logements || []).map(normalizeLogement)
+    logements: (o.logements || []).map(normalizeLogement),
+    pieces: (o.pieces || []).map(normalizePieceDetachee)
   });
 }
 /* instantane des conditions de coupe de tous les logements, au moment de l'essai :
@@ -1495,7 +1672,10 @@ function refLogementEssai(sc, lp){
   return l ? l.ref : "";
 }
 function normalizeScenario(sc){
-  const merged = Object.assign({ emag1:false, limitOverride:false, limitLabel:"Battement (mm)", limitValue:0.12, validationThreshold:5, essais:[], scrapLog:[] }, sc);
+  // statut de vie : le scenario de reference est par definition ce qui tourne en serie,
+  // les autres sont en essai tant qu'on n'a pas tranche
+  const merged = Object.assign({ emag1:false, limitOverride:false, limitLabel:"Battement (mm)", limitValue:0.12, validationThreshold:5,
+    statut: sc.baseline ? "serie" : "essai", statutMotif:"", statutDate:"", essais:[], scrapLog:[] }, sc);
 
   if(Array.isArray(sc.outils)){
     merged.outils = sc.outils.map(normalizeOutil);
@@ -2030,9 +2210,16 @@ function rapportValidationHTML(sc){
   const cost = scenarioCost(sc);
   const base = baselineScenario();
   const baseCost = base ? scenarioCost(base) : null;
+  // le rapport part chez le client : le pourcentage annonce doit porter sur le meme
+  // perimetre que le cout mis en avant, sinon on promet un gain qui n'existe pas
+  const coutsRap = coutsDetail(sc);
+  const coutsRapBase = base ? coutsDetail(base) : null;
+  const refRap = coutsRap.multiPoste ? coutsRap.total : cost;
+  const refRapBase = coutsRap.multiPoste ? (coutsRapBase ? coutsRapBase.total : null) : baseCost;
+  const annuelRap = bilanAnnuel(sc);
   let deltaTxt = "référence";
-  if(!sc.baseline && baseCost !== null && cost !== null){
-    const d = ((cost - baseCost) / baseCost) * 100;
+  if(!sc.baseline && refRapBase !== null && refRap !== null){
+    const d = ((refRap - refRapBase) / refRapBase) * 100;
     deltaTxt = (d > 0 ? "+" : "") + fmt(d,1) + " % vs " + escapeAttr(base.name);
   }
   const essaisRows = (sc.essais || []).map(es => {
@@ -2094,8 +2281,9 @@ function rapportValidationHTML(sc){
 
   <h2>Résumé économique</h2>
   <div class="kpi">
-    <div><div class="l">Coût outil / pièce</div><div class="v">${cost === null ? "—" : fmt(cost,4) + " €"}</div><div style="font-size:11px; color:#7c837c;">${deltaTxt}</div></div>
-    ${config.coutRebutActif ? `<div><div class="l">Coût total / pièce</div><div class="v">${coutTotalPiece(sc) === null ? "—" : fmt(coutTotalPiece(sc),4) + " €"}</div></div>` : ""}
+    <div><div class="l">${coutsRap.multiPoste ? "Coût total / pièce" : "Coût outil / pièce"}</div><div class="v">${refRap === null ? "—" : fmt(refRap,4) + " €"}</div><div style="font-size:11px; color:#7c837c;">${deltaTxt}</div></div>
+    ${coutsRap.multiPoste ? `<div><div class="l">Dont plaquettes / temps machine</div><div class="v" style="font-size:14px;">${coutsRap.plaquettes === null ? "—" : fmt(coutsRap.plaquettes,4)} € / ${coutsRap.machine === null ? "—" : fmt(coutsRap.machine,4)} €</div></div>` : ""}
+    ${annuelRap && annuelRap.gainAnnuel !== undefined ? `<div><div class="l">${annuelRap.gainAnnuel >= 0 ? "Gain annuel" : "Perte annuelle"}</div><div class="v" style="color:${annuelRap.gainAnnuel >= 0 ? "#1a7a3f" : "#b8001a"};">${(annuelRap.gainAnnuel>=0?"+":"−") + fmtEuroCourt(Math.abs(annuelRap.gainAnnuel))}</div><div style="font-size:11px; color:#7c837c;">sur ${fmt(annuelRap.volume,0)} disques/an</div></div>` : ""}
     <div><div class="l">Temps de cycle (indice 100)</div><div class="v">${sc.cycle === "" || sc.cycle == null ? "—" : fmt(parseFloat(sc.cycle),0)}</div></div>
     <div><div class="l">Taux de rebut ligne</div><div class="v">${scrap.rate === null ? "—" : fmt(scrap.rate,1) + " %"}</div></div>
     <div><div class="l">Essais conformes</div><div class="v">${stats.validCount} / ${sc.validationThreshold || "—"}</div></div>
@@ -2340,6 +2528,15 @@ function fmt(n, dec){
   if(n === null || n === undefined || isNaN(n)) return "—";
   return n.toLocaleString("fr-FR", {minimumFractionDigits:dec, maximumFractionDigits:dec});
 }
+/* montants annuels : on parle en k€ des qu'on depasse le millier, personne ne lit
+   "127 340,88 €" dans une carte */
+function fmtEuroCourt(n){
+  if(n === null || n === undefined || isNaN(n)) return "—";
+  const abs = Math.abs(n);
+  if(abs >= 1000000) return fmt(n/1000000, 2) + " M€";
+  if(abs >= 1000) return fmt(n/1000, abs >= 100000 ? 0 : 1) + " k€";
+  return fmt(n, 0) + " €";
+}
 function fmtBatt(v){
   const n = parseFloat(v);
   return (v === "" || v === null || v === undefined || isNaN(n)) ? "—" : fmt(n,3);
@@ -2575,6 +2772,15 @@ function verdictHTML(sc){
   const charn = l => { const v = parseFloat(l && l.charniere); return isNaN(v) ? null : v; };
   const vieSc = charn(logementCycle(sc)), vieBase = base ? charn(logementCycle(base)) : null;
 
+  // des que plusieurs postes de cout sont actifs, c'est le cout complet qui fait foi :
+  // annoncer -93 % sur les seules plaquettes quand le temps machine double serait faux
+  const couts = coutsDetail(sc);
+  const coutsBase = base ? coutsDetail(base) : null;
+  const complet = couts.multiPoste;
+  const refCout = complet ? couts.total : cost;
+  const refBase = complet ? (coutsBase ? coutsBase.total : null) : baseCost;
+  const annuel = bilanAnnuel(sc);
+
   const chips = [];
   let titre, sousTitre, classe;
 
@@ -2582,10 +2788,11 @@ function verdictHTML(sc){
     classe = "ref";
     titre = "Référence de production";
     sousTitre = "Base 100 — tous les autres scénarios se comparent à celui-ci.";
-    if(cost !== null) chips.push({ l:"Coût outil / pièce", v: fmt(cost,4) + " €" });
+    if(refCout !== null) chips.push({ l: complet ? "Coût total / pièce" : "Coût outil / pièce", v: fmt(refCout,4) + " €" });
     if(vieSc !== null) chips.push({ l:"Durée de vie", v: vieSc + " p/arête" });
+    if(annuel && annuel.coutAnnuel !== null) chips.push({ l:"Coût annuel", v: fmtEuroCourt(annuel.coutAnnuel) });
   } else {
-    const dCost = (cost !== null && baseCost) ? ((cost - baseCost) / baseCost) * 100 : null;
+    const dCost = (refCout !== null && refBase) ? ((refCout - refBase) / refBase) * 100 : null;
     const rVie  = (vieSc !== null && vieBase) ? vieSc / vieBase : null;
     const gain = dCost !== null && dCost < 0;
 
@@ -2594,8 +2801,11 @@ function verdictHTML(sc){
       titre = "Renseignez prix, arêtes et charnière";
       sousTitre = "Le gain se calcule dès que les plaquettes sont décrites.";
     } else {
-      titre = (gain ? "−" : "+") + fmt(Math.abs(dCost),1) + " % de coût outil par pièce";
+      titre = (gain ? "−" : "+") + fmt(Math.abs(dCost),1) + " % de coût par pièce" + (complet ? " (tout compris)" : " outil");
       const bouts = [];
+      if(annuel && annuel.gainAnnuel !== undefined){
+        bouts.push((annuel.gainAnnuel >= 0 ? "" : "perte de ") + fmtEuroCourt(Math.abs(annuel.gainAnnuel)) + "/an");
+      }
       if(rVie !== null && rVie !== 1) bouts.push(fmt(rVie,1).replace(",0","") + "× la durée de vie d'arête");
       bouts.push(stats.validated
         ? "validé sur " + stats.validCount + " essai" + (stats.validCount>1?"s":"")
@@ -2604,8 +2814,10 @@ function verdictHTML(sc){
           : "validation en cours (" + stats.validCount + "/" + (sc.validationThreshold||"—") + ")");
       sousTitre = bouts.join(" · ") + " — vs " + escapeAttr(base.name);
     }
-    if(cost !== null) chips.push({ l:"Coût / pièce", v: fmt(cost,4) + " €" });
+    if(refCout !== null) chips.push({ l: complet ? "Coût total / pièce" : "Coût / pièce", v: fmt(refCout,4) + " €" });
+    if(complet && couts.machine !== null) chips.push({ l:"dont temps machine", v: fmt(couts.machine,4) + " €" });
     if(vieSc !== null) chips.push({ l:"Durée de vie", v: vieSc + " p/arête" });
+    if(annuel && annuel.gainAnnuel !== undefined) chips.push({ l: annuel.gainAnnuel >= 0 ? "Gain annuel" : "Perte annuelle", v: fmtEuroCourt(Math.abs(annuel.gainAnnuel)) });
     if(stats.rate !== null) chips.push({ l:"Hors tolérance", v: fmt(stats.rate,0) + " %" });
   }
 
@@ -2795,29 +3007,236 @@ function scrapStats(sc){
 }
 
 /* ---- modules optionnels ---- */
-function coutRebutPiece(sc){
-  if(!config.coutRebutActif) return null;
-  const cd = parseFloat(config.coutDisque);
+function coutRebutPiece(sc, cfg){
+  cfg = cfg || config;
+  if(!cfg.coutRebutActif) return null;
+  const cd = parseFloat(cfg.coutDisque);
   const taux = scrapStats(sc).rate;
   if(isNaN(cd) || taux === null) return null;
   return (taux/100) * cd;
 }
-function coutTotalPiece(sc){
-  const outil = scenarioCost(sc);
-  const rebut = coutRebutPiece(sc);
-  if(outil === null && rebut === null) return null;
-  return (outil||0) + (rebut||0);
+
+/* ---- pieces detachees : amorties comme une plaquette, mais sur leur propre charniere
+   de remplacement, et rattachees au porte-outil (un scenario = un montage) ---- */
+function pieceCost(p){
+  const prix = parseFloat(p.prix), ch = parseFloat(p.charniere);
+  if(!prix || !ch) return null;
+  return prix / ch;
 }
-function cycleSecondes(sc){
-  if(!config.cycleSecActif) return null;
-  const ref = parseFloat(config.cycleRefSec);
+function coutPiecesDetachees(sc, cfg){
+  cfg = cfg || config;
+  if(!cfg.piecesActif) return null;
+  const costs = (sc.outils||[]).flatMap(o => (o.pieces||[]).map(pieceCost)).filter(v => v !== null);
+  if(!costs.length) return null;
+  return costs.reduce((a,b) => a+b, 0);
+}
+
+/* ---- temps de cycle reel ----
+   L'indice vaut 100 x (Vc.f reference)/(Vc.f) : c'est un indice de TEMPS COUPANT, pas de
+   cycle complet. L'appliquer au cycle entier surestime la penalite, puisque chargement,
+   approche et retrait ne bougent pas avec Vc/f. On ne fait donc varier que la part
+   coupante declaree. */
+function cycleSecondes(sc, cfg){
+  cfg = cfg || config;
+  const ref = parseFloat(cfg.cycleRefSec);
   const idx = parseFloat(sc.cycle);
   if(isNaN(ref) || isNaN(idx)) return null;
-  return ref * (idx/100);
+  let part = parseFloat(cfg.partCoupante);
+  if(isNaN(part)) part = 100;
+  part = Math.min(100, Math.max(0, part)) / 100;
+  return (ref * part) * (idx/100) + ref * (1 - part);
 }
-function cadenceHeure(sc){
-  const s = cycleSecondes(sc);
+function cadenceHeure(sc, cfg){
+  const s = cycleSecondes(sc, cfg);
   return (s && s > 0) ? 3600/s : null;
+}
+/* le temps machine devient un cout : c'est ce qui rend comparables un scenario moins cher
+   en plaquettes mais plus lent, et un scenario rapide mais gourmand en outil */
+function coutMachinePiece(sc, cfg, ligne){
+  cfg = cfg || config;
+  if(!cfg.coutMachineActif) return null;
+  const l = ligne || getActiveLigne();
+  const taux = l ? parseFloat(l.coutHoraire) : NaN;
+  const s = cycleSecondes(sc, cfg);
+  if(isNaN(taux) || s === null) return null;
+  return (taux/3600) * s;
+}
+
+/* ---- cout complet, composante par composante ----
+   Un seul point de verite : tout l'affichage economique passe par ici. */
+function coutsDetail(sc, cfg, ligne){
+  cfg = cfg || config;
+  const plaquettes = scenarioCost(sc);
+  const pieces = coutPiecesDetachees(sc, cfg);
+  const machine = coutMachinePiece(sc, cfg, ligne);
+  const rebut = coutRebutPiece(sc, cfg);
+  const parts = [plaquettes, pieces, machine, rebut];
+  const total = parts.some(v => v !== null) ? parts.reduce((a,b) => a + (b||0), 0) : null;
+  return { plaquettes, pieces, machine, rebut, total,
+           multiPoste: parts.filter(v => v !== null).length > 1 };
+}
+function coutTotalPiece(sc, cfg, ligne){
+  return coutsDetail(sc, cfg, ligne).total;
+}
+
+/* ---- charniere reellement atteinte ----
+   On ne peut affirmer qu'une duree de vie a ete tenue que jusqu'au dernier prelevement
+   conforme precedant une sortie de tolerance. Si aucun essai n'est sorti de tolerance,
+   la valeur est une BORNE INFERIEURE : l'essai s'arrete a la charniere visee, on ne sait
+   rien de ce qui se serait passe au-dela. */
+function charniereReelle(sc, logementId){
+  const atteintes = [];
+  let borneInf = true;
+  (sc.essais || []).forEach(es => {
+    const prels = (es.prelevements || [])
+      .filter(r => !logementId || !r.logementId || r.logementId === logementId)
+      .slice()
+      .sort((a,b) => (parseFloat(a.piece)||0) - (parseFloat(b.piece)||0));
+    if(!prels.length) return;
+    let derniereConforme = null, echec = false;
+    for(const r of prels){
+      if(checkConform(sc, r) === false){ echec = true; break; }
+      const p = parseFloat(r.piece);
+      if(!isNaN(p)) derniereConforme = p;
+    }
+    // sortie de tolerance des le premier prelevement : la duree de vie observee est nulle,
+    // il faut le voir plutot que d'ignorer l'essai en silence
+    if(derniereConforme !== null || echec){
+      atteintes.push(derniereConforme ?? 0);
+      if(echec) borneInf = false;
+    }
+  });
+  if(!atteintes.length) return null;
+  return { moyenne: atteintes.reduce((a,b)=>a+b,0) / atteintes.length,
+           essais: atteintes.length, borneInf, min: Math.min(...atteintes) };
+}
+/* logements dont la duree de vie observee est retombee sous la charniere visee :
+   c'est la que le business case se fissure, il faut le voir tout de suite */
+function ecartsCharniere(sc){
+  const out = [];
+  (sc.outils||[]).forEach(o => o.logements.forEach(l => {
+    const cible = parseFloat(l.charniere);
+    const reel = charniereReelle(sc, l.id);
+    if(isNaN(cible) || !reel || reel.borneInf) return;
+    if(reel.moyenne < cible - 0.5){
+      const prix = parseFloat(l.prix), aretes = parseFloat(l.aretes);
+      out.push({ outilNumero: o.numero, logementNom: l.nom, cible, reel: reel.moyenne, essais: reel.essais,
+        coutReel: (prix && aretes && reel.moyenne) ? prix/(aretes*reel.moyenne) : null,
+        coutCible: (prix && aretes && cible) ? prix/(aretes*cible) : null });
+    }
+  }));
+  return out;
+}
+
+/* ---- volume annuel : convertit chaque ecart en euros et en heures machine ---- */
+function volumeAnnuel(ref, cfg){
+  cfg = cfg || config;
+  if(!cfg.volumeActif) return null;
+  const r = ref || getActiveReference();
+  const v = r ? parseFloat(r.productionAnnuelle) : NaN;
+  return (isNaN(v) || v <= 0) ? null : v;
+}
+/* consommation annuelle de plaquettes d'un logement : le carnet de commandes, en clair */
+function plaquettesParAn(l, volume){
+  const a = parseFloat(l.aretes), c = parseFloat(l.charniere);
+  if(!volume || !a || !c) return null;
+  return volume / (a * c);
+}
+function bilanAnnuel(sc, cfg, ligne, ref){
+  cfg = cfg || config;
+  const volume = volumeAnnuel(ref, cfg);
+  if(!volume) return null;
+  const base = baselineScenario();
+  const cSc = coutsDetail(sc, cfg, ligne);
+  const out = { volume, coutAnnuel: cSc.total === null ? null : cSc.total * volume };
+  if(base && base.id !== sc.id){
+    const cBase = coutsDetail(base, cfg, ligne);
+    if(cBase.total !== null && cSc.total !== null) out.gainAnnuel = (cBase.total - cSc.total) * volume;
+    const sBase = cycleSecondes(base, cfg), sSc = cycleSecondes(sc, cfg);
+    if(sBase !== null && sSc !== null) out.heuresAnnuelles = ((sSc - sBase) * volume) / 3600;
+  }
+  out.plaquettes = (sc.outils||[]).flatMap(o => o.logements.map(l => ({
+    outilNumero: o.numero, logementNom: l.nom, ref: l.ref, nb: plaquettesParAn(l, volume)
+  }))).filter(p => p.nb !== null);
+  return out;
+}
+
+/* ---- seuil de bascule : le point ou le scenario cesse d'etre gagnant ----
+   C'est la question que pose toujours l'atelier : "jusqu'ou je peux ralentir avant que
+   ca ne vaille plus le coup ?" */
+function seuilBascule(sc, cfg, ligne){
+  cfg = cfg || config;
+  const base = baselineScenario();
+  if(!base || base.id === sc.id) return null;
+  const cBase = coutsDetail(base, cfg, ligne), cSc = coutsDetail(sc, cfg, ligne);
+  if(cBase.total === null || cSc.total === null) return null;
+  const res = { gain: cBase.total - cSc.total };
+  const l = ligne || getActiveLigne();
+  const taux = l ? parseFloat(l.coutHoraire) : NaN;
+  if(cfg.coutMachineActif && !isNaN(taux) && taux > 0){
+    const autres = (cSc.plaquettes||0) + (cSc.pieces||0) + (cSc.rebut||0);
+    const marge = cBase.total - autres;
+    res.cycleMaxSec = marge > 0 ? (marge * 3600 / taux) : 0;
+    res.cycleActuelSec = cycleSecondes(sc, cfg);
+  }
+  const reste = (cSc.pieces||0) + (cSc.machine||0) + (cSc.rebut||0);
+  const marge2 = cBase.total - reste, outil = cSc.plaquettes || 0;
+  // facteur a appliquer aux charnieres pour revenir a l'equilibre (n'a de sens que si on perd)
+  res.facteurCharniere = (res.gain < 0 && marge2 > 0 && outil > 0) ? (outil / marge2) : null;
+  // cas frequent et decisif : hors plaquettes, le scenario coute deja plus cher que la
+  // reference entiere — aucune duree de vie d'arete ne peut rattraper ca
+  res.charniereImpossible = res.gain < 0 && marge2 <= 0;
+  return res;
+}
+
+/* ---- rendu des blocs economiques ---- */
+const COUT_POSTES = [
+  { key:"plaquettes", label:"Plaquettes",       cls:"cb-plaq" },
+  { key:"pieces",     label:"Pièces détachées", cls:"cb-pieces" },
+  { key:"machine",    label:"Temps machine",    cls:"cb-machine" },
+  { key:"rebut",      label:"Rebut",            cls:"cb-rebut" }
+];
+/* un chiffre agrege seul n'est pas defendable : on montre ou part l'argent */
+function coutBreakdownHTML(couts){
+  if(!couts.multiPoste || !couts.total) return "";
+  const postes = COUT_POSTES.filter(p => couts[p.key] !== null && couts[p.key] > 0);
+  if(postes.length < 2) return "";
+  const segs = postes.map(p =>
+    `<span class="cb-seg ${p.cls}" style="width:${(couts[p.key]/couts.total*100).toFixed(2)}%;" title="${p.label} : ${fmt(couts[p.key],4)} €/pièce"></span>`).join("");
+  const legende = postes.map(p =>
+    `<span class="cb-item"><i class="cb-dot ${p.cls}"></i>${p.label} <b>${fmt(couts[p.key],4)}</b></span>`).join("");
+  return `<div class="cout-breakdown"><div class="cb-bar">${segs}</div><div class="cb-legend">${legende}</div></div>`;
+}
+/* "jusqu'ou je peux ralentir avant que ca ne vaille plus le coup ?" */
+function seuilBasculeHTML(sc){
+  const s = seuilBascule(sc);
+  if(!s) return "";
+  const bits = [];
+  if(s.cycleMaxSec !== undefined && s.cycleActuelSec !== null && s.cycleActuelSec !== undefined){
+    const ok = s.cycleActuelSec <= s.cycleMaxSec;
+    bits.push(`<span class="seuil-item ${ok ? "ok" : "bad"}">
+      <b>${fmt(s.cycleMaxSec,1)} s</b> de cycle maximum pour rester gagnant
+      <em>actuellement ${fmt(s.cycleActuelSec,1)} s — ${ok ? "marge de " + fmt(s.cycleMaxSec - s.cycleActuelSec,1) + " s" : "dépassé de " + fmt(s.cycleActuelSec - s.cycleMaxSec,1) + " s"}</em>
+    </span>`);
+  }
+  if(s.facteurCharniere){
+    bits.push(`<span class="seuil-item bad"><b>×${fmt(s.facteurCharniere,2)}</b> sur les charnières pour revenir à l'équilibre<em>à conditions de coupe inchangées</em></span>`);
+  } else if(s.charniereImpossible){
+    bits.push(`<span class="seuil-item bad"><b>Aucune durée de vie ne compense</b><em>hors plaquettes, ce scénario dépasse déjà la référence : le levier n'est pas l'outil</em></span>`);
+  }
+  if(!bits.length) return "";
+  return `<div class="seuil-strip"><span class="seuil-lab">Seuil de bascule</span><div class="seuil-items">${bits.join("")}</div></div>`;
+}
+/* la ou le business case se fissure : la duree de vie promise n'a pas tenu */
+function ecartsCharniereHTML(sc){
+  const ecarts = ecartsCharniere(sc);
+  if(!ecarts.length) return "";
+  const items = ecarts.map(e => `<li><b>${escapeAttr(e.outilNumero||"—")} · ${escapeAttr(e.logementNom||"—")}</b> — visée ${fmt(e.cible,0)} p/arête, observée <b>${fmt(e.reel,0)}</b> sur ${e.essais} essai${e.essais>1?"s":""}${
+    e.coutReel !== null ? ` → coût réel <b>${fmt(e.coutReel,4)} €</b> au lieu de ${fmt(e.coutCible,4)} €` : ""}</li>`).join("");
+  return `<div class="note reality-note">
+    <b>Durée de vie observée sous la cible</b> — un ou plusieurs logements sont sortis de tolérance avant la charnière visée. Le coût affiché plus haut reste calculé sur la charnière visée : c'est l'objectif, pas encore le constat.
+    <ul>${items}</ul>
+  </div>`;
 }
 
 function escapeAttr(s){
@@ -3107,7 +3526,23 @@ function syntheseTableHTML(){
       sc, stats, scrap,
       statut: stats.validated ? "✓ Validé" : `${stats.validCount}/${sc.validationThreshold || "—"} essais`,
       coutOutil: cost === null ? "—" : fmt(cost,4) + " € (" + deltaCost + ")",
-      coutTotal: config.coutRebutActif ? (coutTotalPiece(sc) === null ? "—" : fmt(coutTotalPiece(sc),4) + " €") : null,
+      coutTotal: (() => {
+        const c = coutsDetail(sc);
+        if(!c.multiPoste) return null;
+        const cb = base ? coutsDetail(base) : null;
+        let d = "réf.";
+        if(!sc.baseline && cb && cb.total && c.total !== null){
+          const p = ((c.total - cb.total) / cb.total) * 100;
+          d = (p > 0 ? "+" : "") + fmt(p,1) + " %";
+        }
+        return c.total === null ? "—" : fmt(c.total,4) + " € (" + d + ")";
+      })(),
+      gainAnnuel: (() => {
+        const a = bilanAnnuel(sc);
+        if(!a) return null;
+        if(a.gainAnnuel === undefined) return a.coutAnnuel === null ? "—" : fmtEuroCourt(a.coutAnnuel) + " / an";
+        return ((a.gainAnnuel>=0?"+":"−") + fmtEuroCourt(Math.abs(a.gainAnnuel))) + " / an";
+      })(),
       parArete: fmt(scenarioCostPerEdge(sc), 3) + " €",
       outils: nbOutils ? `${nbOutils} outil${nbOutils>1?"s":""} / ${nbLogements} logement${nbLogements>1?"s":""}` : "—",
       vcf: logCycle && (logCycle.vc || logCycle.f) ? `${logCycle.vc || "—"} / ${logCycle.f || "—"}` : "—",
@@ -3127,8 +3562,10 @@ function syntheseTableHTML(){
 
   const body = [
     row("Statut de validation", c => c.statut),
-    row("Coût outil / pièce", c => c.coutOutil),
-    ...(config.coutRebutActif ? [row("Coût total / pièce (outil + rebut)", c => c.coutTotal)] : []),
+    row("Statut du scénario", c => `<span class="statut-pill ${c.sc.statut||"essai"}">${statutLabel(c.sc.statut)}</span>`),
+    ...(cols.some(c => c.coutTotal !== null) ? [row("Coût total / pièce (tous postes)", c => c.coutTotal ?? "—")] : []),
+    row("dont coût outil / pièce", c => c.coutOutil),
+    ...(cols.some(c => c.gainAnnuel !== null) ? [row("Gain annuel", c => c.gainAnnuel ?? "—")] : []),
     row("€ / arête (tous logements)", c => c.parArete),
     row("Outils / logements", c => c.outils),
     row("Vc / f (logement de référence cycle)", c => c.vcf),
@@ -3170,18 +3607,26 @@ function renderTabs(){
     const cost = scenarioCost(sc);
     const stats = scenarioStats(sc);
     const scrap = scrapStats(sc);
+    // la liste des scenarios doit annoncer le meme chiffre que la fiche : sinon le rail
+    // dit -46 % pendant que le scenario ouvert affiche +33 %
+    const couts = coutsDetail(sc);
+    const coutsBase = base ? coutsDetail(base) : null;
+    const cRef = couts.multiPoste ? couts.total : cost;
+    const cRefBase = couts.multiPoste ? (coutsBase ? coutsBase.total : null) : baseCost;
     let deltaHtml = `<span class="tc-delta zero">réf.</span>`;
-    if(!sc.baseline && baseCost !== null && cost !== null){
-      const d = ((cost - baseCost) / baseCost) * 100;
+    if(!sc.baseline && cRefBase !== null && cRefBase && cRef !== null){
+      const d = ((cRef - cRefBase) / cRefBase) * 100;
       const cls = d > 0.05 ? "pos" : d < -0.05 ? "neg" : "zero";
       deltaHtml = `<span class="tc-delta ${cls}">${d>0?"+":""}${fmt(d,1)} %</span>`;
     }
+    const an = bilanAnnuel(sc);
     return `
       <button class="tab-card ${sc.id === activeId ? "active" : ""} ${sc.baseline ? "is-baseline" : ""}" data-tab="${sc.id}">
         <span class="tc-name">${escapeAttr(sc.name)}${sc.baseline ? " ★" : ""}</span>
         <span class="status-badge ${stats.validated ? "ok" : "pending"}">${stats.validated ? "✓ Validé" : `${stats.validCount}/${sc.validationThreshold || "—"} essais conformes`}</span>
-        <span class="tc-row"><span class="tc-label">${config.coutRebutActif ? "€/pièce outil" : "€/pièce"}</span><span class="tc-val">${cost === null ? "—" : fmt(cost,4)}</span>${deltaHtml}</span>
-        ${config.coutRebutActif ? `<span class="tc-row"><span class="tc-label">€/pièce total</span><span class="tc-val">${coutTotalPiece(sc) === null ? "—" : fmt(coutTotalPiece(sc),4)}</span></span>` : ""}
+        <span class="tc-row"><span class="tc-label">${couts.multiPoste ? "€/pièce total" : "€/pièce"}</span><span class="tc-val">${cRef === null ? "—" : fmt(cRef,4)}</span>${deltaHtml}</span>
+        ${couts.multiPoste ? `<span class="tc-row"><span class="tc-label">dont plaquettes</span><span class="tc-val">${couts.plaquettes === null ? "—" : fmt(couts.plaquettes,4)}</span></span>` : ""}
+        ${an && an.gainAnnuel !== undefined ? `<span class="tc-row"><span class="tc-label">${an.gainAnnuel>=0?"Gain/an":"Perte/an"}</span><span class="tc-val ${an.gainAnnuel>=0?"tc-gain":"tc-perte"}">${(an.gainAnnuel>=0?"+":"−")+fmtEuroCourt(Math.abs(an.gainAnnuel))}</span></span>` : ""}
         <span class="tc-row"><span class="tc-label">Temps cycle</span><span class="tc-val">${sc.cycle === "" || sc.cycle == null ? "—" : fmt(parseFloat(sc.cycle),0)}${config.cycleSecActif && cycleSecondes(sc) !== null ? " · " + fmt(cycleSecondes(sc),1) + " s" : ""}</span></span>
         <span class="tc-row"><span class="tc-label">Essais</span><span class="tc-val">${stats.essaisCount}${stats.badCount ? ` — ${stats.badCount} non conforme${stats.badCount>1?"s":""}` : ""}</span></span>
         <span class="tc-row"><span class="tc-label">Rebut ligne (équipe)</span><span class="tc-val">${scrap.rate === null ? "—" : fmt(scrap.rate,1)+" %"}</span></span>
@@ -3193,6 +3638,30 @@ function renderTabs(){
   });
 }
 
+/* ---- statut de vie d'un scenario ----
+   "valide" = techniquement conforme, "serie" = reellement passe en production. Les deux
+   ne se confondent pas, et un scenario abandonne garde son motif : c'est ce qui evite de
+   refaire deux ans plus tard une impasse deja explorée. */
+const STATUTS = [
+  { v:"etude",     label:"À l'étude" },
+  { v:"essai",     label:"En essai" },
+  { v:"valide",    label:"Validé" },
+  { v:"serie",     label:"En série" },
+  { v:"abandonne", label:"Abandonné" }
+];
+function statutLabel(v){
+  const s = STATUTS.find(x => x.v === (v || "essai"));
+  return s ? s.label : "En essai";
+}
+function statutSelectHTML(sc){
+  const cur = sc.statut || "essai";
+  const opts = STATUTS.map(s => `<option value="${s.v}" ${cur === s.v ? "selected" : ""}>${s.label}</option>`).join("");
+  return `<span class="statut-wrap">
+    <select class="statut-select ${cur}" data-id="${sc.id}" data-field="statut">${opts}</select>
+    ${cur === "abandonne" ? `<input class="statut-motif" data-id="${sc.id}" data-field="statutMotif" value="${escapeAttr(sc.statutMotif)}" placeholder="Motif de l'abandon (usure, battement, cadence…)">` : ""}
+  </span>`;
+}
+
 /* ---- shared markup for one scenario (interactive on screen, static for print) ---- */
 function scenarioBlockHTML(sc, interactive){
   const stats = scenarioStats(sc);
@@ -3200,11 +3669,12 @@ function scenarioBlockHTML(sc, interactive){
   const head = interactive ? `
       <input class="sc-name" data-id="${sc.id}" data-field="name" value="${escapeAttr(sc.name)}">
       <span class="baseline-pill ${sc.baseline ? "active" : ""}" data-id="${sc.id}" data-action="baseline">${sc.baseline ? "★ Référence" : "Définir référence"}</span>
+      ${statutSelectHTML(sc)}
       <div class="sc-actions">
         <button data-id="${sc.id}" data-action="duplicate">Dupliquer</button>
         <button data-id="${sc.id}" data-action="delete" ${data.length <= 1 ? "disabled" : ""}>Supprimer</button>
       </div>
-  ` : `<span class="sc-name-print">${escapeAttr(sc.name)}${sc.baseline ? " — Référence" : ""}</span>`;
+  ` : `<span class="sc-name-print">${escapeAttr(sc.name)}${sc.baseline ? " — Référence" : ""}</span><span class="statut-pill ${sc.statut||"essai"}">${statutLabel(sc.statut)}</span>`;
 
   // rayon de bec / ap ne servent qu'a l'affinage Fr·Fa (module optionnel, rarement actif — voir
   // Options) : les masquer par defaut allege le tableau de 2 colonnes sur 14. κr, lui, reste
@@ -3261,6 +3731,8 @@ function scenarioBlockHTML(sc, interactive){
     </div>
     ${interactive ? `<button class="ghost outil-add" data-id="${sc.id}" style="margin-top:8px;">+ Ajouter un outil</button>` : ""}
     ${!showFrFa ? `<p class="panel-hint" style="margin:6px 2px 0;">Rayon de bec et ap (affinage Fr·Fa) sont masqués — activez le module Fr·Fa dans <b>Options</b> si votre référence en a besoin.</p>` : ""}
+    ${consommationAnnuelleHTML(sc)}
+    ${piecesDetacheesHTML(sc, interactive)}
   `;
 
   const cost = scenarioCost(sc);
@@ -3289,23 +3761,45 @@ function scenarioBlockHTML(sc, interactive){
   const cycleSecLine = config.cycleSecActif
     ? `<div class="foot-sub">${secs === null ? "—" : fmt(secs,1)+" s"}${cadence ? " · " + fmt(cadence,0) + " p/h" : ""}</div>` : "";
 
-  const cRebut = coutRebutPiece(sc);
-  const cTotal = coutTotalPiece(sc);
-  const coutRebutCell = config.coutRebutActif ? `
-      <div class="foot-cell">
-        <div class="l">Coût total / pièce (outil + rebut)</div>
-        <div class="v">${cTotal === null ? "—" : fmt(cTotal,4)}<small>€</small></div>
-        <div class="foot-sub">${cRebut === null ? "rebut non chiffré — renseignez le suivi équipe" : "dont rebut " + fmt(cRebut,4) + " €"}</div>
-      </div>` : "";
-
-  const foot = `
-    <div class="scenario-foot${config.coutRebutActif ? " five" : ""}">
+  // ---- economie : un seul chiffre de tete, decompose poste par poste ----
+  const couts = coutsDetail(sc);
+  const coutsBase = base ? coutsDetail(base) : null;
+  // le delta se calcule sur le meme perimetre que le chiffre affiche : des que plusieurs
+  // postes entrent en jeu, comparer les seules plaquettes n'a plus de sens
+  let deltaTotalHtml = `<span class="delta zero">réf.</span>`;
+  if(!sc.baseline && coutsBase && coutsBase.total && couts.total !== null){
+    const d = ((couts.total - coutsBase.total) / coutsBase.total) * 100;
+    const cls = d > 0.05 ? "pos" : d < -0.05 ? "neg" : "zero";
+    deltaTotalHtml = `<span class="delta ${cls}">${d>0?"+":""}${fmt(d,1)} %</span>`;
+  }
+  const coutCell = couts.multiPoste ? `
+      <div class="foot-cell foot-cell-wide">
+        <div class="l">Coût total / pièce</div>
+        <div class="v">${couts.total === null ? "—" : fmt(couts.total,4)}<small>€</small></div>
+        ${couts.multiPoste ? deltaTotalHtml : deltaHtml}
+        ${coutBreakdownHTML(couts)}
+      </div>` : `
       <div class="foot-cell">
         <div class="l">Coût outil / pièce</div>
         <div class="v">${cost === null ? "—" : fmt(cost,4)}<small>€</small></div>
         ${deltaHtml}
-      </div>
-      ${coutRebutCell}
+      </div>`;
+
+  const annuel = bilanAnnuel(sc, config, null, null);
+  const annuelCell = annuel ? `
+      <div class="foot-cell">
+        <div class="l">${sc.baseline ? "Coût annuel" : "Gain annuel"}</div>
+        ${sc.baseline || annuel.gainAnnuel === undefined
+          ? `<div class="v" style="font-size:26px;">${annuel.coutAnnuel === null ? "—" : fmtEuroCourt(annuel.coutAnnuel)}</div>
+             <div class="foot-sub">${fmt(annuel.volume,0)} disques/an</div>`
+          : `<div class="v" style="font-size:26px; color:${annuel.gainAnnuel >= 0 ? "var(--green)" : "var(--red)"};">${(annuel.gainAnnuel>=0?"+":"−") + fmtEuroCourt(Math.abs(annuel.gainAnnuel))}</div>
+             <div class="foot-sub">sur ${fmt(annuel.volume,0)} disques/an${annuel.heuresAnnuelles !== undefined ? ` · ${annuel.heuresAnnuelles>=0?"+":"−"}${fmt(Math.abs(annuel.heuresAnnuelles),0)} h machine` : ""}</div>`}
+      </div>` : "";
+
+  const foot = `
+    <div class="scenario-foot">
+      ${coutCell}
+      ${annuelCell}
       <div class="foot-cell">
         <div class="l">€ / arête (bol + piste)</div>
         <div class="v">${fmt(scenarioCostPerEdge(sc), 3)}<small>€</small></div>
@@ -3322,6 +3816,8 @@ function scenarioBlockHTML(sc, interactive){
         <div class="progress-track"><div class="progress-fill" style="width:${(sc.validationThreshold ? Math.min(100, stats.validCount/parseFloat(sc.validationThreshold)*100) : 0)}%;"></div></div>
       </div>
     </div>
+    ${seuilBasculeHTML(sc)}
+    ${ecartsCharniereHTML(sc)}
   `;
 
   const emagRow = interactive ? `
@@ -3797,6 +4293,73 @@ function prelevementRowHTML(sc, essai, row, interactive, snapLogements, showLoge
 /* un outil peut avoir plusieurs logements (positions plaquette) ; chaque logement est
    independant (sa propre charniere, geometrie...). Couleur par outil pour identifier
    d'un coup d'oeil quelles lignes appartiennent au meme outil physique. */
+/* consommation annuelle de plaquettes : la meme donnee lue depuis l'approvisionnement.
+   Visible des que le volume annuel de la reference est renseigne. */
+function consommationAnnuelleHTML(sc){
+  const an = bilanAnnuel(sc);
+  if(!an || !an.plaquettes || !an.plaquettes.length) return "";
+  const items = an.plaquettes.map(p =>
+    `<span class="conso-item"><b>${fmt(p.nb,0)}</b> plaquettes/an<em>${escapeAttr(p.outilNumero||"—")} · ${escapeAttr(p.logementNom||"—")}${p.ref ? " — " + escapeAttr(p.ref) : ""}</em></span>`).join("");
+  return `<div class="conso-strip">
+    <span class="conso-lab">Consommation annuelle</span>
+    <div class="conso-items">${items}</div>
+    <span class="conso-vol">sur ${fmt(an.volume,0)} disques/an</span>
+  </div>`;
+}
+
+/* pieces detachees : un bloc par porte-outil, visible seulement si le module est actif.
+   Meme amortissement que les plaquettes, sur la charniere de remplacement de chaque piece. */
+function piecesDetacheesHTML(sc, interactive){
+  if(!config.piecesActif || !(sc.outils||[]).length) return "";
+  const blocs = sc.outils.map((o, oi) => {
+    const couleur = OUTIL_COLORS[oi % OUTIL_COLORS.length];
+    const pieces = o.pieces || [];
+    const rows = pieces.map(p => {
+      const c = pieceCost(p);
+      if(!interactive){
+        return `<tr>
+          <td>${escapeAttr(p.nom)}</td><td>${escapeAttr(p.ref)}</td>
+          <td class="num">${p.prix === "" || p.prix == null ? "—" : fmt(parseFloat(p.prix),2)}</td>
+          <td class="num">${p.charniere === "" || p.charniere == null ? "—" : fmt(parseFloat(p.charniere),0)}</td>
+          <td class="computed">${c === null ? "—" : fmt(c,5)}</td>
+        </tr>`;
+      }
+      const attrs = `data-id="${sc.id}" data-outil="${o.id}" data-piece="${p.id}"`;
+      return `<tr>
+        <td><input class="cell ref" ${attrs} data-field="nom" value="${escapeAttr(p.nom)}" placeholder="Cale, vis, corps d'outil…"></td>
+        <td><input class="cell ref" ${attrs} data-field="ref" value="${escapeAttr(p.ref)}" placeholder="Référence"></td>
+        <td class="num"><input class="cell" ${attrs} data-field="prix" type="number" step="1" min="0" value="${p.prix ?? ""}"></td>
+        <td class="num"><input class="cell" ${attrs} data-field="charniere" type="number" step="500" min="0" value="${p.charniere ?? ""}"></td>
+        <td class="computed">${c === null ? "—" : fmt(c,5)}</td>
+        <td><button class="log-del piece-del" data-id="${sc.id}" data-outil="${o.id}" data-piece="${p.id}" title="Supprimer">✕</button></td>
+      </tr>`;
+    }).join("");
+    const total = (pieces.map(pieceCost).filter(v => v !== null).reduce((a,b)=>a+b,0)) || 0;
+    return `
+      <div class="pieces-outil" style="border-left:4px solid ${couleur};">
+        <div class="pieces-head">
+          <span class="pieces-outil-nom">${escapeAttr(o.numero || "Outil sans n°")}</span>
+          ${pieces.length ? `<span class="pieces-total">${fmt(total,5)} €/pièce</span>` : `<span class="pieces-vide">aucune pièce détachée déclarée</span>`}
+        </div>
+        ${pieces.length ? `
+        <div class="tbl-wrap">
+          <table class="pieces-table">
+            <thead><tr><th>Désignation</th><th>Référence</th><th class="num">Prix (€)</th><th class="num">Charnière (pièces)</th><th class="num">€ / pièce</th>${interactive?"<th></th>":""}</tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>` : ""}
+        ${interactive ? `<button class="ghost small piece-add" data-id="${sc.id}" data-outil="${o.id}">+ Pièce détachée pour ${escapeAttr(o.numero || "cet outil")}</button>` : ""}
+      </div>`;
+  }).join("");
+  const totalSc = coutPiecesDetachees(sc);
+  return `
+    <div class="pieces-block">
+      <h4 class="pieces-titre">Pièces détachées par porte-outil${totalSc !== null ? ` <span class="pieces-cumul">${fmt(totalSc,5)} €/pièce au total</span>` : ""}</h4>
+      <p class="panel-hint" style="margin:2px 2px 10px;">Amorties sur leur charnière de remplacement, comme les plaquettes. Comptez la pièce autant de fois qu'elle est montée sur l'outil.</p>
+      ${blocs}
+    </div>`;
+}
+
 function outilRowsHTML(sc, o, oi, interactive, showFrFa){
   const couleur = OUTIL_COLORS[oi % OUTIL_COLORS.length];
   const rows = o.logements.map(l => logementRowHTML(sc, o, l, couleur, interactive, showFrFa)).join("");
@@ -3805,6 +4368,20 @@ function outilRowsHTML(sc, o, oi, interactive, showFrFa){
     : "";
   return rows + addRow;
 }
+/* duree de vie observee, affichee sous la charniere visee : "≥ 150" tant qu'aucun essai
+   n'est sorti de tolerance (on ne pousse jamais au-dela de la cible, donc on ne sait pas),
+   une valeur ferme des qu'un essai a lache avant. */
+function charniereSubHTML(sc, l){
+  const info = charniereReelle(sc, l.id);
+  if(!info) return "";
+  const cible = parseFloat(l.charniere);
+  const sous = !isNaN(cible) && !info.borneInf && info.moyenne < cible - 0.5;
+  const titre = info.borneInf
+    ? "Aucun essai n'est sorti de tolérance : la durée de vie tenue est au moins celle-ci. Les essais s'arrêtent à la charnière visée, on ne sait pas ce qu'il y a au-delà."
+    : "Moyenne du dernier prélèvement conforme avant sortie de tolérance.";
+  return `<div class="charniere-reel ${sous ? "bad" : "ok"}" title="${titre}">${info.borneInf ? "≥ " : ""}${fmt(info.moyenne,0)} réel <span>(${info.essais})</span></div>`;
+}
+
 function logementRowHTML(sc, o, l, couleur, interactive, showFrFa){
   const perEdge = posCostPerEdge(l);
   const perPiece = posCost(l);
@@ -3821,7 +4398,7 @@ function logementRowHTML(sc, o, l, couleur, interactive, showFrFa){
         </td>
         <td class="num"><input class="cell" data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}" data-field="prix" type="number" step="0.5" value="${l.prix ?? ""}"></td>
         <td class="num"><input class="cell" data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}" data-field="aretes" type="number" step="1" value="${l.aretes ?? ""}"></td>
-        <td class="num"><input class="cell" data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}" data-field="charniere" type="number" step="1" value="${l.charniere ?? ""}"></td>
+        <td class="num"><input class="cell" data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}" data-field="charniere" type="number" step="1" value="${l.charniere ?? ""}">${charniereSubHTML(sc, l)}</td>
         <td><label style="font-size:11px; white-space:nowrap; display:flex; align-items:center; gap:4px;"><input type="checkbox" data-outil="${o.id}" data-logement="${l.id}" data-field="suiviTolerance" ${l.suiviTolerance !== false ? "checked" : ""}> Tolérance</label></td>
         <td class="num"><input class="cell" data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}" data-field="vc" type="number" step="10" value="${l.vc ?? ""}"></td>
         <td class="num"><input class="cell" data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}" data-field="f" type="number" step="0.01" value="${l.f ?? ""}"></td>
@@ -3842,7 +4419,7 @@ function logementRowHTML(sc, o, l, couleur, interactive, showFrFa){
       <td>${escapeAttr(l.ref)}${l.codeArticle ? `<br><span class="ref-sub-print">Art. Stellantis : ${escapeAttr(l.codeArticle)}</span>` : ""}</td>
       <td class="num">${l.prix === "" ? "—" : l.prix ?? "—"}</td>
       <td class="num">${l.aretes === "" ? "—" : l.aretes ?? "—"}</td>
-      <td class="num">${l.charniere === "" ? "—" : l.charniere ?? "—"}</td>
+      <td class="num">${l.charniere === "" ? "—" : l.charniere ?? "—"}${charniereSubHTML(sc, l)}</td>
       <td style="font-size:11px;">${l.suiviTolerance !== false ? "Charnière + tolérance" : "Charnière seule"}</td>
       <td class="num">${l.vc === "" ? "—" : l.vc ?? "—"}</td>
       <td class="num">${l.f === "" ? "—" : l.f ?? "—"}</td>
@@ -4193,7 +4770,7 @@ function attachDetailHandlers(sc){
       else essaisOuverts.delete(key);
     });
   });
-  root.querySelectorAll("input.cell, input.sc-name, input.cell-cycle, input.limit-label, input.limit-value, input.essai-obs, input.essai-but, select.log-equipe").forEach(inp => {
+  root.querySelectorAll("input.cell, input.sc-name, input.cell-cycle, input.limit-label, input.limit-value, input.essai-obs, input.essai-but, select.log-equipe, select.statut-select, input.statut-motif").forEach(inp => {
     inp.addEventListener("change", onInputChange);
     // a chaque caractere : on ecrit juste la valeur (pas de reconstruction de l'ecran).
     // Reconstruire tout l'affichage a chaque frappe (badges, couts, graphique...) rendait
@@ -4431,6 +5008,23 @@ function attachDetailHandlers(sc){
       saveData(); render();
     });
   });
+  root.querySelectorAll(".piece-add").forEach(el => {
+    el.addEventListener("click", () => {
+      const o = sc.outils.find(x => x.id === el.getAttribute("data-outil"));
+      if(!o) return;
+      o.pieces = o.pieces || [];
+      o.pieces.push(normalizePieceDetachee({}));
+      saveData(); render();
+    });
+  });
+  root.querySelectorAll(".piece-del").forEach(el => {
+    el.addEventListener("click", () => {
+      const o = sc.outils.find(x => x.id === el.getAttribute("data-outil"));
+      if(!o) return;
+      o.pieces = (o.pieces||[]).filter(x => x.id !== el.getAttribute("data-piece"));
+      saveData(); render();
+    });
+  });
   root.querySelectorAll(".logement-del").forEach(el => {
     el.addEventListener("click", () => {
       const outilId = el.getAttribute("data-outil"), logementId = el.getAttribute("data-logement");
@@ -4489,10 +5083,15 @@ function writeFieldValue(el){
   const essaiId = el.getAttribute("data-essai");
   const prelId = el.getAttribute("data-prel");
   const scrapId = el.getAttribute("data-scrap");
+  const pieceId = el.getAttribute("data-piece");
   const sc = data.find(s => s.id === id);
   if(!sc) return null;
   const val = el.type === "number" ? (el.value === "" ? "" : parseFloat(el.value)) : el.value;
-  if(scrapId){
+  if(pieceId){
+    const o = sc.outils.find(x => x.id === outilId);
+    const p = o && (o.pieces||[]).find(x => x.id === pieceId);
+    if(p) p[field] = val;
+  } else if(scrapId){
     const row = (sc.scrapLog||[]).find(r => r.id === scrapId);
     if(row) row[field] = val;
   } else if(prelId){
@@ -4522,6 +5121,10 @@ function onInputChange(e){
   const ctx = writeFieldValue(el);
   if(!ctx) return;
   if(ctx.outilId && ctx.logementId && (ctx.field === "vc" || ctx.field === "f")) recomputeCycles();
+  // passage en serie ou abandon : on date la decision, c'est elle qui fait l'historique
+  if(ctx.field === "statut" && (ctx.sc.statut === "serie" || ctx.sc.statut === "abandonne") && !ctx.sc.statutDate){
+    ctx.sc.statutDate = new Date().toISOString().slice(0,10);
+  }
   saveData();
   render();
 }
@@ -4598,8 +5201,13 @@ function fermerPanneaux(){
   document.getElementById("historyPanel").hidden = true;
   document.getElementById("csvPanel").hidden = true;
   document.getElementById("ligneInfoPanel").hidden = true;
+  document.getElementById("dashboardPanel").hidden = true;
   document.getElementById("toolbarMore").hidden = true;
 }
+document.getElementById("dashboardBtn").addEventListener("click", () => {
+  renderDashboard();
+  ouvrirPanneau("dashboardPanel");
+});
 document.getElementById("panelBackdrop").addEventListener("click", fermerPanneaux);
 document.addEventListener("keydown", (e) => { if(e.key === "Escape") fermerPanneaux(); });
 /* menu "•••" : toggle au clic sur le bouton, fermeture au clic ailleurs ou sur une action
@@ -4624,7 +5232,32 @@ const optCycleRefSec = document.getElementById("optCycleRefSec");
 const optLimitLabel = document.getElementById("optLimitLabel");
 const optLimitValue = document.getElementById("optLimitValue");
 const optForceRatio = document.getElementById("optForceRatio");
+const optCoutMachine = document.getElementById("optCoutMachine");
+const optPartCoupante = document.getElementById("optPartCoupante");
+const optPieces = document.getElementById("optPieces");
+const optVolume = document.getElementById("optVolume");
+const optProductionAnnuelle = document.getElementById("optProductionAnnuelle");
 
+/* le cout horaire vit sur la ligne (icone ⚙ de l'onglet) : on le rappelle ici, et
+   surtout on signale s'il manque — sans lui le module ne peut rien calculer */
+function majRappelCoutHoraire(){
+  const el = document.getElementById("optCoutHoraireRappel");
+  if(!el) return;
+  const l = getActiveLigne();
+  const taux = l ? parseFloat(l.coutHoraire) : NaN;
+  if(isNaN(taux)){
+    el.innerHTML = `<b style="color:var(--red);">Coût horaire non renseigné</b> pour la ligne ${escapeAttr(l ? l.nom : "")} — à saisir via l'icône ⚙ de l'onglet de ligne, sinon le coût machine reste vide.`;
+  } else {
+    el.innerHTML = `Coût horaire utilisé : <b>${fmt(taux,2)} €/h</b> (ligne ${escapeAttr(l.nom)}, modifiable via son icône ⚙).`;
+  }
+}
+function majChampsOptions(){
+  document.getElementById("optCoutRebutField").classList.toggle("on", optCoutRebut.checked);
+  document.getElementById("optCycleRefField").classList.toggle("on", optCycleSec.checked || optCoutMachine.checked);
+  document.getElementById("optCoutMachineField").classList.toggle("on", optCoutMachine.checked);
+  document.getElementById("optVolumeField").classList.toggle("on", optVolume.checked);
+  majRappelCoutHoraire();
+}
 function syncOptionsUI(){
   optLimitLabel.value = config.limitLabel ?? "";
   optLimitValue.value = config.limitValue ?? "";
@@ -4632,9 +5265,14 @@ function syncOptionsUI(){
   optCoutDisque.value = config.coutDisque ?? "";
   optCycleSec.checked = !!config.cycleSecActif;
   optCycleRefSec.value = config.cycleRefSec ?? "";
+  optCoutMachine.checked = !!config.coutMachineActif;
+  optPartCoupante.value = config.partCoupante ?? "";
+  optPieces.checked = !!config.piecesActif;
+  optVolume.checked = !!config.volumeActif;
+  const ref = getActiveReference();
+  optProductionAnnuelle.value = ref ? (ref.productionAnnuelle ?? "") : "";
   optForceRatio.checked = !!config.forceRatioActif;
-  document.getElementById("optCoutRebutField").classList.toggle("on", optCoutRebut.checked);
-  document.getElementById("optCycleSecField").classList.toggle("on", optCycleSec.checked);
+  majChampsOptions();
 }
 function appliquerOptions(){
   config.limitLabel = optLimitLabel.value;
@@ -4643,18 +5281,143 @@ function appliquerOptions(){
   config.coutDisque = optCoutDisque.value === "" ? "" : parseFloat(optCoutDisque.value);
   config.cycleSecActif = optCycleSec.checked;
   config.cycleRefSec = optCycleRefSec.value === "" ? "" : parseFloat(optCycleRefSec.value);
+  config.coutMachineActif = optCoutMachine.checked;
+  config.partCoupante = optPartCoupante.value === "" ? 100 : parseFloat(optPartCoupante.value);
+  config.piecesActif = optPieces.checked;
+  config.volumeActif = optVolume.checked;
+  const ref = getActiveReference();
+  if(ref) ref.productionAnnuelle = optProductionAnnuelle.value === "" ? "" : parseFloat(optProductionAnnuelle.value);
   config.forceRatioActif = optForceRatio.checked;
-  document.getElementById("optCoutRebutField").classList.toggle("on", optCoutRebut.checked);
-  document.getElementById("optCycleSecField").classList.toggle("on", optCycleSec.checked);
+  majChampsOptions();
   saveData();
   render();
 }
-[optCoutRebut, optCoutDisque, optCycleSec, optCycleRefSec, optLimitLabel, optLimitValue, optForceRatio].forEach(el => {
+[optCoutRebut, optCoutDisque, optCycleSec, optCycleRefSec, optCoutMachine, optPartCoupante,
+ optPieces, optVolume, optProductionAnnuelle, optLimitLabel, optLimitValue, optForceRatio].forEach(el => {
   el.addEventListener("change", appliquerOptions);
   el.addEventListener("input", () => { if(el.type === "number") appliquerOptions(); });
 });
 document.getElementById("optionsBtn").addEventListener("click", () => { syncOptionsUI(); ouvrirPanneau("optionsPanel"); });
 document.getElementById("optionsClose").addEventListener("click", fermerPanneaux);
+
+/* ---- tableau de bord : toutes les lignes d'un coup ----
+   Le moteur lit la tolerance et le scenario de reference dans les globales `config` et
+   `data`, qui pointent sur l'OP active. Pour parcourir les AUTRES OP sans threader un
+   parametre dans toute la chaine de calcul, on bascule temporairement le contexte puis on
+   le remet. Tout est synchrone : rien ne peut s'intercaler entre les deux. */
+function dansContexteOp(op, fn){
+  const cfgAvant = config, dataAvant = data;
+  config = op.config; data = op.scenarios;
+  try { return fn(); } finally { config = cfgAvant; data = dataAvant; }
+}
+
+function renderDashboard(){
+  const wrap = document.getElementById("dashboardPanel");
+  if(!wrap) return;
+
+  let nbSuivis = 0, nbValides = 0, nbSerie = 0, gainAcquis = 0, gainPotentiel = 0, volumeConnu = false;
+  const sections = [];
+
+  lignes.forEach(ligne => {
+    const blocsRef = [];
+    ligne.references.forEach(ref => {
+      ref.ops.forEach(op => {
+        const scs = op.scenarios || [];
+        if(!scs.length) return;
+        const rows = dansContexteOp(op, () => {
+          const base = baselineScenario();
+          const cBase = base ? coutsDetail(base, op.config, ligne) : null;
+          return scs.map(sc => {
+            const couts = coutsDetail(sc, op.config, ligne);
+            const stats = scenarioStats(sc);
+            const an = bilanAnnuel(sc, op.config, ligne, ref);
+            const dPct = (!sc.baseline && cBase && cBase.total && couts.total !== null)
+              ? ((couts.total - cBase.total) / cBase.total) * 100 : null;
+            return { sc, couts, stats, dPct, gainAnnuel: an && an.gainAnnuel !== undefined ? an.gainAnnuel : null,
+                     volume: an ? an.volume : null };
+          });
+        });
+
+        rows.forEach(r => {
+          const st = r.sc.statut || "essai";
+          if(!r.sc.baseline && st !== "abandonne") nbSuivis++;
+          if(st === "valide") nbValides++;
+          if(st === "serie" && !r.sc.baseline) nbSerie++;
+          if(r.volume) volumeConnu = true;
+          if(r.gainAnnuel !== null){
+            if(st === "serie") gainAcquis += r.gainAnnuel;
+            else if(st === "valide") gainPotentiel += r.gainAnnuel;
+          }
+        });
+
+        const lignesHtml = rows.map(r => {
+          const st = r.sc.statut || "essai";
+          const seuil = r.sc.validationThreshold || "—";
+          const pct = r.sc.validationThreshold ? Math.min(100, r.stats.validCount/parseFloat(r.sc.validationThreshold)*100) : 0;
+          const deltaTxt = r.sc.baseline ? `<span class="delta zero">réf.</span>`
+            : r.dPct === null ? "—"
+            : `<span class="delta ${r.dPct < -0.05 ? "neg" : r.dPct > 0.05 ? "pos" : "zero"}">${r.dPct>0?"+":""}${fmt(r.dPct,1)} %</span>`;
+          const gainTxt = r.gainAnnuel === null ? "—"
+            : `<b style="color:${r.gainAnnuel >= 0 ? "var(--green)" : "var(--red)"};">${(r.gainAnnuel>=0?"+":"−") + fmtEuroCourt(Math.abs(r.gainAnnuel))}</b>`;
+          return `<tr>
+            <td><span class="db-sc-nom">${escapeAttr(r.sc.name)}</span>${r.sc.baseline ? ` <span class="db-ref-tag">★</span>` : ""}
+                ${st === "abandonne" && r.sc.statutMotif ? `<div class="db-motif">${escapeAttr(r.sc.statutMotif)}</div>` : ""}</td>
+            <td><span class="statut-pill ${st}">${statutLabel(st)}</span></td>
+            <td class="num"><span class="db-prog">${r.stats.validCount}/${seuil}</span>
+                <div class="progress-track small"><div class="progress-fill ${r.stats.validated?"ok":""}" style="width:${pct}%;"></div></div></td>
+            <td class="num">${r.couts.total === null ? "—" : fmt(r.couts.total,4)}</td>
+            <td class="num">${deltaTxt}</td>
+            <td class="num">${gainTxt}</td>
+          </tr>`;
+        }).join("");
+
+        blocsRef.push(`
+          <div class="db-op">
+            <div class="db-op-head">
+              <span class="db-op-ref">${escapeAttr(ref.nom || "Référence sans nom")}</span>
+              <span class="db-op-nom">${escapeAttr(op.nom || "OP")}</span>
+              ${rows[0] && rows[0].volume ? `<span class="db-op-vol">${fmt(rows[0].volume,0)} disques/an</span>` : ""}
+            </div>
+            <div class="tbl-wrap">
+              <table class="db-table">
+                <thead><tr><th>Scénario</th><th>Statut</th><th class="num">Essais</th><th class="num">€/pièce</th><th class="num">Écart</th><th class="num">Gain/an</th></tr></thead>
+                <tbody>${lignesHtml}</tbody>
+              </table>
+            </div>
+          </div>`);
+      });
+    });
+    if(!blocsRef.length) return;
+    const infos = [];
+    if(ligne.coutHoraire !== "" && !isNaN(parseFloat(ligne.coutHoraire))) infos.push(fmt(parseFloat(ligne.coutHoraire),2) + " €/h");
+    if(ligne.maintenanceDate) infos.push("dernière maintenance " + ligne.maintenanceDate + (ligne.maintenanceType ? " (" + escapeAttr(ligne.maintenanceType) + ")" : ""));
+    sections.push(`
+      <section class="db-ligne">
+        <h3 class="db-ligne-titre">${escapeAttr(ligne.nom || "Ligne sans nom")}${infos.length ? `<span class="db-ligne-info">${infos.join(" · ")}</span>` : ""}</h3>
+        ${blocsRef.join("")}
+      </section>`);
+  });
+
+  const kpis = `
+    <div class="db-kpis">
+      <div class="db-kpi"><span class="l">Optimisations suivies</span><span class="v">${nbSuivis}</span></div>
+      <div class="db-kpi"><span class="l">Validées, pas encore en série</span><span class="v">${nbValides}</span></div>
+      <div class="db-kpi"><span class="l">Passées en série</span><span class="v">${nbSerie}</span></div>
+      ${volumeConnu ? `
+      <div class="db-kpi db-kpi-gain"><span class="l">Gain annuel acquis</span><span class="v" style="color:${gainAcquis>=0?"var(--green)":"var(--red)"};">${(gainAcquis>=0?"+":"−")+fmtEuroCourt(Math.abs(gainAcquis))}</span><span class="db-kpi-sub">scénarios en série</span></div>
+      <div class="db-kpi db-kpi-gain"><span class="l">Gain annuel à déployer</span><span class="v">${(gainPotentiel>=0?"+":"−")+fmtEuroCourt(Math.abs(gainPotentiel))}</span><span class="db-kpi-sub">validés, pas encore en série</span></div>` : ""}
+    </div>`;
+
+  wrap.innerHTML = `
+    <h3>Tableau de bord</h3>
+    <p class="panel-hint">Toutes les lignes, références et OP du fichier. Les gains annuels n'apparaissent que pour les références dont le volume de production est renseigné (module <b>Volume annuel</b> dans Options).</p>
+    ${kpis}
+    ${sections.join("") || `<p class="panel-hint">Aucun scénario enregistré.</p>`}
+    <div class="panel-actions"><button class="primary" id="dashboardClose">Fermer</button></div>
+  `;
+  const btn = document.getElementById("dashboardClose");
+  if(btn) btn.addEventListener("click", fermerPanneaux);
+}
 
 /* Informations de ligne — cout horaire, observations, derniere maintenance */
 let ligneInfoTargetId = null;
