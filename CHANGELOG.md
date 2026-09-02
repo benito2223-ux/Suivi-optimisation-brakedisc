@@ -5,6 +5,17 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [3.9.2] — 2026-09-02
+
+### Ajouté
+- **Agrandissement plein écran des captures jointes à une suggestion** (menu `•••` →
+  **Suggestions**) — un clic sur la miniature l'affiche en grand sur fond sombre (clic ou
+  Échap pour refermer). Les captures d'écran collées par Matis/Arthur étaient jusque-là
+  cantonnées à 220×160 px et illisibles.
+- **Rappel dans la fenêtre « Nouveautés »** : quand une évolution correspond à une
+  suggestion notée par ailleurs, un message invite à repasser son statut sur **Traité**
+  dans le backlog — sans ça, les suggestions déjà traitées restaient marquées « Nouveau ».
+
 ## [3.9.1] — 2026-09-02
 
 ### Corrigé

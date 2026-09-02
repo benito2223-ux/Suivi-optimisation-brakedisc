@@ -323,7 +323,12 @@ select.backlog-type, select.backlog-statut{font-family:var(--font-body); font-si
 .backlog-image-add{display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--blue-dark); border:1px dashed var(--border); border-radius:var(--radius-sm); padding:6px 10px; cursor:pointer;}
 .backlog-image-add:hover{border-color:var(--blue);}
 .backlog-image-preview{display:flex; align-items:center; gap:10px;}
-.backlog-image-preview img{max-width:220px; max-height:160px; border-radius:var(--radius); border:1px solid var(--border); display:block;}
+.backlog-image-preview img{max-width:220px; max-height:160px; border-radius:var(--radius); border:1px solid var(--border); display:block; cursor:zoom-in;}
+
+/* --- agrandissement plein ecran d'une image (suggestions) --- */
+.img-lightbox{position:fixed; inset:0; z-index:200; background:rgba(20,24,22,.85);
+  display:flex; align-items:center; justify-content:center; padding:28px; cursor:zoom-out;}
+.img-lightbox img{max-width:100%; max-height:100%; border-radius:var(--radius); box-shadow:0 12px 40px rgba(0,0,0,.5);}
 
 /* relevé de contrôle */
 .log-section{padding:16px; border-top:1px solid var(--border);}
@@ -1024,6 +1029,7 @@ body.atelier-on{overflow:hidden;}
     </div>
   </div>
   <div class="panel-backdrop" id="panelBackdrop" hidden></div>
+  <div class="img-lightbox" id="imgLightbox" hidden><img id="imgLightboxImg" src="" alt=""></div>
 
   <div class="print-head">
     <img src="" alt="SPK by CeramTec" id="printLogo">
@@ -1157,7 +1163,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "3.9.1";
+const TOOL_VERSION = "3.9.2";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -4638,6 +4644,9 @@ function renderBacklog(){
       saveData(); renderBacklog();
     });
   });
+  wrap.querySelectorAll(".backlog-image-preview img").forEach(img => {
+    img.addEventListener("click", () => ouvrirLightbox(img.src));
+  });
   wrap.querySelectorAll(".backlog-image-input").forEach(inp => {
     inp.addEventListener("change", () => {
       const file = inp.files && inp.files[0];
@@ -5182,7 +5191,18 @@ document.getElementById("dashboardBtn").addEventListener("click", () => {
 });
 document.getElementById("nouveautesBtn").addEventListener("click", ouvrirNouveautes);
 document.getElementById("panelBackdrop").addEventListener("click", fermerPanneaux);
-document.addEventListener("keydown", (e) => { if(e.key === "Escape") fermerPanneaux(); });
+document.addEventListener("keydown", (e) => { if(e.key === "Escape") { fermerPanneaux(); fermerLightbox(); } });
+
+/* ---- agrandissement plein ecran d'une image (ex. capture jointe a une suggestion) ---- */
+function ouvrirLightbox(src){
+  document.getElementById("imgLightboxImg").src = src;
+  document.getElementById("imgLightbox").hidden = false;
+}
+function fermerLightbox(){
+  document.getElementById("imgLightbox").hidden = true;
+  document.getElementById("imgLightboxImg").src = "";
+}
+document.getElementById("imgLightbox").addEventListener("click", fermerLightbox);
 /* menu "•••" : toggle au clic sur le bouton, fermeture au clic ailleurs ou sur une action
    du menu (chaque bouton a l'interieur ouvre de toute facon son propre panneau ensuite) */
 document.getElementById("moreBtn").addEventListener("click", (e) => {
@@ -5281,6 +5301,10 @@ document.getElementById("optionsClose").addEventListener("click", fermerPanneaux
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"3.9.2", date:"02/09/2026", points:[
+    "Les captures jointes à une suggestion (menu <b>•••</b> → <b>Suggestions</b>) s'agrandissent maintenant en plein écran d'un clic — elles étaient jusque-là trop petites pour être lisibles.",
+    "Rappel ajouté dans cette fenêtre « Nouveautés » : quand une évolution correspond à une suggestion que vous aviez notée, pensez à passer son statut sur <b>Traité</b>."
+  ]},
   { version:"3.9.1", date:"02/09/2026", points:[
     "Correctif : quand la <b>production annuelle</b> était renseignée, la tuile qui l'affiche pouvait chevaucher le tableau « Composition du scénario » et en écraser les colonnes. Le tableau passe désormais toujours sous la tuile."
   ]},
@@ -5332,6 +5356,7 @@ function ouvrirNouveautes(){
   wrap.innerHTML = `
     <h3>Nouveautés de l'outil</h3>
     <p class="panel-hint">Vous utilisez la version <b>${TOOL_VERSION}</b>. Voici ce qui a changé depuis vos dernières utilisations — inutile d'attendre un e-mail.</p>
+    <p class="panel-hint">Une évolution ci-dessous répond à une suggestion que vous aviez notée ? Pensez à passer son statut sur <b>Traité</b> (menu <b>•••</b> → <b>Suggestions</b>) — l'outil ne le fait pas tout seul.</p>
     ${nouveautesHTML()}
     <label class="opt-row" style="margin-top:18px;">
       <input type="checkbox" id="nvMasquer" ${masquees ? "checked" : ""}>
