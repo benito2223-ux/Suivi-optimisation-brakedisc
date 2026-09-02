@@ -5,6 +5,44 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [3.7.0] — 2026-09-02
+
+Retour à l'habillage d'origine et réorganisation de l'écran de travail autour du scénario
+ouvert. Les évolutions fonctionnelles des versions 3.1 à 3.6 sont toutes conservées.
+
+### Retiré
+- **La refonte visuelle v3.0/v4.0 et son toggle de comparaison.** Le rail sombre, l'en-tête
+  en carte et le verdict retravaillé sont supprimés : retour au visuel v2.5. Avec eux
+  partent le bouton de bascule, son script d'amorçage et les deux blocs CSS conditionnés —
+  environ 16 Ko de code mort en moins.
+
+### Changé
+- **Tuiles de scénario réorganisées.** Le scénario ouvert passe en tête de liste, sur toute
+  la largeur, légèrement teinté en bleu, avec ses chiffres étalés sur une rangée. Les autres
+  restent en dessous, en format condensé (nom, statut, coût/pièce, gain annuel).
+  La tuile ouverte est sortie de la grille : quand elle la traversait, celle-ci créait autant
+  de colonnes qu'elle pouvait en tenir et écrasait les autres tuiles à 218 px de large.
+- **Numéro et couleur de statut sur chaque tuile.** Le numéro est celui de la création : il
+  ne bouge pas quand l'ordre d'affichage change, pour qu'on puisse dire « regarde le 3 ». Un
+  filet vertical donne le statut sans avoir à lire — gris à l'étude, ambre en essai, vert
+  validé, bleu en série, rouge abandonné.
+- **La composition du scénario remonte** juste après les chiffres clés, et s'affiche
+  **dépliée par défaut** : c'est la fiche d'identité du scénario (outils, logements,
+  plaquettes, pièces détachées, conditions de coupe). Elle reste repliable une fois la
+  campagne lancée, et ce choix survit aux re-rendus.
+  Nouvel ordre : tuiles → verdict → chiffres clés → composition → graphique → essais → rebut.
+- **Production annuelle en évidence**, en gros et en bleu, en haut à droite de la composition
+  dès que le module Volume annuel est actif. C'est le multiplicateur de tous les autres
+  chiffres, il ne devait pas se chercher.
+
+### Corrigé
+- **Séparateur de milliers invisible.** Le français sépare les milliers par U+202F (espace
+  fine insécable), et Archivo ne dessine pas ce caractère : « 200 000 » s'affichait quasi
+  collé, l'espace tombant à 1,6 px au lieu de 9,6. Tous les nombres à quatre chiffres et plus
+  étaient concernés. Les espaces fines sont désormais ramenées à l'espace insécable ordinaire
+  U+00A0, présente dans toutes les polices — largeur correcte, et les nombres ne se coupent
+  toujours pas en fin de ligne.
+
 ## [3.6.0] — 2026-09-02
 
 Fiabilisation : plus aucun appel réseau, et le moteur économique est désormais couvert par
