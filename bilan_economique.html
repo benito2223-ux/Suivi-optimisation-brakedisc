@@ -344,6 +344,8 @@ tr.row-bad td{background:var(--red-bg);}
 .badge.ok::before{content:"✓";}
 .badge.risk{background:var(--red); color:#fff;}
 .badge.risk::before{content:"!";}
+.badge.warn{background:var(--amber); color:#fff;}
+.badge.warn::before{content:"~";}
 .badge.muted{background:var(--surface-alt); color:var(--ink-faint); border:1px solid var(--border);}
 .log-del{padding:4px 8px; font-size:12px; color:var(--red); border-color:var(--border);}
 .log-del:hover{background:var(--red-bg); border-color:var(--red);}
@@ -929,7 +931,7 @@ body.atelier-on{overflow:hidden;}
         <span style="color:var(--ink-faint);">≤</span>
         <input type="number" step="0.01" min="0" id="optLimitValue" placeholder="0,12">
       </div>
-      <span class="opt-note">Ex. « Battement (mm) ≤ 0,12 » en OP10, « Ra (µm) ≤ 1,6 » en OP40.</span>
+      <span class="opt-note">Ex. « Battement (mm) ≤ 0,12 » en OP10, « Ra (µm) ≤ 1,6 » en OP40. Un 2e critère (ex. état de surface en plus d'une cote) et l'usure visuelle de la plaquette se règlent dans le bloc « Essais » de chaque scénario.</span>
     </div>
 
     <h3 style="margin-top:22px; font-size:17px;">Modules de calcul</h3>
@@ -1054,6 +1056,7 @@ body.atelier-on{overflow:hidden;}
       <h4>Bon à savoir</h4>
       <ul>
         <li>La <b>grandeur suivie et sa tolérance</b> se règlent une fois pour toutes dans <b>⚙ Options</b> — battement en OP10, Ra en OP40, ce que vous voulez. Un scénario peut déclarer une exception, mais la comparaison perd alors sa validité.</li>
+        <li>Un scénario peut activer un <b>2e critère</b> (ex. état de surface Ra/Rz/Rt en plus d'une cote dimensionnelle) dans son bloc « Essais » : les deux doivent être dans la tolérance pour qu'un prélèvement soit conforme. Chaque prélèvement porte aussi un statut d'<b>usure visuelle de la plaquette</b> (OK / usure limite / à changer) — « à changer » fait basculer le prélèvement en non-conforme même si les cotes sont bonnes.</li>
         <li>Le <b>temps de cycle</b> est un indice base 100 calé sur le scénario de référence (★). Il se recalcule depuis Vc et f, et reste corrigeable à la main.</li>
         <li>Le <b>suivi rebut équipe</b> est distinct des prélèvements : il compte toutes les pièces produites, pas seulement les disques contrôlés.</li>
         <li>Les <b>essais sont repliés en tuiles</b>, colorées selon leur état. Cliquer la tuile déplie tout le détail : conditions figées à l'essai, prélèvements, photos, suivi Marposs. Un essai que vous venez de créer s'ouvre automatiquement ; les autres restent fermés.</li>
@@ -1154,7 +1157,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "3.8.0";
+const TOOL_VERSION = "3.9.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -1498,6 +1501,7 @@ function normalizeScenario(sc){
   // statut de vie : le scenario de reference est par definition ce qui tourne en serie,
   // les autres sont en essai tant qu'on n'a pas tranche
   const merged = Object.assign({ emag1:false, limitOverride:false, limitLabel:"Battement (mm)", limitValue:0.12, validationThreshold:5,
+    critere2Actif:false, limitLabel2:"Ra (µm)", limitValue2:0.8,
     statut: sc.baseline ? "serie" : "essai", statutMotif:"", statutDate:"", essais:[], scrapLog:[] }, sc);
 
   if(Array.isArray(sc.outils)){
@@ -1539,7 +1543,7 @@ function normalizeScenario(sc){
       { id: e.id || ("e"+Math.random().toString(36).slice(2)), titre:"", date:"", equipe:"", operateur:"", observations:"", maturiteBruts:"", prelevements:[] },
       e,
       { params, marposs, photos, prelevements: (e.prelevements || []).map(r => {
-        const row = Object.assign({ id: r.id || ("p"+Math.random().toString(36).slice(2)), piece:"", batt:"", battD:"", battG:"", logementId:"", pointMesure:"" }, r);
+        const row = Object.assign({ id: r.id || ("p"+Math.random().toString(36).slice(2)), piece:"", batt:"", battD:"", battG:"", logementId:"", pointMesure:"", usure:"", valeur2:"" }, r);
         // anciennes saisies (avant le split Droite/Gauche d'EMAG 1) : la mesure vivait
         // seule dans "batt". Si le scenario est en mode EMAG 1, on la reporte sur les deux
         // cotes pour ne pas la faire disparaitre silencieusement de l'affichage.
@@ -1941,7 +1945,7 @@ function exportCSV(essaiIds){
     "Ligne de production","Reference disque","OP","Scenario","Outils (numero/logement:Vc/f/charniere)",
     "Essai","Date","Equipe","Operateur","Maturite bruts (j)","Observations essai","Logement mesure","Point de mesure",
     "N piece","Grandeur","Valeur","Droite","Gauche",
-    "Tolerance","Conforme"
+    "Tolerance","2e critere (grandeur)","2e critere (valeur)","2e critere (tolerance)","Usure plaquette","Conforme"
   ].join(sep)];
 
   (sc.essais||[]).filter(es => !essaiIds || essaiIds.includes(es.id)).forEach(es => {
@@ -1960,6 +1964,8 @@ function exportCSV(essaiIds){
         num(sc.emag1 ? valeurMesuree(sc, r) : r.batt),
         num(sc.emag1 ? r.battD : ""), num(sc.emag1 ? r.battG : ""),
         num(limiteDe(sc)),
+        txt(sc.critere2Actif ? sc.limitLabel2 : ""), num(sc.critere2Actif ? r.valeur2 : ""), num(sc.critere2Actif ? sc.limitValue2 : ""),
+        txt(USURE_LABELS[r.usure] || ""),
         conf === null ? "" : (conf ? "OUI" : "NON")
       ].join(sep));
     });
@@ -2006,13 +2012,16 @@ function prelevementsDetailHTML(sc, es){
     .map(r => {
       const exempte = !toleranceRequisePour(sc, r);
       const conform = checkConform(sc, r);
-      const statut = exempte ? "Charnière seule" : conform === null ? "—" : conform ? "OK" : "Hors tolérance";
+      const statut = exempte ? "Charnière seule" : conform === null ? "—" : conform ? "OK" : (raisonNonConforme(sc, r) || "Hors tolérance");
       const valeur = sc.emag1 ? ("D " + fmtBatt(r.battD) + " / G " + fmtBatt(r.battG)) : fmtBatt(r.batt);
+      const valeur2 = sc.critere2Actif ? (r.valeur2 === "" || r.valeur2 == null ? "—" : r.valeur2) : "";
       return `<tr>
         <td>${escapeAttr(r.piece)}</td>
         ${showLogementCol ? `<td>${escapeAttr(labelLogement(r.logementId))}</td>` : ""}
         <td>${escapeAttr(r.pointMesure) || "—"}</td>
         <td style="text-align:right;">${valeur}</td>
+        ${sc.critere2Actif ? `<td style="text-align:right;">${valeur2}</td>` : ""}
+        <td>${USURE_LABELS[r.usure] || "—"}</td>
         <td>${statut}</td>
       </tr>`;
     }).join("");
@@ -2020,7 +2029,7 @@ function prelevementsDetailHTML(sc, es){
   return `
     <h3 style="font-size:12.5px; margin:16px 0 4px; color:#154d8a; text-transform:uppercase; letter-spacing:.03em;">${escapeAttr(es.titre)}${es.date ? " — " + escapeAttr(es.date) : ""}</h3>
     <table>
-      <tr><th>N° pièce</th>${showLogementCol ? "<th>Logement</th>" : ""}<th>Point de mesure</th><th>Valeur</th><th>Statut</th></tr>
+      <tr><th>N° pièce</th>${showLogementCol ? "<th>Logement</th>" : ""}<th>Point de mesure</th><th>Valeur</th>${sc.critere2Actif ? `<th>${escapeAttr(sc.limitLabel2)}</th>` : ""}<th>Usure</th><th>Statut</th></tr>
       ${rows}
     </table>
   `;
@@ -2164,15 +2173,18 @@ function essaiRapportHTML(sc, essai){
     .map(r => {
       const exempte = !toleranceRequisePour(sc, r);
       const conform = checkConform(sc, r);
-      const statut = exempte ? "Charnière seule" : conform === null ? "—" : conform ? "OK" : "Hors tolérance";
+      const statut = exempte ? "Charnière seule" : conform === null ? "—" : conform ? "OK" : (raisonNonConforme(sc, r) || "Hors tolérance");
       const lp = snap.find(l => l.logementId === r.logementId);
       const logementTxt = lp ? (String(lp.outilNumero||"?") + " · " + String(lp.logementNom||"")).trim() : "—";
       const valeur = sc.emag1 ? ("Droite " + fmtBatt(r.battD) + " / Gauche " + fmtBatt(r.battG)) : fmtBatt(r.batt);
+      const valeur2 = sc.critere2Actif ? (r.valeur2 === "" || r.valeur2 == null ? "—" : r.valeur2) : "";
       return `<tr>
         <td>${escapeAttr(r.piece)}</td>
         ${showLogementCol ? `<td>${escapeAttr(logementTxt)}</td>` : ""}
         <td>${escapeAttr(r.pointMesure) || "—"}</td>
         <td>${valeur}</td>
+        ${sc.critere2Actif ? `<td>${valeur2}</td>` : ""}
+        <td>${USURE_LABELS[r.usure] || "—"}</td>
         <td>${statut}</td>
       </tr>`;
     }).join("");
@@ -2254,8 +2266,8 @@ function essaiRapportHTML(sc, essai){
 
   <h2>Prélèvements — ${mesureLabel}</h2>
   <table>
-    <tr><th>N° pièce</th>${showLogementCol ? "<th>Logement</th>" : ""}<th>Point de mesure</th><th>Valeur</th><th>Statut</th></tr>
-    ${prelRows || `<tr><td colspan="${4 + (showLogementCol?1:0)}" style="text-align:center; color:#888;">Aucun prélèvement enregistré</td></tr>`}
+    <tr><th>N° pièce</th>${showLogementCol ? "<th>Logement</th>" : ""}<th>Point de mesure</th><th>Valeur</th>${sc.critere2Actif ? `<th>${escapeAttr(sc.limitLabel2)}</th>` : ""}<th>Usure</th><th>Statut</th></tr>
+    ${prelRows || `<tr><td colspan="${5 + (showLogementCol?1:0) + (sc.critere2Actif?1:0)}" style="text-align:center; color:#888;">Aucun prélèvement enregistré</td></tr>`}
   </table>
 
   ${essai.observations ? `<h2>Observations</h2><div class="obs-box">${escapeAttr(essai.observations)}</div>` : ""}
@@ -2501,7 +2513,7 @@ function recomputeCycles(){
   });
 }
 
-function checkConform(sc, row){
+function checkConformPrincipal(sc, row){
   if(!toleranceRequisePour(sc, row)) return null; // ce logement ne suit que la charniere, pas la tolerance
   const limit = parseFloat(limiteDe(sc));
   if(isNaN(limit)) return null;
@@ -2514,6 +2526,58 @@ function checkConform(sc, row){
   const b = parseFloat(row.batt);
   if(isNaN(b)) return null;
   return b <= limit;
+}
+/* 2e critere quantitatif optionnel (ex. etat de surface Ra/Rz/Rt en plus de la tolerance
+   dimensionnelle) : n'evalue que si le scenario l'a active ET qu'une valeur est saisie —
+   une case vide ne fait jamais echouer un prelevement par ailleurs conforme. */
+function checkConformCritere2(sc, row){
+  if(!sc.critere2Actif) return null;
+  const limit = parseFloat(sc.limitValue2);
+  if(isNaN(limit)) return null;
+  if(row.valeur2 === "" || row.valeur2 == null) return null;
+  const v = parseFloat(row.valeur2);
+  if(isNaN(v)) return null;
+  return v <= limit;
+}
+/* usure visuelle : "a changer" fait toujours echouer le prelevement, quelle que soit la
+   mesure — un outil visiblement use n'est pas rattrape par une cote encore dans la tol. */
+function checkUsure(row){
+  return row.usure === "changer" ? false : true;
+}
+const USURE_LABELS = { ok: "OK", limite: "Usure limite", changer: "À changer" };
+function usureBadgeHTML(usure){
+  if(usure === "changer") return `<span class="badge risk">À changer</span>`;
+  if(usure === "limite") return `<span class="badge warn">Usure limite</span>`;
+  if(usure === "ok") return `<span class="badge ok">OK</span>`;
+  return `<span class="badge muted">—</span>`;
+}
+function usureSelectHTML(row, attrs){
+  return `<select class="cell usure-select small" ${attrs} data-field="usure">
+    <option value="" ${!row.usure ? "selected" : ""}>—</option>
+    <option value="ok" ${row.usure==="ok"?"selected":""}>OK</option>
+    <option value="limite" ${row.usure==="limite"?"selected":""}>Usure limite</option>
+    <option value="changer" ${row.usure==="changer"?"selected":""}>À changer</option>
+  </select>`;
+}
+/* explique pourquoi un prelevement est hors tolerance, pour les raisons affichees au
+   niveau de l'essai (sinon tout est etiquete "hors tolerance" meme quand c'est l'usure
+   visuelle ou l'etat de surface qui a fait basculer le verdict) */
+function raisonNonConforme(sc, row){
+  if(checkConformPrincipal(sc, row) === false) return "hors tolérance";
+  if(checkConformCritere2(sc, row) === false) return (sc.limitLabel2 || "2e critère") + " hors tolérance";
+  if(checkUsure(row) === false) return "plaquette à changer (usure)";
+  return "";
+}
+/* verdict combine d'un prelevement : conforme seulement si les 3 gardes passent. Le
+   critere principal reste seul maitre du null (pas de tolerance requise / valeur absente) ;
+   le 2e critere et l'usure ne peuvent que faire basculer un prelevement DEJA evalue de
+   conforme a non conforme, jamais l'inverse et jamais depuis le null. */
+function checkConform(sc, row){
+  const principal = checkConformPrincipal(sc, row);
+  if(principal !== true) return principal; // null (exempte/pas de valeur) ou false : inchange
+  if(checkConformCritere2(sc, row) === false) return false;
+  if(checkUsure(row) === false) return false;
+  return true;
 }
 /* le dernier n° de piece atteint POUR UN LOGEMENT DONNE : si au moins un prelevement de
    l'essai porte un logementId, on ne compte que ceux de ce logement (mesures menees en
@@ -2557,7 +2621,8 @@ function essaiStats(sc, essai){
   let status = "pending", raison = "";
   if(anyBad){
     status = "bad";
-    raison = "hors tolérance";
+    const premierBad = evaluated.find(r => checkConform(sc,r) === false);
+    raison = premierBad ? raisonNonConforme(sc, premierBad) : "hors tolérance";
   } else if(!prels.length){
     raison = "aucun prélèvement";
   } else if(manquantes > 0){
@@ -2710,6 +2775,11 @@ function atelierHTML(){
     ? `<div class="at-champ"><label>Droite</label><input type="number" step="0.001" inputmode="decimal" id="atD" placeholder="0,000"></div>
        <div class="at-champ"><label>Gauche</label><input type="number" step="0.001" inputmode="decimal" id="atG" placeholder="0,000"></div>`
     : `<div class="at-champ"><label>${escapeAttr(libelleDe(sc))}</label><input type="number" step="0.001" inputmode="decimal" id="atV" placeholder="0,000"></div>`;
+  const champ2 = sc.critere2Actif
+    ? `<div class="at-champ"><label>${escapeAttr(sc.limitLabel2)}</label><input type="number" step="0.001" inputmode="decimal" id="atV2" placeholder="0,000"></div>` : "";
+  const champUsure = `<div class="at-champ"><label>Usure plaquette</label>
+    <select id="atUsure"><option value="">—</option><option value="ok">OK</option><option value="limite">Usure limite</option><option value="changer">À changer</option></select>
+  </div>`;
 
   return `
     <div class="at-head">
@@ -2744,7 +2814,7 @@ function atelierHTML(){
       </div>
     </div>` : ""}
 
-    <div class="at-champs">${champs}</div>
+    <div class="at-champs">${champs}${champ2}${champUsure}</div>
 
     <button class="primary at-valider" id="atelierValider">Enregistrer et pièce suivante</button>
 
@@ -2780,8 +2850,11 @@ function renderAtelier(){
     const essai = sc && (sc.essais||[]).find(e => e.id === atelierCtx.essaiId);
     if(!sc || !essai) return;
     const piece = document.getElementById("atPiece").value;
-    const row = { id:"p"+Math.random().toString(36).slice(2), piece, batt:"", battD:"", battG:"",
+    const row = { id:"p"+Math.random().toString(36).slice(2), piece, batt:"", battD:"", battG:"", usure:"", valeur2:"",
                   logementId: atelierCtx.logementId || "", pointMesure: atelierCtx.pointMesure || "" };
+    if(sc.critere2Actif) row.valeur2 = document.getElementById("atV2") ? document.getElementById("atV2").value : "";
+    const usureSel = document.getElementById("atUsure");
+    if(usureSel) row.usure = usureSel.value;
     if(sc.emag1){
       row.battD = document.getElementById("atD").value;
       row.battG = document.getElementById("atG").value;
@@ -3687,6 +3760,19 @@ function scenarioBlockHTML(sc, interactive){
     </div>
   ` : `<div class="limit-row-print">${escapeAttr(libelleDe(sc))} ≤ ${fmt(parseFloat(limiteDe(sc)),3)}${sc.limitOverride ? " (tolérance spécifique)" : ""}</div>`;
 
+  const critere2Row = interactive ? `
+    <div class="limit-row">
+      <label class="emag-toggle">
+        <input type="checkbox" data-id="${sc.id}" data-field="critere2Actif" ${sc.critere2Actif ? "checked" : ""}>
+        Suivre un 2e critère (ex. état de surface Ra/Rz/Rt, en plus de la tolérance ci-dessus)
+      </label>
+      ${sc.critere2Actif ? `
+        <input class="limit-label" data-id="${sc.id}" data-field="limitLabel2" value="${escapeAttr(sc.limitLabel2)}">
+        <span>≤</span>
+        <input class="limit-value" data-id="${sc.id}" data-field="limitValue2" type="number" step="0.01" value="${sc.limitValue2 ?? ""}">` : ""}
+    </div>
+  ` : (sc.critere2Actif ? `<div class="limit-row-print">${escapeAttr(sc.limitLabel2)} ≤ ${fmt(parseFloat(sc.limitValue2),3)} (2e critère)</div>` : "");
+
   const thresholdRow = interactive ? `
     <div class="limit-row">
       <span>Seuil de validation —</span>
@@ -3701,7 +3787,7 @@ function scenarioBlockHTML(sc, interactive){
   const logSection = `
     <div class="log-section">
       <h3>Essais — relevés de contrôle (un essai = plusieurs prélèvements sur la charnière visée)</h3>
-      <div class="log-meta">${emagRow}${limitRow}${thresholdRow}</div>
+      <div class="log-meta">${emagRow}${limitRow}${critere2Row}${thresholdRow}</div>
       <div class="essais-list">
         ${essaisHtml || `<div class="log-empty" style="padding:16px;">Aucun essai enregistré</div>`}
       </div>
@@ -4030,9 +4116,11 @@ function essaiCardHTML(sc, essai, interactive){
   const snapLogements = (essai.params && essai.params.logements) || [];
   const showLogementCol = snapLogements.length > 1;
   const logementHead = showLogementCol ? `<th>Logement</th>` : "";
+  const critere2Head = sc.critere2Actif ? `<th class="num">${escapeAttr(sc.limitLabel2)}</th>` : "";
+  const usureHead = `<th>Usure</th>`;
   const prelHead = sc.emag1
-    ? `${logementHead}<th class="num">N° pièce</th><th>Point de mesure</th><th class="num">Droite</th><th class="num">Gauche</th><th>Conf.</th>`
-    : `${logementHead}<th class="num">N° pièce</th><th>Point de mesure</th><th class="num">${mesureLabel}</th><th>Conf.</th>`;
+    ? `${logementHead}<th class="num">N° pièce</th><th>Point de mesure</th><th class="num">Droite</th><th class="num">Gauche</th>${critere2Head}${usureHead}<th>Conf.</th>`
+    : `${logementHead}<th class="num">N° pièce</th><th>Point de mesure</th><th class="num">${mesureLabel}</th>${critere2Head}${usureHead}<th>Conf.</th>`;
   const prelListe = interactive
     ? (essai.prelevements||[])
     : (essai.prelevements||[]).slice().sort((a,b) => (parseFloat(a.piece)||0) - (parseFloat(b.piece)||0));
@@ -4040,7 +4128,7 @@ function essaiCardHTML(sc, essai, interactive){
   const addPrelBtn = interactive ? `<button class="ghost prel-add" data-id="${sc.id}" data-essai="${essai.id}">+ Ajouter un prélèvement</button>
     <button class="primary atelier-open" data-id="${sc.id}" data-essai="${essai.id}" title="Saisie plein écran, gros champs — pour mesurer devant la machine"><svg class="icon" viewBox="0 0 18 18"><path d="M3.5 3.5h11v11h-11z" stroke-linejoin="round"/><path d="M6.5 9h5M9 6.5v5" stroke-linecap="round"/></svg>Mode atelier</button>
     <button class="ghost essai-rapport" data-id="${sc.id}" data-essai="${essai.id}" title="Génère un rapport HTML autonome de cet essai — interlocuteurs, but, plaquettes, mesures"><svg class="icon" viewBox="0 0 18 18"><path d="M5 2.5h5l3 3V15a.8.8 0 0 1-.8.8H5.8a.8.8 0 0 1-.8-.8V2.5Z" stroke-linejoin="round"/><path d="M6.5 9h5M6.5 11.5h5M6.5 6.5h2"/></svg>Rapport de l'essai</button>` : "";
-  const emptyColspan = (sc.emag1 ? 5 : 4) + (showLogementCol?1:0) + (interactive?1:0);
+  const emptyColspan = (sc.emag1 ? 5 : 4) + (showLogementCol?1:0) + (interactive?1:0) + (sc.critere2Actif?1:0) + 1;
 
   // une progression independante par logement : un outil peut atteindre sa charniere
   // pendant qu'un autre continue, chacun avec sa propre cible
@@ -4111,12 +4199,17 @@ function prelevementRowHTML(sc, essai, row, interactive, snapLogements, showLoge
       ? `<td class="num"><input class="cell measure" data-id="${sc.id}" data-essai="${essai.id}" data-prel="${row.id}" data-field="battD" type="number" step="0.001" inputmode="decimal" value="${row.battD ?? ""}"></td>
          <td class="num"><input class="cell measure" data-id="${sc.id}" data-essai="${essai.id}" data-prel="${row.id}" data-field="battG" type="number" step="0.001" inputmode="decimal" value="${row.battG ?? ""}"></td>`
       : `<td class="num"><input class="cell measure" data-id="${sc.id}" data-essai="${essai.id}" data-prel="${row.id}" data-field="batt" type="number" step="0.001" inputmode="decimal" value="${row.batt ?? ""}"></td>`;
+    const critere2Cell = sc.critere2Actif
+      ? `<td class="num"><input class="cell measure" data-id="${sc.id}" data-essai="${essai.id}" data-prel="${row.id}" data-field="valeur2" type="number" step="0.001" inputmode="decimal" value="${row.valeur2 ?? ""}"></td>` : "";
+    const usureCell = `<td>${usureSelectHTML(row, `data-id="${sc.id}" data-essai="${essai.id}" data-prel="${row.id}"`)}</td>`;
     return `
       <tr class="${rowClass}">
         ${logementCell}
         <td class="num"><input class="cell" data-id="${sc.id}" data-essai="${essai.id}" data-prel="${row.id}" data-field="piece" type="number" step="1" inputmode="numeric" value="${row.piece ?? ""}"></td>
         <td><input class="cell ref small" data-id="${sc.id}" data-essai="${essai.id}" data-prel="${row.id}" data-field="pointMesure" value="${escapeAttr(row.pointMesure)}" placeholder="Inter, Exter..."></td>
         ${measureCells}
+        ${critere2Cell}
+        ${usureCell}
         <td>${badge}</td>
         <td><button class="log-del prel-del" data-id="${sc.id}" data-essai="${essai.id}" data-prel="${row.id}">✕</button></td>
       </tr>
@@ -4127,12 +4220,16 @@ function prelevementRowHTML(sc, essai, row, interactive, snapLogements, showLoge
   const measureCells = sc.emag1
     ? `<td class="num">${fmtBatt(row.battD)}</td><td class="num">${fmtBatt(row.battG)}</td>`
     : `<td class="num">${fmtBatt(row.batt)}</td>`;
+  const critere2CellPrint = sc.critere2Actif ? `<td class="num">${row.valeur2 === "" || row.valeur2 == null ? "—" : row.valeur2}</td>` : "";
+  const usureCellPrint = `<td>${USURE_LABELS[row.usure] || "—"}</td>`;
   return `
     <tr class="${rowClass}">
       ${logementCellPrint}
       <td class="num">${row.piece === "" || row.piece === undefined || row.piece === null ? "—" : row.piece}</td>
       <td>${row.pointMesure ? escapeAttr(row.pointMesure) : "—"}</td>
       ${measureCells}
+      ${critere2CellPrint}
+      ${usureCellPrint}
       <td>${badge}</td>
     </tr>
   `;
@@ -4637,7 +4734,7 @@ function attachDetailHandlers(sc){
       else essaisOuverts.delete(key);
     });
   });
-  root.querySelectorAll("input.cell, input.sc-name, input.cell-cycle, input.limit-label, input.limit-value, input.essai-obs, input.essai-but, select.log-equipe, select.statut-select, input.statut-motif").forEach(inp => {
+  root.querySelectorAll("input.cell, input.sc-name, input.cell-cycle, input.limit-label, input.limit-value, input.essai-obs, input.essai-but, select.log-equipe, select.statut-select, input.statut-motif, select.usure-select").forEach(inp => {
     inp.addEventListener("change", onInputChange);
     // a chaque caractere : on ecrit juste la valeur (pas de reconstruction de l'ecran).
     // Reconstruire tout l'affichage a chaque frappe (badges, couts, graphique...) rendait
@@ -4736,6 +4833,12 @@ function attachDetailHandlers(sc){
     inp.addEventListener("change", () => {
       sc.limitOverride = inp.checked;
       if(inp.checked){ sc.limitLabel = config.limitLabel; sc.limitValue = config.limitValue; }
+      saveData(); render();
+    });
+  });
+  root.querySelectorAll('input[data-field="critere2Actif"]').forEach(inp => {
+    inp.addEventListener("change", () => {
+      sc.critere2Actif = inp.checked;
       saveData(); render();
     });
   });
@@ -4915,7 +5018,7 @@ function attachDetailHandlers(sc){
       if(!isLast) return;
       e.preventDefault();
       writeFieldValue(inp); // capture la valeur en cours de frappe avant de reconstruire l'ecran
-      es.prelevements.push({ id: "p"+Math.random().toString(36).slice(2), piece:"", batt:"", battD:"", battG:"", logementId:"", pointMesure:"" });
+      es.prelevements.push({ id: "p"+Math.random().toString(36).slice(2), piece:"", batt:"", battD:"", battG:"", logementId:"", pointMesure:"", usure:"", valeur2:"" });
       saveData();
       render();
       const list = document.querySelectorAll(`#scenarioDetail input[data-essai="${essaiId}"][data-field="piece"]`);
@@ -5002,6 +5105,7 @@ document.getElementById("addBtn").addEventListener("click", () => {
   const blank = {
     id: "s" + Date.now(), name: "Nouveau scénario", baseline: false, cycle: "",
     emag1: emag1Auto, limitOverride: false, limitLabel: "Battement (mm)", limitValue: 0.12, validationThreshold: 5,
+    critere2Actif: false, limitLabel2: "Ra (µm)", limitValue2: 0.8,
     outils: [{ id: "t"+Math.random().toString(36).slice(2), numero: "", logements: [
       normalizeLogement({ nom: "Bol" }), normalizeLogement({ nom: "Piste" })
     ] }],
@@ -5177,6 +5281,12 @@ document.getElementById("optionsClose").addEventListener("click", fermerPanneaux
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"3.9.0", date:"02/09/2026", points:[
+    "Chaque prélèvement porte désormais un statut d'<b>usure visuelle de la plaquette</b> (OK / usure limite / à changer) — « à changer » rend le prélèvement non conforme même si les cotes sont bonnes.",
+    "Un scénario peut activer un <b>2e critère de tolérance</b> (ex. état de surface Ra/Rz/Rt en plus d'une cote dimensionnelle) dans son bloc « Essais » — les deux doivent être respectés pour qu'un prélèvement soit conforme.",
+    "Le motif « hors tolérance » affiché sur les essais est désormais précis (cote, 2e critère, ou usure) plutôt qu'un seul libellé générique.",
+    "Les rapports de validation et d'essai, la table de prélèvements et l'export CSV reprennent ces deux nouveaux critères."
+  ]},
   { version:"3.8.0", date:"02/09/2026", points:[
     "L'outil annonce lui-même ce qui change à chaque nouvelle version : cette fenêtre s'ouvre une fois, puis plus jusqu'à la prochaine mise à jour. Elle reste consultable dans le menu <b>•••</b> → <b>Nouveautés</b>.",
     "Le menu <b>Comment ça marche</b> (icône <b>?</b>) a été complété : coût complet, seuil de bascule, charnière atteinte, statuts et tableau de bord y sont expliqués."

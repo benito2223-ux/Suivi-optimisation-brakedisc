@@ -5,6 +5,27 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [3.9.0] — 2026-09-02
+
+Trois critères de validation de la durée de vie, au lieu d'un seul.
+
+### Ajouté
+- **Usure visuelle de la plaquette** — statut par prélèvement (OK / usure limite / à changer),
+  saisi dans le tableau de l'essai comme en mode atelier. « À changer » rend le prélèvement
+  non conforme même si la cote mesurée est dans la tolérance : un outil visiblement usé n'est
+  pas rattrapé par une mesure encore bonne.
+- **2e critère de tolérance, optionnel par scénario** (bloc « Essais ») — typiquement un état
+  de surface (Ra/Rz/Rt) en plus de la tolérance dimensionnelle déjà suivie (battement,
+  parallélisme, diamètre...). Les deux doivent être respectés pour qu'un prélèvement soit
+  conforme. Une case vide sur le 2e critère ne fait jamais échouer un prélèvement par ailleurs
+  bon — pas de reclassement rétroactif des essais existants.
+- Le motif « hors tolérance » affiché sur les essais est désormais précis (cote hors tolérance,
+  2e critère hors tolérance, ou usure) au lieu d'un seul libellé générique.
+
+### Changé
+- Table de prélèvements, mode atelier, rapports de validation et d'essai (HTML autonomes),
+  export CSV : tous reprennent les deux nouveaux critères.
+
 ## [3.8.0] — 2026-09-02
 
 L'outil annonce lui-même ses évolutions, et le menu d'aide rattrape les fonctionnalités
