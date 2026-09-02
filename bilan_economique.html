@@ -1163,7 +1163,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "3.9.2";
+const TOOL_VERSION = "3.9.3";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -3719,6 +3719,8 @@ function scenarioBlockHTML(sc, interactive){
              <div class="foot-sub">${fmt(annuel.volume,0)} disques/an</div>`
           : `<div class="v" style="font-size:26px; color:${annuel.gainAnnuel >= 0 ? "var(--green)" : "var(--red)"};">${(annuel.gainAnnuel>=0?"+":"−") + fmtEuroCourt(Math.abs(annuel.gainAnnuel))}</div>
              <div class="foot-sub">sur ${fmt(annuel.volume,0)} disques/an${annuel.heuresAnnuelles !== undefined ? ` · ${annuel.heuresAnnuelles>=0?"+":"−"}${fmt(Math.abs(annuel.heuresAnnuelles),0)} h machine` : ""}</div>`}
+        ${(!sc.baseline && !config.coutMachineActif && baseCycle && !isNaN(cyc) && Math.abs(cyc - baseCycle) > 0.5)
+          ? `<div class="foot-sub" style="color:var(--amber);">⚠ écart de cycle non chiffré ici — activez « Intégrer le temps machine au coût pièce » dans Options</div>` : ""}
       </div>` : "";
 
   const foot = `
@@ -3730,7 +3732,7 @@ function scenarioBlockHTML(sc, interactive){
         <div class="v">${fmt(scenarioCostPerEdge(sc), 3)}<small>€</small></div>
       </div>
       <div class="foot-cell">
-        <div class="l">Temps de cycle (réf. éditable)</div>
+        <div class="l">Temps de cycle — indice base 100 (éditable)</div>
         ${cycleCell}
         ${cycleDeltaHtml}
         ${cycleSecLine}
@@ -5301,6 +5303,10 @@ document.getElementById("optionsClose").addEventListener("click", fermerPanneaux
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"3.9.3", date:"02/09/2026", points:[
+    "Le champ « Temps de cycle » du bloc scénario précise maintenant qu'il s'agit d'un <b>indice base 100</b> — il pouvait être confondu avec le temps réel en secondes affiché juste en dessous.",
+    "Quand vous modifiez le temps de cycle sans avoir activé « Intégrer le temps machine au coût pièce » (module Options), le <b>gain annuel</b> ne bouge pas volontairement — un avertissement l'indique désormais directement sous le gain, au lieu de laisser croire à un bug."
+  ]},
   { version:"3.9.2", date:"02/09/2026", points:[
     "Les captures jointes à une suggestion (menu <b>•••</b> → <b>Suggestions</b>) s'agrandissent maintenant en plein écran d'un clic — elles étaient jusque-là trop petites pour être lisibles.",
     "Rappel ajouté dans cette fenêtre « Nouveautés » : quand une évolution correspond à une suggestion que vous aviez notée, pensez à passer son statut sur <b>Traité</b>."

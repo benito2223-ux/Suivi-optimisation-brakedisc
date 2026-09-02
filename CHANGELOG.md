@@ -5,6 +5,19 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [3.9.3] — 2026-09-02
+
+### Changé
+- **Étiquette du champ « Temps de cycle »** — précise désormais « indice base 100 » pour
+  ne plus le confondre avec la ligne de temps réel en secondes affichée en dessous
+  (module « Afficher le temps de cycle en secondes »).
+
+### Ajouté
+- **Avertissement sous « Gain annuel »** quand le temps de cycle d'un scénario diffère de
+  la référence sans que le module « Intégrer le temps machine au coût pièce » soit activé :
+  le gain affiché ignore alors volontairement cet écart. Sans ce message, modifier le cycle
+  sans effet sur le gain pouvait passer pour un bug de calcul.
+
 ## [3.9.2] — 2026-09-02
 
 ### Ajouté
