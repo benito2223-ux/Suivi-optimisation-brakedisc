@@ -5,6 +5,15 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [3.9.1] — 2026-09-02
+
+### Corrigé
+- **Tuile « Production annuelle » chevauchant le tableau de composition** — quand le volume
+  annuel était renseigné pour une référence, la tuile flottante s'imposait à côté du tableau
+  « Composition du scénario » au lieu de passer au-dessus, ce qui écrasait ses colonnes
+  (référence plaquette notamment) et rendait le contenu illisible. Le tableau se place
+  désormais toujours sous la tuile, quelle que soit la largeur d'écran.
+
 ## [3.9.0] — 2026-09-02
 
 Trois critères de validation de la durée de vie, au lieu d'un seul.

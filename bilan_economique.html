@@ -177,7 +177,7 @@ button:focus-visible{outline:2px solid var(--blue); outline-offset:2px;}
 .kvf-item .v.out{color:var(--amber);}
 .kvf-item .ref{font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint);}
 
-.tbl-wrap{overflow-x:auto;}
+.tbl-wrap{overflow-x:auto; clear:both;}
 table{border-collapse:collapse; width:100%; min-width:900px;}
 th,td{padding:8px 12px; border-bottom:1px solid var(--border); font-size:13.5px; white-space:nowrap;}
 th{font-family:var(--font-body); font-weight:600; font-size:10.5px; text-transform:uppercase; letter-spacing:.03em; color:var(--ink-faint); background:var(--surface-alt); text-align:left; position:sticky; top:0;}
@@ -1157,7 +1157,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "3.9.0";
+const TOOL_VERSION = "3.9.1";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -5281,6 +5281,9 @@ document.getElementById("optionsClose").addEventListener("click", fermerPanneaux
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"3.9.1", date:"02/09/2026", points:[
+    "Correctif : quand la <b>production annuelle</b> était renseignée, la tuile qui l'affiche pouvait chevaucher le tableau « Composition du scénario » et en écraser les colonnes. Le tableau passe désormais toujours sous la tuile."
+  ]},
   { version:"3.9.0", date:"02/09/2026", points:[
     "Chaque prélèvement porte désormais un statut d'<b>usure visuelle de la plaquette</b> (OK / usure limite / à changer) — « à changer » rend le prélèvement non conforme même si les cotes sont bonnes.",
     "Un scénario peut activer un <b>2e critère de tolérance</b> (ex. état de surface Ra/Rz/Rt en plus d'une cote dimensionnelle) dans son bloc « Essais » — les deux doivent être respectés pour qu'un prélèvement soit conforme.",
