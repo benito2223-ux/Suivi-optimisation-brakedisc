@@ -1,0 +1,5 @@
+# Deploiement verrouille : seuls ces deux fichiers doivent jamais partir sur Surge.
+# Tout le reste (donnees d'essais reelles, notes internes, mode d'emploi, .git...) reste local.
+*
+!bilan_economique.html
+!index.html
