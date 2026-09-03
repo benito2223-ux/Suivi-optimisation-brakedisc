@@ -5,6 +5,21 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [3.11.0] — 2026-09-03
+
+Champs manquants identifiés en comparant un rapport d'essai papier réel (Matis) au modèle
+de données de l'outil : rédaction, fin d'essai, programme CNC, correcteur, type d'outil,
+légende de photo.
+
+### Ajouté
+- **Champs par essai** : rédigé par, fin d'essai (date + heure — en plus de la date de
+  début déjà présente), nom du programme CNC (deux champs Gauche/Droit sur EMAG 1, un
+  champ unique sinon). Repris dans le rapport d'essai généré.
+- **Champs par outil** : correcteur (n° de jauge/offset machine), type d'outil (description
+  libre, ex. « Foret carbure monobloc à goujure droite »). Repris dans le rapport d'essai
+  et le rapport de validation.
+- **Légende par photo d'essai** (ex. « Usure du foret après 4212 pièces (cumul) »).
+
 ## [3.10.0] — 2026-09-02
 
 ### Ajouté

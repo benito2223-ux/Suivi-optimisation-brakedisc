@@ -405,11 +405,14 @@ tr.row-bad td{background:var(--red-bg);}
 .photos-block summary::-webkit-details-marker{display:none;}
 .photos-body{padding:4px 14px 16px;}
 .photos-grid{display:flex; flex-wrap:wrap; gap:10px; margin-top:10px;}
+.photo-thumb-wrap{width:120px; display:flex; flex-direction:column; gap:4px;}
 .photo-thumb{position:relative; width:120px; height:90px; border-radius:var(--radius); overflow:hidden; border:1px solid var(--border); background:var(--surface-alt);}
 .photo-thumb img{width:100%; height:100%; object-fit:cover; display:block;}
 .photo-thumb img.photo-missing{opacity:.35;}
 .photo-del{position:absolute; top:3px; right:3px; padding:1px 6px; font-size:11px; line-height:1.6; background:rgba(20,24,22,.55); color:#fff; border:none; border-radius:var(--radius-sm);}
 .photo-del:hover{background:var(--red);}
+.photo-legende{width:120px; font-family:var(--font-body); font-size:10.5px; padding:3px 5px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); color:var(--ink);}
+.photo-legende:focus{border-color:var(--blue); outline:none;}
 
 /* panneaux modaux (options / impression) */
 .panel-backdrop{position:fixed; inset:0; background:rgba(20,24,22,.45); z-index:40;}
@@ -1190,7 +1193,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "3.10.0";
+const TOOL_VERSION = "3.11.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -1511,7 +1514,7 @@ function normalizePieceDetachee(p){
     nom:"", ref:"", prix:"", charniere:"" }, p);
 }
 function normalizeOutil(o){
-  return Object.assign({ id: o.id || ("t"+Math.random().toString(36).slice(2)), numero:"" }, o, {
+  return Object.assign({ id: o.id || ("t"+Math.random().toString(36).slice(2)), numero:"", correcteur:"", description:"" }, o, {
     logements: (o.logements || []).map(normalizeLogement),
     pieces: (o.pieces || []).map(normalizePieceDetachee)
   });
@@ -2132,10 +2135,10 @@ function rapportValidationHTML(sc){
 
   <h2>Paramètres de coupe</h2>
   <table>
-    <tr><th>N° outil</th><th>Logement</th><th>Référence plaquette</th><th>Vc (m/min)</th><th>f (mm/rev)</th><th>Charnière (p/arête)</th></tr>
+    <tr><th>N° outil</th><th>Correcteur</th><th>Type d'outil</th><th>Logement</th><th>Référence plaquette</th><th>Vc (m/min)</th><th>f (mm/rev)</th><th>Charnière (p/arête)</th></tr>
     ${sc.outils.flatMap(o => o.logements.map(l =>
-      `<tr><td>${escapeAttr(o.numero)}</td><td>${escapeAttr(l.nom)}</td><td>${escapeAttr(l.ref)}</td><td>${l.vc || "—"}</td><td>${l.f || "—"}</td><td>${l.charniere || "—"}</td></tr>`
-    )).join("") || `<tr><td colspan="6" style="text-align:center; color:#888;">Aucun outil configuré</td></tr>`}
+      `<tr><td>${escapeAttr(o.numero)}</td><td>${escapeAttr(o.correcteur) || "—"}</td><td>${escapeAttr(o.description) || "—"}</td><td>${escapeAttr(l.nom)}</td><td>${escapeAttr(l.ref)}</td><td>${l.vc || "—"}</td><td>${l.f || "—"}</td><td>${l.charniere || "—"}</td></tr>`
+    )).join("") || `<tr><td colspan="8" style="text-align:center; color:#888;">Aucun outil configuré</td></tr>`}
   </table>
 
   <h2>Essais</h2>
@@ -2192,15 +2195,20 @@ function essaiRapportHTML(sc, essai){
   const dateAff = essai.date ? new Date(essai.date + "T00:00").toLocaleDateString("fr-FR") : "—";
   const logoSrc = (document.querySelector(".hd-left img") || {}).getAttribute ? document.querySelector(".hd-left img").getAttribute("src") : "";
 
-  const plaquettesRows = snap.map(lp => `
+  const plaquettesRows = snap.map(lp => {
+    const outilLive = sc.outils.find(o => o.id === lp.outilId);
+    return `
     <tr>
       <td>${escapeAttr(lp.outilNumero)}</td>
+      <td>${escapeAttr(outilLive && outilLive.correcteur) || "—"}</td>
+      <td>${escapeAttr(outilLive && outilLive.description) || "—"}</td>
       <td>${escapeAttr(lp.logementNom)}</td>
       <td>${escapeAttr(refLogementEssai(sc, lp)) || "—"}</td>
       <td>${lp.vc === "" || lp.vc == null ? "—" : lp.vc}</td>
       <td>${lp.f === "" || lp.f == null ? "—" : lp.f}</td>
       <td>${lp.charniere === "" || lp.charniere == null ? "—" : lp.charniere}</td>
-    </tr>`).join("") || `<tr><td colspan="6" style="text-align:center; color:#888;">Aucun outil configuré</td></tr>`;
+    </tr>`;
+  }).join("") || `<tr><td colspan="8" style="text-align:center; color:#888;">Aucun outil configuré</td></tr>`;
 
   const mesureLabel = escapeAttr(libelleDe(sc));
   const showLogementCol = snap.length > 1;
@@ -2288,15 +2296,19 @@ function essaiRapportHTML(sc, essai){
 
   <h2>Informations essai</h2>
   <div class="grid">
-    <div><div class="l">Date</div><div class="v">${dateAff}</div></div>
+    <div><div class="l">Date</div><div class="v">${dateAff}${essai.dateFin ? " → " + new Date(essai.dateFin + "T00:00").toLocaleDateString("fr-FR") + (essai.heureFin ? " à " + essai.heureFin : "") : ""}</div></div>
     <div><div class="l">Équipe</div><div class="v">${escapeAttr(essai.equipe) || "—"}</div></div>
     <div><div class="l">Opérateur</div><div class="v">${escapeAttr(essai.operateur) || "—"}</div></div>
+    <div><div class="l">Rédigé par</div><div class="v">${escapeAttr(essai.redigePar) || "—"}</div></div>
     <div><div class="l">Maturité des bruts</div><div class="v">${essai.maturiteBruts === "" || essai.maturiteBruts == null ? "—" : essai.maturiteBruts + " jour(s)"}</div></div>
+    ${sc.emag1
+      ? `<div><div class="l">Programme</div><div class="v">Gauche : ${escapeAttr(essai.programmeGauche) || "—"} · Droit : ${escapeAttr(essai.programmeDroit) || "—"}</div></div>`
+      : (essai.programme ? `<div><div class="l">Programme</div><div class="v">${escapeAttr(essai.programme)}</div></div>` : "")}
   </div>
 
   <h2>Plaquettes utilisées</h2>
   <table>
-    <tr><th>N° outil</th><th>Logement</th><th>Référence plaquette</th><th>Vc (m/min)</th><th>f (mm/rev)</th><th>Charnière (p/arête)</th></tr>
+    <tr><th>N° outil</th><th>Correcteur</th><th>Type d'outil</th><th>Logement</th><th>Référence plaquette</th><th>Vc (m/min)</th><th>f (mm/rev)</th><th>Charnière (p/arête)</th></tr>
     ${plaquettesRows}
   </table>
 
@@ -4100,9 +4112,12 @@ function photosHTML(sc, essai){
   if(!essai.photos) essai.photos = [];
   const photos = essai.photos;
   const thumbs = photos.map(p => `
-    <div class="photo-thumb">
-      <img data-photo-filename="${escapeAttr(p.filename)}" alt="${escapeAttr(p.filename)}">
-      <button class="photo-del" data-essai="${essai.id}" data-photo="${p.id}" title="Supprimer">✕</button>
+    <div class="photo-thumb-wrap">
+      <div class="photo-thumb">
+        <img data-photo-filename="${escapeAttr(p.filename)}" alt="${escapeAttr(p.filename)}">
+        <button class="photo-del" data-essai="${essai.id}" data-photo="${p.id}" title="Supprimer">✕</button>
+      </div>
+      <input class="photo-legende" data-essai="${essai.id}" data-photo="${p.id}" value="${escapeAttr(p.legende || "")}" placeholder="Légende (ex. usure de l'arête après 4212 pièces)">
     </div>
   `).join("");
   const uploadZone = !fsPhotosSupported()
@@ -4166,6 +4181,34 @@ function essaiCardHTML(sc, essai, interactive){
          value="${escapeAttr(essai.observations)}" placeholder="Observations : mode d'usure, entaille, incident, lot de fonte…"></div>`
     : (essai.observations ? `<div class="essai-obs-print">Observations : ${escapeAttr(essai.observations)}</div>` : "");
 
+  // tracabilite terrain : qui a redige, quand l'essai s'est termine (pas seulement commence),
+  // et quel programme CNC tournait — trois infos que le rapport papier de Matis note toujours
+  // et qu'aucun champ ne capturait avant la v3.11
+  const finEssaiRow = interactive
+    ? `<div class="essai-params" style="flex-wrap:wrap;">
+         <span>Rédigé par —</span>
+         <input class="cell ref" style="width:160px; min-width:120px;" data-id="${sc.id}" data-essai="${essai.id}" data-field="redigePar" value="${escapeAttr(essai.redigePar)}" placeholder="Nom(s)">
+         <span style="margin-left:10px;">Fin d'essai —</span>
+         <input class="cell" style="width:135px; min-width:120px;" type="date" data-id="${sc.id}" data-essai="${essai.id}" data-field="dateFin" value="${essai.dateFin ?? ""}">
+         <input class="cell" style="width:95px; min-width:80px;" type="time" data-id="${sc.id}" data-essai="${essai.id}" data-field="heureFin" value="${essai.heureFin ?? ""}">
+       </div>`
+    : ((essai.redigePar || essai.dateFin) ? `<div class="essai-obs-print">${essai.redigePar ? "Rédigé par : " + escapeAttr(essai.redigePar) : ""}${essai.dateFin ? (essai.redigePar ? " · " : "") + "Fin d'essai : " + essai.dateFin + (essai.heureFin ? " à " + essai.heureFin : "") : ""}</div>` : "");
+
+  const programmeRow = sc.emag1
+    ? (interactive
+        ? `<div class="essai-params" style="flex-wrap:wrap;">
+             <span>Programme —</span>
+             <input class="cell ref" style="width:150px; min-width:110px;" data-id="${sc.id}" data-essai="${essai.id}" data-field="programmeGauche" value="${escapeAttr(essai.programmeGauche)}" placeholder="Gauche">
+             <input class="cell ref" style="width:150px; min-width:110px;" data-id="${sc.id}" data-essai="${essai.id}" data-field="programmeDroit" value="${escapeAttr(essai.programmeDroit)}" placeholder="Droit">
+           </div>`
+        : ((essai.programmeGauche || essai.programmeDroit) ? `<div class="essai-obs-print">Programme — Gauche : ${escapeAttr(essai.programmeGauche) || "—"} · Droit : ${escapeAttr(essai.programmeDroit) || "—"}</div>` : ""))
+    : (interactive
+        ? `<div class="essai-params" style="flex-wrap:wrap;">
+             <span>Programme —</span>
+             <input class="cell ref" style="width:220px; min-width:150px;" data-id="${sc.id}" data-essai="${essai.id}" data-field="programme" value="${escapeAttr(essai.programme)}" placeholder="Nom du programme CNC">
+           </div>`
+        : (essai.programme ? `<div class="essai-obs-print">Programme : ${escapeAttr(essai.programme)}</div>` : ""));
+
   // conditions de coupe de chaque logement, telles qu'elles etaient au moment de l'essai
   const snap = (essai.params && essai.params.logements) || [];
   const diverge = paramsDivergences(sc, essai);
@@ -4224,6 +4267,8 @@ function essaiCardHTML(sc, essai, interactive){
       ${paramsRow}
       ${butRow}
       ${obsRow}
+      ${finEssaiRow}
+      ${programmeRow}
       <div class="tbl-wrap">
         <table>
           <thead><tr>${prelHead}${interactive?"<th></th>":""}</tr></thead>
@@ -4423,7 +4468,13 @@ function logementRowHTML(sc, o, l, couleur, interactive, showFrFa, showCycleDeta
   if(interactive){
     return `
       <tr class="pos-row" style="border-left:4px solid ${couleur};">
-        <td><input class="cell ref" data-id="${sc.id}" data-outil="${o.id}" data-field="numero" value="${escapeAttr(o.numero)}" placeholder="T513.1"></td>
+        <td>
+          <div class="ref-stack">
+            <input class="cell ref" data-id="${sc.id}" data-outil="${o.id}" data-field="numero" value="${escapeAttr(o.numero)}" placeholder="T513.1">
+            <input class="cell ref sub" data-id="${sc.id}" data-outil="${o.id}" data-field="correcteur" value="${escapeAttr(o.correcteur)}" placeholder="Correcteur">
+            <input class="cell ref sub" data-id="${sc.id}" data-outil="${o.id}" data-field="description" value="${escapeAttr(o.description)}" placeholder="Type d'outil (ex. foret carbure monobloc)">
+          </div>
+        </td>
         <td><input class="cell ref" data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}" data-field="nom" value="${escapeAttr(l.nom)}" placeholder="Logement 1"></td>
         <td>
           <div class="ref-stack">
@@ -4452,7 +4503,7 @@ function logementRowHTML(sc, o, l, couleur, interactive, showFrFa, showCycleDeta
   }
   return `
     <tr class="pos-row" style="border-left:4px solid ${couleur};">
-      <td>${escapeAttr(o.numero)}</td>
+      <td>${escapeAttr(o.numero)}${o.correcteur ? `<br><span class="ref-sub-print">Correcteur : ${escapeAttr(o.correcteur)}</span>` : ""}${o.description ? `<br><span class="ref-sub-print">${escapeAttr(o.description)}</span>` : ""}</td>
       <td>${escapeAttr(l.nom)}</td>
       <td>${escapeAttr(l.ref)}${l.codeArticle ? `<br><span class="ref-sub-print">Art. Stellantis : ${escapeAttr(l.codeArticle)}</span>` : ""}</td>
       <td class="num">${l.prix === "" ? "—" : l.prix ?? "—"}</td>
@@ -4893,7 +4944,7 @@ function attachDetailHandlers(sc){
           const stamp = Date.now() + "-" + Math.random().toString(36).slice(2,6);
           const filename = slugify(sc.name) + "_" + slugify(es.titre) + "_" + stamp + ".jpg";
           await writePhotoBlob(filename, blob);
-          es.photos.push({ id: "ph"+Math.random().toString(36).slice(2), filename, addedAt: new Date().toISOString() });
+          es.photos.push({ id: "ph"+Math.random().toString(36).slice(2), filename, addedAt: new Date().toISOString(), legende:"" });
         }catch(err){ alert("Échec de l'enregistrement d'une photo : " + err.message); }
       }
       saveData(); render();
@@ -4910,6 +4961,14 @@ function attachDetailHandlers(sc){
       if(photosDirHandle) await deletePhotoFile(p.filename);
       es.photos = es.photos.filter(x => x.id !== photoId);
       saveData(); render();
+    });
+  });
+  root.querySelectorAll(".photo-legende").forEach(inp => {
+    inp.addEventListener("blur", () => {
+      const essaiId = inp.getAttribute("data-essai"), photoId = inp.getAttribute("data-photo");
+      const es = sc.essais.find(e => e.id === essaiId);
+      const p = es && (es.photos||[]).find(x => x.id === photoId);
+      if(p){ p.legende = inp.value; saveData(); }
     });
   });
   root.querySelectorAll('input[data-field="emag1"]').forEach(inp => {
@@ -5424,6 +5483,12 @@ function renderFicheOutil(){
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"3.11.0", date:"03/09/2026", points:[
+    "Champs manquants par rapport aux rapports papier de Matis, tous ajoutés : <b>rédigé par</b>, <b>fin d'essai</b> (date + heure, en plus de la date de début), <b>nom du programme CNC</b> (Gauche/Droit sur EMAG 1, unique sinon) — dans le bloc de chaque essai.",
+    "<b>Correcteur</b> et <b>type d'outil</b> (ex. « Foret carbure monobloc à goujure droite ») ajoutés par outil, dans la composition du scénario.",
+    "<b>Légende par photo</b> d'essai (ex. « Usure de l'arête après 4212 pièces »).",
+    "Tous ces champs reprennent dans le rapport d'essai et le rapport de validation générés."
+  ]},
   { version:"3.10.0", date:"02/09/2026", points:[
     "Nouveau module <b>« Détailler le temps de cycle par logement »</b> (Options) : remplace l'indice base 100 par un temps coupe + un temps déplacement mesurés machine, saisis pour chaque logement dans la composition du scénario. Plus fidèle qu'un indice unique sur un scénario mixte (ex. un seul côté change de plaquette).",
     "Le calcul détaillé ne s'applique que si <b>tous</b> les logements du scénario sont renseignés — sinon le scénario retombe automatiquement sur l'indice base 100, avec un statut visible sous le tableau qui le dit clairement.",
