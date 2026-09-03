@@ -331,6 +331,28 @@ select.backlog-type, select.backlog-statut{font-family:var(--font-body); font-si
 .img-lightbox[hidden]{display:none;}
 .img-lightbox img{max-width:100%; max-height:100%; border-radius:var(--radius); box-shadow:0 12px 40px rgba(0,0,0,.5);}
 
+/* --- annotation de photo : rognage + fleches/formes/texte, non destructif --- */
+.annot-panel.panel{width:min(880px, calc(100vw - 32px)); padding:18px 20px 20px;}
+.annot-toolbar{display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:10px; padding-bottom:12px; border-bottom:1px solid var(--border);}
+.annot-tool{font-family:var(--font-body); font-size:12px; padding:6px 10px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); color:var(--ink-soft); cursor:pointer; display:inline-flex; align-items:center; gap:5px; white-space:nowrap;}
+.annot-tool:hover{border-color:var(--blue);}
+.annot-tool.active{background:var(--blue); border-color:var(--blue); color:#fff;}
+.annot-sep{width:1px; align-self:stretch; background:var(--border); margin:0 4px;}
+.annot-swatch{width:22px; height:22px; border-radius:50%; border:2px solid var(--surface); box-shadow:0 0 0 1px var(--border); cursor:pointer; padding:0;}
+.annot-swatch.active{box-shadow:0 0 0 2px var(--ink);}
+.annot-color-custom{width:26px; height:26px; padding:0; border:1px solid var(--border); border-radius:50%; overflow:hidden; cursor:pointer; background:none;}
+.annot-color-custom::-webkit-color-swatch-wrapper{padding:0;}
+.annot-color-custom::-webkit-color-swatch{border:none; border-radius:50%;}
+.annot-canvas-wrap{display:flex; justify-content:center; background:var(--surface-alt); border-radius:var(--radius); padding:10px; overflow:auto;}
+.annot-canvas-wrap canvas{cursor:crosshair; touch-action:none; max-width:100%; border-radius:var(--radius-sm); box-shadow:0 1px 3px rgba(20,24,22,.15);}
+.annot-canvas-wrap canvas.move{cursor:default;}
+.annot-hint{font-size:12px; color:var(--ink-faint); margin:8px 2px 0;}
+.annot-legende{width:100%; margin-top:10px; font-family:var(--font-body); font-size:13px; padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); color:var(--ink);}
+.annot-legende:focus{border-color:var(--blue); outline:none;}
+.photo-thumb .photo-annot{position:absolute; bottom:3px; right:3px; padding:1px 6px; font-size:11px; line-height:1.6; background:rgba(20,24,22,.55); color:#fff; border:none; border-radius:var(--radius-sm); cursor:pointer;}
+.photo-thumb .photo-annot:hover{background:var(--blue);}
+.photo-thumb .photo-annot-badge{position:absolute; top:3px; left:3px; font-size:10px; padding:1px 5px; background:var(--blue); color:#fff; border-radius:999px;}
+
 /* relevé de contrôle */
 .log-section{padding:16px; border-top:1px solid var(--border);}
 .log-section h3{font-family:var(--font-body); font-weight:600; font-size:13.5px; text-transform:uppercase; letter-spacing:.03em; color:var(--ink-faint); margin:0 0 12px;}
@@ -407,7 +429,7 @@ tr.row-bad td{background:var(--red-bg);}
 .photos-grid{display:flex; flex-wrap:wrap; gap:10px; margin-top:10px;}
 .photo-thumb-wrap{width:120px; display:flex; flex-direction:column; gap:4px;}
 .photo-thumb{position:relative; width:120px; height:90px; border-radius:var(--radius); overflow:hidden; border:1px solid var(--border); background:var(--surface-alt);}
-.photo-thumb img{width:100%; height:100%; object-fit:cover; display:block;}
+.photo-thumb img{width:100%; height:100%; object-fit:cover; display:block; cursor:zoom-in;}
 .photo-thumb img.photo-missing{opacity:.35;}
 .photo-del{position:absolute; top:3px; right:3px; padding:1px 6px; font-size:11px; line-height:1.6; background:rgba(20,24,22,.55); color:#fff; border:none; border-radius:var(--radius-sm);}
 .photo-del:hover{background:var(--red);}
@@ -1152,6 +1174,7 @@ body.atelier-on{overflow:hidden;}
   <div class="tabs-strip" id="tabsStrip"></div>
   <div class="synthese-wrap" id="syntheseWrap" hidden></div>
   <div class="panel backlog-wrap" id="backlogWrap" hidden></div>
+  <div class="panel annot-panel" id="photoAnnotWrap" hidden></div>
   <div class="panel" id="historyPanel" hidden></div>
   <div class="panel" id="csvPanel" hidden></div>
   <div class="panel" id="nouveautesPanel" hidden></div>
@@ -1193,7 +1216,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "3.11.0";
+const TOOL_VERSION = "3.12.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -4111,15 +4134,20 @@ function marpossHTML(sc, essai){
 function photosHTML(sc, essai){
   if(!essai.photos) essai.photos = [];
   const photos = essai.photos;
-  const thumbs = photos.map(p => `
+  const thumbs = photos.map(p => {
+    const hasAnnot = (p.annotations && p.annotations.length) || (p.crop && (p.crop.w < 0.999 || p.crop.h < 0.999));
+    return `
     <div class="photo-thumb-wrap">
       <div class="photo-thumb">
         <img data-photo-filename="${escapeAttr(p.filename)}" alt="${escapeAttr(p.filename)}">
+        ${hasAnnot ? `<span class="photo-annot-badge" title="Photo annotée">✎</span>` : ""}
+        <button class="photo-annot" data-essai="${essai.id}" data-photo="${p.id}" title="Annoter (rogner, flèches, texte...)">✎</button>
         <button class="photo-del" data-essai="${essai.id}" data-photo="${p.id}" title="Supprimer">✕</button>
       </div>
       <input class="photo-legende" data-essai="${essai.id}" data-photo="${p.id}" value="${escapeAttr(p.legende || "")}" placeholder="Légende (ex. usure de l'arête après 4212 pièces)">
     </div>
-  `).join("");
+  `;
+  }).join("");
   const uploadZone = !fsPhotosSupported()
     ? `<p class="panel-hint">Fonction disponible sur Edge/Chrome (ordinateur), via l'adresse en ligne de l'outil.</p>`
     : !photosDirHandle
@@ -4144,6 +4172,436 @@ async function loadPhotoThumbnails(){
     const url = await readPhotoURL(filename);
     if(url) img.src = url; else img.classList.add("photo-missing");
   }
+}
+
+/* ---- annotation de photo : rognage + fleches/formes/texte, non destructif --------------
+   Rien n'est jamais ecrit dans le fichier image d'origine (coherent avec "jamais dans le
+   JSON... sauf reference legere" plus haut) : le rognage et les formes sont de simples
+   nombres (fractions 0-1 de l'image ORIGINALE) stockes sur l'objet photo, et recomposes a
+   la volee sur un <canvas> a l'affichage (miniature laissee brute, lightbox et rapport
+   recoivent le rendu compose). Ca reste editable indefiniment, sans jamais degrader l'image
+   source ni gonfler le JSON de pixels. */
+const ANNOT_COLORS = ["#e2001a","#f59e0b","#facc15","#22c55e","#1b5ea6","#ffffff","#111111"];
+const ANNOT_MAXW = 780, ANNOT_MAXH = 480;
+let annot = null; // etat de l'editeur ouvert, ou null si ferme
+
+function defaultCrop(){ return { x:0, y:0, w:1, h:1 }; }
+function annotCanvasSize(w, h){
+  const scale = Math.min(ANNOT_MAXW / w, ANNOT_MAXH / h, 1);
+  return { w: Math.max(1, Math.round(w*scale)), h: Math.max(1, Math.round(h*scale)) };
+}
+function photoOfAnnot(){
+  if(!annot) return null;
+  const es = annot.sc.essais.find(e => e.id === annot.essaiId);
+  return es && (es.photos||[]).find(x => x.id === annot.photoId);
+}
+async function openPhotoAnnotator(essaiId, photoId){
+  if(!photosDirHandle){ alert("Connectez d'abord le dossier photos (bouton dans le bloc Photos)."); return; }
+  const sc = data.find(s => s.essais && s.essais.some(e => e.id === essaiId));
+  const es = sc && sc.essais.find(e => e.id === essaiId);
+  const p = es && (es.photos||[]).find(x => x.id === photoId);
+  if(!p) return;
+  const url = await readPhotoURL(p.filename);
+  if(!url){ alert("Photo introuvable dans le dossier connecté."); return; }
+  const img = new Image();
+  img.onload = () => {
+    annot = {
+      sc, essaiId, photoId, img,
+      crop: p.crop ? Object.assign({}, p.crop) : defaultCrop(),
+      shapes: (p.annotations || []).map(s => Object.assign({}, s)),
+      tool: "move", color: ANNOT_COLORS[0], selected: -1, draft: null, cropDraft: null,
+      legendeDraft: p.legende || ""
+    };
+    renderAnnotEditor();
+    ouvrirPanneau("photoAnnotWrap");
+  };
+  img.onerror = () => alert("Impossible de charger l'image.");
+  img.src = url;
+}
+function annotToolButtons(){
+  const tools = [
+    ["move","✥","Sélection / déplacer"], ["crop","⛶","Rogner"],
+    ["arrow","↗","Flèche droite"], ["curve","〰","Flèche courbe"],
+    ["rect","▭","Rectangle"], ["ellipse","◯","Ellipse"], ["text","T","Texte"]
+  ];
+  return tools.map(([id,icon,label]) => `<button type="button" class="annot-tool${annot.tool===id?" active":""}" data-tool="${id}" title="${label}">${icon}</button>`).join("");
+}
+function annotColorButtons(){
+  return ANNOT_COLORS.map(c => `<button type="button" class="annot-swatch${c===annot.color?" active":""}" data-color="${c}" style="background:${c};" title="${c}"></button>`).join("")
+    + `<input type="color" class="annot-color-custom" id="annotColorCustom" value="${/^#[0-9a-f]{6}$/i.test(annot.color)?annot.color:"#000000"}" title="Couleur personnalisée">`;
+}
+const ANNOT_HINTS = {
+  crop: "Faites glisser pour définir la zone à conserver, puis validez.",
+  move: "Cliquez une forme pour la sélectionner (🗑 ou Suppr pour l'effacer), glissez pour la déplacer. Une flèche courbe sélectionnée affiche une poignée bleue à glisser.",
+  arrow: "Cliquez-glissez pour tracer une flèche droite.",
+  curve: "Cliquez-glissez pour tracer une flèche courbe (ajustable ensuite avec la poignée).",
+  rect: "Cliquez-glissez pour dessiner un rectangle de sélection.",
+  ellipse: "Cliquez-glissez pour dessiner un cercle/ovale de sélection.",
+  text: "Cliquez sur l'image pour placer du texte."
+};
+function renderAnnotEditor(){
+  const wrap = document.getElementById("photoAnnotWrap");
+  if(!wrap || !annot) return;
+  wrap.innerHTML = `
+    <h3>Annoter la photo</h3>
+    <p class="panel-hint" style="margin:0 0 12px;">Rognage et dessins ne modifient jamais le fichier d'origine — ils sont recomposés à l'affichage.</p>
+    <div class="annot-toolbar">
+      ${annotToolButtons()}
+      <span class="annot-sep"></span>
+      ${annotColorButtons()}
+      <span class="annot-sep"></span>
+      <button type="button" class="annot-tool" id="annotUndo" title="Annuler la dernière forme">↺</button>
+      <button type="button" class="annot-tool" id="annotDelSel" title="Supprimer la forme sélectionnée">🗑</button>
+      ${annot.tool === "crop" ? `<span class="annot-sep"></span><button type="button" class="annot-tool active" id="annotCropApply">✓ Valider le rognage</button><button type="button" class="annot-tool" id="annotCropReset">↺ Réinitialiser</button>` : ""}
+    </div>
+    <div class="annot-canvas-wrap"><canvas id="annotCanvas"></canvas></div>
+    <p class="annot-hint">${ANNOT_HINTS[annot.tool] || ""}</p>
+    <input type="text" class="annot-legende" id="annotLegende" value="${escapeAttr(annot.legendeDraft)}" placeholder="Légende de la photo (ex. usure de l'arête après 4212 pièces)">
+    <div class="panel-actions">
+      <button class="ghost" id="annotCancel">Annuler</button>
+      <button class="primary" id="annotSave">Enregistrer</button>
+    </div>
+  `;
+  wireAnnotToolbar();
+  setupAnnotCanvas();
+}
+function wireAnnotToolbar(){
+  const wrap = document.getElementById("photoAnnotWrap");
+  wrap.querySelectorAll(".annot-tool[data-tool]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      annot.tool = btn.getAttribute("data-tool");
+      annot.selected = -1; annot.draft = null; annot.cropDraft = null;
+      renderAnnotEditor();
+    });
+  });
+  wrap.querySelectorAll(".annot-swatch").forEach(btn => {
+    btn.addEventListener("click", () => {
+      annot.color = btn.getAttribute("data-color");
+      if(annot.selected >= 0 && annot.shapes[annot.selected]) annot.shapes[annot.selected].color = annot.color;
+      renderAnnotEditor();
+    });
+  });
+  const customColor = document.getElementById("annotColorCustom");
+  if(customColor) customColor.addEventListener("input", () => {
+    annot.color = customColor.value;
+    if(annot.selected >= 0 && annot.shapes[annot.selected]) annot.shapes[annot.selected].color = annot.color;
+    redrawAnnotCanvas();
+  });
+  const undoBtn = document.getElementById("annotUndo");
+  if(undoBtn) undoBtn.addEventListener("click", () => { annot.shapes.pop(); annot.selected = -1; redrawAnnotCanvas(); });
+  const delBtn = document.getElementById("annotDelSel");
+  if(delBtn) delBtn.addEventListener("click", () => {
+    if(annot.selected >= 0){ annot.shapes.splice(annot.selected, 1); annot.selected = -1; redrawAnnotCanvas(); }
+  });
+  const cropApply = document.getElementById("annotCropApply");
+  if(cropApply) cropApply.addEventListener("click", () => {
+    const canvas = document.getElementById("annotCanvas");
+    if(annot.cropDraft && annot.cropDraft.w > 4 && annot.cropDraft.h > 4){
+      annot.crop = { x: annot.cropDraft.x/canvas.width, y: annot.cropDraft.y/canvas.height,
+                      w: annot.cropDraft.w/canvas.width, h: annot.cropDraft.h/canvas.height };
+    }
+    annot.cropDraft = null; annot.tool = "move";
+    renderAnnotEditor();
+  });
+  const cropReset = document.getElementById("annotCropReset");
+  if(cropReset) cropReset.addEventListener("click", () => { annot.crop = defaultCrop(); annot.cropDraft = null; redrawAnnotCanvas(); });
+  const legendeInp = document.getElementById("annotLegende");
+  if(legendeInp) legendeInp.addEventListener("input", () => { annot.legendeDraft = legendeInp.value; });
+  document.getElementById("annotCancel").addEventListener("click", () => { annot = null; fermerPanneaux(); });
+  document.getElementById("annotSave").addEventListener("click", saveAnnotEditor);
+}
+function annotBaseDims(){
+  if(annot.tool === "crop") return { w: annot.img.naturalWidth, h: annot.img.naturalHeight };
+  const c = annot.crop;
+  return { w: Math.max(1, c.w*annot.img.naturalWidth), h: Math.max(1, c.h*annot.img.naturalHeight) };
+}
+function setupAnnotCanvas(){
+  const canvas = document.getElementById("annotCanvas");
+  const base = annotBaseDims();
+  const size = annotCanvasSize(base.w, base.h);
+  canvas.width = size.w; canvas.height = size.h;
+  canvas.className = annot.tool === "move" ? "move" : "";
+  redrawAnnotCanvas();
+  bindAnnotPointerEvents(canvas);
+}
+function fracToCanvas(fx, fy, W, H){
+  const c = annot.crop;
+  return [ (fx - c.x)/c.w * W, (fy - c.y)/c.h * H ];
+}
+function canvasToFrac(px, py, W, H){
+  const c = annot.crop;
+  return [ c.x + (px/W)*c.w, c.y + (py/H)*c.h ];
+}
+function drawAnnotArrowhead(ctx, fromX, fromY, toX, toY, size){
+  const angle = Math.atan2(toY-fromY, toX-fromX);
+  ctx.beginPath();
+  ctx.moveTo(toX, toY);
+  ctx.lineTo(toX - size*Math.cos(angle-Math.PI/7), toY - size*Math.sin(angle-Math.PI/7));
+  ctx.lineTo(toX - size*Math.cos(angle+Math.PI/7), toY - size*Math.sin(angle+Math.PI/7));
+  ctx.closePath();
+  ctx.fill();
+}
+function annotShapeBBox(s, W, H){
+  if(s.type === "arrow" || s.type === "curve"){
+    const [x1,y1] = fracToCanvas(s.x1,s.y1,W,H), [x2,y2] = fracToCanvas(s.x2,s.y2,W,H);
+    const xs=[x1,x2], ys=[y1,y2];
+    if(s.type === "curve"){ const [cx,cy]=fracToCanvas(s.cx,s.cy,W,H); xs.push(cx); ys.push(cy); }
+    return { x:Math.min(...xs), y:Math.min(...ys), w:Math.max(...xs)-Math.min(...xs), h:Math.max(...ys)-Math.min(...ys) };
+  }
+  if(s.type === "rect" || s.type === "ellipse"){
+    const [x,y] = fracToCanvas(s.x,s.y,W,H), [x2,y2] = fracToCanvas(s.x+s.w,s.y+s.h,W,H);
+    return { x:Math.min(x,x2), y:Math.min(y,y2), w:Math.abs(x2-x), h:Math.abs(y2-y) };
+  }
+  if(s.type === "text"){
+    const [x,y] = fracToCanvas(s.x,s.y,W,H);
+    const fontSize = Math.max(14, Math.min(W,H)*0.045);
+    return { x, y, w:(s.text||"").length*fontSize*0.55, h:fontSize+4 };
+  }
+  return { x:0,y:0,w:0,h:0 };
+}
+function drawAnnotShapes(ctx, shapes, W, H, selectedIdx){
+  const lw = Math.max(2, Math.min(W,H)*0.006);
+  shapes.forEach((s, i) => {
+    ctx.strokeStyle = s.color; ctx.fillStyle = s.color; ctx.lineWidth = lw;
+    if(s.type === "arrow" || s.type === "curve"){
+      const [x1,y1] = fracToCanvas(s.x1,s.y1,W,H), [x2,y2] = fracToCanvas(s.x2,s.y2,W,H);
+      ctx.beginPath(); ctx.moveTo(x1,y1);
+      if(s.type === "curve"){
+        const [cx,cy] = fracToCanvas(s.cx,s.cy,W,H);
+        ctx.quadraticCurveTo(cx,cy,x2,y2); ctx.stroke();
+        drawAnnotArrowhead(ctx, cx, cy, x2, y2, lw*4);
+      } else {
+        ctx.lineTo(x2,y2); ctx.stroke();
+        drawAnnotArrowhead(ctx, x1, y1, x2, y2, lw*4);
+      }
+    } else if(s.type === "rect"){
+      const [x,y] = fracToCanvas(s.x,s.y,W,H), [x2,y2] = fracToCanvas(s.x+s.w,s.y+s.h,W,H);
+      ctx.strokeRect(x, y, x2-x, y2-y);
+    } else if(s.type === "ellipse"){
+      const [x,y] = fracToCanvas(s.x,s.y,W,H), [x2,y2] = fracToCanvas(s.x+s.w,s.y+s.h,W,H);
+      ctx.beginPath();
+      ctx.ellipse((x+x2)/2, (y+y2)/2, Math.abs(x2-x)/2, Math.abs(y2-y)/2, 0, 0, Math.PI*2);
+      ctx.stroke();
+    } else if(s.type === "text"){
+      const [x,y] = fracToCanvas(s.x,s.y,W,H);
+      const fontSize = Math.max(14, Math.min(W,H)*0.045);
+      ctx.font = `700 ${fontSize}px 'Archivo','Open Sans',Arial,sans-serif`;
+      ctx.textBaseline = "top";
+      const w = ctx.measureText(s.text).width;
+      ctx.fillStyle = "rgba(255,255,255,.75)"; ctx.fillRect(x-3, y-2, w+6, fontSize+6);
+      ctx.fillStyle = s.color; ctx.fillText(s.text, x, y);
+    }
+    if(i === selectedIdx){
+      ctx.save();
+      ctx.strokeStyle = "#1b5ea6"; ctx.lineWidth = 1.5; ctx.setLineDash([4,3]);
+      const bb = annotShapeBBox(s, W, H);
+      ctx.strokeRect(bb.x-4, bb.y-4, bb.w+8, bb.h+8);
+      ctx.setLineDash([]);
+      if(s.type === "curve"){
+        const [cx,cy] = fracToCanvas(s.cx, s.cy, W, H);
+        ctx.fillStyle = "#1b5ea6"; ctx.beginPath(); ctx.arc(cx,cy,6,0,Math.PI*2); ctx.fill();
+      }
+      ctx.restore();
+    }
+  });
+}
+function distToSegment(px,py,x1,y1,x2,y2){
+  const dx=x2-x1, dy=y2-y1, len2=dx*dx+dy*dy;
+  let t = len2 ? ((px-x1)*dx+(py-y1)*dy)/len2 : 0;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px-(x1+t*dx), py-(y1+t*dy));
+}
+function annotHitTest(px, py, W, H){
+  for(let i=annot.shapes.length-1; i>=0; i--){
+    const s = annot.shapes[i];
+    if(s.type === "arrow" || s.type === "curve"){
+      const [x1,y1] = fracToCanvas(s.x1,s.y1,W,H), [x2,y2] = fracToCanvas(s.x2,s.y2,W,H);
+      if(s.type === "curve"){
+        const [cx,cy] = fracToCanvas(s.cx,s.cy,W,H);
+        let hit = false;
+        for(let t=0;t<=1;t+=0.05){
+          const bx=(1-t)*(1-t)*x1+2*(1-t)*t*cx+t*t*x2, by=(1-t)*(1-t)*y1+2*(1-t)*t*cy+t*t*y2;
+          if(Math.hypot(px-bx,py-by) < 10){ hit = true; break; }
+        }
+        if(hit) return i;
+      } else if(distToSegment(px,py,x1,y1,x2,y2) < 10) return i;
+    } else {
+      const bb = annotShapeBBox(s, W, H);
+      if(px >= bb.x-4 && px <= bb.x+bb.w+4 && py >= bb.y-4 && py <= bb.y+bb.h+4) return i;
+    }
+  }
+  return -1;
+}
+function fractionCropToCanvasRect(crop, W, H){ return { x:crop.x*W, y:crop.y*H, w:crop.w*W, h:crop.h*H }; }
+function redrawAnnotCanvas(){
+  const canvas = document.getElementById("annotCanvas");
+  if(!canvas || !annot) return;
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  if(annot.tool === "crop"){
+    ctx.drawImage(annot.img, 0, 0, canvas.width, canvas.height);
+    const rect = annot.cropDraft || fractionCropToCanvasRect(annot.crop, canvas.width, canvas.height);
+    ctx.save();
+    ctx.fillStyle = "rgba(0,0,0,.45)";
+    ctx.fillRect(0, 0, canvas.width, rect.y);
+    ctx.fillRect(0, rect.y+rect.h, canvas.width, canvas.height-(rect.y+rect.h));
+    ctx.fillRect(0, rect.y, rect.x, rect.h);
+    ctx.fillRect(rect.x+rect.w, rect.y, canvas.width-(rect.x+rect.w), rect.h);
+    ctx.restore();
+    ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.setLineDash([6,4]);
+    ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+    ctx.setLineDash([]);
+    return;
+  }
+  const scale = canvas.width / (annot.crop.w * annot.img.naturalWidth);
+  ctx.drawImage(annot.img, -annot.crop.x*annot.img.naturalWidth*scale, -annot.crop.y*annot.img.naturalHeight*scale,
+    annot.img.naturalWidth*scale, annot.img.naturalHeight*scale);
+  drawAnnotShapes(ctx, annot.shapes, canvas.width, canvas.height, annot.selected);
+  if(annot.draft) drawAnnotShapes(ctx, [annot.draft], canvas.width, canvas.height, -1);
+}
+function commitDraft(){
+  if(!annot.draft) return;
+  const d = annot.draft;
+  const degenerate = (d.type === "arrow" || d.type === "curve")
+    ? Math.hypot(d.x2-d.x1, d.y2-d.y1) < 0.006
+    : (d.w < 0.006 || d.h < 0.006);
+  if(!degenerate){
+    annot.shapes.push(d);
+    annot.selected = annot.shapes.length-1;
+    if(d.type === "curve"){ annot.draft = null; annot.tool = "move"; renderAnnotEditor(); return; }
+  }
+  annot.draft = null;
+  redrawAnnotCanvas();
+}
+function bindAnnotPointerEvents(canvas){
+  let dragging = null;
+  const getPos = (e) => {
+    const r = canvas.getBoundingClientRect();
+    const cx = e.clientX - r.left, cy = e.clientY - r.top;
+    return [ cx * canvas.width/r.width, cy * canvas.height/r.height ];
+  };
+  canvas.addEventListener("pointerdown", (e) => {
+    canvas.setPointerCapture(e.pointerId);
+    const [px,py] = getPos(e);
+    const W = canvas.width, H = canvas.height;
+    if(annot.tool === "crop"){
+      dragging = { kind:"crop", x0:px, y0:py };
+      annot.cropDraft = { x:px, y:py, w:0, h:0 };
+      return;
+    }
+    if(annot.tool === "move"){
+      if(annot.selected >= 0 && annot.shapes[annot.selected] && annot.shapes[annot.selected].type === "curve"){
+        const s = annot.shapes[annot.selected];
+        const [hx,hy] = fracToCanvas(s.cx, s.cy, W, H);
+        if(Math.hypot(px-hx, py-hy) < 14){ dragging = { kind:"curveHandle", idx: annot.selected }; return; }
+      }
+      const hit = annotHitTest(px, py, W, H);
+      annot.selected = hit;
+      if(hit >= 0) dragging = { kind:"moveShape", idx:hit, startPx:px, startPy:py, snapshot: JSON.parse(JSON.stringify(annot.shapes[hit])) };
+      redrawAnnotCanvas();
+      return;
+    }
+    if(annot.tool === "text"){
+      const txt = prompt("Texte à afficher sur la photo :", "");
+      if(txt){
+        const [fx,fy] = canvasToFrac(px, py, W, H);
+        annot.shapes.push({ type:"text", x:fx, y:fy, text:txt, color: annot.color });
+        annot.selected = annot.shapes.length-1;
+      }
+      redrawAnnotCanvas();
+      return;
+    }
+    const [fx,fy] = canvasToFrac(px, py, W, H);
+    dragging = { kind:"draw", startFx:fx, startFy:fy };
+    if(annot.tool === "arrow") annot.draft = { type:"arrow", x1:fx, y1:fy, x2:fx, y2:fy, color: annot.color };
+    else if(annot.tool === "curve") annot.draft = { type:"curve", x1:fx, y1:fy, cx:fx, cy:fy, x2:fx, y2:fy, color: annot.color };
+    else if(annot.tool === "rect") annot.draft = { type:"rect", x:fx, y:fy, w:0, h:0, color: annot.color };
+    else if(annot.tool === "ellipse") annot.draft = { type:"ellipse", x:fx, y:fy, w:0, h:0, color: annot.color };
+  });
+  canvas.addEventListener("pointermove", (e) => {
+    if(!dragging) return;
+    const [px,py] = getPos(e);
+    const W = canvas.width, H = canvas.height;
+    if(dragging.kind === "crop"){
+      annot.cropDraft = { x:Math.min(dragging.x0,px), y:Math.min(dragging.y0,py), w:Math.abs(px-dragging.x0), h:Math.abs(py-dragging.y0) };
+      redrawAnnotCanvas(); return;
+    }
+    if(dragging.kind === "curveHandle"){
+      const [fx,fy] = canvasToFrac(px, py, W, H);
+      annot.shapes[dragging.idx].cx = fx; annot.shapes[dragging.idx].cy = fy;
+      redrawAnnotCanvas(); return;
+    }
+    if(dragging.kind === "moveShape"){
+      const [fx0,fy0] = canvasToFrac(dragging.startPx, dragging.startPy, W, H);
+      const [fx1,fy1] = canvasToFrac(px, py, W, H);
+      const dx = fx1-fx0, dy = fy1-fy0, snap = dragging.snapshot, s = annot.shapes[dragging.idx];
+      if(s.type === "arrow" || s.type === "curve"){
+        s.x1 = snap.x1+dx; s.y1 = snap.y1+dy; s.x2 = snap.x2+dx; s.y2 = snap.y2+dy;
+        if(s.type === "curve"){ s.cx = snap.cx+dx; s.cy = snap.cy+dy; }
+      } else { s.x = snap.x+dx; s.y = snap.y+dy; }
+      redrawAnnotCanvas(); return;
+    }
+    if(dragging.kind === "draw"){
+      const [fx,fy] = canvasToFrac(px, py, W, H);
+      if(annot.tool === "arrow"){ annot.draft.x2 = fx; annot.draft.y2 = fy; }
+      else if(annot.tool === "curve"){ annot.draft.x2 = fx; annot.draft.y2 = fy; annot.draft.cx = (annot.draft.x1+fx)/2; annot.draft.cy = (annot.draft.y1+fy)/2; }
+      else if(annot.tool === "rect" || annot.tool === "ellipse"){
+        annot.draft.x = Math.min(dragging.startFx, fx); annot.draft.y = Math.min(dragging.startFy, fy);
+        annot.draft.w = Math.abs(fx-dragging.startFx); annot.draft.h = Math.abs(fy-dragging.startFy);
+      }
+      redrawAnnotCanvas();
+    }
+  });
+  const finish = () => {
+    if(dragging && dragging.kind === "draw") commitDraft();
+    dragging = null;
+  };
+  canvas.addEventListener("pointerup", finish);
+  canvas.addEventListener("pointercancel", finish);
+}
+function saveAnnotEditor(){
+  const p = photoOfAnnot();
+  if(p){
+    const c = annot.crop;
+    p.crop = (c.x===0 && c.y===0 && c.w>=0.999 && c.h>=0.999) ? null : c;
+    p.annotations = annot.shapes;
+    p.legende = annot.legendeDraft;
+  }
+  annot = null;
+  saveData();
+  fermerPanneaux();
+  render();
+}
+/* recompose rognage + formes sur un canvas offscreen, pour la lightbox (jamais de fichier
+   modifie) : reutilise le moteur de dessin de l'editeur via un `annot` temporaire minimal */
+async function openAnnotatedLightbox(essaiId, photoId){
+  const sc = data.find(s => s.essais && s.essais.some(e => e.id === essaiId));
+  const es = sc && sc.essais.find(e => e.id === essaiId);
+  const p = es && (es.photos||[]).find(x => x.id === photoId);
+  if(!p || !photosDirHandle) return;
+  const url = await readPhotoURL(p.filename);
+  if(!url) return;
+  const hasCrop = p.crop && (p.crop.w < 0.999 || p.crop.h < 0.999 || p.crop.x > 0 || p.crop.y > 0);
+  if(!hasCrop && !(p.annotations && p.annotations.length)){ ouvrirLightbox(url); return; }
+  const img = new Image();
+  img.onload = () => {
+    const crop = p.crop || defaultCrop();
+    const nw = img.naturalWidth, nh = img.naturalHeight;
+    const cw = crop.w*nw, ch = crop.h*nh;
+    const scale = Math.min(1, 1600/Math.max(cw,ch));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(cw*scale));
+    canvas.height = Math.max(1, Math.round(ch*scale));
+    const ctx = canvas.getContext("2d");
+    const drawScale = canvas.width/cw;
+    ctx.drawImage(img, -crop.x*nw*drawScale, -crop.y*nh*drawScale, nw*drawScale, nh*drawScale);
+    const saved = annot;
+    annot = { crop };
+    drawAnnotShapes(ctx, p.annotations || [], canvas.width, canvas.height, -1);
+    annot = saved;
+    ouvrirLightbox(canvas.toDataURL("image/jpeg", 0.9));
+  };
+  img.src = url;
 }
 
 function equipeOptions(selected){
@@ -4944,7 +5402,7 @@ function attachDetailHandlers(sc){
           const stamp = Date.now() + "-" + Math.random().toString(36).slice(2,6);
           const filename = slugify(sc.name) + "_" + slugify(es.titre) + "_" + stamp + ".jpg";
           await writePhotoBlob(filename, blob);
-          es.photos.push({ id: "ph"+Math.random().toString(36).slice(2), filename, addedAt: new Date().toISOString(), legende:"" });
+          es.photos.push({ id: "ph"+Math.random().toString(36).slice(2), filename, addedAt: new Date().toISOString(), legende:"", crop:null, annotations:[] });
         }catch(err){ alert("Échec de l'enregistrement d'une photo : " + err.message); }
       }
       saveData(); render();
@@ -4969,6 +5427,16 @@ function attachDetailHandlers(sc){
       const es = sc.essais.find(e => e.id === essaiId);
       const p = es && (es.photos||[]).find(x => x.id === photoId);
       if(p){ p.legende = inp.value; saveData(); }
+    });
+  });
+  root.querySelectorAll(".photo-annot").forEach(btn => {
+    btn.addEventListener("click", () => openPhotoAnnotator(btn.getAttribute("data-essai"), btn.getAttribute("data-photo")));
+  });
+  root.querySelectorAll("img[data-photo-filename]").forEach(img => {
+    img.addEventListener("click", () => {
+      const wrap = img.closest(".photo-thumb");
+      const annotBtn = wrap && wrap.querySelector(".photo-annot");
+      if(annotBtn) openAnnotatedLightbox(annotBtn.getAttribute("data-essai"), annotBtn.getAttribute("data-photo"));
     });
   });
   root.querySelectorAll('input[data-field="emag1"]').forEach(inp => {
@@ -5314,6 +5782,8 @@ function fermerPanneaux(){
   document.getElementById("optionsPanel").hidden = true;
   document.getElementById("printPanel").hidden = true;
   document.getElementById("backlogWrap").hidden = true;
+  document.getElementById("photoAnnotWrap").hidden = true;
+  annot = null;
   document.getElementById("historyPanel").hidden = true;
   document.getElementById("csvPanel").hidden = true;
   document.getElementById("ligneInfoPanel").hidden = true;
@@ -5483,6 +5953,10 @@ function renderFicheOutil(){
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"3.12.0", date:"03/09/2026", points:[
+    "Nouvel éditeur <b>« Annoter »</b> sur chaque photo d'essai (icône ✎ sur la miniature) : rognage, flèches droites, flèches courbes (poignée ajustable), rectangles et ellipses de sélection, texte flottant, choix de couleur. Rien n'est jamais appliqué au fichier photo d'origine — tout est recomposé à l'affichage, donc modifiable indéfiniment.",
+    "Cliquer sur une miniature de photo l'ouvre désormais en plein écran avec ses annotations."
+  ]},
   { version:"3.11.0", date:"03/09/2026", points:[
     "Champs manquants par rapport aux rapports papier de Matis, tous ajoutés : <b>rédigé par</b>, <b>fin d'essai</b> (date + heure, en plus de la date de début), <b>nom du programme CNC</b> (Gauche/Droit sur EMAG 1, unique sinon) — dans le bloc de chaque essai.",
     "<b>Correcteur</b> et <b>type d'outil</b> (ex. « Foret carbure monobloc à goujure droite ») ajoutés par outil, dans la composition du scénario.",

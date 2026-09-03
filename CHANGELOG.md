@@ -5,6 +5,20 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [3.12.0] — 2026-09-03
+
+### Ajouté
+- **Éditeur d'annotation de photo** (bouton ✎ sur chaque miniature, bloc Photos d'un
+  essai) : rognage, flèches droites, flèches courbes (avec poignée de courbure
+  ajustable), rectangles et ellipses de sélection, texte flottant, palette de 7
+  couleurs + sélecteur personnalisé. Sélection/déplacement/suppression des formes,
+  annuler la dernière forme.
+  - Rognage et formes sont stockés en coordonnées vectorielles (fractions de l'image
+    d'origine), jamais appliqués aux pixels du fichier — non destructif, ré-éditable
+    à volonté, JSON toujours léger.
+  - Cliquer sur une miniature ouvre désormais un aperçu plein écran recomposé
+    (rognage + annotations), au lieu de la photo brute.
+
 ## [3.11.0] — 2026-09-03
 
 Champs manquants identifiés en comparant un rapport d'essai papier réel (Matis) au modèle
