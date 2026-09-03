@@ -641,7 +641,7 @@ select.log-equipe:focus{border-color:var(--blue); outline:none; background:var(-
   background:var(--surface); color:var(--ink-soft); cursor:pointer;}
 .statut-select:focus{outline:none; border-color:var(--blue);}
 .statut-select.valide{border-color:var(--green); color:var(--green);}
-.statut-select.serie{background:var(--green); border-color:var(--green); color:#fff;}
+.statut-select.serie{background:var(--blue); border-color:var(--blue); color:#fff;}
 .statut-select.abandonne{border-color:var(--red); color:var(--red);}
 .statut-select.etude{border-color:var(--border); color:var(--ink-faint);}
 .statut-motif{font-family:var(--font-body); font-size:12px; padding:4px 9px; min-width:230px;
@@ -651,7 +651,7 @@ select.log-equipe:focus{border-color:var(--blue); outline:none; background:var(-
   text-transform:uppercase; letter-spacing:.04em; padding:2px 8px; border-radius:999px;
   background:var(--surface-alt); color:var(--ink-soft); border:1px solid var(--border); white-space:nowrap;}
 .statut-pill.valide{background:var(--green-bg); color:var(--green); border-color:var(--green);}
-.statut-pill.serie{background:var(--green); color:#fff; border-color:var(--green);}
+.statut-pill.serie{background:var(--blue); color:#fff; border-color:var(--blue);}
 .statut-pill.abandonne{background:var(--red-bg); color:var(--red); border-color:var(--red);}
 .statut-pill.essai{background:var(--amber-bg); color:var(--amber); border-color:var(--amber);}
 
@@ -823,6 +823,8 @@ body.atelier-on{overflow:hidden;}
   input.cell.small, select.cell.small{min-height:38px; font-size:13px;}
   .ligne-tab, .reference-tab{min-height:44px; padding:10px 16px;}
   .log-del, .photo-del{min-width:38px; min-height:38px;}
+  .annot-swatch, .annot-color-custom{width:36px; height:36px;}
+  .annot-tool{min-height:40px; padding:9px 13px;}
   .opt-row input[type="checkbox"], input[type="checkbox"]{width:22px; height:22px;}
   summary{min-height:44px;}
 }
@@ -966,6 +968,12 @@ body.atelier-on{overflow:hidden;}
       <span class="opt-note">Ex. « Battement (mm) ≤ 0,12 » en OP10, « Ra (µm) ≤ 1,6 » en OP40. Un 2e critère (ex. état de surface en plus d'une cote) et l'usure visuelle de la plaquette se règlent dans le bloc « Essais » de chaque scénario.</span>
     </div>
 
+    <div class="opt-field on" style="padding-left:0;">
+      <label for="optEcartCharniere">Marge avant d'afficher un écart de charnière (pièces)</label>
+      <input type="number" step="0.5" min="0" id="optEcartCharniere" placeholder="0,5">
+      <span class="opt-note">Un logement n'est signalé « en dessous de la charnière visée » que si la durée de vie réelle observée manque la cible d'au moins cette marge. Sur une charnière courte (quelques dizaines de pièces), une marge de 0,5 est déjà significative ; sur une charnière longue (centaines de pièces), vous pouvez l'augmenter pour ignorer le bruit de mesure.</span>
+    </div>
+
     <h3 style="margin-top:22px; font-size:17px;">Modules de calcul</h3>
     <p class="panel-hint">Activez uniquement ce dont vous avez besoin — l'outil reste volontairement simple par défaut.</p>
 
@@ -994,7 +1002,7 @@ body.atelier-on{overflow:hidden;}
       <input type="checkbox" id="optCoutMachine">
       <span>
         <b>Intégrer le temps machine au coût pièce</b>
-        <em>Convertit l'écart de temps de cycle en euros, avec le coût horaire de la ligne. Sans lui, un scénario moins cher en plaquettes mais plus lent paraît gagnant alors qu'il peut être perdant.</em>
+        <em>Convertit l'écart de temps de cycle en euros, avec le coût horaire de la ligne : coût machine par pièce = coût horaire (€/h) × temps de cycle (s) / 3 600. Sans lui, un scénario moins cher en plaquettes mais plus lent paraît gagnant alors qu'il peut être perdant.</em>
       </span>
     </label>
     <div class="note" style="margin:0 0 14px;">
@@ -1217,7 +1225,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "3.13.0";
+const TOOL_VERSION = "3.14.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -1367,41 +1375,47 @@ const defaultConfig = {
                            // d'un indice base 100 global (voir cycleDetailStatus)
   piecesActif: false,      // pieces detachees amorties par porte-outil
   volumeActif: false,      // volume annuel de la reference -> gains en €/an
-  forceRatioActif: false   // affiche Fr/Fa (effort radial/axial) : specifique a certaines references (bruts peu matures...), pas systematique
+  forceRatioActif: false,  // affiche Fr/Fa (effort radial/axial) : specifique a certaines references (bruts peu matures...), pas systematique
+  ecartCharniereTolerance: 0.5 // marge (pieces) avant qu'un ecart de charniere soit signale ; etait fige en dur
 };
 let migrationTolerance = true;
 
 const OUTIL_COLORS = ["#3b82f6","#14b8a6","#a78bfa","#f59e0b","#22c55e","#94a3b8","#ec4899","#0ea5e9"];
 
+/* Donnees fictives : le nom, les references plaquette et les mesures ne doivent JAMAIS
+   provenir d'une saisie reelle client — ce jeu tourne au premier lancement et apres
+   Reinitialiser, et voyage donc dans le depot Git et sur tout deploiement (Surge). Un
+   ancien jeu reprenait par erreur des donnees reelles d'essai (memes references, memes
+   mesures qu'un export terrain) : corrige, plus aucune valeur ci-dessous n'est reelle. */
 const defaultScenarios = [
-  { id: "s1", name: "Process actuel — CBN", baseline: true, cycle: 100,
+  { id: "s1", name: "[Exemple] Process actuel", baseline: true, cycle: 100,
     emag1: true, limitOverride: false, limitLabel: "Battement (mm)", limitValue: 0.12, validationThreshold: 5,
-    outils: [ { id: "t1", numero: "T513.1", logements: [
-      { id: "g1", nom: "Bol",   ref: "CNGX 120716 CBN387+TiN", prix: 38, aretes: 8, charniere: 75, vc: "", f: "" },
-      { id: "g2", nom: "Piste", ref: "CNGX 120716 CBN387+TiN", prix: 38, aretes: 8, charniere: 75, vc: 900, f: 0.50 }
+    outils: [ { id: "t1", numero: "T-EX1", logements: [
+      { id: "g1", nom: "Bol",   ref: "Plaquette exemple A", prix: 30, aretes: 8, charniere: 100, vc: "", f: "" },
+      { id: "g2", nom: "Piste", ref: "Plaquette exemple A", prix: 30, aretes: 8, charniere: 100, vc: 800, f: 0.40 }
     ] } ],
-    essais: [ { id: "e1", titre: "Essai 1", date: "2026-08-26", equipe: "", operateur: "", observations: "",
-      params: { logements: [ { outilId:"t1", logementId:"g2", outilNumero:"T513.1", logementNom:"Piste", vc:900, f:0.50, charniere:75 } ] },
-      prelevements: [ { id: "p1", piece: 75, batt: 0.10, battD: "", battG: "" } ] } ],
+    essais: [ { id: "e1", titre: "Essai 1", date: "2026-01-15", equipe: "", operateur: "", observations: "",
+      params: { logements: [ { outilId:"t1", logementId:"g2", outilNumero:"T-EX1", logementNom:"Piste", vc:800, f:0.40, charniere:100 } ] },
+      prelevements: [ { id: "p1", piece: 100, batt: 0.08, battD: "", battG: "" } ] } ],
     scrapLog: [] },
-  { id: "s2", name: "Mixte T50013 — bol CBN + piste céramique", baseline: false, cycle: "",
+  { id: "s2", name: "[Exemple] Scénario alternatif A", baseline: false, cycle: "",
     emag1: true, limitOverride: false, limitLabel: "Battement (mm)", limitValue: 0.12, validationThreshold: 5,
-    outils: [ { id: "t2", numero: "T50013", logements: [
-      { id: "g3", nom: "Bol",   ref: "CNGX 120716 CBN387+TiN", prix: 38, aretes: 8, charniere: 75, vc: "", f: "" },
-      { id: "g4", nom: "Piste", ref: "SNGX 120716 T02020 LKT640 (κr85°)", prix: 5, aretes: 8, charniere: 150, vc: 700, f: 0.35 }
+    outils: [ { id: "t2", numero: "T-EX2", logements: [
+      { id: "g3", nom: "Bol",   ref: "Plaquette exemple A", prix: 30, aretes: 8, charniere: 100, vc: "", f: "" },
+      { id: "g4", nom: "Piste", ref: "Plaquette exemple B", prix: 15, aretes: 8, charniere: 150, vc: 650, f: 0.30 }
     ] } ],
-    essais: [ { id: "e1", titre: "Essai 1", date: "2026-08-26", equipe: "", operateur: "", observations: "",
-      params: { logements: [ { outilId:"t2", logementId:"g4", outilNumero:"T50013", logementNom:"Piste", vc:700, f:0.35, charniere:150 } ] },
+    essais: [ { id: "e1", titre: "Essai 1", date: "2026-01-15", equipe: "", operateur: "", observations: "",
+      params: { logements: [ { outilId:"t2", logementId:"g4", outilNumero:"T-EX2", logementNom:"Piste", vc:650, f:0.30, charniere:150 } ] },
       prelevements: [ { id: "p1", piece: 150, batt: 0.09, battD: "", battG: "" } ] } ],
     scrapLog: [] },
-  { id: "s3", name: "Céramique intégrale — LKT640", baseline: false, cycle: "",
+  { id: "s3", name: "[Exemple] Scénario alternatif B", baseline: false, cycle: "",
     emag1: true, limitOverride: false, limitLabel: "Battement (mm)", limitValue: 0.12, validationThreshold: 5,
-    outils: [ { id: "t3", numero: "T50013", logements: [
-      { id: "g5", nom: "Bol",   ref: "CNGX 120716 T02020 LKT640", prix: 5, aretes: 8, charniere: 150, vc: "", f: "" },
-      { id: "g6", nom: "Piste", ref: "CNGX 120716 T02020 LKT640", prix: 5, aretes: 8, charniere: 150, vc: 700, f: 0.35 }
+    outils: [ { id: "t3", numero: "T-EX2", logements: [
+      { id: "g5", nom: "Bol",   ref: "Plaquette exemple B", prix: 15, aretes: 8, charniere: 150, vc: "", f: "" },
+      { id: "g6", nom: "Piste", ref: "Plaquette exemple B", prix: 15, aretes: 8, charniere: 150, vc: 650, f: 0.30 }
     ] } ],
-    essais: [ { id: "e1", titre: "Essai 1", date: "2026-08-26", equipe: "", operateur: "", observations: "",
-      params: { logements: [ { outilId:"t3", logementId:"g6", outilNumero:"T50013", logementNom:"Piste", vc:700, f:0.35, charniere:150 } ] },
+    essais: [ { id: "e1", titre: "Essai 1", date: "2026-01-15", equipe: "", operateur: "", observations: "",
+      params: { logements: [ { outilId:"t3", logementId:"g6", outilNumero:"T-EX2", logementNom:"Piste", vc:650, f:0.30, charniere:150 } ] },
       prelevements: [ { id: "p1", piece: 150, batt: 0.09, battD: "", battG: "" } ] } ],
     scrapLog: [] }
 ];
@@ -1410,7 +1424,7 @@ function defaultLignes(){
   return [{
     id: "l1", nom: "EMAG 1",
     references: [{
-      id: "r1", nom: "DV 356x26 RPI",
+      id: "r1", nom: "[Exemple] Référence disque",
       ops: [{
         id: "o1", nom: "OP10", ordre: 10,
         config: Object.assign({}, defaultConfig, { forceRatioActif: true }),
@@ -1601,9 +1615,13 @@ function normalizeScenario(sc){
       }] : [] };
     }
     const marposs = Object.assign({ debut:"", fin:"", releves:[] }, e.marposs || {});
-    const photos = (e.photos || []).map(p => Object.assign({ id: p.id || ("ph"+Math.random().toString(36).slice(2)), filename:"", addedAt:"" }, p));
+    const photos = (e.photos || []).map(p => Object.assign(
+      { id: p.id || ("ph"+Math.random().toString(36).slice(2)), filename:"", addedAt:"", legende:"", crop:null, annotations:[] }, p));
     return Object.assign(
-      { id: e.id || ("e"+Math.random().toString(36).slice(2)), titre:"", date:"", equipe:"", operateur:"", observations:"", maturiteBruts:"", prelevements:[] },
+      { id: e.id || ("e"+Math.random().toString(36).slice(2)), titre:"", date:"", equipe:"", operateur:"", observations:"", maturiteBruts:"", prelevements:[],
+        // tracabilite terrain (v3.11) : sans ces defauts, un essai charge depuis un JSON
+        // anterieur a cette version porte des champs undefined plutot que des chaines vides
+        redigePar:"", dateFin:"", heureFin:"", programme:"", programmeGauche:"", programmeDroit:"" },
       e,
       { params, marposs, photos, prelevements: (e.prelevements || []).map(r => {
         const row = Object.assign({ id: r.id || ("p"+Math.random().toString(36).slice(2)), piece:"", batt:"", battD:"", battG:"", logementId:"", pointMesure:"", usure:"", valeur2:"" }, r);
@@ -3041,7 +3059,7 @@ function cycleDetailStatusHTML(sc){
   if(!st.total) return "";
   return st.complete
     ? `<p class="panel-hint" style="margin:6px 2px 0; color:var(--green);">✓ ${st.filled}/${st.total} logements renseignés — temps de cycle calculé sur mesures machine (${fmt(st.secs,1)} s).</p>`
-    : `<p class="panel-hint" style="margin:6px 2px 0; color:var(--amber);">⚠ ${st.filled}/${st.total} logements renseignés — incomplet, ce scénario retombe sur l'indice base 100 tant que tous ne sont pas remplis.</p>`;
+    : `<p class="panel-hint" style="margin:6px 2px 0; color:var(--amber);">⚠ ${st.filled}/${st.total} logements renseignés — incomplet, ce scénario retombe sur l'indice base 100 tant que tous les logements ne sont pas renseignés (temps coupe et temps déplacement).</p>`;
 }
 function cycleSecondes(sc, cfg){
   cfg = cfg || config;
@@ -3123,13 +3141,15 @@ function charniereReelle(sc, logementId){
 }
 /* logements dont la duree de vie observee est retombee sous la charniere visee :
    c'est la que le business case se fissure, il faut le voir tout de suite */
-function ecartsCharniere(sc){
+function ecartsCharniere(sc, cfg){
+  cfg = cfg || config;
+  const marge = parseFloat(cfg.ecartCharniereTolerance);
   const out = [];
   (sc.outils||[]).forEach(o => o.logements.forEach(l => {
     const cible = parseFloat(l.charniere);
     const reel = charniereReelle(sc, l.id);
     if(isNaN(cible) || !reel || reel.borneInf) return;
-    if(reel.moyenne < cible - 0.5){
+    if(reel.moyenne < cible - (isNaN(marge) ? 0.5 : marge)){
       const prix = parseFloat(l.prix), aretes = parseFloat(l.aretes);
       out.push({ outilNumero: o.numero, logementNom: l.nom, cible, reel: reel.moyenne, essais: reel.essais,
         coutReel: (prix && aretes && reel.moyenne) ? prix/(aretes*reel.moyenne) : null,
@@ -3231,7 +3251,7 @@ function seuilBasculeHTML(sc){
     </span>`);
   }
   if(s.facteurCharniere){
-    bits.push(`<span class="seuil-item bad"><b>×${fmt(s.facteurCharniere,2)}</b> sur les charnières pour revenir à l'équilibre<em>à conditions de coupe inchangées</em></span>`);
+    bits.push(`<span class="seuil-item bad">Multiplier vos charnières par <b>×${fmt(s.facteurCharniere,2)}</b> pour revenir à l'équilibre<em>à conditions de coupe inchangées</em></span>`);
   } else if(s.charniereImpossible){
     bits.push(`<span class="seuil-item bad"><b>Aucune durée de vie ne compense</b><em>hors plaquettes, ce scénario dépasse déjà la référence : le levier n'est pas l'outil</em></span>`);
   }
@@ -3697,7 +3717,7 @@ function scenarioBlockHTML(sc, interactive){
 
   const head = interactive ? `
       <input class="sc-name" data-id="${sc.id}" data-field="name" value="${escapeAttr(sc.name)}">
-      <span class="baseline-pill ${sc.baseline ? "active" : ""}" data-id="${sc.id}" data-action="baseline">${sc.baseline ? "★ Référence" : "Définir référence"}</span>
+      <span class="baseline-pill ${sc.baseline ? "active" : ""}" data-id="${sc.id}" data-action="baseline" title="« Référence » ici désigne le scénario de comparaison (★), pas la référence disque ni la référence plaquette.">${sc.baseline ? "★ Scénario réf." : "Définir scénario réf."}</span>
       ${statutSelectHTML(sc)}
       <div class="sc-actions">
         <button data-id="${sc.id}" data-action="duplicate">Dupliquer</button>
@@ -4236,6 +4256,10 @@ async function openPhotoAnnotator(essaiId, photoId){
       tool: "move", color: ANNOT_COLORS[0], selected: -1, draft: null, cropDraft: null,
       legendeDraft: p.legende || ""
     };
+    // empreinte de l'etat charge : sert a savoir, a la fermeture, s'il y a vraiment
+    // quelque chose de non enregistre a perdre (ouvrir une photo deja annotee ne doit
+    // pas a lui seul declencher une confirmation)
+    annot.snapshot = JSON.stringify({ crop: annot.crop, shapes: annot.shapes, legende: annot.legendeDraft });
     renderAnnotEditor();
     ouvrirPanneau("photoAnnotWrap");
   };
@@ -4701,8 +4725,8 @@ function essaiCardHTML(sc, essai, interactive){
   // et qu'aucun champ ne capturait avant la v3.11
   const finEssaiRow = interactive
     ? `<div class="essai-params" style="flex-wrap:wrap;">
-         <span>Rédigé par —</span>
-         <input class="cell ref" style="width:160px; min-width:120px;" data-id="${sc.id}" data-essai="${essai.id}" data-field="redigePar" value="${escapeAttr(essai.redigePar)}" placeholder="Nom(s)">
+         <span title="Qui a rédigé ce rapport d'essai — peut différer de l'opérateur machine, renseigné plus haut.">Rédigé par —</span>
+         <input class="cell ref" style="width:160px; min-width:120px;" data-id="${sc.id}" data-essai="${essai.id}" data-field="redigePar" value="${escapeAttr(essai.redigePar)}" placeholder="${escapeAttr(auteurNom) || "Nom du rédacteur"}" title="Nom du rédacteur du rapport — l'opérateur machine (champ ci-dessus) peut être une personne différente.">
          <span style="margin-left:10px;">Fin d'essai —</span>
          <input class="cell" style="width:135px; min-width:120px;" type="date" data-id="${sc.id}" data-essai="${essai.id}" data-field="dateFin" value="${essai.dateFin ?? ""}">
          <input class="cell" style="width:95px; min-width:80px;" type="time" data-id="${sc.id}" data-essai="${essai.id}" data-field="heureFin" value="${essai.heureFin ?? ""}">
@@ -5853,8 +5877,23 @@ document.getElementById("dashboardBtn").addEventListener("click", () => {
   ouvrirPanneau("dashboardPanel");
 });
 document.getElementById("nouveautesBtn").addEventListener("click", ouvrirNouveautes);
-document.getElementById("panelBackdrop").addEventListener("click", fermerPanneaux);
-document.addEventListener("keydown", (e) => { if(e.key === "Escape") { fermerPanneaux(); fermerLightbox(); } });
+// des formes/rognage/legende non enregistres dans l'editeur d'annotation se perdaient
+// silencieusement sur Echap ou un clic hors panneau — confirmation ajoutee, uniquement
+// s'il y a vraiment quelque chose de different de l'etat charge (annotDirty)
+function annotDirty(){
+  if(!annot) return false;
+  return JSON.stringify({ crop: annot.crop, shapes: annot.shapes, legende: annot.legendeDraft }) !== annot.snapshot;
+}
+function fermerPanneauxConfirme(){
+  const annotWrap = document.getElementById("photoAnnotWrap");
+  if(annotWrap && !annotWrap.hidden && annotDirty()){
+    if(!confirm("Fermer sans enregistrer ? Le rognage, les formes et la légende ajoutés à cette photo seront perdus.")) return;
+  }
+  annot = null;
+  fermerPanneaux();
+}
+document.getElementById("panelBackdrop").addEventListener("click", fermerPanneauxConfirme);
+document.addEventListener("keydown", (e) => { if(e.key === "Escape") { fermerPanneauxConfirme(); fermerLightbox(); } });
 
 /* ---- agrandissement plein ecran d'une image (ex. capture jointe a une suggestion) ---- */
 function ouvrirLightbox(src){
@@ -5888,6 +5927,7 @@ const optCycleRefSec = document.getElementById("optCycleRefSec");
 const optLimitLabel = document.getElementById("optLimitLabel");
 const optLimitValue = document.getElementById("optLimitValue");
 const optForceRatio = document.getElementById("optForceRatio");
+const optEcartCharniere = document.getElementById("optEcartCharniere");
 const optCoutMachine = document.getElementById("optCoutMachine");
 const optPartCoupante = document.getElementById("optPartCoupante");
 const optCycleDetail = document.getElementById("optCycleDetail");
@@ -5930,6 +5970,7 @@ function syncOptionsUI(){
   const ref = getActiveReference();
   optProductionAnnuelle.value = ref ? (ref.productionAnnuelle ?? "") : "";
   optForceRatio.checked = !!config.forceRatioActif;
+  optEcartCharniere.value = config.ecartCharniereTolerance ?? 0.5;
   majChampsOptions();
   renderFicheOutil();
 }
@@ -5948,12 +5989,13 @@ function appliquerOptions(){
   const ref = getActiveReference();
   if(ref) ref.productionAnnuelle = optProductionAnnuelle.value === "" ? "" : parseFloat(optProductionAnnuelle.value);
   config.forceRatioActif = optForceRatio.checked;
+  config.ecartCharniereTolerance = optEcartCharniere.value === "" ? 0.5 : parseFloat(optEcartCharniere.value);
   majChampsOptions();
   saveData();
   render();
 }
 [optCoutRebut, optCoutDisque, optCycleSec, optCycleRefSec, optCoutMachine, optPartCoupante, optCycleDetail,
- optPieces, optVolume, optProductionAnnuelle, optLimitLabel, optLimitValue, optForceRatio].forEach(el => {
+ optPieces, optVolume, optProductionAnnuelle, optLimitLabel, optLimitValue, optForceRatio, optEcartCharniere].forEach(el => {
   el.addEventListener("change", appliquerOptions);
   el.addEventListener("input", () => { if(el.type === "number") appliquerOptions(); });
 });
@@ -6010,6 +6052,14 @@ function renderFicheOutil(){
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"3.14.0", date:"03/09/2026", points:[
+    "<b>Confidentialité</b> : les données de démarrage (premier lancement, après Réinitialiser) reprenaient par erreur des références et mesures réelles au lieu de données fictives. Remplacées par un jeu d'exemple générique, clairement identifié « [Exemple] ».",
+    "Marge avant d'afficher un écart de charnière (auparavant fixée à 0,5 pièce sans possibilité de l'ajuster) réglable dans <b>Options</b>.",
+    "Le badge « ★ Référence » d'un scénario est renommé « ★ Scénario réf. » pour ne plus le confondre avec la référence disque ou la référence plaquette — trois choses différentes qui portaient le même mot.",
+    "Champ « Rédigé par » d'un essai : placeholder et info-bulle précisent qu'il s'agit du rédacteur du rapport, pas forcément l'opérateur machine.",
+    "Éditeur d'annotation photo : fermer sans enregistrer (Échap ou clic en dehors) demande confirmation s'il y a des changements non enregistrés ; couleurs plus grandes au doigt sur écran tactile.",
+    "Statuts « Validé » et « En série » distingués par une couleur différente (vert / bleu) — ils étaient visuellement trop proches alors que le sens est très différent (essai confirmé vs tourne en production)."
+  ]},
   { version:"3.13.0", date:"03/09/2026", points:[
     "Correctifs de fond suite à une revue de code externe : le champ « Temps de cycle » du scénario de référence était éditable alors qu'il est toujours écrasé à 100 au chargement — il est maintenant affiché en lecture seule pour ne plus induire en erreur.",
     "Éditeur d'annotation photo : la touche Suppr efface maintenant vraiment la forme sélectionnée (promise mais pas câblée), le bouton « Valider le rognage » est grisé tant qu'aucune zone n'est tracée, et un message avertit si la sauvegarde automatique est bloquée après avoir annoté une photo.",

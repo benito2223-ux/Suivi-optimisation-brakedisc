@@ -5,6 +5,54 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [3.14.0] — 2026-09-03
+
+Suite de la revue de code externe (Hermes) : constats de cohérence et d'UI/UX restants.
+
+### Corrigé — confidentialité (le plus important de ce lot)
+- **Les données de démarrage étaient des données réelles.** `defaultScenarios` /
+  `defaultLignes` (utilisés au tout premier lancement et après « Réinitialiser ») reprenaient
+  exactement les références plaquette, numéros d'outil et mesures d'un export réel — donc
+  versionnées sur GitHub et déployées sur l'URL publique Surge à chaque mise à jour, en
+  contradiction directe avec la politique de confidentialité du README (« les données
+  d'essais réelles ne sont jamais versionnées ici »). Remplacées par un jeu de données
+  entièrement fictif, préfixé « [Exemple] » pour qu'il ne puisse plus être confondu avec un
+  vrai projet.
+
+### Corrigé — cohérence
+- **Marge de charnière (0,5 pièce) codée en dur** — exposée en réglage `Options` :
+  « Marge avant d'afficher un écart de charnière (pièces) », toujours visible, par défaut
+  0,5.
+- **Facteur de charnière au seuil de bascule** — formulation clarifiée : « Multiplier vos
+  charnières par ×X pour revenir à l'équilibre » au lieu d'une simple valeur.
+- **Champs de traçabilité (v3.11) sans valeur par défaut** — `redigePar`, `dateFin`,
+  `heureFin`, `programme`, `programmeGauche`, `programmeDroit` sur un essai, et `legende` /
+  `crop` / `annotations` sur une photo, étaient `undefined` plutôt que vides sur un JSON
+  antérieur à ces versions. Ajoutés à la normalisation des essais/photos.
+
+### Corrigé — UI/UX
+- **Vocabulaire « Référence » à trois sens** — le badge de scénario « ★ Référence »
+  (comparaison) était visible juste à côté de l'onglet « Référence disque » (la pièce) :
+  renommé « ★ Scénario réf. », avec info-bulle.
+- **Formule du coût machine non explicitée** — la case « Intégrer le temps machine au coût
+  pièce » affiche maintenant la formule littérale : coût machine/pièce = coût horaire (€/h) ×
+  temps de cycle (s) / 3 600.
+- **Placeholder « Nom(s) » trop vague sur « Rédigé par »** — précise maintenant qu'il s'agit
+  du rédacteur du rapport (pas forcément l'opérateur machine), et suggère le nom d'auteur
+  déjà enregistré dans l'outil.
+- **Éditeur d'annotation photo, fermeture sans confirmation** — Échap ou un clic en dehors du
+  panneau perdait silencieusement le rognage/les formes/la légende non enregistrés ;
+  confirmation ajoutée, uniquement s'il y a réellement quelque chose de non enregistré à
+  perdre.
+- **Éditeur d'annotation photo, cibles tactiles trop petites** — palette de couleurs et
+  boutons d'outils agrandis sur écran tactile (`pointer: coarse`), comme le reste de l'outil.
+- **Statuts « Validé » et « En série » trop proches visuellement** — les deux étaient en
+  vert ; « En série » passe au bleu (déjà utilisé ailleurs pour ce même statut), pour
+  distinguer d'un coup d'œil « essai confirmé » et « tourne en production ».
+- **Message harmonisé** entre le rappel permanent d'Options et le statut par scénario du
+  module « Détailler le temps de cycle par logement », qui pouvaient légèrement diverger
+  dans leur formulation.
+
 ## [3.13.0] — 2026-09-03
 
 Suite à une revue de code externe (Hermes) du fichier dans son ensemble — cohérence,
