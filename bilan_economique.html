@@ -337,6 +337,7 @@ select.backlog-type, select.backlog-statut{font-family:var(--font-body); font-si
 .annot-tool{font-family:var(--font-body); font-size:12px; padding:6px 10px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); color:var(--ink-soft); cursor:pointer; display:inline-flex; align-items:center; gap:5px; white-space:nowrap;}
 .annot-tool:hover{border-color:var(--blue);}
 .annot-tool.active{background:var(--blue); border-color:var(--blue); color:#fff;}
+.annot-tool:disabled{opacity:.45; cursor:not-allowed;}
 .annot-sep{width:1px; align-self:stretch; background:var(--border); margin:0 4px;}
 .annot-swatch{width:22px; height:22px; border-radius:50%; border:2px solid var(--surface); box-shadow:0 0 0 1px var(--border); cursor:pointer; padding:0;}
 .annot-swatch.active{box-shadow:0 0 0 2px var(--ink);}
@@ -1216,7 +1217,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "3.12.0";
+const TOOL_VERSION = "3.13.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -1262,22 +1263,22 @@ function slugify(txt){
    Mo, inutile de la garder brute pour une consultation a l'ecran */
 function compressImageFile(file, maxDim, quality){
   return new Promise((resolve, reject) => {
+    // ObjectURL plutot qu'un data URL base64 : evite de doubler la photo en memoire
+    // (base64 gonfle ~33%, plus la decompression de l'<img>) — sensible sur un JPEG de
+    // telephone a 8+ Mo, potentiellement OOM sur mobile/Safari
     const img = new Image();
-    const reader = new FileReader();
-    reader.onload = () => {
-      img.onload = () => {
-        const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
-        const canvas = document.createElement("canvas");
-        canvas.width = Math.round(img.width * scale);
-        canvas.height = Math.round(img.height * scale);
-        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("compression échouée")), "image/jpeg", quality);
-      };
-      img.onerror = reject;
-      img.src = reader.result;
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("compression échouée")), "image/jpeg", quality);
     };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("lecture image échouée")); };
+    img.src = url;
   });
 }
 async function connectPhotosDir(){
@@ -1753,6 +1754,9 @@ function loadAll(){
     data = op.scenarios;
     config = op.config;
     activeId = data[0] ? data[0].id : null;
+    saveData(); // persiste la migration tout de suite : sinon elle refait le meme travail
+                // (et regenere de nouveaux id) a chaque ouverture tant qu'aucune saisie
+                // n'a par ailleurs declenche de sauvegarde
     return;
   }
   // premiere utilisation : donnees de depart
@@ -3781,14 +3785,27 @@ function scenarioBlockHTML(sc, interactive){
     const cls = d > 0.5 ? "pos" : d < -0.5 ? "neg" : "zero";
     cycleDeltaHtml = `<span class="delta ${cls}">${d>0?"+":""}${fmt(d,1)} %</span>`;
   }
-  const cycleCell = interactive
-    ? `<input class="cell-cycle" data-id="${sc.id}" data-field="cycle" type="number" step="1" value="${sc.cycle ?? ""}">`
-    : `<div class="v">${sc.cycle === "" || sc.cycle === undefined ? "—" : fmt(parseFloat(sc.cycle),0)}</div>`;
+  // le scenario de reference vaut toujours 100 par definition (recomputeCycles le reimpose
+  // a chaque chargement) : le rendre editable laissait croire qu'une autre valeur tenait,
+  // alors qu'elle etait ecrasee silencieusement au rechargement suivant
+  const cycleCell = !interactive
+    ? `<div class="v">${sc.cycle === "" || sc.cycle === undefined ? "—" : fmt(parseFloat(sc.cycle),0)}</div>`
+    : sc.baseline
+      ? `<div class="v" title="Le scénario de référence vaut toujours 100, par définition.">100</div>`
+      : `<input class="cell-cycle" data-id="${sc.id}" data-field="cycle" type="number" step="1" value="${sc.cycle ?? ""}">`;
 
   const secs = cycleSecondes(sc);
   const cadence = cadenceHeure(sc);
   const cycleSecLine = config.cycleSecActif
     ? `<div class="foot-sub">${secs === null ? "—" : fmt(secs,1)+" s"}${cadence ? " · " + fmt(cadence,0) + " p/h" : ""}</div>` : "";
+  // recomputeCycles() ne peut rien recalculer sans Vc/f exploitables sur la reference : le
+  // dire, plutot que laisser un indice fige sans explication (cas silencieux avant ce fix)
+  const baseLogCycle = sc.baseline ? null : (base ? logementCycle(base) : null);
+  const baseVfManquant = !sc.baseline && base && (!baseLogCycle
+    || isNaN(parseFloat(baseLogCycle.vc)) || isNaN(parseFloat(baseLogCycle.f))
+    || parseFloat(baseLogCycle.vc) * parseFloat(baseLogCycle.f) === 0);
+  const cycleVfWarnLine = baseVfManquant
+    ? `<div class="foot-sub" style="color:var(--amber);">⚠ Vc/f de la référence manquants — l'indice n'est plus recalculé automatiquement</div>` : "";
 
   // ---- economie : un seul chiffre de tete, decompose poste par poste ----
   const couts = coutsDetail(sc);
@@ -3840,6 +3857,7 @@ function scenarioBlockHTML(sc, interactive){
         ${cycleCell}
         ${cycleDeltaHtml}
         ${cycleSecLine}
+        ${cycleVfWarnLine}
       </div>
       <div class="foot-cell">
         <div class="l">Validation scénario</div>
@@ -4170,7 +4188,12 @@ async function loadPhotoThumbnails(){
     const filename = img.getAttribute("data-photo-filename");
     if(!filename) continue;
     const url = await readPhotoURL(filename);
-    if(url) img.src = url; else img.classList.add("photo-missing");
+    if(url){
+      // revoque des que l'image est decodee : le bitmap decode reste affichable, seul
+      // l'objet Blob sous-jacent est libere (sinon fuite memoire a l'usage prolonge)
+      img.addEventListener("load", () => URL.revokeObjectURL(url), { once:true });
+      img.src = url;
+    } else img.classList.add("photo-missing");
   }
 }
 
@@ -4205,6 +4228,7 @@ async function openPhotoAnnotator(essaiId, photoId){
   if(!url){ alert("Photo introuvable dans le dossier connecté."); return; }
   const img = new Image();
   img.onload = () => {
+    URL.revokeObjectURL(url); // l'image est decodee, le Blob source n'est plus necessaire
     annot = {
       sc, essaiId, photoId, img,
       crop: p.crop ? Object.assign({}, p.crop) : defaultCrop(),
@@ -4215,7 +4239,7 @@ async function openPhotoAnnotator(essaiId, photoId){
     renderAnnotEditor();
     ouvrirPanneau("photoAnnotWrap");
   };
-  img.onerror = () => alert("Impossible de charger l'image.");
+  img.onerror = () => { URL.revokeObjectURL(url); alert("Impossible de charger l'image."); };
   img.src = url;
 }
 function annotToolButtons(){
@@ -4252,7 +4276,10 @@ function renderAnnotEditor(){
       <span class="annot-sep"></span>
       <button type="button" class="annot-tool" id="annotUndo" title="Annuler la dernière forme">↺</button>
       <button type="button" class="annot-tool" id="annotDelSel" title="Supprimer la forme sélectionnée">🗑</button>
-      ${annot.tool === "crop" ? `<span class="annot-sep"></span><button type="button" class="annot-tool active" id="annotCropApply">✓ Valider le rognage</button><button type="button" class="annot-tool" id="annotCropReset">↺ Réinitialiser</button>` : ""}
+      ${annot.tool === "crop" ? (() => {
+        const hasDraft = annot.cropDraft && annot.cropDraft.w > 4 && annot.cropDraft.h > 4;
+        return `<span class="annot-sep"></span><button type="button" class="annot-tool active" id="annotCropApply" ${hasDraft ? "" : "disabled"} title="${hasDraft ? "" : "Dessinez d'abord la zone à conserver"}">✓ Valider le rognage</button><button type="button" class="annot-tool" id="annotCropReset">↺ Réinitialiser</button>`;
+      })() : ""}
     </div>
     <div class="annot-canvas-wrap"><canvas id="annotCanvas"></canvas></div>
     <p class="annot-hint">${ANNOT_HINTS[annot.tool] || ""}</p>
@@ -4321,6 +4348,7 @@ function setupAnnotCanvas(){
   const size = annotCanvasSize(base.w, base.h);
   canvas.width = size.w; canvas.height = size.h;
   canvas.className = annot.tool === "move" ? "move" : "";
+  canvas.tabIndex = 0; // pour recevoir les evenements clavier (Suppr)
   redrawAnnotCanvas();
   bindAnnotPointerEvents(canvas);
 }
@@ -4480,8 +4508,19 @@ function bindAnnotPointerEvents(canvas){
     const cx = e.clientX - r.left, cy = e.clientY - r.top;
     return [ cx * canvas.width/r.width, cy * canvas.height/r.height ];
   };
+  // Suppr/Retour arriere efface la forme selectionnee — promis par le hint du mode
+  // "Selection / deplacer" (ANNOT_HINTS.move), il fallait le cabler
+  canvas.addEventListener("keydown", (e) => {
+    if((e.key === "Delete" || e.key === "Backspace") && annot.selected >= 0){
+      e.preventDefault();
+      annot.shapes.splice(annot.selected, 1);
+      annot.selected = -1;
+      redrawAnnotCanvas();
+    }
+  });
   canvas.addEventListener("pointerdown", (e) => {
     canvas.setPointerCapture(e.pointerId);
+    canvas.focus();
     const [px,py] = getPos(e);
     const W = canvas.width, H = canvas.height;
     if(annot.tool === "crop"){
@@ -4554,6 +4593,12 @@ function bindAnnotPointerEvents(canvas){
   });
   const finish = () => {
     if(dragging && dragging.kind === "draw") commitDraft();
+    if(dragging && dragging.kind === "crop"){
+      // met a jour l'etat du bouton "Valider" sans reconstruire toute la barre d'outils
+      const btn = document.getElementById("annotCropApply");
+      const hasDraft = annot.cropDraft && annot.cropDraft.w > 4 && annot.cropDraft.h > 4;
+      if(btn){ btn.disabled = !hasDraft; btn.title = hasDraft ? "" : "Dessinez d'abord la zone à conserver"; }
+    }
     dragging = null;
   };
   canvas.addEventListener("pointerup", finish);
@@ -4569,6 +4614,13 @@ function saveAnnotEditor(){
   }
   annot = null;
   saveData();
+  // saveData() avale ses erreurs (localStorage plein, etc.) et se contente de basculer
+  // storageOk a false : sans ce controle, l'annotation reste correcte en memoire pour la
+  // session en cours mais l'utilisateur ferme le panneau en croyant qu'elle est sauvegardee,
+  // alors qu'un rechargement la perdrait
+  if(!storageOk){
+    alert("La photo annotée reste affichée pour cette session, mais la sauvegarde automatique est actuellement bloquée (stockage plein ou indisponible) — elle sera perdue à la fermeture. Exportez le suivi (.json) dès maintenant pour ne rien perdre.");
+  }
   fermerPanneaux();
   render();
 }
@@ -4582,7 +4634,11 @@ async function openAnnotatedLightbox(essaiId, photoId){
   const url = await readPhotoURL(p.filename);
   if(!url) return;
   const hasCrop = p.crop && (p.crop.w < 0.999 || p.crop.h < 0.999 || p.crop.x > 0 || p.crop.y > 0);
-  if(!hasCrop && !(p.annotations && p.annotations.length)){ ouvrirLightbox(url); return; }
+  if(!hasCrop && !(p.annotations && p.annotations.length)){
+    document.getElementById("imgLightboxImg").addEventListener("load", () => URL.revokeObjectURL(url), { once:true });
+    ouvrirLightbox(url);
+    return;
+  }
   const img = new Image();
   img.onload = () => {
     const crop = p.crop || defaultCrop();
@@ -4595,6 +4651,7 @@ async function openAnnotatedLightbox(essaiId, photoId){
     const ctx = canvas.getContext("2d");
     const drawScale = canvas.width/cw;
     ctx.drawImage(img, -crop.x*nw*drawScale, -crop.y*nh*drawScale, nw*drawScale, nh*drawScale);
+    URL.revokeObjectURL(url); // dessine sur le canvas, le Blob source n'est plus necessaire
     const saved = annot;
     annot = { crop };
     drawAnnotShapes(ctx, p.annotations || [], canvas.width, canvas.height, -1);
@@ -5953,6 +6010,13 @@ function renderFicheOutil(){
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"3.13.0", date:"03/09/2026", points:[
+    "Correctifs de fond suite à une revue de code externe : le champ « Temps de cycle » du scénario de référence était éditable alors qu'il est toujours écrasé à 100 au chargement — il est maintenant affiché en lecture seule pour ne plus induire en erreur.",
+    "Éditeur d'annotation photo : la touche Suppr efface maintenant vraiment la forme sélectionnée (promise mais pas câblée), le bouton « Valider le rognage » est grisé tant qu'aucune zone n'est tracée, et un message avertit si la sauvegarde automatique est bloquée après avoir annoté une photo.",
+    "Réduction de fuite mémoire sur les photos (URLs temporaires libérées après usage) et sur la compression d'image à l'ajout d'une photo.",
+    "La migration d'un ancien fichier de suivi est désormais sauvegardée immédiatement, au lieu d'être refaite à chaque ouverture tant qu'aucune autre saisie n'avait déclenché de sauvegarde.",
+    "Avertissement ajouté quand les Vc/f de la référence manquent : l'indice de cycle des autres scénarios n'est alors plus recalculé automatiquement, ce qui n'était pas signalé."
+  ]},
   { version:"3.12.0", date:"03/09/2026", points:[
     "Nouvel éditeur <b>« Annoter »</b> sur chaque photo d'essai (icône ✎ sur la miniature) : rognage, flèches droites, flèches courbes (poignée ajustable), rectangles et ellipses de sélection, texte flottant, choix de couleur. Rien n'est jamais appliqué au fichier photo d'origine — tout est recomposé à l'affichage, donc modifiable indéfiniment.",
     "Cliquer sur une miniature de photo l'ouvre désormais en plein écran avec ses annotations."

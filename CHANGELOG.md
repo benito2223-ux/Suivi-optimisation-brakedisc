@@ -5,6 +5,50 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [3.13.0] — 2026-09-03
+
+Suite à une revue de code externe (Hermes) du fichier dans son ensemble — cohérence,
+robustesse, UI/UX. 2 constats bloquants et 7 gênants de robustesse corrigés ici ; les
+constats de cohérence et d'UI/UX restants sont notés pour un prochain lot.
+
+### Corrigé (bloquants)
+- **Temps de cycle de la baseline non éditable en pratique** — `recomputeCycles()` force
+  `cycle = 100` sur le scénario de référence à chaque chargement (par construction : c'est
+  le point zéro de l'indice), mais le champ restait affiché comme un `<input>` éditable.
+  Une valeur saisie par erreur (constaté sur un export réel : `54,4` au lieu de `100`)
+  disparaissait silencieusement au rechargement suivant. Le champ est maintenant en
+  lecture seule sur la baseline, avec une info-bulle expliquant pourquoi.
+- **Éditeur d'annotation photo : sauvegarde silencieusement bloquée** — si le stockage
+  navigateur est plein au moment d'enregistrer une annotation, l'annotation reste
+  correcte en mémoire pour la session mais n'est plus persistée ; rien ne le signalait.
+  Un message prévient désormais l'utilisateur et l'invite à exporter le suivi.
+
+### Corrigé (robustesse)
+- **Fuite mémoire sur les photos** — les URLs temporaires (`ObjectURL`) créées pour
+  afficher une miniature, ouvrir l'éditeur d'annotation ou la lightbox n'étaient jamais
+  libérées. Révoquées maintenant dès que l'image correspondante est décodée.
+- **Compression d'image à l'ajout d'une photo** — passait par un data URL base64
+  intermédiaire (pic mémoire ~1,3× la taille du fichier, sensible sur mobile/mauvais
+  réseau) ; utilise directement un `ObjectURL`.
+- **Migration d'un ancien fichier de suivi non persistée** — la conversion vers le format
+  Ligne/Référence/OP n'était sauvegardée qu'à la première saisie ultérieure ; elle l'est
+  désormais immédiatement, sans attendre une action de l'utilisateur.
+- **Éditeur d'annotation, touche Suppr** — promise dans le message d'aide pour effacer la
+  forme sélectionnée, mais jamais câblée. Fonctionne maintenant (Suppr ou Retour arrière).
+- **Éditeur d'annotation, bouton « Valider le rognage »** — restait actif même sans zone
+  tracée, sans retour visible. Grisé tant qu'aucune zone valide n'est en cours, avec une
+  info-bulle explicative.
+- **Avertissement manquant si les Vc/f de la référence sont vides** — dans ce cas,
+  l'indice de cycle des autres scénarios n'est plus recalculé automatiquement lors d'un
+  changement de conditions de coupe, sans que rien ne le signale. Un message ambré
+  l'indique désormais sous le temps de cycle des scénarios concernés.
+
+### Non retenu de la revue
+- Le constat sur `writeBackupToFolder()` (2.4) supposait qu'un échec de sauvegarde du
+  dossier local pouvait faire croire à un échec de `localStorage`. Vérifié : la fonction
+  encapsule déjà sa propre gestion d'erreur silencieuse et ne peut pas remonter jusqu'au
+  `catch` de `saveData()` — le scénario décrit n'est pas reproductible en l'état.
+
 ## [3.12.0] — 2026-09-03
 
 ### Ajouté
