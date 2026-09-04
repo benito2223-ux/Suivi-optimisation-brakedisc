@@ -5,6 +5,38 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [3.14.1] — 2026-09-04
+
+Derniers constats cosmétiques de la revue Hermes.
+
+### Corrigé
+- `migrationTolerance` était une variable globale mutable jamais réinitialisée ; rendue
+  locale à `loadAll()`.
+- Champs numériques d'Options : chaque frappe déclenchait une sauvegarde + un rendu
+  complets — léger debounce (150 ms) ajouté sur la saisie continue, `change` (blur/Entrée)
+  reste instantané.
+- Aucun signal quand la permission du dossier photos est révoquée en cours de session
+  (paramètres du navigateur) — détectée à la prochaine lecture de photo, le statut
+  « dossier non connecté » s'affiche automatiquement.
+- Badges gris (`—`, compteurs) trop peu contrastés en éclairage d'atelier variable —
+  couleur de texte plus soutenue.
+- Badge « Charnière seule » raccourci en « 🔓 Charnière » avec info-bulle, prenait trop de
+  place dans le tableau des prélèvements.
+- Lightbox d'image : ajout d'un rappel « Cliquer ou Échap pour fermer », visible 2,5 s puis
+  estompé (respecte `prefers-reduced-motion`).
+- Menu **•••** : Échap ne le fermait pas (seul un clic à l'extérieur le faisait).
+- Messages du module « Détailler le temps de cycle par logement » : couleurs factorisées
+  en classes CSS sémantiques (`.cycle-detail-ok` / `.cycle-detail-ko`) plutôt qu'en style
+  inline.
+
+### Non retenu
+- Pagination de la vue de synthèse au-delà de N scénarios (3.9) — Hermes notait lui-même
+  que c'est à vérifier « en charge réelle » ; pas de cas concret aujourd'hui pour
+  dimensionner correctement un seuil, laissé de côté pour éviter d'ajouter de la
+  complexité sans bénéfice mesuré.
+- `prompt()` natif pour les saisies rapides (2.11) — Hermes concluait lui-même qu'aucun
+  changement n'était nécessaire en l'état.
+
 ## [3.14.0] — 2026-09-03
 
 Suite de la revue de code externe (Hermes) : constats de cohérence et d'UI/UX restants.
