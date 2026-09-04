@@ -5,6 +5,60 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [3.15.0] — 2026-09-04
+
+Refonte visuelle « blocs pleins » : contraste et lisibilité. Aucun changement de structure de
+données, de calcul ni de format de fichier — les `.json` existants se rechargent à l'identique.
+
+### Constat de départ
+Mesure des contrastes de l'interface existante, plutôt qu'un jugement à l'œil :
+
+| élément | avant | après | seuil AA |
+|---|---|---|---|
+| libellés (`--ink-faint`, #888 → #5a6470) | **3,5:1** | **6,0:1** | 4,5:1 |
+| texte secondaire (`--ink-soft`, #555 → #454e59) | 7,5:1 | 8,4:1 | 4,5:1 |
+| texte principal (`--ink`, #1a1a1a → #12161b) | 17,4:1 | 18,2:1 | 4,5:1 |
+| bordures (`--border`, #e5e5e5 → #ccd1d8) | **1,3:1** | 1,5:1, ombre floue supprimée | 3:1 (non-textuel) |
+| bleu SPK (#1b5ea6 → #0d47a1) | 6,6:1 | 8,6:1 | 4,5:1 |
+| rouge (#e2001a → #c50018) | 4,6:1 | 6,2:1 | 4,5:1 |
+
+Sur les aplats : blanc sur bleu 8,6:1, blanc sur vert 7,1:1, gain/perte éclaircis 5,5 et 5,1:1.
+La bordure reste sous 3:1 par choix — elle ne porte aucune information à elle seule, elle
+délimite ; ce sont l'ombre floue et le manque d'écart de fond qui la rendaient inopérante.
+
+Le point noir n'était pas la palette mais les libellés : l'outil est fait presque entièrement
+de petits libellés mono en majuscules (9,5 à 12 px), tous sous le seuil AA. Les bordures
+`#e5e5e5`, noyées dans une ombre floue large, ne séparaient rien non plus.
+
+### Modifié
+- **Palette recalibrée** — `--ink` #12161b, `--ink-soft` #454e59, `--ink-faint` #5a6470,
+  `--border` #ccd1d8, bleu #0d47a1, vert #12653a, ambre #8a4300, rouge #c50018.
+- **Hiérarchie par aplats** — la rangée de chiffres clés d'un scénario (`.scenario-foot`), les
+  KPI du tableau de bord et le bandeau de production annuelle passent sur fond de couleur
+  pleine, chiffres en blanc. La cellule de validation part en vert : c'est le seul indicateur
+  d'avancement de campagne, il ne se confond plus avec les coûts.
+- **Bandeau de tête** en aplat noir, logo SPK posé sur une plaque blanche (le PNG a une encre
+  sombre, il disparaissait sur fond noir).
+- **Ombres** — `--shadow-card` réduit à un filet de 1 px : sur fond clair, un halo large et pâle
+  ne sépare rien, il brouille l'arête de la carte. La profondeur vient désormais de la bordure.
+- **Typographie** — Manrope (titres, gros chiffres) et Public Sans (texte courant, UI)
+  remplacent Archivo et Open Sans, embarquées en base64 comme les précédentes (+66 ko, aucun
+  appel réseau, fonctionnement hors ligne préservé). Public Sans est dessinée pour les petites
+  tailles à l'écran, là où Open Sans se brouillait sous 12 px. IBM Plex Mono reste sur les
+  chiffres.
+- **Mode sombre** refait avec la même logique au lieu d'une inversion approximative : fond
+  #0f1317, surfaces #181d22, texte #f1f4f7, accents remontés en tons clairs. Nouveau token
+  `--on-accent` (encre posée sur un badge plein) : blanc en clair, sombre en mode nuit — les
+  badges vert/rouge/ambre y étaient auparavant en texte blanc sur fond clair.
+- **PDF et rapport client** alignés sur la même palette.
+
+### Impression
+- Les aplats pleins restent à l'écran : en `@media print`, les tokens `--fill*` basculent sur
+  fond blanc (chiffres en bleu, cellule de validation en blanc, filets de séparation gris).
+  Un tirage papier de plusieurs scénarios aurait sinon consommé beaucoup de toner pour rien.
+  Comme les couleurs posées en style inline par le JS (gain/perte annuels, avertissements de
+  cycle) passent par ces mêmes tokens, elles suivent automatiquement.
+
 ## [3.14.1] — 2026-09-04
 
 Derniers constats cosmétiques de la revue Hermes.
