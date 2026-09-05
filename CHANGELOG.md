@@ -5,6 +5,68 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [3.16.0] — 2026-09-05
+
+Cinq chantiers issus d'une revue des marges d'amélioration réelles. La performance n'en fait
+pas partie : l'historique et la sauvegarde dossier sont déjà throttlés à 5 min, la synthèse et
+le backlog ne se recalculent que s'ils sont affichés, la saisie écrit la valeur sans
+reconstruire l'écran. Le vrai point faible était le modèle d'échange de fichiers.
+
+### Ajouté — import fusionnant (le chantier structurant)
+`importData()` remplaçait tout l'arbre. À trois sur le même suivi, ça impose de travailler en
+série : deux personnes saisissant en parallèle sur deux OP différents, le fichier importé en
+dernier écrasait le travail de l'autre. Le compteur de révision prévenait, il n'empêchait rien.
+
+- Nouveau champ `modifieLe` (ISO) par essai, posé à chaque écriture de champ d'essai ou de
+  prélèvement, à la création, et à l'ajout/suppression de prélèvements, photos ou relevés
+  Marposs (`toucherEssai()`).
+- `fusionnerLignes()` — règle annoncée à l'utilisateur avant validation :
+  - **structure** (lignes, références, OP, scénarios, outils, logements, conditions de coupe,
+    options) : ce qui existe localement est conservé, ce qui n'existe que dans le fichier reçu
+    est ajouté. Une fusion n'écrase jamais un réglage local.
+  - **essais** : niveau d'arbitrage. Un essai présent des deux côtés est remplacé **en bloc**
+    par la version au `modifieLe` le plus récent. Jamais champ par champ — deux moitiés
+    d'essais recollées produiraient une mesure qui n'a jamais existé.
+  - **conflit** (dates identiques, ou absentes d'un côté) : la version locale est conservée et
+    listée nommément. Les fichiers antérieurs à cette version n'ont pas d'horodatage : leurs
+    essais divergents remontent donc en conflit tant que chacun n'a pas ré-exporté une fois.
+    C'est volontaire — mieux vaut signaler que deviner.
+- Panneau de choix `#importPanel` (Fusionner / Remplacer tout), chaque option accompagnée de
+  sa conséquence écrite, puis rapport de fusion : ajoutés, mis à jour, conservés, conflits.
+- Une fusion incrémente la révision (`max + 1`) et repasse le fichier en « non exporté » : le
+  résultat n'existe encore sur aucun autre poste.
+
+### Ajouté — prévision de sortie de tolérance
+`previsionUsure()` : régression linéaire des prélèvements (n° de pièce → cote), extrapolée
+jusqu'à la tolérance, affichée en pastille à côté de la progression du logement. Rouge si la
+sortie est prévue avant la charnière visée. Garde-fous : ≥ 4 points et ≥ 3 n° de pièce
+distincts, pente positive, R² ≥ 0,35, incertitude à ± 2 erreurs-types toujours affichée. En
+dessous : « tendance stable », « tendance non lisible » ou « déjà hors tol. » — jamais un
+chiffre non défendable.
+
+### Ajouté — dispersion par équipe
+Les champs `equipe` et `redigePar` ne servaient qu'à tracer. Croisés avec la conformité des
+prélèvements, ils donnent un tableau équipe × scénario du taux hors tolérance dans la vue de
+synthèse. Badge « écart » au-delà de 5 points au-dessus de la moyenne des autres équipes, à
+partir de 10 prélèvements évalués ; en dessous, la taille d'échantillon est affichée (n=…).
+Le bloc n'apparaît qu'à partir de 2 équipes renseignées.
+
+### Ajouté — mode consultation
+Bouton cadenas : `body.locked` neutralise la saisie (champs en lecture seule, boutons d'action
+masqués) sans rien cacher de l'information. L'outil tourne sur un écran partagé en tactile où
+tout était éditable en permanence. Le mode atelier reste saisissable — on y entre
+volontairement, en plein écran. État local au poste (`localStorage`), jamais exporté,
+ré-appliqué après chaque rendu.
+
+### Modifié
+- Logo ré-encodé de 1796 px à 600 px de large (affiché en 52 px, ~14 mm à 300 dpi en
+  impression) : 118 ko → 37 ko en base64. Fichier total 750 → 669 ko.
+
+### Tests
+16 cas ajoutés à `runTests()` (prévision d'usure : extrapolation, seuil de points, cote
+stable, déjà hors tolérance ; fusion : reçu plus récent, local plus récent, conflit sans date,
+fichiers identiques, essai ajouté, structure ajoutée sans écrasement). **65/65 au vert.**
+
 ## [3.15.0] — 2026-09-04
 
 Refonte visuelle « blocs pleins » : contraste et lisibilité. Aucun changement de structure de
