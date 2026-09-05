@@ -1,3 +1,20 @@
+<!--
+  ============================================================================
+  Suivi_optimisation_SPK — outil de suivi d'essais et de bilan économique
+  pour plaquettes et outils de coupe céramique.
+
+  Conception, architecture et développement : Benjamin Rouquette.
+  Écrit hors temps de travail et avec des moyens personnels.
+  © 2026 Benjamin Rouquette. Tous droits réservés.
+
+  Le logo SPK by CeramTec identifie le contexte d'utilisation de l'outil ;
+  il ne vaut pas cession des droits sur le code qui le porte.
+
+  Le contenu métier saisi dans l'outil (références, mesures, conditions de
+  coupe, résultats d'essais) appartient à ses auteurs et reste confidentiel
+  au projet. Cette mention porte sur le logiciel, pas sur les données.
+  ============================================================================
+-->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Suivi_optimisation_SPK</title>
@@ -970,6 +987,8 @@ select.log-equipe:focus{border-color:var(--blue); outline:none; background:var(-
 .note{border:1px solid var(--border); border-left:3px solid var(--amber); background:var(--amber-bg); border-radius:0 var(--radius) var(--radius) 0; padding:12px 16px; margin:22px 0; font-size:13.5px; color:var(--ink-soft);}
 .note b{color:var(--amber);}
 
+.foot-auteur{color:var(--ink-soft);}
+.foot-auteur b{color:var(--ink);}
 .foot{margin-top:48px; padding-top:14px; border-top:1px solid var(--border); font-size:11.5px; color:var(--ink-faint); font-family:var(--font-mono); display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;}
 
 /* ---- bandeau verdict : la conclusion, en haut, en grand ---- */
@@ -1160,6 +1179,7 @@ body.atelier-on{overflow:hidden;}
     font-family:var(--font-mono); font-size:8.5px; line-height:1.6; color:var(--ink-faint);
   }
   .print-foot b{ color:var(--red); }
+  .print-auteur{ color:var(--ink-faint); }
   .scenario{ border:1px solid var(--border); break-inside:avoid; page-break-inside:avoid; }
   .scenario.baseline{ border-color:var(--blue); border-width:1.5px; }
   .scenario-head{ padding:8px 12px; }
@@ -1509,12 +1529,14 @@ body.atelier-on{overflow:hidden;}
 
   <div class="print-foot">
     Site Stellantis Sept Fons — Interlocuteurs Stellantis : Matis Hernu, Arthur Alves — Interlocuteur CeramTec : Benjamin Rouquette<br>
-    <b>CONFIDENTIEL</b> — document interne au projet, ne pas diffuser hors de l'équipe projet
+    <b>CONFIDENTIEL</b> — document interne au projet, ne pas diffuser hors de l'équipe projet<br>
+    <span class="print-auteur">Édité avec Suivi_optimisation_SPK — outil conçu et développé par Benjamin Rouquette</span>
   </div>
 
   <div class="foot">
     <span id="footToolName">Suivi_optimisation_SPK</span>
-    <span>Confidentiel — Benjamin Rouquette 2026</span>
+    <span class="foot-auteur">Conception et développement : <b>Benjamin Rouquette</b> — © 2026, tous droits réservés</span>
+    <span>Confidentiel — usage interne au projet</span>
     <span>bilan_economique.html</span>
   </div>
 </div>

@@ -5,6 +5,23 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## Non versionné — 2026-09-05
+
+Mentions de paternité. **`TOOL_VERSION` volontairement inchangé** : le bandeau « Nouveautés »
+s'ouvre dès que la version stockée diffère, et cette modification ne concerne ni les
+utilisateurs de l'outil ni le client. Elle n'a donc pas d'entrée dans `NOUVEAUTES`.
+
+- En-tête de commentaire en tête du fichier source : conception et développement, mention de
+  droits, et précision que le logo SPK identifie le contexte d'utilisation sans valoir cession
+  des droits sur le code. Précise aussi que la mention porte sur le logiciel, pas sur les
+  données métier saisies dedans.
+- Pied de page écran : « Conception et développement : Benjamin Rouquette — © 2026, tous droits
+  réservés ».
+- Pied de page imprimé (documents qui partent chez le client) : formulation volontairement plus
+  sobre, « outil conçu et développé par Benjamin Rouquette », sans réserve de droits — une
+  mention de copyright sur un livrable client appelle des questions qui n'ont pas à se poser
+  dans ce contexte.
+
 ## [3.19.1] — 2026-09-05
 
 Trouvé en rejouant le jeu de données de la revue externe sur la version courante.
