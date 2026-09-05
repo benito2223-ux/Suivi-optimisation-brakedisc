@@ -278,6 +278,7 @@ td.computed{font-family:var(--font-mono); font-variant-numeric:tabular-nums; tex
 .ap-cond{font-family:var(--font-mono); font-size:12px; color:var(--ink-soft); margin-top:9px;
   padding-top:8px; border-top:1px solid var(--border);}
 .ap-manque{font-family:var(--font-mono); font-size:11px; font-weight:600; color:var(--amber); margin-top:6px;}
+.ap-manque.ap-bloquant{color:var(--red);}
 
 /* ---- fiche outil repliable ---- */
 .outil-carte > summary.outil-sommaire{cursor:pointer; list-style:none; display:flex; align-items:center;
@@ -1519,7 +1520,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "3.19.0";
+const TOOL_VERSION = "3.19.1";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -5871,11 +5872,20 @@ function logementBlocHTML(sc, o, l, showFrFa, showCycleDetail){
    que decouvert plus tard dans un calcul qui ne tombe pas. */
 function apercuLogementHTML(sc, o, l, couleur, oi){
   const pc = posCost(l);
+  // Deux causes distinctes a un cout qui ne tombe pas, et il faut les nommer separement :
+  // une case vide (on n'a pas encore saisi) et une valeur saisie mais inexploitable (0 arete,
+  // charniere a 0). Le second cas est le plus traitre : la tuile affichait "Coût —" alors que
+  // la cause etait juste a cote, lisible, sans que rien ne fasse le lien.
   const manque = [];
   if(!l.ref) manque.push("référence");
   if(l.prix === "" || l.prix == null) manque.push("prix");
   if(l.aretes === "" || l.aretes == null) manque.push("arêtes");
   if(l.charniere === "" || l.charniere == null) manque.push("charnière");
+  const bloquant = [];
+  const nb = v => { const x = parseFloat(v); return isNaN(x) ? null : x; };
+  if(nb(l.aretes) !== null && nb(l.aretes) <= 0) bloquant.push("nombre d'arêtes à " + l.aretes);
+  if(nb(l.charniere) !== null && nb(l.charniere) <= 0) bloquant.push("charnière à " + l.charniere);
+  if(nb(l.prix) !== null && nb(l.prix) < 0) bloquant.push("prix négatif");
   const cond = [
     l.vc !== "" && l.vc != null ? "Vc " + l.vc : null,
     l.f !== "" && l.f != null ? "f " + fmt(parseFloat(l.f),2) : null,
@@ -5901,6 +5911,7 @@ function apercuLogementHTML(sc, o, l, couleur, oi){
       </div>
       ${cond ? `<div class="ap-cond">${escapeAttr(cond)}</div>` : ""}
       ${manque.length ? `<div class="ap-manque">Manque : ${escapeAttr(manque.join(", "))}</div>` : ""}
+      ${bloquant.length ? `<div class="ap-manque ap-bloquant" title="Le coût pièce ne peut pas être calculé tant que cette valeur reste telle quelle.">Coût non calculable : ${escapeAttr(bloquant.join(", "))}</div>` : ""}
     </div>`;
 }
 
@@ -7156,6 +7167,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""))) ret
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"3.19.1", date:"05/09/2026", points:[
+    "Dans la vue d'ensemble, un coût qui ne peut pas se calculer dit maintenant <b>pourquoi</b> : « Coût non calculable : nombre d'arêtes à 0 ». Auparavant la tuile affichait « Coût — » alors que la cause était lisible juste au-dessus, sans que rien ne fasse le lien. À distinguer de « Manque : … », qui signale une case pas encore remplie — ce n'est pas le même problème ni le même geste."
+  ]},
   { version:"3.19.0", date:"05/09/2026", points:[
     "<b>La sauvegarde ne peut plus échouer en silence.</b> Jusqu'ici, si la mémoire que le navigateur accorde à l'outil était pleine, l'enregistrement échouait et le seul signal était une petite pastille rouge avec une info-bulle. Devant une machine, personne ne survole une pastille : on pouvait saisir des relevés pendant une heure sans que rien ne soit écrit, et tout perdre en fermant l'onglet. C'était le risque le plus sérieux de l'outil.",
     "Désormais, en trois temps. <b>1)</b> L'outil se rattrape tout seul : il purge ses points de reprise automatiques — qui pèsent plusieurs fois le suivi lui-même — et réessaie. Dans la plupart des cas vous ne verrez rien, et c'est voulu : un point de reprise vaut moins que vos mesures en cours. <b>2)</b> Si ça ne suffit pas, une fenêtre s'ouvre et un <b>bandeau rouge reste affiché en haut de l'écran</b>, avec un bouton « Exporter le suivi maintenant » directement dedans. <b>3)</b> Bien avant le mur, dès 3,5 Mo, un avertissement vous prévient et <b>nomme ce qui pèse</b>, pièce jointe par pièce jointe.",
@@ -7780,6 +7794,19 @@ function runTests(){
        ["Fiche outil", "Plan outil T-INT"]);
     ok("inventairePoids : le plus lourd en premier", inv[0].octets >= inv[inv.length-1].octets, true);
     lignes = sauve.lignes;
+
+    /* ---- apercu : distinguer "pas encore saisi" et "saisi mais inexploitable" (v3.19.1) --
+       Remonte par le jeu de stress externe : un logement a 0 arete affichait "Coût —" sans
+       que rien ne fasse le lien avec la cause, pourtant lisible juste au-dessus. */
+    const scAp = normalizeScenario({ id:"sAp", name:"ap", limitOverride:true, limitValue:0.12, outils:[
+      { id:"tA", numero:"T-0", logements:[{ id:"gA", nom:"Piste", ref:"X", prix:0, aretes:0, charniere:100 }] }] });
+    const tuile0 = apercuLogementHTML(scAp, scAp.outils[0], scAp.outils[0].logements[0], "#000", 0);
+    ok("apercu : 0 arete signale comme bloquant", /Coût non calculable[^<]*arêtes à 0/.test(tuile0), true);
+    ok("apercu : une valeur saisie n'est pas listee comme manquante", /Manque/.test(tuile0), false);
+    const scVide = normalizeScenario({ id:"sVi", name:"vi", outils:[
+      { id:"tB", numero:"T-1", logements:[{ id:"gB", nom:"Piste", ref:"", prix:"", aretes:"", charniere:"" }] }] });
+    ok("apercu : cases vides listees comme manquantes",
+       /Manque : référence, prix, arêtes, charnière/.test(apercuLogementHTML(scVide, scVide.outils[0], scVide.outils[0].logements[0], "#000", 0)), true);
 
     ok("normalizeScenario : plan conserve a travers l'arbre",
        normalizeScenario({ id:"sp2", name:"p", outils:[{ id:"t9", numero:"T9", plan:planTest, logements:[] }] }).outils[0].plan, planTest);

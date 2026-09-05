@@ -5,6 +5,32 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [3.19.1] — 2026-09-05
+
+Trouvé en rejouant le jeu de données de la revue externe sur la version courante.
+
+### Corrigé
+- Vue d'ensemble : un logement dont une valeur est **saisie mais inexploitable** (0 arête,
+  charnière à 0, prix négatif) affichait « Coût — » sans explication, alors que la cause était
+  lisible juste au-dessus dans la même tuile. `apercuLogementHTML()` distingue désormais deux
+  situations qui n'appellent pas le même geste : « Manque : … » (case pas encore remplie, en
+  ambre) et « Coût non calculable : … » (valeur présente qui bloque le calcul, en rouge).
+
+### Tests
+73/73 (3 ajoutés) : 0 arête signalé comme bloquant et non comme manquant, cases vides
+listées comme manquantes.
+
+### Relance du jeu de stress externe sur la 3.19.1
+Aucune régression, aucune exception. Rappel des comportements confirmés : cycle de la baseline
+ramené à 100 (par définition), repli sur l'indice quand le cycle détaillé est incomplet
+(1 logement sur 2 renseigné), `plaquettes: null` sans division par zéro sur 0 arête, rebut 50 %
+à 7 €/pièce, seuil de bascule déclaré impossible sur un scénario perdant, charnière réelle
+arrêtée à 50 pièces quand la tolérance est franchie au milieu, mesure de l'ancien format EMAG 1
+correctement relue. Le volume négatif — dont le test n'avait jamais tourné dans le script
+d'origine, un mauvais chemin d'accès l'ayant fait échouer silencieusement — est bien neutralisé
+et affiche le bandeau d'alerte ajouté en 3.17. Les trois niveaux de protection du quota se
+comportent comme prévu sous échec d'écriture provoqué. 70 puis 73 tests internes au vert.
+
 ## [3.19.0] — 2026-09-05
 
 Sécurisation du stockage. Le risque le plus sérieux de l'outil n'était pas un calcul faux :
