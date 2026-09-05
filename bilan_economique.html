@@ -754,6 +754,17 @@ body.locked .log-del, body.locked .photo-del, body.locked .photo-annot, body.loc
 body.locked .baseline-pill, body.locked .backlog-image-add, body.locked .ligne-tab.add,
 body.locked .reference-tab.add, body.locked .statut-motif{display:none !important;}
 body.locked #lockBtn{background:var(--amber); border-color:var(--amber); color:var(--on-accent);}
+/* Panne de sauvegarde : rouge, en haut, avec l'action de secours a portee de clic.
+   Ce bandeau est le seul endroit de l'outil qui a le droit d'etre aussi insistant. */
+.bandeau-stockage{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px;
+  padding:12px 16px; background:var(--red); color:#fff; border-radius:var(--radius);
+  font-size:13.5px; box-shadow:0 2px 10px color-mix(in srgb, var(--red) 40%, transparent);}
+.bandeau-stockage[hidden]{display:none;}
+.bandeau-stockage b{font-family:var(--font-disp); font-weight:800; font-size:15px;}
+.bandeau-stockage span{flex:1 1 320px; line-height:1.45;}
+.bandeau-stockage button.primary{background:#fff; color:var(--red); border-color:#fff; flex:0 0 auto;}
+.bandeau-stockage button.primary:hover{background:#fff; color:var(--red-dark); border-color:#fff;}
+@media print{ .bandeau-stockage{ display:none !important; } }
 .lock-bandeau{display:none; align-items:center; gap:10px; margin-bottom:14px; padding:9px 14px;
   background:var(--amber-bg); border:1px solid var(--amber); border-left:4px solid var(--amber);
   border-radius:var(--radius); font-size:13px; color:var(--ink);}
@@ -1195,6 +1206,8 @@ body.atelier-on{overflow:hidden;}
     </div>
   </div>
 
+  <div class="bandeau-stockage" id="bandeauStockage" hidden></div>
+
   <div class="lock-bandeau"><b>Consultation</b> Saisie verrouillée sur ce poste — cliquez sur « Déverrouiller » pour modifier. Le mode atelier reste utilisable pour relever des mesures.</div>
 
   <div class="toolbar" id="toolbarWrap">
@@ -1506,7 +1519,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "3.18.0";
+const TOOL_VERSION = "3.19.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -2094,20 +2107,142 @@ let storageOk = true;
 let lastSavedAt = null;
 let unexported = false;
 
+/* ---- SAUVEGARDE ET QUOTA (v3.19) ------------------------------------------------------
+   Le scenario dangereux de l'outil n'est pas un mauvais calcul, c'est celui-ci : le quota du
+   navigateur est atteint, saveData() echoue, et le seul signal etait une PASTILLE ROUGE avec
+   une info-bulle. Quelqu'un qui saisit des relevés devant la machine ne survole jamais une
+   pastille : il peut travailler une heure sur des donnees qui ne sont ecrites nulle part, et
+   tout perdre en fermant l'onglet.
+   Trois niveaux desormais :
+     1. RECUPERATION AUTOMATIQUE — l'historique glissant pese jusqu'a 5 fois le suivi lui-meme.
+        En cas d'echec on le purge et on retente : neuf fois sur dix ca suffit, et un point de
+        reprise vaut moins que les mesures en cours.
+     2. ALERTE FRANCHE — si ca echoue quand meme : une fenetre modale (une seule fois) qui dit
+        quoi faire, plus un bandeau rouge permanent en haut de page tant que dure la panne.
+     3. PREVENTION — des que le fichier depasse 3,5 Mo, un avertissement unique avec le detail
+        de ce qui pese, avant que le mur soit atteint.                                        */
+const QUOTA_ALERTE = 3.5 * 1024 * 1024;
+let quotaAlerteVue = false;
+let quotaPanneSignalee = false;
+
+function payloadSuivi(){
+  return JSON.stringify({ lignes, backlog, revision, activeLigneId, activeReferenceId, activeOpId, activeScenarioId: activeId });
+}
+
+/* Ce qui pese vraiment, nomme, pour que l'utilisateur puisse agir plutot que subir. */
+function inventairePoids(){
+  const items = [];
+  lignes.forEach(l => l.references.forEach(r => r.ops.forEach(op => {
+    if(op.ficheOutil && op.ficheOutil.stockage !== "dossier" && op.ficheOutil.dataUrl){
+      items.push({ quoi: "Fiche outil — " + (l.nom || "?") + " › " + (r.nom || "?") + " › " + (op.nom || "?"),
+                   octets: op.ficheOutil.dataUrl.length });
+    }
+    (op.scenarios || []).forEach(sc => (sc.outils || []).forEach(o => {
+      if(o.plan && o.plan.stockage !== "dossier" && o.plan.dataUrl){
+        items.push({ quoi: "Plan outil " + (o.numero || "?") + " — " + (sc.name || "?"), octets: o.plan.dataUrl.length });
+      }
+    }));
+  })));
+  backlog.forEach(b => { if(b.image) items.push({ quoi: "Image de suggestion — " + (b.titre || "sans titre"), octets: b.image.length }); });
+  items.sort((a,b) => b.octets - a.octets);
+  return items;
+}
+function ko(n){ return Math.round(n/1024) + " ko"; }
+function mo(n){ return (n/1024/1024).toFixed(2).replace(".", ",") + " Mo"; }
+
+function detailPoidsTexte(){
+  const items = inventairePoids();
+  if(!items.length) return "Aucune pièce jointe intégrée au fichier : le poids vient des mesures elles-mêmes.";
+  const l = ["Ce qui pèse le plus :"];
+  items.slice(0,6).forEach(i => l.push("  · " + i.quoi + " — " + ko(i.octets)));
+  if(items.length > 6) l.push("  · … et " + (items.length - 6) + " autre(s)");
+  l.push("", "Une pièce jointe se déplace vers le dossier local en la retirant puis en la rejoignant, dossier connecté.");
+  return l.join(String.fromCharCode(10));
+}
+
+function libererEspaceHistorique(){
+  // les points de reprise valent moins que les mesures en cours de saisie
+  let avait = false;
+  try{ avait = !!localStorage.getItem(HISTORY_KEY); localStorage.removeItem(HISTORY_KEY); }catch(e){}
+  try{ localStorage.removeItem(BACKUP_KEY); }catch(e){}
+  return avait;
+}
+
+function signalerPanneStockage(){
+  storageOk = false;
+  renderBandeauStockage();
+  if(quotaPanneSignalee) return;
+  quotaPanneSignalee = true;
+  alert(`SAUVEGARDE BLOQUÉE — vos dernières saisies ne sont PAS enregistrées.
+
+La mémoire que le navigateur accorde à cet outil est pleine. Tout ce que vous saisissez maintenant sera perdu à la fermeture de l'onglet.
+
+À faire tout de suite, dans cet ordre :
+  1. « Exporter le suivi » — vos données partent dans un fichier .json, à l'abri.
+  2. Connectez le dossier local (menu ••• → Dossier photos) et retirez puis rejoignez les pièces jointes lourdes : elles seront stockées à part.
+
+` + detailPoidsTexte());
+}
+
+function verifierPoids(taille){
+  if(quotaAlerteVue || taille < QUOTA_ALERTE) return;
+  quotaAlerteVue = true;
+  alert(`Le fichier de suivi atteint ${mo(taille)}.
+
+Le navigateur accorde environ 5 Mo à cet outil, mesures et pièces jointes comprises. Au-delà, la sauvegarde échoue et les relevés ne s'enregistrent plus. Il reste de la marge, mais il vaut mieux agir maintenant.
+
+` + detailPoidsTexte());
+}
+
 function saveData(){
   syncActiveOp();
-  try{
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ lignes, backlog, revision, activeLigneId, activeReferenceId, activeOpId, activeScenarioId: activeId }));
+  const payload = payloadSuivi();
+  const ecrire = () => {
+    localStorage.setItem(STORAGE_KEY, payload);
     localStorage.setItem(STORAGE_KEY + "_meta", JSON.stringify({ savedAt: new Date().toISOString() }));
+  };
+  try{
+    ecrire();
     storageOk = true;
     lastSavedAt = new Date();
+    quotaPanneSignalee = false;
+    renderBandeauStockage();
+    verifierPoids(payload.length);
     pushHistory();
     writeBackupToFolder();
   }catch(e){
-    storageOk = false;
+    // 1er secours : purger l'historique glissant, qui pese plusieurs fois le suivi
+    if(libererEspaceHistorique()){
+      try{
+        ecrire();
+        storageOk = true;
+        lastSavedAt = new Date();
+        quotaPanneSignalee = false;
+        renderBandeauStockage();
+        verifierPoids(payload.length);
+        unexported = true;
+        updateSaveUI();
+        return;
+      }catch(e2){ /* le mur est bien la */ }
+    }
+    signalerPanneStockage();
   }
   unexported = true;
   updateSaveUI();
+}
+
+/* bandeau permanent : une pastille ne se survole pas quand on saisit devant une machine */
+function renderBandeauStockage(){
+  const el = document.getElementById("bandeauStockage");
+  if(!el) return;
+  el.hidden = storageOk;
+  if(!storageOk){
+    el.innerHTML = `<b>Sauvegarde bloquée</b>
+      <span>La mémoire du navigateur est pleine : vos saisies ne sont plus enregistrées et seront perdues à la fermeture.</span>
+      <button class="primary" id="bandeauExport">Exporter le suivi maintenant</button>`;
+    const b = document.getElementById("bandeauExport");
+    if(b) b.addEventListener("click", () => document.getElementById("exportBtn").click());
+  }
 }
 
 /* ---- filet de securite renforce : historique glissant de sauvegardes automatiques ----
@@ -5787,6 +5922,59 @@ function compositionApercuHTML(sc){
     </div>`;
 }
 
+/* ---- PIECES JOINTES : une seule regle, appliquee partout (v3.19) ---------------------
+   Un PDF de plan ou de fiche outil pese couramment 1 a 2 Mo. localStorage plafonne autour de
+   5 Mo pour L'INTEGRALITE du suivi (mesures comprises) : deux pieces jointes integrees au
+   fichier suffisent a le saturer, et une sauvegarde qui echoue bloque l'enregistrement des
+   MESURES — on perdrait des relevés a cause d'un plan. D'ou la regle unique :
+     1. dossier local connecte  -> le fichier y est ecrit, seul son nom voyage dans le JSON ;
+     2. sinon, sous 500 ko      -> integre au fichier de suivi (base64), ca reste raisonnable ;
+     3. sinon                   -> refus explique, avec le chemin pour connecter le dossier.
+   Renvoie le descriptif a stocker, ou null si l'utilisateur doit d'abord agir. */
+const PJ_MAX_SANS_DOSSIER = 500 * 1024;
+
+async function attacherPieceJointe(file, prefixe){
+  const ext = (file.name.match(/\.[a-z0-9]+$/i) || [""])[0].toLowerCase();
+  const mime = file.type || (ext === ".pdf" ? "application/pdf" : "application/octet-stream");
+  if(photosDirHandle){
+    try{
+      const nom = prefixe + "_" + Date.now() + ext;
+      await writePhotoBlob(nom, file);
+      return { filename: nom, nomOrigine: file.name, mime, addedAt: new Date().toISOString(), stockage: "dossier" };
+    }catch(err){
+      alert("Échec de l'enregistrement dans le dossier local : " + err.message);
+      return null;
+    }
+  }
+  if(file.size > PJ_MAX_SANS_DOSSIER){
+    alert(`Ce fichier pèse ${Math.round(file.size/1024)} ko.
+
+Sans dossier local connecté, il devrait être intégré au fichier de suivi, dont la capacité totale est d'environ 5 Mo pour TOUT le suivi, mesures comprises. Deux pièces jointes de cette taille suffiraient à le saturer — et une sauvegarde qui échoue bloque l'enregistrement de vos relevés. On ne perd pas des mesures à cause d'un plan.
+
+Connectez le dossier local (menu ••• → Dossier photos) : le fichier y sera enregistré à part, sans limite gênante. Ou joignez une version allégée (moins de 500 ko).`);
+    return null;
+  }
+  return await new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = () => resolve({ filename: file.name, mime, addedAt: new Date().toISOString(), stockage: "fichier", dataUrl: reader.result });
+    reader.onerror = () => { alert("Lecture du fichier impossible."); resolve(null); };
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ouvre une piece jointe quel que soit son mode de stockage */
+async function ouvrirPieceJointe(pj){
+  if(!pj) return;
+  if(pj.stockage === "dossier"){
+    if(!photosDirHandle){ alert("Le dossier local n'est pas connecté sur ce poste — reconnectez-le (menu ••• → Dossier photos) pour ouvrir ce fichier."); return; }
+    const url = await readPhotoURL(pj.filename);
+    if(!url){ alert("Fichier introuvable dans le dossier local : " + pj.filename); return; }
+    window.open(url, "_blank");
+  } else {
+    window.open(pj.dataUrl, "_blank");
+  }
+}
+
 /* plan de l'outil : PDF ou image du montage / de la trajectoire, propre a CET outil.
    Stockage : dans le dossier local s'il est connecte (un plan pese vite 1 a 2 Mo, et
    localStorage plafonne autour de 5 Mo pour TOUT le suivi) ; a defaut en base64 dans le
@@ -6226,6 +6414,7 @@ function render(){
   renderSynthese();
   renderBacklog();
   applyLockState(); // le rendu recree les champs : l'etat de verrouillage doit etre re-applique
+  renderBandeauStockage();
 }
 
 function attachDetailHandlers(sc){
@@ -6513,46 +6702,17 @@ function attachDetailHandlers(sc){
       if(!file) return;
       const o = sc.outils.find(x => x.id === el.getAttribute("data-outil"));
       if(!o) return;
-      const ext = (file.name.match(/\.[a-z0-9]+$/i) || [""])[0].toLowerCase();
-      const mime = file.type || (ext === ".pdf" ? "application/pdf" : "application/octet-stream");
-      if(photosDirHandle){
-        try{
-          const nom = "plan_" + slugify(sc.name) + "_" + slugify(o.numero || "outil") + "_" + Date.now() + ext;
-          await writePhotoBlob(nom, file);
-          o.plan = { filename: nom, nomOrigine: file.name, mime, addedAt: new Date().toISOString(), stockage: "dossier" };
-          saveData(); render();
-        }catch(err){ alert("Échec de l'enregistrement du plan dans le dossier local : " + err.message); }
-        return;
-      }
-      if(file.size > 500 * 1024){
-        alert(`Ce plan pèse ${Math.round(file.size/1024)} ko.
-
-Sans dossier local connecté, il devrait être intégré au fichier de suivi, dont la capacité totale est d'environ 5 Mo — deux plans de cette taille suffiraient à la saturer et à bloquer l'enregistrement de vos mesures.
-
-Connectez le dossier local (menu ••• → Dossier photos) : le plan y sera enregistré comme un fichier, sans limite gênante. Ou joignez une version allégée (moins de 500 ko).`);
-        el.value = "";
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = () => {
-        o.plan = { filename: file.name, mime, addedAt: new Date().toISOString(), stockage: "fichier", dataUrl: reader.result };
-        saveData(); render();
-      };
-      reader.readAsDataURL(file);
+      const pj = await attacherPieceJointe(file, "plan_" + slugify(sc.name) + "_" + slugify(o.numero || "outil"));
+      el.value = "";
+      if(!pj) return;
+      o.plan = pj;
+      saveData(); render();
     });
   });
   root.querySelectorAll(".plan-open").forEach(el => {
-    el.addEventListener("click", async () => {
+    el.addEventListener("click", () => {
       const o = sc.outils.find(x => x.id === el.getAttribute("data-outil"));
-      if(!o || !o.plan) return;
-      if(o.plan.stockage === "dossier"){
-        if(!photosDirHandle){ alert("Le dossier local n'est pas connecté sur ce poste — reconnectez-le (menu ••• → Dossier photos) pour ouvrir ce plan."); return; }
-        const url = await readPhotoURL(o.plan.filename);
-        if(!url){ alert("Plan introuvable dans le dossier local : " + o.plan.filename); return; }
-        window.open(url, "_blank");
-      } else {
-        window.open(o.plan.dataUrl, "_blank");
-      }
+      if(o) ouvrirPieceJointe(o.plan);
     });
   });
   root.querySelectorAll(".plan-del").forEach(el => {
@@ -6950,36 +7110,40 @@ function renderFicheOutil(){
   if(!wrap) return;
   const op = getActiveOp();
   const f = op && op.ficheOutil;
+  // les fiches jointes avant la v3.19 n'ont pas de champ "stockage" : elles sont en base64
+  const enDossier = f && f.stockage === "dossier";
   wrap.innerHTML = f
-    ? `<div class="backlog-image-preview" style="align-items:center;">
-         ${f.mime === "application/pdf"
-           ? `<span class="statut-pill">📄 ${escapeAttr(f.filename)}</span>`
-           : `<img src="${f.dataUrl}" alt="${escapeAttr(f.filename)}">`}
-         <button class="ghost" id="ficheOutilOpen" type="button">Ouvrir</button>
-         <button class="ghost" id="ficheOutilDel" type="button">Retirer</button>
+    ? `<div class="plan-outil">
+         <span class="plan-icone">${(f.mime||"").startsWith("image/") ? "🖼" : "📄"}</span>
+         <span class="plan-nom">${escapeAttr(f.nomOrigine || f.filename)}</span>
+         <span class="plan-ou">${enDossier ? "dossier local" : "intégrée au fichier de suivi"}</span>
+         <button class="ghost small" id="ficheOutilOpen" type="button">Ouvrir</button>
+         <button class="ghost small" id="ficheOutilDel" type="button">Retirer</button>
        </div>`
-    : `<label class="backlog-image-add">📎 Joindre la fiche outil (PDF ou image)<input type="file" accept=".pdf,image/*" id="ficheOutilInput" hidden></label>`;
+    : `<label class="plan-ajout">📎 Joindre la fiche outil de l'OP <span>(PDF ou image)</span>
+         <input type="file" accept=".pdf,image/*" id="ficheOutilInput" hidden>
+       </label>`;
   if(f){
-    document.getElementById("ficheOutilOpen").addEventListener("click", () => window.open(f.dataUrl, "_blank"));
-    const img = wrap.querySelector("img");
-    if(img) img.addEventListener("click", () => ouvrirLightbox(f.dataUrl));
+    document.getElementById("ficheOutilOpen").addEventListener("click", () => ouvrirPieceJointe(f));
     document.getElementById("ficheOutilDel").addEventListener("click", () => {
+      if(!confirm("Retirer la fiche outil de cette OP ?" + (enDossier ? `
+
+Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""))) return;
       const op2 = getActiveOp();
       if(op2) op2.ficheOutil = null;
       saveData(); renderFicheOutil();
     });
   } else {
-    document.getElementById("ficheOutilInput").addEventListener("change", (e) => {
+    document.getElementById("ficheOutilInput").addEventListener("change", async (e) => {
       const file = e.target.files && e.target.files[0];
       if(!file) return;
-      if(file.size > 6 * 1024 * 1024){ alert("Fichier trop volumineux (max 6 Mo) — réduisez-le avant de le joindre."); return; }
-      const reader = new FileReader();
-      reader.onload = () => {
-        const op2 = getActiveOp();
-        if(op2) op2.ficheOutil = { filename: file.name, mime: file.type || "application/octet-stream", dataUrl: reader.result };
-        saveData(); renderFicheOutil();
-      };
-      reader.readAsDataURL(file);
+      const op2 = getActiveOp();
+      if(!op2) return;
+      const pj = await attacherPieceJointe(file, "ficheoutil_" + slugify(op2.nom || "op"));
+      e.target.value = "";
+      if(!pj) return;
+      op2.ficheOutil = pj;
+      saveData(); renderFicheOutil();
     });
   }
 }
@@ -6992,6 +7156,12 @@ function renderFicheOutil(){
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"3.19.0", date:"05/09/2026", points:[
+    "<b>La sauvegarde ne peut plus échouer en silence.</b> Jusqu'ici, si la mémoire que le navigateur accorde à l'outil était pleine, l'enregistrement échouait et le seul signal était une petite pastille rouge avec une info-bulle. Devant une machine, personne ne survole une pastille : on pouvait saisir des relevés pendant une heure sans que rien ne soit écrit, et tout perdre en fermant l'onglet. C'était le risque le plus sérieux de l'outil.",
+    "Désormais, en trois temps. <b>1)</b> L'outil se rattrape tout seul : il purge ses points de reprise automatiques — qui pèsent plusieurs fois le suivi lui-même — et réessaie. Dans la plupart des cas vous ne verrez rien, et c'est voulu : un point de reprise vaut moins que vos mesures en cours. <b>2)</b> Si ça ne suffit pas, une fenêtre s'ouvre et un <b>bandeau rouge reste affiché en haut de l'écran</b>, avec un bouton « Exporter le suivi maintenant » directement dedans. <b>3)</b> Bien avant le mur, dès 3,5 Mo, un avertissement vous prévient et <b>nomme ce qui pèse</b>, pièce jointe par pièce jointe.",
+    "<b>La fiche outil de l'OP suit la même règle que les plans d'outil</b> : enregistrée dans le dossier local s'il est connecté, sinon intégrée au fichier de suivi mais seulement sous 500 ko. Elle acceptait jusqu'ici 6 Mo à elle seule — de quoi saturer la mémoire et bloquer l'enregistrement des mesures. Les fiches déjà jointes restent lisibles et ne bougent pas.",
+    "Une pièce jointe stockée dans le dossier local ne pèse rien dans le fichier de suivi : c'est le mode à privilégier dès que le dossier est connecté."
+  ]},
   { version:"3.18.0", date:"05/09/2026", points:[
     "<b>Vue d'ensemble de la composition</b>, en haut du scénario et toujours visible. Une tuile par logement : quelle plaquette, quelle charnière (avec la durée de vie réellement observée en dessous), quel prix, combien au total — en gros caractères, lisibles d'un coup d'œil. Avant, cette information tenait dans une ligne de résumé en 11 px gris clair qui essayait d'être à la fois l'étiquette d'un volet et un tableau de bord.",
     "Ce qui manque est signalé <b>là</b> plutôt que découvert plus tard dans un calcul qui ne tombe pas : « Manque : référence, prix » sous la tuile concernée.",
@@ -7594,6 +7764,23 @@ function runTests(){
     ok("normalizeOutil : plan absent -> null", normalizeOutil({ numero:"T1" }).plan, null);
     const planTest = { filename:"plan_x.pdf", mime:"application/pdf", stockage:"dossier", addedAt:"2026-09-05T10:00:00Z" };
     ok("normalizeOutil : plan conserve a l'identique", normalizeOutil({ numero:"T1", plan:planTest }).plan, planTest);
+    /* ---- inventaire du poids (v3.19) ----------------------------------------------
+       Ce qui est stocke dans le dossier local ne pese RIEN dans le fichier de suivi : le
+       confondre avec une piece jointe integree enverrait l'utilisateur alleger le mauvais
+       fichier. */
+    lignes = [{ id:"lP", nom:"L", references:[{ id:"rP", nom:"R", ops:[{ id:"oP", nom:"OP", config:{},
+      ficheOutil:{ filename:"f.pdf", stockage:"fichier", dataUrl:"x".repeat(2048) },
+      scenarios:[{ id:"sP", name:"S", outils:[
+        { id:"t1", numero:"T-INT", plan:{ filename:"p1.pdf", stockage:"fichier", dataUrl:"y".repeat(4096) }, logements:[] },
+        { id:"t2", numero:"T-DOS", plan:{ filename:"p2.pdf", stockage:"dossier" }, logements:[] }
+      ], essais:[] }] }] }] }];
+    const inv = inventairePoids();
+    ok("inventairePoids : ne compte que les pieces integrees au fichier",
+       inv.filter(i => /T-INT|T-DOS|Fiche outil/.test(i.quoi)).map(i => i.quoi.split(" —")[0]).sort(),
+       ["Fiche outil", "Plan outil T-INT"]);
+    ok("inventairePoids : le plus lourd en premier", inv[0].octets >= inv[inv.length-1].octets, true);
+    lignes = sauve.lignes;
+
     ok("normalizeScenario : plan conserve a travers l'arbre",
        normalizeScenario({ id:"sp2", name:"p", outils:[{ id:"t9", numero:"T9", plan:planTest, logements:[] }] }).outils[0].plan, planTest);
 

@@ -5,6 +5,52 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [3.19.0] — 2026-09-05
+
+Sécurisation du stockage. Le risque le plus sérieux de l'outil n'était pas un calcul faux :
+c'était `saveData()` qui échouait sur quota dépassé en ne mettant à jour qu'une **pastille de
+22 px avec une info-bulle**. Quelqu'un qui saisit des relevés devant une machine ne survole
+jamais une pastille — il pouvait travailler une heure sur des données écrites nulle part et
+tout perdre en fermant l'onglet.
+
+### Ajouté — gestion du quota en trois niveaux
+1. **Récupération automatique.** Sur échec d'écriture, `libererEspaceHistorique()` purge
+   l'historique glissant (5 instantanés complets, soit plusieurs fois le poids du suivi) et
+   réessaie. Silencieux et volontairement : un point de reprise vaut moins que les mesures en
+   cours de saisie.
+2. **Alerte franche** si le mur est réel : une modale unique (`quotaPanneSignalee` évite une
+   fenêtre par frappe) listant les actions dans l'ordre — exporter d'abord, déplacer les pièces
+   jointes ensuite — et un **bandeau rouge permanent** en haut de page tant que dure la panne,
+   avec le bouton « Exporter le suivi maintenant » dedans. Le bandeau disparaît dès qu'une
+   sauvegarde repasse.
+3. **Prévention** dès 3,5 Mo (`QUOTA_ALERTE`) : avertissement unique accompagné de
+   `detailPoidsTexte()`, qui nomme les pièces jointes les plus lourdes.
+
+`inventairePoids()` recense les pièces jointes **intégrées au fichier** (fiche outil de l'OP,
+plans d'outil, images de suggestions) en ignorant celles du dossier local, qui ne coûtent rien
+au quota — les confondre enverrait l'utilisateur alléger le mauvais fichier.
+
+### Modifié — fiche outil de l'OP alignée sur les plans
+`op.ficheOutil` acceptait jusqu'à **6 Mo en base64**, assez à elle seule pour saturer les ~5 Mo
+de `localStorage` et bloquer l'enregistrement des mesures. Elle passe par
+`attacherPieceJointe()`, la règle unique désormais partagée avec les plans d'outil :
+dossier local s'il est connecté, sinon base64 sous 500 ko, sinon refus expliqué. Les fiches
+jointes avant cette version n'ont pas de champ `stockage` : elles sont traitées comme intégrées
+au fichier, restent lisibles et ne sont pas migrées d'office.
+
+`ouvrirPieceJointe()` factorise l'ouverture quel que soit le mode de stockage.
+
+### Non modifié — vérifié
+Les images de suggestions étaient déjà redimensionnées côté client (1000 px de large, JPEG
+qualité 0,82, soit ~100 à 200 ko) : elles ne posent pas le même problème, rien à changer.
+
+### Tests
+70/70 (2 ajoutés) : `inventairePoids()` ne compte que les pièces intégrées au fichier et
+ignore celles du dossier local, et trie du plus lourd au plus léger. Les trois niveaux ont été
+éprouvés en session en interceptant `Storage.prototype.setItem` : récupération silencieuse
+après purge de l'historique, modale + bandeau si le mur persiste, pas de seconde modale sur les
+sauvegardes suivantes, retour à la normale une fois la place libérée.
+
 ## [3.18.0] — 2026-09-05
 
 ### Ajouté — vue d'ensemble de la composition
