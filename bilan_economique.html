@@ -236,6 +236,86 @@ td.computed{font-family:var(--font-mono); font-variant-numeric:tabular-nums; tex
    grille se reorganise toute seule quand la fenetre retrecit, et la taille remonte a 14 px
    pour les valeurs — c'etait 11 px, en dessous du confortable pour des chiffres qu'on relit
    a l'atelier. Le tableau compact reste utilise a l'impression (voir table.postable). */
+/* ---- APERCU DE LA COMPOSITION (v3.18) ----
+   Ce bloc est la vue "premier coup d'oeil" : elle doit se lire de loin, sans clic et sans
+   plisser les yeux. D'ou des chiffres a 17-19 px et un contraste plein, la ou l'ancien
+   resume tenait en 11 px gris clair. */
+.compo-apercu{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+  padding:14px 16px 16px; margin-bottom:14px;}
+.compo-apercu.vide{color:var(--ink-faint); font-size:13px; font-style:italic;}
+.ap-entete{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:12px;
+  padding-bottom:10px; border-bottom:2px solid var(--border);}
+.ap-entete h4{margin:0; font-family:var(--font-disp); font-weight:800; font-size:17px; letter-spacing:-.02em; color:var(--ink);}
+.ap-compte{font-family:var(--font-mono); font-size:12px; color:var(--ink-faint);}
+.ap-total{margin-left:auto; font-family:var(--font-disp); font-weight:800; font-size:22px;
+  letter-spacing:-.03em; color:var(--blue); font-variant-numeric:tabular-nums;}
+.ap-total small{font-family:var(--font-body); font-weight:600; font-size:11.5px; color:var(--ink-faint); letter-spacing:0; margin-left:3px;}
+
+.ap-grille{display:grid; grid-template-columns:repeat(auto-fit,minmax(290px,1fr)); gap:10px;}
+.ap-tuile{border:1px solid var(--border); border-left:4px solid var(--outil-couleur, var(--blue));
+  border-radius:var(--radius-sm); padding:11px 13px 12px; background:var(--surface-alt);}
+.ap-tete{display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-bottom:5px;}
+.ap-pastille{width:20px; height:20px; border-radius:var(--radius-sm); background:var(--outil-couleur, var(--blue));
+  color:#fff; font-family:var(--font-mono); font-size:11px; font-weight:700;
+  display:flex; align-items:center; justify-content:center; flex:0 0 auto;}
+.ap-outil{font-family:var(--font-mono); font-size:14px; font-weight:700; color:var(--ink);}
+.ap-sep{color:var(--ink-faint);}
+.ap-logement{font-size:15px; font-weight:700; color:var(--ink); letter-spacing:-.01em;}
+.ap-flag{font-family:var(--font-mono); font-size:10px; font-weight:600; padding:2px 7px; border-radius:var(--radius-sm);
+  background:var(--amber-bg); color:var(--amber); box-shadow:inset 0 0 0 1px var(--amber); cursor:help;}
+.ap-ref{font-family:var(--font-mono); font-size:12.5px; color:var(--ink-soft); margin-bottom:9px;
+  overflow-wrap:anywhere;}
+.ap-ref em{color:var(--amber); font-style:normal;}
+.ap-chiffres{display:flex; gap:18px; flex-wrap:wrap;}
+.ap-c{display:flex; flex-direction:column;}
+.ap-l{font-family:var(--font-mono); font-size:10px; font-weight:600; color:var(--ink-faint);}
+.ap-v{font-family:var(--font-disp); font-weight:800; font-size:19px; line-height:1.15; letter-spacing:-.02em;
+  color:var(--ink); font-variant-numeric:tabular-nums;}
+.ap-v small{font-family:var(--font-body); font-weight:600; font-size:10.5px; color:var(--ink-faint); letter-spacing:0; margin-left:3px;}
+.ap-cout .ap-v{color:var(--blue);}
+.ap-reel{font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint); margin-top:1px;}
+.ap-reel.bad{color:var(--red); font-weight:700;}
+.ap-cond{font-family:var(--font-mono); font-size:12px; color:var(--ink-soft); margin-top:9px;
+  padding-top:8px; border-top:1px solid var(--border);}
+.ap-manque{font-family:var(--font-mono); font-size:11px; font-weight:600; color:var(--amber); margin-top:6px;}
+
+/* ---- fiche outil repliable ---- */
+.outil-carte > summary.outil-sommaire{cursor:pointer; list-style:none; display:flex; align-items:center;
+  gap:10px; flex-wrap:wrap; padding:12px 14px; margin:-14px -16px; border-radius:var(--radius);}
+.outil-carte > summary::-webkit-details-marker{display:none;}
+.outil-carte > summary::before{content:"›"; font-size:19px; line-height:1; color:var(--ink-faint);
+  transition:transform .15s ease; flex:0 0 auto;}
+.outil-carte[open] > summary::before{transform:rotate(90deg);}
+.outil-carte > summary:hover{background:var(--surface-alt);}
+.outil-carte > summary:focus-visible{outline:2px solid var(--blue); outline-offset:-2px;}
+.os-numero{font-family:var(--font-mono); font-size:14.5px; font-weight:700; color:var(--ink);}
+.os-corr{font-family:var(--font-mono); font-size:11.5px; color:var(--ink-faint); border:1px solid var(--border);
+  border-radius:var(--radius-sm); padding:1px 6px;}
+.os-desc{font-size:13px; color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:34ch;}
+.os-logements{font-family:var(--font-mono); font-size:12px; color:var(--ink-faint);}
+.os-plan{font-family:var(--font-mono); font-size:11px; font-weight:600; color:var(--teal);
+  background:var(--surface-alt); border-radius:var(--radius-sm); padding:2px 7px;}
+.os-cout{margin-left:auto; font-family:var(--font-disp); font-weight:800; font-size:16px;
+  letter-spacing:-.02em; color:var(--blue); font-variant-numeric:tabular-nums; white-space:nowrap;}
+.os-cout small{font-family:var(--font-body); font-weight:600; font-size:10.5px; color:var(--ink-faint); letter-spacing:0;}
+.outil-corps{padding-top:12px; margin-top:2px; border-top:1px solid var(--border);}
+
+/* ---- plan de l'outil ---- */
+.plan-outil{display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin:12px 0 4px;
+  padding:9px 12px; background:var(--surface-alt); border:1px solid var(--border);
+  border-left:3px solid var(--teal-strong); border-radius:0 var(--radius-sm) var(--radius-sm) 0;}
+.plan-icone{font-size:15px;}
+.plan-nom{font-family:var(--font-mono); font-size:12.5px; color:var(--ink); overflow-wrap:anywhere;}
+.plan-ou{font-size:11.5px; color:var(--ink-faint);}
+.plan-outil button{margin-left:auto;}
+.plan-outil .plan-del{margin-left:0;}
+.plan-ajout{display:inline-flex; align-items:center; gap:7px; margin:12px 0 4px; font-size:12.5px;
+  color:var(--teal); border:1px dashed var(--border); border-radius:var(--radius-sm);
+  padding:8px 12px; cursor:pointer;}
+.plan-ajout span{color:var(--ink-faint);}
+.plan-ajout:hover{border-color:var(--teal-strong); background:var(--surface-alt);}
+@media print{ .plan-ajout, .compo-apercu .ap-manque{ display:none !important; } }
+
 .outils-liste{display:flex; flex-direction:column; gap:14px;}
 .outil-carte{background:var(--surface); border:1px solid var(--border);
   border-left:4px solid var(--outil-couleur, var(--blue)); border-radius:var(--radius);
@@ -1426,7 +1506,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "3.17.0";
+const TOOL_VERSION = "3.18.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -1669,6 +1749,9 @@ let essaisOuverts = new Set();
 // La composition du scenario est depliee par defaut : on memorise donc l'inverse, les
 // scenarios dont l'utilisateur a referme le tableau.
 let configReplies = new Set();
+/* Fiches outil : repliees par defaut. L'apercu au-dessus donne la vue d'ensemble, la fiche
+   ne s'ouvre que quand on veut modifier — sinon quatre outils deplies noient l'ecran. */
+let outilsOuverts = new Set();
 
 function normalizeBacklogItem(b){
   return Object.assign({ id: b.id || ("b"+Math.random().toString(36).slice(2)), date:"", auteur:"", type:"amelioration", titre:"", description:"", statut:"nouveau", image:"" }, b);
@@ -1765,7 +1848,9 @@ function normalizePieceDetachee(p){
     nom:"", ref:"", prix:"", charniere:"" }, p);
 }
 function normalizeOutil(o){
-  return Object.assign({ id: o.id || ("t"+Math.random().toString(36).slice(2)), numero:"", correcteur:"", description:"" }, o, {
+  // plan : PDF ou image du montage/trajectoire de CET outil (v3.18). Distinct de la fiche
+  // outil de l'OP, qui couvre toute l'operation.
+  return Object.assign({ id: o.id || ("t"+Math.random().toString(36).slice(2)), numero:"", correcteur:"", description:"", plan:null }, o, {
     logements: (o.logements || []).map(normalizeLogement),
     pieces: (o.pieces || []).map(normalizePieceDetachee)
   });
@@ -4535,17 +4620,14 @@ function scenarioBlockHTML(sc, interactive){
   // defaut : c'est la fiche d'identite du scenario. Il reste repliable une fois la campagne
   // lancee et la configuration figee, et ce choix survit aux re-rendus (voir configReplies).
   const replie = configReplies.has(sc.id);
+  const nbOutilsSc = sc.outils.length;
   const configSection = interactive ? `
+    ${compositionApercuHTML(sc)}
     <details class="config-block"${replie ? "" : " open"} data-config-id="${sc.id}">
-      <summary>Composition du scénario<span class="config-resume">${
-        sc.outils.flatMap(o => o.logements.map(l => {
-          const pc = posCost(l);
-          return escapeAttr((o.numero||"?") + " · " + (l.nom||"—") + (l.ref ? " · " + l.ref : " · réf. manquante") + (pc !== null ? " · " + fmt(pc,4) + " €/pièce" : ""));
-        })).join(" &nbsp;·&nbsp; ") || "aucun outil"
-      }</span></summary>
+      <summary>Modifier la composition<span class="config-resume">outils, plaquettes, conditions de coupe${nbOutilsSc ? " — " + nbOutilsSc + " fiche" + (nbOutilsSc>1?"s":"") : ""}</span></summary>
       <div class="config-body">${volumeAnnuelHTML()}${kvfWidgetHTML(sc)}${posTable}</div>
     </details>
-  ` : `${volumeAnnuelHTML()}${kvfWidgetHTML(sc)}${posTable}`;
+  ` : `${compositionApercuHTML(sc)}${volumeAnnuelHTML()}${kvfWidgetHTML(sc)}${posTable}`;
 
   return `
     <div class="scenario ${sc.baseline ? "baseline" : ""}">
@@ -5643,20 +5725,117 @@ function logementBlocHTML(sc, o, l, showFrFa, showCycleDetail){
     </div>`;
 }
 
+/* ---- APERCU DE LA COMPOSITION (v3.18) -------------------------------------------------
+   Le "premier coup d'oeil" tenait dans une ligne de resume en 11 px mono, gris clair, qui
+   concatenait toutes les plaquettes bout a bout. Cette ligne essayait d'etre deux choses a
+   la fois : l'etiquette d'un volet repliable ET la vue d'ensemble du scenario. Elle etait
+   dimensionnee comme une note de bas de page et lue comme un tableau de bord.
+   L'apercu prend donc son propre bloc, toujours visible (volet ouvert ou ferme) : une tuile
+   par logement, avec ce qu'on va vraiment chercher du regard — quelle plaquette, quelle
+   duree de vie, a quelles conditions, pour combien. Ce qui manque est signale ici plutot
+   que decouvert plus tard dans un calcul qui ne tombe pas. */
+function apercuLogementHTML(sc, o, l, couleur, oi){
+  const pc = posCost(l);
+  const manque = [];
+  if(!l.ref) manque.push("référence");
+  if(l.prix === "" || l.prix == null) manque.push("prix");
+  if(l.aretes === "" || l.aretes == null) manque.push("arêtes");
+  if(l.charniere === "" || l.charniere == null) manque.push("charnière");
+  const cond = [
+    l.vc !== "" && l.vc != null ? "Vc " + l.vc : null,
+    l.f !== "" && l.f != null ? "f " + fmt(parseFloat(l.f),2) : null,
+    l.kappaR !== "" && l.kappaR != null ? "κr " + l.kappaR + "°" : null
+  ].filter(Boolean).join(" · ");
+  const reel = charniereReelle(sc, l.id);
+  return `
+    <div class="ap-tuile" style="--outil-couleur:${couleur};">
+      <div class="ap-tete">
+        <span class="ap-pastille">${oi + 1}</span>
+        <span class="ap-outil">${escapeAttr(o.numero || "outil sans n°")}</span>
+        <span class="ap-sep">·</span>
+        <span class="ap-logement">${escapeAttr(l.nom || "logement sans nom")}</span>
+        ${l.suiviTolerance === false ? `<span class="ap-flag" title="Ce logement ne suit que la charnière : ses mesures ne font pas échouer un essai sur la tolérance.">charnière seule</span>` : ""}
+      </div>
+      <div class="ap-ref">${l.ref ? escapeAttr(l.ref) : `<em>référence plaquette non renseignée</em>`}</div>
+      <div class="ap-chiffres">
+        <div class="ap-c"><span class="ap-l">Charnière</span><span class="ap-v">${l.charniere === "" || l.charniere == null ? "—" : fmt(parseFloat(l.charniere),0)}<small>p/arête</small></span>
+          ${reel ? `<span class="ap-reel ${!reel.borneInf && !isNaN(parseFloat(l.charniere)) && reel.moyenne < parseFloat(l.charniere) - 0.5 ? "bad" : ""}">${reel.borneInf ? "≥ " : ""}${fmt(reel.moyenne,0)} réel</span>` : ""}</div>
+        <div class="ap-c"><span class="ap-l">Plaquette</span><span class="ap-v">${l.prix === "" || l.prix == null ? "—" : fmt(parseFloat(l.prix),2)}<small>€</small></span>
+          <span class="ap-reel">${l.aretes === "" || l.aretes == null ? "— arête" : l.aretes + " arêtes"}</span></div>
+        <div class="ap-c ap-cout"><span class="ap-l">Coût</span><span class="ap-v">${pc === null ? "—" : fmt(pc,4)}<small>€/pièce</small></span></div>
+      </div>
+      ${cond ? `<div class="ap-cond">${escapeAttr(cond)}</div>` : ""}
+      ${manque.length ? `<div class="ap-manque">Manque : ${escapeAttr(manque.join(", "))}</div>` : ""}
+    </div>`;
+}
+
+function compositionApercuHTML(sc){
+  const tuiles = sc.outils.flatMap((o, oi) =>
+    o.logements.map(l => apercuLogementHTML(sc, o, l, OUTIL_COLORS[oi % OUTIL_COLORS.length], oi))).join("");
+  const nbOutils = sc.outils.length;
+  const nbLogements = sc.outils.reduce((n, o) => n + o.logements.length, 0);
+  const total = scenarioCost(sc);
+  if(!tuiles) return `<div class="compo-apercu vide">Aucun outil configuré — ouvrez « Modifier la composition » pour en ajouter un.</div>`;
+  return `
+    <div class="compo-apercu">
+      <div class="ap-entete">
+        <h4>Composition</h4>
+        <span class="ap-compte">${nbOutils} outil${nbOutils>1?"s":""} · ${nbLogements} logement${nbLogements>1?"s":""}</span>
+        <span class="ap-total">${total === null ? "—" : fmt(total,4)} <small>€ / pièce, outillage</small></span>
+      </div>
+      <div class="ap-grille">${tuiles}</div>
+    </div>`;
+}
+
+/* plan de l'outil : PDF ou image du montage / de la trajectoire, propre a CET outil.
+   Stockage : dans le dossier local s'il est connecte (un plan pese vite 1 a 2 Mo, et
+   localStorage plafonne autour de 5 Mo pour TOUT le suivi) ; a defaut en base64 dans le
+   fichier, mais seulement en dessous de 500 ko, pour ne pas faire sauter le quota. */
+function planOutilHTML(sc, o){
+  const p = o.plan;
+  if(p){
+    const ou = p.stockage === "dossier" ? "dossier local" : "intégré au fichier de suivi";
+    return `<div class="plan-outil">
+      <span class="plan-icone">${(p.mime||"").startsWith("image/") ? "🖼" : "📄"}</span>
+      <span class="plan-nom" title="${escapeAttr(p.filename)} — ${ou}">${escapeAttr(p.filename)}</span>
+      <span class="plan-ou">${ou}</span>
+      <button class="ghost small plan-open" data-id="${sc.id}" data-outil="${o.id}">Ouvrir</button>
+      <button class="ghost small plan-del" data-id="${sc.id}" data-outil="${o.id}">Retirer</button>
+    </div>`;
+  }
+  return `<label class="plan-ajout">📎 Joindre le plan de l'outil <span>(PDF ou image)</span>
+    <input type="file" accept=".pdf,image/*" class="plan-input" data-id="${sc.id}" data-outil="${o.id}" hidden>
+  </label>`;
+}
+
 function outilCarteHTML(sc, o, oi, showFrFa, showCycleDetail){
   const couleur = OUTIL_COLORS[oi % OUTIL_COLORS.length];
   const base = (field) => `data-id="${sc.id}" data-outil="${o.id}" data-field="${field}"`;
+  const cle = sc.id + "|" + o.id;
+  const coutOutil = o.logements.reduce((a, l) => { const c = posCost(l); return c === null ? a : a + c; }, 0);
+  const aDesCouts = o.logements.some(l => posCost(l) !== null);
   return `
-    <section class="outil-carte" style="--outil-couleur:${couleur};">
-      <div class="outil-tete">
+    <details class="outil-carte"${outilsOuverts.has(cle) ? " open" : ""} data-outil-id="${o.id}" style="--outil-couleur:${couleur};">
+      <summary class="outil-sommaire">
         <span class="outil-pastille">${oi + 1}</span>
-        ${champHTML("N° outil", `<input class="cell ref" ${base("numero")} value="${escapeAttr(o.numero)}" placeholder="T513.1">`, "oc-moyen")}
-        ${champHTML("Correcteur", `<input class="cell ref" ${base("correcteur")} value="${escapeAttr(o.correcteur)}" placeholder="—">`, "oc-court")}
-        ${champHTML("Type d'outil", `<input class="cell ref" ${base("description")} value="${escapeAttr(o.description)}" placeholder="ex. foret carbure monobloc à goujure droite">`, "oc-large")}
+        <span class="os-numero">${escapeAttr(o.numero || "Outil sans n°")}</span>
+        ${o.correcteur ? `<span class="os-corr">${escapeAttr(o.correcteur)}</span>` : ""}
+        <span class="os-desc">${escapeAttr(o.description || "")}</span>
+        <span class="os-logements">${o.logements.map(l => escapeAttr(l.nom || "—")).join(" + ") || "aucun logement"}</span>
+        ${o.plan ? `<span class="os-plan" title="Un plan est joint à cet outil">${(o.plan.mime||"").startsWith("image/") ? "🖼" : "📄"} plan</span>` : ""}
+        ${aDesCouts ? `<span class="os-cout">${fmt(coutOutil,4)} <small>€/pièce</small></span>` : ""}
+      </summary>
+      <div class="outil-corps">
+        <div class="outil-tete">
+          ${champHTML("N° outil", `<input class="cell ref" ${base("numero")} value="${escapeAttr(o.numero)}" placeholder="T513.1">`, "oc-moyen")}
+          ${champHTML("Correcteur", `<input class="cell ref" ${base("correcteur")} value="${escapeAttr(o.correcteur)}" placeholder="—">`, "oc-court")}
+          ${champHTML("Type d'outil", `<input class="cell ref" ${base("description")} value="${escapeAttr(o.description)}" placeholder="ex. foret carbure monobloc à goujure droite">`, "oc-large")}
+        </div>
+        ${planOutilHTML(sc, o)}
+        ${o.logements.map(l => logementBlocHTML(sc, o, l, showFrFa, showCycleDetail)).join("")}
+        <button class="ghost small logement-add" data-id="${sc.id}" data-outil="${o.id}">+ Logement pour ${escapeAttr(o.numero || "cet outil")}</button>
       </div>
-      ${o.logements.map(l => logementBlocHTML(sc, o, l, showFrFa, showCycleDetail)).join("")}
-      <button class="ghost small logement-add" data-id="${sc.id}" data-outil="${o.id}">+ Logement pour ${escapeAttr(o.numero || "cet outil")}</button>
-    </section>`;
+    </details>`;
 }
 
 /* Rendu tableau : desormais reserve a l'impression et au rapport client. La saisie a l'ecran
@@ -6057,6 +6236,12 @@ function attachDetailHandlers(sc){
       if(det.open) configReplies.delete(id); else configReplies.add(id);
     });
   });
+  root.querySelectorAll("details.outil-carte[data-outil-id]").forEach(det => {
+    det.addEventListener("toggle", () => {
+      const cle = sc.id + "|" + det.getAttribute("data-outil-id");
+      if(det.open) outilsOuverts.add(cle); else outilsOuverts.delete(cle);
+    });
+  });
   root.querySelectorAll("details.essai-card[data-essai-id]").forEach(det => {
     det.addEventListener("toggle", () => {
       const key = sc.id + "|" + det.getAttribute("data-essai-id");
@@ -6315,6 +6500,69 @@ function attachDetailHandlers(sc){
         toucherEssai(es);
         saveData(); render();
       }
+    });
+  });
+  /* Plan d'outil. Le dossier local est prefere des qu'il est connecte : un plan de montage
+     pese couramment 1 a 2 Mo, et localStorage plafonne autour de 5 Mo pour TOUT le suivi —
+     deux plans integres au fichier suffiraient a le saturer. Sans dossier, on accepte quand
+     meme les petits fichiers (< 500 ko) pour que la fonction reste utilisable, et on explique
+     pourquoi on refuse les autres. */
+  root.querySelectorAll(".plan-input").forEach(el => {
+    el.addEventListener("change", async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if(!file) return;
+      const o = sc.outils.find(x => x.id === el.getAttribute("data-outil"));
+      if(!o) return;
+      const ext = (file.name.match(/\.[a-z0-9]+$/i) || [""])[0].toLowerCase();
+      const mime = file.type || (ext === ".pdf" ? "application/pdf" : "application/octet-stream");
+      if(photosDirHandle){
+        try{
+          const nom = "plan_" + slugify(sc.name) + "_" + slugify(o.numero || "outil") + "_" + Date.now() + ext;
+          await writePhotoBlob(nom, file);
+          o.plan = { filename: nom, nomOrigine: file.name, mime, addedAt: new Date().toISOString(), stockage: "dossier" };
+          saveData(); render();
+        }catch(err){ alert("Échec de l'enregistrement du plan dans le dossier local : " + err.message); }
+        return;
+      }
+      if(file.size > 500 * 1024){
+        alert(`Ce plan pèse ${Math.round(file.size/1024)} ko.
+
+Sans dossier local connecté, il devrait être intégré au fichier de suivi, dont la capacité totale est d'environ 5 Mo — deux plans de cette taille suffiraient à la saturer et à bloquer l'enregistrement de vos mesures.
+
+Connectez le dossier local (menu ••• → Dossier photos) : le plan y sera enregistré comme un fichier, sans limite gênante. Ou joignez une version allégée (moins de 500 ko).`);
+        el.value = "";
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        o.plan = { filename: file.name, mime, addedAt: new Date().toISOString(), stockage: "fichier", dataUrl: reader.result };
+        saveData(); render();
+      };
+      reader.readAsDataURL(file);
+    });
+  });
+  root.querySelectorAll(".plan-open").forEach(el => {
+    el.addEventListener("click", async () => {
+      const o = sc.outils.find(x => x.id === el.getAttribute("data-outil"));
+      if(!o || !o.plan) return;
+      if(o.plan.stockage === "dossier"){
+        if(!photosDirHandle){ alert("Le dossier local n'est pas connecté sur ce poste — reconnectez-le (menu ••• → Dossier photos) pour ouvrir ce plan."); return; }
+        const url = await readPhotoURL(o.plan.filename);
+        if(!url){ alert("Plan introuvable dans le dossier local : " + o.plan.filename); return; }
+        window.open(url, "_blank");
+      } else {
+        window.open(o.plan.dataUrl, "_blank");
+      }
+    });
+  });
+  root.querySelectorAll(".plan-del").forEach(el => {
+    el.addEventListener("click", () => {
+      const o = sc.outils.find(x => x.id === el.getAttribute("data-outil"));
+      if(!o || !o.plan) return;
+      if(!confirm("Retirer le plan de cet outil ?" + (o.plan.stockage === "dossier" ? `
+
+Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""))) return;
+      o.plan = null; saveData(); render();
     });
   });
   root.querySelectorAll(".outil-add").forEach(el => {
@@ -6744,6 +6992,13 @@ function renderFicheOutil(){
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"3.18.0", date:"05/09/2026", points:[
+    "<b>Vue d'ensemble de la composition</b>, en haut du scénario et toujours visible. Une tuile par logement : quelle plaquette, quelle charnière (avec la durée de vie réellement observée en dessous), quel prix, combien au total — en gros caractères, lisibles d'un coup d'œil. Avant, cette information tenait dans une ligne de résumé en 11 px gris clair qui essayait d'être à la fois l'étiquette d'un volet et un tableau de bord.",
+    "Ce qui manque est signalé <b>là</b> plutôt que découvert plus tard dans un calcul qui ne tombe pas : « Manque : référence, prix » sous la tuile concernée.",
+    "<b>Les fiches outil se replient.</b> Elles sont fermées par défaut et se résument à une ligne lisible (n° d'outil, type, logements, coût). On ouvre celle qu'on veut modifier, les autres restent rangées — plus d'écran couvert d'informations. L'outil se souvient de ce que vous avez laissé ouvert.",
+    "<b>Un plan peut être joint à chaque outil</b> (PDF ou image du montage, de la trajectoire). Si le dossier local est connecté, le plan y est enregistré comme un fichier — c'est le mode recommandé : un plan pèse vite 1 à 2 Mo alors que le suivi complet ne dispose que d'environ 5 Mo dans le navigateur. Sans dossier connecté, les plans de moins de 500 ko sont intégrés au fichier de suivi ; au-delà, l'outil explique pourquoi il refuse et comment faire.",
+    "À ne pas confondre avec la <b>fiche outil de l'OP</b> (menu Options), qui reste ce qu'elle était : elle couvre toute l'opération, le plan est propre à un outil."
+  ]},
   { version:"3.17.0", date:"05/09/2026", points:[
     "<b>La composition du scénario ne se saisit plus dans un tableau.</b> C'était 15 colonnes rendues en 11 px, avec des largeurs en pourcentage : la colonne « N° outil » recevait 6 % de la largeur, soit une cinquantaine de pixels, pour y empiler le numéro, le correcteur ET le type d'outil. Tout était tronqué, on ne pouvait pas relire ce qu'on venait de saisir. C'est maintenant une <b>fiche par outil</b> : chaque champ a son libellé au-dessus et une largeur adaptée à ce qu'il reçoit — une référence plaquette dispose de 500 px là où elle en avait 200.",
     "Les champs d'un logement sont regroupés par nature : <b>Plaquette</b> (prix, arêtes, charnière), <b>Conditions de coupe</b> (Vc, f, κr, et rε/ap si le module Fr·Fa est actif), <b>Coût</b> (€/arête, €/pièce, calculés). On trouve ce qu'on cherche sans balayer quinze colonnes.",
@@ -7332,6 +7587,15 @@ function runTests(){
     bil = fusionnerLignes(cible, recuAutreScenario);
     ok("fusion : scenario absent ajoute", bil.scenarios, 1);
     ok("fusion : le scenario local est intact", cible[0].references[0].ops[0].scenarios[0].essais[0].titre, "local");
+
+    /* ---- plan d'outil (v3.18) ----------------------------------------------------
+       Un plan perdu au rechargement serait invisible : normalizeOutil doit le conserver
+       tel quel, et poser null par defaut sur les outils venus d'un fichier anterieur. */
+    ok("normalizeOutil : plan absent -> null", normalizeOutil({ numero:"T1" }).plan, null);
+    const planTest = { filename:"plan_x.pdf", mime:"application/pdf", stockage:"dossier", addedAt:"2026-09-05T10:00:00Z" };
+    ok("normalizeOutil : plan conserve a l'identique", normalizeOutil({ numero:"T1", plan:planTest }).plan, planTest);
+    ok("normalizeScenario : plan conserve a travers l'arbre",
+       normalizeScenario({ id:"sp2", name:"p", outils:[{ id:"t9", numero:"T9", plan:planTest, logements:[] }] }).outils[0].plan, planTest);
 
   } catch(err){
     T.push({ nom:"Exception pendant les tests : " + err.message, pass:false,

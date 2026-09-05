@@ -5,6 +5,47 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [3.18.0] — 2026-09-05
+
+### Ajouté — vue d'ensemble de la composition
+Le « premier coup d'œil » tenait dans `.config-resume` : une ligne en 11 px mono, `--ink-faint`,
+qui concaténait toutes les plaquettes bout à bout. Cette ligne essayait d'être deux choses à la
+fois — l'étiquette d'un volet repliable **et** la vue d'ensemble du scénario. Elle était
+dimensionnée comme une note de bas de page et lue comme un tableau de bord.
+
+`compositionApercuHTML()` lui donne son propre bloc, **hors du volet repliable** donc visible
+que la composition soit ouverte ou fermée : une tuile par logement (référence, charnière avec la
+durée de vie réellement observée, prix/arêtes, €/pièce en bleu), chiffres à 19 px, en-tête avec
+le compte d'outils et le coût outillage total à 22 px. Les données manquantes sont listées sous
+la tuile concernée (« Manque : référence, prix ») au lieu d'être découvertes plus tard dans un
+calcul qui ne tombe pas. L'ancienne ligne de résumé devient ce qu'elle aurait dû rester : une
+étiquette (« outils, plaquettes, conditions de coupe — 3 fiches »).
+
+### Ajouté — fiches outil repliables
+`.outil-carte` passe de `<section>` à `<details>`, **fermé par défaut**, avec un `<summary>`
+lisible : n° d'outil, correcteur, type, logements, badge plan, coût de l'outil. L'état ouvert
+est mémorisé dans `outilsOuverts` (même mécanique que `essaisOuverts`) et survit aux re-rendus.
+Avec l'aperçu au-dessus, on ne déplie que ce qu'on veut modifier.
+
+### Ajouté — plan par outil (PDF ou image)
+Nouveau champ `outil.plan`, distinct de `op.ficheOutil` (qui couvre toute l'opération et reste
+inchangé). Deux modes de stockage, choisis automatiquement :
+- **dossier local connecté** → le fichier est écrit via `writePhotoBlob()` sous le nom
+  `plan_<scénario>_<outil>_<horodatage>.<ext>`, seul le nom est stocké dans le JSON. Mode
+  recommandé et sans limite gênante.
+- **sans dossier** → base64 dans le fichier de suivi, mais **uniquement sous 500 ko**. Au-delà,
+  l'outil refuse et explique : `localStorage` plafonne autour de 5 Mo pour l'intégralité du
+  suivi, deux plans de 1,5 Mo suffiraient à le saturer et à bloquer l'enregistrement des
+  mesures. Le message indique le chemin pour connecter le dossier.
+
+Retirer un plan stocké en dossier ne supprime que le lien, pas le fichier — c'est dit dans la
+confirmation.
+
+### Tests
+68/68 (3 ajoutés) : `normalizeOutil` pose `plan: null` par défaut et conserve un plan existant
+à l'identique, y compris à travers `normalizeScenario` — un plan perdu au rechargement aurait
+été une disparition silencieuse.
+
 ## [3.17.0] — 2026-09-05
 
 ### Modifié — composition du scénario : fiches au lieu d'un tableau
