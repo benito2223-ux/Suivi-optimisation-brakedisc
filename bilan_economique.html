@@ -228,6 +228,71 @@ input.cell.small, select.cell.small{font-size:11.5px; color:var(--ink-faint); mi
 select.cell.small{width:100%;}
 td.computed{font-family:var(--font-mono); font-variant-numeric:tabular-nums; text-align:right; color:var(--ink-soft);}
 
+/* ============================================================================
+   COMPOSITION DU SCENARIO — fiches de saisie (v3.17)
+   Le tableau de 15 colonnes en 11 px tronquait tout ce qu'on y saisissait. Ici : un champ =
+   un libelle au-dessus + une largeur dimensionnee sur ce qu'il recoit (une reference
+   plaquette ne tient pas dans la meme case qu'un nombre d'aretes). Rien n'est tronque, la
+   grille se reorganise toute seule quand la fenetre retrecit, et la taille remonte a 14 px
+   pour les valeurs — c'etait 11 px, en dessous du confortable pour des chiffres qu'on relit
+   a l'atelier. Le tableau compact reste utilise a l'impression (voir table.postable). */
+.outils-liste{display:flex; flex-direction:column; gap:14px;}
+.outil-carte{background:var(--surface); border:1px solid var(--border);
+  border-left:4px solid var(--outil-couleur, var(--blue)); border-radius:var(--radius);
+  padding:14px 16px 12px;}
+.outil-tete{display:flex; flex-wrap:wrap; gap:10px 14px; align-items:flex-end;
+  padding-bottom:12px; border-bottom:1px solid var(--border);}
+.outil-pastille{flex:0 0 auto; width:26px; height:26px; border-radius:var(--radius-sm);
+  background:var(--outil-couleur, var(--blue)); color:#fff; font-family:var(--font-mono);
+  font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center;
+  margin-bottom:3px;}
+
+/* un champ : libelle + saisie. Les largeurs sont des minima, les champs s'etirent ensuite. */
+.oc-champ{display:flex; flex-direction:column; gap:3px; min-width:0;}
+.oc-champ > label{font-family:var(--font-mono); font-size:11px; font-weight:600; letter-spacing:.02em;
+  color:var(--ink-faint); white-space:nowrap;}
+.oc-champ > label span{font-weight:500; opacity:.75;}
+.oc-champ input.cell{width:100%; font-size:14px; padding:7px 9px; border:1px solid var(--border);
+  background:var(--surface); border-radius:var(--radius-sm); text-overflow:clip;}
+.oc-champ input.cell:hover{border-color:var(--ink-faint);}
+.oc-champ input.cell:focus{border-color:var(--blue); outline:2px solid color-mix(in srgb, var(--blue) 25%, transparent); outline-offset:0;}
+.oc-court{flex:0 1 110px;}
+.oc-moyen{flex:0 1 170px;}
+.oc-large{flex:1 1 300px; min-width:220px;}
+.oc-num{flex:0 0 96px;}
+.oc-num input.cell{text-align:right;}
+.oc-calc{font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-size:14px;
+  font-weight:600; text-align:right; padding:7px 9px; color:var(--ink-soft);
+  background:var(--surface-alt); border:1px solid transparent; border-radius:var(--radius-sm);}
+
+.logement-bloc{border-top:1px solid var(--border); padding:12px 0 4px; margin-top:2px;}
+.outil-carte .logement-bloc:first-of-type{border-top:none;}
+.lb-tete{display:flex; flex-wrap:wrap; gap:10px 14px; align-items:flex-end; margin-bottom:12px;}
+.lb-tol{display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--ink-soft);
+  cursor:pointer; white-space:nowrap; padding-bottom:8px;}
+.lb-tol input{width:17px; height:17px; accent-color:var(--blue); flex:0 0 auto;}
+.lb-tete .logement-del{margin-left:auto; margin-bottom:4px;}
+
+/* trois groupes cote a cote tant qu'il y a la place, empiles ensuite */
+.lb-groupes{display:flex; flex-wrap:wrap; gap:10px;}
+.lb-groupe{flex:1 1 auto; min-width:0; background:var(--surface-alt); border:1px solid var(--border);
+  border-radius:var(--radius-sm); padding:9px 12px 11px;}
+.lb-groupe.lb-resultats{flex:0 0 auto; margin-left:auto; background:var(--blue-bg); border-color:color-mix(in srgb, var(--blue) 30%, transparent);}
+.lb-groupe.lb-resultats .oc-calc{background:var(--surface); color:var(--blue-dark); font-weight:700;}
+.lb-legende{font-family:var(--font-mono); font-size:9.5px; font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ink-faint); margin-bottom:8px;}
+.lb-groupe.lb-resultats .lb-legende{color:var(--blue-dark);}
+.lb-champs{display:flex; flex-wrap:wrap; gap:9px 12px; align-items:flex-start;}
+.lb-champs .charniere-reel{margin-top:3px; text-align:right;}
+@media (max-width:1000px){
+  .outil-tete .oc-large{flex:1 1 100%;}
+}
+@media (max-width:640px){
+  .oc-num{flex:1 1 92px;}
+  .oc-large, .oc-moyen, .oc-court{flex:1 1 100%;}
+  .lb-tete .logement-del{margin-left:0;}
+}
+
 /* tableau plaquettes : beaucoup de colonnes -> police et paddings resserres pour tenir
    d'un coup d'oeil sans defiler lateralement sur un ecran standard */
 table.postable{min-width:920px; table-layout:fixed; font-size:11px;}
@@ -625,6 +690,8 @@ body.locked .lock-bandeau{display:flex;}
 .import-expl b{color:var(--ink);}
 .import-expl-note{border-top:1px solid var(--border); padding-top:9px; color:var(--ink-faint) !important;}
 .import-expl-lien{margin:0 0 14px;}
+.note.volume-invalide{border-left-color:var(--red); background:var(--red-bg); margin:0 0 14px;}
+.note.volume-invalide b{color:var(--red);}
 .import-choix{display:grid; grid-template-columns:150px 1fr; gap:14px; align-items:start;
   padding:14px 0; border-top:1px solid var(--border);}
 .import-choix button{width:100%;}
@@ -1359,7 +1426,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "3.16.1";
+const TOOL_VERSION = "3.17.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -4227,7 +4294,7 @@ function scenarioBlockHTML(sc, interactive){
       ${interactive ? '<col style="width:2%">' : ""}
     </colgroup>
   `;
-  const posTable = `
+  const posTableau = `
     <div class="tbl-wrap">
       <table class="postable">
         ${posCols}
@@ -4247,16 +4314,26 @@ function scenarioBlockHTML(sc, interactive){
             ${showCycleDetail ? '<th class="num">Temps coupe (s)</th><th class="num">Temps déplacement (s)</th>' : ""}
             <th class="num">€ / arête</th>
             <th class="num">€ / pièce</th>
-            ${interactive ? "<th></th>" : ""}
           </tr>
         </thead>
         <tbody>
-          ${sc.outils.map((o, oi) => outilRowsHTML(sc, o, oi, interactive, showFrFa, showCycleDetail)).join("") || `<tr><td colspan="${posColspan}" class="log-empty">Aucun outil configuré</td></tr>`}
+          ${sc.outils.map((o, oi) => outilRowsHTML(sc, o, oi, showFrFa, showCycleDetail)).join("") || `<tr><td colspan="${posColspan}" class="log-empty">Aucun outil configuré</td></tr>`}
         </tbody>
       </table>
-    </div>
-    ${interactive ? `<button class="ghost outil-add" data-id="${sc.id}" style="margin-top:8px;">+ Ajouter un outil</button>` : ""}
-    ${!showFrFa ? `<p class="panel-hint" style="margin:6px 2px 0;">Rayon de bec et ap (affinage Fr·Fa) sont masqués — activez le module Fr·Fa dans <b>Options</b> si votre référence en a besoin.</p>` : ""}
+    </div>`;
+
+  // A l'ecran on saisit : fiches, un champ = un libelle + une largeur adaptee.
+  // A l'impression on lit : le tableau compact garde tout son sens, rien n'y est saisissable.
+  const posFiches = `
+    <div class="outils-liste">
+      ${sc.outils.map((o, oi) => outilCarteHTML(sc, o, oi, showFrFa, showCycleDetail)).join("")
+        || `<p class="log-empty" style="padding:14px 2px;">Aucun outil configuré</p>`}
+    </div>`;
+
+  const posTable = `
+    ${interactive ? posFiches : posTableau}
+    ${interactive ? `<button class="ghost outil-add" data-id="${sc.id}" style="margin-top:10px;">+ Ajouter un outil</button>` : ""}
+    ${interactive && !showFrFa ? `<p class="panel-hint" style="margin:8px 2px 0;">Rayon de bec et ap (affinage Fr·Fa) sont masqués — activez le module Fr·Fa dans <b>Options</b> si votre référence en a besoin.</p>` : ""}
     ${showCycleDetail ? cycleDetailStatusHTML(sc) : ""}
     ${consommationAnnuelleHTML(sc)}
     ${piecesDetacheesHTML(sc, interactive)}
@@ -5377,9 +5454,31 @@ function prelevementRowHTML(sc, essai, row, interactive, snapLogements, showLoge
 /* Production annuelle de la reference, posee en haut a droite de la composition du
    scenario : c'est le multiplicateur de tout le reste, il doit se lire sans le chercher.
    N'apparait que si le module Volume annuel est actif et la valeur renseignee. */
+/* Volume annuel invalide : jusqu'ici, une valeur negative ou nulle faisait simplement
+   disparaitre le bandeau et tous les gains annuels, sans un mot. Pour qui s'est trompe de
+   signe ou a saisi 0, "le gain a disparu" est incomprehensible — et la valeur peut arriver
+   par un import, ou le min="0" du champ ne protege rien. On le dit maintenant, avec le
+   chemin exact pour corriger. */
+function volumeInvalideHTML(){
+  if(!config.volumeActif) return "";
+  const r = getActiveReference();
+  const brut = r ? r.productionAnnuelle : "";
+  if(brut === "" || brut === null || brut === undefined) return ""; // simplement pas encore renseigne
+  const v = parseFloat(brut);
+  if(!isNaN(v) && v > 0) return "";
+  const cause = isNaN(v) ? "n'est pas un nombre" : (v === 0 ? "vaut 0" : "est négative");
+  return `<div class="note volume-invalide">
+    <b>Volume annuel invalide</b> — la production annuelle de la référence
+    ${r && r.nom ? "« " + escapeAttr(r.nom) + " » " : ""}${cause} (${escapeAttr(String(brut))}).
+    Les gains en €/an, les heures machine et la consommation annuelle de plaquettes sont
+    désactivés tant qu'elle n'est pas corrigée — ils ne valent pas zéro, ils ne sont pas calculés.
+    À corriger dans <b>Options</b> › <b>Volume annuel de production</b>.
+  </div>`;
+}
+
 function volumeAnnuelHTML(){
   const v = volumeAnnuel();
-  if(!v) return "";
+  if(!v) return volumeInvalideHTML();
   const ref = getActiveReference();
   return `<div class="volume-bandeau">
     <span class="vb-l">Production annuelle${ref && ref.nom ? " — " + escapeAttr(ref.nom) : ""}</span>
@@ -5454,13 +5553,9 @@ function piecesDetacheesHTML(sc, interactive){
     </div>`;
 }
 
-function outilRowsHTML(sc, o, oi, interactive, showFrFa, showCycleDetail){
+function outilRowsHTML(sc, o, oi, showFrFa, showCycleDetail){
   const couleur = OUTIL_COLORS[oi % OUTIL_COLORS.length];
-  const rows = o.logements.map(l => logementRowHTML(sc, o, l, couleur, interactive, showFrFa, showCycleDetail)).join("");
-  const addRow = interactive
-    ? `<tr class="outil-add-row"><td colspan="${14 - (showFrFa ? 0 : 3) + (showCycleDetail ? 2 : 0)}" style="padding:4px 12px; border-left:4px solid ${couleur};"><button class="ghost small logement-add" data-id="${sc.id}" data-outil="${o.id}">+ Logement pour ${escapeAttr(o.numero || "cet outil")}</button></td></tr>`
-    : "";
-  return rows + addRow;
+  return o.logements.map(l => logementRowHTML(sc, o, l, couleur, showFrFa, showCycleDetail)).join("");
 }
 /* duree de vie observee, affichee sous la charniere visee : "≥ 150" tant qu'aucun essai
    n'est sorti de tolerance (on ne pousse jamais au-dela de la cible, donc on ne sait pas),
@@ -5476,45 +5571,100 @@ function charniereSubHTML(sc, l){
   return `<div class="charniere-reel ${sous ? "bad" : "ok"}" title="${titre}">${info.borneInf ? "≥ " : ""}${fmt(info.moyenne,0)} réel <span>(${info.essais})</span></div>`;
 }
 
-function logementRowHTML(sc, o, l, couleur, interactive, showFrFa, showCycleDetail){
+/* ============================================================================
+   COMPOSITION DU SCENARIO — vue de saisie (v3.17)
+   Ce bloc etait un tableau de 15 colonnes rendu en 11 px, avec table-layout:fixed et des
+   largeurs en pourcentage : la colonne "N° outil" recevait 6 % de 920 px, soit ~55 px, pour
+   y empiler TROIS champs (numero, correcteur, "Foret carbure monobloc a goujure droite").
+   Resultat : tout etait tronque, et personne ne pouvait relire ce qu'il avait saisi.
+   Le fond du probleme n'est pas la largeur, c'est la nature de l'objet : 15 colonnes pour
+   2 a 4 lignes, ce n'est pas un tableau, c'est un formulaire deguise. On le rend donc comme
+   un formulaire — une fiche par outil, un bloc par logement, chaque champ avec son libelle
+   au-dessus et une largeur adaptee a ce qu'il recoit. Le tableau, lui, reste tel quel pour
+   l'impression et le rapport client, ou la compacite a un sens et ou rien n'est saisissable.
+   ============================================================================ */
+function champHTML(label, inputHTML, cls, aide){
+  return `<div class="oc-champ ${cls||""}">
+    <label${aide ? ` title="${escapeAttr(aide)}"` : ""}>${label}</label>
+    ${inputHTML}
+  </div>`;
+}
+
+function logementBlocHTML(sc, o, l, showFrFa, showCycleDetail){
+  const perEdge = posCostPerEdge(l), perPiece = posCost(l);
+  const base = (field, extra) => `data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}" data-field="${field}" ${extra||""}`;
+  const num = (field, label, step, attrs, aide) => champHTML(label,
+    `<input class="cell" ${base(field)} type="number" step="${step}" ${attrs||""} value="${l[field] ?? ""}">`, "oc-num", aide);
+
+  const coupe = [
+    num("vc", "Vc <span>m/min</span>", "10"),
+    num("f", "f <span>mm/tr</span>", "0.01"),
+    num("kappaR", "κr <span>°</span>", "1", 'min="0" max="90"', "Angle de direction d'arête : alimente le rapport Fr/Fa et le suivi thermique."),
+    showFrFa ? num("rayonBec", "rε <span>mm</span>", "0.1", 'min="0"', "Rayon de bec — affine le κr effectif quand la coupe se fait sur le bec.") : "",
+    showFrFa ? num("apPiste", "ap <span>mm</span>", "0.1", 'min="0"', "Profondeur de passe — affine le κr effectif.") : "",
+    showCycleDetail ? num("tempsCoupe", "Temps coupe <span>s</span>", "0.1", 'min="0"') : "",
+    showCycleDetail ? num("tempsDeplacement", "Déplacement <span>s</span>", "0.1", 'min="0"') : ""
+  ].filter(Boolean).join("");
+
+  return `
+    <div class="logement-bloc">
+      <div class="lb-tete">
+        ${champHTML("Logement", `<input class="cell ref" ${base("nom")} value="${escapeAttr(l.nom)}" placeholder="Bol, Piste, Chanfrein...">`, "oc-moyen")}
+        ${champHTML("Référence plaquette", `<input class="cell ref" ${base("ref")} value="${escapeAttr(l.ref)}" placeholder="CNGX 120716 T02020 LKT640">`, "oc-large")}
+        ${champHTML("Code article Stellantis", `<input class="cell ref" ${base("codeArticle")} value="${escapeAttr(l.codeArticle)}" placeholder="—">`, "oc-moyen")}
+        <label class="lb-tol" title="Décoché, ce logement ne suit que la charnière : ses mesures ne font jamais échouer un essai sur la tolérance.">
+          <input type="checkbox" data-outil="${o.id}" data-logement="${l.id}" data-field="suiviTolerance" ${l.suiviTolerance !== false ? "checked" : ""}>
+          <span>Suivi en tolérance</span>
+        </label>
+        <button class="log-del logement-del" data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}" title="Supprimer ce logement">✕</button>
+      </div>
+      <div class="lb-groupes">
+        <div class="lb-groupe">
+          <div class="lb-legende">Plaquette</div>
+          <div class="lb-champs">
+            ${num("prix", "Prix <span>€</span>", "0.5")}
+            ${num("aretes", "Arêtes", "1")}
+            ${champHTML("Charnière <span>p/arête</span>",
+              `<input class="cell" ${base("charniere")} type="number" step="1" value="${l.charniere ?? ""}">${charniereSubHTML(sc, l)}`, "oc-num")}
+          </div>
+        </div>
+        <div class="lb-groupe">
+          <div class="lb-legende">Conditions de coupe</div>
+          <div class="lb-champs">${coupe}</div>
+        </div>
+        <div class="lb-groupe lb-resultats">
+          <div class="lb-legende">Coût</div>
+          <div class="lb-champs">
+            <div class="oc-champ oc-num"><label>€ / arête</label><div class="oc-calc">${perEdge === null ? "—" : fmt(perEdge,3)}</div></div>
+            <div class="oc-champ oc-num"><label>€ / pièce</label><div class="oc-calc">${perPiece === null ? "—" : fmt(perPiece,4)}</div></div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function outilCarteHTML(sc, o, oi, showFrFa, showCycleDetail){
+  const couleur = OUTIL_COLORS[oi % OUTIL_COLORS.length];
+  const base = (field) => `data-id="${sc.id}" data-outil="${o.id}" data-field="${field}"`;
+  return `
+    <section class="outil-carte" style="--outil-couleur:${couleur};">
+      <div class="outil-tete">
+        <span class="outil-pastille">${oi + 1}</span>
+        ${champHTML("N° outil", `<input class="cell ref" ${base("numero")} value="${escapeAttr(o.numero)}" placeholder="T513.1">`, "oc-moyen")}
+        ${champHTML("Correcteur", `<input class="cell ref" ${base("correcteur")} value="${escapeAttr(o.correcteur)}" placeholder="—">`, "oc-court")}
+        ${champHTML("Type d'outil", `<input class="cell ref" ${base("description")} value="${escapeAttr(o.description)}" placeholder="ex. foret carbure monobloc à goujure droite">`, "oc-large")}
+      </div>
+      ${o.logements.map(l => logementBlocHTML(sc, o, l, showFrFa, showCycleDetail)).join("")}
+      <button class="ghost small logement-add" data-id="${sc.id}" data-outil="${o.id}">+ Logement pour ${escapeAttr(o.numero || "cet outil")}</button>
+    </section>`;
+}
+
+/* Rendu tableau : desormais reserve a l'impression et au rapport client. La saisie a l'ecran
+   passe par outilCarteHTML/logementBlocHTML (fiches) — la branche interactive de cette
+   fonction a ete supprimee avec elle plutot que laissee en double entretien. */
+function logementRowHTML(sc, o, l, couleur, showFrFa, showCycleDetail){
   const perEdge = posCostPerEdge(l);
   const perPiece = posCost(l);
-  if(interactive){
-    return `
-      <tr class="pos-row" style="border-left:4px solid ${couleur};">
-        <td>
-          <div class="ref-stack">
-            <input class="cell ref" data-id="${sc.id}" data-outil="${o.id}" data-field="numero" value="${escapeAttr(o.numero)}" placeholder="T513.1">
-            <input class="cell ref sub" data-id="${sc.id}" data-outil="${o.id}" data-field="correcteur" value="${escapeAttr(o.correcteur)}" placeholder="Correcteur">
-            <input class="cell ref sub" data-id="${sc.id}" data-outil="${o.id}" data-field="description" value="${escapeAttr(o.description)}" placeholder="Type d'outil (ex. foret carbure monobloc)">
-          </div>
-        </td>
-        <td><input class="cell ref" data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}" data-field="nom" value="${escapeAttr(l.nom)}" placeholder="Logement 1"></td>
-        <td>
-          <div class="ref-stack">
-            <input class="cell ref" data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}" data-field="ref" value="${escapeAttr(l.ref)}">
-            <input class="cell ref sub" data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}" data-field="codeArticle" value="${escapeAttr(l.codeArticle)}" placeholder="Code article Stellantis">
-          </div>
-        </td>
-        <td class="num"><input class="cell" data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}" data-field="prix" type="number" step="0.5" value="${l.prix ?? ""}"></td>
-        <td class="num"><input class="cell" data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}" data-field="aretes" type="number" step="1" value="${l.aretes ?? ""}"></td>
-        <td class="num"><input class="cell" data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}" data-field="charniere" type="number" step="1" value="${l.charniere ?? ""}">${charniereSubHTML(sc, l)}</td>
-        <td><label style="font-size:11px; white-space:nowrap; display:flex; align-items:center; gap:4px;"><input type="checkbox" data-outil="${o.id}" data-logement="${l.id}" data-field="suiviTolerance" ${l.suiviTolerance !== false ? "checked" : ""}> Tolérance</label></td>
-        <td class="num"><input class="cell" data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}" data-field="vc" type="number" step="10" value="${l.vc ?? ""}"></td>
-        <td class="num"><input class="cell" data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}" data-field="f" type="number" step="0.01" value="${l.f ?? ""}"></td>
-        <td class="num"><input class="cell" data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}" data-field="kappaR" type="number" step="1" min="0" max="90" value="${l.kappaR ?? ""}"></td>
-        ${showFrFa ? `
-        <td class="num"><input class="cell" data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}" data-field="rayonBec" type="number" step="0.1" min="0" value="${l.rayonBec ?? ""}"></td>
-        <td class="num"><input class="cell" data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}" data-field="apPiste" type="number" step="0.1" min="0" value="${l.apPiste ?? ""}"></td>` : ""}
-        ${showCycleDetail ? `
-        <td class="num"><input class="cell" data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}" data-field="tempsCoupe" type="number" step="0.1" min="0" value="${l.tempsCoupe ?? ""}"></td>
-        <td class="num"><input class="cell" data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}" data-field="tempsDeplacement" type="number" step="0.1" min="0" value="${l.tempsDeplacement ?? ""}"></td>` : ""}
-        <td class="computed">${perEdge === null ? "—" : fmt(perEdge,3)}</td>
-        <td class="computed">${perPiece === null ? "—" : fmt(perPiece,4)}</td>
-        <td><button class="log-del logement-del" data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}">✕</button></td>
-      </tr>
-    `;
-  }
   return `
     <tr class="pos-row" style="border-left:4px solid ${couleur};">
       <td>${escapeAttr(o.numero)}${o.correcteur ? `<br><span class="ref-sub-print">Correcteur : ${escapeAttr(o.correcteur)}</span>` : ""}${o.description ? `<br><span class="ref-sub-print">${escapeAttr(o.description)}</span>` : ""}</td>
@@ -6594,6 +6744,13 @@ function renderFicheOutil(){
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"3.17.0", date:"05/09/2026", points:[
+    "<b>La composition du scénario ne se saisit plus dans un tableau.</b> C'était 15 colonnes rendues en 11 px, avec des largeurs en pourcentage : la colonne « N° outil » recevait 6 % de la largeur, soit une cinquantaine de pixels, pour y empiler le numéro, le correcteur ET le type d'outil. Tout était tronqué, on ne pouvait pas relire ce qu'on venait de saisir. C'est maintenant une <b>fiche par outil</b> : chaque champ a son libellé au-dessus et une largeur adaptée à ce qu'il reçoit — une référence plaquette dispose de 500 px là où elle en avait 200.",
+    "Les champs d'un logement sont regroupés par nature : <b>Plaquette</b> (prix, arêtes, charnière), <b>Conditions de coupe</b> (Vc, f, κr, et rε/ap si le module Fr·Fa est actif), <b>Coût</b> (€/arête, €/pièce, calculés). On trouve ce qu'on cherche sans balayer quinze colonnes.",
+    "Taille de saisie remontée de 11 à 14 px — en dessous, relire un chiffre à l'atelier demandait un effort. Les notations sensibles à la casse (Vc, f, κr, rε, ap) ne sont plus mises en majuscules automatiquement : elles s'affichaient « VC », « KR », « RE ».",
+    "<b>Le tableau compact reste utilisé à l'impression et dans le rapport client</b>, où rien n'est saisissable et où la compacité a du sens.",
+    "<b>Volume annuel invalide signalé.</b> Un volume négatif ou nul faisait disparaître silencieusement tous les gains en €/an, les heures machine et la consommation de plaquettes — sans un mot. Un bandeau rouge dit maintenant ce qui ne va pas et où le corriger. Les chiffres ne valent pas zéro : ils ne sont pas calculés."
+  ]},
   { version:"3.16.1", date:"05/09/2026", points:[
     "L'import affiche une <b>explication au premier usage</b> : ce que fait « Remplacer tout », ce que fait « Fusionner », et dans quel cas choisir l'un ou l'autre. Une case <b>« Ne plus afficher cette explication »</b> la range une fois lue ; elle reste accessible par le lien « Comment choisir ? » en haut de la fenêtre d'import.",
     "<b>« Remplacer tout » est le choix par défaut</b> (bouton bleu, en premier) : aujourd'hui une seule personne tient les saisies, c'est le geste normal et il ne change pas. La fusion est là pour le jour où vous serez plusieurs à saisir en parallèle — elle attend son heure sans se mettre en travers."

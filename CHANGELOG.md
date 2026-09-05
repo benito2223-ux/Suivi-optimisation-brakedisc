@@ -5,6 +5,55 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [3.17.0] — 2026-09-05
+
+### Modifié — composition du scénario : fiches au lieu d'un tableau
+Le bloc de saisie des outils était un tableau de 15 colonnes rendu en 11 px, avec
+`table-layout:fixed` et des largeurs en pourcentage. La colonne « N° outil » recevait 6 % de
+920 px — environ 55 px — pour y empiler trois champs (numéro, correcteur, type d'outil), et la
+référence plaquette 20 à 30 % pour une chaîne du genre `CNGX 120716 T02020 LKT640 (κr 85°)`.
+Avec `overflow:hidden` sur les cellules et `text-overflow:ellipsis` sur les entrées, tout était
+tronqué : on ne pouvait pas relire ce qu'on venait de saisir.
+
+Le problème de fond n'est pas la largeur, c'est la nature de l'objet : 15 colonnes pour 2 à 4
+lignes, ce n'est pas un tableau, c'est un formulaire déguisé. Il est donc rendu comme un
+formulaire.
+
+- **Une fiche par outil** (`outilCarteHTML`), **un bloc par logement** (`logementBlocHTML`),
+  chaque champ avec son libellé au-dessus et une largeur dimensionnée sur son contenu :
+  `--oc-court` 110 px (correcteur), `--oc-moyen` 170 px (logement, code article),
+  `--oc-large` 300 px minimum extensible (référence plaquette, type d'outil), `--oc-num` 96 px
+  (valeurs numériques). Mesuré : la référence plaquette dispose de 505 px à 1440 px de large,
+  contre ~200 px tronqués auparavant.
+- **Champs groupés par nature** : Plaquette (prix, arêtes, charnière + durée de vie réelle),
+  Conditions de coupe (Vc, f, κr, et rε/ap si Fr·Fa est actif, temps coupe/déplacement si le
+  cycle détaillé l'est), Coût (€/arête, €/pièce, calculés, sur fond bleu et calés à droite).
+- **Taille de saisie 11 → 14 px**, libellés 10 → 11 px.
+- **Plus de `text-transform:uppercase` sur les libellés de champ** : Vc, f, κr, rε, ap sont des
+  notations sensibles à la casse, elles s'affichaient « VC », « KR », « RE ». Les intitulés de
+  groupe (mots ordinaires) restent en capitales.
+- **Le tableau compact est conservé pour l'impression et le rapport client** — rien n'y est
+  saisissable et la compacité y a du sens. La branche interactive de `logementRowHTML` a été
+  supprimée plutôt que laissée en double entretien ; `outilRowsHTML` perd son paramètre
+  `interactive`.
+- Vérifié sans troncature de 820 à 1440 px de large (contrôle `scrollWidth > clientWidth` sur
+  tous les champs, avec des valeurs longues réalistes).
+
+### Ajouté — volume annuel invalide signalé
+Un volume annuel négatif ou nul faisait renvoyer `null` à `volumeAnnuel()`, donc disparaître
+silencieusement le bandeau de production, les gains en €/an, les heures machine et la
+consommation annuelle de plaquettes. Le champ porte bien `min="0"`, mais rien n'empêche la
+valeur d'arriver par un import — c'est exactement ce que le jeu de données de la revue externe
+contenait. `volumeInvalideHTML()` affiche désormais un bandeau rouge nommant la référence, la
+valeur fautive et le chemin pour la corriger, et précise que les chiffres ne valent pas zéro :
+ils ne sont pas calculés. Rien n'est affiché tant que le champ est simplement vide.
+
+### Tests
+65/65 au vert. Contrôles complémentaires en session : saisie toujours enregistrée après
+refonte (les gestionnaires sont liés aux classes et aux `data-*`, conservées), voie impression
+produisant bien le tableau et aucune fiche, bandeau volume affiché pour −5000 et 0, absent
+pour un champ vide et pour 200 000.
+
 ## [3.16.1] — 2026-09-05
 
 Réglage du dosage de la fonction précédente : la fusion est prête, elle ne doit pas pour
