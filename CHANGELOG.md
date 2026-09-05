@@ -5,6 +5,27 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [3.16.1] — 2026-09-05
+
+Réglage du dosage de la fonction précédente : la fusion est prête, elle ne doit pas pour
+autant s'imposer alors qu'une seule personne tient les saisies aujourd'hui.
+
+### Modifié
+- **« Remplacer tout » redevient le choix par défaut** de la fenêtre d'import (bouton primaire,
+  placé en premier). C'est le geste que l'équipe connaît et le comportement correct tant qu'une
+  seule personne saisit. « Fusionner » passe en action secondaire, disponible sans être
+  proposée d'office.
+- La note de version 3.16.0 (jamais diffusée, l'outil n'ayant pas été déployé) est corrigée en
+  conséquence : elle présentait la fusion comme le choix recommandé.
+
+### Ajouté
+- **Explication au premier import** : un bloc dans la fenêtre d'import détaille ce que fait
+  chaque option, le cas d'usage de chacune, et ce qui se passe quand l'outil ne peut pas
+  trancher. Case **« Ne plus afficher cette explication »** (clé `spk_fusion_explication_masquee`,
+  locale au poste comme celle des nouveautés) ; une fois cochée, le bloc se replie derrière un
+  lien « Comment choisir ? » qui le redéploie — l'explication n'est jamais perdue, seulement
+  rangée. Le choix lui-même n'est jamais masqué.
+
 ## [3.16.0] — 2026-09-05
 
 Cinq chantiers issus d'une revue des marges d'amélioration réelles. La performance n'en fait

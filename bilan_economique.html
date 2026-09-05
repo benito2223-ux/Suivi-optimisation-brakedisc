@@ -618,6 +618,13 @@ body.locked .lock-bandeau{display:flex;}
 .hint-bloc{font-size:12.5px; color:var(--ink-faint); margin:-6px 0 12px; line-height:1.5; max-width:80ch;}
 /* choix fusionner / remplacer : chaque option porte sa consequence ecrite a cote, on ne
    choisit pas entre deux verbes mais entre deux resultats */
+/* explication de l'import : longue mais lue une fois, puis repliee derriere un lien */
+.import-expl{background:var(--surface-alt); border:1px solid var(--border); border-left:4px solid var(--blue);
+  border-radius:0 var(--radius) var(--radius) 0; padding:14px 16px 10px; margin:0 0 18px;}
+.import-expl p{margin:0 0 9px; font-size:13px; line-height:1.55; color:var(--ink-soft);}
+.import-expl b{color:var(--ink);}
+.import-expl-note{border-top:1px solid var(--border); padding-top:9px; color:var(--ink-faint) !important;}
+.import-expl-lien{margin:0 0 14px;}
 .import-choix{display:grid; grid-template-columns:150px 1fr; gap:14px; align-items:start;
   padding:14px 0; border-top:1px solid var(--border);}
 .import-choix button{width:100%;}
@@ -1352,7 +1359,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "3.16.0";
+const TOOL_VERSION = "3.16.1";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -2663,25 +2670,72 @@ function importData(file){
 
 let importEnAttente = null;
 
+/* Cle du "ne plus afficher" de l'explication de fusion : locale au poste, comme celle des
+   nouveautes. On ne masque que l'explication, jamais le choix lui-meme. */
+const CLE_FUSION_EXPL_OFF = "spk_fusion_explication_masquee";
+
+/* L'explication est longue a dessein. Aujourd'hui une seule personne saisit : remplacer est
+   le geste normal et reste le bouton par defaut. La fusion est la pour le jour ou ils seront
+   plusieurs — encore faut-il qu'a ce moment-la on comprenne ce qu'on choisit sans avoir a
+   demander. D'ou l'explication au premier import, et la coche pour ne plus la revoir. */
+function explicationFusionHTML(){
+  return `
+    <div class="import-expl" id="importExpl">
+      <p><b>Deux façons d'intégrer un fichier reçu.</b></p>
+      <p><b>Remplacer tout</b> — le fonctionnement habituel. Tout ce qui est affiché ici est
+      remplacé par le contenu du fichier. C'est le bon choix quand une seule personne tient le
+      suivi et que le fichier reçu est la dernière version en date : c'est simple et sans
+      surprise. <b>« ↺ Restaurer » permet toujours de revenir en arrière.</b></p>
+      <p><b>Fusionner</b> — utile le jour où vous serez plusieurs à saisir en parallèle. Les
+      essais que vous n'avez pas sont ajoutés ; ceux que vous avez déjà ne sont remplacés que si
+      la version reçue a été modifiée plus récemment que la vôtre. Vos réglages, vos outils et
+      vos conditions de coupe ne sont jamais écrasés. Quand l'outil ne peut pas trancher (même
+      date des deux côtés, ou fichier créé avant la version 3.16 qui n'a pas d'horodatage), il
+      garde <b>votre</b> version et vous la signale — à vous d'aller voir.</p>
+      <p class="import-expl-note">En résumé : <b>remplacer</b> quand le fichier reçu fait
+      autorité, <b>fusionner</b> quand chacun a saisi de son côté. Dans le doute, exportez
+      d'abord votre version pour en garder une copie.</p>
+      <label class="opt-row" style="border-top:none; padding-bottom:0;">
+        <input type="checkbox" id="fusionExplMasquer">
+        <span><b>Ne plus afficher cette explication</b>
+        <em>Elle restera accessible par le lien « Comment choisir ? » en haut de cette fenêtre.</em></span>
+      </label>
+    </div>`;
+}
+
 function ouvrirChoixImport(){
   const { parsed, revisionEntrante } = importEnAttente;
   const quand = parsed.exporteLe ? new Date(parsed.exporteLe).toLocaleString("fr-FR") : "date inconnue";
   const par = parsed.exportePar ? " par " + escapeAttr(parsed.exportePar) : "";
   const plusAncien = revisionEntrante && revisionEntrante <= revision;
+  const explMasquee = (() => { try{ return localStorage.getItem(CLE_FUSION_EXPL_OFF) === "1"; }catch(e){ return false; } })();
+
   document.getElementById("importPanelBody").innerHTML = `
     <p class="panel-hint">Fichier reçu : révision <b>${revisionEntrante || "—"}</b>, exporté le ${escapeAttr(quand)}${par}. Vos données actuelles sont en révision <b>${revision || "—"}</b>.</p>
-    ${plusAncien ? `<div class="note" style="margin:0 0 16px;"><b>Ce fichier est plus ancien ou identique à vos données.</b> Le remplacement écraserait des saisies plus récentes que les siennes. La fusion, elle, ne peut rien perdre : elle ne remplace un essai que si la version reçue est postérieure à la vôtre.</div>` : ""}
+    ${explMasquee ? `<p class="import-expl-lien"><button class="ghost small" id="importExplRouvrir">Comment choisir ?</button></p>` : explicationFusionHTML()}
+    ${plusAncien ? `<div class="note" style="margin:0 0 16px;"><b>Ce fichier est plus ancien ou identique à vos données.</b> Le remplacer écraserait des saisies plus récentes que les siennes. Vérifiez que c'est bien le fichier voulu — ou fusionnez, ce qui ne peut rien perdre.</div>` : ""}
     <div class="import-choix">
-      <button class="primary" id="importFusion">Fusionner</button>
-      <p>Recommandé dès que vous êtes plusieurs à saisir. Les essais absents ici sont ajoutés ; ceux présents des deux côtés ne sont remplacés que si la version reçue est plus récente. Vos réglages, outils et conditions de coupe ne sont jamais écrasés. Un rapport détaille ce qui a changé.</p>
+      <button class="primary" id="importRemplace">Remplacer tout</button>
+      <p>Fonctionnement habituel, et choix par défaut : le contenu du fichier remplace ce qui est affiché ici. « ↺ Restaurer » reste disponible pour annuler.</p>
     </div>
     <div class="import-choix">
-      <button class="ghost" id="importRemplace">Remplacer tout</button>
-      <p>L'ancien comportement : tout l'arbre est remplacé par le contenu du fichier. À réserver au cas où vous récupérez un suivi complet dont vous savez qu'il fait autorité. « ↺ Restaurer » reste disponible pour annuler.</p>
+      <button class="ghost" id="importFusion">Fusionner</button>
+      <p>À utiliser quand plusieurs personnes ont saisi chacune de leur côté : les essais manquants sont ajoutés, les vôtres ne sont remplacés que par une version plus récente. Un rapport détaille ce qui a changé.</p>
     </div>`;
+
   ouvrirPanneau("importPanel");
-  document.getElementById("importFusion").addEventListener("click", () => appliquerImport("fusion"));
   document.getElementById("importRemplace").addEventListener("click", () => appliquerImport("remplace"));
+  document.getElementById("importFusion").addEventListener("click", () => appliquerImport("fusion"));
+
+  const coche = document.getElementById("fusionExplMasquer");
+  if(coche) coche.addEventListener("change", () => {
+    try{ localStorage.setItem(CLE_FUSION_EXPL_OFF, coche.checked ? "1" : "0"); }catch(e){}
+  });
+  const rouvrir = document.getElementById("importExplRouvrir");
+  if(rouvrir) rouvrir.addEventListener("click", () => {
+    try{ localStorage.setItem(CLE_FUSION_EXPL_OFF, "0"); }catch(e){}
+    ouvrirChoixImport(); // re-rendu avec l'explication depliee
+  });
 }
 
 function appliquerImport(mode){
@@ -6540,8 +6594,12 @@ function renderFicheOutil(){
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"3.16.1", date:"05/09/2026", points:[
+    "L'import affiche une <b>explication au premier usage</b> : ce que fait « Remplacer tout », ce que fait « Fusionner », et dans quel cas choisir l'un ou l'autre. Une case <b>« Ne plus afficher cette explication »</b> la range une fois lue ; elle reste accessible par le lien « Comment choisir ? » en haut de la fenêtre d'import.",
+    "<b>« Remplacer tout » est le choix par défaut</b> (bouton bleu, en premier) : aujourd'hui une seule personne tient les saisies, c'est le geste normal et il ne change pas. La fusion est là pour le jour où vous serez plusieurs à saisir en parallèle — elle attend son heure sans se mettre en travers."
+  ]},
   { version:"3.16.0", date:"05/09/2026", points:[
-    "<b>Importer fusionne au lieu d'écraser.</b> Jusqu'ici, importer un fichier remplaçait TOUT — à plusieurs sur le même suivi, celui qui importait en dernier effaçait le travail de l'autre. L'import propose maintenant deux options : <b>Fusionner</b> (recommandé) ajoute les essais absents, ne remplace un essai présent des deux côtés que si la version reçue est plus récente, et ne touche jamais à vos réglages, outils ou conditions de coupe ; <b>Remplacer tout</b> reste disponible pour le cas où vous récupérez un suivi qui fait autorité. Un rapport détaille après coup ce qui a été ajouté, mis à jour, conservé, et liste les conflits à vérifier.",
+    "<b>Importer fusionne au lieu d'écraser.</b> Jusqu'ici, importer un fichier remplaçait TOUT — à plusieurs sur le même suivi, celui qui importait en dernier effaçait le travail de l'autre. L'import propose maintenant deux options : <b>Remplacer tout</b> reste le choix par défaut, celui que vous connaissez ; <b>Fusionner</b> ajoute les essais absents, ne remplace un essai présent des deux côtés que si la version reçue est plus récente, et ne touche jamais à vos réglages, outils ou conditions de coupe. Un rapport détaille après coup ce qui a été ajouté, mis à jour, conservé, et liste les conflits à vérifier.",
     "Chaque essai porte désormais sa date de dernière modification — c'est elle qui arbitre la fusion. Les essais venant d'un fichier antérieur à cette version n'en ont pas : s'ils diffèrent, la fusion garde <b>votre</b> version et vous la signale comme conflit plutôt que de deviner. Ça se résorbe tout seul dès que chacun a ré-exporté une fois.",
     "<b>Prévision de sortie de tolérance.</b> À côté de la progression d'un logement, une pastille extrapole l'usure mesurée : « tendance : tol. vers 199 p ± 8 ». Elle passe au rouge si la tolérance serait atteinte avant la charnière visée — de quoi arrêter un essai qui ne tiendra pas, ou le prolonger en connaissance de cause. Il faut au moins 4 prélèvements et une tendance nette : en dessous, l'outil affiche « tendance non lisible » plutôt qu'un chiffre non défendable.",
     "<b>Dispersion par équipe</b> dans la vue de synthèse : taux hors tolérance de chaque poste sur chaque scénario. Même outil, même scénario, un écart marqué d'un poste à l'autre pointe la conduite plutôt que la plaquette. Un badge signale un écart de plus de 5 points au-dessus des autres équipes (à partir de 10 prélèvements).",
