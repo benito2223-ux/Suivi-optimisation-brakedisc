@@ -5,6 +5,95 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.2.0] — 2026-09-08
+
+Suite directe des retours d'usage sur la 4.1.x, tous traités dans cette version : ergonomie
+du panneau projet, gestion des pilotes avec couleur, identité visuelle par projet, zone de
+texte étendue. Décisions posées dans `CAHIER_DES_CHARGES_PROJETS_V2.md`, validées avant
+codage.
+
+### Corrigé — visibilité des actions existantes
+- Le bouton d'édition d'un projet était une icône ⚙ 22×22 px transparente jusqu'au survol
+  (`.pj-cfg`) — personne ne la trouvait. Remplacée par un bouton texte **« Modifier »**,
+  visible en permanence, hors de la carte cliquable (`.pj-modifier`, sibling de `.pj-corps`
+  plutôt que bouton imbriqué dans un bouton — l'ancien markup était `<button>` dans
+  `<button>`, invalide en HTML, corrigé au passage).
+- Le bouton qui enregistre le panneau projet s'appelait « Fermer » alors qu'il sauvegardait
+  déjà (`enregistrerProjetInfo()` puis fermeture) — renommé **« Enregistrer »**. Aucun
+  changement de comportement, seulement de l'étiquette.
+- « + Créer un projet » / « + Nouveau projet » passent de `button.ghost.small` (11 px,
+  transparent) à `button.primary` — aussi visibles que « + Ajouter un scénario ».
+- Le tableau de bord signale maintenant qu'un OP porte des scénarios de plusieurs projets à
+  la fois (pastilles colorées dans `.db-op-head`, calculées sur l'ensemble des scénarios de
+  l'OP — pas seulement ceux visibles sous un filtre de projet actif, qui masquerait
+  justement la cohabitation qu'il s'agit de signaler). Cette capacité existait déjà
+  (modèle par étiquettes, v4.1) ; seule sa visibilité manquait.
+
+### Ajouté — responsables gérés, avec couleur
+Nouvelle liste racine `responsables: [{id, nom, couleur}]`, gérée dans Options (ajout avec
+sélecteur `<input type="color">`, suppression avec confirmation). `projet.responsableId`
+remplace le champ texte libre `projet.responsable` comme source de vérité en saisie — un
+menu déroulant dans le panneau projet, avec une option **« + Nouveau responsable… »** qui
+crée la personne à la volée sans quitter le panneau (couleur assignée automatiquement,
+modifiable ensuite dans Options).
+
+- Migration automatique : un projet issu d'un fichier antérieur (v4.0/4.1) avec un champ
+  `responsable` texte libre voit ce texte devenir une entrée de la liste gérée
+  (`finaliserProjetsEtResponsables`, appelée par `migrerArbre` pour les trois formats lus),
+  couleur assignée par cycle sur `OUTIL_COLORS`. Aucune saisie perdue ni à ressaisir.
+- Suppression d'un responsable : les projets qu'il pilotait repassent à « Aucun », jamais de
+  suppression en cascade.
+- Fusion : `fusionnerResponsables()` — correspondance par id ou par nom (deux « Julien »
+  créés indépendamment sur deux postes ne se dupliquent pas), couleur locale jamais écrasée
+  par le fichier reçu.
+- La couleur du responsable habille la bordure gauche de ses cartes de projet — remplace
+  l'ancien codage par statut sur cet axe. Le statut reste lisible via son badge texte,
+  inchangé. Choix documenté : deux informations différentes (qui pilote / où en est le
+  projet) ne doivent pas se disputer un seul axe couleur.
+
+### Ajouté — identité visuelle par projet
+Chaque projet reçoit une couleur à sa création (`OUTIL_COLORS[projets.length % ...]`,
+stockée une fois pour toutes, jamais recalculée au rendu pour ne pas « sauter » d'une
+session à l'autre). Appliquée à un petit point sur sa carte (`.pj-puce`) et à ses étiquettes
+actives sur les cartes de scénario (`.tag-pill.on`, auparavant uniformément bleues quel que
+soit le projet) — avec plusieurs projets sur un même scénario, chaque étiquette reste
+identifiable sans lire son texte. Axe volontairement distinct de la couleur du responsable
+(voir ci-dessus) : le confondre ferait porter deux informations différentes à une seule
+couleur.
+
+### Modifié — description du projet
+Champ `problematique` (nom interne inchangé — aucune donnée à migrer) renommé
+**« Description »** en interface et passé d'un `<input>` une ligne à un `<textarea>` de 5
+lignes, redimensionnable : assez de place pour l'objectif et les moyens mis en œuvre, plus
+seulement une phrase.
+
+### Format de fichier : 8
+`lignes` reste la racine, exactement comme les formats 5 et 7 — `responsables` et les
+nouveaux champs de projet (`couleur`, `responsableId`) sont des ajouts, pas une
+restructuration. Vérifié : un export produit par cette version, rechargé dans le code de la
+3.19.2, restitue lignes/scénarios/prélèvements intacts ; seuls `projets` et `responsables`
+lui restent invisibles.
+
+### Hors périmètre (rappel)
+Rattacher un projet à une référence disque entière reste écarté (décision v4.1.1) — deuxième
+granularité d'étiquette, questions d'héritage non résolues pour un besoin quasi inexistant.
+
+### Tests
+115/115 (13 ajoutés) : défauts de `normalizeResponsable`, migration d'un `responsable` texte
+libre vers la liste gérée avec couleur assignée et lien `responsableId` correct, assignation
+de couleur aux projets migrés sans couleur, `prochaineCouleurLibre` (évite les doublons tant
+qu'il reste une couleur libre, recycle sans exception au-delà), fusion de responsables par id
+ou par nom sans duplication ni écrasement de couleur locale.
+
+Vérifié en session, au-delà des tests automatisés : création d'un responsable à la volée
+depuis le menu déroulant du panneau projet, couleur répercutée sur la bordure de carte,
+suppression depuis Options sans toucher au projet, deux projets avec des couleurs
+d'identité distinctes visibles sur leurs cartes et sur les étiquettes d'un scénario partagé,
+repère multi-projets affiché au niveau d'un OP dans le tableau de bord, description
+multi-lignes enregistrée et restituée, filtre des cartes par ligne (v4.1.1) toujours
+opérationnel, fichier réel de production (format 5) chargé sans perte ni projet fantôme,
+round-trip complet 4.2.0 → 3.19.2 réussi.
+
 ## [4.1.1] — 2026-09-08
 
 Retour d'usage immédiat sur la 4.1.0 (déployée le jour même sur le domaine de test) : les

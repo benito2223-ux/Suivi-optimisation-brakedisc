@@ -452,16 +452,25 @@ input.cell.sub{font-size:10.5px; color:var(--ink-faint);}
   letter-spacing:-.01em; color:var(--ink);}
 .pj-compte{font-family:var(--font-mono); font-size:11.5px; color:var(--ink-faint); margin-right:auto;}
 .pj-grille{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:10px;}
+/* v4.2 : deux axes couleur distincts sur la carte -- bordure gauche = responsable (couleur
+   posee en style inline par projetCarteHTML, cf. couleurBordure), statut = badge texte
+   colore (inchange). "active" ne touche que les 3 autres cotes (border-color, shorthand) :
+   le style inline sur border-left-color, plus specifique, l'emporte toujours -- la carte
+   active devient donc bleue sur 3 cotes, le 4e reste la couleur du responsable. */
 .pj-carte{position:relative; display:flex; flex-direction:column; align-items:flex-start; gap:5px;
-  text-align:left; background:var(--surface); border:1px solid var(--border); border-left:4px solid var(--ink-faint);
-  border-radius:var(--radius); padding:12px 34px 12px 14px; cursor:pointer; font-family:var(--font-body);
+  background:var(--surface); border:1px solid var(--border); border-left:4px solid var(--ink-faint);
+  border-radius:var(--radius); padding:12px 14px; font-family:var(--font-body);
   transition:border-color .15s ease, box-shadow .15s ease, transform .15s ease;}
-.pj-carte:hover{transform:translateY(-1px); box-shadow:var(--shadow-card); border-left-color:var(--blue);}
-.pj-carte.active{border-color:var(--blue); border-left-color:var(--blue); background:var(--blue-bg);
-  box-shadow:0 0 0 2px var(--blue);}
-.pj-carte.pj-termine{border-left-color:var(--green);}
-.pj-carte.pj-pause{border-left-color:var(--amber);}
-.pj-carte.pj-abandonne{border-left-color:var(--red); opacity:.72;}
+.pj-carte:hover{transform:translateY(-1px); box-shadow:var(--shadow-card);}
+.pj-carte.active{border-color:var(--blue); background:var(--blue-bg); box-shadow:0 0 0 2px var(--blue);}
+.pj-carte.pj-abandonne{opacity:.72;}
+.pj-corps{display:flex; flex-direction:column; align-items:flex-start; gap:5px; width:100%;
+  text-align:left; background:transparent; border:none; padding:0 76px 0 0; margin:0;
+  cursor:pointer; font-family:inherit; color:inherit;}
+/* petit point de la couleur du PROJET (assignee a la creation) -- la meme couleur qui
+   habille ses etiquettes de scenario ailleurs dans l'ecran (tag-pill.on) : sert de cle de
+   lecture, pas de decoration. */
+.pj-puce{width:9px; height:9px; border-radius:50%; flex:0 0 auto; box-shadow:inset 0 0 0 1px rgba(0,0,0,.15);}
 .pj-haut{display:flex; align-items:center; gap:8px; flex-wrap:wrap; width:100%;}
 .pj-nom{font-family:var(--font-disp); font-weight:800; font-size:15.5px; letter-spacing:-.015em; color:var(--ink);}
 .pj-carte.active .pj-nom{color:var(--blue-dark);}
@@ -472,18 +481,25 @@ input.cell.sub{font-size:10.5px; color:var(--ink-faint);}
 .pj-carte.pj-pause .pj-statut{background:var(--amber-bg); color:var(--amber); border-color:var(--amber);}
 .pj-carte.pj-abandonne .pj-statut{background:var(--red-bg); color:var(--red); border-color:var(--red);}
 .pj-echeance{font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint); margin-left:auto; cursor:help;}
-.pj-pb{font-size:12.5px; color:var(--ink-soft); line-height:1.4;}
+.pj-pb{font-size:12.5px; color:var(--ink-soft); line-height:1.4; white-space:pre-wrap;}
 .pj-chiffres{display:flex; flex-wrap:wrap; gap:4px 12px; font-family:var(--font-mono);
   font-size:11.5px; color:var(--ink-faint); margin-top:2px;}
 .pj-chiffres b{color:var(--ink); font-weight:700;}
 .pj-serie b, .pj-serie{color:var(--blue-dark);}
 .pj-gain{font-family:var(--font-disp); font-weight:800; font-size:14px; letter-spacing:-.02em;}
 .pj-gain.pos{color:var(--green);} .pj-gain.neg{color:var(--red);}
-.pj-resp{font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint);}
-.pj-cfg{position:absolute; top:8px; right:8px; width:22px; height:22px; padding:0;
-  border-radius:var(--radius-sm); background:transparent; border:1px solid transparent;
-  color:var(--ink-faint); font-size:13px; line-height:1;}
-.pj-cfg:hover{background:var(--surface-alt); border-color:var(--border); color:var(--ink);}
+.pj-resp{display:flex; align-items:center; gap:5px; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint);}
+.pj-resp-puce{width:7px; height:7px; border-radius:50%; flex:0 0 auto;}
+/* bouton "Modifier" : texte visible en permanence, pas une icone a decouvrir au survol
+   (l'ancienne icone ⚙ 22x22 transparente ne se voyait pas -- retour direct d'usage). */
+.pj-modifier{position:absolute; top:10px; right:10px; font-family:var(--font-mono); font-size:10.5px;
+  font-weight:700; padding:5px 10px; border-radius:var(--radius-sm);
+  background:var(--surface-alt); border:1px solid var(--border); color:var(--ink-soft);}
+.pj-modifier:hover{background:var(--surface); border-color:var(--blue); color:var(--blue-dark);}
+.responsable-ligne{display:flex; align-items:center; gap:9px; padding:6px 0; border-bottom:1px solid var(--border);}
+.responsable-ligne:last-child{border-bottom:none;}
+.responsable-ligne .responsable-couleur{width:26px; height:26px; padding:1px; border:1px solid var(--border); border-radius:50%; background:var(--surface); cursor:pointer;}
+.responsable-ligne .responsable-nom{flex:1; font-size:13px; color:var(--ink);}
 @media print{ .projets-bandeau{ display:none !important; } }
 
 /* onglets Ligne de production / Reference disque — controle segmente (piste grise, segment
@@ -1030,6 +1046,7 @@ select.log-equipe:focus{border-color:var(--blue); outline:none; background:var(-
 .db-op-ref{font-family:var(--font-disp); font-weight:700; font-size:14px; color:var(--ink);}
 .db-op-nom{font-family:var(--font-mono); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--blue);}
 .db-op-vol{font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint); margin-left:auto;}
+.db-op-projets{display:flex; gap:4px; flex-wrap:wrap;}
 .db-table{min-width:640px;}
 .db-table td{vertical-align:middle;}
 .db-sc-nom{font-weight:600; color:var(--ink);}
@@ -1439,6 +1456,17 @@ body.atelier-on{overflow:hidden;}
       </span>
     </label>
 
+    <div class="opt-field on" style="padding-left:0; border-top:1px solid var(--border); padding-top:14px; margin-top:4px;">
+      <label>Responsables de projet</label>
+      <span class="opt-note" style="margin-bottom:8px; display:block;">Une couleur par personne, reprise sur la bordure de ses cartes de projet. Se rattache dans le panneau de chaque projet.</span>
+      <div id="responsablesListe"></div>
+      <div style="display:flex; gap:8px; align-items:center; margin-top:8px; flex-wrap:wrap;">
+        <input type="text" id="responsableNouveauNom" placeholder="Nom" style="flex:1 1 160px; min-width:120px; text-align:left; font-family:var(--font-body);">
+        <input type="color" id="responsableNouvelleCouleur" title="Couleur" style="width:38px; height:34px; padding:2px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); cursor:pointer;">
+        <button class="ghost" id="responsableAjouter">+ Ajouter</button>
+      </div>
+    </div>
+
     <div class="panel-actions"><button class="primary" id="optionsClose">Fermer</button></div>
   </div>
 
@@ -1570,14 +1598,16 @@ body.atelier-on{overflow:hidden;}
       <input type="text" id="projetNom" style="width:100%; text-align:left; font-family:var(--font-body);" placeholder="ex. Coût &amp; qualité EMAG 1">
     </div>
     <div class="opt-field on" style="padding-left:0;">
-      <label for="projetProblematique">Problématique</label>
-      <input type="text" id="projetProblematique" style="width:100%; text-align:left; font-family:var(--font-body);" placeholder="ex. réduire le coût outil sans dégrader le battement">
-      <span class="opt-note">Ce qu'on cherche à résoudre — c'est ce qui distingue deux projets menés sur la même machine.</span>
+      <label for="projetProblematique">Description</label>
+      <textarea id="projetProblematique" rows="5" style="width:100%; text-align:left; font-family:var(--font-body); resize:vertical;" placeholder="Objectif du projet et moyens mis en œuvre — ex. réduire le coût outil sans dégrader le battement, en testant la céramique intégrale sur les 3 outils du poste."></textarea>
+      <span class="opt-note">Ce qu'on cherche à résoudre et comment — c'est ce qui distingue deux projets menés sur la même machine.</span>
     </div>
     <div class="opt-field on" style="padding-left:0;">
       <label for="projetResponsable">Pilote du projet</label>
-      <input type="text" id="projetResponsable" style="width:100%; text-align:left; font-family:var(--font-body);" placeholder="ex. Julien (technicien process Step 3)">
-      <span class="opt-note">Qui mène ce projet précis — pas forcément la même personne d'un projet à l'autre.</span>
+      <select id="projetResponsable" style="width:100%; text-align:left; font-family:var(--font-body); font-size:13px; padding:7px 9px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); color:var(--ink);">
+        <option value="">— Aucun —</option>
+      </select>
+      <span class="opt-note">Qui mène ce projet précis — pas forcément la même personne d'un projet à l'autre. La liste se gère dans Options.</span>
     </div>
     <div class="opt-field on" style="padding-left:0;">
       <label for="projetStatut">Statut</label>
@@ -1597,7 +1627,7 @@ body.atelier-on{overflow:hidden;}
     <p class="panel-hint" style="font-size:12px;">Pour ajouter ou retirer un scénario de ce projet, utilisez les étiquettes sous chaque carte de scénario (bandeau des scénarios).</p>
     <div class="panel-actions">
       <button class="danger" id="projetSupprimer">Supprimer ce projet</button>
-      <button class="primary" id="projetInfoClose">Fermer</button>
+      <button class="primary" id="projetInfoClose">Enregistrer</button>
     </div>
   </div>
   <div class="panel" id="ligneInfoPanel" hidden>
@@ -1639,7 +1669,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.1.1";
+const TOOL_VERSION = "4.2.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -1773,7 +1803,7 @@ async function writeBackupToFolder(){
   try{
     const backupsDir = await photosDirHandle.getDirectoryHandle("backups", { create: true });
     const stamp = new Date().toISOString().replace(/[:.]/g,"-");
-    const payload = { outil:"SPK Suivi optimisation", format:7, toolVersion:TOOL_VERSION, revision, exporteLe:new Date().toISOString(), exportePar:auteurNom, lignes, projets, activeProjetId, backlog };
+    const payload = { outil:"SPK Suivi optimisation", format:8, toolVersion:TOOL_VERSION, revision, exporteLe:new Date().toISOString(), exportePar:auteurNom, lignes, projets, activeProjetId, responsables, backlog };
     const fh = await backupsDir.getFileHandle(stamp + ".json", { create: true });
     const w = await fh.createWritable();
     await w.write(JSON.stringify(payload));
@@ -1868,6 +1898,10 @@ function defaultLignes(){
    meme titre que `lignes`, jamais imbriques l'un dans l'autre. */
 let projets = [];
 let activeProjetId = null; // null = aucun filtre actif ("Tous les projets")
+/* Responsables (v4.2) : liste geree de personnes, chacune avec une couleur, referencee par
+   projet.responsableId. Racine, comme projets -- une personne existe independamment des
+   projets qu'elle pilote (elle peut ne plus en piloter aucun sans etre supprimee). */
+let responsables = [];
 let lignes = [];
 let backlog = [];
 let revision = 0;
@@ -1962,11 +1996,36 @@ const PROJET_STATUTS = { encours:"En cours", pause:"En pause", termine:"Terminé
 function normalizeProjet(p){
   return Object.assign({
     id: p.id || ("pj"+Math.random().toString(36).slice(2)),
-    nom: "", problematique: "", responsable: "", statut: "encours",
-    dateCible: "", creePar: "", creeLe: ""
+    // "problematique" reste le nom de champ en interne (aucune donnee a migrer) : seule
+    // l'etiquette visible change ("Description", v4.2) et la saisie passe en zone de texte.
+    nom: "", problematique: "", responsable: "", responsableId: "", statut: "encours",
+    dateCible: "", creePar: "", creeLe: "",
+    // identite visuelle du projet (v4.2) : assignee une fois, a la creation, jamais
+    // recalculee au rendu -- sinon les couleurs "sauteraient" d'une session a l'autre des
+    // qu'un projet est supprime et decale les index des autres.
+    couleur: ""
   }, p, {
     tags: (p.tags || []).map(normalizeTag)
   });
+}
+
+/* Responsables (v4.2) : personne + couleur, geres depuis Options. Independants des projets :
+   supprimer un responsable ne supprime aucun projet, il repasse juste a "aucun responsable". */
+function normalizeResponsable(r){
+  return Object.assign({ id: r.id || ("resp"+Math.random().toString(36).slice(2)), nom:"", couleur:"" }, r);
+}
+/* Couleur suivante de la palette, jamais deja utilisee par un responsable existant tant
+   qu'il en reste une de libre -- au-dela de 8 responsables, le cycle recommence (une
+   redite est preferable a l'absence de couleur). */
+function prochaineCouleurLibre(dejaUtilisees){
+  const libre = OUTIL_COLORS.find(c => !dejaUtilisees.includes(c));
+  return libre || OUTIL_COLORS[dejaUtilisees.length % OUTIL_COLORS.length];
+}
+function couleurProjet(pj){
+  return pj.couleur || "var(--ink-faint)";
+}
+function responsableDe(pj){
+  return responsables.find(r => r.id === pj.responsableId) || null;
 }
 
 /* Resout une etiquette contre l'arbre physique COURANT (`lignes`). Renvoie null si un
@@ -2001,19 +2060,46 @@ function toggleTagScenario(pj, ligneId, referenceId, opId, scenarioId){
 
 /* Lecture unifiee d'un arbre, quel que soit le format qui l'a produit. Un seul point
    d'entree utilise partout : chargement, historique, points de reprise, import. */
+/* Etape commune aux formats lus par migrerArbre (v4.2) : assigne une couleur stable a tout
+   projet qui n'en a pas encore (creation ou fichier anterieur a la v4.2), et lie chaque
+   projet a un responsable de la liste geree. Un ancien projet qui n'avait qu'un champ texte
+   libre "responsable" (v4.0/4.1) voit ce texte devenir une entree de la liste geree, avec
+   une couleur assignee automatiquement -- aucune saisie n'est perdue ni a ressaisir. */
+function finaliserProjetsEtResponsables(projetsBruts, responsablesSource){
+  const responsablesRes = Array.isArray(responsablesSource) && responsablesSource.length
+    ? responsablesSource.map(normalizeResponsable) : [];
+  const trouverOuCreerResponsable = (nomLibre) => {
+    const nom = (nomLibre || "").trim();
+    if(!nom) return "";
+    let r = responsablesRes.find(x => x.nom === nom);
+    if(!r){
+      r = normalizeResponsable({ nom, couleur: prochaineCouleurLibre(responsablesRes.map(x => x.couleur)) });
+      responsablesRes.push(r);
+    }
+    return r.id;
+  };
+  const projetsRes = projetsBruts.map((pj, i) => {
+    if(!pj.couleur) pj.couleur = OUTIL_COLORS[i % OUTIL_COLORS.length];
+    if(!pj.responsableId && pj.responsable) pj.responsableId = trouverOuCreerResponsable(pj.responsable);
+    return pj;
+  });
+  return { projets: projetsRes, responsables: responsablesRes };
+}
+
 function migrerArbre(source){
   if(!source) return null;
 
-  // format 5 (pre-v4, sans projets) OU format 7 (v4.1, lignes racine + projets-etiquettes) :
-  // les deux ont `lignes` a la racine -- c'est precisement ce qui rend le format 7
-  // retro-lisible par les versions anterieures a la v4.
+  // format 5 (pre-v4, sans projets) OU format 7/8 (v4.1+, lignes racine + projets-etiquettes) :
+  // les deux ont `lignes` a la racine -- c'est precisement ce qui rend ces formats
+  // retro-lisibles par les versions anterieures a la v4.
   if(Array.isArray(source.lignes) && source.lignes.length){
     const lignesLues = source.lignes.map(normalizeLigne);
     let projetsLus = [];
     if(Array.isArray(source.projets) && source.projets.length && Array.isArray(source.projets[0].tags)){
       projetsLus = source.projets.map(normalizeProjet);
     }
-    return { lignes: lignesLues, projets: projetsLus };
+    const fin = finaliserProjetsEtResponsables(projetsLus, source.responsables);
+    return { lignes: lignesLues, projets: fin.projets, responsables: fin.responsables };
   }
 
   // format 6 (v4.0, projets PROPRIETAIRES des lignes -- deployee moins d'une journee) :
@@ -2038,7 +2124,8 @@ function migrerArbre(source){
         creePar: pjBrut.creePar, creeLe: pjBrut.creeLe, tags
       });
     });
-    return { lignes: lignesPlates, projets: projetsRecrees };
+    const fin = finaliserProjetsEtResponsables(projetsRecrees, source.responsables);
+    return { lignes: lignesPlates, projets: fin.projets, responsables: fin.responsables };
   }
 
   return null;
@@ -2283,6 +2370,7 @@ function loadAll(){
       if(migre){
         lignes = migre.lignes;
         projets = migre.projets;
+        responsables = migre.responsables;
         activeProjetId = projets.find(x => x.id === parsed.activeProjetId) ? parsed.activeProjetId : null;
         projets.forEach(purgerTagsMorts);
         backlog = (parsed.backlog || []).map(normalizeBacklogItem);
@@ -2316,7 +2404,7 @@ function loadAll(){
                 scenarios: secours.map(normalizeScenario) };
               const ref2 = { id: "r"+Date.now(), nom: "DV 356x26 RPI", ops: [op2] };
               lignes = [{ id: "l"+Date.now(), nom: "EMAG 1", references: [ref2] }];
-              projets = []; activeProjetId = null;
+              projets = []; activeProjetId = null; responsables = [];
               backlog = [];
               activeLigneId = lignes[0].id; activeReferenceId = ref2.id; activeOpId = op2.id;
               data = op2.scenarios; config = op2.config;
@@ -2343,7 +2431,7 @@ function loadAll(){
     if(migrationTolerance) migrerTolerancesOp(op);
     const ref = { id: "r" + Date.now(), nom: "DV 356x26 RPI", ops: [op] };
     lignes = [{ id: "l" + Date.now(), nom: "EMAG 1", references: [ref] }];
-    projets = []; activeProjetId = null;
+    projets = []; activeProjetId = null; responsables = [];
     backlog = [];
     activeLigneId = lignes[0].id;
     activeReferenceId = ref.id;
@@ -2358,7 +2446,7 @@ function loadAll(){
   }
   // premiere utilisation : donnees de depart, aucun projet (les projets sont facultatifs)
   lignes = defaultLignes();
-  projets = []; activeProjetId = null;
+  projets = []; activeProjetId = null; responsables = [];
   backlog = [];
   activeLigneId = lignes[0].id;
   activeReferenceId = lignes[0].references[0].id;
@@ -2375,6 +2463,7 @@ function appliquerArbre(source){
   const migre = migrerArbre(source);
   lignes = migre ? migre.lignes : [];
   projets = migre ? migre.projets : [];
+  responsables = migre ? migre.responsables : [];
   if(!lignes.length) lignes = defaultLignes();
   projets.forEach(purgerTagsMorts);
   activeProjetId = projets.find(x => x.id === source.activeProjetId) ? source.activeProjetId : null;
@@ -2413,9 +2502,10 @@ let quotaAlerteVue = false;
 let quotaPanneSignalee = false;
 
 function payloadSuivi(){
-  // format 7 : `lignes` reste la racine (comme le format 5) -- une version anterieure a la
-  // v4 lit ce fichier normalement, seul `projets` (les etiquettes) lui est invisible.
-  return JSON.stringify({ format:7, lignes, projets, activeProjetId, backlog, revision, activeLigneId, activeReferenceId, activeOpId, activeScenarioId: activeId });
+  // format 8 (v4.2) : `lignes` reste la racine, exactement comme les formats 5 et 7 -- une
+  // version anterieure a la v4 lit ce fichier normalement, seuls `projets` et `responsables`
+  // lui sont invisibles (elle ne les connait pas, elle ne les cherche pas).
+  return JSON.stringify({ format:8, lignes, projets, activeProjetId, responsables, backlog, revision, activeLigneId, activeReferenceId, activeOpId, activeScenarioId: activeId });
 }
 
 /* Ce qui pese vraiment, nomme, pour que l'utilisateur puisse agir plutot que subir. */
@@ -2547,7 +2637,7 @@ function pushHistory(){
   lastHistoryAt = now;
   let hist = [];
   try{ hist = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }catch(e){}
-  hist.push({ savedAt: new Date().toISOString(), count: comptePrelevements(lignes), lignes, projets, activeProjetId, backlog, revision });
+  hist.push({ savedAt: new Date().toISOString(), count: comptePrelevements(lignes), lignes, projets, activeProjetId, responsables, backlog, revision });
   if(hist.length > 5) hist = hist.slice(hist.length - 5);
   try{ localStorage.setItem(HISTORY_KEY, JSON.stringify(hist)); }catch(e){}
 }
@@ -2638,7 +2728,7 @@ const BACKUP_KEY = STORAGE_KEY + "_backup";
 function backupSnapshot(label){
   syncActiveOp();
   try{
-    localStorage.setItem(BACKUP_KEY, JSON.stringify({ savedAt: new Date().toISOString(), label, lignes, projets, activeProjetId, backlog, revision }));
+    localStorage.setItem(BACKUP_KEY, JSON.stringify({ savedAt: new Date().toISOString(), label, lignes, projets, activeProjetId, responsables, backlog, revision }));
   }catch(e){}
 }
 function hasBackup(){
@@ -2683,11 +2773,11 @@ function exportData(){
   revision += 1;
   const payload = {
     outil: "SPK Suivi optimisation",
-    // format 7 : `lignes` reste la racine, `projets` n'est qu'une liste d'etiquettes posees
-    // dessus. Une version anterieure a la v4 lit ce fichier sans souci -- elle ignore juste
-    // `projets`, qu'elle ne connait pas -- contrairement au format 6 (v4.0) qui rendait
+    // format 8 (v4.2) : `lignes` reste la racine, `projets`/`responsables` ne sont que des
+    // listes posees a cote. Une version anterieure a la v4 lit ce fichier sans souci -- elle
+    // ignore juste ce qu'elle ne connait pas -- contrairement au format 6 (v4.0) qui rendait
     // l'arbre illisible aux anciennes versions.
-    format: 7,
+    format: 8,
     toolVersion: TOOL_VERSION,
     revision: revision,
     exporteLe: new Date().toISOString(),
@@ -2695,6 +2785,7 @@ function exportData(){
     lignes: lignes,
     projets: projets,
     activeProjetId: activeProjetId,
+    responsables: responsables,
     backlog: backlog,
     // onglet ouvert chez l'exportateur : permet a l'import de retomber directement
     // dessus (sinon, avec plusieurs lignes/references/OP, la personne qui importe
@@ -3190,6 +3281,17 @@ function fusionnerProjetsTags(locaux, entrants){
   return { projetsAjoutes, tagsAjoutes };
 }
 
+/* Fusion des responsables (v4.2) : correspondance par id (meme personne exportee puis
+   reimportee) ou par nom (creee independamment sur deux postes) -- sinon deux "Julien" avec
+   des ids differents et des couleurs differentes coexisteraient sans raison. */
+function fusionnerResponsables(locaux, entrants){
+  let ajoutes = 0;
+  (entrants || []).forEach(rE => {
+    if(!locaux.some(x => x.id === rE.id || x.nom === rE.nom)){ locaux.push(rE); ajoutes++; }
+  });
+  return ajoutes;
+}
+
 function bilanFusionHTML(b){
   const struct = [
     b.lignes && b.lignes + " ligne" + (b.lignes>1?"s":""),
@@ -3203,7 +3305,8 @@ function bilanFusionHTML(b){
     `<li><b>${b.essaisConserves}</b> essai${b.essaisConserves>1?"s":""} conservé${b.essaisConserves>1?"s":""} <span class="fusion-note">(votre version était la plus récente, ou conflit ci-dessous)</span></li>`,
     struct ? `<li>Structure ajoutée : ${struct}</li>` : "",
     b.projetsAjoutes ? `<li><b>${b.projetsAjoutes}</b> projet${b.projetsAjoutes>1?"s":""} ajouté${b.projetsAjoutes>1?"s":""}</li>` : "",
-    b.tagsAjoutes ? `<li><b>${b.tagsAjoutes}</b> scénario${b.tagsAjoutes>1?"s":""} rattaché${b.tagsAjoutes>1?"s":""} à un projet existant</li>` : ""
+    b.tagsAjoutes ? `<li><b>${b.tagsAjoutes}</b> scénario${b.tagsAjoutes>1?"s":""} rattaché${b.tagsAjoutes>1?"s":""} à un projet existant</li>` : "",
+    b.responsablesAjoutes ? `<li><b>${b.responsablesAjoutes}</b> responsable${b.responsablesAjoutes>1?"s":""} ajouté${b.responsablesAjoutes>1?"s":""}</li>` : ""
   ].filter(Boolean).join("");
   const conflits = b.conflits.length ? `
     <p class="fusion-conflit-titre">${b.conflits.length} conflit${b.conflits.length>1?"s":""} — votre version a été conservée, à vérifier :</p>
@@ -3223,12 +3326,13 @@ function importData(file){
       return;
     }
 
-    let nouvellesLignes, nouveauxProjets, nouveauBacklog, revisionEntrante;
+    let nouvellesLignes, nouveauxProjets, nouveauxResponsables, nouveauBacklog, revisionEntrante;
     const migreImport = migrerArbre(parsed);
     if(migreImport){
       // format 5, 6 ou 7 -- voir migrerArbre() pour le detail de chaque cas
       nouvellesLignes = migreImport.lignes;
       nouveauxProjets = migreImport.projets;
+      nouveauxResponsables = migreImport.responsables;
       nouveauBacklog = (parsed.backlog || []).map(normalizeBacklogItem);
       revisionEntrante = parsed.revision || 0;
     } else {
@@ -3244,13 +3348,14 @@ function importData(file){
       const ref = { id: "r"+Date.now(), nom: "DV 356x26 RPI", ops: [op] };
       nouvellesLignes = [{ id: "l"+Date.now(), nom: "EMAG 1", references: [ref] }];
       nouveauxProjets = [];
+      nouveauxResponsables = [];
       nouveauBacklog = [];
       revisionEntrante = 0;
     }
 
     // Le choix fusionner/remplacer se fait dans un panneau : c'est une decision a
     // consequences, elle merite mieux qu'un confirm() ou "OK" voudrait dire "ecrase tout".
-    importEnAttente = { parsed, nouvellesLignes, nouveauxProjets, nouveauBacklog, revisionEntrante };
+    importEnAttente = { parsed, nouvellesLignes, nouveauxProjets, nouveauxResponsables, nouveauBacklog, revisionEntrante };
     ouvrirChoixImport();
   };
   reader.readAsText(file);
@@ -3327,7 +3432,7 @@ function ouvrirChoixImport(){
 }
 
 function appliquerImport(mode){
-  const { parsed, nouvellesLignes, nouveauxProjets, nouveauBacklog, revisionEntrante } = importEnAttente;
+  const { parsed, nouvellesLignes, nouveauxProjets, nouveauxResponsables, nouveauBacklog, revisionEntrante } = importEnAttente;
   backupSnapshot((mode === "fusion" ? "Fusionner" : "Importer") + " (révision " + (revisionEntrante || "—") + ")");
 
   let bilan = null;
@@ -3335,6 +3440,7 @@ function appliquerImport(mode){
     bilan = fusionnerLignes(lignes, nouvellesLignes);
     const bp = fusionnerProjetsTags(projets, nouveauxProjets);
     bilan.projetsAjoutes = bp.projetsAjoutes; bilan.tagsAjoutes = bp.tagsAjoutes;
+    bilan.responsablesAjoutes = fusionnerResponsables(responsables, nouveauxResponsables || []);
     bilan.backlog = fusionnerBacklog(backlog, nouveauBacklog);
     // la fusion produit un etat qui n'existe dans aucun des deux fichiers : elle merite sa
     // propre revision, sinon deux postes croiraient detenir la meme
@@ -3342,6 +3448,7 @@ function appliquerImport(mode){
   } else {
     lignes = nouvellesLignes;
     projets = nouveauxProjets;
+    responsables = nouveauxResponsables || [];
     activeProjetId = projets.find(x => x.id === parsed.activeProjetId) ? parsed.activeProjetId : null;
     backlog = nouveauBacklog;
     revision = Math.max(revision, revisionEntrante || 0);
@@ -4735,7 +4842,11 @@ function renderTabs(){
         </span>
         ${projets.length ? `<span class="tc-tags">${projets.map(pj => {
           const dedans = projetContientScenario(pj, activeLigneId, activeReferenceId, activeOpId, sc.id);
-          return `<span class="tag-pill ${dedans ? "on" : ""}" data-projet="${pj.id}" title="${dedans ? "Retirer de" : "Ajouter à"} « ${escapeAttr(pj.nom)} »">${dedans ? "✓ " : "+ "}${escapeAttr(pj.nom)}</span>`;
+          // couleur propre au projet (v4.2) plutot qu'un bleu uniforme : avec plusieurs
+          // etiquettes actives sur un meme scenario, chacune reste identifiable sans lire
+          // le texte -- la meme couleur que le petit point sur sa carte de projet.
+          const style = dedans ? ` style="background:${couleurProjet(pj)}; border-color:${couleurProjet(pj)};"` : "";
+          return `<span class="tag-pill ${dedans ? "on" : ""}"${style} data-projet="${pj.id}" title="${dedans ? "Retirer de" : "Ajouter à"} « ${escapeAttr(pj.nom)} »">${dedans ? "✓ " : "+ "}${escapeAttr(pj.nom)}</span>`;
         }).join("")}</span>` : ""}
         <span class="tc-row"><span class="tc-label">${couts.multiPoste ? "€/pièce total" : "€/pièce"}</span><span class="tc-val">${cRef === null ? "—" : fmt(cRef,4)}</span>${deltaHtml}</span>
         ${an && an.gainAnnuel !== undefined ? `<span class="tc-row"><span class="tc-label">${an.gainAnnuel>=0?"Gain/an":"Perte/an"}</span><span class="tc-val ${an.gainAnnuel>=0?"tc-gain":"tc-perte"}">${(an.gainAnnuel>=0?"+":"−")+fmtEuroCourt(Math.abs(an.gainAnnuel))}</span></span>` : ""}
@@ -6433,6 +6544,14 @@ function projetCarteHTML(pj){
   const st = statsProjet(pj);
   const actif = pj.id === activeProjetId;
   const statut = PROJET_STATUTS[pj.statut] || PROJET_STATUTS.encours;
+  const resp = responsableDe(pj);
+  // Deux axes couleur distincts, jamais fusionnes (v4.2) : la bordure gauche porte la
+  // couleur du RESPONSABLE (qui pilote -- une personne, une couleur stable dans le temps) ;
+  // le statut reste lisible via son badge texte, inchange. Le petit point avant le nom porte
+  // la couleur du PROJET lui-meme (assignee a la creation), la meme que sur ses etiquettes
+  // de scenario (voir tag-pill) -- pour apprendre au premier coup d'oeil quelle couleur
+  // designe quel projet, avant meme de croiser cette couleur ailleurs dans l'ecran.
+  const couleurBordure = resp ? resp.couleur : "var(--ink-faint)";
   // l'echeance se lit, elle ne sanctionne pas : dans un atelier, un essai glisse pour des
   // raisons subies (dispo machine, dispo bruts, priorite client) -- pas de badge "en retard".
   let echeance = "";
@@ -6442,24 +6561,27 @@ function projetCarteHTML(pj){
       j >= 0 ? "J−" + j : "échéance dépassée de " + Math.abs(j) + " j"}</span>`;
   }
   return `
-    <button class="pj-carte ${actif ? "active" : ""} pj-${escapeAttr(pj.statut || "encours")}" data-projet="${pj.id}"
-            title="${actif ? "Retirer le filtre (voir tous les projets)" : "Filtrer sur ce projet"}">
-      <span class="pj-haut">
-        <span class="pj-nom">${escapeAttr(pj.nom || "Projet sans nom")}</span>
-        <span class="pj-statut">${statut}</span>
-        ${echeance}
-      </span>
-      ${pj.problematique ? `<span class="pj-pb">${escapeAttr(pj.problematique)}</span>` : ""}
-      <span class="pj-chiffres">
-        <span><b>${st.scenarios}</b> scénario${st.scenarios>1?"s":""}</span>
-        <span><b>${st.lignes}</b> ligne${st.lignes>1?"s":""}</span>
-        <span><b>${st.essais}</b> essai${st.essais>1?"s":""}</span>
-        ${st.enSerie ? `<span class="pj-serie"><b>${st.enSerie}</b> en série</span>` : ""}
-      </span>
-      ${st.gainConnu ? `<span class="pj-gain ${st.gain>=0?"pos":"neg"}">${st.gain>=0?"+":"−"}${fmtEuroCourt(Math.abs(st.gain))} / an acquis</span>` : ""}
-      ${pj.responsable ? `<span class="pj-resp">Pilote : ${escapeAttr(pj.responsable)}</span>` : ""}
-      <button class="pj-cfg" data-cfg-projet="${pj.id}" title="Modifier ce projet" onclick="event.stopPropagation();">⚙</button>
-    </button>`;
+    <div class="pj-carte ${actif ? "active" : ""} pj-${escapeAttr(pj.statut || "encours")}" style="border-left-color:${couleurBordure};">
+      <button class="pj-corps" data-projet="${pj.id}"
+              title="${actif ? "Retirer le filtre (voir tous les projets)" : "Filtrer sur ce projet"}">
+        <span class="pj-haut">
+          <span class="pj-puce" style="background:${couleurProjet(pj)};" title="Couleur de ce projet, reprise sur ses étiquettes de scénario"></span>
+          <span class="pj-nom">${escapeAttr(pj.nom || "Projet sans nom")}</span>
+          <span class="pj-statut">${statut}</span>
+          ${echeance}
+        </span>
+        ${pj.problematique ? `<span class="pj-pb">${escapeAttr(pj.problematique)}</span>` : ""}
+        <span class="pj-chiffres">
+          <span><b>${st.scenarios}</b> scénario${st.scenarios>1?"s":""}</span>
+          <span><b>${st.lignes}</b> ligne${st.lignes>1?"s":""}</span>
+          <span><b>${st.essais}</b> essai${st.essais>1?"s":""}</span>
+          ${st.enSerie ? `<span class="pj-serie"><b>${st.enSerie}</b> en série</span>` : ""}
+        </span>
+        ${st.gainConnu ? `<span class="pj-gain ${st.gain>=0?"pos":"neg"}">${st.gain>=0?"+":"−"}${fmtEuroCourt(Math.abs(st.gain))} / an acquis</span>` : ""}
+        ${resp ? `<span class="pj-resp"><span class="pj-resp-puce" style="background:${resp.couleur};"></span>Pilote : ${escapeAttr(resp.nom)}</span>` : ""}
+      </button>
+      <button class="pj-modifier" data-cfg-projet="${pj.id}">Modifier</button>
+    </div>`;
 }
 
 /* Un projet est visible sur une ligne si : c'est le projet actif (on doit toujours pouvoir
@@ -6484,7 +6606,7 @@ function renderProjets(){
   if(!projets.length){
     // aucun projet cree : pas la peine d'occuper l'ecran avec un bandeau vide, un simple
     // lien suffit -- les projets sont facultatifs, l'outil marche identiquement sans eux
-    el.innerHTML = `<button class="ghost small" id="addProjetBtn">+ Créer un projet</button>
+    el.innerHTML = `<button class="primary" id="addProjetBtn">+ Créer un projet</button>
       <span class="pj-aide">Un projet regroupe les scénarios qui répondent à une même problématique, sans changer où ils vivent physiquement.</span>`;
     document.getElementById("addProjetBtn").addEventListener("click", creerProjet);
     return;
@@ -6501,7 +6623,7 @@ function renderProjets(){
         <h4>Projets</h4>
         <span class="pj-compte">Aucun sur « ${escapeAttr(ligneNom)} »</span>
         <button class="ghost small" id="toggleVueProjetsBtn">Voir tous les projets (${projets.length})</button>
-        <button class="ghost small" id="addProjetBtn">+ Nouveau projet</button>
+        <button class="primary" id="addProjetBtn">+ Nouveau projet</button>
       </div>`;
     document.getElementById("toggleVueProjetsBtn").addEventListener("click", () => { bandeauProjetsTousAffiches = true; render(); });
     document.getElementById("addProjetBtn").addEventListener("click", creerProjet);
@@ -6516,7 +6638,7 @@ function renderProjets(){
         : `${visibles.length} sur « ${escapeAttr(ligneNom)} »`}${activeProjetId ? " — filtré" : ""}</span>
       <button class="ghost small" id="toggleVueProjetsBtn">${bandeauProjetsTousAffiches ? "Filtrer sur cette ligne" : "Voir tous les projets"}</button>
       ${activeProjetId ? `<button class="ghost small" id="clearProjetBtn">Retirer le filtre projet</button>` : ""}
-      <button class="ghost small" id="addProjetBtn">+ Nouveau projet</button>
+      <button class="primary" id="addProjetBtn">+ Nouveau projet</button>
     </div>
     <div class="pj-grille">${visibles.map(projetCarteHTML).join("")}</div>`;
 
@@ -6538,9 +6660,11 @@ function creerProjet(){
   if(nom === null) return;
   const pj = normalizeProjet({
     nom: (nom || "").trim() || "Nouveau projet",
-    responsable: auteurNom || "",
     creePar: auteurNom || "",
-    creeLe: new Date().toISOString().slice(0,10)
+    creeLe: new Date().toISOString().slice(0,10),
+    // couleur d'identite assignee une fois pour toutes, ici, a la creation -- jamais
+    // recalculee au rendu (voir normalizeProjet)
+    couleur: OUTIL_COLORS[projets.length % OUTIL_COLORS.length]
   });
   // le scenario actuellement ouvert entre d'office dans le nouveau projet : c'est
   // generalement pour lui qu'on cree le projet
@@ -6553,13 +6677,23 @@ function creerProjet(){
 }
 
 let projetInfoTargetId = null;
+/* Remplit le menu deroulant "Pilote du projet" a partir de la liste geree, plus une option
+   de creation rapide -- inutile d'aller dans Options pour la toute premiere personne. */
+function remplirSelectResponsables(selectionneId){
+  const sel = document.getElementById("projetResponsable");
+  sel.innerHTML = `<option value="">— Aucun —</option>`
+    + responsables.map(r => `<option value="${r.id}">${escapeAttr(r.nom)}</option>`).join("")
+    + `<option value="__nouveau__">+ Nouveau responsable…</option>`;
+  sel.value = selectionneId || "";
+}
+
 function ouvrirProjetInfo(id){
   const pj = projets.find(x => x.id === id);
   if(!pj) return;
   projetInfoTargetId = pj.id;
   document.getElementById("projetNom").value = pj.nom || "";
   document.getElementById("projetProblematique").value = pj.problematique || "";
-  document.getElementById("projetResponsable").value = pj.responsable || "";
+  remplirSelectResponsables(pj.responsableId || "");
   document.getElementById("projetStatut").value = pj.statut || "encours";
   document.getElementById("projetDateCible").value = pj.dateCible || "";
   const st = statsProjet(pj);
@@ -6568,12 +6702,27 @@ function ouvrirProjetInfo(id){
     + st.scenarios + " scénario(s) étiqueté(s) sur " + st.lignes + " ligne(s), " + st.essais + " essai(s).";
   ouvrirPanneau("projetInfoPanel");
 }
+
+/* Selection "+ Nouveau responsable…" dans le menu deroulant : cree la personne a la volee
+   (couleur assignee automatiquement, modifiable ensuite dans Options) sans faire quitter
+   le panneau du projet. */
+function ajouterResponsableDepuisSelect(){
+  const pj = projets.find(x => x.id === projetInfoTargetId);
+  const nom = prompt("Nom du nouveau responsable :", "");
+  if(nom === null || !nom.trim()){ remplirSelectResponsables(pj ? pj.responsableId : ""); return; }
+  const r = normalizeResponsable({ nom: nom.trim(), couleur: prochaineCouleurLibre(responsables.map(x => x.couleur)) });
+  responsables.push(r);
+  remplirSelectResponsables(r.id);
+  enregistrerProjetInfo();
+}
+
 function enregistrerProjetInfo(){
   const pj = projets.find(x => x.id === projetInfoTargetId);
   if(!pj) return;
   pj.nom = document.getElementById("projetNom").value.trim() || "Projet sans nom";
   pj.problematique = document.getElementById("projetProblematique").value.trim();
-  pj.responsable = document.getElementById("projetResponsable").value.trim();
+  pj.responsableId = document.getElementById("projetResponsable").value;
+  pj.responsable = ""; // le champ texte libre (v4.0/4.1) n'est plus utilise en saisie
   pj.statut = document.getElementById("projetStatut").value;
   pj.dateCible = document.getElementById("projetDateCible").value;
   saveData(); render();
@@ -7432,7 +7581,7 @@ document.getElementById("resetBtn").addEventListener("click", () => {
   if(saisie !== "REINITIALISER"){ if(saisie !== null) alert("Réinitialisation annulée — le texte tapé ne correspond pas."); return; }
   backupSnapshot("Réinitialiser");
   lignes = defaultLignes();
-  projets = []; activeProjetId = null;
+  projets = []; activeProjetId = null; responsables = [];
   backlog = [];
   activeLigneId = lignes[0].id;
   activeReferenceId = lignes[0].references[0].id;
@@ -7598,7 +7747,53 @@ function syncOptionsUI(){
   optEcartCharniere.value = config.ecartCharniereTolerance ?? 0.5;
   majChampsOptions();
   renderFicheOutil();
+  renderResponsablesOptions();
 }
+
+/* Gestion des responsables (v4.2), dans Options : liste geree independamment des projets --
+   supprimer un responsable ne supprime jamais un projet, il repasse a "aucun responsable"
+   (voir supprimerResponsable). */
+function renderResponsablesOptions(){
+  const el = document.getElementById("responsablesListe");
+  if(!el) return;
+  el.innerHTML = responsables.length
+    ? responsables.map(r => `
+        <div class="responsable-ligne" data-responsable="${r.id}">
+          <input type="color" class="responsable-couleur" value="${r.couleur || "#94a3b8"}" title="Couleur de ${escapeAttr(r.nom)}">
+          <span class="responsable-nom">${escapeAttr(r.nom)}</span>
+          <button class="log-del" data-suppr-responsable="${r.id}" title="Supprimer">✕</button>
+        </div>`).join("")
+    : `<p class="opt-note">Aucun responsable pour l'instant — ajoutez-en un ci-dessous, ou directement depuis le panneau d'un projet.</p>`;
+  el.querySelectorAll(".responsable-couleur").forEach(inp => {
+    inp.addEventListener("change", () => {
+      const r = responsables.find(x => x.id === inp.closest("[data-responsable]").getAttribute("data-responsable"));
+      if(r){ r.couleur = inp.value; saveData(); render(); }
+    });
+  });
+  el.querySelectorAll("[data-suppr-responsable]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = btn.getAttribute("data-suppr-responsable");
+      const r = responsables.find(x => x.id === id);
+      if(!r) return;
+      const nbProjets = projets.filter(p => p.responsableId === id).length;
+      if(!confirm(`Supprimer « ${r.nom} » de la liste des responsables ?` + (nbProjets ? `\n\n${nbProjets} projet(s) actuellement piloté(s) par cette personne repasseront à « Aucun » — ils ne sont pas supprimés.` : ""))) return;
+      responsables = responsables.filter(x => x.id !== id);
+      projets.forEach(p => { if(p.responsableId === id) p.responsableId = ""; });
+      saveData(); render(); renderResponsablesOptions();
+    });
+  });
+}
+document.getElementById("responsableAjouter").addEventListener("click", () => {
+  const nomEl = document.getElementById("responsableNouveauNom");
+  const couleurEl = document.getElementById("responsableNouvelleCouleur");
+  const nom = nomEl.value.trim();
+  if(!nom){ alert("Indiquez un nom."); return; }
+  responsables.push(normalizeResponsable({ nom, couleur: couleurEl.value }));
+  nomEl.value = "";
+  couleurEl.value = prochaineCouleurLibre(responsables.map(x => x.couleur));
+  saveData(); render(); renderResponsablesOptions();
+});
+
 function appliquerOptions(){
   config.limitLabel = optLimitLabel.value;
   config.limitValue = optLimitValue.value === "" ? "" : parseFloat(optLimitValue.value);
@@ -7633,9 +7828,13 @@ let optionsInputDebounce = null;
   });
 });
 document.getElementById("optionsBtn").addEventListener("click", () => { syncOptionsUI(); ouvrirPanneau("optionsPanel"); });
-["projetNom","projetProblematique","projetResponsable","projetStatut","projetDateCible"].forEach(id => {
+["projetNom","projetProblematique","projetStatut","projetDateCible"].forEach(id => {
   const el = document.getElementById(id);
   if(el) el.addEventListener("change", enregistrerProjetInfo);
+});
+document.getElementById("projetResponsable").addEventListener("change", (e) => {
+  if(e.target.value === "__nouveau__") ajouterResponsableDepuisSelect();
+  else enregistrerProjetInfo();
 });
 document.getElementById("projetInfoClose").addEventListener("click", () => { enregistrerProjetInfo(); fermerPanneaux(); });
 document.getElementById("projetSupprimer").addEventListener("click", supprimerProjetActif);
@@ -7695,6 +7894,14 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""))) ret
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.2.0", date:"08/09/2026", points:[
+    "<b>Retours d'usage sur les projets, traités d'un coup.</b> Le bouton « Modifier » d'un projet est maintenant écrit en toutes lettres sur la carte (avant : une petite icône ⚙ qu'on ne voyait pas) — pareil pour créer un projet, qui passe en bouton bleu bien visible. Le bouton qui enregistre vos modifications s'appelle maintenant « Enregistrer » — il faisait déjà ça, mais s'appelait « Fermer », ce qui n'aidait pas à croire que c'était sauvegardé.",
+    "<b>Description du projet en zone de texte</b> — largement assez de place pour écrire l'objectif et les moyens mis en œuvre, plus une seule ligne.",
+    "<b>Un pilote par projet, avec sa couleur.</b> Une liste de responsables se gère dans Options (nom + couleur), et se rattache à chaque projet depuis son panneau — avec une création à la volée directement dans le menu déroulant, pas besoin d'aller dans Options la première fois. La couleur du pilote habille la bordure de ses cartes de projet ; supprimer un responsable ne supprime jamais les projets qu'il pilotait, ils repassent juste à « Aucun ».",
+    "<b>Chaque projet a sa propre couleur d'identité</b>, distincte de celle du pilote — reprise sur ses étiquettes de scénario. Avec plusieurs projets sur un même scénario, chaque étiquette reste reconnaissable sans avoir à lire le texte.",
+    "Quand un OP porte des scénarios de plusieurs projets à la fois, le tableau de bord l'indique maintenant directement, sans avoir à ouvrir chaque scénario un par un pour le découvrir.",
+    "Pour mémoire, déjà possible sans rien changer : un scénario peut appartenir à plusieurs projets, et un projet peut couvrir plusieurs lignes — le modèle par étiquettes (v4.1) le permettait nativement."
+  ]},
   { version:"4.1.1", date:"08/09/2026", points:[
     "Les cartes de projet en haut de l'écran se limitent maintenant à ceux qui concernent la ligne ouverte — jusqu'ici, tous les projets s'affichaient partout, même ceux qui n'avaient rien à voir avec la ligne regardée. Un projet qui touche plusieurs lignes (ou tout juste créé, sans scénario encore rattaché) reste visible partout, et le lien « Voir tous les projets » permet de repasser en vue complète à tout moment."
   ]},
@@ -7910,9 +8117,16 @@ function renderDashboard(){
     const blocsRef = [];
     ligne.references.forEach(ref => {
       ref.ops.forEach(op => {
-        let scs = op.scenarios || [];
+        const scsTotal = op.scenarios || [];
+        let scs = scsTotal;
         if(pjFiltre) scs = scs.filter(sc => projetContientScenario(pjFiltre, ligne.id, ref.id, op.id, sc.id));
         if(!scs.length) return;
+        // repere de lecture (v4.2) : quand un OP porte des scenarios de plusieurs projets a
+        // la fois, on le signale ici plutot que de forcer a ouvrir chaque carte de scenario
+        // une par une pour le decouvrir. Calcule sur TOUS les scenarios de l'OP, pas
+        // seulement ceux affiches sous le filtre courant -- sinon un filtre sur un seul
+        // projet masquerait la cohabitation qu'il sert justement a signaler.
+        const projetsIci = projets.filter(pj => scsTotal.some(sc => projetContientScenario(pj, ligne.id, ref.id, op.id, sc.id)));
         const rows = dansContexteOp(op, () => {
           const base = baselineScenario();
           const cBase = base ? coutsDetail(base, op.config, ligne) : null;
@@ -7966,6 +8180,8 @@ function renderDashboard(){
               <span class="db-op-ref">${escapeAttr(ref.nom || "Référence sans nom")}</span>
               <span class="db-op-nom">${escapeAttr(op.nom || "OP")}</span>
               ${rows[0] && rows[0].volume ? `<span class="db-op-vol">${fmt(rows[0].volume,0)} disques/an</span>` : ""}
+              ${projetsIci.length > 1 ? `<span class="db-op-projets">${projetsIci.map(pj =>
+                `<span class="tag-pill on" style="background:${couleurProjet(pj)}; border-color:${couleurProjet(pj)};">${escapeAttr(pj.nom)}</span>`).join("")}</span>` : ""}
             </div>
             <div class="tbl-wrap">
               <table class="db-table">
@@ -8160,7 +8376,7 @@ function runTests(){
   const prel = (id, piece, batt) => ({ id, piece, batt, battD:"", battG:"", logementId:"", pointMesure:"" });
 
   // --- etat reel mis de cote : les tests ne doivent rien laisser derriere eux ---
-  const sauve = { config, data, lignes, projets, activeProjetId, activeLigneId, activeReferenceId, activeOpId, activeId };
+  const sauve = { config, data, lignes, projets, activeProjetId, responsables, activeLigneId, activeReferenceId, activeOpId, activeId };
 
   try{
     // ---- jeu d'essai : chiffres ronds, pour que l'attendu se verifie a la main ----
@@ -8385,6 +8601,36 @@ function runTests(){
       lignes = memo; return r;
     })(), true);
 
+    /* ---- responsables geres et couleurs de projet (v4.2) ----------------------------
+       Un ancien projet n'avait qu'un champ texte libre "responsable" : la migration doit
+       creer une entree dans la liste geree ET faire le lien, sans jamais planter si la
+       liste est vide ou si la palette de couleurs est epuisee. */
+    const respDefaut = normalizeResponsable({});
+    ok("normalizeResponsable : id genere", typeof respDefaut.id === "string" && respDefaut.id.length > 0, true);
+    ok("normalizeResponsable : nom/couleur par defaut", [respDefaut.nom, respDefaut.couleur], ["", ""]);
+    ok("migrerArbre format 6 : un responsable est cree pour le texte libre", migF6.responsables.length, 1);
+    ok("migrerArbre format 6 : le responsable cree s'appelle Julien", migF6.responsables[0].nom, "Julien");
+    ok("migrerArbre format 6 : le projet est lie au responsable cree", migF6.projets[0].responsableId, migF6.responsables[0].id);
+    ok("migrerArbre format 6 : une couleur a ete assignee au responsable", !!migF6.responsables[0].couleur, true);
+    ok("migrerArbre format 6 : une couleur a ete assignee au projet", !!migF6.projets[0].couleur, true);
+
+    ok("prochaineCouleurLibre : prend une couleur non utilisee", OUTIL_COLORS.includes(prochaineCouleurLibre(["#000000"])), true);
+    ok("prochaineCouleurLibre : ne repropose pas une couleur deja prise tant qu'il en reste une libre",
+       OUTIL_COLORS.slice(0, 3).includes(prochaineCouleurLibre(OUTIL_COLORS.slice(0, 3))), false);
+    ok("prochaineCouleurLibre : recycle la palette une fois epuisee (pas d'exception)",
+       typeof prochaineCouleurLibre(OUTIL_COLORS.slice()), "string");
+
+    // fusion de responsables : correspondance par id ou par nom, jamais de doublon "Julien"
+    const respLocaux = [ normalizeResponsable({ id:"rA", nom:"Julien", couleur:"#111111" }) ];
+    const respEntrants = [
+      normalizeResponsable({ id:"rA-autre-id", nom:"Julien", couleur:"#222222" }), // meme nom, id different
+      normalizeResponsable({ id:"rB", nom:"Matis", couleur:"#333333" })
+    ];
+    const ajoutesResp = fusionnerResponsables(respLocaux, respEntrants);
+    ok("fusionnerResponsables : Matis (inconnu) est ajoute", ajoutesResp, 1);
+    ok("fusionnerResponsables : Julien (meme nom, id different) n'est pas duplique", respLocaux.length, 2);
+    ok("fusionnerResponsables : la couleur locale de Julien n'est pas ecrasee", respLocaux[0].couleur, "#111111");
+
     // format 5 (pre-v4, sans projets) : lit normalement, aucun projet invente
     const arbreFormat5 = { lignes:[ { id:"l5", nom:"L5", references:[ { id:"r5", nom:"R5", ops:[ { id:"o5", nom:"OP", config:{},
       scenarios:[ { id:"s5", name:"S5", outils:[], essais:[] } ] } ] } ] } ] };
@@ -8480,7 +8726,7 @@ function runTests(){
   } finally {
     // remise en place de l'etat reel, quoi qu'il arrive
     config = sauve.config; data = sauve.data; lignes = sauve.lignes;
-    projets = sauve.projets; activeProjetId = sauve.activeProjetId;
+    projets = sauve.projets; activeProjetId = sauve.activeProjetId; responsables = sauve.responsables;
     activeLigneId = sauve.activeLigneId; activeReferenceId = sauve.activeReferenceId;
     activeOpId = sauve.activeOpId; activeId = sauve.activeId;
   }
