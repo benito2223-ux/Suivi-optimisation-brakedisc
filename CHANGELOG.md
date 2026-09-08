@@ -5,6 +5,48 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.5.0] — 2026-09-09
+
+Deux garde-fous ergonomiques issus de l'audit externe (revue Hermes) et de sa relecture,
+plus deux ajustements de confort. Aucun changement de format de données.
+
+### Ajouté — garde-fous contre le double comptage inter-projets (le concept de la v4.1
+non poussée, réécrit pour le modèle v4.4 où le projet est une étiquette, pas un propriétaire)
+Dans le modèle actuel, le piège se joue au niveau du **scénario** : deux projets peuvent
+étiqueter chacun un scénario différent, du même nom, « en série », sur la même ligne — deux
+descriptions du même changement physique, et le tableau de bord additionne leurs gains sans
+le savoir.
+
+- `scenariosSerieHomonymes()` : détecte les groupes (nom de scénario + nom de ligne,
+  insensibles à la casse et aux espaces de bord) où des scénarios « en série » distincts
+  sont étiquetés dans plusieurs projets. Le **même** scénario étiqueté dans deux projets
+  n'est PAS un homonyme (c'est un seul objet, compté une seule fois par construction).
+- `avertissementSerieHomonymes(sc)` : appelée par `promouvoirEnProduction()` avant le
+  passage en série — cite les projets où un homonyme est déjà en série sur la même ligne.
+  Confirmation demandée, refus possible (rien n'est modifié), jamais bloquant.
+- Tableau de bord, vue tous projets (≥ 2 projets, sans filtre) : bandeau ambre
+  `.db-alerte-homonymes` listant les homonymes et rappelant la règle.
+- `runTests()` : 5 nouveaux tests (cas sains non signalés, casse/espaces détectés,
+  chemins cités).
+
+### Ajouté — pastille permanente du poids du suivi
+Le quota ne se voyait qu'au moment de l'alerte (souvent trop tard pour agir sereinement).
+Une pastille en pied de page affiche en continu le poids du suivi sur ~5 Mo : neutre sous
+60 %, ambre de 60 à 85 %, rouge au-delà. Le clic donne le détail (même contenu que
+l'alerte) et les conseils pour alléger. Rendue à l'ouverture et à chaque sauvegarde.
+
+### Modifié — la création de projet passe par un panneau
+Le `prompt()` natif détonnait avec le reste de l'outil. Nouveau panneau (même famille que
+le panneau projet) : champ nom, annonce du rattachement automatique (« N scénario(s) de
+l'OP ouvert seront rattachés »), Enter valide, Annuler ferme. La création passe ensuite
+par le panneau projet habituel comme avant.
+
+### Ajouté — récap du rattachement automatique dans le panneau projet
+Un projet créé rattache d'office les scénarios de l'OP ouvert (comportement v4.3 conservé),
+mais rien ne le disait : le panneau projet affiche désormais « N scénario(s) rattaché(s)
+automatiquement à la création » le jour de la création, avec l'invitation à ajuster les
+étiquettes.
+
 ## [4.4.1] — 2026-09-08
 
 Correctif robustesse remonté par l'audit externe (revue Hermes) de la 4.4.0 : collision

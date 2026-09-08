@@ -1039,6 +1039,9 @@ select.log-equipe:focus{border-color:var(--blue); outline:none; background:var(-
 /* le gain acquis est la conclusion du tableau de bord : vert plein, pas un bleu de plus */
 .db-kpi-gain{background:var(--fill-good); border-color:var(--fill-good);}
 .db-kpi-gain .l, .db-kpi-gain .db-kpi-sub{color:var(--fill-good-ink-soft);}
+/* bandeau ambre : scenarios du meme nom en serie sur la meme ligne = risque de double
+   comptage du gain annuel dans cette vue (v4.5) */
+.db-alerte-homonymes{border:1px solid var(--amber); border-left:4px solid var(--amber); background:var(--amber-bg); border-radius:var(--radius-sm); padding:10px 14px; margin:0 0 14px; font-size:12.5px; line-height:1.5; color:var(--ink-soft);}
 .db-ligne{margin-bottom:26px;}
 .db-ligne-titre{font-family:var(--font-disp); font-weight:800; font-size:19px; color:var(--ink); margin:0 0 10px;
   padding-bottom:7px; border-bottom:2px solid var(--blue); display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;}
@@ -1066,6 +1069,10 @@ select.log-equipe:focus{border-color:var(--blue); outline:none; background:var(-
 .foot-auteur{color:var(--ink-soft);}
 .foot-auteur b{color:var(--ink);}
 .foot{margin-top:48px; padding-top:14px; border-top:1px solid var(--border); font-size:11.5px; color:var(--ink-faint); font-family:var(--font-mono); display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;}
+/* pastille poids du suivi (v4.5) : visible en permanence, couleur selon la marge restante */
+.foot-poids{cursor:help; padding:1px 8px; border-radius:999px; border:1px solid var(--border); background:transparent; white-space:nowrap;}
+.foot-poids.alerte{color:var(--amber); border-color:var(--amber);}
+.foot-poids.critique{color:var(--red); border-color:var(--red); font-weight:600;}
 
 /* ---- bandeau verdict : la conclusion, en haut, en grand ---- */
 .verdict{display:flex; align-items:center; justify-content:space-between; gap:24px; flex-wrap:wrap;
@@ -1645,6 +1652,22 @@ body.atelier-on{overflow:hidden;}
       <button class="primary" id="projetInfoClose">Enregistrer</button>
     </div>
   </div>
+  <!-- creation de projet (v4.5) : remplace le prompt() natif qui detonait avec le reste.
+       Le projet cree ici se reprend ensuite dans le panneau ci-dessus (description, pilote...). -->
+  <div class="panel" id="projetCreatePanel" hidden>
+    <h3>Nouveau projet</h3>
+    <p class="panel-hint">Un projet regroupe des scénarios qui répondent à une même problématique — ce qu'il cherche à résoudre, pas une machine. Les scénarios de l'OP ouvert seront rattachés automatiquement ; on ajuste ensuite étiquette par étiquette.</p>
+    <div class="opt-field on" style="padding-left:0;">
+      <label for="projetCreateNom">Nom du projet</label>
+      <input type="text" id="projetCreateNom" style="width:100%; text-align:left; font-family:var(--font-body);" placeholder="ex. Coût &amp; qualité EMAG 1 — ou « Essais Step 3 »">
+      <span class="opt-note">Ce qu'on cherche à résoudre : c'est ce qui distingue deux projets menés sur la même machine.</span>
+    </div>
+    <p class="panel-hint" id="projetCreateAutoTag"></p>
+    <div class="panel-actions">
+      <button class="ghost" id="projetCreateAnnuler">Annuler</button>
+      <button class="primary" id="projetCreateGo">Créer le projet</button>
+    </div>
+  </div>
   <div class="panel" id="ligneInfoPanel" hidden>
     <h3 id="ligneInfoTitle">Informations de ligne</h3>
     <div class="opt-field on" style="padding-left:0;">
@@ -1677,6 +1700,7 @@ body.atelier-on{overflow:hidden;}
 
   <div class="foot">
     <span id="footToolName">Suivi_optimisation_SPK</span>
+    <span id="footPoids" class="foot-poids" title="Poids du fichier de suivi dans la mémoire de ce navigateur (environ 5 Mo disponibles). Cliquer pour le détail et alléger si besoin." role="status"></span>
     <span class="foot-auteur">Conception et développement : <b>Benjamin Rouquette</b> — © 2026, tous droits réservés</span>
     <span>Confidentiel — usage interne au projet</span>
     <span>bilan_economique.html</span>
@@ -1684,7 +1708,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.4.1";
+const TOOL_VERSION = "4.5.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -2082,6 +2106,55 @@ function toggleTagScenario(pj, ligneId, referenceId, opId, scenarioId){
   const i = pj.tags.findIndex(t => t.ligneId===ligneId && t.referenceId===referenceId && t.opId===opId && t.scenarioId===scenarioId);
   if(i === -1) pj.tags.push({ ligneId, referenceId, opId, scenarioId });
   else pj.tags.splice(i, 1);
+}
+
+/* ---- garde-fous homonymes (v4.5) -----------------------------------------------------
+   Dans le modele v4.4 (projets = etiquettes posees sur des scenarios qui vivent dans les
+   lignes), le piege du double comptage se joue au niveau du SCENARIO EN SERIE : deux projets
+   etiquettent chacun un scenario different qui decrit le MEME changement physique sur la
+   MEME machine (meme nom de scenario, meme ligne), le tableau de bord "tous projets"
+   additionne alors deux fois le meme gain annuel. On ne peut pas interdire (deux campagnes
+   homonymes sur deux machines differentes existent), mais on signale la ou la decision se
+   prend : passage en serie, et vue globale du tableau de bord. */
+function scenariosSerieHomonymes(){
+  // tous les scenarios "en serie", regroupes par (nom nettoye + nom de ligne nettoye) :
+  // meme nom de scenario sur la meme ligne = tres probablement le meme fait physique.
+  // Dedoublonne par scenario.id : le MEME scenario etiquete dans deux projets est un seul
+  // objet (le dashboard le compte via statsProjet de chaque projet, mais c'est le meme
+  // fait physique declare deux fois, pas deux optimisations divergentes a reconcilier) —
+  // l'alerte ne vise que des scenarios DISTINCTS du meme nom, la ou deux descriptions du
+  // meme changement peuvent diverger en silence.
+  const groupes = new Map();
+  projets.forEach(pj => {
+    scenariosResolusDuProjet(pj).forEach(({ ligne, reference, op, scenario: sc }) => {
+      if(sc.statut !== "serie") return;
+      if(!(sc.name || "").trim()) return;
+      const cle = (sc.name || "").trim().toLowerCase() + "@" + (ligne.nom || "").trim().toLowerCase();
+      if(!groupes.has(cle)) groupes.set(cle, { nom: sc.name, ligne: ligne.nom || "?", ids: new Set(), projets: new Set() });
+      const g = groupes.get(cle);
+      g.ids.add(sc.id);
+      g.projets.add(pj.nom || "Projet");
+    });
+  });
+  return [...groupes.values()].filter(g => g.ids.size > 1)
+    .map(g => ({ nom: g.nom, ligne: g.ligne, projets: [...g.projets] }));
+}
+function avertissementSerieHomonymes(sc){
+  // le scenario sc (sur le point de passer "en serie" dans l'OP actif) porte-t-il le meme
+  // nom qu'un scenario deja en serie sur la meme ligne, dans un AUTRE projet ?
+  const ligne = getActiveLigne();
+  const nom = (sc.name || "").trim().toLowerCase();
+  if(!nom || !ligne) return [];
+  const res = [];
+  projets.forEach(pj => {
+    scenariosResolusDuProjet(pj).forEach(({ ligne: l2, scenario: s2 }) => {
+      if(s2 === sc || s2.statut !== "serie") return;
+      if((s2.name || "").trim().toLowerCase() === nom && (l2.nom || "").trim().toLowerCase() === (ligne.nom || "").trim().toLowerCase()){
+        res.push((pj.nom || "Projet") + " › " + (l2.nom || "?") + " › " + (s2.name || "?"));
+      }
+    });
+  });
+  return res;
 }
 
 /* Lecture unifiee d'un arbre, quel que soit le format qui l'a produit. Un seul point
@@ -2605,6 +2678,32 @@ Le navigateur accorde environ 5 Mo à cet outil, mesures et pièces jointes comp
 ` + detailPoidsTexte());
 }
 
+/* ---- pastille permanente du poids (v4.5) ------------------------------------------
+   Le quota ne se voit qu'au moment de l'alerte, souvent trop tard pour agir sereinement.
+   Une pastille en pied de page affiche en continu le poids du suivi et la marge restante ;
+   le clic donne le detail (meme contenu que l'alerte, consultable a tout moment). */
+let dernierPoids = 0;
+function renderPoidsFooter(taille){
+  dernierPoids = taille || dernierPoids || 0;
+  const el = document.getElementById("footPoids");
+  if(!el) return;
+  const sur5 = dernierPoids / (5 * 1024 * 1024);
+  el.classList.remove("alerte", "critique");
+  if(sur5 >= 0.85) el.classList.add("critique");
+  else if(sur5 >= 0.6) el.classList.add("alerte");
+  el.textContent = "suivi " + mo(dernierPoids) + " / ~5 Mo";
+  el.title = "Fichier de suivi : " + mo(dernierPoids) + " sur ~5 Mo que le navigateur accorde à cet outil ("
+    + Math.round(sur5 * 100) + "% utilisé).\nCliquer pour le détail et les conseils pour alléger.";
+}
+function installerClickPoids(){
+  const el = document.getElementById("footPoids");
+  if(!el) return;
+  el.addEventListener("click", () => {
+    alert("Poids du suivi : " + mo(dernierPoids) + " sur ~5 Mo accordés par le navigateur ("
+      + Math.round((dernierPoids / (5 * 1024 * 1024)) * 100) + "% utilisé).\n\n" + detailPoidsTexte());
+  });
+}
+
 function saveData(){
   syncActiveOp();
   const payload = payloadSuivi();
@@ -2619,6 +2718,7 @@ function saveData(){
     quotaPanneSignalee = false;
     renderBandeauStockage();
     verifierPoids(payload.length);
+    renderPoidsFooter(payload.length);
     pushHistory();
     writeBackupToFolder();
   }catch(e){
@@ -2631,6 +2731,7 @@ function saveData(){
         quotaPanneSignalee = false;
         renderBandeauStockage();
         verifierPoids(payload.length);
+        renderPoidsFooter(payload.length);
         unexported = true;
         updateSaveUI();
         return;
@@ -3581,6 +3682,21 @@ function baselineScenario(){
    pas decouvert apres. */
 function promouvoirEnProduction(sc){
   if(sc.baseline && sc.statut === "serie") return true; // deja en place
+  // garde-fou double comptage (v4.5) : un scenario du meme nom deja en serie sur la meme
+  // ligne dans un autre projet = le tableau de bord comptera le gain annuel deux fois pour
+  // un seul changement physique. On ne bloque pas (le nom peut mentir), mais on ne laisse
+  // pas passer en silence -- c'est le chiffre qui part en reunion.
+  if((projets || []).length > 1){
+    const homonymes = avertissementSerieHomonymes(sc);
+    if(homonymes.length){
+      const ok2 = confirm(
+        `« ${sc.name} » passe en série ici, mais un scénario du même nom est déjà en série sur la même ligne dans :\n\n` +
+        homonymes.join("\n") +
+        `\n\nSi c'est le même changement physique suivi deux fois, le gain annuel sera compté DEUX FOIS dans le tableau de bord (une fois par projet).\n\nGardez « en série » dans un seul projet si c'est le même optimisation.\n\nOK = passer en série ici quand même`
+      );
+      if(!ok2) return false;
+    }
+  }
   const ancien = data.find(s => s.baseline && s.id !== sc.id);
   if(ancien){
     if(!confirm(`Faire de « ${sc.name} » le scénario en production ?\n\nIl remplace « ${ancien.name} » comme scénario de référence (★) — son statut passera à « Validé ».`)) return false;
@@ -6805,11 +6921,27 @@ function renderProjets(){
 }
 
 function creerProjet(){
-  const nom = prompt(`Nom du nouveau projet — ce qu'il regroupe, pas une machine :
-(ex. « Coût & qualité EMAG 1 », « Essais Step 3 »)`, "");
-  if(nom === null) return;
+  // v4.5 : panneau dedie plutot que prompt() natif — meme famille visuelle que le panneau
+  // projet, et le champ Description y trouve sa place des la creation.
+  const champ = document.getElementById("projetCreateNom");
+  const auto = document.getElementById("projetCreateAutoTag");
+  if(!champ) return;
+  champ.value = "";
+  const nb = (data || []).length;
+  const l = getActiveLigne();
+  if(auto){
+    auto.textContent = nb
+      ? "Seront rattachés automatiquement : les " + nb + " scénario(s) de l'OP ouvert (" + ((l && l.nom) || "cette ligne") + " › " + ((getActiveOp() || {}).nom || "OP") + "). Retirez ensuite les étiquettes qui n'ont rien à voir, ou gardez-les toutes."
+      : "Aucun scénario dans l'OP ouvert : le projet démarrera vide — vous étiquetterez ses scénarios au fur et à mesure.";
+  }
+  ouvrirPanneau("projetCreatePanel");
+  champ.focus();
+}
+function validerCreationProjet(){
+  const champ = document.getElementById("projetCreateNom");
+  const nom = (champ ? champ.value : "") || "";
   const pj = normalizeProjet({
-    nom: (nom || "").trim() || "Nouveau projet",
+    nom: nom.trim() || "Nouveau projet",
     creePar: auteurNom || "",
     creeLe: new Date().toISOString().slice(0,10),
     // couleur d'identite assignee une fois pour toutes, ici, a la creation -- jamais
@@ -6826,6 +6958,7 @@ function creerProjet(){
   projets.push(pj);
   activeProjetId = pj.id;
   saveData();
+  fermerPanneaux();
   ouvrirProjetInfo(pj.id);
   render();
 }
@@ -6853,7 +6986,12 @@ function ouvrirProjetInfo(id){
   const st = statsProjet(pj);
   document.getElementById("projetMeta").textContent =
     (pj.creeLe ? "Créé le " + pj.creeLe + (pj.creePar ? " par " + pj.creePar : "") + " · " : "")
-    + st.scenarios + " scénario(s) étiqueté(s) sur " + st.lignes + " ligne(s), " + st.essais + " essai(s).";
+    + st.scenarios + " scénario(s) étiqueté(s) sur " + st.lignes + " ligne(s), " + st.essais + " essai(s)."
+    // v4.5 : un projet fraichement cree a rattache d'office les scenarios de l'OP ouvert —
+    // il faut le DIRE, sinon l'utilisateur ne sait pas que son projet "contient" deja quelque chose
+    + (pj.creeLe === new Date().toISOString().slice(0,10) && st.scenarios
+        ? " " + st.scenarios + " scénario(s) rattaché(s) automatiquement à la création — ajustez les étiquettes si certains n'ont rien à voir."
+        : "");
   ouvrirPanneau("projetInfoPanel");
 }
 
@@ -8012,6 +8150,10 @@ document.getElementById("projetResponsable").addEventListener("change", (e) => {
 });
 document.getElementById("projetInfoClose").addEventListener("click", () => { enregistrerProjetInfo(); fermerPanneaux(); });
 document.getElementById("projetSupprimer").addEventListener("click", supprimerProjetActif);
+/* creation projet (v4.5) : panneau dedie, Enter valide, echap/annuler ferme */
+document.getElementById("projetCreateGo").addEventListener("click", validerCreationProjet);
+document.getElementById("projetCreateAnnuler").addEventListener("click", fermerPanneaux);
+document.getElementById("projetCreateNom").addEventListener("keydown", (e) => { if(e.key === "Enter") validerCreationProjet(); });
 document.getElementById("optionsClose").addEventListener("click", fermerPanneaux);
 
 /* fiche outil (PDF ou image) : n° d'outils et trajectoires par logement, par OP.
@@ -8068,6 +8210,11 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""))) ret
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.5.0", date:"09/09/2026", points:[
+    "<b>Protection du gain annuel.</b> Deux projets peuvent décrire le même changement physique sur la même machine : si deux scénarios du même nom passent « en série » dans des projets différents, l'outil vous prévient maintenant au moment du passage en série, et un bandeau dans le tableau de bord (vue tous projets) le signale en continu — sans quoi le même gain était compté deux fois.",
+    "<b>Le poids du suivi, visible en permanence.</b> Une pastille en pied de page affiche en continu la place que prend votre suivi dans la mémoire du navigateur (~5 Mo) : ambre puis rouge à l'approche de la limite, avec le détail et les conseils d'allègement au clic. Plus besoin d'attendre l'alerte pour agir.",
+    "<b>Créer un projet, plus confortable.</b> Fini la petite fenêtre système : un panneau avec champ dédié, qui annonce combien de scénarios seront rattachés automatiquement — et le panneau du projet vous le rappelle après création."
+  ]},
   { version:"4.4.0", date:"08/09/2026", points:[
     "<b>Chaque OP a un seul « scénario en production » (★), qui s'affiche toujours.</b> Jusqu'ici, rien n'empêchait le badge ★ (scénario de référence) et le statut « En série » de diverger — deux notions qui, dans les faits, désignent la même chose : ce qui tourne réellement en série sur la machine. Elles sont maintenant unifiées : le scénario ★ est verrouillé sur « En série », impossible de lui donner un autre statut sans d'abord désigner un autre scénario comme référence.",
     "<b>Désigner un nouveau scénario en production rétrograde l'ancien</b>, avec une confirmation qui l'annonce avant de le faire : l'ancien passe en « Validé » (pas « Abandonné » — il n'a rien raté, il a juste été remplacé).",
@@ -8089,7 +8236,7 @@ const NOUVEAUTES = [
     "Pour mémoire, déjà possible sans rien changer : un scénario peut appartenir à plusieurs projets, et un projet peut couvrir plusieurs lignes — le modèle par étiquettes (v4.1) le permettait nativement."
   ]},
   { version:"4.1.1", date:"08/09/2026", points:[
-    "<b>Correctif discret mais important.</b> Dans un cas rare (deux créations dans la même fraction de seconde — par exemple un double-clic), deux scénarios pouvaient recevoir le même identifiant interne et l'un masquait l'autre. C'est corrigé : chaque scénario, ligne, référence ou OP créé désormais porte un identifiant unique, y compris par double-clic ou en série."
+    "<b>Correctif discret mais important.</b> Dans un cas rare (deux créations dans la même fraction de seconde — par exemple un double-clic), deux scénarios pouvaient recevoir le même identifiant interne et l'un masquait l'autre. C'est corrigé : chaque scénario, ligne, référence ou OP créé désormais porte un identifiant unique, y compris par double-clic ou en série.",
     "Les cartes de projet en haut de l'écran se limitent maintenant à ceux qui concernent la ligne ouverte — jusqu'ici, tous les projets s'affichaient partout, même ceux qui n'avaient rien à voir avec la ligne regardée. Un projet qui touche plusieurs lignes (ou tout juste créé, sans scénario encore rattaché) reste visible partout, et le lien « Voir tous les projets » permet de repasser en vue complète à tout moment."
   ]},
   { version:"4.1.0", date:"08/09/2026", points:[
@@ -8412,6 +8559,19 @@ function renderDashboard(){
   wrap.innerHTML = `
     <h3>Tableau de bord</h3>
     ${filtreHTML}
+    ${(() => {
+      // bandeau d'avertissement (v4.5) : vue tous projets, des scenarios du MEME NOM en
+      // serie sur la MEME ligne mais etiquetes dans plusieurs projets = peut-etre le meme
+      // changement physique suivi deux fois, et le gain annuel s'additionne sans le savoir
+      if(pjFiltre || projets.length < 2) return "";
+      const hom = scenariosSerieHomonymes();
+      if(!hom.length) return "";
+      return `<div class="db-alerte-homonymes">
+        <b>Scénarios du même nom « en série » sur une même ligne, dans plusieurs projets :</b>
+        ${hom.map(x => escapeAttr(x.nom + " (" + x.ligne + ") — " + [...new Set(x.projets)].join(", "))).join(" · ")}<br>
+        Le gain annuel s'additionne projet par projet : si c'est le même changement physique suivi deux fois, il est compté deux fois. Gardez « en série » dans un seul projet.
+      </div>`;
+    })()}
     <p class="panel-hint">${pjFiltre ? `Scénarios étiquetés dans « ${escapeAttr(pjFiltre.nom)} » uniquement.` : "Toutes les lignes, références et OP du fichier."} Les gains annuels n'apparaissent que pour les références dont le volume de production est renseigné (module <b>Volume annuel</b> dans Options).</p>
     ${kpis}
     ${sections.join("") || `<p class="panel-hint">Aucun scénario ${pjFiltre ? "étiqueté dans ce projet" : "enregistré"}.</p>`}
@@ -8530,6 +8690,8 @@ updateSaveUI();
 updateRestoreUI();
 updateRevisionUI();
 document.getElementById("footToolName").textContent = "Suivi_optimisation_SPK v" + TOOL_VERSION + " — SPK by CeramTec";
+// pastille poids : rendue des le chargement (le suivi vient d'etre lu, on connait sa taille)
+try{ renderPoidsFooter((localStorage.getItem(STORAGE_KEY) || "").length); installerClickPoids(); }catch(e){}
 // en dernier : l'ecran doit etre pret derriere la fenetre des nouveautes
 verifierNouveautes();
 </script>
@@ -8949,6 +9111,54 @@ function runTests(){
     ok("scenariosVisibles : le scenario en production reste visible meme non etiquete dans le projet actif", scenariosVisibles().map(s=>s.id).sort(), ["scP1","scP2"].sort());
     ok("projetContientScenario : le baseline visible mais non etiquete ne compte pas dans le projet", projetContientScenario(pjSansBaseline, "lP","rP","oP","scP2"), false);
     activeProjetId = null;
+
+    /* ---- garde-fous homonymes (v4.5) -----------------------------------------------
+       Deux scenarios du meme nom "en serie" sur la meme ligne, etiquetes dans deux projets
+       differents : le tableau de bord additionne deux fois le meme gain physique. La
+       detection doit etre exacte (casse/espaces) et ne rien signaler sur les cas sains. */
+    const memLigne = () => normalizeLigne({ id:"lH", nom:"EMAG 1", references:[
+      { id:"rH", nom:"Ref", ops:[ { id:"oH", nom:"OP10", config:{}, scenarios:[
+        normalizeScenario({ id:"sH1", name:"Plaquette NG", statut:"serie", statutDate:"2026-09-01" }),
+        normalizeScenario({ id:"sH2", name:"Autre chose", statut:"serie", statutDate:"2026-09-01" }),
+        normalizeScenario({ id:"sH3", name:"plaquette ng", statut:"essai" }) // meme nom, casse diff, pas en serie
+      ] } ] }
+    ] });
+    const memoProjetsH = projets;
+    const ligneH = memLigne();
+    lignes = [ligneH];
+    const pjH1 = normalizeProjet({ id:"pjH1", nom:"Projet H1", tags:[{ ligneId:"lH", referenceId:"rH", opId:"oH", scenarioId:"sH1" }] });
+    const pjH2 = normalizeProjet({ id:"pjH2", nom:"Projet H2", tags:[{ ligneId:"lH", referenceId:"rH", opId:"oH", scenarioId:"sH1" }] }); // meme scenario dans 2 projets : pas un homonyme (c'est le meme objet)
+    projets = [pjH1, pjH2];
+    ok("homonymes : le meme scenario etiquete dans 2 projets n'est PAS un homonyme", scenariosSerieHomonymes().length, 0);
+    // deux scenarios DIFFERENTS du meme nom, en serie, sur la meme ligne : le vrai piege
+    const ligneH2 = memLigne();
+    const sH1bis = normalizeScenario({ id:"sH1bis", name:"  plaquette ng ", statut:"serie", statutDate:"2026-09-02" }); // casse+espaces : homonyme quand meme
+    ligneH2.references[0].ops[0].scenarios.push(sH1bis);
+    lignes = [ligneH2];
+    const pjH3 = normalizeProjet({ id:"pjH3", nom:"Projet H3", tags:[{ ligneId:"lH", referenceId:"rH", opId:"oH", scenarioId:"sH1" }] });
+    const pjH4 = normalizeProjet({ id:"pjH4", nom:"Projet H4", tags:[{ ligneId:"lH", referenceId:"rH", opId:"oH", scenarioId:"sH1bis" }] });
+    projets = [pjH3, pjH4];
+    const homTrouves = scenariosSerieHomonymes();
+    ok("homonymes : deux scenarios homonymes en serie dans 2 projets detectes", homTrouves.length, 1);
+    ok("homonymes : les deux projets sont cites", homTrouves.length && homTrouves[0].projets.length, 2);
+    ok("homonymes : un seul scenario en serie, pas de signalement", (() => {
+      const pjSeul = normalizeProjet({ id:"pjSeul", nom:"Seul", tags:[{ ligneId:"lH", referenceId:"rH", opId:"oH", scenarioId:"sH1" }] });
+      projets = [pjSeul];
+      const r = scenariosSerieHomonymes().length;
+      projets = [pjH3, pjH4];
+      return r;
+    })(), 0);
+    // avertissementSerieHomonymes : le scenario qui va passer en serie vs un homonyme deja en serie
+    ok("avertissement : le scenario homonyme deja en serie est cite avec son projet", (() => {
+      activeLigneId = "lH"; activeReferenceId = "rH"; activeOpId = "oH";
+      const res = avertissementSerieHomonymes(sH1bis);
+      return res.length === 1 && /Projet H3/.test(res[0]) && /Plaquette NG/.test(res[0]);
+    })(), true);
+    ok("avertissement : un scenario sans homonyme en serie ne declenche rien", (() => {
+      const res = avertissementSerieHomonymes(ligneH2.references[0].ops[0].scenarios[1]); // sH2 « Autre chose »
+      return res.length === 0;
+    })(), true);
+    projets = memoProjetsH;
 
     /* ---- plan d'outil (v3.18) ----------------------------------------------------
        Un plan perdu au rechargement serait invisible : normalizeOutil doit le conserver
