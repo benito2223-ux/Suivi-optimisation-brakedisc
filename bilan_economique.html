@@ -441,6 +441,46 @@ input.cell.sub{font-size:10.5px; color:var(--ink-faint);}
 .foot-cell .cb-item{color:var(--fill-ink-soft);}
 .foot-cell .cb-item b{color:var(--fill-ink);}
 
+/* ---- SELECTEUR DE PROJET (v4.0) ----
+   Des cartes, pas une quatrieme barre grise : le projet est un changement de contexte
+   complet (on ne compare pas EMAG 1 avec Step 3), pas une selection de plus au meme
+   niveau que la ligne ou l'OP. La difference d'echelle visuelle dit exactement ca. */
+.projets-bandeau{margin-bottom:16px;}
+.pj-entete{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:9px;}
+.pj-entete h4{margin:0; font-family:var(--font-disp); font-weight:800; font-size:15px;
+  letter-spacing:-.01em; color:var(--ink);}
+.pj-compte{font-family:var(--font-mono); font-size:11.5px; color:var(--ink-faint); margin-right:auto;}
+.pj-grille{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:10px;}
+.pj-carte{display:flex; flex-direction:column; align-items:flex-start; gap:5px; text-align:left;
+  background:var(--surface); border:1px solid var(--border); border-left:4px solid var(--ink-faint);
+  border-radius:var(--radius); padding:12px 14px; cursor:pointer; font-family:var(--font-body);
+  transition:border-color .15s ease, box-shadow .15s ease, transform .15s ease;}
+.pj-carte:hover{transform:translateY(-1px); box-shadow:var(--shadow-card); border-left-color:var(--blue);}
+.pj-carte.active{border-color:var(--blue); border-left-color:var(--blue); background:var(--blue-bg);
+  box-shadow:0 0 0 2px var(--blue); cursor:default; transform:none;}
+.pj-carte.pj-termine{border-left-color:var(--green);}
+.pj-carte.pj-pause{border-left-color:var(--amber);}
+.pj-carte.pj-abandonne{border-left-color:var(--red); opacity:.72;}
+.pj-haut{display:flex; align-items:center; gap:8px; flex-wrap:wrap; width:100%;}
+.pj-nom{font-family:var(--font-disp); font-weight:800; font-size:15.5px; letter-spacing:-.015em; color:var(--ink);}
+.pj-carte.active .pj-nom{color:var(--blue-dark);}
+.pj-statut{font-family:var(--font-mono); font-size:10px; font-weight:700; letter-spacing:.04em;
+  text-transform:uppercase; padding:2px 7px; border-radius:var(--radius-sm);
+  background:var(--surface-alt); color:var(--ink-soft); border:1px solid var(--border);}
+.pj-carte.pj-termine .pj-statut{background:var(--green-bg); color:var(--green); border-color:var(--green);}
+.pj-carte.pj-pause .pj-statut{background:var(--amber-bg); color:var(--amber); border-color:var(--amber);}
+.pj-carte.pj-abandonne .pj-statut{background:var(--red-bg); color:var(--red); border-color:var(--red);}
+.pj-echeance{font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint); margin-left:auto; cursor:help;}
+.pj-pb{font-size:12.5px; color:var(--ink-soft); line-height:1.4;}
+.pj-chiffres{display:flex; flex-wrap:wrap; gap:4px 12px; font-family:var(--font-mono);
+  font-size:11.5px; color:var(--ink-faint); margin-top:2px;}
+.pj-chiffres b{color:var(--ink); font-weight:700;}
+.pj-serie b, .pj-serie{color:var(--blue-dark);}
+.pj-gain{font-family:var(--font-disp); font-weight:800; font-size:14px; letter-spacing:-.02em;}
+.pj-gain.pos{color:var(--green);} .pj-gain.neg{color:var(--red);}
+.pj-resp{font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint);}
+@media print{ .projets-bandeau{ display:none !important; } }
+
 /* onglets Ligne de production / Reference disque — controle segmente (piste grise, segment
    actif elevé en blanc/ombre douce) plutot que des rectangles bordes individuels : un seul
    repère visuel pour "la selection", pas une couleur de marque appliquee a chaque etat */
@@ -964,6 +1004,11 @@ select.log-equipe:focus{border-color:var(--blue); outline:none; background:var(-
 /* le gain acquis est la conclusion du tableau de bord : vert plein, pas un bleu de plus */
 .db-kpi-gain{background:var(--fill-good); border-color:var(--fill-good);}
 .db-kpi-gain .l, .db-kpi-gain .db-kpi-sub{color:var(--fill-good-ink-soft);}
+.db-portee{display:flex; gap:6px; margin:0 0 14px;}
+.db-projet-titre{font-family:var(--font-disp); font-weight:800; font-size:21px; color:var(--ink);
+  margin:26px 0 12px; padding-bottom:8px; border-bottom:3px solid var(--ink); letter-spacing:-.02em;
+  display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;}
+.db-projet-titre:first-child{margin-top:0;}
 .db-ligne{margin-bottom:26px;}
 .db-ligne-titre{font-family:var(--font-disp); font-weight:800; font-size:19px; color:var(--ink); margin:0 0 10px;
   padding-bottom:7px; border-bottom:2px solid var(--blue); display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;}
@@ -1486,6 +1531,7 @@ body.atelier-on{overflow:hidden;}
   </div>
 
   <div class="ctx-rail" id="ctxRail">
+    <div class="projets-bandeau" id="projetsBandeau"></div>
     <div class="ligne-strip" id="ligneStrip"></div>
     <div class="reference-strip" id="referenceStrip"></div>
     <div class="reference-strip" id="opStrip"></div>
@@ -1502,6 +1548,43 @@ body.atelier-on{overflow:hidden;}
     <h3>Importer un suivi</h3>
     <div id="importPanelBody"></div>
     <div class="panel-actions"><button class="ghost" id="importAnnuler">Fermer</button></div>
+  </div>
+  <div class="panel" id="projetInfoPanel" hidden>
+    <h3>Projet</h3>
+    <p class="panel-hint">Un projet regroupe tout ce qui concerne une même problématique : ses lignes, ses références, ses OP, ses scénarios et ses essais. Les projets ne se mélangent jamais entre eux.</p>
+    <div class="opt-field on" style="padding-left:0;">
+      <label for="projetNom">Nom du projet</label>
+      <input type="text" id="projetNom" style="width:100%; text-align:left; font-family:var(--font-body);" placeholder="ex. Coût &amp; qualité EMAG 1">
+    </div>
+    <div class="opt-field on" style="padding-left:0;">
+      <label for="projetProblematique">Problématique</label>
+      <input type="text" id="projetProblematique" style="width:100%; text-align:left; font-family:var(--font-body);" placeholder="ex. réduire le coût outil sans dégrader le battement">
+      <span class="opt-note">Ce qu'on cherche à résoudre. C'est ce qui distingue deux projets menés sur la même machine.</span>
+    </div>
+    <div class="opt-field on" style="padding-left:0;">
+      <label for="projetResponsable">Pilote du projet</label>
+      <input type="text" id="projetResponsable" style="width:100%; text-align:left; font-family:var(--font-body);" placeholder="ex. Julien (technicien process Step 3)">
+      <span class="opt-note">Qui mène ce projet précis — pas forcément la même personne d'un projet à l'autre.</span>
+    </div>
+    <div class="opt-field on" style="padding-left:0;">
+      <label for="projetStatut">Statut</label>
+      <select id="projetStatut" class="statut-select" style="text-transform:none; letter-spacing:0; font-size:13px;">
+        <option value="encours">En cours</option>
+        <option value="pause">En pause</option>
+        <option value="termine">Terminé</option>
+        <option value="abandonne">Abandonné</option>
+      </select>
+    </div>
+    <div class="opt-field on" style="padding-left:0;">
+      <label for="projetDateCible">Échéance visée (facultatif)</label>
+      <input type="date" id="projetDateCible" style="width:170px; text-align:left; font-family:var(--font-body);">
+      <span class="opt-note">Affichée à titre indicatif sur la carte. L'outil ne déclare jamais un projet « en retard » : dans un atelier, un essai glisse pour des raisons subies.</span>
+    </div>
+    <p class="panel-hint" id="projetMeta" style="margin-top:14px;"></p>
+    <div class="panel-actions">
+      <button class="danger" id="projetSupprimer">Supprimer ce projet</button>
+      <button class="primary" id="projetInfoClose">Fermer</button>
+    </div>
   </div>
   <div class="panel" id="ligneInfoPanel" hidden>
     <h3 id="ligneInfoTitle">Informations de ligne</h3>
@@ -1542,7 +1625,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "3.19.1";
+const TOOL_VERSION = "4.0.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -1676,7 +1759,7 @@ async function writeBackupToFolder(){
   try{
     const backupsDir = await photosDirHandle.getDirectoryHandle("backups", { create: true });
     const stamp = new Date().toISOString().replace(/[:.]/g,"-");
-    const payload = { outil:"SPK Suivi optimisation", format:5, toolVersion:TOOL_VERSION, revision, exporteLe:new Date().toISOString(), exportePar:auteurNom, lignes, backlog };
+    const payload = { outil:"SPK Suivi optimisation", format:6, toolVersion:TOOL_VERSION, revision, exporteLe:new Date().toISOString(), exportePar:auteurNom, projets, backlog, activeProjetId };
     const fh = await backupsDir.getFileHandle(stamp + ".json", { create: true });
     const w = await fh.createWritable();
     await w.write(JSON.stringify(payload));
@@ -1767,6 +1850,25 @@ function defaultLignes(){
 }
 
 /* ---- hierarchie Ligne de production > Reference disque > OP > Scenario > Essai > Prelevement ---- */
+/* ---- PROJETS (v4.0) ------------------------------------------------------------------
+   Nouveau niveau racine, au-dessus des lignes de production. Un projet = une campagne
+   d'optimisation cloisonnee : "coût & qualité sur EMAG 1" d'un cote, les essais de Julien
+   sur Step 3 de l'autre, sans que leurs scenarios, leurs syntheses et leurs tableaux de
+   bord se melangent.
+
+   Choix d'architecture : `lignes` reste la variable globale "lignes du PROJET ACTIF",
+   exactement comme `data` est deja "scenarios de l'OP active". Les ~90 endroits du code
+   qui manipulent `lignes` continuent donc de fonctionner sans modification. La contrepartie
+   est la meme que pour data/config : quand `lignes` est REASSIGNE (filter, defaultLignes...)
+   il faut le recopier dans le projet — c'est le role de syncActiveProjet(), appele par
+   saveData() comme syncActiveOp() l'est deja.
+
+   Une ligne appartient a UN SEUL projet (arbre, pas graphe). Mettre EMAG 1 dans deux
+   projets suppose de la dupliquer, et les scenarios divergeront ensuite. C'est le choix
+   difficile a defaire : il correspond a la demande telle qu'elle a ete formulee, et un
+   modele en graphe coutait trois fois le prix pour un besoin qui n'existe pas encore. */
+let projets = [];
+let activeProjetId = null;
 let lignes = [];
 let backlog = [];
 let revision = 0;
@@ -1812,6 +1914,113 @@ function normalizeReference(r){
   return { id: r.id || ("r"+Math.random().toString(36).slice(2)), nom: r.nom || "",
            productionAnnuelle: r.productionAnnuelle ?? "", ops };
 }
+const PROJET_STATUTS = { encours:"En cours", pause:"En pause", termine:"Terminé", abandonne:"Abandonné" };
+
+function comptePrelevementsProjets(){
+  return projets.reduce((n, pj) => n + comptePrelevements(pj.lignes || []), 0);
+}
+
+function normalizeProjet(p){
+  return Object.assign({
+    id: p.id || ("pj"+Math.random().toString(36).slice(2)),
+    nom: "",
+    problematique: "",   // ce qu'on cherche a resoudre : "coût et qualité", "état de surface"...
+    responsable: "",     // qui pilote CE projet — pas forcement celui qui pilote les autres
+    statut: "encours",
+    dateCible: "",       // echeance visee, facultative : sert a ordonner, pas a sanctionner
+    creePar: "",
+    creeLe: ""
+  }, p, {
+    lignes: (p.lignes || []).map(normalizeLigne)
+  });
+}
+
+/* Migration format 5 -> 6. Un fichier au format 5 a ses lignes en racine : elles entrent
+   toutes dans un projet unique. Le nom reprend celui de la premiere ligne — "Optimisation
+   EMAG 1" plutot qu'un "Projet 1" anonyme, pour que personne n'ait a deviner ce qu'il
+   contient. Renommable en un clic. */
+function projetsDepuisLignes(lignesBrutes, meta){
+  meta = meta || {};
+  const premiere = lignesBrutes[0];
+  return [normalizeProjet({
+    id: "pj_initial",
+    nom: premiere && premiere.nom ? "Optimisation " + premiere.nom : "Projet initial",
+    problematique: "Coût et qualité",
+    responsable: meta.responsable || "",
+    creePar: meta.creePar || "",
+    creeLe: meta.creeLe || new Date().toISOString().slice(0,10),
+    lignes: lignesBrutes
+  })];
+}
+
+/* Lit indifferemment un arbre format 6 (projets) ou format 5 (lignes en racine). */
+function lireProjets(parsed){
+  if(parsed && Array.isArray(parsed.projets) && parsed.projets.length){
+    return { projets: parsed.projets.map(normalizeProjet), migre: false };
+  }
+  if(parsed && Array.isArray(parsed.lignes) && parsed.lignes.length){
+    return { projets: projetsDepuisLignes(parsed.lignes.map(normalizeLigne), { creePar: parsed.exportePar }), migre: true };
+  }
+  return null;
+}
+
+/* Repose un arbre complet (projets, selections, scenarios) depuis un instantane ou un
+   fichier importe. Accepte indifferemment le format 5 et le format 6 : les points de reprise
+   pris avant la v4 n'ont que des `lignes`, ils doivent rester restaurables. */
+function appliquerArbre(source){
+  const lu = lireProjets(source);
+  projets = lu ? lu.projets : projetsDepuisLignes(defaultLignes().map(normalizeLigne));
+  const pj = projets.find(x => x.id === source.activeProjetId) || projets[0];
+  activeProjetId = pj.id;
+  lignes = pj.lignes;
+  if(!lignes.length){ lignes = defaultLignes().map(normalizeLigne); pj.lignes = lignes; }
+  const l = lignes.find(x => x.id === source.activeLigneId) || lignes[0];
+  activeLigneId = l.id;
+  const r = l.references.find(x => x.id === source.activeReferenceId) || l.references[0];
+  activeReferenceId = r ? r.id : null;
+  const op = r ? (r.ops.find(x => x.id === source.activeOpId) || r.ops[0]) : null;
+  activeOpId = op ? op.id : null;
+  data = op ? op.scenarios : [];
+  config = op ? op.config : Object.assign({}, defaultConfig);
+  if(!data.find(x => x.baseline) && data.length) data[0].baseline = true;
+  activeId = (data.find(x => x.id === source.activeScenarioId) ? source.activeScenarioId : (data[0] ? data[0].id : null));
+}
+
+function getActiveProjet(){ return projets.find(p => p.id === activeProjetId) || projets[0]; }
+
+/* `lignes` a pu etre reassigne en bloc (suppression, reset, import) : on le recopie dans le
+   projet actif pour que l'arbre reste coherent, comme syncActiveOp() le fait pour data. */
+function syncActiveProjet(){
+  // filet : un arbre sans projet ne doit jamais exister (reset partiel, donnees corrompues)
+  if(!projets.length){
+    projets = projetsDepuisLignes(lignes.length ? lignes : defaultLignes().map(normalizeLigne));
+    activeProjetId = projets[0].id;
+    lignes = projets[0].lignes;
+    return;
+  }
+  const pj = getActiveProjet();
+  if(pj){ activeProjetId = pj.id; pj.lignes = lignes; }
+}
+
+/* bascule de projet : recharge lignes/reference/OP/scenario sur le premier de chaque niveau */
+function ouvrirProjet(id){
+  syncActiveOp(); syncActiveProjet();
+  const pj = projets.find(x => x.id === id);
+  if(!pj) return;
+  activeProjetId = pj.id;
+  lignes = pj.lignes;
+  const l = lignes[0];
+  activeLigneId = l ? l.id : null;
+  const r = l && l.references[0];
+  activeReferenceId = r ? r.id : null;
+  const op = r && r.ops[0];
+  activeOpId = op ? op.id : null;
+  data = op ? op.scenarios : [];
+  config = op ? op.config : Object.assign({}, defaultConfig);
+  activeId = data[0] ? data[0].id : null;
+  saveData(); render();
+}
+
 function normalizeLigne(l){
   return Object.assign({ id: l.id || ("l"+Math.random().toString(36).slice(2)), nom:"", coutHoraire:"", observations:"", maintenanceDate:"", maintenanceType:"" }, l, {
     references: (l.references || []).map(normalizeReference)
@@ -2044,8 +2253,15 @@ function loadAll(){
   if(raw){
     try{
       const parsed = JSON.parse(raw);
-      if(parsed && Array.isArray(parsed.lignes) && parsed.lignes.length){
-        lignes = parsed.lignes.map(normalizeLigne);
+      const lu = lireProjets(parsed);
+      if(lu){
+        // migration 5 -> 6 : on pose un point de reprise AVANT de transformer l'arbre.
+        // Une migration qui se passe mal doit toujours pouvoir se defaire.
+        if(lu.migre) backupSnapshot("Avant passage aux projets (format 5 → 6)");
+        projets = lu.projets;
+        const pj = projets.find(x => x.id === parsed.activeProjetId) || projets[0];
+        activeProjetId = pj.id;
+        lignes = pj.lignes;
         backlog = (parsed.backlog || []).map(normalizeBacklogItem);
         revision = parsed.revision || 0;
         const l = lignes.find(x => x.id === parsed.activeLigneId) || lignes[0];
@@ -2077,6 +2293,8 @@ function loadAll(){
                 scenarios: secours.map(normalizeScenario) };
               const ref2 = { id: "r"+Date.now(), nom: "DV 356x26 RPI", ops: [op2] };
               lignes = [{ id: "l"+Date.now(), nom: "EMAG 1", references: [ref2] }];
+              projets = projetsDepuisLignes(lignes.map(normalizeLigne));
+              activeProjetId = projets[0].id; lignes = projets[0].lignes;
               backlog = [];
               activeLigneId = lignes[0].id; activeReferenceId = ref2.id; activeOpId = op2.id;
               data = op2.scenarios; config = op2.config;
@@ -2103,6 +2321,8 @@ function loadAll(){
     if(migrationTolerance) migrerTolerancesOp(op);
     const ref = { id: "r" + Date.now(), nom: "DV 356x26 RPI", ops: [op] };
     lignes = [{ id: "l" + Date.now(), nom: "EMAG 1", references: [ref] }];
+    projets = projetsDepuisLignes(lignes.map(normalizeLigne));
+    activeProjetId = projets[0].id; lignes = projets[0].lignes;
     backlog = [];
     activeLigneId = lignes[0].id;
     activeReferenceId = ref.id;
@@ -2115,8 +2335,10 @@ function loadAll(){
                 // n'a par ailleurs declenche de sauvegarde
     return;
   }
-  // premiere utilisation : donnees de depart
-  lignes = defaultLignes();
+  // premiere utilisation : donnees de depart, dans un projet initial
+  projets = projetsDepuisLignes(defaultLignes().map(normalizeLigne));
+  activeProjetId = projets[0].id;
+  lignes = projets[0].lignes;
   backlog = [];
   activeLigneId = lignes[0].id;
   activeReferenceId = lignes[0].references[0].id;
@@ -2149,7 +2371,7 @@ let quotaAlerteVue = false;
 let quotaPanneSignalee = false;
 
 function payloadSuivi(){
-  return JSON.stringify({ lignes, backlog, revision, activeLigneId, activeReferenceId, activeOpId, activeScenarioId: activeId });
+  return JSON.stringify({ format:6, projets, backlog, revision, activeProjetId, activeLigneId, activeReferenceId, activeOpId, activeScenarioId: activeId });
 }
 
 /* Ce qui pese vraiment, nomme, pour que l'utilisateur puisse agir plutot que subir. */
@@ -2219,6 +2441,7 @@ Le navigateur accorde environ 5 Mo à cet outil, mesures et pièces jointes comp
 
 function saveData(){
   syncActiveOp();
+  syncActiveProjet();
   const payload = payloadSuivi();
   const ecrire = () => {
     localStorage.setItem(STORAGE_KEY, payload);
@@ -2281,7 +2504,7 @@ function pushHistory(){
   lastHistoryAt = now;
   let hist = [];
   try{ hist = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }catch(e){}
-  hist.push({ savedAt: new Date().toISOString(), count: comptePrelevements(lignes), lignes, backlog, revision });
+  hist.push({ savedAt: new Date().toISOString(), count: comptePrelevementsProjets(), projets, backlog, revision, activeProjetId });
   if(hist.length > 5) hist = hist.slice(hist.length - 5);
   try{ localStorage.setItem(HISTORY_KEY, JSON.stringify(hist)); }catch(e){}
 }
@@ -2320,18 +2543,9 @@ function renderHistoryPanel(){
       if(!h) return;
       if(!confirm("Restaurer l'état enregistré le " + new Date(h.savedAt).toLocaleString("fr-FR") + " (" + h.count + " prélèvement(s)) ?\n\nCela remplacera TOUTES les données actuellement affichées (toutes lignes et références confondues).\n\n(Un « ↺ Restaurer » restera disponible pour annuler ce geste.)")) return;
       backupSnapshot("Restauration depuis l'historique (" + new Date(h.savedAt).toLocaleString("fr-FR") + ")");
-      lignes = (h.lignes || []).map(normalizeLigne);
+      appliquerArbre(h);
       backlog = (h.backlog || []).map(normalizeBacklogItem);
       revision = h.revision || 0;
-      if(!lignes.length) lignes = defaultLignes();
-      activeLigneId = lignes[0].id;
-      const r = lignes[0].references[0];
-      activeReferenceId = r ? r.id : null;
-      const op = r ? r.ops[0] : null;
-      activeOpId = op ? op.id : null;
-      data = op ? op.scenarios : [];
-      config = op ? op.config : Object.assign({}, defaultConfig);
-      activeId = data[0] ? data[0].id : null;
       saveData();
       updateRestoreUI();
       fermerPanneaux();
@@ -2381,7 +2595,7 @@ const BACKUP_KEY = STORAGE_KEY + "_backup";
 function backupSnapshot(label){
   syncActiveOp();
   try{
-    localStorage.setItem(BACKUP_KEY, JSON.stringify({ savedAt: new Date().toISOString(), label, lignes, backlog, revision }));
+    localStorage.setItem(BACKUP_KEY, JSON.stringify({ savedAt: new Date().toISOString(), label, projets, backlog, revision, activeProjetId }));
   }catch(e){}
 }
 function hasBackup(){
@@ -2393,19 +2607,9 @@ function restoreBackup(){
   if(!snap){ alert("Aucun état précédent à restaurer."); updateRestoreUI(); return; }
   const quand = new Date(snap.savedAt).toLocaleString("fr-FR");
   if(!confirm("Restaurer l'état d'avant « " + (snap.label || "la dernière opération") + " » (" + quand + ") ?\n\nCela remplacera les données actuellement affichées (toutes lignes et références confondues).")) return;
-  lignes = (snap.lignes || []).map(normalizeLigne);
+  appliquerArbre(snap);
   backlog = (snap.backlog || []).map(normalizeBacklogItem);
   revision = snap.revision || 0;
-  if(!lignes.length) lignes = defaultLignes();
-  activeLigneId = lignes[0].id;
-  const r = lignes[0].references[0];
-  activeReferenceId = r ? r.id : null;
-  const op = r ? r.ops[0] : null;
-  activeOpId = op ? op.id : null;
-  data = op ? op.scenarios : [];
-  config = op ? op.config : Object.assign({}, defaultConfig);
-  if(!data.find(s => s.baseline) && data.length) data[0].baseline = true;
-  activeId = data[0] ? data[0].id : null;
   try{ localStorage.removeItem(BACKUP_KEY); }catch(e){}
   recomputeCycles();
   saveData();
@@ -2432,16 +2636,21 @@ try{ auteurNom = localStorage.getItem(AUTEUR_KEY) || ""; }catch(e){}
 
 function exportData(){
   syncActiveOp();
+  syncActiveProjet();
   revision += 1;
   const payload = {
     outil: "SPK Suivi optimisation",
-    format: 5,
+    // format 6 : l'arbre est desormais une liste de PROJETS. Un fichier au format 5 se
+    // recharge sans probleme (migration automatique), l'inverse n'est pas vrai : ce fichier
+    // ne s'ouvrira pas dans une version de l'outil anterieure a la 4.0.
+    format: 6,
     toolVersion: TOOL_VERSION,
     revision: revision,
     exporteLe: new Date().toISOString(),
     exportePar: auteurNom,
-    lignes: lignes,
+    projets: projets,
     backlog: backlog,
+    activeProjetId: activeProjetId,
     // onglet ouvert chez l'exportateur : permet a l'import de retomber directement
     // dessus (sinon, avec plusieurs lignes/references/OP, la personne qui importe
     // atterrit sur le premier onglet de chaque niveau et peut croire que des
@@ -2864,8 +3073,8 @@ function telechargerRapportEssai(sc, essai){
      garde alors la version locale et on la signale nommement — a l'utilisateur de trancher
      en regardant les deux fichiers.
    ============================================================================ */
-function fusionnerLignes(locales, entrantes){
-  const bilan = { lignes:0, references:0, ops:0, scenarios:0,
+function fusionnerLignes(locales, entrantes, bilanExterne, prefixe){
+  const bilan = bilanExterne || { projets:0, lignes:0, references:0, ops:0, scenarios:0,
                   essaisAjoutes:0, essaisMaj:0, essaisConserves:0, conflits:[] };
   const memeContenu = (a,b) => { try{ return JSON.stringify(a) === JSON.stringify(b); }catch(e){ return false; } };
 
@@ -2899,10 +3108,30 @@ function fusionnerLignes(locales, entrantes){
         (opE.scenarios || []).forEach(scE => {
           let scL = (opL.scenarios = opL.scenarios || []).find(x => x.id === scE.id);
           if(!scL){ opL.scenarios.push(scE); bilan.scenarios++; return; }
-          fusionnerEssais(scL, scE, [ligneL.nom, refL.nom, opL.nom, scL.name].filter(Boolean).join(" › "));
+          fusionnerEssais(scL, scE, [prefixe, ligneL.nom, refL.nom, opL.nom, scL.name].filter(Boolean).join(" › "));
         });
       });
     });
+  });
+  return bilan;
+}
+
+/* Fusion au niveau PROJET (v4.0). Meme regle qu'aux niveaux inferieurs : un projet inconnu
+   est ajoute en entier, un projet connu voit ses lignes fusionnees. Les proprietes du projet
+   lui-meme (nom, responsable, statut, echeance) ne sont jamais ecrasees par le fichier recu —
+   c'est du reglage local, comme les outils et les conditions de coupe.
+
+   Ce niveau prend toute son importance maintenant que plusieurs personnes saisissent en
+   parallele : Julien sur son projet, Matis sur le sien. Sans lui, fusionner deux fichiers
+   ferait disparaitre le projet de l'autre. */
+function fusionnerProjets(locaux, entrants){
+  const bilan = { projets:0, lignes:0, references:0, ops:0, scenarios:0,
+                  essaisAjoutes:0, essaisMaj:0, essaisConserves:0, conflits:[] };
+  (entrants || []).forEach(pjE => {
+    const pjL = locaux.find(x => x.id === pjE.id);
+    if(!pjL){ locaux.push(pjE); bilan.projets++; return; }
+    pjL.lignes = pjL.lignes || [];
+    fusionnerLignes(pjL.lignes, pjE.lignes || [], bilan, pjL.nom);
   });
   return bilan;
 }
@@ -2919,6 +3148,7 @@ function fusionnerBacklog(local, entrant){
 
 function bilanFusionHTML(b){
   const struct = [
+    b.projets && b.projets + " projet" + (b.projets>1?"s":""),
     b.lignes && b.lignes + " ligne" + (b.lignes>1?"s":""),
     b.references && b.references + " référence" + (b.references>1?"s":""),
     b.ops && b.ops + " OP",
@@ -2948,10 +3178,11 @@ function importData(file){
       return;
     }
 
-    let nouvellesLignes, nouveauBacklog, revisionEntrante;
-    if(parsed && Array.isArray(parsed.lignes) && parsed.lignes.length){
-      // format actuel : arbre Ligne > Reference
-      nouvellesLignes = parsed.lignes.map(normalizeLigne);
+    let nouveauxProjets, nouveauBacklog, revisionEntrante;
+    const luImport = lireProjets(parsed);
+    if(luImport){
+      // format 6 (projets) ou format 5 (lignes en racine, migre a la volee)
+      nouveauxProjets = luImport.projets;
       nouveauBacklog = (parsed.backlog || []).map(normalizeBacklogItem);
       revisionEntrante = parsed.revision || 0;
     } else {
@@ -2965,14 +3196,14 @@ function importData(file){
         config: Object.assign({}, defaultConfig, parsed.config || {}),
         scenarios: scenarios.map(normalizeScenario) };
       const ref = { id: "r"+Date.now(), nom: "DV 356x26 RPI", ops: [op] };
-      nouvellesLignes = [{ id: "l"+Date.now(), nom: "EMAG 1", references: [ref] }];
+      nouveauxProjets = projetsDepuisLignes([normalizeLigne({ id: "l"+Date.now(), nom: "EMAG 1", references: [ref] })]);
       nouveauBacklog = [];
       revisionEntrante = 0;
     }
 
     // Le choix fusionner/remplacer se fait dans un panneau : c'est une decision a
     // consequences, elle merite mieux qu'un confirm() ou "OK" voudrait dire "ecrase tout".
-    importEnAttente = { parsed, nouvellesLignes, nouveauBacklog, revisionEntrante };
+    importEnAttente = { parsed, nouveauxProjets, nouveauBacklog, revisionEntrante };
     ouvrirChoixImport();
   };
   reader.readAsText(file);
@@ -3049,21 +3280,25 @@ function ouvrirChoixImport(){
 }
 
 function appliquerImport(mode){
-  const { parsed, nouvellesLignes, nouveauBacklog, revisionEntrante } = importEnAttente;
+  const { parsed, nouveauxProjets, nouveauBacklog, revisionEntrante } = importEnAttente;
   backupSnapshot((mode === "fusion" ? "Fusionner" : "Importer") + " (révision " + (revisionEntrante || "—") + ")");
+  syncActiveOp(); syncActiveProjet();
 
   let bilan = null;
   if(mode === "fusion"){
-    bilan = fusionnerLignes(lignes, nouvellesLignes);
+    bilan = fusionnerProjets(projets, nouveauxProjets);
     bilan.backlog = fusionnerBacklog(backlog, nouveauBacklog);
     // la fusion produit un etat qui n'existe dans aucun des deux fichiers : elle merite sa
     // propre revision, sinon deux postes croiraient detenir la meme
     revision = Math.max(revision, revisionEntrante || 0) + 1;
   } else {
-    lignes = nouvellesLignes;
+    projets = nouveauxProjets;
     backlog = nouveauBacklog;
     revision = Math.max(revision, revisionEntrante || 0);
   }
+  const pjImport = projets.find(x => x.id === parsed.activeProjetId) || projets[0];
+  activeProjetId = pjImport.id;
+  lignes = pjImport.lignes;
 
   // on retombe sur l'onglet qu'avait l'exportateur (ligne > reference > OP > scenario),
   // s'il est bien present dans le fichier reçu ; sinon repli sur le tout premier de chaque niveau
@@ -6106,6 +6341,147 @@ function renderAll(){
 }
 
 /* ---- onglets Ligne de production / Reference disque ---- */
+/* ---- SELECTEUR DE PROJET (v4.0) -------------------------------------------------------
+   Matis demandait "quelque chose dans le style de ce que tu as fait pour les scenarios" :
+   des cartes, projet actif en avant. On ne rajoute donc PAS une quatrieme barre grise
+   identique aux trois autres (Ligne / Reference / OP) — empiler quatre barres transformerait
+   le haut de l'ecran en pile de bandeaux.
+   La carte porte de quoi piloter un portefeuille, pas seulement un nom : ou en est le projet,
+   qui le pilote, combien d'essais ont ete menes, et le gain annuel deja acquis. */
+function statsProjet(pj){
+  let refs = 0, ops = 0, scen = 0, essais = 0, valides = 0, enSerie = 0, gain = 0, gainConnu = false;
+  const memoL = lignes, memoD = data, memoC = config, memoR = activeReferenceId;
+  (pj.lignes || []).forEach(l => {
+    refs += (l.references || []).length;
+    (l.references || []).forEach(r => {
+      ops += (r.ops || []).length;
+      (r.ops || []).forEach(op => {
+        scen += (op.scenarios || []).length;
+        (op.scenarios || []).forEach(sc => {
+          essais += (sc.essais || []).length;
+          if(sc.statut === "valide") valides++;
+          if(sc.statut === "serie") enSerie++;
+          // le bilan annuel lit config/data/reference active : on bascule le contexte,
+          // comme le fait deja le tableau de bord multi-lignes
+          try{
+            lignes = pj.lignes; data = op.scenarios; config = op.config; activeReferenceId = r.id;
+            const an = bilanAnnuel(sc);
+            if(an && an.gainAnnuel !== undefined && sc.statut === "serie"){ gain += an.gainAnnuel; gainConnu = true; }
+          }catch(e){}
+        });
+      });
+    });
+  });
+  lignes = memoL; data = memoD; config = memoC; activeReferenceId = memoR;
+  return { lignes:(pj.lignes||[]).length, refs, ops, scen, essais, valides, enSerie, gain, gainConnu };
+}
+
+function projetCarteHTML(pj){
+  const st = statsProjet(pj);
+  const actif = pj.id === activeProjetId;
+  const statut = PROJET_STATUTS[pj.statut] || PROJET_STATUTS.encours;
+  // l'echeance se lit, elle ne sanctionne pas : dans un atelier, un essai glisse pour des
+  // raisons subies (dispo machine, dispo bruts, priorite client). On affiche le reste a
+  // courir, sans badge rouge "en retard" qui ne dirait rien d'utile a personne.
+  let echeance = "";
+  if(pj.dateCible){
+    const j = Math.round((new Date(pj.dateCible) - new Date()) / 86400000);
+    echeance = isNaN(j) ? "" : `<span class="pj-echeance" title="Échéance visée : ${escapeAttr(pj.dateCible)}">${
+      j >= 0 ? "J−" + j : "échéance dépassée de " + Math.abs(j) + " j"}</span>`;
+  }
+  return `
+    <button class="pj-carte ${actif ? "active" : ""} pj-${escapeAttr(pj.statut || "encours")}" data-projet="${pj.id}"
+            title="${actif ? "Projet ouvert" : "Ouvrir ce projet"}">
+      <span class="pj-haut">
+        <span class="pj-nom">${escapeAttr(pj.nom || "Projet sans nom")}</span>
+        <span class="pj-statut">${statut}</span>
+        ${echeance}
+      </span>
+      ${pj.problematique ? `<span class="pj-pb">${escapeAttr(pj.problematique)}</span>` : ""}
+      <span class="pj-chiffres">
+        <span><b>${st.lignes}</b> ligne${st.lignes>1?"s":""}</span>
+        <span><b>${st.ops}</b> OP</span>
+        <span><b>${st.scen}</b> scénario${st.scen>1?"s":""}</span>
+        <span><b>${st.essais}</b> essai${st.essais>1?"s":""}</span>
+        ${st.enSerie ? `<span class="pj-serie"><b>${st.enSerie}</b> en série</span>` : ""}
+      </span>
+      ${st.gainConnu ? `<span class="pj-gain ${st.gain>=0?"pos":"neg"}">${st.gain>=0?"+":"−"}${fmtEuroCourt(Math.abs(st.gain))} / an acquis</span>` : ""}
+      ${pj.responsable ? `<span class="pj-resp">Pilote : ${escapeAttr(pj.responsable)}</span>` : ""}
+    </button>`;
+}
+
+function renderProjets(){
+  const el = document.getElementById("projetsBandeau");
+  if(!el) return;
+  const multiple = projets.length > 1;
+  el.innerHTML = `
+    <div class="pj-entete">
+      <h4>Projets</h4>
+      <span class="pj-compte">${projets.length} projet${projets.length>1?"s":""}</span>
+      <button class="ghost small" id="addProjetBtn">+ Nouveau projet</button>
+      ${multiple ? `<button class="ghost small" id="cfgProjetBtn">Modifier le projet ouvert</button>` : `<button class="ghost small" id="cfgProjetBtn">Modifier</button>`}
+    </div>
+    <div class="pj-grille">${projets.map(projetCarteHTML).join("")}</div>`;
+
+  el.querySelectorAll("[data-projet]").forEach(b => b.addEventListener("click", () => {
+    const id = b.getAttribute("data-projet");
+    if(id !== activeProjetId) ouvrirProjet(id);
+  }));
+  const add = document.getElementById("addProjetBtn");
+  if(add) add.addEventListener("click", creerProjet);
+  const cfg = document.getElementById("cfgProjetBtn");
+  if(cfg) cfg.addEventListener("click", () => ouvrirProjetInfo(activeProjetId));
+}
+
+let projetInfoTargetId = null;
+function ouvrirProjetInfo(id){
+  const pj = projets.find(x => x.id === id) || getActiveProjet();
+  if(!pj) return;
+  projetInfoTargetId = pj.id;
+  document.getElementById("projetNom").value = pj.nom || "";
+  document.getElementById("projetProblematique").value = pj.problematique || "";
+  document.getElementById("projetResponsable").value = pj.responsable || "";
+  document.getElementById("projetStatut").value = pj.statut || "encours";
+  document.getElementById("projetDateCible").value = pj.dateCible || "";
+  const st = statsProjet(pj);
+  document.getElementById("projetMeta").textContent =
+    (pj.creeLe ? "Créé le " + pj.creeLe + (pj.creePar ? " par " + pj.creePar : "") + " · " : "")
+    + st.lignes + " ligne(s), " + st.refs + " référence(s), " + st.ops + " OP, "
+    + st.scen + " scénario(s), " + st.essais + " essai(s).";
+  // un seul projet : le supprimer laisserait l'outil sans racine
+  document.getElementById("projetSupprimer").style.display = projets.length > 1 ? "" : "none";
+  ouvrirPanneau("projetInfoPanel");
+}
+
+function enregistrerProjetInfo(){
+  const pj = projets.find(x => x.id === projetInfoTargetId);
+  if(!pj) return;
+  pj.nom = document.getElementById("projetNom").value.trim() || "Projet sans nom";
+  pj.problematique = document.getElementById("projetProblematique").value.trim();
+  pj.responsable = document.getElementById("projetResponsable").value.trim();
+  pj.statut = document.getElementById("projetStatut").value;
+  pj.dateCible = document.getElementById("projetDateCible").value;
+  saveData(); render();
+}
+
+function creerProjet(){
+  const nom = prompt(`Nom du nouveau projet — ce qu'il regroupe, pas juste une machine :
+(ex. « Coût & qualité EMAG 1 », « Essais Step 3 »)`, "");
+  if(nom === null) return;
+  syncActiveOp(); syncActiveProjet();
+  const pj = normalizeProjet({
+    nom: (nom || "").trim() || "Nouveau projet",
+    responsable: auteurNom || "",
+    creePar: auteurNom || "",
+    creeLe: new Date().toISOString().slice(0,10),
+    lignes: defaultLignes().map(normalizeLigne)
+  });
+  projets.push(pj);
+  saveData();
+  ouvrirProjet(pj.id);
+  ouvrirProjetInfo(pj.id);
+}
+
 function renderLignes(){
   const el = document.getElementById("ligneStrip");
   if(!el) return;
@@ -6393,7 +6769,10 @@ function updateRevisionUI(){
    (ex. "OP10 — EMAG 1 — DV 356x26 RPI") deviendrait vite incoherent avec ce qui est ouvert */
 function updateHeader(){
   const l = getActiveLigne(), r = getActiveReference(), op = getActiveOp();
-  const eyebrow = [l && l.nom, op && op.nom].filter(Boolean).join(" — ")
+  // le projet ouvre le fil d'Ariane : avec plusieurs projets, savoir DANS LEQUEL on saisit
+  // est la premiere information a lire, avant la ligne et l'OP
+  const pj = getActiveProjet();
+  const eyebrow = [projets.length > 1 && pj && pj.nom, l && l.nom, op && op.nom].filter(Boolean).join(" — ")
     || "Suivi_optimisation_SPK — Amélioration Process";
   const titre = (r && r.nom) || "";
   const hdE = document.getElementById("hdEyebrow"), hdT = document.getElementById("hdTitle");
@@ -6435,6 +6814,7 @@ function render(){
   if(!data.find(s => s.id === activeId)) activeId = data[0] ? data[0].id : null;
   updateHeader();
   updatePhotosDirUI();
+  renderProjets();
   renderLignes();
   renderReferences();
   renderOps();
@@ -6933,7 +7313,10 @@ document.getElementById("resetBtn").addEventListener("click", () => {
   );
   if(saisie !== "REINITIALISER"){ if(saisie !== null) alert("Réinitialisation annulée — le texte tapé ne correspond pas."); return; }
   backupSnapshot("Réinitialiser");
-  lignes = defaultLignes();
+  // la reinitialisation efface TOUS les projets, pas seulement celui qui est ouvert
+  projets = projetsDepuisLignes(defaultLignes().map(normalizeLigne));
+  activeProjetId = projets[0].id;
+  lignes = projets[0].lignes;
   backlog = [];
   activeLigneId = lignes[0].id;
   activeReferenceId = lignes[0].references[0].id;
@@ -6980,6 +7363,7 @@ function fermerPanneaux(){
   document.getElementById("csvPanel").hidden = true;
   document.getElementById("importPanel").hidden = true;
   importEnAttente = null;
+  document.getElementById("projetInfoPanel").hidden = true;
   document.getElementById("ligneInfoPanel").hidden = true;
   document.getElementById("dashboardPanel").hidden = true;
   document.getElementById("nouveautesPanel").hidden = true;
@@ -7133,6 +7517,25 @@ let optionsInputDebounce = null;
   });
 });
 document.getElementById("optionsBtn").addEventListener("click", () => { syncOptionsUI(); ouvrirPanneau("optionsPanel"); });
+["projetNom","projetProblematique","projetResponsable","projetStatut","projetDateCible"].forEach(id => {
+  const el = document.getElementById(id);
+  if(el) el.addEventListener("change", enregistrerProjetInfo);
+});
+document.getElementById("projetInfoClose").addEventListener("click", () => { enregistrerProjetInfo(); fermerPanneaux(); });
+document.getElementById("projetSupprimer").addEventListener("click", () => {
+  const pj = projets.find(x => x.id === projetInfoTargetId);
+  if(!pj || projets.length <= 1) return;
+  const st = statsProjet(pj);
+  if(!confirm(`Supprimer le projet « ${pj.nom} » ?
+
+Cela supprime ${st.lignes} ligne(s), ${st.ops} OP, ${st.scen} scénario(s) et ${st.essais} essai(s) — tout ce qu'il contient.
+
+« ↺ Restaurer » permet de revenir en arrière.`)) return;
+  backupSnapshot("Suppression du projet « " + pj.nom + " »");
+  projets = projets.filter(x => x.id !== pj.id);
+  fermerPanneaux();
+  ouvrirProjet(projets[0].id);
+});
 document.getElementById("optionsClose").addEventListener("click", fermerPanneaux);
 
 /* fiche outil (PDF ou image) : n° d'outils et trajectoires par logement, par OP.
@@ -7189,6 +7592,14 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""))) ret
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.0.0", date:"08/09/2026", points:[
+    "<b>Les projets arrivent.</b> Un projet regroupe tout ce qui concerne une même problématique — ses lignes de production, ses références, ses OP, ses scénarios et ses essais. « Coût &amp; qualité EMAG 1 » d'un côté, les essais de Julien sur Step 3 de l'autre : les deux ne se mélangent plus, ni dans les scénarios, ni dans la synthèse.",
+    "Les projets se choisissent par <b>cartes, en haut de l'écran</b>, comme les scénarios. Chaque carte dit où en est le projet : lignes, OP, scénarios, essais menés, combien sont passés en série, et le gain annuel déjà acquis. Le projet ouvert apparaît aussi dans le bandeau de titre.",
+    "Chaque projet porte sa <b>problématique</b>, son <b>pilote</b> (pas forcément la même personne d'un projet à l'autre), un <b>statut</b> (en cours, en pause, terminé, abandonné) et une <b>échéance visée facultative</b>. L'outil affiche le temps restant mais ne déclare jamais un projet « en retard » : dans un atelier, un essai glisse pour des raisons subies.",
+    "<b>Vos données existantes sont automatiquement reprises</b> dans un projet nommé d'après votre ligne actuelle, que vous pouvez renommer en un clic. Un point de reprise est posé juste avant, accessible par « ↺ Restaurer ».",
+    "Le <b>tableau de bord</b> gagne une bascule « projet ouvert / tous les projets ». Il montre tous les projets par défaut : le cloisonnement sert à saisir, pas à perdre la vue d'ensemble.",
+    "<b>Important si vous échangez des fichiers</b> : le format d'export change. Les fichiers reçus d'une version précédente s'ouvrent normalement, mais un fichier exporté par cette version <b>ne s'ouvrira pas dans une version antérieure de l'outil</b>. Si quelqu'un travaille encore sur une copie locale ancienne, il doit prendre celle-ci."
+  ]},
   { version:"3.19.1", date:"05/09/2026", points:[
     "Dans la vue d'ensemble, un coût qui ne peut pas se calculer dit maintenant <b>pourquoi</b> : « Coût non calculable : nombre d'arêtes à 0 ». Auparavant la tuile affichait « Coût — » alors que la cause était lisible juste au-dessus, sans que rien ne fasse le lien. À distinguer de « Manque : … », qui signale une case pas encore remplie — ce n'est pas le même problème ni le même geste."
   ]},
@@ -7370,14 +7781,27 @@ function dansContexteOp(op, fn){
   try { return fn(); } finally { config = cfgAvant; data = dataAvant; }
 }
 
+/* Portee du tableau de bord : le projet ouvert, ou tous. Le defaut est "tous les projets" —
+   c'est la vue que Matis avait avant l'arrivee des projets, et celle qu'il perdrait sans
+   cette bascule. Le cloisonnement sert a saisir, pas a s'aveugler sur le reste. */
+let dashboardTousProjets = true;
+
 function renderDashboard(){
   const wrap = document.getElementById("dashboardPanel");
   if(!wrap) return;
+  syncActiveProjet();
 
   let nbSuivis = 0, nbValides = 0, nbSerie = 0, gainAcquis = 0, gainPotentiel = 0, volumeConnu = false;
   const sections = [];
+  const projetsVus = dashboardTousProjets ? projets : [getActiveProjet()].filter(Boolean);
 
-  lignes.forEach(ligne => {
+  projetsVus.forEach(pj => {
+  const lignesVues = pj.lignes || [];
+  if(dashboardTousProjets && projets.length > 1){
+    sections.push(`<h3 class="db-projet-titre">${escapeAttr(pj.nom || "Projet sans nom")}
+      <span class="db-ligne-info">${escapeAttr(PROJET_STATUTS[pj.statut] || "")}${pj.responsable ? " · " + escapeAttr(pj.responsable) : ""}</span></h3>`);
+  }
+  lignesVues.forEach(ligne => {
     const blocsRef = [];
     ligne.references.forEach(ref => {
       ref.ops.forEach(op => {
@@ -7455,6 +7879,7 @@ function renderDashboard(){
         <h3 class="db-ligne-titre">${escapeAttr(ligne.nom || "Ligne sans nom")}${infos.length ? `<span class="db-ligne-info">${infos.join(" · ")}</span>` : ""}</h3>
         ${blocsRef.join("")}
       </section>`);
+   });
   });
 
   const kpis = `
@@ -7469,13 +7894,21 @@ function renderDashboard(){
 
   wrap.innerHTML = `
     <h3>Tableau de bord</h3>
-    <p class="panel-hint">Toutes les lignes, références et OP du fichier. Les gains annuels n'apparaissent que pour les références dont le volume de production est renseigné (module <b>Volume annuel</b> dans Options).</p>
+    <div class="db-portee">
+      <button class="ghost small ${dashboardTousProjets ? "" : "primary"}" id="dbProjetCourant">Projet ouvert</button>
+      <button class="ghost small ${dashboardTousProjets ? "primary" : ""}" id="dbTousProjets">Tous les projets (${projets.length})</button>
+    </div>
+    <p class="panel-hint">${dashboardTousProjets ? "Tous les projets du fichier." : "Projet « " + escapeAttr((getActiveProjet()||{}).nom || "") + " » uniquement."} Toutes les lignes, références et OP. Les gains annuels n'apparaissent que pour les références dont le volume de production est renseigné (module <b>Volume annuel</b> dans Options).</p>
     ${kpis}
     ${sections.join("") || `<p class="panel-hint">Aucun scénario enregistré.</p>`}
     <div class="panel-actions"><button class="primary" id="dashboardClose">Fermer</button></div>
   `;
   const btn = document.getElementById("dashboardClose");
   if(btn) btn.addEventListener("click", fermerPanneaux);
+  const bc = document.getElementById("dbProjetCourant");
+  if(bc) bc.addEventListener("click", () => { dashboardTousProjets = false; renderDashboard(); });
+  const bt = document.getElementById("dbTousProjets");
+  if(bt) bt.addEventListener("click", () => { dashboardTousProjets = true; renderDashboard(); });
 }
 
 /* Informations de ligne — cout horaire, observations, derniere maintenance */
@@ -7827,6 +8260,36 @@ function runTests(){
     ok("apercu : une valeur saisie n'est pas listee comme manquante", /Manque/.test(tuile0), false);
     const scVide = normalizeScenario({ id:"sVi", name:"vi", outils:[
       { id:"tB", numero:"T-1", logements:[{ id:"gB", nom:"Piste", ref:"", prix:"", aretes:"", charniere:"" }] }] });
+    /* ---- projets (v4.0) -----------------------------------------------------------
+       La migration est le point le plus risque de cette version : un fichier format 5 mal
+       migre ferait disparaitre des campagnes entieres. */
+    const arbreV5 = { format:5, exportePar:"Matis", lignes:[
+      { id:"lV5", nom:"EMAG 1", references:[{ id:"rV5", nom:"DV", ops:[{ id:"oV5", nom:"OP10", config:{},
+        scenarios:[{ id:"sV5", name:"S", outils:[], essais:[{ id:"eV5", titre:"E1",
+          prelevements:[{ id:"p1", piece:10, batt:0.1 }] }] }] }] }] }] };
+    const luV5 = lireProjets(arbreV5);
+    ok("migration 5→6 : un projet unique est cree", luV5.projets.length, 1);
+    ok("migration 5→6 : signalee comme migration", luV5.migre, true);
+    ok("migration 5→6 : nom repris de la premiere ligne", luV5.projets[0].nom, "Optimisation EMAG 1");
+    ok("migration 5→6 : aucun prelevement perdu", comptePrelevements(luV5.projets[0].lignes), 1);
+    const luV6 = lireProjets({ format:6, projets:[{ id:"pjX", nom:"X", lignes:[] }] });
+    ok("format 6 : relu sans migration", luV6.migre, false);
+    ok("normalizeProjet : statut par defaut", normalizeProjet({ nom:"n" }).statut, "encours");
+
+    /* fusion au niveau projet : un projet inconnu arrive en entier, un projet connu voit
+       ses lignes fusionnees sans que son parametrage local soit ecrase */
+    const pjLocal = [normalizeProjet({ id:"pjA", nom:"Mon nom local", responsable:"Benjamin", lignes:[] })];
+    const pjEntrant = [
+      normalizeProjet({ id:"pjA", nom:"Nom de l'expediteur", responsable:"Julien", lignes:[
+        { id:"lN", nom:"Ligne recue", references:[] }] }),
+      normalizeProjet({ id:"pjB", nom:"Projet inconnu", lignes:[] })
+    ];
+    const bilanPj = fusionnerProjets(pjLocal, pjEntrant);
+    ok("fusion projets : le projet inconnu est ajoute", bilanPj.projets, 1);
+    ok("fusion projets : la ligne recue rejoint le projet connu", pjLocal[0].lignes.length, 1);
+    ok("fusion projets : le nom local n'est pas ecrase", pjLocal[0].nom, "Mon nom local");
+    ok("fusion projets : le pilote local n'est pas ecrase", pjLocal[0].responsable, "Benjamin");
+
     ok("apercu : cases vides listees comme manquantes",
        /Manque : référence, prix, arêtes, charnière/.test(apercuLogementHTML(scVide, scVide.outils[0], scVide.outils[0].logements[0], "#000", 0)), true);
 

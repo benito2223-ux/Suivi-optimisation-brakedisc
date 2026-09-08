@@ -5,6 +5,75 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.0.0] — 2026-09-08
+
+Nouveau niveau racine : les **projets**. Demande de Matis — un nouveau technicien process
+(Julien) mène désormais des essais sur Step 3 qui n'ont rien à voir avec EMAG 1, et les deux
+campagnes se retrouvaient dans le même arbre, la même synthèse et le même tableau de bord.
+
+Hiérarchie : `Projet → Ligne → Référence → OP → Scénario → Essai → Prélèvement`.
+
+### Choix d'architecture
+- **`lignes` reste la variable « lignes du projet actif »**, exactement comme `data` est déjà
+  « scénarios de l'OP active ». Les ~90 points du code qui manipulent `lignes` n'ont pas été
+  touchés. Contrepartie identique à celle de `data`/`config` : quand `lignes` est réassigné
+  (filter, defaultLignes…), il faut le recopier dans le projet — rôle de `syncActiveProjet()`,
+  appelé par `saveData()` à côté de `syncActiveOp()`.
+- **Une ligne appartient à un seul projet** (arbre, pas graphe). Mettre EMAG 1 dans deux
+  projets suppose de la dupliquer, et les scénarios divergeront ensuite. C'est le choix
+  difficile à défaire ; il correspond à la demande telle qu'elle a été formulée, et un modèle
+  en graphe coûtait trois fois le prix pour un besoin qui n'existe pas encore.
+- `appliquerArbre()` factorise la remise en place d'un arbre complet (chargement, historique,
+  point de reprise, import) — la logique était dupliquée quatre fois.
+
+### Format de fichier 5 → 6
+- `lireProjets()` accepte indifféremment les deux formats ; un arbre format 5 est migré à la
+  volée dans un projet unique nommé d'après sa première ligne (« Optimisation EMAG 1 »), avec
+  la problématique « Coût et qualité » pré-remplie.
+- **Point de reprise automatique posé avant la migration** (`backupSnapshot`), en plus de
+  l'historique glissant existant.
+- Les points de reprise et l'historique antérieurs à la v4 n'ont que des `lignes` : ils restent
+  restaurables via le même `lireProjets()`.
+- **Sens unique** : un fichier exporté en format 6 ne s'ouvrira pas dans une version antérieure
+  à la 4.0. Signalé dans les notes de version, à répercuter auprès de toute personne qui
+  garderait une copie locale ancienne.
+
+### Champs du projet
+`nom`, `problematique`, `responsable` (le pilote de CE projet), `statut`
+(encours/pause/termine/abandonne), `dateCible` facultative, `creePar`/`creeLe`.
+Pas de gestion de rôles ni de permissions : l'outil n'a pas d'authentification et n'en aura pas
+— `creePar` sert la traçabilité, la convention d'équipe fait le reste, et le mode consultation
+verrouillé (v3.16) couvre déjà la protection contre les modifications involontaires.
+
+### Interface
+- Sélecteur en **cartes** (`renderProjets`), pas une quatrième barre grise : quatre barres
+  empilées auraient transformé le haut de l'écran en pile de bandeaux, et le projet est un
+  changement de contexte complet, pas une sélection de plus au même niveau que la ligne ou l'OP.
+- Chaque carte porte de quoi piloter un portefeuille : lignes, OP, scénarios, essais, scénarios
+  passés en série, gain annuel acquis, pilote, statut, échéance.
+- Échéance affichée en J−n, **sans badge « en retard »** : dans un atelier, un essai glisse pour
+  des raisons subies (dispo machine, dispo bruts, priorité client) et un voyant rouge
+  n'apprendrait rien à personne.
+- Panneau d'édition du projet, avec suppression protégée (impossible s'il ne reste qu'un projet,
+  confirmation détaillant ce qui disparaît, point de reprise posé avant).
+- Le projet ouvre le fil d'Ariane du bandeau dès qu'il y a plus d'un projet.
+
+### Fusion
+`fusionnerProjets()` ajoute le niveau projet : un projet inconnu arrive en entier, un projet
+connu voit ses lignes fusionnées. Le paramétrage local du projet (nom, pilote, statut,
+échéance) n'est jamais écrasé par le fichier reçu — même règle qu'aux niveaux inférieurs.
+Ce niveau devient nécessaire maintenant que plusieurs personnes saisissent en parallèle : sans
+lui, fusionner deux fichiers ferait disparaître le projet de l'autre.
+
+### Tableau de bord
+Bascule « projet ouvert / tous les projets », **tous par défaut** — c'est la vue que Matis avait
+avant, et celle qu'il perdrait sans elle.
+
+### Tests
+83/83 (10 ajoutés) : migration 5→6 (projet unique, nom repris, aucun prélèvement perdu, migration
+signalée), relecture format 6 sans migration, statut par défaut, et fusion au niveau projet
+(projet inconnu ajouté, ligne reçue rattachée au projet connu, nom et pilote locaux préservés).
+
 ## Non versionné — 2026-09-05
 
 Mentions de paternité. **`TOOL_VERSION` volontairement inchangé** : le bandeau « Nouveautés »
