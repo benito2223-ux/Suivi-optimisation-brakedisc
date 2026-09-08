@@ -5,6 +5,78 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.4.0] — 2026-09-08
+
+Repart de la discussion sur la logique d'atelier réelle : très peu de données saisies par
+Matis à ce stade, et Benjamin veut clarifier AVANT que la saisie s'accélère la relation entre
+« ce qui tourne en série sur la machine » et « les projets qui organisent le travail dessus ».
+Décision : chaque OP a un seul scénario en production, immuable au sens où il s'affiche
+toujours (pas au sens où il serait figé/non éditable) ; les projets s'organisent PAR-DESSUS,
+une fois cette brique posée.
+
+### Ajouté — le scénario en production, un seul concept
+Jusqu'ici, le badge ★ (`baseline`, scénario de comparaison base 100) et le statut « En série »
+étaient deux champs indépendants qui pouvaient diverger sans que rien ne le signale — un
+scénario ★ qui ne serait pas réellement en série n'a pourtant aucun sens dans cet outil.
+Unifiés : `normalizeScenario()` force `statut:"serie"` dès que `baseline:true` sur toute
+donnée chargée (fichier ancien, import, édition manuelle du JSON). L'interface l'empêche
+désormais de diverger à la source :
+- `appliquerChangementStatut()` refuse de sortir un scénario ★ de « En série » directement
+  (message expliquant qu'il faut d'abord désigner un autre scénario comme référence) ;
+- `statutSelectHTML()` affiche un verrou 🔒 avec info-bulle sur le menu déroulant du scénario
+  en production, sans pour autant le rendre inerte : un changement tenté déclenche le refus
+  ci-dessus puis se réaffiche correctement au re-rendu.
+
+### Ajouté — promotion et rétrogradation
+`promouvoirEnProduction(sc)` : désigner un scénario comme nouvelle référence (bouton ★ ou
+menu statut sur « En série ») retire le badge à l'ancien et le rétrograde en **« Validé »**
+(jamais « Abandonné » — il n'a rien raté, il a juste été remplacé), avec une date de statut
+posée si elle manquait. Un `confirm()` annonce l'échange avant qu'il n'ait lieu (« Faire de
+« X » le scénario en production ? Il remplace « Y » … son statut passera à « Validé » ») ;
+annuler ne change rien. Le clic sur la pastille ★ et le passage du menu statut à « En série »
+partagent désormais ce même chemin (`onInputChange` route les changements de
+`select.statut-select` vers `appliquerChangementStatut` plutôt que l'écriture générique de
+champ).
+
+### Ajouté — visibilité toujours acquise, indépendante des statistiques
+`scenariosVisibles()` (filtre réel du bandeau, v4.3) exempte désormais le scénario en
+production : il reste dans la liste même si le projet actif ne le contient pas, ou si aucun
+projet ne le mentionne du tout — c'est la référence de l'OP, elle ne doit jamais disparaître
+pendant qu'on travaille filtré sur un projet. Cette exemption est strictement une exemption
+d'AFFICHAGE : `projetContientScenario()` et `statsProjet()` restent inchangées, un scénario en
+production non étiqueté dans un projet ne compte donc jamais dans les statistiques de ce
+projet malgré sa présence à l'écran. Décision pesée explicitement pour ne pas fausser les
+chiffres qu'un projet remonte sur ce qu'il couvre réellement.
+
+### Modifié — info-bulle du badge ★ (pas de renommage)
+Le libellé « ★ Scénario réf. » n'est pas renommé (déjà changé une fois en 3.14.0, éviter la
+valse d'intitulés dans les rapports et habitudes). Son info-bulle est en revanche étoffée pour
+expliquer, sans ambiguïté, que le désigner en fait le scénario en production (statut verrouillé
+sur « En série », visibilité garantie même filtré par un projet).
+
+### Portée volontairement non étendue
+Le point de départ conceptuel de cette version — poser d'abord toute l'arborescence
+lignes/références/OP avec leur scénario en production, PUIS créer des projets par-dessus —
+reste pour l'instant une convention d'usage à transmettre à Matis, pas une contrainte imposée
+par le logiciel : rien n'empêche techniquement de créer un projet avant d'avoir posé de
+scénario en production sur l'OP. Aucune UI de "workflow guidé" n'a été ajoutée ; un ajustement
+pourra suivre si l'usage réel montre que la convention seule ne suffit pas.
+
+### Tests
+129/129 (6 ajoutés) : `normalizeScenario` verrouille le statut à `serie` quand `baseline` est
+vrai ; `appliquerChangementStatut` refuse de sortir le scénario en production de « En série » ;
+`promouvoirEnProduction` bascule la référence et rétrograde l'ancien en « Validé » lors d'une
+confirmation acceptée, n'effectue aucun changement si elle est refusée ; `scenariosVisibles`
+inclut le scénario en production même non étiqueté dans le projet actif tout en le laissant
+absent du calcul de `projetContientScenario` pour ce même projet.
+
+Vérifié en session, au-delà des tests automatisés : verrou visuel 🔒 affiché sur le menu statut
+du scénario ★, tentative de changement direct refusée avec message et menu réaffiché sur sa
+vraie valeur après re-rendu ; clic sur ★ d'un autre scénario déclenchant le `confirm()` exact
+annoncé, ancien scénario repassé en « Validé », nouveau en « En série » ; round-trip complet
+vers la 3.19.2 réussi (lignes, essais, prélèvements et le champ `baseline` intacts — aucun
+changement de structure racine, seul le comportement applicatif évolue).
+
 ## [4.3.0] — 2026-09-08
 
 Correctif de fond suite à un retour d'usage direct de Benjamin : le filtre de projet livré

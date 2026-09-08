@@ -998,6 +998,8 @@ select.log-equipe:focus{border-color:var(--blue); outline:none; background:var(-
 .statut-select.serie{background:var(--blue); border-color:var(--blue); color:var(--on-accent);}
 .statut-select.abandonne{border-color:var(--red); color:var(--red);}
 .statut-select.etude{border-color:var(--border); color:var(--ink-faint);}
+.statut-select.verrouille{cursor:not-allowed; opacity:.85;}
+.statut-lock{font-size:11px; opacity:.7; cursor:help;}
 .statut-motif{font-family:var(--font-body); font-size:12px; padding:4px 9px; min-width:230px;
   border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); color:var(--ink);}
 .statut-motif:focus{outline:none; border-color:var(--red);}
@@ -1572,6 +1574,10 @@ body.atelier-on{overflow:hidden;}
       <p>Chaque scénario porte un statut, modifiable dans son en-tête : <b>à l'étude</b>, <b>en essai</b>, <b>validé</b>, <b>en série</b>, <b>abandonné</b> (avec son motif). Il colore sa tuile et alimente le tableau de bord.</p>
       <p>« Validé » et « en série » ne se confondent pas : un scénario peut être techniquement conforme sans jamais avoir été déployé. Distinguer les deux permet de voir le gain déjà acquis d'un côté, celui qui attend un feu vert de l'autre. Et un scénario abandonné garde son motif — c'est ce qui évite de reparcourir la même impasse deux ans plus tard.</p>
 
+      <h4>Scénario en production (★)</h4>
+      <p>Chaque OP a un seul <b>scénario en production</b> — le badge ★ « Scénario réf. » — qui sert de base 100 aux comparaisons et reste <b>toujours affiché</b>, même quand un projet filtre le reste des scénarios sur cet OP. Son statut est verrouillé sur « En série » : c'est la même notion, il ne peut pas exister un scénario ★ qui ne soit pas celui qui tourne réellement.</p>
+      <p>Pour changer de scénario en production, désignez le nouveau avec le bouton ★ de sa carte — une confirmation rappelle qu'il remplace l'ancien, qui repasse alors en « Validé » (pas « Abandonné » : il n'a pas échoué, il a été remplacé).</p>
+
       <h4>Tableau de bord</h4>
       <p>Dans le menu <b>•••</b>, le <b>Tableau de bord</b> rassemble toutes les lignes, références et OP du fichier dans un seul écran : statut de chaque scénario, avancement de ses essais, coût pièce, écart et gain annuel. En tête, le cumul du <b>gain déjà acquis</b> (scénarios en série) face à celui <b>qui reste à déployer</b> (validés, pas encore passés en série). Les gains annuels n'apparaissent que pour les références dont le volume est renseigné.</p>
     </div>
@@ -1678,7 +1684,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.3.0";
+const TOOL_VERSION = "4.4.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -2250,6 +2256,12 @@ function normalizeScenario(sc){
   const merged = Object.assign({ emag1:false, limitOverride:false, limitLabel:"Battement (mm)", limitValue:0.12, validationThreshold:5,
     critere2Actif:false, limitLabel2:"Ra (µm)", limitValue2:0.8,
     statut: sc.baseline ? "serie" : "essai", statutMotif:"", statutDate:"", essais:[], scrapLog:[] }, sc);
+  // v4.4 : le scenario en production (★) EST le scenario "en serie" -- un seul concept,
+  // pas deux qui pourraient diverger. Corrige silencieusement toute donnee anterieure ou
+  // saisie hors interface (import, edition manuelle du JSON) qui aurait laisse les deux
+  // decorreles ; l'interface, elle, empeche desormais cette divergence a la source
+  // (voir promouvoirEnProduction / appliquerChangementStatut).
+  if(merged.baseline) merged.statut = "serie";
 
   if(Array.isArray(sc.outils)){
     merged.outils = sc.outils.map(normalizeOutil);
@@ -3543,6 +3555,58 @@ function scenarioCostPerEdge(sc){
 }
 function baselineScenario(){
   return data.find(s => s.baseline) || data[0];
+}
+
+/* ============================================================================
+   SCENARIO EN PRODUCTION (v4.4)
+   ============================================================================
+   "★ Scenario ref." = le scenario reellement en production sur cet OP. Un seul concept,
+   pas deux : avant la v4.4, `baseline` (l'ancre de comparaison) et `statut === "serie"`
+   pouvaient diverger librement, sans qu'aucune interface ne les remette en phase. Desormais
+   ils ne font plus qu'un, dans les deux sens :
+     - un scenario baseline ne peut pas avoir un autre statut que "serie" (verrouille dans
+       statutSelectHTML et appliquerChangementStatut) ;
+     - promouvoir un scenario "en serie" (par la pastille ★ OU par le menu Statut) passe
+       TOUJOURS par cette fonction, qui retrograde l'ancien titulaire au lieu de laisser
+       deux scenarios "en serie" coexister sur le meme OP.
+   L'ancien titulaire retombe a "Valide" (pas "Abandonne" : il n'a pas echoue, il a ete
+   remplace ; pas "Essai" : il a bien tourne en production). Confirme avant d'agir des
+   qu'un autre scenario est reellement impacte, pour que l'effet de bord soit vu avant,
+   pas decouvert apres. */
+function promouvoirEnProduction(sc){
+  if(sc.baseline && sc.statut === "serie") return true; // deja en place
+  const ancien = data.find(s => s.baseline && s.id !== sc.id);
+  if(ancien){
+    if(!confirm(`Faire de « ${sc.name} » le scénario en production ?\n\nIl remplace « ${ancien.name} » comme scénario de référence (★) — son statut passera à « Validé ».`)) return false;
+    ancien.baseline = false;
+    ancien.statut = "valide";
+    if(!ancien.statutDate) ancien.statutDate = new Date().toISOString().slice(0,10);
+  }
+  data.forEach(s => { if(s.id !== sc.id) s.baseline = false; });
+  sc.baseline = true;
+  sc.statut = "serie";
+  if(!sc.statutDate) sc.statutDate = new Date().toISOString().slice(0,10);
+  return true;
+}
+
+/* Point d'entree unique du menu "Statut" d'un scenario : verrouille le statut du scenario
+   en production (il faut redefinir la reference pour en sortir), et route toute promotion
+   "En serie" par promouvoirEnProduction ci-dessus. Renvoie false si le changement est
+   refuse ou annule -- l'appelant se contente alors de re-rendre pour que le menu deroulant
+   reaffiche la vraie valeur (aucune mutation n'a eu lieu, rien a annuler). */
+function appliquerChangementStatut(el){
+  const sc = data.find(s => s.id === el.getAttribute("data-id"));
+  if(!sc) return false;
+  const nouveau = el.value;
+  if((sc.statut || "essai") === nouveau) return true;
+  if(sc.baseline && nouveau !== "serie"){
+    alert(`« ${sc.name} » est le scénario en production (★). Pour lui donner un autre statut, définissez d'abord un autre scénario comme référence.`);
+    return false;
+  }
+  if(nouveau === "serie") return promouvoirEnProduction(sc);
+  sc.statut = nouveau;
+  if((sc.statut === "serie" || sc.statut === "abandonne") && !sc.statutDate) sc.statutDate = new Date().toISOString().slice(0,10);
+  return true;
 }
 /* le logement "de reference" pour le temps de cycle : celui nomme Piste (retro-compat)
    si migre depuis l'ancien format, sinon le premier logement disponible */
@@ -4924,8 +4988,16 @@ function statutLabel(v){
 function statutSelectHTML(sc){
   const cur = sc.statut || "essai";
   const opts = STATUTS.map(s => `<option value="${s.v}" ${cur === s.v ? "selected" : ""}>${s.label}</option>`).join("");
+  // v4.4 : le scenario en production (★) a son statut verrouille sur "En serie" -- en
+  // sortir passe par la redefinition de la reference (pastille ★ sur un autre scenario),
+  // jamais par ce menu directement. Le menu reste techniquement modifiable (necessaire
+  // pour que le "change" se declenche et route vers appliquerChangementStatut, qui refuse
+  // et reaffiche la vraie valeur) mais visuellement attenue, avec l'explication en info-bulle.
+  const verrouille = !!sc.baseline;
   return `<span class="statut-wrap">
-    <select class="statut-select ${cur}" data-id="${sc.id}" data-field="statut">${opts}</select>
+    <select class="statut-select ${cur} ${verrouille ? "verrouille" : ""}" data-id="${sc.id}" data-field="statut"
+            ${verrouille ? `title="Scénario en production (★) — redéfinissez la référence pour lui donner un autre statut."` : ""}>${opts}</select>
+    ${verrouille ? `<span class="statut-lock" title="Verrouillé : scénario en production">🔒</span>` : ""}
     ${cur === "abandonne" ? `<input class="statut-motif" data-id="${sc.id}" data-field="statutMotif" value="${escapeAttr(sc.statutMotif)}" placeholder="Motif de l'abandon (usure, battement, cadence…)">` : ""}
   </span>`;
 }
@@ -4936,7 +5008,9 @@ function scenarioBlockHTML(sc, interactive){
 
   const head = interactive ? `
       <input class="sc-name" data-id="${sc.id}" data-field="name" value="${escapeAttr(sc.name)}">
-      <span class="baseline-pill ${sc.baseline ? "active" : ""}" data-id="${sc.id}" data-action="baseline" title="« Référence » ici désigne le scénario de comparaison (★), pas la référence disque ni la référence plaquette.">${sc.baseline ? "★ Scénario réf." : "Définir scénario réf."}</span>
+      <span class="baseline-pill ${sc.baseline ? "active" : ""}" data-id="${sc.id}" data-action="baseline" title="${sc.baseline
+        ? "Scénario en production : celui qui tourne réellement en série, toujours visible même filtré par un projet. Cliquer sur ★ un autre scénario le remplace ici."
+        : "« Référence » ici désigne le scénario de comparaison (★), pas la référence disque ni la référence plaquette. Le désigner en fait le scénario en production : son statut passera à « En série » et il restera toujours visible, même filtré par un projet."}">${sc.baseline ? "★ Scénario réf." : "Définir scénario réf."}</span>
       ${statutSelectHTML(sc)}
       <div class="sc-actions">
         <button data-id="${sc.id}" data-action="duplicate">Dupliquer</button>
@@ -6658,7 +6732,12 @@ function scenariosVisibles(){
   if(!opOrganiseParProjets()) return data;
   const pjActif = projets.find(p => p.id === activeProjetId);
   if(!pjActif) return data;
-  return data.filter(sc => projetContientScenario(pjActif, activeLigneId, activeReferenceId, activeOpId, sc.id));
+  // v4.4 : le scenario en production reste toujours visible, meme filtre projet actif et
+  // meme s'il n'est etiquete dans aucun projet -- c'est la reference de l'OP, elle ne doit
+  // jamais disparaitre du bandeau. Exemption d'AFFICHAGE uniquement : statsProjet() et
+  // projetContientScenario() ne changent pas, un baseline non etiquete ne compte donc pas
+  // dans les stats du projet actif malgre sa presence a l'ecran.
+  return data.filter(sc => sc.baseline || projetContientScenario(pjActif, activeLigneId, activeReferenceId, activeOpId, sc.id));
 }
 
 /* Vue "tous les projets" du bandeau : etat d'affichage volatil, comme le filtre du tableau
@@ -7327,7 +7406,10 @@ function attachDetailHandlers(sc){
     });
   });
   root.querySelectorAll('[data-action="baseline"]').forEach(el => {
-    el.addEventListener("click", () => { data.forEach(s => s.baseline = (s.id === sc.id)); recomputeCycles(); saveData(); render(); });
+    el.addEventListener("click", () => {
+      if(!promouvoirEnProduction(sc)) return; // annule : rien n'a bouge
+      recomputeCycles(); saveData(); render();
+    });
   });
   root.querySelectorAll('[data-action="duplicate"]').forEach(el => {
     el.addEventListener("click", () => {
@@ -7608,11 +7690,23 @@ function writeFieldValue(el){
    en depend, on sauvegarde et on reconstruit l'affichage complet (badges, couts, graphique). */
 function onInputChange(e){
   const el = e.target;
+  // le statut d'un scenario passe par sa propre logique (verrouillage du scenario en
+  // production, promotion coordonnee) plutot que par l'ecriture generique de champ --
+  // voir appliquerChangementStatut. Le resultat (accepte ou refuse) est ignore ici : dans
+  // les deux cas, saveData()+render() suivent -- accepte, ils persistent le nouvel etat ;
+  // refuse, aucune mutation n'a eu lieu et render() reaffiche simplement la vraie valeur.
+  if(el.classList.contains("statut-select")){
+    appliquerChangementStatut(el);
+    saveData();
+    render();
+    return;
+  }
   const ctx = writeFieldValue(el);
   if(!ctx) return;
   if(ctx.outilId && ctx.logementId && (ctx.field === "vc" || ctx.field === "f")) recomputeCycles();
-  // passage en serie ou abandon : on date la decision, c'est elle qui fait l'historique
-  if(ctx.field === "statut" && (ctx.sc.statut === "serie" || ctx.sc.statut === "abandonne") && !ctx.sc.statutDate){
+  // passage en abandon : on date la decision, c'est elle qui fait l'historique (le cas
+  // "serie" est desormais entierement gere par appliquerChangementStatut ci-dessus)
+  if(ctx.field === "statut" && ctx.sc.statut === "abandonne" && !ctx.sc.statutDate){
     ctx.sc.statutDate = new Date().toISOString().slice(0,10);
   }
   saveData();
@@ -7968,6 +8062,12 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""))) ret
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.4.0", date:"08/09/2026", points:[
+    "<b>Chaque OP a un seul « scénario en production » (★), qui s'affiche toujours.</b> Jusqu'ici, rien n'empêchait le badge ★ (scénario de référence) et le statut « En série » de diverger — deux notions qui, dans les faits, désignent la même chose : ce qui tourne réellement en série sur la machine. Elles sont maintenant unifiées : le scénario ★ est verrouillé sur « En série », impossible de lui donner un autre statut sans d'abord désigner un autre scénario comme référence.",
+    "<b>Désigner un nouveau scénario en production rétrograde l'ancien</b>, avec une confirmation qui l'annonce avant de le faire : l'ancien passe en « Validé » (pas « Abandonné » — il n'a rien raté, il a juste été remplacé).",
+    "<b>Le scénario en production reste visible même filtré par un projet</b> qui ne le concerne pas — c'est la référence de l'OP, elle ne doit jamais disparaître du bandeau de travail. Cette exception ne touche que l'affichage : elle ne le fait pas compter dans les statistiques d'un projet où il n'est pas explicitement rattaché.",
+    "Pense-bête pour la suite : la bonne façon de démarrer un OP est de créer d'abord sa ligne, sa référence et son scénario en production, puis de créer des projets par-dessus pour organiser le travail d'optimisation — pas l'inverse."
+  ]},
   { version:"4.3.0", date:"08/09/2026", points:[
     "<b>Le filtre de projet scope réellement le travail, pas seulement l'affichage.</b> Jusqu'ici, activer un projet ne faisait que du cosmétique — le bandeau de scénarios sur lequel vous travailliez au quotidien continuait à tout montrer, mélangé. Désormais, dès qu'au moins un scénario de l'OP ouvert appartient à un projet, activer ce projet ne montre plus que ses scénarios : les autres restent dans l'outil, simplement masqués tant que le filtre est actif. Un OP qui n'a encore aucun scénario rattaché à un projet continue de fonctionner exactement comme avant, sans rien filtrer.",
     "<b>Correction d'un vrai défaut</b> : un projet sans aucun scénario rattaché s'affichait sur toutes les lignes, y compris celles qui n'avaient rien à voir avec lui. Il n'apparaît maintenant que sur la ligne où il a été créé, tant qu'il n'a pas d'étiquette ailleurs.",
@@ -8796,6 +8896,52 @@ function runTests(){
     ok("opOrganiseParProjets : faux si aucun scenario de l'OP n'est etiquete nulle part", (() => {
       projets = []; return opOrganiseParProjets();
     })(), false);
+
+    /* ---- scenario en production (v4.4) ---------------------------------------------
+       Un OP n'a jamais qu'un seul "scenario en production" (baseline=true), dont le
+       statut est verrouille sur "serie" -- promouvoir un autre scenario retrograde
+       l'ancien en "valide" (jamais "abandonne", ce n'etait pas un echec) plutot que de
+       laisser deux scenarios "en serie" coexister. La visibilite du baseline (toujours
+       affiche) reste separee de son appartenance a un projet (jamais comptee de force). */
+    lignes = [ normalizeLigne({ id:"lP", nom:"Ligne prod", references:[
+      { id:"rP", nom:"Ref", ops:[ { id:"oP", nom:"OP", config:{}, scenarios:[
+        normalizeScenario({ id:"scP1", name:"Prod", baseline:true }),
+        normalizeScenario({ id:"scP2", name:"Alt" })
+      ] } ] }
+    ] }) ];
+    activeLigneId = "lP"; activeReferenceId = "rP"; activeOpId = "oP";
+    data = lignes[0].references[0].ops[0].scenarios;
+    const scP1 = data[0], scP2 = data[1];
+    ok("normalizeScenario : baseline force le statut a serie", scP1.statut, "serie");
+    ok("appliquerChangementStatut : refuse de sortir le baseline de serie", (() => {
+      const fakeEl = { getAttribute: () => "scP1", value: "valide" };
+      const avant = scP1.statut;
+      const res = appliquerChangementStatut(fakeEl);
+      return !res && scP1.statut === avant;
+    })(), true);
+    projets = []; activeProjetId = null;
+    ok("promouvoirEnProduction : bascule la reference et retrograde l'ancien en valide", (() => {
+      const origConfirm = window.confirm;
+      window.confirm = () => true;
+      const res = promouvoirEnProduction(scP2);
+      window.confirm = origConfirm;
+      return res && scP2.baseline === true && scP2.statut === "serie" && scP1.baseline === false && scP1.statut === "valide";
+    })(), true);
+    ok("promouvoirEnProduction : annule si le confirm est refuse", (() => {
+      const origConfirm = window.confirm;
+      window.confirm = () => false;
+      const res = promouvoirEnProduction(scP1);
+      window.confirm = origConfirm;
+      return !res && scP2.baseline === true && scP1.baseline === false;
+    })(), true);
+    // a ce stade, scP2 est devenu le scenario en production (promotion ci-dessus) ; le
+    // projet ne rattache que scP1 -- scP2 doit malgre tout rester visible (exemption),
+    // sans pour autant etre compte comme membre du projet (separation affichage/stats).
+    const pjSansBaseline = normalizeProjet({ id:"pjProd", nom:"Prod", tags:[{ ligneId:"lP", referenceId:"rP", opId:"oP", scenarioId:"scP1" }] });
+    projets = [pjSansBaseline]; activeProjetId = "pjProd";
+    ok("scenariosVisibles : le scenario en production reste visible meme non etiquete dans le projet actif", scenariosVisibles().map(s=>s.id).sort(), ["scP1","scP2"].sort());
+    ok("projetContientScenario : le baseline visible mais non etiquete ne compte pas dans le projet", projetContientScenario(pjSansBaseline, "lP","rP","oP","scP2"), false);
+    activeProjetId = null;
 
     /* ---- plan d'outil (v3.18) ----------------------------------------------------
        Un plan perdu au rechargement serait invisible : normalizeOutil doit le conserver
