@@ -1542,7 +1542,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "3.19.1";
+const TOOL_VERSION = "3.19.2";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -1812,6 +1812,28 @@ function normalizeReference(r){
   return { id: r.id || ("r"+Math.random().toString(36).slice(2)), nom: r.nom || "",
            productionAnnuelle: r.productionAnnuelle ?? "", ops };
 }
+/* ---- RETOUR ARRIERE DEPUIS LA 4.0 (v3.19.2) -------------------------------------------
+   La 4.0 a introduit un niveau "projet" au-dessus des lignes et un format de fichier 6.
+   Elle a ete deployee puis retiree, le temps de valider l'organisation des lignes par projet.
+   Probleme : un poste qui a ouvert la 4.0 a ses donnees ecrites en format 6 dans le
+   navigateur. Sans ce garde-fou, cette version ne trouve pas `parsed.lignes`, croit demarrer
+   a neuf et affiche le jeu d'exemple — les vraies mesures restent presentes mais invisibles,
+   et la premiere saisie les ecrase. C'est exactement l'incident du 27/08/2026.
+
+   On aplatit donc : toutes les lignes de tous les projets sont reprises dans l'arbre unique
+   de cette version. Aucune donnee n'est perdue ; seul le regroupement par projet disparait,
+   et il reviendra si la 4.0 est redeployee. */
+function lignesDepuisArbre(source){
+  if(!source) return null;
+  if(Array.isArray(source.lignes) && source.lignes.length) return source.lignes;
+  if(Array.isArray(source.projets) && source.projets.length){
+    const plates = [];
+    source.projets.forEach(pj => (pj.lignes || []).forEach(l => plates.push(l)));
+    return plates.length ? plates : null;
+  }
+  return null;
+}
+
 function normalizeLigne(l){
   return Object.assign({ id: l.id || ("l"+Math.random().toString(36).slice(2)), nom:"", coutHoraire:"", observations:"", maintenanceDate:"", maintenanceType:"" }, l, {
     references: (l.references || []).map(normalizeReference)
@@ -2044,8 +2066,9 @@ function loadAll(){
   if(raw){
     try{
       const parsed = JSON.parse(raw);
-      if(parsed && Array.isArray(parsed.lignes) && parsed.lignes.length){
-        lignes = parsed.lignes.map(normalizeLigne);
+      const brutesLignes = lignesDepuisArbre(parsed);
+      if(brutesLignes){
+        lignes = brutesLignes.map(normalizeLigne);
         backlog = (parsed.backlog || []).map(normalizeBacklogItem);
         revision = parsed.revision || 0;
         const l = lignes.find(x => x.id === parsed.activeLigneId) || lignes[0];
@@ -2320,7 +2343,7 @@ function renderHistoryPanel(){
       if(!h) return;
       if(!confirm("Restaurer l'état enregistré le " + new Date(h.savedAt).toLocaleString("fr-FR") + " (" + h.count + " prélèvement(s)) ?\n\nCela remplacera TOUTES les données actuellement affichées (toutes lignes et références confondues).\n\n(Un « ↺ Restaurer » restera disponible pour annuler ce geste.)")) return;
       backupSnapshot("Restauration depuis l'historique (" + new Date(h.savedAt).toLocaleString("fr-FR") + ")");
-      lignes = (h.lignes || []).map(normalizeLigne);
+      lignes = (lignesDepuisArbre(h) || []).map(normalizeLigne);
       backlog = (h.backlog || []).map(normalizeBacklogItem);
       revision = h.revision || 0;
       if(!lignes.length) lignes = defaultLignes();
@@ -2393,7 +2416,7 @@ function restoreBackup(){
   if(!snap){ alert("Aucun état précédent à restaurer."); updateRestoreUI(); return; }
   const quand = new Date(snap.savedAt).toLocaleString("fr-FR");
   if(!confirm("Restaurer l'état d'avant « " + (snap.label || "la dernière opération") + " » (" + quand + ") ?\n\nCela remplacera les données actuellement affichées (toutes lignes et références confondues).")) return;
-  lignes = (snap.lignes || []).map(normalizeLigne);
+  lignes = (lignesDepuisArbre(snap) || []).map(normalizeLigne);
   backlog = (snap.backlog || []).map(normalizeBacklogItem);
   revision = snap.revision || 0;
   if(!lignes.length) lignes = defaultLignes();
@@ -2949,9 +2972,10 @@ function importData(file){
     }
 
     let nouvellesLignes, nouveauBacklog, revisionEntrante;
-    if(parsed && Array.isArray(parsed.lignes) && parsed.lignes.length){
-      // format actuel : arbre Ligne > Reference
-      nouvellesLignes = parsed.lignes.map(normalizeLigne);
+    const brutesImport = lignesDepuisArbre(parsed);
+    if(brutesImport){
+      // format 5 (lignes) ou format 6 (projets, aplati — voir lignesDepuisArbre)
+      nouvellesLignes = brutesImport.map(normalizeLigne);
       nouveauBacklog = (parsed.backlog || []).map(normalizeBacklogItem);
       revisionEntrante = parsed.revision || 0;
     } else {
@@ -7189,6 +7213,11 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""))) ret
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"3.19.2", date:"08/09/2026", points:[
+    "<b>Les projets sont mis en attente.</b> La version 4.0, qui ajoutait un niveau « Projet » au-dessus des lignes de production, a été retirée le temps de valider son organisation — notamment la question de savoir si une ligne doit appartenir à un seul projet ou pouvoir être suivie dans plusieurs. Mieux vaut trancher cette question avant que des campagnes entières soient rangées d'une façon qu'il faudrait défaire ensuite.",
+    "<b>Vos données sont intactes.</b> Si vous aviez ouvert la 4.0, tout ce que vous aviez saisi est repris automatiquement, y compris les mesures enregistrées entre-temps. Seul le regroupement par projet n'apparaît plus ; il reviendra quand la fonction sera validée.",
+    "Rien d'autre ne change par rapport à la version 3.19.1 que vous utilisiez avant."
+  ]},
   { version:"3.19.1", date:"05/09/2026", points:[
     "Dans la vue d'ensemble, un coût qui ne peut pas se calculer dit maintenant <b>pourquoi</b> : « Coût non calculable : nombre d'arêtes à 0 ». Auparavant la tuile affichait « Coût — » alors que la cause était lisible juste au-dessus, sans que rien ne fasse le lien. À distinguer de « Manque : … », qui signale une case pas encore remplie — ce n'est pas le même problème ni le même geste."
   ]},
