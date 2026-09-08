@@ -1684,9 +1684,15 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.4.0";
+const TOOL_VERSION = "4.4.1";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
+
+/* Identifiants uniques : prefix + timestamp base36 + aleatoire. Date.now() seul collisionne
+   des qu'un meme geste crée plusieurs objets dans la meme milliseconde (double-clic,
+   import, scripts) — la collision ecrase silencieusement des donnees (audit v4.4.0).
+   Pattern deja utilise pour e/p/t/g, etendu a s/l/r/o. pj reste gere par normalizeProjet. */
+function uid(prefix){ return prefix + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 
 /* ---- dossier local (photos + backup) ----
    Les photos ne doivent JAMAIS gonfler le localStorage/JSON echange entre collegues : elles
@@ -2425,11 +2431,11 @@ function loadAll(){
             )){
               let secoursConfig = null;
               try{ secoursConfig = JSON.parse(localStorage.getItem(LEGACY_KEY + "_config") || "null"); }catch(e2){}
-              const op2 = { id: "o"+Date.now(), nom: "OP10", ordre: 10,
+              const op2 = { id: uid("o"), nom: "OP10", ordre: 10,
                 config: Object.assign({}, defaultConfig, { forceRatioActif: true }, secoursConfig || {}),
                 scenarios: secours.map(normalizeScenario) };
-              const ref2 = { id: "r"+Date.now(), nom: "DV 356x26 RPI", ops: [op2] };
-              lignes = [{ id: "l"+Date.now(), nom: "EMAG 1", references: [ref2] }];
+              const ref2 = { id: uid("r"), nom: "DV 356x26 RPI", ops: [op2] };
+              lignes = [{ id: uid("l"), nom: "EMAG 1", references: [ref2] }];
               projets = []; activeProjetId = null; responsables = [];
               backlog = [];
               activeLigneId = lignes[0].id; activeReferenceId = ref2.id; activeOpId = op2.id;
@@ -2449,14 +2455,14 @@ function loadAll(){
   try{ legacyConfig = JSON.parse(localStorage.getItem(LEGACY_KEY + "_config") || "null"); }catch(e){}
   if(Array.isArray(legacyData) && legacyData.length){
     const op = {
-      id: "o" + Date.now(), nom: "OP10", ordre: 10,
+      id: uid("o"), nom: "OP10", ordre: 10,
       config: Object.assign({}, defaultConfig, { forceRatioActif: true }, legacyConfig || {}),
       scenarios: legacyData.map(normalizeScenario)
     };
     const migrationTolerance = !(legacyConfig && legacyConfig.limitValue !== undefined);
     if(migrationTolerance) migrerTolerancesOp(op);
-    const ref = { id: "r" + Date.now(), nom: "DV 356x26 RPI", ops: [op] };
-    lignes = [{ id: "l" + Date.now(), nom: "EMAG 1", references: [ref] }];
+    const ref = { id: uid("r"), nom: "DV 356x26 RPI", ops: [op] };
+    lignes = [{ id: uid("l"), nom: "EMAG 1", references: [ref] }];
     projets = []; activeProjetId = null; responsables = [];
     backlog = [];
     activeLigneId = lignes[0].id;
@@ -3368,11 +3374,11 @@ function importData(file){
         alert("Aucune donnée reconnue dans ce fichier.");
         return;
       }
-      const op = { id: "o"+Date.now(), nom: "OP10", ordre: 10,
+      const op = { id: uid("o"), nom: "OP10", ordre: 10,
         config: Object.assign({}, defaultConfig, parsed.config || {}),
         scenarios: scenarios.map(normalizeScenario) };
-      const ref = { id: "r"+Date.now(), nom: "DV 356x26 RPI", ops: [op] };
-      nouvellesLignes = [{ id: "l"+Date.now(), nom: "EMAG 1", references: [ref] }];
+      const ref = { id: uid("r"), nom: "DV 356x26 RPI", ops: [op] };
+      nouvellesLignes = [{ id: uid("l"), nom: "EMAG 1", references: [ref] }];
       nouveauxProjets = [];
       nouveauxResponsables = [];
       nouveauBacklog = [];
@@ -6937,9 +6943,9 @@ function renderLignes(){
   document.getElementById("addLigneBtn").addEventListener("click", () => {
     const nom = prompt("Nom de la nouvelle ligne de production (ex. EMAG 1, EMAG 2, WEISSER 1, WEISSER 2, HESSAP...) :");
     if(!nom || !nom.trim()) return;
-    const op = { id: "o"+Date.now(), nom: "OP10", ordre: 10, config: Object.assign({}, defaultConfig), scenarios: [] };
-    const ref = { id: "r"+Date.now(), nom: "Nouvelle référence", ops: [op] };
-    const l = { id: "l"+Date.now(), nom: nom.trim(), references: [ref] };
+    const op = { id: uid("o"), nom: "OP10", ordre: 10, config: Object.assign({}, defaultConfig), scenarios: [] };
+    const ref = { id: uid("r"), nom: "Nouvelle référence", ops: [op] };
+    const l = { id: uid("l"), nom: nom.trim(), references: [ref] };
     lignes.push(l);
     switchReference(l.id, ref.id);
   });
@@ -6989,8 +6995,8 @@ function renderReferences(){
   document.getElementById("addRefBtn").addEventListener("click", () => {
     const nom = prompt("Nom de la nouvelle référence disque :");
     if(!nom || !nom.trim()) return;
-    const op = { id: "o"+Date.now(), nom: "OP10", ordre: 10, config: Object.assign({}, defaultConfig), scenarios: [] };
-    const ref = { id: "r"+Date.now(), nom: nom.trim(), ops: [op] };
+    const op = { id: uid("o"), nom: "OP10", ordre: 10, config: Object.assign({}, defaultConfig), scenarios: [] };
+    const ref = { id: uid("r"), nom: nom.trim(), ops: [op] };
     l.references.push(ref);
     switchReference(l.id, ref.id);
   });
@@ -7042,7 +7048,7 @@ function renderOps(){
     const nom = prompt("Nom de la nouvelle OP (ex. OP10, OP20, Perçage...) :");
     if(!nom || !nom.trim()) return;
     const ordreMax = r.ops.reduce((m, o) => Math.max(m, o.ordre || 0), 0);
-    const op = { id: "o"+Date.now(), nom: nom.trim(), ordre: ordreMax + 10, config: Object.assign({}, defaultConfig), scenarios: [] };
+    const op = { id: uid("o"), nom: nom.trim(), ordre: ordreMax + 10, config: Object.assign({}, defaultConfig), scenarios: [] };
     r.ops.push(op);
     switchOp(activeLigneId, activeReferenceId, op.id);
   });
@@ -7414,7 +7420,7 @@ function attachDetailHandlers(sc){
   root.querySelectorAll('[data-action="duplicate"]').forEach(el => {
     el.addEventListener("click", () => {
       const copy = JSON.parse(JSON.stringify(sc));
-      copy.id = "s" + Date.now();
+      copy.id = uid("s");
       copy.name = sc.name + " (copie)";
       copy.baseline = false;
       // nouveaux ids pour les outils/logements de la copie, et on reporte la correspondance
@@ -7719,7 +7725,7 @@ document.getElementById("addBtn").addEventListener("click", () => {
   const l = getActiveLigne();
   const emag1Auto = !!(l && l.nom && l.nom.trim().toLowerCase() === "emag 1");
   const blank = {
-    id: "s" + Date.now(), name: "Nouveau scénario", baseline: false, cycle: "",
+    id: uid("s"), name: "Nouveau scénario", baseline: false, cycle: "",
     emag1: emag1Auto, limitOverride: false, limitLabel: "Battement (mm)", limitValue: 0.12, validationThreshold: 5,
     critere2Actif: false, limitLabel2: "Ra (µm)", limitValue2: 0.8,
     outils: [{ id: "t"+Math.random().toString(36).slice(2), numero: "", logements: [
@@ -8083,6 +8089,7 @@ const NOUVEAUTES = [
     "Pour mémoire, déjà possible sans rien changer : un scénario peut appartenir à plusieurs projets, et un projet peut couvrir plusieurs lignes — le modèle par étiquettes (v4.1) le permettait nativement."
   ]},
   { version:"4.1.1", date:"08/09/2026", points:[
+    "<b>Correctif discret mais important.</b> Dans un cas rare (deux créations dans la même fraction de seconde — par exemple un double-clic), deux scénarios pouvaient recevoir le même identifiant interne et l'un masquait l'autre. C'est corrigé : chaque scénario, ligne, référence ou OP créé désormais porte un identifiant unique, y compris par double-clic ou en série."
     "Les cartes de projet en haut de l'écran se limitent maintenant à ceux qui concernent la ligne ouverte — jusqu'ici, tous les projets s'affichaient partout, même ceux qui n'avaient rien à voir avec la ligne regardée. Un projet qui touche plusieurs lignes (ou tout juste créé, sans scénario encore rattaché) reste visible partout, et le lien « Voir tous les projets » permet de repasser en vue complète à tout moment."
   ]},
   { version:"4.1.0", date:"08/09/2026", points:[
@@ -8981,6 +8988,16 @@ function runTests(){
 
     ok("normalizeScenario : plan conserve a travers l'arbre",
        normalizeScenario({ id:"sp2", name:"p", outils:[{ id:"t9", numero:"T9", plan:planTest, logements:[] }] }).outils[0].plan, planTest);
+
+    /* ---- uid() : pas de collision d'identifiants (v4.4.1) --------------------------
+       Date.now() seul produisait le meme id pour deux objets crees dans la meme
+       milliseconde (double-clic, import) : la collision ecrasait des donnees en silence. */
+    {
+      const ids = Array.from({ length: 200 }, () => uid("s"));
+      ok("uid : 200 identifiants generes dans la meme milliseconde sont uniques",
+         new Set(ids).size, 200);
+      ok("uid : le prefixe est respecte", /^s[a-z0-9]+$/.test(ids[0]), true);
+    }
 
   } catch(err){
     T.push({ nom:"Exception pendant les tests : " + err.message, pass:false,

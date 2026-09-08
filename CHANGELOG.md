@@ -5,6 +5,29 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.4.1] — 2026-09-08
+
+Correctif robustesse remonté par l'audit externe (revue Hermes) de la 4.4.0 : collision
+d'identifiants à la création.
+
+### Corrigé — deux objets créés dans la même milliseconde avaient le même id
+Les scénarios, lignes, références et OP recevaient un id `"s"+Date.now()` (idem l/r/o).
+Deux créations dans la même milliseconde — double-clic sur « Dupliquer » ou
+« + Ajouter un scénario », gestes scriptés — produisaient le **même id** : `data.find(id)`
+pointait alors au mauvais endroit, un scénario en écrasait un autre, un projet pouvait
+taguer le mauvais scénario. Reproduit pendant l'audit (5 copies → 1 seul id) ; probabilité
+faible en usage calme mais corruption silencieuse quand ça arrive.
+
+- Nouveau helper `uid(prefix)` : `prefix + Date.now().toString(36) + aleatoire` — le
+  pattern déjà utilisé pour essais/prélèvements/outils/logements, étendu à s/l/r/o.
+  `pj` reste géré par `normalizeProjet` (déjà aléatoire).
+- Les 15 sites de création concernés passent par `uid()` (migrations legacy, import ancien
+  format, création ligne/référence/OP/scénario, duplication).
+- `runTests()` : 2 nouveaux tests (200 ids générés d'affilée tous uniques, préfixe respecté).
+
+Aucun changement de format de données : les id existants ne sont pas touchés, seule la
+génération des nouveaux change.
+
 ## [4.4.0] — 2026-09-08
 
 Repart de la discussion sur la logique d'atelier réelle : très peu de données saisies par
