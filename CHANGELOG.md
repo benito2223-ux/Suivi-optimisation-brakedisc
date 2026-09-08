@@ -5,6 +5,69 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.3.0] — 2026-09-08
+
+Correctif de fond suite à un retour d'usage direct de Benjamin : le filtre de projet livré
+en 4.1/4.2 ne faisait que du cosmétique — activer un projet changeait le bandeau de cartes
+mais ne touchait jamais à la liste des scénarios sur laquelle on travaille au quotidien.
+Deux mécanismes de filtrage qui ne se parlaient pas, d'où le symptôme remonté : « je clique
+sur une ligne, ça m'affiche des projets qui n'ont rien à voir ».
+
+### Corrigé — bug réel : projet sans étiquette visible sur toutes les lignes
+`projetVisibleSurLigne()` traitait tout projet à 0 étiquette comme visible partout, sans
+distinction. Nouveau champ `projet.ligneCreation` (posé à la création) : un projet sans
+étiquette n'est désormais visible **que sur la ligne où il a été créé**. Comportement legacy
+(visible partout) conservé uniquement pour un projet créé avant la 4.3, qui n'a pas ce champ
+— pour ne pas le faire disparaître sans explication à la mise à jour.
+
+### Ajouté — le filtre scope réellement le travail
+Nouvelles fonctions `opOrganiseParProjets()` et `scenariosVisibles()` :
+- si aucun scénario de l'OP courant n'est étiqueté dans un projet, rien n'est filtré —
+  comportement identique à avant l'existence des projets, pour ne rien changer à qui ne s'en
+  sert pas ;
+- dès qu'au moins un scénario de cet OP appartient à un projet, et qu'un projet précis est
+  actif, la liste se scope réellement : seuls les scénarios de ce projet s'affichent
+  (`renderTabs()`). Les autres restent dans l'outil, simplement masqués.
+
+`render()` reconduit `activeId` vers le premier scénario encore visible si le filtre masque
+celui qui était ouvert — jamais un panneau de détail affichant un scénario que la liste dit
+ne pas montrer. Un état vide dédié (« Aucun scénario de « X » sur cet OP », avec un bouton
+« Voir tous les scénarios de cet OP ») couvre le cas où le projet actif ne touche rien ici,
+plutôt qu'un écran vide sans explication ni échappatoire.
+
+Le numéro de chaque tuile reste calculé sur la liste complète de l'OP, pas sur la liste
+filtrée — sinon « le scénario 3 » changerait de sens selon le projet ouvert.
+
+### Modifié — création d'un projet
+« Créer un projet ici » rattache désormais **tous les scénarios de l'OP ouvert**, pas
+seulement celui affiché au moment du clic (l'ancien mécanisme, fragile : un projet créé sans
+scénario actif restait vide et devenait le « fantôme visible partout » du bug ci-dessus).
+L'association à la ligne se fait donc directement par l'acte de création, sans dialogue
+supplémentaire — on affine ensuite au cas par cas avec les étiquettes des cartes de scénario.
+
+### Ajouté — documentation intégrée
+La section « Comment ça marche » de l'outil (icône ⓘ) n'avait jamais été mise à jour depuis
+l'arrivée des projets — corrigé, avec une explication du filtre réel ci-dessus.
+
+### Portée volontairement non étendue
+La synthèse comparative, l'export CSV et l'impression restent **non filtrés** par le projet
+actif — ce sont des vues de comparaison où voir l'ensemble reste souvent le but recherché,
+y compris en travaillant principalement dans un projet. Seul le bandeau de travail quotidien
+(`renderTabs`) applique le filtre réel.
+
+### Tests
+123/123 (10 ajoutés) : projet neuf visible sur sa ligne de création et caché ailleurs,
+compatibilité d'un projet legacy sans ce champ, `opOrganiseParProjets()` vrai/faux selon
+qu'un scénario de l'OP est étiqueté ou non, `scenariosVisibles()` dans les trois états (aucun
+filtre, OP non organisé, OP organisé avec projet actif ne contenant rien ici — liste vide et
+non un repli silencieux sur tout).
+
+Vérifié en session : projet créé avec 3 scénarios auto-rattachés, un retiré manuellement puis
+absent de la liste filtrée sans être supprimé de l'outil ; bascule automatique du scénario
+ouvert quand le filtre le masque ; état vide avec échappatoire fonctionnelle ; bug d'origine
+reproduit puis confirmé corrigé (un nouveau projet sur EMAG 1 n'apparaît plus sur Step 3) ;
+round-trip complet vers la 3.19.2 toujours réussi (lignes/scénarios/prélèvements intacts).
+
 ## [4.2.0] — 2026-09-08
 
 Suite directe des retours d'usage sur la 4.1.x, tous traités dans cette version : ergonomie

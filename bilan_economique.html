@@ -1515,6 +1515,15 @@ body.atelier-on{overflow:hidden;}
         <li>Si un essai reste « en cours », le badge dit toujours ce qui manque : une mesure à saisir, la charnière non renseignée, ou le nombre de pièces atteint.</li>
       </ul>
 
+      <h4>Projets</h4>
+      <ul>
+        <li>Un <b>projet</b> regroupe les scénarios qui répondent à une même problématique — il ne possède rien : les lignes, références, OP et scénarios restent où ils sont, un scénario peut appartenir à plusieurs projets à la fois (utile pour une plaquette testée sur deux machines pour deux raisons différentes).</li>
+        <li><b>Créer un projet</b> ("+ Créer/Nouveau projet") le rattache d'office à tous les scénarios de l'OP actuellement ouvert — pas juste celui affiché au moment du clic. Affinez ensuite avec les étiquettes sous chaque carte de scénario (cliquer une étiquette l'ajoute ou la retire du projet).</li>
+        <li>Les cartes de projet affichées changent selon la <b>ligne ouverte</b> : un projet n'apparaît que sur les lignes où il a au moins un scénario, plus celui actuellement filtré (même s'il porte sur une autre ligne). Le lien « Voir tous les projets » retrouve tout le reste.</li>
+        <li><b>Cliquer une carte filtre réellement le travail</b>, pas juste l'affichage : dès qu'au moins un scénario de l'OP ouvert appartient à un projet, activer ce projet ne montre plus que ses scénarios dans la liste — les autres restent dans l'outil, simplement masqués tant que le filtre est actif. Un OP qui n'a encore aucun scénario rattaché à un projet fonctionne exactement comme avant, sans rien filtrer.</li>
+        <li>Chaque projet a sa <b>couleur</b> (reprise sur ses étiquettes) et peut avoir un <b>pilote</b> — liste gérée dans <b>⚙ Options</b>, avec sa propre couleur affichée sur la bordure des cartes.</li>
+      </ul>
+
       <h4>Bon à savoir</h4>
       <ul>
         <li>La <b>grandeur suivie et sa tolérance</b> se règlent une fois pour toutes dans <b>⚙ Options</b> — battement en OP10, Ra en OP40, ce que vous voulez. Un scénario peut déclarer une exception, mais la comparaison perd alors sa validité.</li>
@@ -1669,7 +1678,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.2.0";
+const TOOL_VERSION = "4.3.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -2000,6 +2009,11 @@ function normalizeProjet(p){
     // l'etiquette visible change ("Description", v4.2) et la saisie passe en zone de texte.
     nom: "", problematique: "", responsable: "", responsableId: "", statut: "encours",
     dateCible: "", creePar: "", creeLe: "",
+    // ligne sur laquelle le projet a ete cree (v4.3) : sert UNIQUEMENT de repli d'affichage
+    // tant qu'aucune etiquette n'existe encore (voir projetVisibleSurLigne). Des qu'une
+    // etiquette est posee, ce champ n'a plus d'effet -- ce ne sont plus les etiquettes qui
+    // decident, jamais ce champ.
+    ligneCreation: "",
     // identite visuelle du projet (v4.2) : assignee une fois, a la creation, jamais
     // recalculee au rendu -- sinon les couleurs "sauteraient" d'une session a l'autre des
     // qu'un projet est supprime et decale les index des autres.
@@ -4808,10 +4822,24 @@ function renderTabs(){
   const el = document.getElementById("tabsStrip");
   const base = baselineScenario();
   const baseCost = base ? scenarioCost(base) : null;
+  // v4.3 : la liste affichee respecte le filtre de projet actif (voir scenariosVisibles).
+  // Le numero de chaque tuile reste son rang dans `data` (la liste COMPLETE de l'OP), pas
+  // dans la liste filtree -- sinon "le scenario 3" changerait de sens selon le projet
+  // ouvert, ce qui casserait exactement la reperabilite que ce numero est cense donner.
+  const visibles = scenariosVisibles();
+  if(!visibles.length && data.length){
+    const pjActif = projets.find(p => p.id === activeProjetId);
+    el.innerHTML = `<p class="log-empty" style="padding:16px 4px;">Aucun scénario de « ${escapeAttr(pjActif ? pjActif.nom : "")} » sur cet OP.
+      <button class="ghost small" id="voirTousScenariosBtn" style="margin-left:8px;">Voir tous les scénarios de cet OP</button></p>`;
+    const btn = document.getElementById("voirTousScenariosBtn");
+    if(btn) btn.addEventListener("click", () => { activeProjetId = null; saveData(); render(); });
+    return;
+  }
   // Le scenario ouvert passe en tete et s'affiche en grand : on lit d'abord ce qu'on
   // regarde. Le numero, lui, reste celui de la creation — il ne bouge pas quand l'ordre
   // d'affichage change, sinon on ne peut plus se dire "regarde le 3".
-  const ordre = data.map((sc, i) => ({ sc, numero: i + 1 }));
+  const numeroDe = new Map(data.map((sc, i) => [sc.id, i + 1]));
+  const ordre = visibles.map(sc => ({ sc, numero: numeroDe.get(sc.id) }));
   ordre.sort((a, b) => (b.sc.id === activeId) - (a.sc.id === activeId));
   const carte = ({ sc, numero }) => {
     const cost = scenarioCost(sc);
@@ -6587,13 +6615,50 @@ function projetCarteHTML(pj){
 /* Un projet est visible sur une ligne si : c'est le projet actif (on doit toujours pouvoir
    voir/desactiver ce qu'on a choisi, meme en regardant une autre ligne -- un projet peut
    volontairement couvrir plusieurs lignes) ; ou il a deja au moins un scenario tague sur
-   cette ligne ; ou il n'a encore AUCUNE etiquette nulle part (projet tout juste cree --
-   sinon il ne s'afficherait jamais nulle part et on ne pourrait jamais y taguer un premier
-   scenario). */
+   cette ligne.
+   Correctif v4.3 : un projet SANS AUCUNE etiquette n'est plus visible "partout" -- ce
+   comportement etait le bug remonte en usage reel ("je clique sur une ligne, ça m'affiche
+   des projets qui n'ont rien à voir"). Il est desormais visible UNIQUEMENT sur la ligne ou
+   il a ete cree (`ligneCreation`, pose par creerProjet() qui tague aussi d'office tous les
+   scenarios de l'OP courant -- un projet neuf n'est donc presque jamais reellement vide).
+   Le seul cas ou l'ancien comportement ("partout") est conserve : un projet cree par une
+   version anterieure a la v4.3, qui n'a pas ce champ -- pour ne pas le faire disparaitre
+   d'un coup sans explication a la mise a jour. */
 function projetVisibleSurLigne(pj, ligneId){
   if(pj.id === activeProjetId) return true;
-  if(!pj.tags.length) return true;
-  return pj.tags.some(t => t.ligneId === ligneId);
+  if(pj.tags.length) return pj.tags.some(t => t.ligneId === ligneId);
+  return pj.ligneCreation ? pj.ligneCreation === ligneId : true;
+}
+
+/* ============================================================================
+   FILTRE REEL DU TRAVAIL PAR PROJET (v4.3)
+   ============================================================================
+   Jusqu'ici, "activer" un projet ne faisait que du cosmetique : bandeau de cartes,
+   auto-etiquetage a la creation, filtre du tableau de bord. La liste des scenarios sur
+   laquelle on travaille au quotidien (le bandeau de tuiles, `data`) restait, elle,
+   totalement insensible au projet actif -- on pouvait cliquer "Coût EMAG 1" et continuer a
+   voir cote a cote des scenarios d'un autre projet sur le meme OP. Ce n'etait pas juste
+   incomplet, c'etait incoherent : deux mecanismes de filtrage qui ne se parlaient pas.
+
+   Regle desormais (logique atelier) :
+     - si AUCUN scenario de l'OP courant n'est etiquete dans un quelconque projet, l'OP
+       n'a pas ete organise par projets : rien n'est filtre, comportement identique a avant
+       l'existence des projets. Personne ne doit sentir la fonctionnalite s'il ne l'utilise
+       pas ;
+     - des qu'au moins un scenario de cet OP appartient a un projet, ET qu'un projet precis
+       est le filtre actif, la liste se scope reellement : seuls les scenarios de CE projet
+       s'affichent. On ne regarde plus "tout", on travaille "dans" le projet choisi.
+   `render()` s'appuie dessus pour ne jamais laisser `activeId` pointer vers un scenario
+   masque ; `renderTabs()` s'en sert pour la liste affichee et son etat vide dedie. */
+function opOrganiseParProjets(){
+  return data.some(sc => projets.some(pj => projetContientScenario(pj, activeLigneId, activeReferenceId, activeOpId, sc.id)));
+}
+function scenariosVisibles(){
+  if(!activeProjetId) return data;
+  if(!opOrganiseParProjets()) return data;
+  const pjActif = projets.find(p => p.id === activeProjetId);
+  if(!pjActif) return data;
+  return data.filter(sc => projetContientScenario(pjActif, activeLigneId, activeReferenceId, activeOpId, sc.id));
 }
 
 /* Vue "tous les projets" du bandeau : etat d'affichage volatil, comme le filtre du tableau
@@ -6664,11 +6729,15 @@ function creerProjet(){
     creeLe: new Date().toISOString().slice(0,10),
     // couleur d'identite assignee une fois pour toutes, ici, a la creation -- jamais
     // recalculee au rendu (voir normalizeProjet)
-    couleur: OUTIL_COLORS[projets.length % OUTIL_COLORS.length]
+    couleur: OUTIL_COLORS[projets.length % OUTIL_COLORS.length],
+    // repli d'affichage tant qu'aucune etiquette n'existe (voir projetVisibleSurLigne)
+    ligneCreation: activeLigneId || ""
   });
-  // le scenario actuellement ouvert entre d'office dans le nouveau projet : c'est
-  // generalement pour lui qu'on cree le projet
-  if(activeId) toggleTagScenario(pj, activeLigneId, activeReferenceId, activeOpId, activeId);
+  // v4.3 : "creer un projet ici" tague TOUS les scenarios de l'OP courant, pas seulement
+  // celui qui etait ouvert par hasard -- "ici" doit se comprendre comme "cette ligne, cet
+  // OP, maintenant", pas comme une loterie sur le scenario affiche. On affine ensuite au
+  // cas par cas avec les etiquettes des cartes de scenario.
+  (data || []).forEach(sc => pj.tags.push({ ligneId: activeLigneId, referenceId: activeReferenceId, opId: activeOpId, scenarioId: sc.id }));
   projets.push(pj);
   activeProjetId = pj.id;
   saveData();
@@ -7068,6 +7137,11 @@ function toggleLock(){
 
 function render(){
   if(!data.find(s => s.id === activeId)) activeId = data[0] ? data[0].id : null;
+  // le filtre de projet (v4.3) peut masquer le scenario actuellement ouvert : on retombe
+  // sur le premier scenario encore visible, comme s'il avait ete supprime -- jamais un
+  // panneau de detail affichant un scenario que la liste dit ne pas montrer.
+  const visibles = scenariosVisibles();
+  if(visibles.length && !visibles.find(s => s.id === activeId)) activeId = visibles[0].id;
   updateHeader();
   updatePhotosDirUI();
   renderProjets();
@@ -7894,6 +7968,12 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""))) ret
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.3.0", date:"08/09/2026", points:[
+    "<b>Le filtre de projet scope réellement le travail, pas seulement l'affichage.</b> Jusqu'ici, activer un projet ne faisait que du cosmétique — le bandeau de scénarios sur lequel vous travailliez au quotidien continuait à tout montrer, mélangé. Désormais, dès qu'au moins un scénario de l'OP ouvert appartient à un projet, activer ce projet ne montre plus que ses scénarios : les autres restent dans l'outil, simplement masqués tant que le filtre est actif. Un OP qui n'a encore aucun scénario rattaché à un projet continue de fonctionner exactement comme avant, sans rien filtrer.",
+    "<b>Correction d'un vrai défaut</b> : un projet sans aucun scénario rattaché s'affichait sur toutes les lignes, y compris celles qui n'avaient rien à voir avec lui. Il n'apparaît maintenant que sur la ligne où il a été créé, tant qu'il n'a pas d'étiquette ailleurs.",
+    "<b>Créer un projet rattache désormais tous les scénarios de l'OP ouvert</b>, pas seulement celui affiché au moment du clic — « créer un projet ici » veut dire « cette ligne, cet OP, maintenant ». Affinez ensuite au cas par cas avec les étiquettes des cartes de scénario.",
+    "La section « Comment ça marche » de l'outil (icône ⓘ) explique maintenant les projets — elle avait été oubliée lors de leur arrivée."
+  ]},
   { version:"4.2.0", date:"08/09/2026", points:[
     "<b>Retours d'usage sur les projets, traités d'un coup.</b> Le bouton « Modifier » d'un projet est maintenant écrit en toutes lettres sur la carte (avant : une petite icône ⚙ qu'on ne voyait pas) — pareil pour créer un projet, qui passe en bouton bleu bien visible. Le bouton qui enregistre vos modifications s'appelle maintenant « Enregistrer » — il faisait déjà ça, mais s'appelait « Fermer », ce qui n'aidait pas à croire que c'était sauvegardé.",
     "<b>Description du projet en zone de texte</b> — largement assez de place pour écrire l'objectif et les moyens mis en œuvre, plus une seule ligne.",
@@ -8670,16 +8750,52 @@ function runTests(){
     const pjStepSeul = normalizeProjet({ id:"pjS", nom:"S", tags:[{ ligneId:"lS", referenceId:"r", opId:"o", scenarioId:"s" }] });
     const pjCroise   = normalizeProjet({ id:"pjX", nom:"X", tags:[
       { ligneId:"lE", referenceId:"r", opId:"o", scenarioId:"s" }, { ligneId:"lS", referenceId:"r", opId:"o", scenarioId:"s" }] });
-    const pjNeuf     = normalizeProjet({ id:"pjN", nom:"N", tags:[] });
+    // v4.3 : un projet sans etiquette n'est plus visible "partout" (c'etait le bug remonte
+    // en usage reel) -- il n'est visible que sur sa ligne de creation, sauf pour un projet
+    // legacy (anterieur a la v4.3, sans le champ ligneCreation) qui garde l'ancien
+    // comportement pour ne pas disparaitre sans explication a la mise a jour.
+    const pjNeufIci  = normalizeProjet({ id:"pjN", nom:"N", tags:[], ligneCreation:"lE" });
+    const pjNeufAncien = { id:"pjO", nom:"O", tags:[], statut:"encours" }; // pas de normalizeProjet : simule un vieux projet sans le champ
     const memoActifTest = activeProjetId;
     activeProjetId = null;
     ok("projetVisibleSurLigne : un projet d'une autre ligne est cache", projetVisibleSurLigne(pjStepSeul, "lE"), false);
     ok("projetVisibleSurLigne : un projet de cette ligne reste visible", projetVisibleSurLigne(pjEmagSeul, "lE"), true);
     ok("projetVisibleSurLigne : un projet cross-ligne est visible des deux cotes", projetVisibleSurLigne(pjCroise, "lE") && projetVisibleSurLigne(pjCroise, "lS"), true);
-    ok("projetVisibleSurLigne : un projet tout neuf (0 etiquette) est toujours visible", projetVisibleSurLigne(pjNeuf, "lE"), true);
+    ok("projetVisibleSurLigne : un projet neuf est visible sur sa ligne de creation", projetVisibleSurLigne(pjNeufIci, "lE"), true);
+    ok("projetVisibleSurLigne : un projet neuf est cache sur une AUTRE ligne", projetVisibleSurLigne(pjNeufIci, "lS"), false);
+    ok("projetVisibleSurLigne : un projet legacy sans ligneCreation reste visible partout", projetVisibleSurLigne(pjNeufAncien, "lE") && projetVisibleSurLigne(pjNeufAncien, "lS"), true);
     activeProjetId = "pjS";
     ok("projetVisibleSurLigne : le projet actif reste visible meme hors de sa ligne", projetVisibleSurLigne(pjStepSeul, "lE"), true);
     activeProjetId = memoActifTest;
+
+    /* ---- filtre reel du travail par projet (v4.3) -----------------------------------
+       opOrganiseParProjets()/scenariosVisibles() sont la vraie correction du bug remonte :
+       activer un projet doit reellement scoper la liste des scenarios sur lesquels on
+       travaille, pas seulement les cartes de projet affichees en haut de l'ecran. */
+    lignes = [ normalizeLigne({ id:"lF", nom:"Ligne filtre", references:[
+      { id:"rF", nom:"Ref", ops:[ { id:"oF", nom:"OP", config:{}, scenarios:[
+        normalizeScenario({ id:"scF1", name:"S1" }), normalizeScenario({ id:"scF2", name:"S2" })
+      ] } ] }
+    ] }) ];
+    activeLigneId = "lF"; activeReferenceId = "rF"; activeOpId = "oF";
+    data = lignes[0].references[0].ops[0].scenarios;
+    projets = [];
+    activeProjetId = null;
+    ok("scenariosVisibles : sans filtre actif, tout est visible", scenariosVisibles(), data);
+    const pjFiltreTest = normalizeProjet({ id:"pjF1", nom:"F1", tags:[{ ligneId:"lF", referenceId:"rF", opId:"oF", scenarioId:"scF1" }] });
+    projets = [pjFiltreTest];
+    ok("opOrganiseParProjets : vrai des qu'un scenario de l'OP est etiquete", opOrganiseParProjets(), true);
+    ok("scenariosVisibles : OP non organise (aucun projet actif) -> tout est visible", scenariosVisibles(), data);
+    activeProjetId = "pjF1";
+    ok("scenariosVisibles : OP organise + projet actif -> ne montre que ses scenarios", scenariosVisibles().map(s=>s.id), ["scF1"]);
+    const pjAutreTest = normalizeProjet({ id:"pjF2", nom:"F2", tags:[] });
+    projets.push(pjAutreTest);
+    activeProjetId = "pjF2";
+    ok("scenariosVisibles : projet actif sans etiquette ici -> liste vide (pas tout montrer)", scenariosVisibles(), []);
+    activeProjetId = null;
+    ok("opOrganiseParProjets : faux si aucun scenario de l'OP n'est etiquete nulle part", (() => {
+      projets = []; return opOrganiseParProjets();
+    })(), false);
 
     /* ---- plan d'outil (v3.18) ----------------------------------------------------
        Un plan perdu au rechargement serait invisible : normalizeOutil doit le conserver
