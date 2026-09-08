@@ -74,6 +74,57 @@ avant, et celle qu'il perdrait sans elle.
 signalée), relecture format 6 sans migration, statut par défaut, et fusion au niveau projet
 (projet inconnu ajouté, ligne reçue rattachée au projet connu, nom et pilote locaux préservés).
 
+### Validation sur données réelles
+La migration a été éprouvée sur le dernier export de production avant bascule
+(`rev16`, 07/09/2026, format 5, produit par la 3.19.1 — 1 ligne, 1 référence, 1 OP,
+3 scénarios, 32 prélèvements, 7 suggestions) :
+
+| contrôle | résultat |
+|---|---|
+| prélèvements avant / après migration | 32 / 32 |
+| scénarios, baseline, statuts | conservés à l'identique |
+| backlog | 7 / 7 |
+| onglet actif (ligne › référence › OP › scénario) | restitué |
+| projet créé | « Optimisation EMAG 1 », problématique pré-remplie |
+
+Aucune perte, aucune exception. Le test a été mené sur une copie servie en local ; le fichier
+de production n'est pas versionné (voir README, § Confidentialité).
+
+### Points ouverts — pour la revue externe
+Décisions assumées de cette version, listées ici parce qu'elles sont les plus discutables et
+les plus coûteuses à défaire :
+
+1. **Arbre et non graphe.** Une ligne appartient à un seul projet. Suivre EMAG 1 dans deux
+   projets distincts suppose de la dupliquer, et les scénarios divergeront ensuite. Choix fait
+   pour coller à la demande telle que formulée ; un modèle en graphe (ligne partagée, scénarios
+   référencés) coûtait environ trois fois le prix. **Question ouverte** : est-ce que le besoin
+   « même machine, deux problématiques suivies séparément » va apparaître, et à quelle échéance ?
+2. **`lignes` reste une variable globale pointant sur le projet actif**, sur le modèle de
+   `data`/`config` pour l'OP active. Cela a évité de toucher ~90 points d'appel, au prix d'un
+   invariant à tenir : toute réassignation de `lignes` doit être suivie d'un `syncActiveProjet()`.
+   Aujourd'hui garanti par `saveData()`, plus un filet dans `syncActiveProjet()` qui recrée un
+   projet si l'arbre se retrouve sans racine. **Question ouverte** : cet invariant tient-il face
+   aux chemins d'erreur (import interrompu, quota atteint en cours de bascule de projet) ?
+3. **Format 6 à sens unique.** Les fichiers antérieurs s'ouvrent, l'inverse est faux. Aucun
+   garde-fou côté anciennes versions : elles afficheront « Aucune donnée reconnue ». **Question
+   ouverte** : faut-il un message explicite côté nouvelle version quand elle détecte qu'un
+   fichier a été produit par une version plus récente qu'elle ?
+4. **Défaut d'import inchangé.** « Remplacer tout » reste le bouton primaire, décision prise en
+   3.16.1 quand une seule personne saisissait. Avec l'arrivée d'un second technicien process,
+   c'est devenu le bouton qui écrase le travail de l'autre. Non modifié dans cette version pour
+   ne pas changer un défaut sans arbitrage explicite. **Question ouverte** : inverser ?
+5. **Échéance sans notion de retard.** `dateCible` est affichée en J−n, sans badge ni statut
+   automatique « en retard ». Motif : dans un atelier, un essai glisse pour des raisons subies
+   (disponibilité machine, disponibilité bruts, priorité client) et un voyant rouge n'apporte
+   pas d'information exploitable — voire nuit, sur un écran visible par le client.
+
+### Anomalie découverte hors périmètre de cette version
+Vérifié sur la 4.0.0 mais préexistant : dans le module Marposs, coller une seconde extraction
+**écrase la première** (`es.marposs.releves = rows`). Un essai mené sur deux jours ne peut pas
+être saisi sans perdre la moitié des relevés, et rien ne le signale. Remonté par l'utilisateur
+sous la forme d'une demande d'évolution (« Essais en plusieurs parties ») ; c'est en réalité une
+perte de données silencieuse. À traiter en priorité dans une version ultérieure.
+
 ## Non versionné — 2026-09-05
 
 Mentions de paternité. **`TOOL_VERSION` volontairement inchangé** : le bandeau « Nouveautés »
