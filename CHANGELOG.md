@@ -5,6 +5,39 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [3.19.2] — 2026-09-08 — **version actuellement en production**
+
+Retour arrière : la 4.0.0 est retirée de la production le temps de trancher si une ligne doit
+appartenir à un seul projet ou pouvoir être suivie dans plusieurs. Décision assumée de décider
+avant que des campagnes entières soient rangées d'une façon qu'il faudrait défaire ensuite.
+
+> **Écart volontaire entre le dépôt et la production.** `main` porte la 4.0.0 ; la production
+> sert la 3.19.2, conservée sur la branche `rollback/3.19.2`. Tout déploiement depuis `main`
+> remettrait donc les projets en ligne — déployer depuis la branche de rollback tant que la
+> question n'est pas tranchée.
+
+### Pourquoi un retour arrière brut aurait été dangereux
+Vérifié, pas supposé : la 3.19.1 face à un `localStorage` en format 6 ne trouve pas
+`parsed.lignes`, conclut qu'elle démarre à neuf et **affiche le jeu d'exemple**. Les vraies
+mesures restent présentes dans le navigateur mais invisibles, et la première saisie les écrase.
+C'est exactement l'incident du 27/08/2026 documenté plus bas dans ce fichier — une migration
+produisant un arbre vide qui masque silencieusement les vraies données.
+
+### Garde-fou ajouté
+`lignesDepuisArbre()` lit indifféremment `lignes` (format 5) et `projets` (format 6, dont les
+lignes sont aplaties dans l'arbre unique de cette version). Appliqué au chargement, aux **deux**
+chemins de restauration (historique et point de reprise — la 4.0 y écrivait aussi des `projets`)
+et à l'import de fichier. Aucune donnée n'est perdue ; seul le regroupement par projet
+disparaît, et il revient si la 4.0 est redéployée.
+
+Vérifié : deux projets en format 6 → deux lignes, 31/31 prélèvements, préservés après
+sauvegarde ; format 5 inchangé ; import d'un `.json` format 6 accepté ; 73/73 tests.
+
+### Note de version affichée aux utilisateurs
+Explicite sur le fait que les projets sont *mis en attente* et que les données saisies
+entre-temps sont reprises — quelqu'un qui a vu les projets ce matin doit comprendre pourquoi
+ils ont disparu, sinon il conclura à une perte.
+
 ## [4.0.0] — 2026-09-08
 
 Nouveau niveau racine : les **projets**. Demande de Matis — un nouveau technicien process
