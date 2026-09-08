@@ -1639,7 +1639,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.1.0";
+const TOOL_VERSION = "4.1.1";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -2068,6 +2068,9 @@ function syncActiveOp(){
 }
 function switchOp(ligneId, refId, opId){
   syncActiveOp();
+  // le "voir tous les projets" du bandeau est une echappatoire ponctuelle, pas un reglage :
+  // en changeant de ligne on repart filtre, sinon le mode "tous" resterait colle indefiniment
+  if(ligneId !== activeLigneId) bandeauProjetsTousAffiches = false;
   activeLigneId = ligneId;
   activeReferenceId = refId;
   activeOpId = opId;
@@ -6459,10 +6462,26 @@ function projetCarteHTML(pj){
     </button>`;
 }
 
+/* Un projet est visible sur une ligne si : c'est le projet actif (on doit toujours pouvoir
+   voir/desactiver ce qu'on a choisi, meme en regardant une autre ligne -- un projet peut
+   volontairement couvrir plusieurs lignes) ; ou il a deja au moins un scenario tague sur
+   cette ligne ; ou il n'a encore AUCUNE etiquette nulle part (projet tout juste cree --
+   sinon il ne s'afficherait jamais nulle part et on ne pourrait jamais y taguer un premier
+   scenario). */
+function projetVisibleSurLigne(pj, ligneId){
+  if(pj.id === activeProjetId) return true;
+  if(!pj.tags.length) return true;
+  return pj.tags.some(t => t.ligneId === ligneId);
+}
+
+/* Vue "tous les projets" du bandeau : etat d'affichage volatil, comme le filtre du tableau
+   de bord -- ne se sauvegarde pas, on repart filtre par ligne a chaque rechargement. */
+let bandeauProjetsTousAffiches = false;
+
 function renderProjets(){
   const el = document.getElementById("projetsBandeau");
   if(!el) return;
-  if(!projets.length && !document.getElementById("projetsBandeauOuvert")){
+  if(!projets.length){
     // aucun projet cree : pas la peine d'occuper l'ecran avec un bandeau vide, un simple
     // lien suffit -- les projets sont facultatifs, l'outil marche identiquement sans eux
     el.innerHTML = `<button class="ghost small" id="addProjetBtn">+ Créer un projet</button>
@@ -6470,14 +6489,36 @@ function renderProjets(){
     document.getElementById("addProjetBtn").addEventListener("click", creerProjet);
     return;
   }
+
+  const ligneNom = (getActiveLigne() || {}).nom || "cette ligne";
+  const visibles = bandeauProjetsTousAffiches ? projets : projets.filter(pj => projetVisibleSurLigne(pj, activeLigneId));
+
+  if(!visibles.length){
+    // des projets existent, mais aucun ne concerne la ligne ouverte -- on le dit plutot
+    // que d'afficher un bandeau vide qui laisserait croire qu'aucun projet n'existe
+    el.innerHTML = `
+      <div class="pj-entete">
+        <h4>Projets</h4>
+        <span class="pj-compte">Aucun sur « ${escapeAttr(ligneNom)} »</span>
+        <button class="ghost small" id="toggleVueProjetsBtn">Voir tous les projets (${projets.length})</button>
+        <button class="ghost small" id="addProjetBtn">+ Nouveau projet</button>
+      </div>`;
+    document.getElementById("toggleVueProjetsBtn").addEventListener("click", () => { bandeauProjetsTousAffiches = true; render(); });
+    document.getElementById("addProjetBtn").addEventListener("click", creerProjet);
+    return;
+  }
+
   el.innerHTML = `
     <div class="pj-entete">
       <h4>Projets</h4>
-      <span class="pj-compte">${projets.length} projet${projets.length>1?"s":""}${activeProjetId ? " — filtré" : ""}</span>
-      ${activeProjetId ? `<button class="ghost small" id="clearProjetBtn">Voir tous les projets</button>` : ""}
+      <span class="pj-compte">${bandeauProjetsTousAffiches
+        ? `${projets.length} projet${projets.length>1?"s":""}`
+        : `${visibles.length} sur « ${escapeAttr(ligneNom)} »`}${activeProjetId ? " — filtré" : ""}</span>
+      <button class="ghost small" id="toggleVueProjetsBtn">${bandeauProjetsTousAffiches ? "Filtrer sur cette ligne" : "Voir tous les projets"}</button>
+      ${activeProjetId ? `<button class="ghost small" id="clearProjetBtn">Retirer le filtre projet</button>` : ""}
       <button class="ghost small" id="addProjetBtn">+ Nouveau projet</button>
     </div>
-    <div class="pj-grille">${projets.map(projetCarteHTML).join("")}</div>`;
+    <div class="pj-grille">${visibles.map(projetCarteHTML).join("")}</div>`;
 
   el.querySelectorAll("[data-projet]").forEach(b => b.addEventListener("click", () => {
     const id = b.getAttribute("data-projet");
@@ -6485,8 +6526,8 @@ function renderProjets(){
     saveData(); render();
   }));
   el.querySelectorAll("[data-cfg-projet]").forEach(b => b.addEventListener("click", () => ouvrirProjetInfo(b.getAttribute("data-cfg-projet"))));
-  const add = document.getElementById("addProjetBtn");
-  if(add) add.addEventListener("click", creerProjet);
+  document.getElementById("addProjetBtn").addEventListener("click", creerProjet);
+  document.getElementById("toggleVueProjetsBtn").addEventListener("click", () => { bandeauProjetsTousAffiches = !bandeauProjetsTousAffiches; render(); });
   const clr = document.getElementById("clearProjetBtn");
   if(clr) clr.addEventListener("click", () => { activeProjetId = null; saveData(); render(); });
 }
@@ -7654,6 +7695,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""))) ret
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.1.1", date:"08/09/2026", points:[
+    "Les cartes de projet en haut de l'écran se limitent maintenant à ceux qui concernent la ligne ouverte — jusqu'ici, tous les projets s'affichaient partout, même ceux qui n'avaient rien à voir avec la ligne regardée. Un projet qui touche plusieurs lignes (ou tout juste créé, sans scénario encore rattaché) reste visible partout, et le lien « Voir tous les projets » permet de repasser en vue complète à tout moment."
+  ]},
   { version:"4.1.0", date:"08/09/2026", points:[
     "<b>Les projets reviennent, sous une forme plus solide.</b> La première version (mise en attente il y a quelques jours) faisait du projet le propriétaire de la ligne de production — une machine ne pouvait appartenir qu'à un seul projet à la fois. Après réflexion, un projet est maintenant une liste de scénarios qu'on choisit d'y rattacher, un peu comme des étiquettes : la ligne, la référence et l'OP restent ce qu'ils ont toujours été, uniques, et un même scénario peut appartenir à plusieurs projets si le besoin se présente.",
     "Concrètement : « Coût &amp; qualité EMAG 1 » et « Essais Step 3 » sont deux cartes en haut de l'écran. Ouvrir un projet ne cache rien de l'atelier — vous continuez à voir toutes les lignes — mais un nouveau scénario créé pendant qu'un projet est ouvert y est <b>automatiquement rattaché</b>, exactement ce que demandait « sélectionner un projet pour renseigner les données ».",
@@ -8371,6 +8415,25 @@ function runTests(){
     ok("fusionnerProjetsTags : etiquette deja presente non dupliquee", pjLocalFusion[0].tags.length, 2);
     ok("fusionnerProjetsTags : nom local jamais ecrase", pjLocalFusion[0].nom, "Mon nom local");
     ok("fusionnerProjetsTags : pilote local jamais ecrase", pjLocalFusion[0].responsable, "Benjamin");
+
+    /* ---- filtre des cartes de projet par ligne (v4.1.1) ----------------------------
+       Un projet doit rester DECOUVRABLE meme s'il ne touche pas encore la ligne ouverte
+       (sinon on ne peut jamais y taguer un premier scenario), et un projet cross-ligne ou
+       le projet actif ne doivent jamais disparaitre du bandeau. */
+    const pjEmagSeul = normalizeProjet({ id:"pjE", nom:"E", tags:[{ ligneId:"lE", referenceId:"r", opId:"o", scenarioId:"s" }] });
+    const pjStepSeul = normalizeProjet({ id:"pjS", nom:"S", tags:[{ ligneId:"lS", referenceId:"r", opId:"o", scenarioId:"s" }] });
+    const pjCroise   = normalizeProjet({ id:"pjX", nom:"X", tags:[
+      { ligneId:"lE", referenceId:"r", opId:"o", scenarioId:"s" }, { ligneId:"lS", referenceId:"r", opId:"o", scenarioId:"s" }] });
+    const pjNeuf     = normalizeProjet({ id:"pjN", nom:"N", tags:[] });
+    const memoActifTest = activeProjetId;
+    activeProjetId = null;
+    ok("projetVisibleSurLigne : un projet d'une autre ligne est cache", projetVisibleSurLigne(pjStepSeul, "lE"), false);
+    ok("projetVisibleSurLigne : un projet de cette ligne reste visible", projetVisibleSurLigne(pjEmagSeul, "lE"), true);
+    ok("projetVisibleSurLigne : un projet cross-ligne est visible des deux cotes", projetVisibleSurLigne(pjCroise, "lE") && projetVisibleSurLigne(pjCroise, "lS"), true);
+    ok("projetVisibleSurLigne : un projet tout neuf (0 etiquette) est toujours visible", projetVisibleSurLigne(pjNeuf, "lE"), true);
+    activeProjetId = "pjS";
+    ok("projetVisibleSurLigne : le projet actif reste visible meme hors de sa ligne", projetVisibleSurLigne(pjStepSeul, "lE"), true);
+    activeProjetId = memoActifTest;
 
     /* ---- plan d'outil (v3.18) ----------------------------------------------------
        Un plan perdu au rechargement serait invisible : normalizeOutil doit le conserver

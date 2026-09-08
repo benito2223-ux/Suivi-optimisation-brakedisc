@@ -5,6 +5,57 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.1.1] — 2026-09-08
+
+Retour d'usage immédiat sur la 4.1.0 (déployée le jour même sur le domaine de test) : les
+cartes de projet s'affichaient toutes, sur toutes les lignes, sans rapport avec la ligne
+ouverte. Ce n'était pas voulu — juste une simplification prise en construisant la
+fonctionnalité, sans peser le sens inverse du principe déjà appliqué à la navigation
+(« la ligne/référence/OP ne se filtrent jamais par projet »).
+
+### Corrigé — cartes de projet filtrées par ligne
+`projetVisibleSurLigne(pj, ligneId)` décide de la visibilité d'une carte : visible si (a)
+c'est le projet actif — on doit toujours pouvoir voir/désactiver ce qu'on a sélectionné, même
+en étant sur une autre ligne, un projet pouvant volontairement couvrir plusieurs lignes —, ou
+(b) il a déjà au moins une étiquette sur cette ligne, ou (c) il n'a **encore aucune étiquette
+nulle part** (projet tout juste créé). Cette dernière règle est la plus importante : sans elle,
+un projet neuf ne s'affiche nulle part et on ne peut jamais y rattacher un premier scénario.
+
+`renderProjets()` gère trois états : la liste filtrée normale, l'absence de projet pertinent
+sur la ligne courante (bandeau qui le dit explicitement plutôt que de paraître vide, avec un
+lien pour voir les projets existant ailleurs), et une bascule « Voir tous les projets » /
+« Filtrer sur cette ligne » — état volatil (`bandeauProjetsTousAffiches`, non persisté, comme
+le filtre du tableau de bord), remis à zéro à chaque changement de ligne pour rester une
+échappatoire ponctuelle plutôt qu'un réglage qui reste collé.
+
+Les étiquettes cliquables sur les cartes de scénario restent volontairement **non filtrées** :
+elles permettent de rattacher délibérément un scénario à un projet d'une autre ligne (c'est
+tout l'intérêt du modèle par étiquettes face à l'ancien modèle par propriété), alors que le
+bandeau du haut sert à ne montrer que ce qui est pertinent au premier coup d'œil.
+
+Nettoyage au passage : `projetsBandeauOuvert`, un identifiant DOM vérifié dans une condition
+mais ne correspondant à aucun élément (donc toujours `null`, condition sans effet réel),
+retiré.
+
+### Discuté et volontairement écarté
+Rattacher un projet à une référence disque entière (plutôt qu'à des scénarios un par un) a été
+envisagé puis abandonné : ça aurait introduit une deuxième granularité d'étiquette, avec les
+questions d'héritage et de précédence que ça pose (une référence taguée inclut-elle les futurs
+scénarios ? comment exclure une exception ?) — exactement le type d'ambiguïté que le passage de
+la 4.0.0 à la 4.1.0 a cherché à éliminer. Le rattachement multi-lignes, en revanche, ne demande
+aucun changement : le modèle par étiquettes le permettait déjà nativement (un projet est une
+liste de scénarios, indépendamment de leur ligne).
+
+### Tests
+102/102 (5 ajoutés) : visibilité d'un projet mono-ligne sur sa ligne et sur une autre, d'un
+projet cross-ligne des deux côtés, d'un projet neuf sans étiquette, et persistance de la
+visibilité du projet actif hors de sa ligne.
+
+Vérifié en session : 4 projets réels (mono-ligne EMAG 1, mono-ligne Step 3, cross-ligne, neuf)
+répartis correctement entre deux lignes ; projet actif resté visible et marqué en changeant de
+ligne ; bandeau « aucun projet ici » avec bouton d'échappatoire quand c'est le cas ; retour
+automatique au filtre après un changement de ligne suivant un « voir tous ».
+
 ## [4.1.0] — 2026-09-08
 
 Les projets reviennent, sur un modèle différent. Retour d'expérience et revue externe
