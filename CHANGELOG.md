@@ -5,16 +5,118 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
-## [3.19.2] — 2026-09-08 — **version actuellement en production**
+## [4.1.0] — 2026-09-08
+
+Les projets reviennent, sur un modèle différent. Retour d'expérience et revue externe
+(Hermès) sur la 4.0.0, retirée quatre jours plus tôt : elle avait mis la coupure de propriété
+au-dessus de la machine (`Projet → Ligne → Référence → OP → Scénario`), forçant une ligne de
+production à n'appartenir qu'à un seul projet. Une ligne physique — une machine, un coût
+horaire, une référence disque — est un fait unique ; en faire la propriété exclusive d'un
+projet confondait « le projet possède la machine » avec « le projet s'intéresse à certains
+essais menés sur la machine ».
+
+### Le modèle : des étiquettes, pas un propriétaire
+L'arbre physique redevient racine, exactement comme avant la 4.0.0 : `lignes` n'est plus
+réassigné selon le projet ouvert, toute la gymnastique `syncActiveProjet()` de la 4.0.0
+disparaît. Un **projet** (`normalizeProjet`) est désormais une liste d'étiquettes
+(`{ligneId, referenceId, opId, scenarioId}`) posées sur des scénarios existants, plus les
+quatre informations que la 4.0.0 avait raison d'inventer : problématique, pilote, statut,
+échéance.
+
+Conséquences directes de ce choix :
+- **Un scénario peut appartenir à plusieurs projets.** Le cas qu'un modèle en arbre ne peut
+  pas exprimer (« cette plaquette est testée à la fois pour le coût sur EMAG 1 et pour l'état
+  de surface pour Step 3 ») devient une simple étiquette de plus.
+- **Pas de double comptage.** Un scénario « en série » a une seule adresse ; le tableau de
+  bord additionne des scénarios uniques, jamais des copies.
+- **Une étiquette peut pointer vers un scénario supprimé** entre-temps — `resoudreTag()` ne
+  lève jamais d'exception dans ce cas, renvoie `null`, et `purgerTagsMorts()` nettoie
+  silencieusement à chaque chargement. Ce n'est pas une perte de données : c'est une entrée de
+  liste qui n'a plus de sens.
+- **La navigation reste volontairement non filtrée** : le bandeau ligne/référence/OP montre
+  toutes les lignes existantes, quel que soit le projet ouvert. Le cloisonnement porte sur la
+  lecture (tableau de bord, cartes de projet), pas sur la vue d'ensemble de l'atelier — Matis
+  n'a jamais demandé à ne plus voir Step 3 exister, il a demandé à ne pas mélanger les essais
+  dans sa synthèse.
+
+### Format de fichier : 7 (rétro-compatible en lecture)
+`payloadSuivi()`, l'export manuel et la sauvegarde automatique dans le dossier local écrivent
+`{ format:7, lignes, projets, activeProjetId, ... }` — **`lignes` reste à la racine, exactement
+comme le format 5.** C'est la différence majeure avec le format 6 de la 4.0.0 : une version
+antérieure à la v4 (3.19.x et avant) ouvre un fichier format 7 sans problème et affiche toutes
+les lignes et mesures ; seul `projets` lui est invisible, puisqu'elle ne le lit pas. Vérifié en
+session : un export produit par cette version, rechargé dans le code de la 3.19.2, restitue
+les lignes, les 3 scénarios et l'intégralité des prélèvements.
+
+`migrerArbre()` remplace `lireProjets()`/`lignesDepuisArbre()` des versions précédentes et unifie
+la lecture des trois formats en un seul point d'entrée (chargement, historique, point de
+reprise, import) :
+- **format 5 ou 7** (`lignes` à la racine) → lu directement, `projets` reconstruit uniquement
+  s'il a la forme d'étiquettes (`tags`) ;
+- **format 6** (4.0.0, projets propriétaires) → les lignes de chaque ancien projet sont
+  aplaties dans l'arbre commun, **et un projet-étiquettes est reconstruit avec la même
+  métadonnée** (nom, problématique, pilote, statut, échéance) pointant vers les scénarios
+  désormais dans l'arbre partagé. Une personne qui a ouvert la 4.0.0 avant son retrait ne perd
+  ni ses mesures ni son regroupement — contrairement au garde-fou de la 3.19.2, qui préservait
+  les mesures mais abandonnait le regroupement.
+
+### Interface
+- **Cartes de projet** (`renderProjets`, `projetCarteHTML`) au-dessus du bandeau
+  ligne/référence/OP, qui reste entièrement visible et navigable — le projet est un filtre de
+  lecture, pas un niveau de navigation physique de plus. Cliquer une carte l'active comme
+  filtre (fil d'Ariane, tableau de bord) ; un second clic la désactive.
+  Chaque carte affiche : nombre de scénarios étiquetés, lignes touchées, essais, scénarios en
+  série, gain annuel acquis (calculé via `dansContexteOp` + `bilanAnnuel`, sans toucher aux
+  globales de navigation), pilote, statut, échéance en J−n **sans notion de retard** — un essai
+  qui glisse dans un atelier est subi, pas fautif.
+- **Aucun bandeau si aucun projet n'existe** : un simple lien « + Créer un projet ». Les
+  projets restent facultatifs, l'outil se comporte à l'identique sans eux.
+- **Étiquettes cliquables sur chaque carte de scénario** (`.tag-pill`) : ajoute ou retire le
+  scénario d'un projet en un clic, sans ouvrir de panneau. Répond littéralement à la demande de
+  Matis (« sélectionner le projet qu'on veut pour renseigner les données ») par un mécanisme
+  différent : **créer un scénario pendant qu'un projet est ouvert l'y étiquette
+  automatiquement** ; dupliquer un scénario fait hériter la copie des mêmes projets que
+  l'original, pour qu'un test de variante ne sorte pas silencieusement de sa campagne.
+- **Panneau d'édition de projet** : nom, problématique, pilote, statut, échéance. La
+  suppression d'un projet ne touche à **aucune donnée physique** — seules les étiquettes
+  disparaissent, les scénarios et essais restent dans l'outil. Contraste volontaire avec la
+  4.0.0, où supprimer un projet supprimait ses lignes.
+- **Tableau de bord filtrable par projet** (`<select>`, un projet = potentiellement plusieurs
+  lignes désormais), réglé sur *tous les projets* par défaut.
+
+### Fusion
+`fusionnerLignes()` retrouve sa forme d'avant la 4.0.0 (fusion par identifiant, sans paramètre
+de préfixe de projet). `fusionnerProjetsTags()` la complète : un projet inconnu arrive en
+entier, un projet connu reçoit les étiquettes qui lui manquent, **sans jamais toucher à son
+nom, son pilote, son statut ou son échéance locaux** — même règle que pour les outils et les
+conditions de coupe. Beaucoup plus simple que la fusion au niveau projet de la 4.0.0 : fusionner
+des listes d'identifiants ne demande aucun arbitrage essai-par-essai.
+
+### Tests
+97/97 (24 ajoutés) : défauts de `normalizeProjet` ; résolution d'étiquette valide et morte sans
+exception ; purge d'étiquettes mortes ; bascule d'appartenance ; migration depuis un format 6
+synthétique avec vérification que la métadonnée et le regroupement survivent et qu'aucun
+prélèvement n'est perdu ; lecture des formats 5 et 7 ; fusion de projets-étiquettes (projet
+inconnu ajouté, étiquette manquante fusionnée, nom et pilote locaux jamais écrasés).
+
+Vérifié en session, au-delà des tests automatisés : deux projets réels créés, un même scénario
+étiqueté dans les deux simultanément (le cas que la 4.0.0 ne pouvait pas exprimer) ; navigation
+ligne/référence/OP restée complètement visible avec un projet actif ; tableau de bord filtré
+sur un seul projet puis remis à zéro ; export de cette version rechargé avec succès dans le
+code de la 3.19.2 (lignes, scénarios et prélèvements intacts, projets invisibles comme prévu) ;
+le fichier réel de production le plus récent (format 5, 3 scénarios, 32 prélèvements) chargé
+sans perte et sans création de projet fantôme.
+
+## [3.19.2] — 2026-09-08
 
 Retour arrière : la 4.0.0 est retirée de la production le temps de trancher si une ligne doit
 appartenir à un seul projet ou pouvoir être suivie dans plusieurs. Décision assumée de décider
 avant que des campagnes entières soient rangées d'une façon qu'il faudrait défaire ensuite.
 
-> **Écart volontaire entre le dépôt et la production.** `main` porte la 4.0.0 ; la production
-> sert la 3.19.2, conservée sur la branche `rollback/3.19.2`. Tout déploiement depuis `main`
-> remettrait donc les projets en ligne — déployer depuis la branche de rollback tant que la
-> question n'est pas tranchée.
+> **Superseded.** Cette version a été la production le temps de trancher la question ci-dessus.
+> Elle est remplacée par la 4.1.0 (voir plus bas), qui répond à la question : le projet devient
+> une étiquette posée sur des scénarios, pas un propriétaire de la ligne physique. Conservée
+> sur la branche `rollback/3.19.2` comme filet de secours.
 
 ### Pourquoi un retour arrière brut aurait été dangereux
 Vérifié, pas supposé : la 3.19.1 face à un `localStorage` en format 6 ne trouve pas

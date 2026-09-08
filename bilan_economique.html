@@ -441,23 +441,24 @@ input.cell.sub{font-size:10.5px; color:var(--ink-faint);}
 .foot-cell .cb-item{color:var(--fill-ink-soft);}
 .foot-cell .cb-item b{color:var(--fill-ink);}
 
-/* ---- SELECTEUR DE PROJET (v4.0) ----
-   Des cartes, pas une quatrieme barre grise : le projet est un changement de contexte
-   complet (on ne compare pas EMAG 1 avec Step 3), pas une selection de plus au meme
-   niveau que la ligne ou l'OP. La difference d'echelle visuelle dit exactement ca. */
+/* ---- SELECTEUR DE PROJET (v4.1) ----
+   Des cartes, pas une barre grise de plus : le projet est un filtre de lecture, pas un
+   niveau de navigation physique. Il ne remplace ni ne chapeaute le controle segmente
+   ligne/reference/OP juste en dessous, qui reste toujours entierement visible. */
 .projets-bandeau{margin-bottom:16px;}
+.pj-aide{font-size:12px; color:var(--ink-faint); margin-left:10px;}
 .pj-entete{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:9px;}
 .pj-entete h4{margin:0; font-family:var(--font-disp); font-weight:800; font-size:15px;
   letter-spacing:-.01em; color:var(--ink);}
 .pj-compte{font-family:var(--font-mono); font-size:11.5px; color:var(--ink-faint); margin-right:auto;}
 .pj-grille{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:10px;}
-.pj-carte{display:flex; flex-direction:column; align-items:flex-start; gap:5px; text-align:left;
-  background:var(--surface); border:1px solid var(--border); border-left:4px solid var(--ink-faint);
-  border-radius:var(--radius); padding:12px 14px; cursor:pointer; font-family:var(--font-body);
+.pj-carte{position:relative; display:flex; flex-direction:column; align-items:flex-start; gap:5px;
+  text-align:left; background:var(--surface); border:1px solid var(--border); border-left:4px solid var(--ink-faint);
+  border-radius:var(--radius); padding:12px 34px 12px 14px; cursor:pointer; font-family:var(--font-body);
   transition:border-color .15s ease, box-shadow .15s ease, transform .15s ease;}
 .pj-carte:hover{transform:translateY(-1px); box-shadow:var(--shadow-card); border-left-color:var(--blue);}
 .pj-carte.active{border-color:var(--blue); border-left-color:var(--blue); background:var(--blue-bg);
-  box-shadow:0 0 0 2px var(--blue); cursor:default; transform:none;}
+  box-shadow:0 0 0 2px var(--blue);}
 .pj-carte.pj-termine{border-left-color:var(--green);}
 .pj-carte.pj-pause{border-left-color:var(--amber);}
 .pj-carte.pj-abandonne{border-left-color:var(--red); opacity:.72;}
@@ -479,6 +480,10 @@ input.cell.sub{font-size:10.5px; color:var(--ink-faint);}
 .pj-gain{font-family:var(--font-disp); font-weight:800; font-size:14px; letter-spacing:-.02em;}
 .pj-gain.pos{color:var(--green);} .pj-gain.neg{color:var(--red);}
 .pj-resp{font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint);}
+.pj-cfg{position:absolute; top:8px; right:8px; width:22px; height:22px; padding:0;
+  border-radius:var(--radius-sm); background:transparent; border:1px solid transparent;
+  color:var(--ink-faint); font-size:13px; line-height:1;}
+.pj-cfg:hover{background:var(--surface-alt); border-color:var(--border); color:var(--ink);}
 @media print{ .projets-bandeau{ display:none !important; } }
 
 /* onglets Ligne de production / Reference disque — controle segmente (piste grise, segment
@@ -515,6 +520,15 @@ input.cell.sub{font-size:10.5px; color:var(--ink-faint);}
 .tc-num{font-family:var(--font-mono); font-size:11px; font-weight:600; color:var(--ink-faint);
   border:1px solid var(--border); border-radius:var(--radius-sm); padding:1px 6px; flex:0 0 auto;}
 .tc-badges{display:flex; flex-wrap:wrap; gap:6px; align-items:center;}
+/* etiquettes de projet sur une carte de scenario : lecture ET bascule d'appartenance en
+   un clic, sans quitter le bandeau des scenarios. */
+.tc-tags{display:flex; flex-wrap:wrap; gap:5px; margin-top:2px;}
+.tag-pill{font-family:var(--font-mono); font-size:10px; font-weight:600; letter-spacing:.02em;
+  padding:2px 8px; border-radius:999px; cursor:pointer; white-space:nowrap;
+  background:var(--surface-alt); color:var(--ink-faint); border:1px solid var(--border);
+  transition:background .12s ease, color .12s ease, border-color .12s ease;}
+.tag-pill:hover{border-color:var(--blue); color:var(--blue-dark);}
+.tag-pill.on{background:var(--blue); color:var(--on-accent); border-color:var(--blue);}
 
 .tab-card.active{border-color:var(--blue); background:var(--blue-bg);
   box-shadow:0 0 0 2px var(--blue), 0 10px 26px rgba(27,94,166,.14); padding:22px 24px 22px 26px;}
@@ -995,6 +1009,9 @@ select.log-equipe:focus{border-color:var(--blue); outline:none; background:var(-
 
 /* --- tableau de bord multi-lignes --- */
 .panel.panel-large{max-width:1120px;}
+.db-filtre{display:flex; align-items:center; gap:8px; margin:2px 0 10px;}
+.db-filtre label{font-family:var(--font-mono); font-size:11px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em;}
+.db-filtre select{font-family:var(--font-body); font-size:13px; padding:5px 8px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); color:var(--ink);}
 .db-kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px; margin:16px 0 22px;}
 .db-kpi{background:var(--fill); border:1px solid var(--fill); border-radius:var(--radius-lg); padding:13px 15px;
   display:flex; flex-direction:column; gap:5px;}
@@ -1004,11 +1021,6 @@ select.log-equipe:focus{border-color:var(--blue); outline:none; background:var(-
 /* le gain acquis est la conclusion du tableau de bord : vert plein, pas un bleu de plus */
 .db-kpi-gain{background:var(--fill-good); border-color:var(--fill-good);}
 .db-kpi-gain .l, .db-kpi-gain .db-kpi-sub{color:var(--fill-good-ink-soft);}
-.db-portee{display:flex; gap:6px; margin:0 0 14px;}
-.db-projet-titre{font-family:var(--font-disp); font-weight:800; font-size:21px; color:var(--ink);
-  margin:26px 0 12px; padding-bottom:8px; border-bottom:3px solid var(--ink); letter-spacing:-.02em;
-  display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;}
-.db-projet-titre:first-child{margin-top:0;}
 .db-ligne{margin-bottom:26px;}
 .db-ligne-titre{font-family:var(--font-disp); font-weight:800; font-size:19px; color:var(--ink); margin:0 0 10px;
   padding-bottom:7px; border-bottom:2px solid var(--blue); display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;}
@@ -1530,8 +1542,9 @@ body.atelier-on{overflow:hidden;}
   <button type="button" class="legend-btn" title="Point bleu = calculé automatiquement · point clair = champ éditable" aria-label="Légende des couleurs de champs"><i class="dot editable"></i><i class="dot blue"></i></button>
   </div>
 
+  <div class="projets-bandeau" id="projetsBandeau"></div>
+
   <div class="ctx-rail" id="ctxRail">
-    <div class="projets-bandeau" id="projetsBandeau"></div>
     <div class="ligne-strip" id="ligneStrip"></div>
     <div class="reference-strip" id="referenceStrip"></div>
     <div class="reference-strip" id="opStrip"></div>
@@ -1551,7 +1564,7 @@ body.atelier-on{overflow:hidden;}
   </div>
   <div class="panel" id="projetInfoPanel" hidden>
     <h3>Projet</h3>
-    <p class="panel-hint">Un projet regroupe tout ce qui concerne une même problématique : ses lignes, ses références, ses OP, ses scénarios et ses essais. Les projets ne se mélangent jamais entre eux.</p>
+    <p class="panel-hint">Un projet regroupe des scénarios qui répondent à une même problématique. Il ne possède rien : les lignes, références, OP et scénarios restent où ils sont, un scénario peut appartenir à plusieurs projets.</p>
     <div class="opt-field on" style="padding-left:0;">
       <label for="projetNom">Nom du projet</label>
       <input type="text" id="projetNom" style="width:100%; text-align:left; font-family:var(--font-body);" placeholder="ex. Coût &amp; qualité EMAG 1">
@@ -1559,7 +1572,7 @@ body.atelier-on{overflow:hidden;}
     <div class="opt-field on" style="padding-left:0;">
       <label for="projetProblematique">Problématique</label>
       <input type="text" id="projetProblematique" style="width:100%; text-align:left; font-family:var(--font-body);" placeholder="ex. réduire le coût outil sans dégrader le battement">
-      <span class="opt-note">Ce qu'on cherche à résoudre. C'est ce qui distingue deux projets menés sur la même machine.</span>
+      <span class="opt-note">Ce qu'on cherche à résoudre — c'est ce qui distingue deux projets menés sur la même machine.</span>
     </div>
     <div class="opt-field on" style="padding-left:0;">
       <label for="projetResponsable">Pilote du projet</label>
@@ -1581,6 +1594,7 @@ body.atelier-on{overflow:hidden;}
       <span class="opt-note">Affichée à titre indicatif sur la carte. L'outil ne déclare jamais un projet « en retard » : dans un atelier, un essai glisse pour des raisons subies.</span>
     </div>
     <p class="panel-hint" id="projetMeta" style="margin-top:14px;"></p>
+    <p class="panel-hint" style="font-size:12px;">Pour ajouter ou retirer un scénario de ce projet, utilisez les étiquettes sous chaque carte de scénario (bandeau des scénarios).</p>
     <div class="panel-actions">
       <button class="danger" id="projetSupprimer">Supprimer ce projet</button>
       <button class="primary" id="projetInfoClose">Fermer</button>
@@ -1625,7 +1639,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.0.0";
+const TOOL_VERSION = "4.1.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -1759,7 +1773,7 @@ async function writeBackupToFolder(){
   try{
     const backupsDir = await photosDirHandle.getDirectoryHandle("backups", { create: true });
     const stamp = new Date().toISOString().replace(/[:.]/g,"-");
-    const payload = { outil:"SPK Suivi optimisation", format:6, toolVersion:TOOL_VERSION, revision, exporteLe:new Date().toISOString(), exportePar:auteurNom, projets, backlog, activeProjetId };
+    const payload = { outil:"SPK Suivi optimisation", format:7, toolVersion:TOOL_VERSION, revision, exporteLe:new Date().toISOString(), exportePar:auteurNom, lignes, projets, activeProjetId, backlog };
     const fh = await backupsDir.getFileHandle(stamp + ".json", { create: true });
     const w = await fh.createWritable();
     await w.write(JSON.stringify(payload));
@@ -1850,25 +1864,10 @@ function defaultLignes(){
 }
 
 /* ---- hierarchie Ligne de production > Reference disque > OP > Scenario > Essai > Prelevement ---- */
-/* ---- PROJETS (v4.0) ------------------------------------------------------------------
-   Nouveau niveau racine, au-dessus des lignes de production. Un projet = une campagne
-   d'optimisation cloisonnee : "coût & qualité sur EMAG 1" d'un cote, les essais de Julien
-   sur Step 3 de l'autre, sans que leurs scenarios, leurs syntheses et leurs tableaux de
-   bord se melangent.
-
-   Choix d'architecture : `lignes` reste la variable globale "lignes du PROJET ACTIF",
-   exactement comme `data` est deja "scenarios de l'OP active". Les ~90 endroits du code
-   qui manipulent `lignes` continuent donc de fonctionner sans modification. La contrepartie
-   est la meme que pour data/config : quand `lignes` est REASSIGNE (filter, defaultLignes...)
-   il faut le recopier dans le projet — c'est le role de syncActiveProjet(), appele par
-   saveData() comme syncActiveOp() l'est deja.
-
-   Une ligne appartient a UN SEUL projet (arbre, pas graphe). Mettre EMAG 1 dans deux
-   projets suppose de la dupliquer, et les scenarios divergeront ensuite. C'est le choix
-   difficile a defaire : il correspond a la demande telle qu'elle a ete formulee, et un
-   modele en graphe coutait trois fois le prix pour un besoin qui n'existe pas encore. */
+/* Projets (v4.1) : liste d'etiquettes posees sur des scenarios de `lignes`. Racine au
+   meme titre que `lignes`, jamais imbriques l'un dans l'autre. */
 let projets = [];
-let activeProjetId = null;
+let activeProjetId = null; // null = aucun filtre actif ("Tous les projets")
 let lignes = [];
 let backlog = [];
 let revision = 0;
@@ -1914,111 +1913,135 @@ function normalizeReference(r){
   return { id: r.id || ("r"+Math.random().toString(36).slice(2)), nom: r.nom || "",
            productionAnnuelle: r.productionAnnuelle ?? "", ops };
 }
-const PROJET_STATUTS = { encours:"En cours", pause:"En pause", termine:"Terminé", abandonne:"Abandonné" };
+/* ============================================================================
+   PROJETS COMME ETIQUETTES, PAS COMME PROPRIETAIRES (v4.1)
+   ============================================================================
+   La v4.0 avait mis le projet AU-DESSUS de la machine : Projet -> Ligne -> Reference ->
+   OP -> Scenario. Deployee, elle a ete retiree en v3.19.2 le temps de trancher une question
+   de fond, posee par Benjamin et confirmee par la revue d'Hermes : une ligne de production
+   est un fait physique unique (une machine, un cout horaire, une reference disque). La
+   forcer a appartenir a UN SEUL projet, c'est confondre "le projet possede la machine" avec
+   "le projet s'interesse a certains essais menes sur la machine".
 
-function comptePrelevementsProjets(){
-  return projets.reduce((n, pj) => n + comptePrelevements(pj.lignes || []), 0);
+   Le bon modele separe les deux :
+     - l'arbre physique (lignes -> references -> OP -> scenarios -> essais) reste RACINE,
+       unique, exactement comme avant la v4.0 -- c'est le "monde", il n'existe qu'une fois ;
+     - un PROJET est une liste d'etiquettes posees sur des scenarios existants (une
+       "playlist"), plus les quatre informations que la v4.0 avait raison d'inventer :
+       problematique, pilote, statut, echeance.
+
+   Ce que ce choix elimine, entierement :
+     - la gymnastique syncActiveProjet()/reassignation de `lignes` (disparue : `lignes` est
+       de nouveau LA racine, comme en v3) ;
+     - le risque de double comptage entre projets (un scenario "en serie" a une seule
+       adresse, pas une copie par projet) ;
+     - la duplication d'une ligne pour la suivre depuis deux projets -- elle est juste
+       etiquetee dans les deux ;
+     - la fusion complexe au niveau ligne/reference/OP pour les projets : fusionner des
+       etiquettes, c'est fusionner des listes d'identifiants, pas des sous-arbres.
+   Ce que ce choix coute, assume :
+     - une etiquette peut pointer vers un scenario supprime entre-temps -> purgerTagsMorts()
+       nettoie a chaque chargement, silencieusement (une etiquette morte n'est pas une
+       perte de donnees, juste une entree de playlist a oublier) ;
+     - la navigation (bandeaux ligne/reference/OP) reste VOLONTAIREMENT non filtree par
+       projet dans cette version : on voit toutes les lignes existantes, quel que soit le
+       projet ouvert. Le cloisonnement porte sur la lecture (tableau de bord, cartes de
+       projet), pas sur la vue d'ensemble de l'atelier -- Matis n'a jamais demande a ne plus
+       voir Step 3 exister, il a demande a ne pas melanger les essais dans SA synthese.
+
+   Format de fichier : 7. Un fichier format 7 a `lignes` a la racine, EXACTEMENT comme le
+   format 5 -- une version anterieure a la v4 (3.19.x et avant) l'ouvre donc correctement et
+   affiche toutes les mesures ; seul le regroupement en projets lui est invisible. C'est la
+   difference majeure avec le format 6 de la v4.0, qui rendait l'arbre illisible aux anciennes
+   versions (incident reproduit et documente en v3.19.2). */
+
+function normalizeTag(t){
+  return { ligneId: t.ligneId || "", referenceId: t.referenceId || "", opId: t.opId || "", scenarioId: t.scenarioId || "" };
 }
-
+const PROJET_STATUTS = { encours:"En cours", pause:"En pause", termine:"Terminé", abandonne:"Abandonné" };
 function normalizeProjet(p){
   return Object.assign({
     id: p.id || ("pj"+Math.random().toString(36).slice(2)),
-    nom: "",
-    problematique: "",   // ce qu'on cherche a resoudre : "coût et qualité", "état de surface"...
-    responsable: "",     // qui pilote CE projet — pas forcement celui qui pilote les autres
-    statut: "encours",
-    dateCible: "",       // echeance visee, facultative : sert a ordonner, pas a sanctionner
-    creePar: "",
-    creeLe: ""
+    nom: "", problematique: "", responsable: "", statut: "encours",
+    dateCible: "", creePar: "", creeLe: ""
   }, p, {
-    lignes: (p.lignes || []).map(normalizeLigne)
+    tags: (p.tags || []).map(normalizeTag)
   });
 }
 
-/* Migration format 5 -> 6. Un fichier au format 5 a ses lignes en racine : elles entrent
-   toutes dans un projet unique. Le nom reprend celui de la premiere ligne — "Optimisation
-   EMAG 1" plutot qu'un "Projet 1" anonyme, pour que personne n'ait a deviner ce qu'il
-   contient. Renommable en un clic. */
-function projetsDepuisLignes(lignesBrutes, meta){
-  meta = meta || {};
-  const premiere = lignesBrutes[0];
-  return [normalizeProjet({
-    id: "pj_initial",
-    nom: premiere && premiere.nom ? "Optimisation " + premiere.nom : "Projet initial",
-    problematique: "Coût et qualité",
-    responsable: meta.responsable || "",
-    creePar: meta.creePar || "",
-    creeLe: meta.creeLe || new Date().toISOString().slice(0,10),
-    lignes: lignesBrutes
-  })];
+/* Resout une etiquette contre l'arbre physique COURANT (`lignes`). Renvoie null si un
+   maillon a disparu (ligne/reference/OP/scenario supprime) : c'est le seul etat d'erreur
+   a prevoir, et il ne doit jamais lever d'exception -- une etiquette morte est un evenement
+   normal (quelqu'un a nettoye un vieux scenario), pas un incident. */
+function resoudreTag(tag){
+  const l = lignes.find(x => x.id === tag.ligneId); if(!l) return null;
+  const r = l.references.find(x => x.id === tag.referenceId); if(!r) return null;
+  const op = r.ops.find(x => x.id === tag.opId); if(!op) return null;
+  const sc = (op.scenarios || []).find(x => x.id === tag.scenarioId); if(!sc) return null;
+  return { ligne:l, reference:r, op, scenario:sc };
+}
+function scenariosResolusDuProjet(pj){
+  return pj.tags.map(resoudreTag).filter(Boolean);
+}
+/* nettoyage silencieux, appele au chargement : purge les etiquettes qui ne pointent plus
+   vers rien. Ne modifie jamais l'arbre physique, seulement les listes du projet. */
+function purgerTagsMorts(pj){
+  const avant = pj.tags.length;
+  pj.tags = pj.tags.filter(t => resoudreTag(t));
+  return avant - pj.tags.length;
+}
+function projetContientScenario(pj, ligneId, referenceId, opId, scenarioId){
+  return pj.tags.some(t => t.ligneId===ligneId && t.referenceId===referenceId && t.opId===opId && t.scenarioId===scenarioId);
+}
+function toggleTagScenario(pj, ligneId, referenceId, opId, scenarioId){
+  const i = pj.tags.findIndex(t => t.ligneId===ligneId && t.referenceId===referenceId && t.opId===opId && t.scenarioId===scenarioId);
+  if(i === -1) pj.tags.push({ ligneId, referenceId, opId, scenarioId });
+  else pj.tags.splice(i, 1);
 }
 
-/* Lit indifferemment un arbre format 6 (projets) ou format 5 (lignes en racine). */
-function lireProjets(parsed){
-  if(parsed && Array.isArray(parsed.projets) && parsed.projets.length){
-    return { projets: parsed.projets.map(normalizeProjet), migre: false };
+/* Lecture unifiee d'un arbre, quel que soit le format qui l'a produit. Un seul point
+   d'entree utilise partout : chargement, historique, points de reprise, import. */
+function migrerArbre(source){
+  if(!source) return null;
+
+  // format 5 (pre-v4, sans projets) OU format 7 (v4.1, lignes racine + projets-etiquettes) :
+  // les deux ont `lignes` a la racine -- c'est precisement ce qui rend le format 7
+  // retro-lisible par les versions anterieures a la v4.
+  if(Array.isArray(source.lignes) && source.lignes.length){
+    const lignesLues = source.lignes.map(normalizeLigne);
+    let projetsLus = [];
+    if(Array.isArray(source.projets) && source.projets.length && Array.isArray(source.projets[0].tags)){
+      projetsLus = source.projets.map(normalizeProjet);
+    }
+    return { lignes: lignesLues, projets: projetsLus };
   }
-  if(parsed && Array.isArray(parsed.lignes) && parsed.lignes.length){
-    return { projets: projetsDepuisLignes(parsed.lignes.map(normalizeLigne), { creePar: parsed.exportePar }), migre: true };
+
+  // format 6 (v4.0, projets PROPRIETAIRES des lignes -- deployee moins d'une journee) :
+  // on aplatit les lignes dans l'arbre unique ET on reconstruit un projet-etiquettes par
+  // ancien projet, en pointant ses etiquettes sur les scenarios desormais dans l'arbre
+  // commun. Rien n'est perdu : ni les mesures, ni le regroupement, ni la problematique/
+  // le pilote/le statut/l'echeance que l'utilisateur avait deja saisis.
+  if(Array.isArray(source.projets) && source.projets.length && Array.isArray(source.projets[0].lignes)){
+    const lignesPlates = [];
+    const projetsRecrees = source.projets.map(pjBrut => {
+      const tags = [];
+      (pjBrut.lignes || []).forEach(lBrut => {
+        const l = normalizeLigne(lBrut);
+        lignesPlates.push(l);
+        l.references.forEach(r => r.ops.forEach(op => (op.scenarios || []).forEach(sc => {
+          tags.push({ ligneId:l.id, referenceId:r.id, opId:op.id, scenarioId:sc.id });
+        })));
+      });
+      return normalizeProjet({
+        id: pjBrut.id, nom: pjBrut.nom, problematique: pjBrut.problematique,
+        responsable: pjBrut.responsable, statut: pjBrut.statut, dateCible: pjBrut.dateCible,
+        creePar: pjBrut.creePar, creeLe: pjBrut.creeLe, tags
+      });
+    });
+    return { lignes: lignesPlates, projets: projetsRecrees };
   }
+
   return null;
-}
-
-/* Repose un arbre complet (projets, selections, scenarios) depuis un instantane ou un
-   fichier importe. Accepte indifferemment le format 5 et le format 6 : les points de reprise
-   pris avant la v4 n'ont que des `lignes`, ils doivent rester restaurables. */
-function appliquerArbre(source){
-  const lu = lireProjets(source);
-  projets = lu ? lu.projets : projetsDepuisLignes(defaultLignes().map(normalizeLigne));
-  const pj = projets.find(x => x.id === source.activeProjetId) || projets[0];
-  activeProjetId = pj.id;
-  lignes = pj.lignes;
-  if(!lignes.length){ lignes = defaultLignes().map(normalizeLigne); pj.lignes = lignes; }
-  const l = lignes.find(x => x.id === source.activeLigneId) || lignes[0];
-  activeLigneId = l.id;
-  const r = l.references.find(x => x.id === source.activeReferenceId) || l.references[0];
-  activeReferenceId = r ? r.id : null;
-  const op = r ? (r.ops.find(x => x.id === source.activeOpId) || r.ops[0]) : null;
-  activeOpId = op ? op.id : null;
-  data = op ? op.scenarios : [];
-  config = op ? op.config : Object.assign({}, defaultConfig);
-  if(!data.find(x => x.baseline) && data.length) data[0].baseline = true;
-  activeId = (data.find(x => x.id === source.activeScenarioId) ? source.activeScenarioId : (data[0] ? data[0].id : null));
-}
-
-function getActiveProjet(){ return projets.find(p => p.id === activeProjetId) || projets[0]; }
-
-/* `lignes` a pu etre reassigne en bloc (suppression, reset, import) : on le recopie dans le
-   projet actif pour que l'arbre reste coherent, comme syncActiveOp() le fait pour data. */
-function syncActiveProjet(){
-  // filet : un arbre sans projet ne doit jamais exister (reset partiel, donnees corrompues)
-  if(!projets.length){
-    projets = projetsDepuisLignes(lignes.length ? lignes : defaultLignes().map(normalizeLigne));
-    activeProjetId = projets[0].id;
-    lignes = projets[0].lignes;
-    return;
-  }
-  const pj = getActiveProjet();
-  if(pj){ activeProjetId = pj.id; pj.lignes = lignes; }
-}
-
-/* bascule de projet : recharge lignes/reference/OP/scenario sur le premier de chaque niveau */
-function ouvrirProjet(id){
-  syncActiveOp(); syncActiveProjet();
-  const pj = projets.find(x => x.id === id);
-  if(!pj) return;
-  activeProjetId = pj.id;
-  lignes = pj.lignes;
-  const l = lignes[0];
-  activeLigneId = l ? l.id : null;
-  const r = l && l.references[0];
-  activeReferenceId = r ? r.id : null;
-  const op = r && r.ops[0];
-  activeOpId = op ? op.id : null;
-  data = op ? op.scenarios : [];
-  config = op ? op.config : Object.assign({}, defaultConfig);
-  activeId = data[0] ? data[0].id : null;
-  saveData(); render();
 }
 
 function normalizeLigne(l){
@@ -2253,15 +2276,12 @@ function loadAll(){
   if(raw){
     try{
       const parsed = JSON.parse(raw);
-      const lu = lireProjets(parsed);
-      if(lu){
-        // migration 5 -> 6 : on pose un point de reprise AVANT de transformer l'arbre.
-        // Une migration qui se passe mal doit toujours pouvoir se defaire.
-        if(lu.migre) backupSnapshot("Avant passage aux projets (format 5 → 6)");
-        projets = lu.projets;
-        const pj = projets.find(x => x.id === parsed.activeProjetId) || projets[0];
-        activeProjetId = pj.id;
-        lignes = pj.lignes;
+      const migre = migrerArbre(parsed);
+      if(migre){
+        lignes = migre.lignes;
+        projets = migre.projets;
+        activeProjetId = projets.find(x => x.id === parsed.activeProjetId) ? parsed.activeProjetId : null;
+        projets.forEach(purgerTagsMorts);
         backlog = (parsed.backlog || []).map(normalizeBacklogItem);
         revision = parsed.revision || 0;
         const l = lignes.find(x => x.id === parsed.activeLigneId) || lignes[0];
@@ -2293,8 +2313,7 @@ function loadAll(){
                 scenarios: secours.map(normalizeScenario) };
               const ref2 = { id: "r"+Date.now(), nom: "DV 356x26 RPI", ops: [op2] };
               lignes = [{ id: "l"+Date.now(), nom: "EMAG 1", references: [ref2] }];
-              projets = projetsDepuisLignes(lignes.map(normalizeLigne));
-              activeProjetId = projets[0].id; lignes = projets[0].lignes;
+              projets = []; activeProjetId = null;
               backlog = [];
               activeLigneId = lignes[0].id; activeReferenceId = ref2.id; activeOpId = op2.id;
               data = op2.scenarios; config = op2.config;
@@ -2321,8 +2340,7 @@ function loadAll(){
     if(migrationTolerance) migrerTolerancesOp(op);
     const ref = { id: "r" + Date.now(), nom: "DV 356x26 RPI", ops: [op] };
     lignes = [{ id: "l" + Date.now(), nom: "EMAG 1", references: [ref] }];
-    projets = projetsDepuisLignes(lignes.map(normalizeLigne));
-    activeProjetId = projets[0].id; lignes = projets[0].lignes;
+    projets = []; activeProjetId = null;
     backlog = [];
     activeLigneId = lignes[0].id;
     activeReferenceId = ref.id;
@@ -2335,10 +2353,9 @@ function loadAll(){
                 // n'a par ailleurs declenche de sauvegarde
     return;
   }
-  // premiere utilisation : donnees de depart, dans un projet initial
-  projets = projetsDepuisLignes(defaultLignes().map(normalizeLigne));
-  activeProjetId = projets[0].id;
-  lignes = projets[0].lignes;
+  // premiere utilisation : donnees de depart, aucun projet (les projets sont facultatifs)
+  lignes = defaultLignes();
+  projets = []; activeProjetId = null;
   backlog = [];
   activeLigneId = lignes[0].id;
   activeReferenceId = lignes[0].references[0].id;
@@ -2347,6 +2364,28 @@ function loadAll(){
   config = lignes[0].references[0].ops[0].config;
   activeId = data[0] ? data[0].id : null;
 }
+/* Repose un arbre complet (projets-etiquettes compris) depuis un instantane ou un fichier
+   importe, quel que soit le format qui l'a produit (5, 6 ou 7 -- voir migrerArbre). Utilise
+   par la restauration depuis l'historique et depuis le point de reprise : la logique etait
+   dupliquee entre les deux, avec le meme risque d'oubli a chaque evolution du format. */
+function appliquerArbre(source){
+  const migre = migrerArbre(source);
+  lignes = migre ? migre.lignes : [];
+  projets = migre ? migre.projets : [];
+  if(!lignes.length) lignes = defaultLignes();
+  projets.forEach(purgerTagsMorts);
+  activeProjetId = projets.find(x => x.id === source.activeProjetId) ? source.activeProjetId : null;
+  activeLigneId = lignes[0].id;
+  const r = lignes[0].references[0];
+  activeReferenceId = r ? r.id : null;
+  const op = r ? r.ops[0] : null;
+  activeOpId = op ? op.id : null;
+  data = op ? op.scenarios : [];
+  config = op ? op.config : Object.assign({}, defaultConfig);
+  if(!data.find(x => x.baseline) && data.length) data[0].baseline = true;
+  activeId = data[0] ? data[0].id : null;
+}
+
 /* ---- persistance 100 % locale : navigateur (auto) + fichier .json (export/import) ---- */
 let storageOk = true;
 let lastSavedAt = null;
@@ -2371,7 +2410,9 @@ let quotaAlerteVue = false;
 let quotaPanneSignalee = false;
 
 function payloadSuivi(){
-  return JSON.stringify({ format:6, projets, backlog, revision, activeProjetId, activeLigneId, activeReferenceId, activeOpId, activeScenarioId: activeId });
+  // format 7 : `lignes` reste la racine (comme le format 5) -- une version anterieure a la
+  // v4 lit ce fichier normalement, seul `projets` (les etiquettes) lui est invisible.
+  return JSON.stringify({ format:7, lignes, projets, activeProjetId, backlog, revision, activeLigneId, activeReferenceId, activeOpId, activeScenarioId: activeId });
 }
 
 /* Ce qui pese vraiment, nomme, pour que l'utilisateur puisse agir plutot que subir. */
@@ -2441,7 +2482,6 @@ Le navigateur accorde environ 5 Mo à cet outil, mesures et pièces jointes comp
 
 function saveData(){
   syncActiveOp();
-  syncActiveProjet();
   const payload = payloadSuivi();
   const ecrire = () => {
     localStorage.setItem(STORAGE_KEY, payload);
@@ -2504,7 +2544,7 @@ function pushHistory(){
   lastHistoryAt = now;
   let hist = [];
   try{ hist = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }catch(e){}
-  hist.push({ savedAt: new Date().toISOString(), count: comptePrelevementsProjets(), projets, backlog, revision, activeProjetId });
+  hist.push({ savedAt: new Date().toISOString(), count: comptePrelevements(lignes), lignes, projets, activeProjetId, backlog, revision });
   if(hist.length > 5) hist = hist.slice(hist.length - 5);
   try{ localStorage.setItem(HISTORY_KEY, JSON.stringify(hist)); }catch(e){}
 }
@@ -2595,7 +2635,7 @@ const BACKUP_KEY = STORAGE_KEY + "_backup";
 function backupSnapshot(label){
   syncActiveOp();
   try{
-    localStorage.setItem(BACKUP_KEY, JSON.stringify({ savedAt: new Date().toISOString(), label, projets, backlog, revision, activeProjetId }));
+    localStorage.setItem(BACKUP_KEY, JSON.stringify({ savedAt: new Date().toISOString(), label, lignes, projets, activeProjetId, backlog, revision }));
   }catch(e){}
 }
 function hasBackup(){
@@ -2610,6 +2650,7 @@ function restoreBackup(){
   appliquerArbre(snap);
   backlog = (snap.backlog || []).map(normalizeBacklogItem);
   revision = snap.revision || 0;
+  activeId = data[0] ? data[0].id : null;
   try{ localStorage.removeItem(BACKUP_KEY); }catch(e){}
   recomputeCycles();
   saveData();
@@ -2636,21 +2677,22 @@ try{ auteurNom = localStorage.getItem(AUTEUR_KEY) || ""; }catch(e){}
 
 function exportData(){
   syncActiveOp();
-  syncActiveProjet();
   revision += 1;
   const payload = {
     outil: "SPK Suivi optimisation",
-    // format 6 : l'arbre est desormais une liste de PROJETS. Un fichier au format 5 se
-    // recharge sans probleme (migration automatique), l'inverse n'est pas vrai : ce fichier
-    // ne s'ouvrira pas dans une version de l'outil anterieure a la 4.0.
-    format: 6,
+    // format 7 : `lignes` reste la racine, `projets` n'est qu'une liste d'etiquettes posees
+    // dessus. Une version anterieure a la v4 lit ce fichier sans souci -- elle ignore juste
+    // `projets`, qu'elle ne connait pas -- contrairement au format 6 (v4.0) qui rendait
+    // l'arbre illisible aux anciennes versions.
+    format: 7,
     toolVersion: TOOL_VERSION,
     revision: revision,
     exporteLe: new Date().toISOString(),
     exportePar: auteurNom,
+    lignes: lignes,
     projets: projets,
-    backlog: backlog,
     activeProjetId: activeProjetId,
+    backlog: backlog,
     // onglet ouvert chez l'exportateur : permet a l'import de retomber directement
     // dessus (sinon, avec plusieurs lignes/references/OP, la personne qui importe
     // atterrit sur le premier onglet de chaque niveau et peut croire que des
@@ -3073,8 +3115,8 @@ function telechargerRapportEssai(sc, essai){
      garde alors la version locale et on la signale nommement — a l'utilisateur de trancher
      en regardant les deux fichiers.
    ============================================================================ */
-function fusionnerLignes(locales, entrantes, bilanExterne, prefixe){
-  const bilan = bilanExterne || { projets:0, lignes:0, references:0, ops:0, scenarios:0,
+function fusionnerLignes(locales, entrantes){
+  const bilan = { lignes:0, references:0, ops:0, scenarios:0,
                   essaisAjoutes:0, essaisMaj:0, essaisConserves:0, conflits:[] };
   const memeContenu = (a,b) => { try{ return JSON.stringify(a) === JSON.stringify(b); }catch(e){ return false; } };
 
@@ -3108,30 +3150,10 @@ function fusionnerLignes(locales, entrantes, bilanExterne, prefixe){
         (opE.scenarios || []).forEach(scE => {
           let scL = (opL.scenarios = opL.scenarios || []).find(x => x.id === scE.id);
           if(!scL){ opL.scenarios.push(scE); bilan.scenarios++; return; }
-          fusionnerEssais(scL, scE, [prefixe, ligneL.nom, refL.nom, opL.nom, scL.name].filter(Boolean).join(" › "));
+          fusionnerEssais(scL, scE, [ligneL.nom, refL.nom, opL.nom, scL.name].filter(Boolean).join(" › "));
         });
       });
     });
-  });
-  return bilan;
-}
-
-/* Fusion au niveau PROJET (v4.0). Meme regle qu'aux niveaux inferieurs : un projet inconnu
-   est ajoute en entier, un projet connu voit ses lignes fusionnees. Les proprietes du projet
-   lui-meme (nom, responsable, statut, echeance) ne sont jamais ecrasees par le fichier recu —
-   c'est du reglage local, comme les outils et les conditions de coupe.
-
-   Ce niveau prend toute son importance maintenant que plusieurs personnes saisissent en
-   parallele : Julien sur son projet, Matis sur le sien. Sans lui, fusionner deux fichiers
-   ferait disparaitre le projet de l'autre. */
-function fusionnerProjets(locaux, entrants){
-  const bilan = { projets:0, lignes:0, references:0, ops:0, scenarios:0,
-                  essaisAjoutes:0, essaisMaj:0, essaisConserves:0, conflits:[] };
-  (entrants || []).forEach(pjE => {
-    const pjL = locaux.find(x => x.id === pjE.id);
-    if(!pjL){ locaux.push(pjE); bilan.projets++; return; }
-    pjL.lignes = pjL.lignes || [];
-    fusionnerLignes(pjL.lignes, pjE.lignes || [], bilan, pjL.nom);
   });
   return bilan;
 }
@@ -3146,9 +3168,27 @@ function fusionnerBacklog(local, entrant){
   return ajoutes;
 }
 
+/* Fusion des projets-etiquettes (v4.1). Beaucoup plus simple que la fusion de la v4.0 :
+   un projet n'est qu'une liste d'identifiants, fusionner deux listes ne demande aucun
+   arbitrage essai-par-essai. Un projet inconnu arrive entier ; un projet connu recoit les
+   etiquettes qui lui manquent, sans jamais toucher a son nom, son pilote, son statut ou
+   son echeance -- exactement la meme regle que pour les outils et conditions de coupe. */
+function fusionnerProjetsTags(locaux, entrants){
+  let projetsAjoutes = 0, tagsAjoutes = 0;
+  (entrants || []).forEach(pjE => {
+    const pjL = locaux.find(x => x.id === pjE.id);
+    if(!pjL){ locaux.push(pjE); projetsAjoutes++; return; }
+    (pjE.tags || []).forEach(t => {
+      if(!pjL.tags.some(x => x.ligneId===t.ligneId && x.referenceId===t.referenceId && x.opId===t.opId && x.scenarioId===t.scenarioId)){
+        pjL.tags.push(t); tagsAjoutes++;
+      }
+    });
+  });
+  return { projetsAjoutes, tagsAjoutes };
+}
+
 function bilanFusionHTML(b){
   const struct = [
-    b.projets && b.projets + " projet" + (b.projets>1?"s":""),
     b.lignes && b.lignes + " ligne" + (b.lignes>1?"s":""),
     b.references && b.references + " référence" + (b.references>1?"s":""),
     b.ops && b.ops + " OP",
@@ -3158,7 +3198,9 @@ function bilanFusionHTML(b){
     `<li><b>${b.essaisAjoutes}</b> essai${b.essaisAjoutes>1?"s":""} ajouté${b.essaisAjoutes>1?"s":""}</li>`,
     `<li><b>${b.essaisMaj}</b> essai${b.essaisMaj>1?"s":""} mis à jour <span class="fusion-note">(la version reçue était la plus récente)</span></li>`,
     `<li><b>${b.essaisConserves}</b> essai${b.essaisConserves>1?"s":""} conservé${b.essaisConserves>1?"s":""} <span class="fusion-note">(votre version était la plus récente, ou conflit ci-dessous)</span></li>`,
-    struct ? `<li>Structure ajoutée : ${struct}</li>` : ""
+    struct ? `<li>Structure ajoutée : ${struct}</li>` : "",
+    b.projetsAjoutes ? `<li><b>${b.projetsAjoutes}</b> projet${b.projetsAjoutes>1?"s":""} ajouté${b.projetsAjoutes>1?"s":""}</li>` : "",
+    b.tagsAjoutes ? `<li><b>${b.tagsAjoutes}</b> scénario${b.tagsAjoutes>1?"s":""} rattaché${b.tagsAjoutes>1?"s":""} à un projet existant</li>` : ""
   ].filter(Boolean).join("");
   const conflits = b.conflits.length ? `
     <p class="fusion-conflit-titre">${b.conflits.length} conflit${b.conflits.length>1?"s":""} — votre version a été conservée, à vérifier :</p>
@@ -3178,11 +3220,12 @@ function importData(file){
       return;
     }
 
-    let nouveauxProjets, nouveauBacklog, revisionEntrante;
-    const luImport = lireProjets(parsed);
-    if(luImport){
-      // format 6 (projets) ou format 5 (lignes en racine, migre a la volee)
-      nouveauxProjets = luImport.projets;
+    let nouvellesLignes, nouveauxProjets, nouveauBacklog, revisionEntrante;
+    const migreImport = migrerArbre(parsed);
+    if(migreImport){
+      // format 5, 6 ou 7 -- voir migrerArbre() pour le detail de chaque cas
+      nouvellesLignes = migreImport.lignes;
+      nouveauxProjets = migreImport.projets;
       nouveauBacklog = (parsed.backlog || []).map(normalizeBacklogItem);
       revisionEntrante = parsed.revision || 0;
     } else {
@@ -3196,14 +3239,15 @@ function importData(file){
         config: Object.assign({}, defaultConfig, parsed.config || {}),
         scenarios: scenarios.map(normalizeScenario) };
       const ref = { id: "r"+Date.now(), nom: "DV 356x26 RPI", ops: [op] };
-      nouveauxProjets = projetsDepuisLignes([normalizeLigne({ id: "l"+Date.now(), nom: "EMAG 1", references: [ref] })]);
+      nouvellesLignes = [{ id: "l"+Date.now(), nom: "EMAG 1", references: [ref] }];
+      nouveauxProjets = [];
       nouveauBacklog = [];
       revisionEntrante = 0;
     }
 
     // Le choix fusionner/remplacer se fait dans un panneau : c'est une decision a
     // consequences, elle merite mieux qu'un confirm() ou "OK" voudrait dire "ecrase tout".
-    importEnAttente = { parsed, nouveauxProjets, nouveauBacklog, revisionEntrante };
+    importEnAttente = { parsed, nouvellesLignes, nouveauxProjets, nouveauBacklog, revisionEntrante };
     ouvrirChoixImport();
   };
   reader.readAsText(file);
@@ -3280,25 +3324,26 @@ function ouvrirChoixImport(){
 }
 
 function appliquerImport(mode){
-  const { parsed, nouveauxProjets, nouveauBacklog, revisionEntrante } = importEnAttente;
+  const { parsed, nouvellesLignes, nouveauxProjets, nouveauBacklog, revisionEntrante } = importEnAttente;
   backupSnapshot((mode === "fusion" ? "Fusionner" : "Importer") + " (révision " + (revisionEntrante || "—") + ")");
-  syncActiveOp(); syncActiveProjet();
 
   let bilan = null;
   if(mode === "fusion"){
-    bilan = fusionnerProjets(projets, nouveauxProjets);
+    bilan = fusionnerLignes(lignes, nouvellesLignes);
+    const bp = fusionnerProjetsTags(projets, nouveauxProjets);
+    bilan.projetsAjoutes = bp.projetsAjoutes; bilan.tagsAjoutes = bp.tagsAjoutes;
     bilan.backlog = fusionnerBacklog(backlog, nouveauBacklog);
     // la fusion produit un etat qui n'existe dans aucun des deux fichiers : elle merite sa
     // propre revision, sinon deux postes croiraient detenir la meme
     revision = Math.max(revision, revisionEntrante || 0) + 1;
   } else {
+    lignes = nouvellesLignes;
     projets = nouveauxProjets;
+    activeProjetId = projets.find(x => x.id === parsed.activeProjetId) ? parsed.activeProjetId : null;
     backlog = nouveauBacklog;
     revision = Math.max(revision, revisionEntrante || 0);
   }
-  const pjImport = projets.find(x => x.id === parsed.activeProjetId) || projets[0];
-  activeProjetId = pjImport.id;
-  lignes = pjImport.lignes;
+  projets.forEach(purgerTagsMorts);
 
   // on retombe sur l'onglet qu'avait l'exportateur (ligne > reference > OP > scenario),
   // s'il est bien present dans le fichier reçu ; sinon repli sur le tout premier de chaque niveau
@@ -4685,6 +4730,10 @@ function renderTabs(){
           <span class="statut-pill ${sc.statut || "essai"}">${statutLabel(sc.statut)}</span>
           <span class="status-badge ${stats.validated ? "ok" : "pending"}">${stats.validated ? "✓ Validé" : `${stats.validCount}/${sc.validationThreshold || "—"} essais conformes`}</span>
         </span>
+        ${projets.length ? `<span class="tc-tags">${projets.map(pj => {
+          const dedans = projetContientScenario(pj, activeLigneId, activeReferenceId, activeOpId, sc.id);
+          return `<span class="tag-pill ${dedans ? "on" : ""}" data-projet="${pj.id}" title="${dedans ? "Retirer de" : "Ajouter à"} « ${escapeAttr(pj.nom)} »">${dedans ? "✓ " : "+ "}${escapeAttr(pj.nom)}</span>`;
+        }).join("")}</span>` : ""}
         <span class="tc-row"><span class="tc-label">${couts.multiPoste ? "€/pièce total" : "€/pièce"}</span><span class="tc-val">${cRef === null ? "—" : fmt(cRef,4)}</span>${deltaHtml}</span>
         ${an && an.gainAnnuel !== undefined ? `<span class="tc-row"><span class="tc-label">${an.gainAnnuel>=0?"Gain/an":"Perte/an"}</span><span class="tc-val ${an.gainAnnuel>=0?"tc-gain":"tc-perte"}">${(an.gainAnnuel>=0?"+":"−")+fmtEuroCourt(Math.abs(an.gainAnnuel))}</span></span>` : ""}
         ${sc.id !== activeId ? "" : `
@@ -4702,7 +4751,16 @@ function renderTabs(){
   el.innerHTML = ouverte.map(carte).join("") +
     (autres.length ? `<div class="tabs-rest">${autres.map(carte).join("")}</div>` : "");
   el.querySelectorAll(".tab-card").forEach(b => {
-    b.addEventListener("click", () => { activeId = b.getAttribute("data-tab"); render(); });
+    b.addEventListener("click", (e) => {
+      const pill = e.target.closest(".tag-pill");
+      if(pill){
+        const pj = projets.find(x => x.id === pill.getAttribute("data-projet"));
+        if(pj) toggleTagScenario(pj, activeLigneId, activeReferenceId, activeOpId, b.getAttribute("data-tab"));
+        saveData(); render();
+        return;
+      }
+      activeId = b.getAttribute("data-tab"); render();
+    });
   });
 }
 
@@ -6340,40 +6398,32 @@ function renderAll(){
   document.getElementById("scenarioAll").innerHTML = synthesePrint + liste.map(sc => scenarioBlockHTML(sc, false)).join("");
 }
 
-/* ---- onglets Ligne de production / Reference disque ---- */
-/* ---- SELECTEUR DE PROJET (v4.0) -------------------------------------------------------
-   Matis demandait "quelque chose dans le style de ce que tu as fait pour les scenarios" :
-   des cartes, projet actif en avant. On ne rajoute donc PAS une quatrieme barre grise
-   identique aux trois autres (Ligne / Reference / OP) — empiler quatre barres transformerait
-   le haut de l'ecran en pile de bandeaux.
-   La carte porte de quoi piloter un portefeuille, pas seulement un nom : ou en est le projet,
-   qui le pilote, combien d'essais ont ete menes, et le gain annuel deja acquis. */
+/* ============================================================================
+   SELECTEUR DE PROJET (v4.1) -- des cartes, pas une quatrieme barre grise. Le projet est
+   un changement de focus (quels essais je regarde), pas un niveau de navigation physique
+   supplementaire : la ligne/reference/OP restent visibles et navigables normalement, quel
+   que soit le projet ouvert (voir la note en tete de fichier sur les etiquettes).
+   ============================================================================ */
 function statsProjet(pj){
-  let refs = 0, ops = 0, scen = 0, essais = 0, valides = 0, enSerie = 0, gain = 0, gainConnu = false;
-  const memoL = lignes, memoD = data, memoC = config, memoR = activeReferenceId;
-  (pj.lignes || []).forEach(l => {
-    refs += (l.references || []).length;
-    (l.references || []).forEach(r => {
-      ops += (r.ops || []).length;
-      (r.ops || []).forEach(op => {
-        scen += (op.scenarios || []).length;
-        (op.scenarios || []).forEach(sc => {
-          essais += (sc.essais || []).length;
-          if(sc.statut === "valide") valides++;
-          if(sc.statut === "serie") enSerie++;
-          // le bilan annuel lit config/data/reference active : on bascule le contexte,
-          // comme le fait deja le tableau de bord multi-lignes
-          try{
-            lignes = pj.lignes; data = op.scenarios; config = op.config; activeReferenceId = r.id;
-            const an = bilanAnnuel(sc);
-            if(an && an.gainAnnuel !== undefined && sc.statut === "serie"){ gain += an.gainAnnuel; gainConnu = true; }
-          }catch(e){}
-        });
+  const rs = scenariosResolusDuProjet(pj);
+  const lignesTouchees = new Set(rs.map(x => x.ligne.id));
+  const opsTouches = new Set(rs.map(x => x.op.id));
+  let essais = 0, valides = 0, enSerie = 0, gain = 0, gainConnu = false;
+  rs.forEach(({ ligne, reference, op, scenario: sc }) => {
+    essais += (sc.essais || []).length;
+    if(sc.statut === "valide") valides++;
+    if(sc.statut === "serie") enSerie++;
+    if(sc.statut === "serie"){
+      dansContexteOp(op, () => {
+        try{
+          const an = bilanAnnuel(sc, op.config, ligne, reference);
+          if(an && an.gainAnnuel !== undefined){ gain += an.gainAnnuel; gainConnu = true; }
+        }catch(e){}
       });
-    });
+    }
   });
-  lignes = memoL; data = memoD; config = memoC; activeReferenceId = memoR;
-  return { lignes:(pj.lignes||[]).length, refs, ops, scen, essais, valides, enSerie, gain, gainConnu };
+  return { scenarios: rs.length, lignes: lignesTouchees.size, ops: opsTouches.size,
+           essais, valides, enSerie, gain, gainConnu };
 }
 
 function projetCarteHTML(pj){
@@ -6381,8 +6431,7 @@ function projetCarteHTML(pj){
   const actif = pj.id === activeProjetId;
   const statut = PROJET_STATUTS[pj.statut] || PROJET_STATUTS.encours;
   // l'echeance se lit, elle ne sanctionne pas : dans un atelier, un essai glisse pour des
-  // raisons subies (dispo machine, dispo bruts, priorite client). On affiche le reste a
-  // courir, sans badge rouge "en retard" qui ne dirait rien d'utile a personne.
+  // raisons subies (dispo machine, dispo bruts, priorite client) -- pas de badge "en retard".
   let echeance = "";
   if(pj.dateCible){
     const j = Math.round((new Date(pj.dateCible) - new Date()) / 86400000);
@@ -6391,7 +6440,7 @@ function projetCarteHTML(pj){
   }
   return `
     <button class="pj-carte ${actif ? "active" : ""} pj-${escapeAttr(pj.statut || "encours")}" data-projet="${pj.id}"
-            title="${actif ? "Projet ouvert" : "Ouvrir ce projet"}">
+            title="${actif ? "Retirer le filtre (voir tous les projets)" : "Filtrer sur ce projet"}">
       <span class="pj-haut">
         <span class="pj-nom">${escapeAttr(pj.nom || "Projet sans nom")}</span>
         <span class="pj-statut">${statut}</span>
@@ -6399,43 +6448,72 @@ function projetCarteHTML(pj){
       </span>
       ${pj.problematique ? `<span class="pj-pb">${escapeAttr(pj.problematique)}</span>` : ""}
       <span class="pj-chiffres">
+        <span><b>${st.scenarios}</b> scénario${st.scenarios>1?"s":""}</span>
         <span><b>${st.lignes}</b> ligne${st.lignes>1?"s":""}</span>
-        <span><b>${st.ops}</b> OP</span>
-        <span><b>${st.scen}</b> scénario${st.scen>1?"s":""}</span>
         <span><b>${st.essais}</b> essai${st.essais>1?"s":""}</span>
         ${st.enSerie ? `<span class="pj-serie"><b>${st.enSerie}</b> en série</span>` : ""}
       </span>
       ${st.gainConnu ? `<span class="pj-gain ${st.gain>=0?"pos":"neg"}">${st.gain>=0?"+":"−"}${fmtEuroCourt(Math.abs(st.gain))} / an acquis</span>` : ""}
       ${pj.responsable ? `<span class="pj-resp">Pilote : ${escapeAttr(pj.responsable)}</span>` : ""}
+      <button class="pj-cfg" data-cfg-projet="${pj.id}" title="Modifier ce projet" onclick="event.stopPropagation();">⚙</button>
     </button>`;
 }
 
 function renderProjets(){
   const el = document.getElementById("projetsBandeau");
   if(!el) return;
-  const multiple = projets.length > 1;
+  if(!projets.length && !document.getElementById("projetsBandeauOuvert")){
+    // aucun projet cree : pas la peine d'occuper l'ecran avec un bandeau vide, un simple
+    // lien suffit -- les projets sont facultatifs, l'outil marche identiquement sans eux
+    el.innerHTML = `<button class="ghost small" id="addProjetBtn">+ Créer un projet</button>
+      <span class="pj-aide">Un projet regroupe les scénarios qui répondent à une même problématique, sans changer où ils vivent physiquement.</span>`;
+    document.getElementById("addProjetBtn").addEventListener("click", creerProjet);
+    return;
+  }
   el.innerHTML = `
     <div class="pj-entete">
       <h4>Projets</h4>
-      <span class="pj-compte">${projets.length} projet${projets.length>1?"s":""}</span>
+      <span class="pj-compte">${projets.length} projet${projets.length>1?"s":""}${activeProjetId ? " — filtré" : ""}</span>
+      ${activeProjetId ? `<button class="ghost small" id="clearProjetBtn">Voir tous les projets</button>` : ""}
       <button class="ghost small" id="addProjetBtn">+ Nouveau projet</button>
-      ${multiple ? `<button class="ghost small" id="cfgProjetBtn">Modifier le projet ouvert</button>` : `<button class="ghost small" id="cfgProjetBtn">Modifier</button>`}
     </div>
     <div class="pj-grille">${projets.map(projetCarteHTML).join("")}</div>`;
 
   el.querySelectorAll("[data-projet]").forEach(b => b.addEventListener("click", () => {
     const id = b.getAttribute("data-projet");
-    if(id !== activeProjetId) ouvrirProjet(id);
+    activeProjetId = (activeProjetId === id) ? null : id;
+    saveData(); render();
   }));
+  el.querySelectorAll("[data-cfg-projet]").forEach(b => b.addEventListener("click", () => ouvrirProjetInfo(b.getAttribute("data-cfg-projet"))));
   const add = document.getElementById("addProjetBtn");
   if(add) add.addEventListener("click", creerProjet);
-  const cfg = document.getElementById("cfgProjetBtn");
-  if(cfg) cfg.addEventListener("click", () => ouvrirProjetInfo(activeProjetId));
+  const clr = document.getElementById("clearProjetBtn");
+  if(clr) clr.addEventListener("click", () => { activeProjetId = null; saveData(); render(); });
+}
+
+function creerProjet(){
+  const nom = prompt(`Nom du nouveau projet — ce qu'il regroupe, pas une machine :
+(ex. « Coût & qualité EMAG 1 », « Essais Step 3 »)`, "");
+  if(nom === null) return;
+  const pj = normalizeProjet({
+    nom: (nom || "").trim() || "Nouveau projet",
+    responsable: auteurNom || "",
+    creePar: auteurNom || "",
+    creeLe: new Date().toISOString().slice(0,10)
+  });
+  // le scenario actuellement ouvert entre d'office dans le nouveau projet : c'est
+  // generalement pour lui qu'on cree le projet
+  if(activeId) toggleTagScenario(pj, activeLigneId, activeReferenceId, activeOpId, activeId);
+  projets.push(pj);
+  activeProjetId = pj.id;
+  saveData();
+  ouvrirProjetInfo(pj.id);
+  render();
 }
 
 let projetInfoTargetId = null;
 function ouvrirProjetInfo(id){
-  const pj = projets.find(x => x.id === id) || getActiveProjet();
+  const pj = projets.find(x => x.id === id);
   if(!pj) return;
   projetInfoTargetId = pj.id;
   document.getElementById("projetNom").value = pj.nom || "";
@@ -6446,13 +6524,9 @@ function ouvrirProjetInfo(id){
   const st = statsProjet(pj);
   document.getElementById("projetMeta").textContent =
     (pj.creeLe ? "Créé le " + pj.creeLe + (pj.creePar ? " par " + pj.creePar : "") + " · " : "")
-    + st.lignes + " ligne(s), " + st.refs + " référence(s), " + st.ops + " OP, "
-    + st.scen + " scénario(s), " + st.essais + " essai(s).";
-  // un seul projet : le supprimer laisserait l'outil sans racine
-  document.getElementById("projetSupprimer").style.display = projets.length > 1 ? "" : "none";
+    + st.scenarios + " scénario(s) étiqueté(s) sur " + st.lignes + " ligne(s), " + st.essais + " essai(s).";
   ouvrirPanneau("projetInfoPanel");
 }
-
 function enregistrerProjetInfo(){
   const pj = projets.find(x => x.id === projetInfoTargetId);
   if(!pj) return;
@@ -6463,25 +6537,19 @@ function enregistrerProjetInfo(){
   pj.dateCible = document.getElementById("projetDateCible").value;
   saveData(); render();
 }
-
-function creerProjet(){
-  const nom = prompt(`Nom du nouveau projet — ce qu'il regroupe, pas juste une machine :
-(ex. « Coût & qualité EMAG 1 », « Essais Step 3 »)`, "");
-  if(nom === null) return;
-  syncActiveOp(); syncActiveProjet();
-  const pj = normalizeProjet({
-    nom: (nom || "").trim() || "Nouveau projet",
-    responsable: auteurNom || "",
-    creePar: auteurNom || "",
-    creeLe: new Date().toISOString().slice(0,10),
-    lignes: defaultLignes().map(normalizeLigne)
-  });
-  projets.push(pj);
-  saveData();
-  ouvrirProjet(pj.id);
-  ouvrirProjetInfo(pj.id);
+function supprimerProjetActif(){
+  const pj = projets.find(x => x.id === projetInfoTargetId);
+  if(!pj) return;
+  // supprimer un projet ne touche a AUCUNE donnee physique : ce n'est qu'une liste
+  // d'etiquettes qui disparait. Les scenarios, essais et mesures restent intacts.
+  if(!confirm(`Supprimer le projet « ${pj.nom} » ?\n\nSes ${pj.tags.length} étiquette(s) de scénario disparaissent. Les lignes, scénarios et essais eux-mêmes ne sont PAS supprimés — ils restent dans l'outil, seulement plus rattachés à ce projet.`)) return;
+  projets = projets.filter(x => x.id !== pj.id);
+  if(activeProjetId === pj.id) activeProjetId = null;
+  fermerPanneaux();
+  saveData(); render();
 }
 
+/* ---- onglets Ligne de production / Reference disque ---- */
 function renderLignes(){
   const el = document.getElementById("ligneStrip");
   if(!el) return;
@@ -6769,10 +6837,8 @@ function updateRevisionUI(){
    (ex. "OP10 — EMAG 1 — DV 356x26 RPI") deviendrait vite incoherent avec ce qui est ouvert */
 function updateHeader(){
   const l = getActiveLigne(), r = getActiveReference(), op = getActiveOp();
-  // le projet ouvre le fil d'Ariane : avec plusieurs projets, savoir DANS LEQUEL on saisit
-  // est la premiere information a lire, avant la ligne et l'OP
-  const pj = getActiveProjet();
-  const eyebrow = [projets.length > 1 && pj && pj.nom, l && l.nom, op && op.nom].filter(Boolean).join(" — ")
+  const pjFiltre = activeProjetId && projets.find(x => x.id === activeProjetId);
+  const eyebrow = [pjFiltre && pjFiltre.nom, l && l.nom, op && op.nom].filter(Boolean).join(" — ")
     || "Suivi_optimisation_SPK — Amélioration Process";
   const titre = (r && r.nom) || "";
   const hdE = document.getElementById("hdEyebrow"), hdT = document.getElementById("hdTitle");
@@ -7027,6 +7093,13 @@ function attachDetailHandlers(sc){
       const idx = data.findIndex(s => s.id === sc.id);
       data.splice(idx + 1, 0, copy);
       activeId = copy.id;
+      // la copie herite des projets de l'original : dupliquer un scenario pour tester une
+      // variante ne doit pas le faire sortir silencieusement de sa campagne
+      projets.forEach(pj => {
+        if(projetContientScenario(pj, activeLigneId, activeReferenceId, activeOpId, sc.id)){
+          toggleTagScenario(pj, activeLigneId, activeReferenceId, activeOpId, copy.id);
+        }
+      });
       saveData(); render();
     });
   });
@@ -7298,6 +7371,10 @@ document.getElementById("addBtn").addEventListener("click", () => {
   };
   data.push(blank);
   activeId = blank.id;
+  // "renseigner les donnees dans le projet qu'on a selectionne" (Matis) : un nouveau
+  // scenario cree pendant qu'un projet precis est ouvert y est etiquete d'office.
+  const pjActif = activeProjetId && projets.find(x => x.id === activeProjetId);
+  if(pjActif) toggleTagScenario(pjActif, activeLigneId, activeReferenceId, activeOpId, blank.id);
   saveData(); render();
 });
 
@@ -7313,10 +7390,8 @@ document.getElementById("resetBtn").addEventListener("click", () => {
   );
   if(saisie !== "REINITIALISER"){ if(saisie !== null) alert("Réinitialisation annulée — le texte tapé ne correspond pas."); return; }
   backupSnapshot("Réinitialiser");
-  // la reinitialisation efface TOUS les projets, pas seulement celui qui est ouvert
-  projets = projetsDepuisLignes(defaultLignes().map(normalizeLigne));
-  activeProjetId = projets[0].id;
-  lignes = projets[0].lignes;
+  lignes = defaultLignes();
+  projets = []; activeProjetId = null;
   backlog = [];
   activeLigneId = lignes[0].id;
   activeReferenceId = lignes[0].references[0].id;
@@ -7522,20 +7597,7 @@ document.getElementById("optionsBtn").addEventListener("click", () => { syncOpti
   if(el) el.addEventListener("change", enregistrerProjetInfo);
 });
 document.getElementById("projetInfoClose").addEventListener("click", () => { enregistrerProjetInfo(); fermerPanneaux(); });
-document.getElementById("projetSupprimer").addEventListener("click", () => {
-  const pj = projets.find(x => x.id === projetInfoTargetId);
-  if(!pj || projets.length <= 1) return;
-  const st = statsProjet(pj);
-  if(!confirm(`Supprimer le projet « ${pj.nom} » ?
-
-Cela supprime ${st.lignes} ligne(s), ${st.ops} OP, ${st.scen} scénario(s) et ${st.essais} essai(s) — tout ce qu'il contient.
-
-« ↺ Restaurer » permet de revenir en arrière.`)) return;
-  backupSnapshot("Suppression du projet « " + pj.nom + " »");
-  projets = projets.filter(x => x.id !== pj.id);
-  fermerPanneaux();
-  ouvrirProjet(projets[0].id);
-});
+document.getElementById("projetSupprimer").addEventListener("click", supprimerProjetActif);
 document.getElementById("optionsClose").addEventListener("click", fermerPanneaux);
 
 /* fiche outil (PDF ou image) : n° d'outils et trajectoires par logement, par OP.
@@ -7592,13 +7654,18 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""))) ret
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
-  { version:"4.0.0", date:"08/09/2026", points:[
-    "<b>Les projets arrivent.</b> Un projet regroupe tout ce qui concerne une même problématique — ses lignes de production, ses références, ses OP, ses scénarios et ses essais. « Coût &amp; qualité EMAG 1 » d'un côté, les essais de Julien sur Step 3 de l'autre : les deux ne se mélangent plus, ni dans les scénarios, ni dans la synthèse.",
-    "Les projets se choisissent par <b>cartes, en haut de l'écran</b>, comme les scénarios. Chaque carte dit où en est le projet : lignes, OP, scénarios, essais menés, combien sont passés en série, et le gain annuel déjà acquis. Le projet ouvert apparaît aussi dans le bandeau de titre.",
-    "Chaque projet porte sa <b>problématique</b>, son <b>pilote</b> (pas forcément la même personne d'un projet à l'autre), un <b>statut</b> (en cours, en pause, terminé, abandonné) et une <b>échéance visée facultative</b>. L'outil affiche le temps restant mais ne déclare jamais un projet « en retard » : dans un atelier, un essai glisse pour des raisons subies.",
-    "<b>Vos données existantes sont automatiquement reprises</b> dans un projet nommé d'après votre ligne actuelle, que vous pouvez renommer en un clic. Un point de reprise est posé juste avant, accessible par « ↺ Restaurer ».",
-    "Le <b>tableau de bord</b> gagne une bascule « projet ouvert / tous les projets ». Il montre tous les projets par défaut : le cloisonnement sert à saisir, pas à perdre la vue d'ensemble.",
-    "<b>Important si vous échangez des fichiers</b> : le format d'export change. Les fichiers reçus d'une version précédente s'ouvrent normalement, mais un fichier exporté par cette version <b>ne s'ouvrira pas dans une version antérieure de l'outil</b>. Si quelqu'un travaille encore sur une copie locale ancienne, il doit prendre celle-ci."
+  { version:"4.1.0", date:"08/09/2026", points:[
+    "<b>Les projets reviennent, sous une forme plus solide.</b> La première version (mise en attente il y a quelques jours) faisait du projet le propriétaire de la ligne de production — une machine ne pouvait appartenir qu'à un seul projet à la fois. Après réflexion, un projet est maintenant une liste de scénarios qu'on choisit d'y rattacher, un peu comme des étiquettes : la ligne, la référence et l'OP restent ce qu'ils ont toujours été, uniques, et un même scénario peut appartenir à plusieurs projets si le besoin se présente.",
+    "Concrètement : « Coût &amp; qualité EMAG 1 » et « Essais Step 3 » sont deux cartes en haut de l'écran. Ouvrir un projet ne cache rien de l'atelier — vous continuez à voir toutes les lignes — mais un nouveau scénario créé pendant qu'un projet est ouvert y est <b>automatiquement rattaché</b>, exactement ce que demandait « sélectionner un projet pour renseigner les données ».",
+    "Chaque scénario affiche de petites étiquettes cliquables pour l'ajouter ou le retirer d'un projet à tout moment — pas besoin de tout prévoir à la création.",
+    "Chaque carte de projet garde sa problématique, son pilote, son statut et son échéance visée (toujours sans notion de « retard » — un essai qui glisse n'est pas une faute).",
+    "Le tableau de bord peut se filtrer sur un projet précis, mais reste réglé sur « tous les projets » par défaut.",
+    "<b>Bonne nouvelle pour l'échange de fichiers</b> : cette fois, un fichier exporté par cette version reste lisible par une version plus ancienne de l'outil — elle affichera toutes vos lignes et mesures normalement, seul le regroupement en projets lui restera invisible."
+  ]},
+  { version:"3.19.2", date:"08/09/2026", points:[
+    "<b>Les projets sont mis en attente.</b> La version 4.0, qui ajoutait un niveau « Projet » au-dessus des lignes de production, a été retirée le temps de valider son organisation — notamment la question de savoir si une ligne doit appartenir à un seul projet ou pouvoir être suivie dans plusieurs. Mieux vaut trancher cette question avant que des campagnes entières soient rangées d'une façon qu'il faudrait défaire ensuite.",
+    "<b>Vos données sont intactes.</b> Si vous aviez ouvert la 4.0, tout ce que vous aviez saisi est repris automatiquement, y compris les mesures enregistrées entre-temps. Seul le regroupement par projet n'apparaît plus ; il reviendra quand la fonction sera validée.",
+    "Rien d'autre ne change par rapport à la version 3.19.1 que vous utilisiez avant."
   ]},
   { version:"3.19.1", date:"05/09/2026", points:[
     "Dans la vue d'ensemble, un coût qui ne peut pas se calculer dit maintenant <b>pourquoi</b> : « Coût non calculable : nombre d'arêtes à 0 ». Auparavant la tuile affichait « Coût — » alors que la cause était lisible juste au-dessus, sans que rien ne fasse le lien. À distinguer de « Manque : … », qui signale une case pas encore remplie — ce n'est pas le même problème ni le même geste."
@@ -7781,31 +7848,26 @@ function dansContexteOp(op, fn){
   try { return fn(); } finally { config = cfgAvant; data = dataAvant; }
 }
 
-/* Portee du tableau de bord : le projet ouvert, ou tous. Le defaut est "tous les projets" —
-   c'est la vue que Matis avait avant l'arrivee des projets, et celle qu'il perdrait sans
-   cette bascule. Le cloisonnement sert a saisir, pas a s'aveugler sur le reste. */
-let dashboardTousProjets = true;
+/* Filtre du tableau de bord (v4.1) : null = tous les scenarios, sinon l'id d'un projet --
+   seuls les scenarios etiquetes dans ce projet apparaissent. Par defaut "tous", meme quand
+   un projet est ouvert dans le bandeau superieur : le tableau de bord sert a garder la vue
+   d'ensemble, le cloisonnement est une option qu'on choisit ici, pas un etat qu'on subit. */
+let dashboardFiltreProjetId = null;
 
 function renderDashboard(){
   const wrap = document.getElementById("dashboardPanel");
   if(!wrap) return;
-  syncActiveProjet();
+  const pjFiltre = dashboardFiltreProjetId && projets.find(x => x.id === dashboardFiltreProjetId);
 
   let nbSuivis = 0, nbValides = 0, nbSerie = 0, gainAcquis = 0, gainPotentiel = 0, volumeConnu = false;
   const sections = [];
-  const projetsVus = dashboardTousProjets ? projets : [getActiveProjet()].filter(Boolean);
 
-  projetsVus.forEach(pj => {
-  const lignesVues = pj.lignes || [];
-  if(dashboardTousProjets && projets.length > 1){
-    sections.push(`<h3 class="db-projet-titre">${escapeAttr(pj.nom || "Projet sans nom")}
-      <span class="db-ligne-info">${escapeAttr(PROJET_STATUTS[pj.statut] || "")}${pj.responsable ? " · " + escapeAttr(pj.responsable) : ""}</span></h3>`);
-  }
-  lignesVues.forEach(ligne => {
+  lignes.forEach(ligne => {
     const blocsRef = [];
     ligne.references.forEach(ref => {
       ref.ops.forEach(op => {
-        const scs = op.scenarios || [];
+        let scs = op.scenarios || [];
+        if(pjFiltre) scs = scs.filter(sc => projetContientScenario(pjFiltre, ligne.id, ref.id, op.id, sc.id));
         if(!scs.length) return;
         const rows = dansContexteOp(op, () => {
           const base = baselineScenario();
@@ -7879,7 +7941,6 @@ function renderDashboard(){
         <h3 class="db-ligne-titre">${escapeAttr(ligne.nom || "Ligne sans nom")}${infos.length ? `<span class="db-ligne-info">${infos.join(" · ")}</span>` : ""}</h3>
         ${blocsRef.join("")}
       </section>`);
-   });
   });
 
   const kpis = `
@@ -7892,23 +7953,27 @@ function renderDashboard(){
       <div class="db-kpi db-kpi-gain"><span class="l">Gain annuel à déployer</span><span class="v">${(gainPotentiel>=0?"+":"−")+fmtEuroCourt(Math.abs(gainPotentiel))}</span><span class="db-kpi-sub">validés, pas encore en série</span></div>` : ""}
     </div>`;
 
+  const filtreHTML = projets.length ? `
+    <div class="db-filtre">
+      <label for="dbFiltreProjet">Projet</label>
+      <select id="dbFiltreProjet">
+        <option value="">Tous les projets</option>
+        ${projets.map(pj => `<option value="${pj.id}" ${pj.id===dashboardFiltreProjetId?"selected":""}>${escapeAttr(pj.nom)}</option>`).join("")}
+      </select>
+    </div>` : "";
+
   wrap.innerHTML = `
     <h3>Tableau de bord</h3>
-    <div class="db-portee">
-      <button class="ghost small ${dashboardTousProjets ? "" : "primary"}" id="dbProjetCourant">Projet ouvert</button>
-      <button class="ghost small ${dashboardTousProjets ? "primary" : ""}" id="dbTousProjets">Tous les projets (${projets.length})</button>
-    </div>
-    <p class="panel-hint">${dashboardTousProjets ? "Tous les projets du fichier." : "Projet « " + escapeAttr((getActiveProjet()||{}).nom || "") + " » uniquement."} Toutes les lignes, références et OP. Les gains annuels n'apparaissent que pour les références dont le volume de production est renseigné (module <b>Volume annuel</b> dans Options).</p>
+    ${filtreHTML}
+    <p class="panel-hint">${pjFiltre ? `Scénarios étiquetés dans « ${escapeAttr(pjFiltre.nom)} » uniquement.` : "Toutes les lignes, références et OP du fichier."} Les gains annuels n'apparaissent que pour les références dont le volume de production est renseigné (module <b>Volume annuel</b> dans Options).</p>
     ${kpis}
-    ${sections.join("") || `<p class="panel-hint">Aucun scénario enregistré.</p>`}
+    ${sections.join("") || `<p class="panel-hint">Aucun scénario ${pjFiltre ? "étiqueté dans ce projet" : "enregistré"}.</p>`}
     <div class="panel-actions"><button class="primary" id="dashboardClose">Fermer</button></div>
   `;
   const btn = document.getElementById("dashboardClose");
   if(btn) btn.addEventListener("click", fermerPanneaux);
-  const bc = document.getElementById("dbProjetCourant");
-  if(bc) bc.addEventListener("click", () => { dashboardTousProjets = false; renderDashboard(); });
-  const bt = document.getElementById("dbTousProjets");
-  if(bt) bt.addEventListener("click", () => { dashboardTousProjets = true; renderDashboard(); });
+  const sel = document.getElementById("dbFiltreProjet");
+  if(sel) sel.addEventListener("change", () => { dashboardFiltreProjetId = sel.value || null; renderDashboard(); });
 }
 
 /* Informations de ligne — cout horaire, observations, derniere maintenance */
@@ -8051,7 +8116,7 @@ function runTests(){
   const prel = (id, piece, batt) => ({ id, piece, batt, battD:"", battG:"", logementId:"", pointMesure:"" });
 
   // --- etat reel mis de cote : les tests ne doivent rien laisser derriere eux ---
-  const sauve = { config, data, lignes, activeLigneId, activeReferenceId, activeOpId, activeId };
+  const sauve = { config, data, lignes, projets, activeProjetId, activeLigneId, activeReferenceId, activeOpId, activeId };
 
   try{
     // ---- jeu d'essai : chiffres ronds, pour que l'attendu se verifie a la main ----
@@ -8227,6 +8292,86 @@ function runTests(){
     ok("fusion : scenario absent ajoute", bil.scenarios, 1);
     ok("fusion : le scenario local est intact", cible[0].references[0].ops[0].scenarios[0].essais[0].titre, "local");
 
+    /* ---- projets comme etiquettes (v4.1) -------------------------------------------
+       Le point le plus sensible : une etiquette qui pointe vers un scenario supprime ne
+       doit jamais lever d'exception, et une migration depuis l'ancien format "propriete"
+       (v4.0, format 6) ne doit perdre ni mesure ni regroupement. */
+    ok("normalizeProjet : statut par defaut", normalizeProjet({ nom:"n" }).statut, "encours");
+    ok("normalizeProjet : tags par defaut vide", normalizeProjet({ nom:"n" }).tags, []);
+
+    // arbre de test pour resoudreTag/purgerTagsMorts/toggleTagScenario
+    lignes = [ normalizeLigne({ id:"lT", nom:"Ligne test", references:[
+      { id:"rT", nom:"Ref", ops:[ { id:"oT", nom:"OP", config:{}, scenarios:[
+        normalizeScenario({ id:"scT", name:"Sc" })
+      ] } ] }
+    ] }) ];
+    const tagValide = { ligneId:"lT", referenceId:"rT", opId:"oT", scenarioId:"scT" };
+    const tagMort = { ligneId:"lT", referenceId:"rT", opId:"oT", scenarioId:"introuvable" };
+    ok("resoudreTag : etiquette valide resolue", !!resoudreTag(tagValide), true);
+    ok("resoudreTag : etiquette morte ne leve pas, renvoie null", resoudreTag(tagMort), null);
+
+    const pjTest = normalizeProjet({ id:"pjT", nom:"Projet test", tags:[tagValide, tagMort] });
+    const purges = purgerTagsMorts(pjTest);
+    ok("purgerTagsMorts : une etiquette morte retiree", purges, 1);
+    ok("purgerTagsMorts : l'etiquette valide reste", pjTest.tags.length, 1);
+
+    ok("projetContientScenario : vrai sur une etiquette posee", projetContientScenario(pjTest, "lT","rT","oT","scT"), true);
+    toggleTagScenario(pjTest, "lT","rT","oT","scT");
+    ok("toggleTagScenario : retire une etiquette existante", pjTest.tags.length, 0);
+    toggleTagScenario(pjTest, "lT","rT","oT","scT");
+    ok("toggleTagScenario : repose l'etiquette retiree", pjTest.tags.length, 1);
+
+    // migration depuis un arbre format 6 (v4.0, projets PROPRIETAIRES des lignes) :
+    // aucune mesure perdue, le regroupement redevient des etiquettes sur l'arbre commun
+    const arbreFormat6 = { format:6, projets:[
+      { id:"pjV4", nom:"Ancien projet", problematique:"Qualite", responsable:"Julien", statut:"encours",
+        lignes:[ { id:"lV4", nom:"Step 3", references:[ { id:"rV4", nom:"Ref V4", ops:[ { id:"oV4", nom:"OP40", config:{},
+          scenarios:[ { id:"scV4", name:"Essai", outils:[], essais:[ { id:"eV4", titre:"E1",
+            prelevements:[ { id:"p1", piece:1, batt:0.03 } ] } ] } ] } ] } ] } ] }
+    ] };
+    const migF6 = migrerArbre(arbreFormat6);
+    ok("migrerArbre format 6 : ligne aplatie dans l'arbre commun", migF6.lignes.map(l=>l.nom), ["Step 3"]);
+    ok("migrerArbre format 6 : aucune mesure perdue", comptePrelevements(migF6.lignes), 1);
+    ok("migrerArbre format 6 : projet-etiquettes recree avec sa metadonnee", migF6.projets[0].nom, "Ancien projet");
+    ok("migrerArbre format 6 : responsable conserve", migF6.projets[0].responsable, "Julien");
+    ok("migrerArbre format 6 : etiquette pointant sur le bon scenario", migF6.projets[0].tags[0].scenarioId, "scV4");
+    ok("migrerArbre format 6 : etiquette resoluble apres migration", (() => {
+      const memo = lignes; lignes = migF6.lignes;
+      const r = !!resoudreTag(migF6.projets[0].tags[0]);
+      lignes = memo; return r;
+    })(), true);
+
+    // format 5 (pre-v4, sans projets) : lit normalement, aucun projet invente
+    const arbreFormat5 = { lignes:[ { id:"l5", nom:"L5", references:[ { id:"r5", nom:"R5", ops:[ { id:"o5", nom:"OP", config:{},
+      scenarios:[ { id:"s5", name:"S5", outils:[], essais:[] } ] } ] } ] } ] };
+    const migF5 = migrerArbre(arbreFormat5);
+    ok("migrerArbre format 5 : lignes conservees", migF5.lignes.map(l=>l.nom), ["L5"]);
+    ok("migrerArbre format 5 : aucun projet invente", migF5.projets, []);
+
+    // format 7 (v4.1) : lignes ET projets-etiquettes lus tels quels, sans transformation
+    const arbreFormat7 = { format:7, lignes: arbreFormat5.lignes,
+      projets:[ normalizeProjet({ id:"pj7", nom:"Projet 7", tags:[{ ligneId:"l5", referenceId:"r5", opId:"o5", scenarioId:"s5" }] }) ] };
+    const migF7 = migrerArbre(arbreFormat7);
+    ok("migrerArbre format 7 : projets lus sans reconstruction", migF7.projets[0].nom, "Projet 7");
+    ok("migrerArbre format 7 : etiquette conservee", migF7.projets[0].tags.length, 1);
+
+    // fusion de projets-etiquettes : un projet inconnu arrive entier, un projet connu ne
+    // recoit que les etiquettes manquantes, son nom/pilote local n'est jamais ecrase
+    const pjLocalFusion = [ normalizeProjet({ id:"pjF", nom:"Mon nom local", responsable:"Benjamin",
+      tags:[{ ligneId:"lA", referenceId:"rA", opId:"oA", scenarioId:"scA" }] }) ];
+    const pjEntrantFusion = [
+      normalizeProjet({ id:"pjF", nom:"Nom recu", responsable:"Julien",
+        tags:[{ ligneId:"lA", referenceId:"rA", opId:"oA", scenarioId:"scA" },
+              { ligneId:"lB", referenceId:"rB", opId:"oB", scenarioId:"scB" }] }),
+      normalizeProjet({ id:"pjG", nom:"Projet inconnu", tags:[] })
+    ];
+    const bilanTags = fusionnerProjetsTags(pjLocalFusion, pjEntrantFusion);
+    ok("fusionnerProjetsTags : projet inconnu ajoute", bilanTags.projetsAjoutes, 1);
+    ok("fusionnerProjetsTags : etiquette manquante ajoutee", bilanTags.tagsAjoutes, 1);
+    ok("fusionnerProjetsTags : etiquette deja presente non dupliquee", pjLocalFusion[0].tags.length, 2);
+    ok("fusionnerProjetsTags : nom local jamais ecrase", pjLocalFusion[0].nom, "Mon nom local");
+    ok("fusionnerProjetsTags : pilote local jamais ecrase", pjLocalFusion[0].responsable, "Benjamin");
+
     /* ---- plan d'outil (v3.18) ----------------------------------------------------
        Un plan perdu au rechargement serait invisible : normalizeOutil doit le conserver
        tel quel, et poser null par defaut sur les outils venus d'un fichier anterieur. */
@@ -8260,36 +8405,6 @@ function runTests(){
     ok("apercu : une valeur saisie n'est pas listee comme manquante", /Manque/.test(tuile0), false);
     const scVide = normalizeScenario({ id:"sVi", name:"vi", outils:[
       { id:"tB", numero:"T-1", logements:[{ id:"gB", nom:"Piste", ref:"", prix:"", aretes:"", charniere:"" }] }] });
-    /* ---- projets (v4.0) -----------------------------------------------------------
-       La migration est le point le plus risque de cette version : un fichier format 5 mal
-       migre ferait disparaitre des campagnes entieres. */
-    const arbreV5 = { format:5, exportePar:"Matis", lignes:[
-      { id:"lV5", nom:"EMAG 1", references:[{ id:"rV5", nom:"DV", ops:[{ id:"oV5", nom:"OP10", config:{},
-        scenarios:[{ id:"sV5", name:"S", outils:[], essais:[{ id:"eV5", titre:"E1",
-          prelevements:[{ id:"p1", piece:10, batt:0.1 }] }] }] }] }] }] };
-    const luV5 = lireProjets(arbreV5);
-    ok("migration 5→6 : un projet unique est cree", luV5.projets.length, 1);
-    ok("migration 5→6 : signalee comme migration", luV5.migre, true);
-    ok("migration 5→6 : nom repris de la premiere ligne", luV5.projets[0].nom, "Optimisation EMAG 1");
-    ok("migration 5→6 : aucun prelevement perdu", comptePrelevements(luV5.projets[0].lignes), 1);
-    const luV6 = lireProjets({ format:6, projets:[{ id:"pjX", nom:"X", lignes:[] }] });
-    ok("format 6 : relu sans migration", luV6.migre, false);
-    ok("normalizeProjet : statut par defaut", normalizeProjet({ nom:"n" }).statut, "encours");
-
-    /* fusion au niveau projet : un projet inconnu arrive en entier, un projet connu voit
-       ses lignes fusionnees sans que son parametrage local soit ecrase */
-    const pjLocal = [normalizeProjet({ id:"pjA", nom:"Mon nom local", responsable:"Benjamin", lignes:[] })];
-    const pjEntrant = [
-      normalizeProjet({ id:"pjA", nom:"Nom de l'expediteur", responsable:"Julien", lignes:[
-        { id:"lN", nom:"Ligne recue", references:[] }] }),
-      normalizeProjet({ id:"pjB", nom:"Projet inconnu", lignes:[] })
-    ];
-    const bilanPj = fusionnerProjets(pjLocal, pjEntrant);
-    ok("fusion projets : le projet inconnu est ajoute", bilanPj.projets, 1);
-    ok("fusion projets : la ligne recue rejoint le projet connu", pjLocal[0].lignes.length, 1);
-    ok("fusion projets : le nom local n'est pas ecrase", pjLocal[0].nom, "Mon nom local");
-    ok("fusion projets : le pilote local n'est pas ecrase", pjLocal[0].responsable, "Benjamin");
-
     ok("apercu : cases vides listees comme manquantes",
        /Manque : référence, prix, arêtes, charnière/.test(apercuLogementHTML(scVide, scVide.outils[0], scVide.outils[0].logements[0], "#000", 0)), true);
 
@@ -8302,6 +8417,7 @@ function runTests(){
   } finally {
     // remise en place de l'etat reel, quoi qu'il arrive
     config = sauve.config; data = sauve.data; lignes = sauve.lignes;
+    projets = sauve.projets; activeProjetId = sauve.activeProjetId;
     activeLigneId = sauve.activeLigneId; activeReferenceId = sauve.activeReferenceId;
     activeOpId = sauve.activeOpId; activeId = sauve.activeId;
   }
