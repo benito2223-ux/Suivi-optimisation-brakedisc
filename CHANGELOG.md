@@ -5,6 +5,61 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.6.0] — 2026-09-09
+
+Trois chantiers issus de la revue UX externe (pertinence/architecture/UX) : la fin des
+fenêtres système, l'encodage de la convention de démarrage, et une passe accessibilité
+clavier. Aucun changement de format de données.
+
+### Ajouté — dialogues in-app : les 27 `alert()`, 20 `confirm()` et 4 `prompt()` natifs remplacés
+Derniers vestiges de fenêtres système grises : cassaient l'identité visuelle (et le mode
+nuit), et ne supportaient aucune mise en forme — les messages les plus importants (panne de
+stockage, garde-fou double comptage) étaient des murs de texte brut.
+
+- Nouveau panneau `#dialogPanel` (même famille visuelle que les autres panneaux), piloté par
+  trois helpers : `dialogueAlerte()` (alerte), `dialogueConfirmer()` (confirm, promesse de
+  booléen), `dialogueDemander()` (prompt, promesse de texte ou null).
+- Sémantique native conservée : Échap et clic hors panneau = Annuler (déjà câblés sur
+  `fermerPanneaux`), Entrée dans le champ = valider, défaut de focus sur le geste
+  réversible (« Annuler »).
+- Nouveau style `danger` (bouton rouge) pour les suppressions et la réinitialisation —
+  la validation par saisie exacte de « REINITIALISER » est conservée.
+- `promouvoirEnProduction()` scindée en `questionsPromotion()` (les questions, testables
+  hors DOM) + `appliquerPromotion()` (l'effet, synchrone) + le chemin interactif (promesse).
+  Le chemin accepte un injecteur de réponse pour les tests ; les garde-fous v4.5
+  (double comptage, annonce du remplacement) passent par les mêmes dialogues, avec
+  « Passer en série quand même » comme libellé explicite sur le premier.
+- Les appelants asynchrones sauvegardent après résolution de la promesse (statut-select,
+  pastille ★), pour ne jamais persister un état muté après coup.
+- `runTests()` : 5 nouveaux tests (échappement `dlgTexte`, valeurs absentes, contenu des
+  questions de promotion, application synchrone, refus sans mutation) — 140/140.
+
+### Ajouté — parcours de démarrage : la convention v4.4 devient un guide
+« Poser le scénario en production d'abord, créer les projets ensuite » n'était qu'une
+convention à transmettre oralement ; elle est maintenant dans l'outil.
+
+- Menu **••• → Démarrer un suivi** : panneau checklist à trois étapes (ligne → scénario ★
+  sur l'OP → premier projet), qui se coche tout seul selon l'état réel du suivi
+  (`etatParcours()`), avec le « pourquoi » de chaque étape.
+- Bandeau bleu sur un OP vierge (ni scénario en production, ni projet) : rappel court,
+  « Voir le parcours » ouvre le panneau, « Masquer » le retire définitivement sur ce poste
+  (`spk_parcours_masque`). Il disparaît seul dès qu'une étape 2 ou 3 est franchie.
+- Les projets restent facultatifs : le panneau le dit explicitement.
+
+### Ajouté — accessibilité clavier des panneaux
+- `ouvrirPanneau()` pose `role="dialog"` + `aria-modal="true"`, entre le focus dans le
+  premier champ du panneau (sinon le panneau lui-même) et retient l'élément déclencheur ;
+  `fermerPanneaux()`/`fermerDialogue()` restaurent le focus d'origine.
+- La touche Tab reste piégée dans le panneau du dessus (pile de panneaux) : plus de focus
+  perdu derrière le voile. Échap et le clic hors panneau gardent leur comportement.
+- Les icônes du menu ••• portaient déjà des libellés visibles ; le statut de sauvegarde
+  avait déjà son `role="status"`.
+
+### Corrigé — le dernier point de la tendance collait au bord droit
+`chartHTML()` et `multiChartHTML()` bornaient l'axe X au max des données (ou de la
+charnière) : le point le plus avancé tombait exactement sur le cadre, à moitié coupé.
+Une marge de 8 % sépare désormais le dernier point du bord.
+
 ## [4.5.0] — 2026-09-09
 
 Deux garde-fous ergonomiques issus de l'audit externe (revue Hermes) et de sa relecture,

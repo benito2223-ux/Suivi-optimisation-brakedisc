@@ -748,6 +748,16 @@ tr.row-bad td{background:var(--red-bg);}
 .opt-note{display:block; font-size:11.5px; color:var(--ink-faint); margin-top:5px;}
 .panel-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:18px; padding-top:16px; border-top:1px solid var(--border);}
 
+/* ---- dialogues in-app (v4.6) ---- */
+.panel-dialog{ width:min(460px, calc(100vw - 32px)); }
+.dialog-body{ font-size:14px; line-height:1.6; color:var(--ink); margin:10px 0 2px; }
+.dialog-body b{ font-weight:600; }
+.dialog-input{ margin-top:12px; }
+.dialog-input input{ width:100%; font-family:var(--font-mono); font-size:14px; padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); color:var(--ink); }
+.dialog-input input:focus{ border-color:var(--blue); outline:2px solid color-mix(in srgb, var(--blue) 25%, transparent); outline-offset:0; }
+#dialogOk.danger{ background:var(--red); border-color:var(--red); }
+#dialogOk.danger:hover{ background:var(--red-dark); border-color:var(--red-dark); }
+
 /* graphique de tendance */
 .chart-block{padding:16px; border-top:1px solid var(--border);}
 .chart-block h3{font-family:var(--font-body); font-weight:600; font-size:13.5px; text-transform:uppercase; letter-spacing:.03em; color:var(--ink-faint); margin:0 0 12px;}
@@ -852,6 +862,22 @@ body.locked #lockBtn{background:var(--amber); border-color:var(--amber); color:v
 .bandeau-stockage span{flex:1 1 320px; line-height:1.45;}
 .bandeau-stockage button.primary{background:#fff; color:var(--red); border-color:#fff; flex:0 0 auto;}
 .bandeau-stockage button.primary:hover{background:#fff; color:var(--red-dark); border-color:#fff;}
+
+/* ---- parcours de demarrage (v4.6) : production d'abord, projets ensuite ---- */
+.parcours-bandeau{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px;
+  padding:10px 14px; background:var(--blue-bg); border:1px solid var(--blue); border-left:4px solid var(--blue);
+  border-radius:var(--radius); font-size:13px; color:var(--ink);}
+.parcours-bandeau[hidden]{display:none;}
+.parcours-bandeau b{font-family:var(--font-mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--blue-dark);}
+.parcours-bandeau span{flex:1 1 320px; line-height:1.45;}
+.parcours-bandeau button.primary{flex:0 0 auto;}
+.pc-step{display:grid; grid-template-columns:26px 1fr; gap:11px; align-items:start; padding:12px 0; border-top:1px solid var(--border);}
+.pc-num{width:24px; height:24px; border-radius:50%; border:2px solid var(--blue); color:var(--blue-dark);
+  display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-weight:700; font-size:12px; margin-top:2px;}
+.pc-step.pc-fait .pc-num{background:var(--green); border-color:var(--green); color:#fff;}
+.pc-step b{display:block; font-size:14.5px; font-weight:700; color:var(--ink);}
+.pc-step.pc-fait b{color:var(--green);}
+.pc-corps{font-size:13px; line-height:1.5; color:var(--ink-soft);}
 @media print{ .bandeau-stockage{ display:none !important; } }
 .lock-bandeau{display:none; align-items:center; gap:10px; margin-bottom:14px; padding:9px 14px;
   background:var(--amber-bg); border:1px solid var(--amber); border-left:4px solid var(--amber);
@@ -1330,6 +1356,7 @@ body.atelier-on{overflow:hidden;}
           <button class="ghost" id="syntheseBtn" title="Comparer tous les scénarios dans un tableau, et superposer leurs courbes de tendance"><svg class="icon" viewBox="0 0 18 18"><rect x="4" y="3" width="10" height="12" rx="1.5"/><path d="M6.5 7h5M6.5 10h5M6.5 13h3" stroke-linecap="round"/></svg>Vue de synthèse</button>
           <button class="ghost" id="nouveautesBtn" title="Ce qui a changé dans les dernières versions de l'outil"><svg class="icon" viewBox="0 0 18 18"><path d="M9 2.5 10.7 6.6 15 7l-3.2 3 .9 4.3L9 12.2 5.3 14.3l.9-4.3L3 7l4.3-.4Z" stroke-linejoin="round"/></svg>Nouveautés</button>
           <button class="ghost" id="dashboardBtn" title="Toutes les lignes, références et OP : avancement des optimisations et gains cumulés"><svg class="icon" viewBox="0 0 18 18"><rect x="2.5" y="2.5" width="5.5" height="7" rx="1"/><rect x="10" y="2.5" width="5.5" height="4" rx="1"/><rect x="2.5" y="11.5" width="5.5" height="4" rx="1"/><rect x="10" y="8.5" width="5.5" height="7" rx="1"/></svg>Tableau de bord</button>
+          <button class="ghost" id="parcoursBtn" title="L'ordre recommandé pour démarrer un suivi : production d'abord, projets ensuite"><svg class="icon" viewBox="0 0 18 18"><path d="M3 9h8M7 5l4 4-4 4M13 3v12" stroke-linecap="round" stroke-linejoin="round"/></svg>Démarrer un suivi</button>
           <button class="ghost" id="backlogBtn" title="Noter une idée ou un problème rencontré sur l'outil"><svg class="icon" viewBox="0 0 18 18"><path d="M9 2.5a4.5 4.5 0 0 0-2.5 8.2c.4.3.6.7.6 1.2v.6h3.8v-.6c0-.5.2-.9.6-1.2A4.5 4.5 0 0 0 9 2.5Z" stroke-linejoin="round"/><path d="M7.2 15h3.6" stroke-linecap="round"/></svg>Suggestions</button>
           <button class="ghost" id="optionsBtn" title="Activer les modules de calcul complémentaires"><svg class="icon" viewBox="0 0 18 18"><path d="M2.5 5h8M13.5 5h2M2.5 13h2M7.5 13h8" stroke-linecap="round"/><circle cx="11.5" cy="5" r="1.6"/><circle cx="5.5" cy="13" r="1.6"/></svg>Options</button>
           <button class="ghost" id="pdfBtn"><svg class="icon" viewBox="0 0 18 18"><path d="M5 2.5h5l3 3V15a.8.8 0 0 1-.8.8H5.8a.8.8 0 0 1-.8-.8V2.5Z" stroke-linejoin="round"/><path d="M9 8v4.5M7 10.5 9 12.5 11 10.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Générer le PDF</button>
@@ -1592,6 +1619,7 @@ body.atelier-on{overflow:hidden;}
   <button type="button" class="legend-btn" title="Point bleu = calculé automatiquement · point clair = champ éditable" aria-label="Légende des couleurs de champs"><i class="dot editable"></i><i class="dot blue"></i></button>
   </div>
 
+  <div class="parcours-bandeau" id="parcoursBandeau" hidden></div>
   <div class="projets-bandeau" id="projetsBandeau"></div>
 
   <div class="ctx-rail" id="ctxRail">
@@ -1606,6 +1634,23 @@ body.atelier-on{overflow:hidden;}
   <div class="panel" id="historyPanel" hidden></div>
   <div class="panel" id="csvPanel" hidden></div>
   <div class="panel" id="nouveautesPanel" hidden></div>
+  <div class="panel" id="parcoursPanel" hidden></div>
+  <!-- dialogues in-app (v4.6) : les alert()/confirm()/prompt() natifs etaient les seuls
+       elements non styles de l'outil — fenetres systeme grises, impossible a mettre en
+       forme (pas de gras, pas de liste), et dont l'apparence varie selon le navigateur.
+       Memes comportements que le natif : Echap et clic hors panneau = Annuler,
+       Entree = valider, et le focus reste piege dans la fenetre. -->
+  <div class="panel panel-dialog" id="dialogPanel" hidden>
+    <h3 id="dialogTitle">Information</h3>
+    <div class="dialog-body" id="dialogBody"></div>
+    <div class="dialog-input" id="dialogInputRow" hidden>
+      <input type="text" id="dialogInput" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="panel-actions">
+      <button class="ghost" id="dialogCancel" hidden>Annuler</button>
+      <button class="primary" id="dialogOk">Confirmer</button>
+    </div>
+  </div>
   <div class="panel panel-large" id="dashboardPanel" hidden></div>
   <div class="panel" id="importPanel" hidden>
     <h3>Importer un suivi</h3>
@@ -1708,7 +1753,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.5.0";
+const TOOL_VERSION = "4.6.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -1717,6 +1762,102 @@ const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris 
    import, scripts) — la collision ecrase silencieusement des donnees (audit v4.4.0).
    Pattern deja utilise pour e/p/t/g, etendu a s/l/r/o. pj reste gere par normalizeProjet. */
 function uid(prefix){ return prefix + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+/* ---- dialogues in-app + focus des panneaux (v4.6) ----
+   Derniers vestiges de fenetres natives : 27 alert(), 20 confirm() et 4 prompt() s'affichaient
+   en fenetres systeme grises. Deux problemes : elles cassaient l'identite visuelle (et le mode
+   nuit), et leur texte ne supportait aucune mise en forme — les messages les plus importants
+   de l'outil (panne de stockage, garde-fou double comptage) etaient des murs de texte brut.
+   Ces dialogues gardent la semantique du natif : Echap / clic hors panneau = Annuler,
+   Entree = valider, promesse resolue avec la valeur (booleen, ou texte saisi / null).
+   Placé ici, avant loadAll() : le garde-fou anti-arbre-vide peut poser sa question des
+   le chargement — les declarations "let" du bloc seraient en zone morte plus bas. */
+let panneauPile = [];
+let focusAvantPanneau = null;
+let dialogEnAttente = null;
+const SELECTEUR_FOCUSABLE = 'button:not([disabled]), input:not([disabled]):not([type="file"]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])';
+
+function dlgTexte(t){
+  return String(t ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/\n/g,"<br>");
+}
+function ouvrirDialogue(opts){
+  return new Promise(resolve => {
+    fermerDialogue(); // un dialogue oublie ouvert ne doit pas laisser sa promesse en suspens
+    const row = document.getElementById("dialogInputRow");
+    const input = document.getElementById("dialogInput");
+    const avecSaisie = Object.prototype.hasOwnProperty.call(opts, "saisie");
+    document.getElementById("dialogTitle").textContent = opts.titre || "Information";
+    document.getElementById("dialogBody").innerHTML = opts.html || "";
+    row.hidden = !avecSaisie;
+    if(avecSaisie){ input.value = opts.saisie || ""; input.placeholder = opts.placeholder || ""; }
+    const annuler = document.getElementById("dialogCancel");
+    const ok = document.getElementById("dialogOk");
+    annuler.hidden = opts.sansAnnuler === true;
+    ok.textContent = opts.okLabel || (opts.sansAnnuler ? "Fermer" : "Confirmer");
+    ok.classList.toggle("danger", opts.danger === true);
+    dialogEnAttente = { resolve, avecSaisie };
+    ouvrirPanneau("dialogPanel");
+    if(avecSaisie){ input.focus(); input.select(); }
+    else if(!annuler.hidden) annuler.focus(); // defaut au clavier : le geste reversible
+    else ok.focus();
+  });
+}
+function fermerDialogue(valeur){
+  const pan = document.getElementById("dialogPanel");
+  if(!pan || pan.hidden) return;
+  pan.hidden = true;
+  panneauPile = panneauPile.filter(id => id !== "dialogPanel");
+  if(!panneauPile.length){
+    document.getElementById("panelBackdrop").hidden = true;
+    restaurerFocusPanneau();
+  }
+  if(dialogEnAttente){
+    const d = dialogEnAttente; dialogEnAttente = null;
+    d.resolve(valeur === undefined ? (d.avecSaisie ? null : false) : valeur);
+  }
+}
+function dialogueAlerte(texte, titre){
+  return ouvrirDialogue({ titre: titre || "Information", html: dlgTexte(texte), sansAnnuler: true });
+}
+function dialogueConfirmer(texte, opts){
+  opts = opts || {};
+  return ouvrirDialogue({ titre: opts.titre || "Confirmer ?", html: opts.html || dlgTexte(texte), danger: opts.danger, okLabel: opts.okLabel }).then(ok => !!ok);
+}
+function dialogueDemander(texte, valeur, opts){
+  opts = opts || {};
+  return ouvrirDialogue({ titre: opts.titre || "Saisie", html: dlgTexte(texte), saisie: valeur, placeholder: opts.placeholder, okLabel: opts.okLabel || "Valider", danger: opts.danger });
+}
+function restaurerFocusPanneau(){
+  if(focusAvantPanneau && document.contains(focusAvantPanneau)){
+    try{ focusAvantPanneau.focus({ preventScroll:true }); }catch(e){}
+  }
+  focusAvantPanneau = null;
+}
+document.getElementById("dialogOk").addEventListener("click", () => {
+  if(!dialogEnAttente) return;
+  fermerDialogue(dialogEnAttente.avecSaisie ? document.getElementById("dialogInput").value : true);
+});
+document.getElementById("dialogCancel").addEventListener("click", () => fermerDialogue(false));
+document.getElementById("dialogInput").addEventListener("keydown", e => {
+  if(e.key === "Enter"){ e.preventDefault(); fermerDialogue(document.getElementById("dialogInput").value); }
+});
+/* Tab reste piege dans le panneau du dessus : sans cela, le focus s'echappe derriere
+   le voile — on tabule dans une page invisible, et Echap devient le seul recours. */
+document.addEventListener("keydown", e => {
+  if(e.key !== "Tab") return;
+  const idPan = panneauPile[panneauPile.length - 1];
+  if(!idPan) return;
+  const pan = document.getElementById(idPan);
+  if(!pan || pan.hidden) return;
+  const items = Array.from(pan.querySelectorAll(SELECTEUR_FOCUSABLE)).filter(el => el.getClientRects().length > 0);
+  if(!items.length) return;
+  const dedans = pan.contains(document.activeElement);
+  if(e.shiftKey){
+    if(!dedans || document.activeElement === items[0]){ e.preventDefault(); items[items.length - 1].focus(); }
+  } else {
+    if(!dedans || document.activeElement === items[items.length - 1]){ e.preventDefault(); items[0].focus(); }
+  }
+});
 
 /* ---- dossier local (photos + backup) ----
    Les photos ne doivent JAMAIS gonfler le localStorage/JSON echange entre collegues : elles
@@ -1780,7 +1921,7 @@ function compressImageFile(file, maxDim, quality){
 }
 async function connectPhotosDir(){
   if(!fsPhotosSupported()){
-    alert("Cette fonction (dossier photos local) nécessite Edge ou Chrome sur ordinateur, et d'ouvrir l'outil via son adresse en ligne (https://...) plutôt que le fichier local.");
+    dialogueAlerte("Cette fonction (dossier photos local) nécessite Edge ou Chrome sur ordinateur, et d'ouvrir l'outil via son adresse en ligne (https://...) plutôt que le fichier local.", "Dossier local indisponible");
     return;
   }
   try{
@@ -2499,22 +2640,29 @@ function loadAll(){
           try{ secours = JSON.parse(localStorage.getItem(LEGACY_KEY) || "null"); }catch(e2){}
           if(Array.isArray(secours) && secours.length){
             const totalSecours = secours.reduce((n,s) => n + (s.essais||[]).reduce((n2,e) => n2 + (e.prelevements||[]).length, 0), 0);
-            if(totalSecours > 0 && confirm(
-              "Le fichier de suivi actuel semble vide (0 prélèvement), mais une ancienne sauvegarde de cet outil contient " + totalSecours + " prélèvement(s) enregistré(s).\n\nRécupérer cette ancienne sauvegarde maintenant ?\n\n(Recommandé — sinon ces essais resteront invisibles.)"
-            )){
-              let secoursConfig = null;
-              try{ secoursConfig = JSON.parse(localStorage.getItem(LEGACY_KEY + "_config") || "null"); }catch(e2){}
-              const op2 = { id: uid("o"), nom: "OP10", ordre: 10,
-                config: Object.assign({}, defaultConfig, { forceRatioActif: true }, secoursConfig || {}),
-                scenarios: secours.map(normalizeScenario) };
-              const ref2 = { id: uid("r"), nom: "DV 356x26 RPI", ops: [op2] };
-              lignes = [{ id: uid("l"), nom: "EMAG 1", references: [ref2] }];
-              projets = []; activeProjetId = null; responsables = [];
-              backlog = [];
-              activeLigneId = lignes[0].id; activeReferenceId = ref2.id; activeOpId = op2.id;
-              data = op2.scenarios; config = op2.config;
-              activeId = data[0] ? data[0].id : null;
-              saveData();
+            if(totalSecours > 0){
+              // dialogue in-app (v4.6) : la reponse peut arriver apres le premier rendu de
+              // l'ecran (sur l'arbre vide) — on re-rend derriere la decision.
+              dialogueConfirmer(
+                "Le fichier de suivi actuel semble vide (0 prélèvement), mais une ancienne sauvegarde de cet outil contient " + totalSecours + " prélèvement(s) enregistré(s).\n\nRécupérer cette ancienne sauvegarde maintenant ?\n\n(Recommandé — sinon ces essais resteront invisibles.)",
+                { titre: "Récupérer une ancienne sauvegarde ?" }
+              ).then(okSecours => {
+                if(!okSecours) return;
+                let secoursConfig = null;
+                try{ secoursConfig = JSON.parse(localStorage.getItem(LEGACY_KEY + "_config") || "null"); }catch(e2){}
+                const op2 = { id: uid("o"), nom: "OP10", ordre: 10,
+                  config: Object.assign({}, defaultConfig, { forceRatioActif: true }, secoursConfig || {}),
+                  scenarios: secours.map(normalizeScenario) };
+                const ref2 = { id: uid("r"), nom: "DV 356x26 RPI", ops: [op2] };
+                lignes = [{ id: uid("l"), nom: "EMAG 1", references: [ref2] }];
+                projets = []; activeProjetId = null; responsables = [];
+                backlog = [];
+                activeLigneId = lignes[0].id; activeReferenceId = ref2.id; activeOpId = op2.id;
+                data = op2.scenarios; config = op2.config;
+                activeId = data[0] ? data[0].id : null;
+                saveData();
+                render();
+              });
             }
           }
         }
@@ -2657,7 +2805,7 @@ function signalerPanneStockage(){
   renderBandeauStockage();
   if(quotaPanneSignalee) return;
   quotaPanneSignalee = true;
-  alert(`SAUVEGARDE BLOQUÉE — vos dernières saisies ne sont PAS enregistrées.
+  dialogueAlerte(`SAUVEGARDE BLOQUÉE — vos dernières saisies ne sont PAS enregistrées.
 
 La mémoire que le navigateur accorde à cet outil est pleine. Tout ce que vous saisissez maintenant sera perdu à la fermeture de l'onglet.
 
@@ -2665,17 +2813,17 @@ La mémoire que le navigateur accorde à cet outil est pleine. Tout ce que vous 
   1. « Exporter le suivi » — vos données partent dans un fichier .json, à l'abri.
   2. Connectez le dossier local (menu ••• → Dossier photos) et retirez puis rejoignez les pièces jointes lourdes : elles seront stockées à part.
 
-` + detailPoidsTexte());
+` + detailPoidsTexte(), "Sauvegarde bloquée");
 }
 
 function verifierPoids(taille){
   if(quotaAlerteVue || taille < QUOTA_ALERTE) return;
   quotaAlerteVue = true;
-  alert(`Le fichier de suivi atteint ${mo(taille)}.
+  dialogueAlerte(`Le fichier de suivi atteint ${mo(taille)}.
 
 Le navigateur accorde environ 5 Mo à cet outil, mesures et pièces jointes comprises. Au-delà, la sauvegarde échoue et les relevés ne s'enregistrent plus. Il reste de la marge, mais il vaut mieux agir maintenant.
 
-` + detailPoidsTexte());
+` + detailPoidsTexte(), "Poids du suivi");
 }
 
 /* ---- pastille permanente du poids (v4.5) ------------------------------------------
@@ -2699,8 +2847,8 @@ function installerClickPoids(){
   const el = document.getElementById("footPoids");
   if(!el) return;
   el.addEventListener("click", () => {
-    alert("Poids du suivi : " + mo(dernierPoids) + " sur ~5 Mo accordés par le navigateur ("
-      + Math.round((dernierPoids / (5 * 1024 * 1024)) * 100) + "% utilisé).\n\n" + detailPoidsTexte());
+    dialogueAlerte("Poids du suivi : " + mo(dernierPoids) + " sur ~5 Mo accordés par le navigateur ("
+      + Math.round((dernierPoids / (5 * 1024 * 1024)) * 100) + "% utilisé).\n\n" + detailPoidsTexte(), "Poids du suivi");
   });
 }
 
@@ -2807,15 +2955,17 @@ function renderHistoryPanel(){
       try{ hist = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }catch(e){}
       const h = hist[parseInt(btn.getAttribute("data-history-restore"), 10)];
       if(!h) return;
-      if(!confirm("Restaurer l'état enregistré le " + new Date(h.savedAt).toLocaleString("fr-FR") + " (" + h.count + " prélèvement(s)) ?\n\nCela remplacera TOUTES les données actuellement affichées (toutes lignes et références confondues).\n\n(Un « ↺ Restaurer » restera disponible pour annuler ce geste.)")) return;
-      backupSnapshot("Restauration depuis l'historique (" + new Date(h.savedAt).toLocaleString("fr-FR") + ")");
-      appliquerArbre(h);
-      backlog = (h.backlog || []).map(normalizeBacklogItem);
-      revision = h.revision || 0;
-      saveData();
-      updateRestoreUI();
-      fermerPanneaux();
-      render();
+      dialogueConfirmer("Restaurer l'état enregistré le " + new Date(h.savedAt).toLocaleString("fr-FR") + " (" + h.count + " prélèvement(s)) ?\n\nCela remplacera TOUTES les données actuellement affichées (toutes lignes et références confondues).\n\n(Un « ↺ Restaurer » restera disponible pour annuler ce geste.)", { titre: "Restaurer cet état ?" }).then(ok => {
+        if(!ok) return;
+        backupSnapshot("Restauration depuis l'historique (" + new Date(h.savedAt).toLocaleString("fr-FR") + ")");
+        appliquerArbre(h);
+        backlog = (h.backlog || []).map(normalizeBacklogItem);
+        revision = h.revision || 0;
+        saveData();
+        updateRestoreUI();
+        fermerPanneaux();
+        render();
+      });
     });
   });
   const closeBtn = document.getElementById("historyClose");
@@ -2870,18 +3020,20 @@ function hasBackup(){
 function restoreBackup(){
   let snap = null;
   try{ snap = JSON.parse(localStorage.getItem(BACKUP_KEY) || "null"); }catch(e){}
-  if(!snap){ alert("Aucun état précédent à restaurer."); updateRestoreUI(); return; }
+  if(!snap){ dialogueAlerte("Aucun état précédent à restaurer.", "Rien à restaurer"); updateRestoreUI(); return; }
   const quand = new Date(snap.savedAt).toLocaleString("fr-FR");
-  if(!confirm("Restaurer l'état d'avant « " + (snap.label || "la dernière opération") + " » (" + quand + ") ?\n\nCela remplacera les données actuellement affichées (toutes lignes et références confondues).")) return;
-  appliquerArbre(snap);
-  backlog = (snap.backlog || []).map(normalizeBacklogItem);
-  revision = snap.revision || 0;
-  activeId = data[0] ? data[0].id : null;
-  try{ localStorage.removeItem(BACKUP_KEY); }catch(e){}
-  recomputeCycles();
-  saveData();
-  updateRestoreUI();
-  render();
+  dialogueConfirmer("Restaurer l'état d'avant « " + (snap.label || "la dernière opération") + " » (" + quand + ") ?\n\nCela remplacera les données actuellement affichées (toutes lignes et références confondues).", { titre: "Restaurer l'état précédent ?" }).then(ok => {
+    if(!ok) return;
+    appliquerArbre(snap);
+    backlog = (snap.backlog || []).map(normalizeBacklogItem);
+    revision = snap.revision || 0;
+    activeId = data[0] ? data[0].id : null;
+    try{ localStorage.removeItem(BACKUP_KEY); }catch(e){}
+    recomputeCycles();
+    saveData();
+    updateRestoreUI();
+    render();
+  });
 }
 function updateRestoreUI(){
   const btn = document.getElementById("restoreBtn");
@@ -2954,7 +3106,7 @@ function exportData(){
    ligne repetee) ; essaiIds permet de ne garder que les essais coches dans le panneau. */
 function exportCSV(essaiIds){
   const sc = data.find(s => s.id === activeId);
-  if(!sc){ alert("Aucun scénario sélectionné."); return; }
+  if(!sc){ dialogueAlerte("Aucun scénario sélectionné.", "Rien à générer"); return; }
   const sep = ";";
   const num = v => (v === "" || v === null || v === undefined || isNaN(parseFloat(v)))
     ? "" : String(v).replace(".", ",");            // Excel FR attend la virgule décimale
@@ -2993,7 +3145,7 @@ function exportCSV(essaiIds){
     });
   });
 
-  if(csvLignes.length === 1){ alert("Aucun prélèvement à exporter pour les essais sélectionnés."); return; }
+  if(csvLignes.length === 1){ dialogueAlerte("Aucun prélèvement à exporter pour les essais sélectionnés.", "Export CSV vide"); return; }
 
   const blob = new Blob(["﻿" + csvLignes.join("\r\n")], {type:"text/csv;charset=utf-8"});
   const url = URL.createObjectURL(blob);
@@ -3455,7 +3607,7 @@ function importData(file){
     try{
       parsed = JSON.parse(reader.result);
     }catch(e){
-      alert("Fichier illisible : ce n'est pas un export valide de cet outil.");
+      dialogueAlerte("Fichier illisible : ce n'est pas un export valide de cet outil.", "Import impossible");
       return;
     }
 
@@ -3472,7 +3624,7 @@ function importData(file){
       // ancien format (une seule reference : un tableau de scenarios + une config)
       const scenarios = Array.isArray(parsed) ? parsed : parsed.scenarios;
       if(!Array.isArray(scenarios) || !scenarios.length){
-        alert("Aucune donnée reconnue dans ce fichier.");
+        dialogueAlerte("Aucune donnée reconnue dans ce fichier.", "Import impossible");
         return;
       }
       const op = { id: uid("o"), nom: "OP10", ordre: 10,
@@ -3680,26 +3832,37 @@ function baselineScenario(){
    remplace ; pas "Essai" : il a bien tourne en production). Confirme avant d'agir des
    qu'un autre scenario est reellement impacte, pour que l'effet de bord soit vu avant,
    pas decouvert apres. */
-function promouvoirEnProduction(sc){
-  if(sc.baseline && sc.statut === "serie") return true; // deja en place
-  // garde-fou double comptage (v4.5) : un scenario du meme nom deja en serie sur la meme
-  // ligne dans un autre projet = le tableau de bord comptera le gain annuel deux fois pour
-  // un seul changement physique. On ne bloque pas (le nom peut mentir), mais on ne laisse
-  // pas passer en silence -- c'est le chiffre qui part en reunion.
+/* Questions posees avant une promotion, separees de l'effet (v4.6) : les tests internes
+   verifient le contenu des questions et la machine a etats sans attendre un clic.
+   - garde-fou double comptage (v4.5) : un scenario du meme nom deja en serie sur la meme
+     ligne dans un autre projet = le tableau de bord comptera le gain annuel deux fois pour
+     un seul changement physique. On ne bloque pas (le nom peut mentir), mais on ne laisse
+     pas passer en silence -- c'est le chiffre qui part en reunion.
+   - annonce du remplacement : l'ancien titulaire retombe a "Valide", il faut le dire. */
+function questionsPromotion(sc){
+  const qs = [];
   if((projets || []).length > 1){
     const homonymes = avertissementSerieHomonymes(sc);
     if(homonymes.length){
-      const ok2 = confirm(
+      qs.push({ titre: "Double comptage possible", texte:
         `« ${sc.name} » passe en série ici, mais un scénario du même nom est déjà en série sur la même ligne dans :\n\n` +
         homonymes.join("\n") +
-        `\n\nSi c'est le même changement physique suivi deux fois, le gain annuel sera compté DEUX FOIS dans le tableau de bord (une fois par projet).\n\nGardez « en série » dans un seul projet si c'est le même optimisation.\n\nOK = passer en série ici quand même`
-      );
-      if(!ok2) return false;
+        `\n\nSi c'est le même changement physique suivi deux fois, le gain annuel sera compté DEUX FOIS dans le tableau de bord (une fois par projet).\n\nGardez « en série » dans un seul projet si c'est le même optimisation.` });
     }
   }
   const ancien = data.find(s => s.baseline && s.id !== sc.id);
   if(ancien){
-    if(!confirm(`Faire de « ${sc.name} » le scénario en production ?\n\nIl remplace « ${ancien.name} » comme scénario de référence (★) — son statut passera à « Validé ».`)) return false;
+    qs.push({ titre: "Changer le scénario en production ?", texte:
+      `Faire de « ${sc.name} » le scénario en production ?\n\nIl remplace « ${ancien.name} » comme scénario de référence (★) — son statut passera à « Validé ».` });
+  }
+  return qs;
+}
+/* l'effet lui-meme, sans aucune question : l'ancien titulaire retombe a "Valide" (pas
+   "Abandonne" : il n'a pas echoue, il a ete remplace ; pas "Essai" : il a bien tourne en
+   production). */
+function appliquerPromotion(sc){
+  const ancien = data.find(s => s.baseline && s.id !== sc.id);
+  if(ancien){
     ancien.baseline = false;
     ancien.statut = "valide";
     if(!ancien.statutDate) ancien.statutDate = new Date().toISOString().slice(0,10);
@@ -3709,6 +3872,23 @@ function promouvoirEnProduction(sc){
   sc.statut = "serie";
   if(!sc.statutDate) sc.statutDate = new Date().toISOString().slice(0,10);
   return true;
+}
+/* chemin interactif : pose les questions (dialogues in-app, v4.6) puis applique.
+   Renvoie une promesse de booleen -- meme semantique que l'ancien retour synchrone :
+   false = annule, aucune mutation n'a eu lieu. Le parametre `demander` (tests internes)
+   permet d'injecter une reponse synchrone : la promesse degene alors en booleen. */
+function promouvoirEnProduction(sc, demander){
+  if(sc.baseline && sc.statut === "serie") return Promise.resolve(true); // deja en place
+  const qs = questionsPromotion(sc);
+  if(!qs.length) return Promise.resolve(appliquerPromotion(sc));
+  const ask = demander || dialogueConfirmer;
+  const suite = i => {
+    if(i >= qs.length) return appliquerPromotion(sc);
+    const rep = ask(qs[i].texte, { titre: qs[i].titre, okLabel: qs[i].titre === "Double comptage possible" ? "Passer en série quand même" : "Confirmer" });
+    if(rep && typeof rep.then === "function") return rep.then(ok2 => ok2 === false ? false : suite(i + 1));
+    return rep === false ? false : suite(i + 1);
+  };
+  return suite(0);
 }
 
 /* Point d'entree unique du menu "Statut" d'un scenario : verrouille le statut du scenario
@@ -3722,7 +3902,7 @@ function appliquerChangementStatut(el){
   const nouveau = el.value;
   if((sc.statut || "essai") === nouveau) return true;
   if(sc.baseline && nouveau !== "serie"){
-    alert(`« ${sc.name} » est le scénario en production (★). Pour lui donner un autre statut, définissez d'abord un autre scénario comme référence.`);
+    dialogueAlerte(`« ${sc.name} » est le scénario en production (★). Pour lui donner un autre statut, définissez d'abord un autre scénario comme référence.`, "Statut verrouillé");
     return false;
   }
   if(nouveau === "serie") return promouvoirEnProduction(sc);
@@ -4263,10 +4443,10 @@ function renderAtelier(){
     if(sc.emag1){
       row.battD = document.getElementById("atD").value;
       row.battG = document.getElementById("atG").value;
-      if(row.battD==="" && row.battG===""){ alert("Saisissez au moins une valeur (Droite ou Gauche)."); return; }
+      if(row.battD==="" && row.battG===""){ dialogueAlerte("Saisissez au moins une valeur (Droite ou Gauche).", "Mesure incomplète"); return; }
     } else {
       row.batt = document.getElementById("atV").value;
-      if(row.batt===""){ alert("Saisissez la valeur mesurée."); return; }
+      if(row.batt===""){ dialogueAlerte("Saisissez la valeur mesurée.", "Mesure incomplète"); return; }
     }
     essai.prelevements.push(row);
     toucherEssai(essai);
@@ -4669,7 +4849,9 @@ function chartHTML(sc){
   const charniere = charnieresSc.length ? Math.max(...charnieresSc) : NaN;
   const allX = series.flatMap(s => s.pts.map(p => p.x));
   const allY = series.flatMap(s => s.pts.map(p => p.y));
-  let xMax = Math.max(...allX, isNaN(charniere) ? 0 : charniere) || 1;
+  // +8 % a droite (v4.6) : le dernier point (souvent le plus haut n° de piece, ou la
+  // charniere elle-meme) tombait exactement sur le bord — colle au cadre, moitie coupe.
+  let xMax = Math.max(...allX, isNaN(charniere) ? 0 : charniere) * 1.08 || 1;
   let yMax = Math.max(...allY, isNaN(limite) ? 0 : limite) * 1.18 || 1;
 
   const W = 720, H = 250, ml = 58, mr = 14, mt = 12, mb = 38;
@@ -4775,7 +4957,8 @@ function multiChartHTML(){
 
   const allX = series.flatMap(s => s.pts.map(p => p.x));
   const allY = series.flatMap(s => s.pts.map(p => p.y));
-  const xMax = Math.max(...allX, 1);
+  // meme marge a droite que chartHTML (v4.6) : le point le plus avance ne colle plus au bord
+  const xMax = Math.max(...allX, 1) * 1.08;
   const yMax = Math.max(...allY, ...limites, 0.001) * 1.18;
 
   const W = 720, H = 260, ml = 58, mr = 14, mt = 12, mb = 38;
@@ -5661,13 +5844,13 @@ function photoOfAnnot(){
   return es && (es.photos||[]).find(x => x.id === annot.photoId);
 }
 async function openPhotoAnnotator(essaiId, photoId){
-  if(!photosDirHandle){ alert("Connectez d'abord le dossier photos (bouton dans le bloc Photos)."); return; }
+  if(!photosDirHandle){ dialogueAlerte("Connectez d'abord le dossier photos (bouton dans le bloc Photos).", "Dossier non connecté"); return; }
   const sc = data.find(s => s.essais && s.essais.some(e => e.id === essaiId));
   const es = sc && sc.essais.find(e => e.id === essaiId);
   const p = es && (es.photos||[]).find(x => x.id === photoId);
   if(!p) return;
   const url = await readPhotoURL(p.filename);
-  if(!url){ alert("Photo introuvable dans le dossier connecté."); return; }
+  if(!url){ dialogueAlerte("Photo introuvable dans le dossier connecté.", "Photo introuvable"); return; }
   const img = new Image();
   img.onload = () => {
     URL.revokeObjectURL(url); // l'image est decodee, le Blob source n'est plus necessaire
@@ -5685,7 +5868,7 @@ async function openPhotoAnnotator(essaiId, photoId){
     renderAnnotEditor();
     ouvrirPanneau("photoAnnotWrap");
   };
-  img.onerror = () => { URL.revokeObjectURL(url); alert("Impossible de charger l'image."); };
+  img.onerror = () => { URL.revokeObjectURL(url); dialogueAlerte("Impossible de charger l'image.", "Photo illisible"); };
   img.src = url;
 }
 function annotToolButtons(){
@@ -5987,13 +6170,14 @@ function bindAnnotPointerEvents(canvas){
       return;
     }
     if(annot.tool === "text"){
-      const txt = prompt("Texte à afficher sur la photo :", "");
-      if(txt){
-        const [fx,fy] = canvasToFrac(px, py, W, H);
-        annot.shapes.push({ type:"text", x:fx, y:fy, text:txt, color: annot.color });
-        annot.selected = annot.shapes.length-1;
-      }
-      redrawAnnotCanvas();
+      dialogueDemander("Texte à afficher sur la photo :", "", { titre: "Texte sur la photo" }).then(txt => {
+        if(txt){
+          const [fx,fy] = canvasToFrac(px, py, W, H);
+          annot.shapes.push({ type:"text", x:fx, y:fy, text:txt, color: annot.color });
+          annot.selected = annot.shapes.length-1;
+        }
+        redrawAnnotCanvas();
+      });
       return;
     }
     const [fx,fy] = canvasToFrac(px, py, W, H);
@@ -6065,7 +6249,7 @@ function saveAnnotEditor(){
   // session en cours mais l'utilisateur ferme le panneau en croyant qu'elle est sauvegardee,
   // alors qu'un rechargement la perdrait
   if(!storageOk){
-    alert("La photo annotée reste affichée pour cette session, mais la sauvegarde automatique est actuellement bloquée (stockage plein ou indisponible) — elle sera perdue à la fermeture. Exportez le suivi (.json) dès maintenant pour ne rien perdre.");
+    dialogueAlerte("La photo annotée reste affichée pour cette session, mais la sauvegarde automatique est actuellement bloquée (stockage plein ou indisponible) — elle sera perdue à la fermeture. Exportez le suivi (.json) dès maintenant pour ne rien perdre.", "Sauvegarde bloquée");
   }
   fermerPanneaux();
   render();
@@ -6606,12 +6790,12 @@ async function attacherPieceJointe(file, prefixe){
       await writePhotoBlob(nom, file);
       return { filename: nom, nomOrigine: file.name, mime, addedAt: new Date().toISOString(), stockage: "dossier" };
     }catch(err){
-      alert("Échec de l'enregistrement dans le dossier local : " + err.message);
+      dialogueAlerte("Échec de l'enregistrement dans le dossier local : " + err.message, "Échec d'enregistrement");
       return null;
     }
   }
   if(file.size > PJ_MAX_SANS_DOSSIER){
-    alert(`Ce fichier pèse ${Math.round(file.size/1024)} ko.
+    dialogueAlerte(`Ce fichier pèse ${Math.round(file.size/1024)} ko.
 
 Sans dossier local connecté, il devrait être intégré au fichier de suivi, dont la capacité totale est d'environ 5 Mo pour TOUT le suivi, mesures comprises. Deux pièces jointes de cette taille suffiraient à le saturer — et une sauvegarde qui échoue bloque l'enregistrement de vos relevés. On ne perd pas des mesures à cause d'un plan.
 
@@ -6621,7 +6805,7 @@ Connectez le dossier local (menu ••• → Dossier photos) : le fichier y se
   return await new Promise(resolve => {
     const reader = new FileReader();
     reader.onload = () => resolve({ filename: file.name, mime, addedAt: new Date().toISOString(), stockage: "fichier", dataUrl: reader.result });
-    reader.onerror = () => { alert("Lecture du fichier impossible."); resolve(null); };
+    reader.onerror = () => { dialogueAlerte("Lecture du fichier impossible.", "Lecture impossible"); resolve(null); };
     reader.readAsDataURL(file);
   });
 }
@@ -6630,9 +6814,9 @@ Connectez le dossier local (menu ••• → Dossier photos) : le fichier y se
 async function ouvrirPieceJointe(pj){
   if(!pj) return;
   if(pj.stockage === "dossier"){
-    if(!photosDirHandle){ alert("Le dossier local n'est pas connecté sur ce poste — reconnectez-le (menu ••• → Dossier photos) pour ouvrir ce fichier."); return; }
+    if(!photosDirHandle){ dialogueAlerte("Le dossier local n'est pas connecté sur ce poste — reconnectez-le (menu ••• → Dossier photos) pour ouvrir ce fichier.", "Dossier non connecté"); return; }
     const url = await readPhotoURL(pj.filename);
-    if(!url){ alert("Fichier introuvable dans le dossier local : " + pj.filename); return; }
+    if(!url){ dialogueAlerte("Fichier introuvable dans le dossier local : " + pj.filename, "Fichier introuvable"); return; }
     window.open(url, "_blank");
   } else {
     window.open(pj.dataUrl, "_blank");
@@ -7000,12 +7184,13 @@ function ouvrirProjetInfo(id){
    le panneau du projet. */
 function ajouterResponsableDepuisSelect(){
   const pj = projets.find(x => x.id === projetInfoTargetId);
-  const nom = prompt("Nom du nouveau responsable :", "");
-  if(nom === null || !nom.trim()){ remplirSelectResponsables(pj ? pj.responsableId : ""); return; }
-  const r = normalizeResponsable({ nom: nom.trim(), couleur: prochaineCouleurLibre(responsables.map(x => x.couleur)) });
-  responsables.push(r);
-  remplirSelectResponsables(r.id);
-  enregistrerProjetInfo();
+  dialogueDemander("Nom du nouveau responsable :", "", { titre: "Nouveau responsable" }).then(nom => {
+    if(nom === null || !nom.trim()){ remplirSelectResponsables(pj ? pj.responsableId : ""); return; }
+    const r = normalizeResponsable({ nom: nom.trim(), couleur: prochaineCouleurLibre(responsables.map(x => x.couleur)) });
+    responsables.push(r);
+    remplirSelectResponsables(r.id);
+    enregistrerProjetInfo();
+  });
 }
 
 function enregistrerProjetInfo(){
@@ -7024,11 +7209,13 @@ function supprimerProjetActif(){
   if(!pj) return;
   // supprimer un projet ne touche a AUCUNE donnee physique : ce n'est qu'une liste
   // d'etiquettes qui disparait. Les scenarios, essais et mesures restent intacts.
-  if(!confirm(`Supprimer le projet « ${pj.nom} » ?\n\nSes ${pj.tags.length} étiquette(s) de scénario disparaissent. Les lignes, scénarios et essais eux-mêmes ne sont PAS supprimés — ils restent dans l'outil, seulement plus rattachés à ce projet.`)) return;
-  projets = projets.filter(x => x.id !== pj.id);
-  if(activeProjetId === pj.id) activeProjetId = null;
-  fermerPanneaux();
-  saveData(); render();
+  dialogueConfirmer(`Supprimer le projet « ${pj.nom} » ?\n\nSes ${pj.tags.length} étiquette(s) de scénario disparaissent. Les lignes, scénarios et essais eux-mêmes ne sont PAS supprimés — ils restent dans l'outil, seulement plus rattachés à ce projet.`, { titre: "Supprimer le projet ?", danger: true, okLabel: "Supprimer" }).then(ok => {
+    if(!ok) return;
+    projets = projets.filter(x => x.id !== pj.id);
+    if(activeProjetId === pj.id) activeProjetId = null;
+    fermerPanneaux();
+    saveData(); render();
+  });
 }
 
 /* ---- onglets Ligne de production / Reference disque ---- */
@@ -7060,10 +7247,11 @@ function renderLignes(){
       e.stopPropagation();
       const l = lignes.find(x => x.id === btn.getAttribute("data-ren-ligne"));
       if(!l) return;
-      const nom = prompt("Renommer la ligne de production :", l.nom);
-      if(nom === null || !nom.trim()) return;
-      l.nom = nom.trim();
-      saveData(); render();
+      dialogueDemander("Renommer la ligne de production :", l.nom, { titre: "Renommer la ligne" }).then(nom => {
+        if(nom === null || !nom.trim()) return;
+        l.nom = nom.trim();
+        saveData(); render();
+      });
     });
   });
   el.querySelectorAll("[data-del-ligne]").forEach(btn => {
@@ -7073,19 +7261,22 @@ function renderLignes(){
       const l = lignes.find(x => x.id === id);
       if(!l || lignes.length <= 1) return;
       const nbRef = l.references.length;
-      if(!confirm("Supprimer la ligne « " + l.nom + " » ?" + (nbRef ? "\n\nElle contient " + nbRef + " référence(s) disque qui seront perdues." : ""))) return;
-      lignes = lignes.filter(x => x.id !== id);
-      switchReference(lignes[0].id, lignes[0].references[0] ? lignes[0].references[0].id : null);
+      dialogueConfirmer("Supprimer la ligne « " + l.nom + " » ?" + (nbRef ? "\n\nElle contient " + nbRef + " référence(s) disque qui seront perdues." : ""), { titre: "Supprimer la ligne ?", danger: true, okLabel: "Supprimer" }).then(ok => {
+        if(!ok) return;
+        lignes = lignes.filter(x => x.id !== id);
+        switchReference(lignes[0].id, lignes[0].references[0] ? lignes[0].references[0].id : null);
+      });
     });
   });
   document.getElementById("addLigneBtn").addEventListener("click", () => {
-    const nom = prompt("Nom de la nouvelle ligne de production (ex. EMAG 1, EMAG 2, WEISSER 1, WEISSER 2, HESSAP...) :");
-    if(!nom || !nom.trim()) return;
-    const op = { id: uid("o"), nom: "OP10", ordre: 10, config: Object.assign({}, defaultConfig), scenarios: [] };
-    const ref = { id: uid("r"), nom: "Nouvelle référence", ops: [op] };
-    const l = { id: uid("l"), nom: nom.trim(), references: [ref] };
-    lignes.push(l);
-    switchReference(l.id, ref.id);
+    dialogueDemander("Nom de la nouvelle ligne de production (ex. EMAG 1, EMAG 2, WEISSER 1, WEISSER 2, HESSAP...) :", "", { titre: "Nouvelle ligne de production" }).then(nom => {
+      if(!nom || !nom.trim()) return;
+      const op = { id: uid("o"), nom: "OP10", ordre: 10, config: Object.assign({}, defaultConfig), scenarios: [] };
+      const ref = { id: uid("r"), nom: "Nouvelle référence", ops: [op] };
+      const l = { id: uid("l"), nom: nom.trim(), references: [ref] };
+      lignes.push(l);
+      switchReference(l.id, ref.id);
+    });
   });
 }
 
@@ -7112,10 +7303,11 @@ function renderReferences(){
       e.stopPropagation();
       const r = l.references.find(x => x.id === btn.getAttribute("data-ren-ref"));
       if(!r) return;
-      const nom = prompt("Renommer la référence disque :", r.nom);
-      if(nom === null || !nom.trim()) return;
-      r.nom = nom.trim();
-      saveData(); render();
+      dialogueDemander("Renommer la référence disque :", r.nom, { titre: "Renommer la référence" }).then(nom => {
+        if(nom === null || !nom.trim()) return;
+        r.nom = nom.trim();
+        saveData(); render();
+      });
     });
   });
   el.querySelectorAll("[data-del-ref]").forEach(btn => {
@@ -7125,18 +7317,21 @@ function renderReferences(){
       if(l.references.length <= 1) return;
       const r = l.references.find(x => x.id === id);
       const nbSc = r ? r.ops.reduce((n, o) => n + o.scenarios.length, 0) : 0;
-      if(!confirm("Supprimer la référence « " + (r ? r.nom : "") + " » ?" + (nbSc ? "\n\nElle contient " + nbSc + " scénario(s) (toutes OP confondues) qui seront perdus." : ""))) return;
-      l.references = l.references.filter(x => x.id !== id);
-      switchReference(l.id, l.references[0].id);
+      dialogueConfirmer("Supprimer la référence « " + (r ? r.nom : "") + " » ?" + (nbSc ? "\n\nElle contient " + nbSc + " scénario(s) (toutes OP confondues) qui seront perdus." : ""), { titre: "Supprimer la référence ?", danger: true, okLabel: "Supprimer" }).then(ok => {
+        if(!ok) return;
+        l.references = l.references.filter(x => x.id !== id);
+        switchReference(l.id, l.references[0].id);
+      });
     });
   });
   document.getElementById("addRefBtn").addEventListener("click", () => {
-    const nom = prompt("Nom de la nouvelle référence disque :");
-    if(!nom || !nom.trim()) return;
-    const op = { id: uid("o"), nom: "OP10", ordre: 10, config: Object.assign({}, defaultConfig), scenarios: [] };
-    const ref = { id: uid("r"), nom: nom.trim(), ops: [op] };
-    l.references.push(ref);
-    switchReference(l.id, ref.id);
+    dialogueDemander("Nom de la nouvelle référence disque :", "", { titre: "Nouvelle référence disque" }).then(nom => {
+      if(!nom || !nom.trim()) return;
+      const op = { id: uid("o"), nom: "OP10", ordre: 10, config: Object.assign({}, defaultConfig), scenarios: [] };
+      const ref = { id: uid("r"), nom: nom.trim(), ops: [op] };
+      l.references.push(ref);
+      switchReference(l.id, ref.id);
+    });
   });
 }
 
@@ -7164,10 +7359,11 @@ function renderOps(){
       e.stopPropagation();
       const o = r.ops.find(x => x.id === btn.getAttribute("data-ren-op"));
       if(!o) return;
-      const nom = prompt("Renommer l'OP :", o.nom);
-      if(nom === null || !nom.trim()) return;
-      o.nom = nom.trim();
-      saveData(); render();
+      dialogueDemander("Renommer l'OP :", o.nom, { titre: "Renommer l'OP" }).then(nom => {
+        if(nom === null || !nom.trim()) return;
+        o.nom = nom.trim();
+        saveData(); render();
+      });
     });
   });
   el.querySelectorAll("[data-del-op]").forEach(btn => {
@@ -7177,18 +7373,21 @@ function renderOps(){
       if(r.ops.length <= 1) return;
       const o = r.ops.find(x => x.id === id);
       const nbSc = o ? o.scenarios.length : 0;
-      if(!confirm("Supprimer l'OP « " + (o ? o.nom : "") + " » ?" + (nbSc ? "\n\nElle contient " + nbSc + " scénario(s) qui seront perdus." : ""))) return;
-      r.ops = r.ops.filter(x => x.id !== id);
-      switchOp(activeLigneId, activeReferenceId, r.ops[0].id);
+      dialogueConfirmer("Supprimer l'OP « " + (o ? o.nom : "") + " » ?" + (nbSc ? "\n\nElle contient " + nbSc + " scénario(s) qui seront perdus." : ""), { titre: "Supprimer l'OP ?", danger: true, okLabel: "Supprimer" }).then(ok => {
+        if(!ok) return;
+        r.ops = r.ops.filter(x => x.id !== id);
+        switchOp(activeLigneId, activeReferenceId, r.ops[0].id);
+      });
     });
   });
   document.getElementById("addOpBtn").addEventListener("click", () => {
-    const nom = prompt("Nom de la nouvelle OP (ex. OP10, OP20, Perçage...) :");
-    if(!nom || !nom.trim()) return;
-    const ordreMax = r.ops.reduce((m, o) => Math.max(m, o.ordre || 0), 0);
-    const op = { id: uid("o"), nom: nom.trim(), ordre: ordreMax + 10, config: Object.assign({}, defaultConfig), scenarios: [] };
-    r.ops.push(op);
-    switchOp(activeLigneId, activeReferenceId, op.id);
+    dialogueDemander("Nom de la nouvelle OP (ex. OP10, OP20, Perçage...) :", "", { titre: "Nouvelle OP" }).then(nom => {
+      if(!nom || !nom.trim()) return;
+      const ordreMax = r.ops.reduce((m, o) => Math.max(m, o.ordre || 0), 0);
+      const op = { id: uid("o"), nom: nom.trim(), ordre: ordreMax + 10, config: Object.assign({}, defaultConfig), scenarios: [] };
+      r.ops.push(op);
+      switchOp(activeLigneId, activeReferenceId, op.id);
+    });
   });
 }
 
@@ -7368,6 +7567,7 @@ function render(){
   updateHeader();
   updatePhotosDirUI();
   renderProjets();
+  renderParcours();
   renderLignes();
   renderReferences();
   renderOps();
@@ -7446,12 +7646,12 @@ function attachDetailHandlers(sc){
       const ta = root.querySelector(`.marposs-paste[data-marposs-essai="${essaiId}"]`);
       if(!es || !ta) return;
       const { rows, ignorees } = parseMarpossPaste(ta.value);
-      if(!rows.length){ alert("Aucune ligne valide reconnue dans le collage (attendu : heure puis valeur, séparées par une tabulation)."); return; }
+      if(!rows.length){ dialogueAlerte("Aucune ligne valide reconnue dans le collage (attendu : heure puis valeur, séparées par une tabulation).", "Collage non reconnu"); return; }
       if(!es.marposs) es.marposs = { debut:"", fin:"", releves:[] };
       es.marposs.releves = rows;
       toucherEssai(es);
       saveData(); render();
-      alert(rows.length + " relevé(s) importé(s)" + (ignorees ? ", " + ignorees + " ligne(s) ignorée(s) (non reconnue(s))." : "."));
+      dialogueAlerte(rows.length + " relevé(s) importé(s)" + (ignorees ? ", " + ignorees + " ligne(s) ignorée(s) (non reconnue(s))." : "."), "Relevés Marposs importés");
     });
   });
   root.querySelectorAll(".marposs-clear").forEach(btn => {
@@ -7459,10 +7659,12 @@ function attachDetailHandlers(sc){
       const essaiId = btn.getAttribute("data-marposs-essai");
       const es = sc.essais.find(e => e.id === essaiId);
       if(!es || !es.marposs) return;
-      if(!confirm("Vider les " + es.marposs.releves.length + " relevé(s) Marposs de cet essai ?")) return;
-      es.marposs.releves = [];
-      toucherEssai(es);
-      saveData(); render();
+      dialogueConfirmer("Vider les " + es.marposs.releves.length + " relevé(s) Marposs de cet essai ?", { titre: "Vider les relevés ?", danger: true, okLabel: "Vider" }).then(ok => {
+        if(!ok) return;
+        es.marposs.releves = [];
+        toucherEssai(es);
+        saveData(); render();
+      });
     });
   });
   root.querySelectorAll(".photos-connect-btn").forEach(btn => btn.addEventListener("click", connectPhotosDir));
@@ -7480,7 +7682,7 @@ function attachDetailHandlers(sc){
           const filename = slugify(sc.name) + "_" + slugify(es.titre) + "_" + stamp + ".jpg";
           await writePhotoBlob(filename, blob);
           es.photos.push({ id: "ph"+Math.random().toString(36).slice(2), filename, addedAt: new Date().toISOString(), legende:"", crop:null, annotations:[] });
-        }catch(err){ alert("Échec de l'enregistrement d'une photo : " + err.message); }
+        }catch(err){ dialogueAlerte("Échec de l'enregistrement d'une photo : " + err.message, "Échec d'enregistrement"); }
       }
       saveData(); render();
     });
@@ -7492,10 +7694,12 @@ function attachDetailHandlers(sc){
       if(!es) return;
       const p = (es.photos||[]).find(x => x.id === photoId);
       if(!p) return;
-      if(!confirm("Supprimer cette photo ?")) return;
-      if(photosDirHandle) await deletePhotoFile(p.filename);
-      es.photos = es.photos.filter(x => x.id !== photoId);
-      saveData(); render();
+      dialogueConfirmer("Supprimer cette photo ?", { titre: "Supprimer la photo ?", danger: true, okLabel: "Supprimer" }).then(async ok => {
+        if(!ok) return;
+        if(photosDirHandle) await deletePhotoFile(p.filename);
+        es.photos = es.photos.filter(x => x.id !== photoId);
+        saveData(); render();
+      });
     });
   });
   root.querySelectorAll(".photo-legende").forEach(inp => {
@@ -7544,15 +7748,19 @@ function attachDetailHandlers(sc){
     el.addEventListener("click", () => {
       const es = sc.essais.find(e => e.id === el.getAttribute("data-essai"));
       if(!es) return;
-      if(!confirm("Aligner « " + es.titre + " » sur les conditions actuelles du scénario ?\n\nÀ ne faire que si cet essai a réellement été mené avec ces paramètres.")) return;
-      es.params = { logements: snapshotLogements(sc) };
-      saveData(); render();
+      dialogueConfirmer("Aligner « " + es.titre + " » sur les conditions actuelles du scénario ?\n\nÀ ne faire que si cet essai a réellement été mené avec ces paramètres.", { titre: "Aligner sur le scénario ?", okLabel: "Aligner" }).then(ok => {
+        if(!ok) return;
+        es.params = { logements: snapshotLogements(sc) };
+        saveData(); render();
+      });
     });
   });
   root.querySelectorAll('[data-action="baseline"]').forEach(el => {
     el.addEventListener("click", () => {
-      if(!promouvoirEnProduction(sc)) return; // annule : rien n'a bouge
-      recomputeCycles(); saveData(); render();
+      promouvoirEnProduction(sc).then(ok => {
+        if(!ok) return; // annule : rien n'a bouge
+        recomputeCycles(); saveData(); render();
+      });
     });
   });
   root.querySelectorAll('[data-action="duplicate"]').forEach(el => {
@@ -7597,12 +7805,14 @@ function attachDetailHandlers(sc){
     el.addEventListener("click", () => {
       if(data.length <= 1) return;
       const n = (sc.essais||[]).length;
-      if(!confirm("Supprimer le scénario « " + sc.name + " » ?" + (n ? "\n\nIl contient " + n + " essai(s) qui seront perdus." : ""))) return;
-      const wasBaseline = sc.baseline;
-      data = data.filter(s => s.id !== sc.id);
-      if(wasBaseline && data.length) data[0].baseline = true;
-      activeId = data[0] ? data[0].id : null;
-      saveData(); render();
+      dialogueConfirmer("Supprimer le scénario « " + sc.name + " » ?" + (n ? "\n\nIl contient " + n + " essai(s) qui seront perdus." : ""), { titre: "Supprimer le scénario ?", danger: true, okLabel: "Supprimer" }).then(ok => {
+        if(!ok) return;
+        const wasBaseline = sc.baseline;
+        data = data.filter(s => s.id !== sc.id);
+        if(wasBaseline && data.length) data[0].baseline = true;
+        activeId = data[0] ? data[0].id : null;
+        saveData(); render();
+      });
     });
   });
   root.querySelectorAll(".essai-add").forEach(el => {
@@ -7629,10 +7839,12 @@ function attachDetailHandlers(sc){
       const essaiId = el.getAttribute("data-essai");
       const es = sc.essais.find(e => e.id === essaiId);
       const n = es ? (es.prelevements||[]).length : 0;
-      if(!confirm("Supprimer l'essai « " + (es ? es.titre : "") + " » ?" + (n ? "\n\nSes " + n + " prélèvement(s) seront perdus." : ""))) return;
-      sc.essais = sc.essais.filter(e => e.id !== essaiId);
-      essaisOuverts.delete(sc.id + "|" + essaiId);
-      saveData(); render();
+      dialogueConfirmer("Supprimer l'essai « " + (es ? es.titre : "") + " » ?" + (n ? "\n\nSes " + n + " prélèvement(s) seront perdus." : ""), { titre: "Supprimer l'essai ?", danger: true, okLabel: "Supprimer" }).then(ok => {
+        if(!ok) return;
+        sc.essais = sc.essais.filter(e => e.id !== essaiId);
+        essaisOuverts.delete(sc.id + "|" + essaiId);
+        saveData(); render();
+      });
     });
   });
   root.querySelectorAll(".atelier-open").forEach(el => {
@@ -7695,10 +7907,12 @@ function attachDetailHandlers(sc){
     el.addEventListener("click", () => {
       const o = sc.outils.find(x => x.id === el.getAttribute("data-outil"));
       if(!o || !o.plan) return;
-      if(!confirm("Retirer le plan de cet outil ?" + (o.plan.stockage === "dossier" ? `
+      dialogueConfirmer("Retirer le plan de cet outil ?" + (o.plan.stockage === "dossier" ? `
 
-Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""))) return;
-      o.plan = null; saveData(); render();
+Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { titre: "Retirer le plan ?", danger: true, okLabel: "Retirer" }).then(ok => {
+        if(!ok) return;
+        o.plan = null; saveData(); render();
+      });
     });
   });
   root.querySelectorAll(".outil-add").forEach(el => {
@@ -7737,10 +7951,12 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""))) ret
       const outilId = el.getAttribute("data-outil"), logementId = el.getAttribute("data-logement");
       const o = sc.outils.find(x => x.id === outilId);
       if(!o) return;
-      if(!confirm("Supprimer ce logement ?")) return;
-      o.logements = o.logements.filter(x => x.id !== logementId);
-      if(!o.logements.length) sc.outils = sc.outils.filter(x => x.id !== outilId);
-      saveData(); render();
+      dialogueConfirmer("Supprimer ce logement ?", { titre: "Supprimer le logement ?", danger: true, okLabel: "Supprimer" }).then(ok => {
+        if(!ok) return;
+        o.logements = o.logements.filter(x => x.id !== logementId);
+        if(!o.logements.length) sc.outils = sc.outils.filter(x => x.id !== outilId);
+        saveData(); render();
+      });
     });
   });
   // saisie rapide : Entree dans la derniere ligne d'un essai cree une nouvelle ligne et y place le focus
@@ -7839,10 +8055,13 @@ function onInputChange(e){
   // voir appliquerChangementStatut. Le resultat (accepte ou refuse) est ignore ici : dans
   // les deux cas, saveData()+render() suivent -- accepte, ils persistent le nouvel etat ;
   // refuse, aucune mutation n'a eu lieu et render() reaffiche simplement la vraie valeur.
+  // Depuis les dialogues in-app (v4.6), la promotion "En serie" passe par une promesse :
+  // on attend sa resolution avant de sauvegarder, sinon l'etat mute apres la sauvegarde.
   if(el.classList.contains("statut-select")){
-    appliquerChangementStatut(el);
-    saveData();
-    render();
+    Promise.resolve(appliquerChangementStatut(el)).then(() => {
+      saveData();
+      render();
+    });
     return;
   }
   const ctx = writeFieldValue(el);
@@ -7887,24 +8106,28 @@ document.getElementById("resetBtn").addEventListener("click", () => {
   // un simple clic sur "OK" se fait sans y penser (surtout avec ce bouton juste a cote des
   // autres actions courantes) : on exige de taper un mot exact, comme un vrai "sont-vous sur"
   // qui force une action deliberee plutot qu'un reflexe de souris.
-  const saisie = prompt(
-    "Réinitialiser l'outil ?\n\nTOUTES les lignes de production, TOUTES les références disque (" + nbRef + "), TOUTES les OP (" + nbOp + "), tous les scénarios et les " + nbEssais + " essai(s) saisis seront effacés et remplacés par les valeurs de départ.\n\nExportez d'abord le suivi si vous voulez le conserver.\n\nPour confirmer, tapez exactement : REINITIALISER"
-  );
-  if(saisie !== "REINITIALISER"){ if(saisie !== null) alert("Réinitialisation annulée — le texte tapé ne correspond pas."); return; }
-  backupSnapshot("Réinitialiser");
-  lignes = defaultLignes();
-  projets = []; activeProjetId = null; responsables = [];
-  backlog = [];
-  activeLigneId = lignes[0].id;
-  activeReferenceId = lignes[0].references[0].id;
-  activeOpId = lignes[0].references[0].ops[0].id;
-  data = lignes[0].references[0].ops[0].scenarios;
-  config = lignes[0].references[0].ops[0].config;
-  activeId = data[0].id;
-  recomputeCycles();
-  saveData();
-  updateRestoreUI();
-  render();
+  // dialogue in-app (v4.6) : la validation reste un mot exact a taper — le geste est
+  // deliberé, pas un reflexe de souris — mais dans la famille visuelle de l'outil.
+  dialogueDemander(
+    "Réinitialiser l'outil ?\n\nTOUTES les lignes de production, TOUTES les références disque (" + nbRef + "), TOUTES les OP (" + nbOp + "), tous les scénarios et les " + nbEssais + " essai(s) saisis seront effacés et remplacés par les valeurs de départ.\n\nExportez d'abord le suivi si vous voulez le conserver.\n\nPour confirmer, tapez exactement : REINITIALISER",
+    "", { titre: "Réinitialiser l'outil ?", okLabel: "Réinitialiser", danger: true }
+  ).then(saisie => {
+    if(saisie !== "REINITIALISER"){ if(saisie !== null) dialogueAlerte("Réinitialisation annulée — le texte tapé ne correspond pas.", "Annulée"); return; }
+    backupSnapshot("Réinitialiser");
+    lignes = defaultLignes();
+    projets = []; activeProjetId = null; responsables = [];
+    backlog = [];
+    activeLigneId = lignes[0].id;
+    activeReferenceId = lignes[0].references[0].id;
+    activeOpId = lignes[0].references[0].ops[0].id;
+    data = lignes[0].references[0].ops[0].scenarios;
+    config = lignes[0].references[0].ops[0].config;
+    activeId = data[0].id;
+    recomputeCycles();
+    saveData();
+    updateRestoreUI();
+    render();
+  });
 });
 
 document.getElementById("restoreBtn").addEventListener("click", restoreBackup);
@@ -7926,10 +8149,29 @@ auteurInput.addEventListener("change", () => {
 
 /* ---- panneaux modaux ---- */
 function ouvrirPanneau(id){
+  const pan = document.getElementById(id);
+  if(panneauPile.indexOf(id) === -1){
+    if(!panneauPile.length && !focusAvantPanneau) focusAvantPanneau = document.activeElement;
+    panneauPile.push(id);
+  }
+  pan.hidden = false;
+  // role dialogue pose dynamiquement (v4.6) : chaque panneau se comporte comme une fenetre
+  // modale pour les lecteurs d'ecran, et le piege de Tab ci-dessus s'appuie sur la pile.
+  pan.setAttribute("role", "dialog");
+  pan.setAttribute("aria-modal", "true");
+  if(!pan.hasAttribute("aria-label")){
+    const t = pan.querySelector("h3");
+    if(t) pan.setAttribute("aria-label", t.textContent.trim());
+  }
   document.getElementById("panelBackdrop").hidden = false;
-  document.getElementById(id).hidden = false;
+  // le focus entre dans le panneau ouvert : premier champ, sinon le panneau lui-meme —
+  // sinon il reste derriere le voile et Tab ressort de la fenetre invisible.
+  const cible = pan.querySelector(SELECTEUR_FOCUSABLE);
+  if(cible && cible.getClientRects().length) cible.focus();
+  else { pan.tabIndex = -1; pan.focus({ preventScroll:true }); }
 }
 function fermerPanneaux(){
+  fermerDialogue();
   document.getElementById("panelBackdrop").hidden = true;
   document.getElementById("optionsPanel").hidden = true;
   document.getElementById("printPanel").hidden = true;
@@ -7944,12 +8186,16 @@ function fermerPanneaux(){
   document.getElementById("ligneInfoPanel").hidden = true;
   document.getElementById("dashboardPanel").hidden = true;
   document.getElementById("nouveautesPanel").hidden = true;
+  document.getElementById("parcoursPanel").hidden = true;
   document.getElementById("toolbarMore").hidden = true;
+  panneauPile = [];
+  restaurerFocusPanneau();
 }
 document.getElementById("dashboardBtn").addEventListener("click", () => {
   renderDashboard();
   ouvrirPanneau("dashboardPanel");
 });
+document.getElementById("parcoursBtn").addEventListener("click", ouvrirParcours);
 document.getElementById("nouveautesBtn").addEventListener("click", ouvrirNouveautes);
 // des formes/rognage/legende non enregistres dans l'editeur d'annotation se perdaient
 // silencieusement sur Echap ou un clic hors panneau — confirmation ajoutee, uniquement
@@ -7961,7 +8207,13 @@ function annotDirty(){
 function fermerPanneauxConfirme(){
   const annotWrap = document.getElementById("photoAnnotWrap");
   if(annotWrap && !annotWrap.hidden && annotDirty()){
-    if(!confirm("Fermer sans enregistrer ? Le rognage, les formes et la légende ajoutés à cette photo seront perdus.")) return;
+    // dialogue in-app (v4.6) : le refus laisse le panneau ouvert, comme avant avec confirm().
+    dialogueConfirmer("Fermer sans enregistrer ? Le rognage, les formes et la légende ajoutés à cette photo seront perdus.", { titre: "Fermer sans enregistrer ?", danger: true, okLabel: "Fermer sans enregistrer" }).then(ok => {
+      if(!ok) return;
+      annot = null;
+      fermerPanneaux();
+    });
+    return;
   }
   annot = null;
   fermerPanneaux();
@@ -8088,10 +8340,12 @@ function renderResponsablesOptions(){
       const r = responsables.find(x => x.id === id);
       if(!r) return;
       const nbProjets = projets.filter(p => p.responsableId === id).length;
-      if(!confirm(`Supprimer « ${r.nom} » de la liste des responsables ?` + (nbProjets ? `\n\n${nbProjets} projet(s) actuellement piloté(s) par cette personne repasseront à « Aucun » — ils ne sont pas supprimés.` : ""))) return;
-      responsables = responsables.filter(x => x.id !== id);
-      projets.forEach(p => { if(p.responsableId === id) p.responsableId = ""; });
-      saveData(); render(); renderResponsablesOptions();
+      dialogueConfirmer(`Supprimer « ${r.nom} » de la liste des responsables ?` + (nbProjets ? `\n\n${nbProjets} projet(s) actuellement piloté(s) par cette personne repasseront à « Aucun » — ils ne sont pas supprimés.` : ""), { titre: "Supprimer le responsable ?", danger: true, okLabel: "Supprimer" }).then(ok => {
+        if(!ok) return;
+        responsables = responsables.filter(x => x.id !== id);
+        projets.forEach(p => { if(p.responsableId === id) p.responsableId = ""; });
+        saveData(); render(); renderResponsablesOptions();
+      });
     });
   });
 }
@@ -8099,7 +8353,7 @@ document.getElementById("responsableAjouter").addEventListener("click", () => {
   const nomEl = document.getElementById("responsableNouveauNom");
   const couleurEl = document.getElementById("responsableNouvelleCouleur");
   const nom = nomEl.value.trim();
-  if(!nom){ alert("Indiquez un nom."); return; }
+  if(!nom){ dialogueAlerte("Indiquez un nom.", "Nom manquant"); return; }
   responsables.push(normalizeResponsable({ nom, couleur: couleurEl.value }));
   nomEl.value = "";
   couleurEl.value = prochaineCouleurLibre(responsables.map(x => x.couleur));
@@ -8180,12 +8434,14 @@ function renderFicheOutil(){
   if(f){
     document.getElementById("ficheOutilOpen").addEventListener("click", () => ouvrirPieceJointe(f));
     document.getElementById("ficheOutilDel").addEventListener("click", () => {
-      if(!confirm("Retirer la fiche outil de cette OP ?" + (enDossier ? `
+      dialogueConfirmer("Retirer la fiche outil de cette OP ?" + (enDossier ? `
 
-Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""))) return;
-      const op2 = getActiveOp();
-      if(op2) op2.ficheOutil = null;
-      saveData(); renderFicheOutil();
+Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { titre: "Retirer la fiche outil ?", danger: true, okLabel: "Retirer" }).then(ok => {
+        if(!ok) return;
+        const op2 = getActiveOp();
+        if(op2) op2.ficheOutil = null;
+        saveData(); renderFicheOutil();
+      });
     });
   } else {
     document.getElementById("ficheOutilInput").addEventListener("change", async (e) => {
@@ -8210,6 +8466,12 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""))) ret
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.6.0", date:"09/09/2026", points:[
+    "<b>Des confirmations dans le style de l'outil.</b> Les petites fenêtres système grises (alertes, confirmations, saisies) ont disparu : chaque question s'affiche maintenant dans une fenêtre de l'outil — mêmes textes, mêmes garde-fous, mais lisible, mise en forme, et compatible avec le mode nuit. La réinitialisation demande toujours de taper « REINITIALISER ».",
+    "<b>Démarrer un suivi, dans le bon ordre.</b> La règle « le scénario en production d'abord, les projets ensuite » est maintenant dans l'outil : un parcours en trois étapes cochées (menu <b>•••</b> → <b>Démarrer un suivi</b>) et un rappel sur un OP vierge. Il disparaît tout seul dès que la première étape est faite.",
+    "<b>Navigation au clavier.</b> La touche Tab reste dans la fenêtre ouverte (plus de focus perdu derrière le voile), Escape ferme comme avant, et à l'ouverture le focus entre dans la fenêtre — utile au lecteur d'écran comme au clavier rapide.",
+    "<b>Graphique de tendance.</b> Le point le plus avancé ne colle plus au bord droit du graphique — une marge le sépare désormais du cadre."
+  ]},
   { version:"4.5.0", date:"09/09/2026", points:[
     "<b>Protection du gain annuel.</b> Deux projets peuvent décrire le même changement physique sur la même machine : si deux scénarios du même nom passent « en série » dans des projets différents, l'outil vous prévient maintenant au moment du passage en série, et un bandeau dans le tableau de bord (vue tous projets) le signale en continu — sans quoi le même gain était compté deux fois.",
     "<b>Le poids du suivi, visible en permanence.</b> Une pastille en pied de page affiche en continu la place que prend votre suivi dans la mémoire du navigateur (~5 Mo) : ambre puis rouge à l'approche de la limite, avec le détail et les conseils d'allègement au clic. Plus besoin d'attendre l'alerte pour agir.",
@@ -8420,6 +8682,69 @@ function verifierNouveautes(){
   } catch(e){ return; }
   if(off || vue === TOOL_VERSION) return;
   ouvrirNouveautes();
+}
+
+/* ---- parcours de demarrage (v4.6) ----
+   La regole v4.4 — "poser la production d'abord, creer les projets ensuite" — n'etait qu'une
+   convention a transmettre oralement. Elle est maintenant dans l'outil : un panneau checklist
+   (menu ••• → Démarrer un suivi) et un bandeau qui s'affiche sur un suivi vierge (ni scenario
+   en production, ni projet) tant que la premiere etape n'est pas faite. Le bandeau se cache
+   tout seul des qu'un scénario ★ existe ou qu'un projet est créé — la cle "masquer" ne sert
+   que si l'utilisateur veut garder un suivi vide sans rappel. */
+const CLE_PARCOURS_MASQUE = "spk_parcours_masque";
+function etatParcours(){
+  const op = getActiveOp();
+  const scenarios = op ? (op.scenarios || []) : [];
+  return {
+    prod: scenarios.some(s => s.baseline),
+    projet: (projets || []).length > 0
+  };
+}
+function ouvrirParcours(){
+  const wrap = document.getElementById("parcoursPanel");
+  const et = etatParcours();
+  const etape = (n, titre, fait, corps) => `
+    <div class="pc-step${fait ? " pc-fait" : ""}">
+      <span class="pc-num">${fait ? "✓" : n}</span>
+      <div class="pc-corps"><b>${titre}</b>${corps}</div>
+    </div>`;
+  wrap.innerHTML = `
+    <h3>Démarrer un suivi</h3>
+    <p class="panel-hint">L'ordre recommandé : la production d'abord, l'organisation ensuite.
+    Les étapes se cochent toutes seules au fur et à mesure.</p>
+    ${etape(1, "Une ligne de production", true,
+      "Déjà en place — c'est le premier ruban en haut de page. « + Ligne de production » en ajoute d'autres : EMAG 2, WEISSER, HESSAP…")}
+    ${etape(2, "Un scénario en production (★) sur l'OP", et.prod, et.prod
+      ? "C'est le process réellement en série : il sert de base 100 à toutes les comparaisons."
+      : "Le process réellement en série sur la machine : coûts, cycle, outillage. C'est la base 100 de toutes les comparaisons. S'il n'existe pas encore, ajoutez un scénario puis désignez-le avec sa pastille ★.")}
+    ${etape(3, "Un premier projet", et.projet, et.projet
+      ? "L'organisation du travail d'optimisation est en place : les scénarios sont étiquetés par problématique."
+      : "Il regroupe les scénarios qui répondent à une même problématique (coût, qualité, « Essais Step 3 »…). Créez-le avec « + Créer un projet » : il rattachera automatiquement les scénarios de l'OP ouvert, ajustez ensuite les étiquettes.")}
+    <p class="opt-note">Les projets sont facultatifs : un scénario vit très bien sans projet.
+    L'essentiel est d'avoir d'abord un scénario en production à comparer.</p>
+    <div class="panel-actions"><button class="primary" id="parcoursFermer">C'est parti</button></div>`;
+  wrap.querySelector("#parcoursFermer").addEventListener("click", fermerPanneaux);
+  ouvrirPanneau("parcoursPanel");
+}
+function renderParcours(){
+  const el = document.getElementById("parcoursBandeau");
+  if(!el) return;
+  let masque = false;
+  try{ masque = localStorage.getItem(CLE_PARCOURS_MASQUE) === "1"; }catch(e){}
+  const et = etatParcours();
+  const montrer = !et.prod && !et.projet && !masque;
+  el.hidden = !montrer;
+  if(!montrer) return;
+  el.innerHTML = `
+    <b>Démarrer</b>
+    <span>Suivi vierge : commencez par poser le <b>scénario en production (★)</b> — le process réellement en série — puis créez vos projets par-dessus. C'est l'ordre recommandé pour que les comparaisons aient un sens dès le premier jour.</span>
+    <button class="primary" id="parcoursVoir">Voir le parcours</button>
+    <button class="ghost" id="parcoursMasquer" title="Ne plus afficher ce rappel sur ce poste">Masquer</button>`;
+  el.querySelector("#parcoursVoir").addEventListener("click", ouvrirParcours);
+  el.querySelector("#parcoursMasquer").addEventListener("click", () => {
+    try{ localStorage.setItem(CLE_PARCOURS_MASQUE, "1"); }catch(e){}
+    renderParcours();
+  });
 }
 
 /* ---- tableau de bord : toutes les lignes d'un coup ----
@@ -8658,7 +8983,7 @@ function renderCsvPanel(){
   const goBtn = document.getElementById("csvGo");
   if(goBtn) goBtn.addEventListener("click", () => {
     const ids = [...wrap.querySelectorAll(".csv-essai-chk:checked")].map(c => c.value);
-    if(!ids.length){ alert("Cochez au moins un essai."); return; }
+    if(!ids.length){ dialogueAlerte("Cochez au moins un essai.", "Rien à exporter"); return; }
     fermerPanneaux();
     exportCSV(ids);
   });
@@ -8846,6 +9171,8 @@ function runTests(){
     ok("bilanAnnuel : plaquettes/an = volume/(aretes x charniere)", an.plaquettes[0].nb, 100000/(8*200), 1e-9);
 
     // ---- mise en forme des montants ----
+    ok("dlgTexte : echappe le html et preserve les retours a la ligne", dlgTexte('<b>couleur</b>\nteste'), "&lt;b&gt;couleur&lt;/b&gt;<br>teste");
+    ok("dlgTexte : valeur absente -> vide", dlgTexte(null), "");
     ok("fmtEuroCourt : centaines en euros", fmtEuroCourt(500), "500 €");
     ok("fmtEuroCourt : milliers en k€", fmtEuroCourt(167625), "168 k€");
     ok("fmtEuroCourt : millions en M€", fmtEuroCourt(1500000), "1,50 M€");
@@ -9089,19 +9416,17 @@ function runTests(){
       return !res && scP1.statut === avant;
     })(), true);
     projets = []; activeProjetId = null;
-    ok("promouvoirEnProduction : bascule la reference et retrograde l'ancien en valide", (() => {
-      const origConfirm = window.confirm;
-      window.confirm = () => true;
-      const res = promouvoirEnProduction(scP2);
-      window.confirm = origConfirm;
-      return res && scP2.baseline === true && scP2.statut === "serie" && scP1.baseline === false && scP1.statut === "valide";
+    ok("questionsPromotion : annonce le remplacement de la reference en place", (() => {
+      const qs = questionsPromotion(scP2);
+      return qs.length === 1 && qs[0].texte.includes("scénario en production") && qs[0].texte.includes(scP1.name);
     })(), true);
-    ok("promouvoirEnProduction : annule si le confirm est refuse", (() => {
-      const origConfirm = window.confirm;
-      window.confirm = () => false;
-      const res = promouvoirEnProduction(scP1);
-      window.confirm = origConfirm;
-      return !res && scP2.baseline === true && scP1.baseline === false;
+    ok("appliquerPromotion : bascule la reference et retrograde l'ancien en valide", (() => {
+      const res = appliquerPromotion(scP2);
+      return res === true && scP2.baseline === true && scP2.statut === "serie" && scP1.baseline === false && scP1.statut === "valide";
+    })(), true);
+    ok("promouvoirEnProduction : refuse sans mutation quand la question est refusee", (() => {
+      const res = promouvoirEnProduction(scP1, () => false);
+      return res === false && scP2.baseline === true && scP1.baseline === false;
     })(), true);
     // a ce stade, scP2 est devenu le scenario en production (promotion ci-dessus) ; le
     // projet ne rattache que scP1 -- scP2 doit malgre tout rester visible (exemption),
