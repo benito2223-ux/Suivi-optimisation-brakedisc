@@ -746,6 +746,16 @@ tr.row-bad td{background:var(--red-bg);}
 .opt-field input{font-family:var(--font-mono); font-size:14px; width:130px; padding:6px 9px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); color:var(--ink); text-align:right;}
 .opt-field input:focus{border-color:var(--blue); outline:none;}
 .opt-note{display:block; font-size:11.5px; color:var(--ink-faint); margin-top:5px;}
+/* ---- sections d'Options + badges de portee + statut (v4.7) ---- */
+.opt-section{display:flex; align-items:center; margin:24px 0 6px; padding-top:16px; border-top:1px solid var(--border);
+  font-family:var(--font-disp); font-weight:700; font-size:12.5px; letter-spacing:.07em; text-transform:uppercase; color:var(--ink-soft);}
+.opt-section.opt-section-premier{margin-top:10px; border-top:none; padding-top:0;}
+.opt-scope{display:inline-block; vertical-align:2px; margin-left:7px; padding:1px 7px 2px; border-radius:999px;
+  border:1px solid var(--border); background:var(--surface-alt); font-family:var(--font-mono); font-style:normal;
+  font-size:9.5px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-faint);}
+.opt-statut{margin:2px 0 10px; padding:8px 11px; border-radius:var(--radius-sm); font-size:12.5px; line-height:1.5; color:var(--ink);}
+.opt-statut.ok{background:var(--green-bg); border:1px solid var(--green);}
+.opt-statut.ko{background:var(--amber-bg); border:1px solid var(--amber);}
 .panel-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:18px; padding-top:16px; border-top:1px solid var(--border);}
 
 /* ---- dialogues in-app (v4.6) ---- */
@@ -1376,10 +1386,15 @@ body.atelier-on{overflow:hidden;}
 
   <div class="panel" id="optionsPanel" hidden>
     <h3>Réglages de la campagne</h3>
-    <p class="panel-hint">La grandeur suivie et sa tolérance s'appliquent à tous les scénarios, pour que la comparaison reste valable. Un scénario peut déclarer une exception dans son propre bloc.</p>
+    <!-- v4.7 : le panneau est organise par nature (mesure / couts / equipe), chaque reglage
+         porte son badge de portee, et le cout horaire de la ligne se saisit ici meme --
+         plus de renvoi vers l'icone ⚙ pour finir une configuration commenced ici. -->
+    <p class="panel-hint" id="optionsContexte"></p>
+
+    <div class="opt-section opt-section-premier">Mesure &amp; essais</div>
 
     <div class="opt-field on" style="padding-left:0;">
-      <label for="optLimitLabel">Grandeur mesurée et tolérance</label>
+      <label for="optLimitLabel">Grandeur mesurée et tolérance <i class="opt-scope">OP</i></label>
       <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
         <input type="text" id="optLimitLabel" style="width:190px; text-align:left; font-family:var(--font-body);" placeholder="Battement (mm)">
         <span style="color:var(--ink-faint);">≤</span>
@@ -1389,65 +1404,15 @@ body.atelier-on{overflow:hidden;}
     </div>
 
     <div class="opt-field on" style="padding-left:0;">
-      <label for="optEcartCharniere">Marge avant d'afficher un écart de charnière (pièces)</label>
+      <label for="optEcartCharniere">Marge avant d'afficher un écart de charnière (pièces) <i class="opt-scope">OP</i></label>
       <input type="number" step="0.5" min="0" id="optEcartCharniere" placeholder="0,5">
       <span class="opt-note">Un logement n'est signalé « en dessous de la charnière visée » que si la durée de vie réelle observée manque la cible d'au moins cette marge. Sur une charnière courte (quelques dizaines de pièces), une marge de 0,5 est déjà significative ; sur une charnière longue (centaines de pièces), vous pouvez l'augmenter pour ignorer le bruit de mesure.</span>
-    </div>
-
-    <h3 style="margin-top:22px; font-size:17px;">Modules de calcul</h3>
-    <p class="panel-hint">Activez uniquement ce dont vous avez besoin — l'outil reste volontairement simple par défaut.</p>
-
-    <label class="opt-row">
-      <input type="checkbox" id="optCoutRebut">
-      <span>
-        <b>Intégrer le coût du rebut</b>
-        <em>Ajoute le coût des disques rebutés au coût pièce. Sans lui, seul le prix plaquette est comparé — un écart de rebut de 1 % peut à lui seul annuler le gain outil.</em>
-      </span>
-    </label>
-    <div class="opt-field" id="optCoutRebutField">
-      <label for="optCoutDisque">Coût d'un disque rebuté (€)</label>
-      <input type="number" step="0.5" min="0" id="optCoutDisque" placeholder="ex. 14">
-      <span class="opt-note">Matière + valeur ajoutée perdue à l'OP40.</span>
-    </div>
-
-    <label class="opt-row">
-      <input type="checkbox" id="optCycleSec">
-      <span>
-        <b>Afficher le temps de cycle en secondes</b>
-        <em>Convertit l'indice base 100 en secondes réelles et en cadence pièces/heure.</em>
-      </span>
-    </label>
-
-    <label class="opt-row">
-      <input type="checkbox" id="optCoutMachine">
-      <span>
-        <b>Intégrer le temps machine au coût pièce</b>
-        <em>Convertit l'écart de temps de cycle en euros, avec le coût horaire de la ligne : coût machine par pièce = coût horaire (€/h) × temps de cycle (s) / 3 600. Sans lui, un scénario moins cher en plaquettes mais plus lent paraît gagnant alors qu'il peut être perdant.</em>
-      </span>
-    </label>
-    <div class="note" style="margin:0 0 14px;">
-      Pour que le <b>temps de cycle</b> pèse réellement dans les comparaisons de <b>gain annuel</b>, quatre choses sont
-      nécessaires ensemble : cocher <b>« Afficher le temps de cycle en secondes »</b> ET <b>« Intégrer le temps
-      machine au coût pièce »</b> ci-dessus, renseigner le <b>coût horaire de la ligne</b> (icône ⚙ de l'onglet de
-      ligne) et le <b>temps de cycle réel du scénario de référence (s)</b> juste en dessous. Il en manque une seule
-      et le gain annuel ignore silencieusement l'écart de cycle entre scénarios.
-    </div>
-    <div class="opt-field" id="optCycleRefField">
-      <label for="optCycleRefSec">Temps de cycle du scénario de référence (s)</label>
-      <input type="number" step="0.1" min="0" id="optCycleRefSec" placeholder="ex. 42">
-      <span class="opt-note">Mesuré machine sur le scénario marqué ★.</span>
-    </div>
-    <div class="opt-field" id="optCoutMachineField">
-      <label for="optPartCoupante">Part réellement coupante de ce cycle (%)</label>
-      <input type="number" step="5" min="0" max="100" id="optPartCoupante" placeholder="100">
-      <span class="opt-note">L'indice de cycle se calcule sur Vc·f : il ne décrit que le temps de coupe. Chargement, approche et retrait ne bougent pas quand Vc ou f changent — les compter comme s'ils ralentissaient aussi surestimerait la pénalité. À 100 %, tout le cycle est considéré comme coupant.</span>
-      <span class="opt-note" id="optCoutHoraireRappel"></span>
     </div>
 
     <label class="opt-row">
       <input type="checkbox" id="optCycleDetail">
       <span>
-        <b>Détailler le temps de cycle par logement (mesures machine)</b>
+        <b>Détailler le temps de cycle par logement (mesures machine) <i class="opt-scope">OP</i></b>
         <em>Remplace l'indice base 100 par un temps coupe + un temps déplacement, relevés sur machine, pour chaque logement. Plus fidèle qu'un indice unique quand un scénario ne change qu'une partie de l'outillage (ex. un seul côté passe en céramique).</em>
       </span>
     </label>
@@ -1464,9 +1429,62 @@ body.atelier-on{overflow:hidden;}
     </div>
 
     <label class="opt-row">
+      <input type="checkbox" id="optForceRatio">
+      <span>
+        <b>Afficher l'effort radial/axial (Fr/Fa) <i class="opt-scope">OP</i></b>
+        <em>Utile quand la géométrie de coupe (κr) est un levier connu sur cette référence précise (ex. bruts peu matures) — pas systématique d'une référence à l'autre.</em>
+      </span>
+    </label>
+
+    <div class="opt-section">Coûts</div>
+
+    <label class="opt-row">
+      <input type="checkbox" id="optCoutRebut">
+      <span>
+        <b>Intégrer le coût du rebut <i class="opt-scope">OP</i></b>
+        <em>Ajoute le coût des disques rebutés au coût pièce. Sans lui, seul le prix plaquette est comparé — un écart de rebut de 1 % peut à lui seul annuler le gain outil.</em>
+      </span>
+    </label>
+    <div class="opt-field" id="optCoutRebutField">
+      <label for="optCoutDisque">Coût d'un disque rebuté (€)</label>
+      <input type="number" step="0.5" min="0" id="optCoutDisque" placeholder="ex. 14">
+      <span class="opt-note">Matière + valeur ajoutée perdue à l'OP40.</span>
+    </div>
+
+    <label class="opt-row">
+      <input type="checkbox" id="optCycleSec">
+      <span>
+        <b>Afficher le temps de cycle en secondes <i class="opt-scope">OP</i></b>
+        <em>Convertit l'indice base 100 en secondes réelles et en cadence pièces/heure.</em>
+      </span>
+    </label>
+
+    <label class="opt-row">
+      <input type="checkbox" id="optCoutMachine">
+      <span>
+        <b>Intégrer le temps machine au coût pièce <i class="opt-scope">OP</i></b>
+        <em>Convertit l'écart de temps de cycle en euros, avec le coût horaire de la ligne : coût machine par pièce = coût horaire (€/h) × temps de cycle (s) / 3 600. Sans lui, un scénario moins cher en plaquettes mais plus lent paraît gagnant alors qu'il peut être perdant.</em>
+      </span>
+    </label>
+    <div class="opt-field" id="optCycleRefField">
+      <label for="optCycleRefSec">Temps de cycle du scénario de référence (s) <i class="opt-scope">OP</i></label>
+      <input type="number" step="0.1" min="0" id="optCycleRefSec" placeholder="ex. 42">
+      <span class="opt-note">Mesuré machine sur le scénario marqué ★.</span>
+    </div>
+    <div class="opt-field" id="optCoutMachineField">
+      <div class="opt-statut ko" id="optCoutMachineStatut" hidden></div>
+      <label for="optCoutHoraire">Coût horaire de la ligne (€/h) <i class="opt-scope">Ligne</i></label>
+      <input type="number" step="0.5" min="0" id="optCoutHoraire" placeholder="ex. 45">
+      <span class="opt-note">Machine + opérateur. Partagé par toutes les références de cette ligne — le même champ reste accessible par l'icône ⚙ de son onglet.</span>
+      <label for="optPartCoupante">Part réellement coupante de ce cycle (%) <i class="opt-scope">OP</i></label>
+      <input type="number" step="5" min="0" max="100" id="optPartCoupante" placeholder="100">
+      <span class="opt-note">L'indice de cycle se calcule sur Vc·f : il ne décrit que le temps de coupe. Chargement, approche et retrait ne bougent pas quand Vc ou f changent — les compter comme s'ils ralentissaient aussi surestimerait la pénalité. À 100 %, tout le cycle est considéré comme coupant.</span>
+    </div>
+
+    <label class="opt-row">
       <input type="checkbox" id="optPieces">
       <span>
-        <b>Pièces détachées par porte-outil</b>
+        <b>Pièces détachées par porte-outil <i class="opt-scope">OP</i></b>
         <em>Cales, vis, corps d'outil, brides… amorties sur leur propre charnière de remplacement et ajoutées au coût pièce.</em>
       </span>
     </label>
@@ -1474,7 +1492,7 @@ body.atelier-on{overflow:hidden;}
     <label class="opt-row">
       <input type="checkbox" id="optVolume">
       <span>
-        <b>Volume annuel de production</b>
+        <b>Volume annuel de production <i class="opt-scope">Référence</i></b>
         <em>Convertit chaque écart en €/an et en heures machine/an, et donne la consommation annuelle de plaquettes par scénario.</em>
       </span>
     </label>
@@ -1484,16 +1502,10 @@ body.atelier-on{overflow:hidden;}
       <span class="opt-note">Se règle par référence disque (partagé entre toutes ses OP), pas par scénario.</span>
     </div>
 
-    <label class="opt-row">
-      <input type="checkbox" id="optForceRatio">
-      <span>
-        <b>Afficher l'effort radial/axial (Fr/Fa)</b>
-        <em>Utile quand la géométrie de coupe (κr) est un levier connu sur cette référence précise (ex. bruts peu matures) — pas systématique d'une référence à l'autre.</em>
-      </span>
-    </label>
+    <div class="opt-section">Équipe</div>
 
-    <div class="opt-field on" style="padding-left:0; border-top:1px solid var(--border); padding-top:14px; margin-top:4px;">
-      <label>Responsables de projet</label>
+    <div class="opt-field on" style="padding-left:0;">
+      <label>Responsables de projet <i class="opt-scope">Tous</i></label>
       <span class="opt-note" style="margin-bottom:8px; display:block;">Une couleur par personne, reprise sur la bordure de ses cartes de projet. Se rattache dans le panneau de chaque projet.</span>
       <div id="responsablesListe"></div>
       <div style="display:flex; gap:8px; align-items:center; margin-top:8px; flex-wrap:wrap;">
@@ -1589,7 +1601,7 @@ body.atelier-on{overflow:hidden;}
       <h4>Coût complet — les modules d'Options</h4>
       <p>Le prix des plaquettes ne dit pas tout : un scénario moins cher en outil mais plus lent peut coûter plus cher au total. Quatre modules, à activer dans <b>Options</b>, complètent le calcul. Tant qu'ils sont éteints, rien ne change à l'écran.</p>
       <ul>
-        <li><b>Temps machine</b> — convertit l'écart de temps de cycle en euros, à partir du coût horaire de la ligne (icône ⚙ sur son onglet). C'est ce qui rend comparables un scénario économe en plaquettes mais lent, et un scénario rapide mais gourmand en outil.</li>
+        <li><b>Temps machine</b> — convertit l'écart de temps de cycle en euros, à partir du coût horaire de la ligne (section Coûts du panneau Options, ou icône ⚙ de l'onglet de ligne). C'est ce qui rend comparables un scénario économe en plaquettes mais lent, et un scénario rapide mais gourmand en outil.</li>
         <li><b>Part réellement coupante du cycle</b> — l'indice de cycle se calcule sur Vc·f : il ne décrit que la <b>coupe</b>. Chargement, approche et retrait ne bougent pas quand Vc ou f changent ; les compter comme s'ils ralentissaient aussi surestimerait fortement la pénalité. C'est le paramètre le plus sensible de tout le calcul.</li>
         <li><b>Pièces détachées</b> — cales, vis, corps d'outil, brides : amorties sur leur propre charnière de remplacement, et rattachées au porte-outil.</li>
         <li><b>Volume annuel</b> — se règle par référence disque. Traduit chaque écart en €/an et en heures machine/an, et donne la consommation annuelle de plaquettes par logement.</li>
@@ -1753,7 +1765,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.6.0";
+const TOOL_VERSION = "4.7.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -8268,22 +8280,38 @@ const optForceRatio = document.getElementById("optForceRatio");
 const optEcartCharniere = document.getElementById("optEcartCharniere");
 const optCoutMachine = document.getElementById("optCoutMachine");
 const optPartCoupante = document.getElementById("optPartCoupante");
+const optCoutHoraire = document.getElementById("optCoutHoraire");
 const optCycleDetail = document.getElementById("optCycleDetail");
 const optPieces = document.getElementById("optPieces");
 const optVolume = document.getElementById("optVolume");
 const optProductionAnnuelle = document.getElementById("optProductionAnnuelle");
 
-/* le cout horaire vit sur la ligne (icone ⚙ de l'onglet) : on le rappelle ici, et
-   surtout on signale s'il manque — sans lui le module ne peut rien calculer */
-function majRappelCoutHoraire(){
-  const el = document.getElementById("optCoutHoraireRappel");
-  if(!el) return;
-  const l = getActiveLigne();
+/* etat du cout machine (v4.7) : l'ancienne note statique des "quatre choses a faire"
+   disait trop — le calcul reel (coutMachinePiece/cycleSecondes) n'exige que le module
+   actif, le cycle de reference et le cout horaire ; l'affichage en secondes est une
+   commodite, pas une condition. L'outil le dit maintenant depuis le code, pas depuis
+   un texte qui pouvait deriver de lui. */
+function etatCoutMachine(cfg, ligne){
+  cfg = cfg || config;
+  const l = ligne || getActiveLigne();
   const taux = l ? parseFloat(l.coutHoraire) : NaN;
-  if(isNaN(taux)){
-    el.innerHTML = `<b style="color:var(--red);">Coût horaire non renseigné</b> pour la ligne ${escapeAttr(l ? l.nom : "")} — à saisir via l'icône ⚙ de l'onglet de ligne, sinon le coût machine reste vide.`;
+  const manquants = [];
+  if(cfg.cycleRefSec === "" || isNaN(parseFloat(cfg.cycleRefSec))) manquants.push("le temps de cycle du scénario de référence (s)");
+  if(isNaN(taux) || taux <= 0) manquants.push("le coût horaire de la ligne (€/h)");
+  return { actif: !!cfg.coutMachineActif && !manquants.length, taux, manquants };
+}
+function majStatutCoutMachine(){
+  const el = document.getElementById("optCoutMachineStatut");
+  if(!el) return;
+  if(!config.coutMachineActif){ el.hidden = true; return; }
+  const et = etatCoutMachine();
+  el.hidden = false;
+  if(et.manquants.length){
+    el.className = "opt-statut ko";
+    el.innerHTML = `Coût machine incomplet — il manque encore ${et.manquants.join(" et ")}. Tant qu'il manque, le coût pièce ignore le temps machine : aucun écart de cycle ne pèse dans le gain annuel.`;
   } else {
-    el.innerHTML = `Coût horaire utilisé : <b>${fmt(taux,2)} €/h</b> (ligne ${escapeAttr(l.nom)}, modifiable via son icône ⚙).`;
+    el.className = "opt-statut ok";
+    el.innerHTML = `Coût machine actif — ${fmt(et.taux,2)} €/h × temps de cycle. Les écarts de cycle pèsent maintenant dans le coût pièce et le gain annuel.`;
   }
 }
 function majChampsOptions(){
@@ -8291,7 +8319,7 @@ function majChampsOptions(){
   document.getElementById("optCycleRefField").classList.toggle("on", optCycleSec.checked || optCoutMachine.checked);
   document.getElementById("optCoutMachineField").classList.toggle("on", optCoutMachine.checked);
   document.getElementById("optVolumeField").classList.toggle("on", optVolume.checked);
-  majRappelCoutHoraire();
+  majStatutCoutMachine();
 }
 function syncOptionsUI(){
   optLimitLabel.value = config.limitLabel ?? "";
@@ -8309,6 +8337,14 @@ function syncOptionsUI(){
   optProductionAnnuelle.value = ref ? (ref.productionAnnuelle ?? "") : "";
   optForceRatio.checked = !!config.forceRatioActif;
   optEcartCharniere.value = config.ecartCharniereTolerance ?? 0.5;
+  // contexte (v4.7) : les reglages d'Options ne portent pas tous la meme portee — on dit
+  // laquelle, d'un coup, en tete de panneau, plutot que de la deviner champ par champ.
+  const lg = getActiveLigne(), op = getActiveOp();
+  document.getElementById("optionsContexte").innerHTML =
+    `${escapeAttr(op ? op.nom : "—")} · ${escapeAttr(ref ? ref.nom : "—")} · ${escapeAttr(lg ? lg.nom : "—")}` +
+    ` — chaque réglage porte son badge de portée : <i class="opt-scope">OP</i>, <i class="opt-scope">Référence</i>, <i class="opt-scope">Ligne</i> ou <i class="opt-scope">Tous</i>.`;
+  // le cout horaire vit sur la ligne : champ en place (v4.7), meme donnee que l'icone ⚙
+  optCoutHoraire.value = lg ? (lg.coutHoraire ?? "") : "";
   majChampsOptions();
   renderFicheOutil();
   renderResponsablesOptions();
@@ -8374,6 +8410,10 @@ function appliquerOptions(){
   config.volumeActif = optVolume.checked;
   const ref = getActiveReference();
   if(ref) ref.productionAnnuelle = optProductionAnnuelle.value === "" ? "" : parseFloat(optProductionAnnuelle.value);
+  // cout horaire saisi en place (v4.7) : il ecrit dans la ligne active, comme le ferait
+  // l'icone ⚙ de son onglet — meme champ, deux portes d'entree, zero changement de format
+  const lgOpt = getActiveLigne();
+  if(lgOpt) lgOpt.coutHoraire = optCoutHoraire.value;
   config.forceRatioActif = optForceRatio.checked;
   config.ecartCharniereTolerance = optEcartCharniere.value === "" ? 0.5 : parseFloat(optEcartCharniere.value);
   majChampsOptions();
@@ -8385,7 +8425,7 @@ function appliquerOptions(){
 // reste instantane
 let optionsInputDebounce = null;
 [optCoutRebut, optCoutDisque, optCycleSec, optCycleRefSec, optCoutMachine, optPartCoupante, optCycleDetail,
- optPieces, optVolume, optProductionAnnuelle, optLimitLabel, optLimitValue, optForceRatio, optEcartCharniere].forEach(el => {
+ optPieces, optVolume, optProductionAnnuelle, optLimitLabel, optLimitValue, optForceRatio, optEcartCharniere, optCoutHoraire].forEach(el => {
   el.addEventListener("change", () => { clearTimeout(optionsInputDebounce); appliquerOptions(); });
   el.addEventListener("input", () => {
     if(el.type !== "number") return;
@@ -8466,6 +8506,11 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.7.0", date:"09/09/2026", points:[
+    "<b>Options, réorganisé.</b> Le panneau est maintenant découpé par nature — <b>Mesure &amp; essais</b>, <b>Coûts</b>, <b>Équipe</b> — et chaque réglage porte son badge de portée (<b>OP</b>, <b>Référence</b>, <b>Ligne</b>, <b>Tous</b>) : on voit enfin pourquoi le volume annuel se règle ailleurs que la tolérance.",
+    "<b>Le coût horaire se saisit dans Options.</b> Fini le renvoi vers l'icône ⚙ de l'onglet de ligne pour finir une configuration commencée dans Options : le champ est là, dans la section Coûts. Même donnée, deux portes d'entrée.",
+    "<b>L'état du coût machine, calculé — plus deviné.</b> L'ancienne note des « quatre choses à faire » était static et trop stricte : un statut vert ou ambre dit maintenant exactement ce qui manque (temps de cycle de référence, coût horaire) et ce que ça change. Sans eux, aucun écart de cycle ne pèse dans le gain annuel — c'est écrit, depuis le code."
+  ]},
   { version:"4.6.0", date:"09/09/2026", points:[
     "<b>Des confirmations dans le style de l'outil.</b> Les petites fenêtres système grises (alertes, confirmations, saisies) ont disparu : chaque question s'affiche maintenant dans une fenêtre de l'outil — mêmes textes, mêmes garde-fous, mais lisible, mise en forme, et compatible avec le mode nuit. La réinitialisation demande toujours de taper « REINITIALISER ».",
     "<b>Démarrer un suivi, dans le bon ordre.</b> La règle « le scénario en production d'abord, les projets ensuite » est maintenant dans l'outil : un parcours en trois étapes cochées (menu <b>•••</b> → <b>Démarrer un suivi</b>) et un rappel sur un OP vierge. Il disparaît tout seul dès que la première étape est faite.",
@@ -9106,6 +9151,23 @@ function runTests(){
     ok("coutMachinePiece = cout horaire/3600 x cycle", coutMachinePiece(B, cfg, ligne), 1.25);
     ok("coutMachinePiece : sans cout horaire de ligne -> null",
        coutMachinePiece(B, cfg, normalizeLigne({id:"x", nom:"x", coutHoraire:""})), null);
+    // etat calcule du module (v4.7) : ce que le statut d'Options affiche
+    ok("etatCoutMachine : complet quand cycle de reference et cout horaire sont la", (() => {
+      const et = etatCoutMachine({ coutMachineActif:true, cycleRefSec:"42" }, { nom:"L", coutHoraire:"45" });
+      return et.actif === true && et.manquants.length === 0;
+    })(), true);
+    ok("etatCoutMachine : cite le cout horaire manquant", (() => {
+      const et = etatCoutMachine({ coutMachineActif:true, cycleRefSec:"42" }, { nom:"L", coutHoraire:"" });
+      return !et.actif && et.manquants.length === 1 && et.manquants[0].includes("coût horaire");
+    })(), true);
+    ok("etatCoutMachine : cite le cycle de reference manquant", (() => {
+      const et = etatCoutMachine({ coutMachineActif:true, cycleRefSec:"" }, { nom:"L", coutHoraire:"45" });
+      return !et.actif && et.manquants.length === 1 && et.manquants[0].includes("cycle");
+    })(), true);
+    ok("etatCoutMachine : module eteint -> jamais actif", (() => {
+      const et = etatCoutMachine({ coutMachineActif:false, cycleRefSec:"42" }, { nom:"L", coutHoraire:"45" });
+      return !et.actif;
+    })(), true);
 
     // ---- rebut ----
     ok("coutRebutPiece : module eteint -> null", coutRebutPiece(B, cfg), null);

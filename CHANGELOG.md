@@ -5,6 +5,52 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.7.0] — 2026-09-09
+
+Réorganisation du panneau Options, dont l'intégration du coût machine dispersait ses
+réglages entre Options et l'icône ⚙ de l'onglet de ligne, sans dire les portées.
+Aucun changement de format de données.
+
+### Modifié — Options découpé par nature, portées affichées
+Le panneau mélangeait quatre natures de réglages (mesure, économie, affichage, équipe)
+sans séparation, et la note du module machine renvoyait ailleurs (« renseignez le coût
+horaire via l'icône ⚙ de l'onglet de ligne ») — un écran qui t'envoie ailleurs pour
+finir une configuration commencée chez lui est un écran mal fichu.
+
+- Trois sections titrées : **Mesure & essais** (tolérance, marge charnière, cycle
+  détaillé + fiche outil, Fr/Fa), **Coûts** (rebut, cycle en secondes, temps machine,
+  pièces détachées, volume annuel), **Équipe** (responsables).
+- Badge de portée sur chaque réglage : `OP`, `Référence`, `Ligne`, `Tous`. La ligne de
+  contexte en tête de panneau nomme l'OP/référence/ligne ouverts et explique les badges.
+- Ancien intitulé « Modules de calcul » supprimé (il ne disait rien des portées).
+
+### Ajouté — le coût horaire de la ligne se saisit dans Options
+Nouveau champ `optCoutHoraire` dans la section Coûts, affiché quand le module temps
+machine est coché. Il écrit dans `ligne.coutHoraire` — exactement la même donnée que
+l'icône ⚙ de l'onglet de ligne, qui reste fonctionnelle : même champ, deux portes
+d'entrée. Plus aucun renvoi croisé pour finir une configuration.
+
+### Ajouté — état calculé du coût machine, à la place de la note statique
+La note des « quatre choses nécessaires ensemble » était fausse sur un point : la case
+« Afficher le temps de cycle en secondes » est une commodité d'affichage, pas une
+condition du calcul (`cycleSecondes` ne la consulte pas ; seuls `coutMachineActif`,
+`cycleRefSec` et `coutHoraire` comptent). Un texte statique dérive toujours du code —
+le statut est désormais calculé par `etatCoutMachine(cfg, ligne)` :
+
+- module coché et tout renseigné : statut vert « Coût machine actif — X €/h × temps de
+  cycle. Les écarts de cycle pèsent maintenant dans le coût pièce et le gain annuel. » ;
+- sinon : statut ambre listant exactement ce qui manque (temps de cycle de référence
+  et/ou coût horaire) et la conséquence (« aucun écart de cycle ne pèse dans le gain
+  annuel »).
+- `runTests()` : 4 nouveaux tests sur `etatCoutMachine` (complet, coût horaire cité,
+  cycle de référence cité, module éteint).
+
+### Nettoyé
+- `optCoutHoraireRappel` (rappel texte du coût horaire) supprimé, remplacé par le
+  statut calculé et le champ en place.
+- La section « Comment ça marche » renvoie désormais vers la section Coûts d'Options
+  pour le coût horaire, en gardant la mention de l'icône ⚙.
+
 ## [4.6.0] — 2026-09-09
 
 Trois chantiers issus de la revue UX externe (pertinence/architecture/UX) : la fin des
