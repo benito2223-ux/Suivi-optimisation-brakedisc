@@ -5,6 +5,28 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.7.1] — 2026-09-22
+
+Deux corrections de la couche de fenêtres modales introduites en v4.6, dont une
+rendait invisibles toutes les confirmations ouvertes depuis un panneau. Aucun
+changement de format de données.
+
+### Corrigé — les confirmations invisibles derrière les panneaux
+Le dialogue de confirmation partageait le `z-index` des autres panneaux et était
+déclaré avant eux dans le DOM : ouvert par-dessus le panneau projet, dashboard ou
+import, il s'affichait en réalité **derrière**. Symptôme vu sur le terrain :
+« Supprimer ce projet » semble ne rien faire (le dialogue est là, mais caché, et
+le clavier est piégé dedans). Toutes les confirmations du même type étaient
+touchées (suppression de responsable, fermeture de l'éditeur d'annotation…).
+Le dialogue passe désormais au-dessus de tout (`z-index:120`).
+
+### Corrigé — le panneau de création de projet restait ouvert
+`fermerPanneaux()` fermait une liste de panneaux codée en dur, dans laquelle
+`projetCreatePanel` (ajouté en v4.5) avait été oublié : après « Créer le
+projet », le panneau de création restait empilé sous celui d'info, et un second
+clic sur « Créer le projet » créait un doublon. La fermeture est généralisée à
+tous les `.panel` — un futur panneau sera couvert d'office.
+
 ## [4.7.0] — 2026-09-09
 
 Réorganisation du panneau Options, dont l'intégration du coût machine dispersait ses

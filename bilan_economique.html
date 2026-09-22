@@ -759,7 +759,10 @@ tr.row-bad td{background:var(--red-bg);}
 .panel-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:18px; padding-top:16px; border-top:1px solid var(--border);}
 
 /* ---- dialogues in-app (v4.6) ---- */
-.panel-dialog{ width:min(460px, calc(100vw - 32px)); }
+/* le dialogue de confirmation est TOUJOURS le panneau le plus haut de la pile : au meme
+   z-index que les autres panneaux, il passait sous ceux declares apres lui dans le DOM
+   (projet, dashboard...) — ouvert mais invisible, donc "le bouton ne fait rien". */
+.panel-dialog{ width:min(460px, calc(100vw - 32px)); z-index:120; }
 .dialog-body{ font-size:14px; line-height:1.6; color:var(--ink); margin:10px 0 2px; }
 .dialog-body b{ font-weight:600; }
 .dialog-input{ margin-top:12px; }
@@ -1765,7 +1768,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.7.0";
+const TOOL_VERSION = "4.7.1";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -8185,20 +8188,12 @@ function ouvrirPanneau(id){
 function fermerPanneaux(){
   fermerDialogue();
   document.getElementById("panelBackdrop").hidden = true;
-  document.getElementById("optionsPanel").hidden = true;
-  document.getElementById("printPanel").hidden = true;
-  document.getElementById("backlogWrap").hidden = true;
-  document.getElementById("photoAnnotWrap").hidden = true;
+  // tous les panneaux, sans liste en dur : projetCreatePanel oublie ici restait ouvert
+  // apres la creation d'un projet, empile sous le panneau d'info (et un 2e clic sur
+  // "Creer le projet" creait un doublon). Un futur panneau sera couvert d'office.
+  document.querySelectorAll(".panel").forEach(p => { p.hidden = true; });
   annot = null;
-  document.getElementById("historyPanel").hidden = true;
-  document.getElementById("csvPanel").hidden = true;
-  document.getElementById("importPanel").hidden = true;
   importEnAttente = null;
-  document.getElementById("projetInfoPanel").hidden = true;
-  document.getElementById("ligneInfoPanel").hidden = true;
-  document.getElementById("dashboardPanel").hidden = true;
-  document.getElementById("nouveautesPanel").hidden = true;
-  document.getElementById("parcoursPanel").hidden = true;
   document.getElementById("toolbarMore").hidden = true;
   panneauPile = [];
   restaurerFocusPanneau();
