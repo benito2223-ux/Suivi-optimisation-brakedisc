@@ -782,6 +782,8 @@ tr.row-bad td{background:var(--red-bg);}
 .chart-empty{color:var(--ink-faint); font-style:italic; font-size:13px;}
 
 .essai-params{display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:7px 12px; font-size:12px; color:var(--ink-faint); background:var(--surface); border-bottom:1px solid var(--border);}
+.essai-lp-del{cursor:pointer; margin-left:7px; border:none; background:transparent; color:var(--ink-faint); font-size:11px; padding:0 3px; line-height:1;}
+.essai-lp-del:hover{color:var(--red);}
 .essai-params b{font-family:var(--font-mono); font-weight:600; font-size:12px; color:var(--ink-soft);}
 .essai-params.diverge{background:var(--amber-bg);}
 .essai-diverge{color:var(--amber); font-weight:600; display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap;}
@@ -1789,7 +1791,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.10.1";
+const TOOL_VERSION = "4.11.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -2517,6 +2519,13 @@ function snapshotLogements(sc){
     vc: l.vc, f: l.f, charniere: l.charniere, ref: l.ref, prix: l.prix
   })));
 }
+/* v4.11 — logements réellement suivis par un essai : la sélection se coche par essai
+   (✕ sur la puce / « + suivre un logement »). Un logement exclu (suivi:false) garde son
+   instantané en mémoire mais ne génère plus colonne, progression ni rapport. Pas de
+   marque = suivi (compatibilité totale avec les essais d'avant la v4.11). */
+function logementsSuivis(es){
+  return ((es.params && es.params.logements) || []).filter(lp => lp.suivi !== false);
+}
 /* reference plaquette au moment de l'essai. Les essais crees avant l'ajout de "ref" au
    snapshot n'ont pas cette valeur figee : on retombe alors sur la reference actuelle du
    scenario pour ce logement (meilleur effort, mais peut differer si elle a change depuis). */
@@ -2654,11 +2663,12 @@ function migrerTolerancesOp(op){
    pas seulement QUE. Tableau vide = rien n'a divergé. */
 function paramsDivergences(sc, essai){
   const snap = (essai.params && essai.params.logements) || [];
+  const actifs = snap.filter(s => s.suivi !== false); // v4.11 : les logements exclus volontairement ne signalent rien
   const courant = snapshotLogements(sc);
   const memeVal = (a,b) => String(a ?? "") === String(b ?? "");
   const aff = v => (v === "" || v == null) ? "—" : v;
   const diffs = [];
-  snap.forEach(s => {
+  actifs.forEach(s => {
     const cur = courant.find(c => c.logementId === s.logementId);
     const nom = (s.outilNumero||"?") + " · " + (s.logementNom||"—");
     if(!cur){ diffs.push(nom + " (retiré du scénario)"); return; }
@@ -2669,7 +2679,7 @@ function paramsDivergences(sc, essai){
     if(champs.length) diffs.push(nom + " — " + champs.join(", "));
   });
   courant.forEach(c => {
-    if(!snap.find(s => s.logementId === c.logementId)) diffs.push((c.outilNumero||"?") + " · " + (c.logementNom||"—") + " (ajouté au scénario)");
+    if(!snap.some(s => s.logementId === c.logementId)) diffs.push((c.outilNumero||"?") + " · " + (c.logementNom||"—") + " (ajouté au scénario)");
   });
   return diffs;
 }
@@ -3210,7 +3220,7 @@ function exportCSV(essaiIds){
   ].join(sep)];
 
   (sc.essais||[]).filter(es => !essaiIds || essaiIds.includes(es.id)).forEach(es => {
-    const snap = (es.params && es.params.logements) || [];
+    const snap = logementsSuivis(es);
     const outilsResume = snap.map(lp => `${lp.outilNumero||"?"}/${lp.logementNom||"?"}:Vc${lp.vc??"-"}/f${lp.f??"-"}/charn${lp.charniere??"-"}`).join(" | ");
     (es.prelevements||[]).forEach(r => {
       const conf = checkConform(sc, r);
@@ -3424,7 +3434,7 @@ function essaiRapportHTML(sc, essai){
   const est = essaiStats(sc, essai);
   const badgeClass = est.status === "ok" ? "ok" : est.status === "bad" ? "bad" : "pending";
   const badgeLabel = est.status === "ok" ? "Conforme" : est.status === "bad" ? "Non conforme" : "En cours";
-  const snap = (essai.params && essai.params.logements) || [];
+  const snap = logementsSuivis(essai);
   const dateAff = essai.date ? new Date(essai.date + "T00:00").toLocaleDateString("fr-FR") : "—";
   const logoSrc = (document.querySelector(".hd-left img") || {}).getAttribute ? document.querySelector(".hd-left img").getAttribute("src") : "";
 
@@ -4384,7 +4394,7 @@ function essaiStats(sc, essai){
   // chaque logement a sa propre charniere visee ET son propre flux de mesures (mene en
   // parallele) — independance totale : un outil peut atteindre sa cible pendant qu'un
   // autre continue, chacun compte ses propres pieces
-  const snap = (essai.params && essai.params.logements) || [];
+  const snap = logementsSuivis(essai);
   const logementProgress = snap.map(lp => {
     const target = parseFloat(lp.charniere);
     const hasTarget = !isNaN(target);
@@ -4525,7 +4535,7 @@ function atelierHTML(){
   const sc = data.find(s => s.id === atelierCtx.scId);
   const essai = sc && (sc.essais||[]).find(e => e.id === atelierCtx.essaiId);
   if(!sc || !essai) return "";
-  const snap = (essai.params && essai.params.logements) || [];
+  const snap = logementsSuivis(essai);
   if(!atelierCtx.logementId && snap.length) atelierCtx.logementId = snap[0].logementId;
   const lp = snap.find(x => x.logementId === atelierCtx.logementId);
   const piece = atelierProchainePiece(essai, atelierCtx.logementId);
@@ -5024,7 +5034,7 @@ function chartHTML(sc){
     const prels = es.prelevements || [];
     const utiliseLogements = prels.some(r => r.logementId);
     if(utiliseLogements){
-      const snap = (es.params && es.params.logements) || [];
+      const snap = logementsSuivis(es);
       snap.forEach(lp => {
         const pts = prels.filter(r => r.logementId === lp.logementId)
           .map(r => ({ x: parseFloat(r.piece), y: valeurMesuree(sc, r), pointMesure: r.pointMesure || "" }))
@@ -6596,18 +6606,31 @@ function essaiCardHTML(sc, essai, interactive){
            </div>`
         : (essai.programme ? `<div class="essai-obs-print">Programme : ${escapeAttr(essai.programme)}</div>` : ""));
 
-  // conditions de coupe de chaque logement, telles qu'elles etaient au moment de l'essai
-  const snap = (essai.params && essai.params.logements) || [];
+  // conditions de coupe de chaque logement, telles qu'elles etaient au moment de l'essai.
+  // v4.11 : la sélection est cochable — ✕ sur une puce = ne plus suivre ce logement dans
+  // CET essai (il reste dans le scénario et re-suivable à tout moment).
+  const snap = logementsSuivis(essai);
+  const tousSnap = (essai.params && essai.params.logements) || [];
   const diverge = paramsDivergences(sc, essai);
   const chips = snap.map(lp => {
     const oi = sc.outils.findIndex(o => o.id === lp.outilId);
     const couleur = oi >= 0 ? OUTIL_COLORS[oi % OUTIL_COLORS.length] : "var(--ink-faint)";
-    return `<b style="border-left:3px solid ${couleur}; padding-left:6px;">${escapeAttr(lp.outilNumero||"—")} · ${escapeAttr(lp.logementNom||"—")} — Vc ${lp.vc === "" || lp.vc == null ? "—" : lp.vc} f ${lp.f === "" || lp.f == null ? "—" : lp.f} charnière ${lp.charniere === "" || lp.charniere == null ? "—" : lp.charniere} p</b>`;
+    const croix = interactive ? `<button class="essai-lp-del" data-id="${sc.id}" data-essai="${essai.id}" data-lp="${lp.logementId}" title="Ne plus suivre ce logement dans cet essai (le logement reste dans le scénario, re-suivable à tout moment)">✕</button>` : "";
+    return `<b style="border-left:3px solid ${couleur}; padding-left:6px;">${escapeAttr(lp.outilNumero||"—")} · ${escapeAttr(lp.logementNom||"—")} — Vc ${lp.vc === "" || lp.vc == null ? "—" : lp.vc} f ${lp.f === "" || lp.f == null ? "—" : lp.f} charnière ${lp.charniere === "" || lp.charniere == null ? "—" : lp.charniere} p${croix}</b>`;
   }).join("");
+  const ajoutables = interactive
+    ? snapshotLogements(sc).filter(c => !snap.some(s => s.logementId === c.logementId))
+    : [];
+  const lpAdd = interactive ? `
+    <select class="cell essai-lp-add" data-id="${sc.id}" data-essai="${essai.id}" style="max-width:250px; min-width:160px;" title="Ajouter un logement du scénario au suivi de cet essai">
+      <option value="">+ suivre un logement…</option>
+      ${ajoutables.map(c => `<option value="${c.logementId}">${escapeAttr((c.outilNumero||"?") + " · " + (c.logementNom||"—"))}</option>`).join("")}
+    </select>` : "";
   const paramsRow = `
     <div class="essai-params${diverge.length ? " diverge" : ""}" style="flex-wrap:wrap;">
       <span>Conditions de l'essai —</span>
-      ${chips || `<span style="color:var(--ink-faint);">aucun outil configuré</span>`}
+      ${chips}${lpAdd}
+      ${(!chips && !interactive) ? `<span style="color:var(--ink-faint);">aucun logement suivi</span>` : ""}
       ${diverge.length ? `<span class="essai-diverge">⚠ modifié depuis : ${escapeAttr(diverge.join(" · "))}${interactive ? ` <button class="params-sync" data-id="${sc.id}" data-essai="${essai.id}">Aligner sur le scénario</button>` : ""}</span>` : ""}
     </div>
     <div class="essai-params">
@@ -6620,7 +6643,7 @@ function essaiCardHTML(sc, essai, interactive){
     </div>`;
 
   const mesureLabel = escapeAttr(libelleDe(sc));
-  const snapLogements = (essai.params && essai.params.logements) || [];
+  const snapLogements = logementsSuivis(essai);
   const showLogementCol = snapLogements.length > 1;
   const logementHead = showLogementCol ? `<th>Logement</th>` : "";
   // v4.9 : colonnes battement selon les côtés choisis ; critères supplémentaires : une
@@ -6697,7 +6720,7 @@ function essaiCardHTML(sc, essai, interactive){
 }
 
 function prelevementRowHTML(sc, essai, row, interactive, snapLogements, showLogementCol){
-  snapLogements = snapLogements || (essai.params && essai.params.logements) || [];
+  snapLogements = snapLogements || logementsSuivis(essai);
   showLogementCol = showLogementCol !== undefined ? showLogementCol : snapLogements.length > 1;
   const conform = checkConform(sc, row);
   const exempte = !toleranceRequisePour(sc, row);
@@ -7912,6 +7935,46 @@ function attachDetailHandlers(sc){
       saveData(); render();
     });
   });
+  // v4.11 — sélection des logements suivis par essai : ✕ = ne plus suivre (le logement
+  // reste dans le scénario, ses prélèvements restent dans le tableau), et le sélecteur
+  // « + suivre un logement » ramène un logement exclu ou ajoute un nouveau venu.
+  root.querySelectorAll(".essai-lp-del").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const es = sc.essais.find(e => e.id === btn.getAttribute("data-essai"));
+      if(!es || !es.params) return;
+      const lp = (es.params.logements||[]).find(x => x.logementId === btn.getAttribute("data-lp"));
+      if(!lp) return;
+      const nom = (lp.outilNumero||"?") + " · " + (lp.logementNom||"—");
+      const nbPrels = (es.prelevements||[]).filter(r => r.logementId === lp.logementId).length;
+      dialogueConfirmer("Ne plus suivre « " + nom + " » dans cet essai ?" +
+        (nbPrels ? "\n\n" + nbPrels + " prélèvement(s) lui sont attribué(s) : ils restent dans le tableau mais ne compteront plus dans la progression de ce logement." : "") +
+        "\n\nLe logement reste dans le scénario — re-suivable à tout moment via « + suivre un logement ».",
+        { titre: "Ne plus suivre ce logement ?", danger: nbPrels > 0, okLabel: "Ne plus suivre" }).then(ok => {
+        if(!ok) return;
+        lp.suivi = false; // l'instantané reste : re-cocher restitue les conditions d'origine
+        toucherEssai(es);
+        saveData(); render();
+      });
+    });
+  });
+  root.querySelectorAll("select.essai-lp-add").forEach(sel => {
+    sel.addEventListener("change", () => {
+      const lid = sel.value;
+      if(!lid) return;
+      const es = sc.essais.find(e => e.id === sel.getAttribute("data-essai"));
+      if(!es || !es.params) return;
+      es.params.logements = es.params.logements || [];
+      const deja = es.params.logements.find(x => x.logementId === lid);
+      if(deja){
+        deja.suivi = true; // re-coche avec son instantané d'origine
+      } else {
+        const courant = snapshotLogements(sc).find(c => c.logementId === lid);
+        if(courant) es.params.logements.push(Object.assign({ suivi: true }, courant));
+      }
+      toucherEssai(es);
+      saveData(); render();
+    });
+  });
   // v4.9.1 : l'heure de début/fin de l'essai pré-remplit la fenêtre du suivi Marposs si
   // elle est encore vide (une seule saisie en pratique ; la fenêtre Marposs reste
   // modifiable séparément — la machine, elle, contrôle toute la journée)
@@ -8915,6 +8978,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.11.0", date:"22/09/2026", points:[
+    "<b>On ne suit que ce qu'on veut suivre.</b> Dans chaque essai, les puces « Conditions de l'essai » portent désormais une croix : <b>✕ = ne plus suivre ce logement dans cet essai</b> (il reste dans le scénario, re-suivable à tout moment via « + suivre un logement »). Fini de remplir des colonnes pour les outils qui ont déjà atteint leur charnière — la progression, le tableau, l'atelier et les rapports ne montrent plus que les logements cochés."
+  ]},
   { version:"4.10.1", date:"22/09/2026", points:[
     "<b>Plus de logements pré-nommés.</b> Un nouveau scénario arrive avec un outil vide : c'est vous qui créez et nommez vos logements (Filetage, Chanfrein…). Les noms « Bol » et « Piste » n'apparaissent plus que s'ils ont été saisis — ils ne débourent plus automatiquement dans le bandeau récapitulatif."
   ]},

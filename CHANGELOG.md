@@ -5,6 +5,21 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.11.0] — 2026-09-22
+
+### Ajouté — on ne suit que ce qu'on veut suivre (sélection par essai)
+Jusqu'ici, créer un essai snappshotait TOUS les logements du scénario :
+progressions, colonnes et rapports s'imposaient même pour les outils qui ont
+déjà atteint leur charnière et qui n'importent plus. Désormais chaque puce
+« Conditions de l'essai » porte une croix : **✕ = ne plus suivre ce logement
+dans cet essai**. Le logement reste dans le scénario (et re-suivable à tout
+moment via « + suivre un logement »), son instantané est conservé (re-cocher
+restitue les conditions d'origine), et ses prélèvements éventuels restent dans
+le tableau — ils ne comptent simplement plus dans sa progression. Le tableau,
+l'atelier, le graphique de tendance, le CSV et les rapports ne montrent plus
+que les logements suivis. Aucun changement de format : la marque d'exclusion
+s'ajoute aux instantanés existants, les essais anciens restent « tout suivi ».
+
 ## [4.10.1] — 2026-09-22
 
 ### Modifié — plus de logements pré-nommés à la création d'un scénario
