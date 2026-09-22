@@ -5,6 +5,17 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.10.1] — 2026-09-22
+
+### Modifié — plus de logements pré-nommés à la création d'un scénario
+Créer un scénario sur une ligne EMAG 1 pré-créeait automatiquement deux
+logements nommés « Bol » et « Piste » : le bandeau récapitulatif de l'outil
+les affichait donc même sur des montages qui n'en ont pas, et l'utilisateur
+croyait à un bug d'affichage. Désormais le scénario arrive avec un outil vide —
+l'opérateur crée et nomme ses logements lui-même (le bouton « + Logement »
+propose « Logement 1 », « Logement 2 »… neutres, à renommer). Les données
+existantes ne bougent pas : seules les futures créations sont concernées.
+
 ## [4.10.0] — 2026-09-22
 
 Le travail à deux passe en fusion automatique. Aucun changement de format.

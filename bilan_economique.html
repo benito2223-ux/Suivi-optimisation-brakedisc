@@ -1789,7 +1789,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.10.0";
+const TOOL_VERSION = "4.10.1";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -8478,9 +8478,10 @@ document.getElementById("addBtn").addEventListener("click", () => {
     id: uid("s"), name: "Nouveau scénario", baseline: false, cycle: "",
     emag1: emag1Auto, limitOverride: false, limitLabel: "Battement (mm)", limitValue: 0.12, validationThreshold: 5,
     critere2Actif: false, limitLabel2: "Ra (µm)", limitValue2: 0.8,
-    outils: [{ id: "t"+Math.random().toString(36).slice(2), numero: "", logements: [
-      normalizeLogement({ nom: "Bol" }), normalizeLogement({ nom: "Piste" })
-    ] }],
+    // v4.10.1 — plus de logements pré-créés : le scénario arrive avec un outil vide, et
+    // l'opérateur nomme ses logements lui-même (les « Bol »/« Piste » automatiques mentaient
+    // sur les montages qui n'en ont pas — un logement ne porte un nom que s'il a été saisi)
+    outils: [{ id: "t"+Math.random().toString(36).slice(2), numero: "", logements: [] }],
     essais: [], scrapLog: []
   };
   data.push(blank);
@@ -8914,6 +8915,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.10.1", date:"22/09/2026", points:[
+    "<b>Plus de logements pré-nommés.</b> Un nouveau scénario arrive avec un outil vide : c'est vous qui créez et nommez vos logements (Filetage, Chanfrein…). Les noms « Bol » et « Piste » n'apparaissent plus que s'ils ont été saisis — ils ne débourent plus automatiquement dans le bandeau récapitulatif."
+  ]},
   { version:"4.10.0", date:"22/09/2026", points:[
     "<b>Le travail à deux fusionne tout seul.</b> Quand vous avez saisi tous les deux pendant que l'autre déposait, l'outil <b>fusionne automatiquement</b> essai par essai — le plus récent gagne pour un même essai, les essais de chacun s'ajoutent, les réglages du scénario restent à la version locale. Fini le choix « prendre le cloud ou écraser » : le rapport de fusion détaille ce qui a été ajouté, mis à jour, conservé, et liste les rares conflits à vérifier.",
     "<b>Un message à l'ouverture.</b> Si Matis a synchronisé pendant votre absence, l'outil vous le dit en ouvrant : qui a déposé, quand, et le détail (« 3 essais ajoutés, 1 mis à jour »). Plus personne ne découvre un changement en tombant dessus.",
