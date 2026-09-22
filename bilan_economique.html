@@ -1791,7 +1791,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.11.0";
+const TOOL_VERSION = "4.11.1";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -5025,31 +5025,80 @@ function valeurMesuree(sc, row){
   return isNaN(b) ? null : b;
 }
 
-function chartHTML(sc){
-  // un essai mene en parallele sur plusieurs logements est scinde en une courbe par
-  // logement (sinon les mesures de logements differents se melangeraient sur une seule
-  // ligne) ; un essai classique (un seul flux de mesures) garde une courbe unique.
-  let series = [];
+/* construit les séries d'un critère : un essai mené en parallèle sur plusieurs logements
+   est scindé en une courbe par logement ; un essai classique garde une courbe unique */
+function seriesTendance(sc, valeurFn){
+  const series = [];
   (sc.essais||[]).forEach(es => {
     const prels = es.prelevements || [];
     const utiliseLogements = prels.some(r => r.logementId);
-    if(utiliseLogements){
-      const snap = logementsSuivis(es);
-      snap.forEach(lp => {
-        const pts = prels.filter(r => r.logementId === lp.logementId)
-          .map(r => ({ x: parseFloat(r.piece), y: valeurMesuree(sc, r), pointMesure: r.pointMesure || "" }))
-          .filter(p => !isNaN(p.x) && p.y !== null)
-          .sort((a,b) => a.x - b.x);
-        if(pts.length) series.push({ titre: `${es.titre} (${lp.outilNumero||"?"}·${lp.logementNom||"?"})`, pts });
-      });
-    } else {
-      const pts = prels.map(r => ({ x: parseFloat(r.piece), y: valeurMesuree(sc, r), pointMesure: r.pointMesure || "" }))
+    const pousse = (titre, rows) => {
+      const pts = rows.map(r => ({ x: parseFloat(r.piece), y: valeurFn(r), pointMesure: r.pointMesure || "" }))
         .filter(p => !isNaN(p.x) && p.y !== null)
         .sort((a,b) => a.x - b.x);
-      if(pts.length) series.push({ titre: es.titre, pts });
+      if(pts.length) series.push({ titre, pts });
+    };
+    if(utiliseLogements){
+      logementsSuivis(es).forEach(lp => {
+        pousse(`${es.titre} (${lp.outilNumero||"?"}·${lp.logementNom||"?"})`, prels.filter(r => r.logementId === lp.logementId));
+      });
+    } else {
+      pousse(es.titre, prels);
     }
   });
-  series = series.map((s, i) => Object.assign(s, { couleur: CHART_COLORS[i % CHART_COLORS.length], dash: STROKE_DASH[i % STROKE_DASH.length] }));
+  return series;
+}
+
+function chartHTML(sc){
+  /* v4.11 — la Tendance trace QUELQUE SOIT le critère évalué : le battement (s'il est
+     actif), puis chaque critère supplémentaire (Ra, VE, critère libre). Un graphe par
+     critère — les échelles ne se mélangent pas — et à l'intérieur une courbe (une
+     couleur) par axe : les évolutions Inter et Exter se lisent séparément d'un coup
+     d'œil, avec leur ligne de tolérance propre. */
+  const groupes = [];
+  if(sc.battActif !== false){
+    groupes.push({
+      label: libelleDe(sc),
+      tolerance: parseFloat(limiteDe(sc)),
+      toleranceMini: NaN,
+      note: sc.emag1 ? "valeur tracée : max(Droite, Gauche)" : "",
+      series: seriesTendance(sc, r => valeurMesuree(sc, r))
+    });
+  }
+  criteresSupActifs(sc).forEach(c => {
+    const series = [];
+    axesDe(c).forEach(ax => {
+      seriesTendance(sc, r => {
+        const v = ((r.valeurs || {})[c.id] || {})[ax];
+        const n = parseFloat(v);
+        return isNaN(n) ? null : n;
+      }).forEach(s => series.push({
+        titre: s.titre + (ax !== "v" ? " — " + (AXE_LABELS[ax] || ax) : ""),
+        pts: s.pts
+      }));
+    });
+    groupes.push({
+      label: c.label || "critère",
+      tolerance: parseFloat(c.maxi),
+      toleranceMini: c.miniActif ? parseFloat(c.mini) : NaN,
+      note: "",
+      series
+    });
+  });
+
+  const sections = groupes.filter(g => g.series.length).map(g => tendanceChartHTML(sc, g));
+  if(!sections.length){
+    return `<div class="chart-block">
+      <h3>Tendance</h3>
+      <p class="chart-empty">Le graphique apparaîtra dès qu'un prélèvement sera mesuré (n° de pièce + valeur).</p>
+    </div>`;
+  }
+  return sections.join("");
+}
+
+function tendanceChartHTML(sc, g){
+  const series = g.series;
+  series.forEach((s, i) => Object.assign(s, { couleur: CHART_COLORS[i % CHART_COLORS.length], dash: STROKE_DASH[i % STROKE_DASH.length] }));
   // une meme piece peut porter plusieurs points de mesure (ex. Inter/Exter, Droite/Gauche
   // hors EMAG1) : chaque point de mesure recoit une couleur fixe et coherente sur tout le
   // graphique (pas seulement au sein d'une piece), pour les identifier au premier coup
@@ -5063,14 +5112,8 @@ function chartHTML(sc){
     }
   }));
 
-  if(!series.length){
-    return `<div class="chart-block">
-      <h3>Tendance — ${escapeAttr(libelleDe(sc))}</h3>
-      <p class="chart-empty">Le graphique apparaîtra dès qu'un prélèvement sera mesuré (n° de pièce + valeur).</p>
-    </div>`;
-  }
-
-  const limite = parseFloat(limiteDe(sc));
+  const limite = g.tolerance, mini = g.toleranceMini;
+  const bornes = [limite, mini].filter(v => !isNaN(v));
   const charnieresSc = sc.outils.flatMap(o => o.logements.map(l => parseFloat(l.charniere))).filter(v => !isNaN(v));
   const charniere = charnieresSc.length ? Math.max(...charnieresSc) : NaN;
   const allX = series.flatMap(s => s.pts.map(p => p.x));
@@ -5078,7 +5121,7 @@ function chartHTML(sc){
   // +8 % a droite (v4.6) : le dernier point (souvent le plus haut n° de piece, ou la
   // charniere elle-meme) tombait exactement sur le bord — colle au cadre, moitie coupe.
   let xMax = Math.max(...allX, isNaN(charniere) ? 0 : charniere) * 1.08 || 1;
-  let yMax = Math.max(...allY, isNaN(limite) ? 0 : limite) * 1.18 || 1;
+  let yMax = Math.max(...allY, ...bornes) * 1.18 || 1;
 
   const W = 720, H = 250, ml = 58, mr = 14, mt = 12, mb = 38;
   const iw = W - ml - mr, ih = H - mt - mb;
@@ -5098,12 +5141,15 @@ function chartHTML(sc){
     ticksX += `<text x="${xx.toFixed(1)}" y="${H-mb+18}" text-anchor="middle" font-size="11" fill="var(--ink-faint)" font-family="var(--font-mono)">${Math.round(v)}</text>`;
   }
 
-  let tolLine = "";
-  if(!isNaN(limite) && limite <= yMax){
-    const yl = Y(limite);
-    tolLine = `<line x1="${ml}" y1="${yl.toFixed(1)}" x2="${W-mr}" y2="${yl.toFixed(1)}" stroke="var(--red)" stroke-width="2" stroke-dasharray="7 5"/>
-      <text x="${W-mr}" y="${(yl-7).toFixed(1)}" text-anchor="end" font-size="11" font-weight="600" fill="var(--red)" font-family="var(--font-mono)">tolérance ${fmt(limite, dec)}</text>`;
-  }
+  const lignesBornes = bornes.map((v, i) => {
+    if(isNaN(v) || v > yMax) return "";
+    const yl = Y(v);
+    const estMaxi = i === 0;
+    const couleur = estMaxi ? "var(--red)" : "var(--blue)";
+    const etiquette = estMaxi ? `tolérance ${fmt(v, dec)}` : `min ${fmt(v, dec)}`;
+    return `<line x1="${ml}" y1="${yl.toFixed(1)}" x2="${W-mr}" y2="${yl.toFixed(1)}" stroke="${couleur}" stroke-width="2" stroke-dasharray="7 5"/>
+      <text x="${W-mr}" y="${(yl-7).toFixed(1)}" text-anchor="end" font-size="11" font-weight="600" fill="${couleur}" font-family="var(--font-mono)">${etiquette}</text>`;
+  }).join("");
 
   const paths = series.map(s => {
     const d = s.pts.map(p => `${X(p.x).toFixed(1)},${Y(p.y).toFixed(1)}`).join(" ");
@@ -5126,22 +5172,24 @@ function chartHTML(sc){
   }).join("");
   const legend = series.map(s =>
     `<span>${dashSwatch(s.couleur, s.dash)}${escapeAttr(s.titre)}</span>`
-  ).join("") + (isNaN(limite) ? "" : `<span><i class="tol"></i>Limite ${escapeAttr(libelleDe(sc))}</span>`)
-    + (sc.emag1 ? `<span style="color:var(--ink-faint);">valeur tracée : max(Droite, Gauche)</span>` : "")
+  ).join("")
+    + (isNaN(limite) ? "" : `<span><i class="tol"></i>Limite ${escapeAttr(g.label)}</span>`)
+    + (isNaN(mini) ? "" : `<span>${dashSwatch("var(--blue)", "7 5")}Min</span>`)
+    + (g.note ? `<span style="color:var(--ink-faint);">${escapeAttr(g.note)}</span>` : "")
     + legendPointsMesure;
 
   return `
     <div class="chart-block">
-      <h3>Tendance — ${escapeAttr(libelleDe(sc))} en fonction du n° de pièce</h3>
+      <h3>Tendance — ${escapeAttr(g.label)} en fonction du n° de pièce</h3>
       <svg class="chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img"
-           aria-label="Évolution de ${escapeAttr(libelleDe(sc))} au fil des pièces produites, par essai">
+           aria-label="Évolution de ${escapeAttr(g.label)} au fil des pièces produites, par essai">
         ${grid}
         <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt+ih}" stroke="var(--ink-faint)" stroke-width="1"/>
         <line x1="${ml}" y1="${mt+ih}" x2="${W-mr}" y2="${mt+ih}" stroke="var(--ink-faint)" stroke-width="1"/>
-        ${ticksY}${ticksX}${tolLine}${paths}
+        ${ticksY}${ticksX}${lignesBornes}${paths}
         <text x="${ml+iw/2}" y="${H-4}" text-anchor="middle" font-size="11.5" fill="var(--ink-soft)">N° de pièce</text>
         <text x="14" y="${mt+ih/2}" text-anchor="middle" font-size="11.5" fill="var(--ink-soft)"
-              transform="rotate(-90 14 ${mt+ih/2})">${escapeAttr(libelleDe(sc))}</text>
+              transform="rotate(-90 14 ${mt+ih/2})">${escapeAttr(g.label)}</text>
       </svg>
       <div class="chart-legend">${legend}</div>
     </div>
@@ -8978,6 +9026,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.11.1", date:"22/09/2026", points:[
+    "<b>La Tendance trace tout critère évalué.</b> Le graphique ne se limitait au battement : désormais chaque critère suivi — Ra, VE, critère libre — a son propre graphe d'évolution en fonction du n° de pièce, avec sa ligne de tolérance (et sa borne mini si activée). Quand un critère porte deux mesures (Ra Inter / Ra Exter), deux courbes de couleurs distinctes tracent leurs évolutions côte à côte."
+  ]},
   { version:"4.11.0", date:"22/09/2026", points:[
     "<b>On ne suit que ce qu'on veut suivre.</b> Dans chaque essai, les puces « Conditions de l'essai » portent désormais une croix : <b>✕ = ne plus suivre ce logement dans cet essai</b> (il reste dans le scénario, re-suivable à tout moment via « + suivre un logement »). Fini de remplir des colonnes pour les outils qui ont déjà atteint leur charnière — la progression, le tableau, l'atelier et les rapports ne montrent plus que les logements cochés."
   ]},

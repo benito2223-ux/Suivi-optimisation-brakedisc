@@ -5,6 +5,17 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.11.1] — 2026-09-22
+
+### Modifié — la Tendance trace tout critère évalué
+Le graphique de tendance ne se limitait au battement : un essai jugé sur le Ra
+se retrouvait sans courbe. Désormais chaque critère suivi a son propre graphe
+« Tendance — {critère} en fonction du n° de pièce », avec sa ligne de tolérance
+et sa borne mini si activée. Quand un critère porte plusieurs mesures (Ra
+Inter / Ra Exter), chaque axe a sa courbe de couleur distincte — les évolutions
+se comparent d'un coup d'œil. Le battement garde son graphe quand il est actif ;
+les échelles ne se mélangent jamais entre critères.
+
 ## [4.11.0] — 2026-09-22
 
 ### Ajouté — on ne suit que ce qu'on veut suivre (sélection par essai)
