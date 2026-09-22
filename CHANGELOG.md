@@ -5,6 +5,33 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.10.0] — 2026-09-22
+
+Le travail à deux passe en fusion automatique. Aucun changement de format.
+
+### Modifié — les conflits de synchro fusionnent au lieu de s'arbitrer à la main
+Avant : « le cloud et ce poste ont changé — prendre le cloud ou déposer ma
+version ? » (choix binaire, tout l'un ou tout l'autre). Désormais : **fusion
+automatique essai par essai**, avec les règles déjà éprouvées par l'import
+« Fusionner » — un essai présent seulement chez l'un est ajouté ; un même essai
+modifié des deux côtés voit la version la plus récente gagner ; les réglages du
+scénario (tolérances, critères, outils, conditions de coupe) restent à la version
+locale. Le rapport de fusion détaille le résultat et liste les rares conflits
+vrais (modifiés à la même seconde) à vérifier. La version du cloud remplacée
+part à l'archive (20 versions), le résultat fusionné repart au cloud au cycle
+suivant — les deux postes convergent sans geste.
+
+### Ajouté — le journal de synchro, annoncé à l'ouverture
+Chaque fusion/dépôt embarque une note dans le suivi (« fusion après le dépôt de
+Matis : 3 essais ajoutés, 1 mis à jour, 0 conflit »). À l'ouverture, si l'autre
+poste a déposé depuis votre dernière visite, l'outil le dit avant tout : qui,
+quand, et le détail. Vos données sont déjà à jour quand le message s'affiche.
+
+### Ajouté — traçabilité « modifié par »
+Chaque essai porte désormais, à côté de son horodatage de modification, le nom
+(ou le compte) de qui l'a touché — c'est ce qui alimente les messages et rend
+l'arbitrage des fusions lisible.
+
 ## [4.9.1] — 2026-09-22
 
 ### Ajouté — heure de début d'essai

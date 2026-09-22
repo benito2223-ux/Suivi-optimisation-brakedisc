@@ -1789,7 +1789,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.9.1";
+const TOOL_VERSION = "4.10.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -2465,6 +2465,11 @@ function normaliserSpecsUsine(s){
   const nb = parseFloat(s.battement), nv = parseFloat(s.ve);
   return { battement: isNaN(nb) ? 0.04 : nb, ve: isNaN(nv) ? 0.01 : nv };
 }
+/* v4.10 — note de synchro : le bilan de la dernière fusion/dépôt, embarqué dans le suivi.
+   L'autre poste le lit à sa prochaine ouverture (« Matis a fusionné : 3 essais ajoutés... »).
+   Même règle que specsUsine : déclaré AVANT loadAll(), qui est protégé par un try/catch
+   silencieux (voir le commentaire de specsUsine). */
+let synchroNote = null;
 loadAll();
 recomputeCycles();
 
@@ -2692,6 +2697,7 @@ function loadAll(){
         backlog = (parsed.backlog || []).map(normalizeBacklogItem);
         revision = parsed.revision || 0;
         specsUsine = normaliserSpecsUsine(parsed.specsUsine);
+        synchroNote = parsed.synchroNote || null;
         const l = lignes.find(x => x.id === parsed.activeLigneId) || lignes[0];
         activeLigneId = l.id;
         const r = l.references.find(x => x.id === parsed.activeReferenceId) || l.references[0];
@@ -2789,6 +2795,7 @@ function appliquerArbre(source){
   projets = migre ? migre.projets : [];
   responsables = migre ? migre.responsables : [];
   specsUsine = normaliserSpecsUsine(source.specsUsine);
+  synchroNote = source.synchroNote || null;
   if(!lignes.length) lignes = defaultLignes();
   projets.forEach(purgerTagsMorts);
   activeProjetId = projets.find(x => x.id === source.activeProjetId) ? source.activeProjetId : null;
@@ -2830,7 +2837,7 @@ function payloadSuivi(){
   // format 8 (v4.2) : `lignes` reste la racine, exactement comme les formats 5 et 7 -- une
   // version anterieure a la v4 lit ce fichier normalement, seuls `projets` et `responsables`
   // lui sont invisibles (elle ne les connait pas, elle ne les cherche pas).
-  return JSON.stringify({ format:8, lignes, projets, activeProjetId, responsables, backlog, revision, specsUsine, activeLigneId, activeReferenceId, activeOpId, activeScenarioId: activeId });
+  return JSON.stringify({ format:8, lignes, projets, activeProjetId, responsables, backlog, revision, specsUsine, synchroNote, activeLigneId, activeReferenceId, activeOpId, activeScenarioId: activeId });
 }
 
 /* Ce qui pese vraiment, nomme, pour que l'utilisateur puisse agir plutot que subir. */
@@ -3085,7 +3092,7 @@ const BACKUP_KEY = STORAGE_KEY + "_backup";
 function backupSnapshot(label){
   syncActiveOp();
   try{
-    localStorage.setItem(BACKUP_KEY, JSON.stringify({ savedAt: new Date().toISOString(), label, lignes, projets, activeProjetId, responsables, backlog, revision, specsUsine }));
+    localStorage.setItem(BACKUP_KEY, JSON.stringify({ savedAt: new Date().toISOString(), label, lignes, projets, activeProjetId, responsables, backlog, revision, specsUsine, synchroNote }));
   }catch(e){}
 }
 function hasBackup(){
@@ -3102,6 +3109,7 @@ function restoreBackup(){
     backlog = (snap.backlog || []).map(normalizeBacklogItem);
     revision = snap.revision || 0;
     specsUsine = normaliserSpecsUsine(snap.specsUsine);
+    synchroNote = snap.synchroNote || null;
     activeId = data[0] ? data[0].id : null;
     try{ localStorage.removeItem(BACKUP_KEY); }catch(e){}
     recomputeCycles();
@@ -3865,8 +3873,9 @@ function appliquerImport(mode){
     activeProjetId = projets.find(x => x.id === parsed.activeProjetId) ? parsed.activeProjetId : null;
     backlog = nouveauBacklog;
     revision = Math.max(revision, revisionEntrante || 0);
-    // le fichier reçu fait autorité : ses specs usine remplacent les locales (défaut si absentes)
+    // le fichier reçu fait autorité : ses specs usine et sa note de synchro remplacent les locales
     specsUsine = normaliserSpecsUsine(parsed.specsUsine);
+    synchroNote = parsed.synchroNote || null;
   }
   projets.forEach(purgerTagsMorts);
 
@@ -3899,6 +3908,7 @@ function appliquerImport(mode){
   } else {
     fermerPanneaux();
   }
+  return bilan || null;
 }
 
 function fmt(n, dec){
@@ -8354,7 +8364,11 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    ecriture (champ d'essai ou de prelevement), a la creation, et a l'ajout/suppression de
    prelevements, photos ou releves Marposs. */
 function toucherEssai(es){
-  if(es) es.modifieLe = new Date().toISOString();
+  if(es){
+    es.modifieLe = new Date().toISOString();
+    // v4.10 : qui a touché — pour le journal de synchro et l'arbitrage lisible des fusions
+    es.modifiePar = auteurNom || ((typeof cloudSession !== "undefined" && cloudSession) ? cloudSession.email : "") || "";
+  }
 }
 
 /* v4.9 — champs des critères supplémentaires (config du bloc Essais ET cellules des
@@ -8900,6 +8914,11 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.10.0", date:"22/09/2026", points:[
+    "<b>Le travail à deux fusionne tout seul.</b> Quand vous avez saisi tous les deux pendant que l'autre déposait, l'outil <b>fusionne automatiquement</b> essai par essai — le plus récent gagne pour un même essai, les essais de chacun s'ajoutent, les réglages du scénario restent à la version locale. Fini le choix « prendre le cloud ou écraser » : le rapport de fusion détaille ce qui a été ajouté, mis à jour, conservé, et liste les rares conflits à vérifier.",
+    "<b>Un message à l'ouverture.</b> Si Matis a synchronisé pendant votre absence, l'outil vous le dit en ouvrant : qui a déposé, quand, et le détail (« 3 essais ajoutés, 1 mis à jour »). Plus personne ne découvre un changement en tombant dessus.",
+    "<b>Traçabilité.</b> Chaque essai porte maintenant <i>qui</i> l'a modifié en plus de <i>quand</i> — c'est ce qui alimente les messages et l'arbitrage des fusions."
+  ]},
   { version:"4.9.1", date:"22/09/2026", points:[
     "<b>Heure de début d'essai.</b> L'essai avait une heure de fin mais pas de début : le champ est là, à côté de « Fin d'essai ». Il apparaît dans le rapport (« 22/09/2026 · 08:00 → 09:30 ») et dans l'export CSV. Le choix Matin / Après-midi / Nuit reste ce qu'il a toujours été : l'<b>équipe</b> (poste), utilisée par la comparaison de dispersion entre équipes.",
     "<b>Fenêtre Marposs pré-remplie.</b> Dès que l'heure de début et l'heure de fin de l'essai sont saisies, la fenêtre horaire du suivi Marposs se remplit avec — modifiable ensuite séparément, la machine contrôlant toute la journée."
@@ -9494,9 +9513,11 @@ const CLOUD_URL  = "https://cxjfyaorkkxemjnollnj.supabase.co";
 const CLOUD_KEY  = "sb_publishable_TQySmct-8qg3qMiS2WodbA_gQCcPp9Z";
 const CLOUD_SESSION_KEY = STORAGE_KEY + "_cloud_session";
 const CLOUD_STAMP_KEY   = STORAGE_KEY + "_cloud_stamp";
+const CLOUD_VU_KEY      = STORAGE_KEY + "_cloud_vu";
 
 let cloudSession = null;   // {access_token, refresh_token, expires_at, email}
 let cloudStamp = null;     // modifie_le du cloud tel que CE poste le connait
+let cloudVu = null;        // dernier modifie_le annoncé/ vu (pour le journal à l'ouverture)
 let cloudSale = false;     // des saisies locales pas encore déposées
 let cloudEnCours = false;  // une synchro est en route
 let cloudPause = false;    // neutralise le hook pendant l'application d'un tirage
@@ -9507,6 +9528,7 @@ let cloudTimerPush = null, cloudTimerFocus = null, cloudDernierFocus = 0;
 
 try{ cloudSession = JSON.parse(localStorage.getItem(CLOUD_SESSION_KEY) || "null"); }catch(e){}
 try{ cloudStamp = localStorage.getItem(CLOUD_STAMP_KEY) || null; }catch(e){}
+try{ cloudVu = localStorage.getItem(CLOUD_VU_KEY) || null; }catch(e){}
 
 function cloudSauverSession(){
   try{
@@ -9516,6 +9538,23 @@ function cloudSauverSession(){
 }
 function cloudSauverStamp(){
   try{ if(cloudStamp) localStorage.setItem(CLOUD_STAMP_KEY, cloudStamp); }catch(e){}
+}
+/* journal : la dernière version du cloud que CE poste a vue — une version plus récente
+   déposée par l'autre poste et jamais vue déclenche le message à l'ouverture */
+function cloudMarquerVu(){
+  if(!cloudStamp) return;
+  cloudVu = cloudStamp;
+  try{ localStorage.setItem(CLOUD_VU_KEY, cloudVu); }catch(e){}
+}
+function cloudMonIdentite(){
+  return auteurNom || (cloudSession && cloudSession.email) || "";
+}
+function cloudAnnoncerVersion(row){
+  const qui = row.modifie_par || "L'autre poste";
+  let txt = qui + " a mis à jour le suivi partagé (déposé le " + new Date(row.modifie_le).toLocaleString("fr-FR") + ").\n\nVos données locales viennent d'être mises à jour avec cette version.";
+  const note = row.donnees && row.donnees.synchroNote;
+  if(note && note.texte) txt += "\n\nDétail : " + note.texte + "\n(par " + (note.par || "?") + ")";
+  dialogueAlerte(txt, "Suivi partagé — mise à jour reçue");
 }
 
 /* ---- transport : fetch avec délai max (un proxy qui hang ne doit pas bloquer l'outil) ---- */
@@ -9706,24 +9745,37 @@ async function cloudPremierContact(row){
   }
 }
 
-/* le cloud a bougé pendant que ce poste avait des saisies non déposées */
+/* le cloud a bougé pendant que ce poste avait des saisies non déposées : depuis la
+   v4.10, FUSION AUTOMATIQUE essai par essai (le plus récent gagne pour un même essai,
+   les essais de chacun s'ajoutent, les réglages du scénario restent à la version
+   locale) — plus de choix binaire « prendre / écraser ». Le bilan s'affiche dans le
+   panneau de fusion, la version du cloud remplacée part à l'archive, et le résultat
+   fusionné repart au cloud au prochain cycle avec une note embarquée que l'autre
+   poste lira à sa prochaine ouverture. */
 async function cloudConflit(row){
   const quand = new Date(row.modifie_le).toLocaleString("fr-FR");
-  const par = row.modifie_par || "un autre poste";
-  const ok = await dialogueConfirmer(
-    "Le cloud a reçu une version plus récente (" + quand + ", par " + par + ") et ce poste a des saisies non envoyées.\n\n" +
-    "Prendre la version du cloud ? Votre version locale sera téléchargée en secours avant. Sinon, on vous proposera de déposer la vôtre.",
-    { titre:"Synchronisation — modifié des deux côtés", okLabel:"Prendre le cloud" });
-  if(ok){ await cloudAdopter(row, false); return; }
-  const ok2 = await dialogueConfirmer(
-    "Déposer votre version locale à la place ? Celle du cloud reste archivée dans l'historique.",
-    { titre:"Déposer ma version ?", danger:true, okLabel:"Déposer ma version" });
-  if(ok2){
-    try{ await cloudEcrireEtat(); cloudErreur = ""; }
-    catch(e){ cloudErreur = e.message || "dépôt impossible"; }
-  } else {
-    cloudErreur = "conflit en attente de votre décision (Synchroniser dans Options)";
-  }
+  const par = row.modifie_par || "l'autre poste";
+  try{ await cloudArchiverLeCloudActuel(row); }catch(e){}
+  const prep = preparerImportDepuis(row.donnees);
+  if(!prep){ cloudErreur = "contenu cloud illisible"; cloudRenduPastille(); return; }
+  importEnAttente = Object.assign({ parsed: row.donnees }, prep);
+  const bilan = appliquerImport("fusion") || { essaisAjoutes:0, essaisMaj:0, essaisConserves:0, conflits:[] };
+  // dans le flux import, le panneau de bilan est déjà ouvert par le choix Fusionner ;
+  // ici il faut l'ouvrir soi-même — c'est le « message » qui raconte la fusion
+  if(bilan) ouvrirPanneau("importPanel");
+  synchroNote = {
+    par: auteurNom || (cloudSession && cloudSession.email) || "?",
+    quand: new Date().toISOString(),
+    texte: "fusion automatique après le dépôt de " + par + " (" + quand + ") : " +
+      bilan.essaisAjoutes + " essai(s) ajouté(s), " + bilan.essaisMaj + " mis à jour, " +
+      (bilan.essaisConserves || 0) + " conservé(s)" +
+      ((bilan.conflits && bilan.conflits.length) ? ", " + bilan.conflits.length + " conflit(s) à vérifier (rapport de fusion ci-dessous)" : "")
+  };
+  saveData(); // repersiste la note ; le dépôt du fusionné part au prochain cycle (4 s)
+  cloudStamp = row.modifie_le; // version du cloud vue et fusionnée
+  cloudSale = true;
+  cloudSauverStamp();
+  cloudDernierOK = new Date();
 }
 
 /* ---- le moteur : un aller-retour qui décrit tout ce qui peut se rencontrer ---- */
@@ -9751,8 +9803,15 @@ async function cloudSync(raison){
       return;
     }
     if(row.modifie_le !== cloudStamp){
-      if(cloudSale) await cloudConflit(row);
-      else await cloudAdopter(row, true);   // tirage silencieux — le cas nominal
+      if(cloudSale){
+        await cloudConflit(row);
+      } else {
+        // tirage silencieux — le cas nominal. Si la version vient de l'autre poste et
+        // n'avait jamais été vue : message à l'ouverture (le journal de synchro).
+        const annonce = (row.modifie_le !== cloudVu) && ((row.modifie_par || "") !== cloudMonIdentite());
+        await cloudAdopter(row, true);
+        if(annonce) cloudAnnoncerVersion(row);
+      }
     } else if(cloudSale){
       await cloudEcrireEtat();               // dépôt automatique après saisie
     } else {
@@ -9763,6 +9822,7 @@ async function cloudSync(raison){
     cloudErreur = (e && e.name === "AbortError") ? "cloud injoignable (délai dépassé)" : ((e && e.message) || "cloud injoignable");
   }finally{
     cloudEnCours = false;
+    cloudMarquerVu();
     cloudRenduPastille();
     const opt = document.getElementById("optionsPanel");
     if(opt && !opt.hidden) cloudRenduOptions();
