@@ -1518,6 +1518,12 @@ body.atelier-on{overflow:hidden;}
       </div>
     </div>
 
+    <div class="opt-section">Cloud — suivi partagé</div>
+
+    <div class="opt-field on" style="padding-left:0;" id="cloudZone">
+      <span class="opt-note">Module de synchro en cours de chargement…</span>
+    </div>
+
     <div class="panel-actions"><button class="primary" id="optionsClose">Fermer</button></div>
   </div>
 
@@ -1761,6 +1767,7 @@ body.atelier-on{overflow:hidden;}
   <div class="foot">
     <span id="footToolName">Suivi_optimisation_SPK</span>
     <span id="footPoids" class="foot-poids" title="Poids du fichier de suivi dans la mémoire de ce navigateur (environ 5 Mo disponibles). Cliquer pour le détail et alléger si besoin." role="status"></span>
+    <span id="footCloud" class="foot-poids" role="status" hidden style="cursor:pointer;"></span>
     <span class="foot-auteur">Conception et développement : <b>Benjamin Rouquette</b> — © 2026, tous droits réservés</span>
     <span>Confidentiel — usage interne au projet</span>
     <span>bilan_economique.html</span>
@@ -1768,7 +1775,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.7.1";
+const TOOL_VERSION = "4.8.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -2897,6 +2904,7 @@ function saveData(){
         renderPoidsFooter(payload.length);
         unexported = true;
         updateSaveUI();
+        if(window.cloudApresSauvegarde) cloudApresSauvegarde();
         return;
       }catch(e2){ /* le mur est bien la */ }
     }
@@ -2904,6 +2912,7 @@ function saveData(){
   }
   unexported = true;
   updateSaveUI();
+  if(window.cloudApresSauvegarde) cloudApresSauvegarde();
 }
 
 /* bandeau permanent : une pastille ne se survole pas quand on saisit devant une machine */
@@ -3615,6 +3624,37 @@ function bilanFusionHTML(b){
   return `<ul class="fusion-bilan">${lignes}</ul>${conflits}`;
 }
 
+/* Reconnaît un export de l'outil (format 8 et tous les formats antérieurs) et renvoie
+   l'arbre prêt à être appliqué — ou null (message déjà affiché). Utilisé par l'import
+   fichier ET par la synchro cloud : même donnée, même porte d'entrée, mêmes migrations. */
+function preparerImportDepuis(parsed){
+  let nouvellesLignes, nouveauxProjets, nouveauxResponsables, nouveauBacklog, revisionEntrante;
+  const migreImport = migrerArbre(parsed);
+  if(migreImport){
+    nouvellesLignes = migreImport.lignes;
+    nouveauxProjets = migreImport.projets;
+    nouveauxResponsables = migreImport.responsables;
+    nouveauBacklog = (parsed.backlog || []).map(normalizeBacklogItem);
+    revisionEntrante = parsed.revision || 0;
+  } else {
+    const scenarios = Array.isArray(parsed) ? parsed : parsed.scenarios;
+    if(!Array.isArray(scenarios) || !scenarios.length){
+      dialogueAlerte("Aucune donnée reconnue dans ce contenu.", "Import impossible");
+      return null;
+    }
+    const op = { id: uid("o"), nom: "OP10", ordre: 10,
+      config: Object.assign({}, defaultConfig, parsed.config || {}),
+      scenarios: scenarios.map(normalizeScenario) };
+    const ref = { id: uid("r"), nom: "DV 356x26 RPI", ops: [op] };
+    nouvellesLignes = [{ id: uid("l"), nom: "EMAG 1", references: [ref] }];
+    nouveauxProjets = [];
+    nouveauxResponsables = [];
+    nouveauBacklog = [];
+    revisionEntrante = 0;
+  }
+  return { nouvellesLignes, nouveauxProjets, nouveauxResponsables, nouveauBacklog, revisionEntrante };
+}
+
 function importData(file){
   const reader = new FileReader();
   reader.onload = () => {
@@ -3626,36 +3666,12 @@ function importData(file){
       return;
     }
 
-    let nouvellesLignes, nouveauxProjets, nouveauxResponsables, nouveauBacklog, revisionEntrante;
-    const migreImport = migrerArbre(parsed);
-    if(migreImport){
-      // format 5, 6 ou 7 -- voir migrerArbre() pour le detail de chaque cas
-      nouvellesLignes = migreImport.lignes;
-      nouveauxProjets = migreImport.projets;
-      nouveauxResponsables = migreImport.responsables;
-      nouveauBacklog = (parsed.backlog || []).map(normalizeBacklogItem);
-      revisionEntrante = parsed.revision || 0;
-    } else {
-      // ancien format (une seule reference : un tableau de scenarios + une config)
-      const scenarios = Array.isArray(parsed) ? parsed : parsed.scenarios;
-      if(!Array.isArray(scenarios) || !scenarios.length){
-        dialogueAlerte("Aucune donnée reconnue dans ce fichier.", "Import impossible");
-        return;
-      }
-      const op = { id: uid("o"), nom: "OP10", ordre: 10,
-        config: Object.assign({}, defaultConfig, parsed.config || {}),
-        scenarios: scenarios.map(normalizeScenario) };
-      const ref = { id: uid("r"), nom: "DV 356x26 RPI", ops: [op] };
-      nouvellesLignes = [{ id: uid("l"), nom: "EMAG 1", references: [ref] }];
-      nouveauxProjets = [];
-      nouveauxResponsables = [];
-      nouveauBacklog = [];
-      revisionEntrante = 0;
-    }
+    const prep = preparerImportDepuis(parsed);
+    if(!prep) return;
 
     // Le choix fusionner/remplacer se fait dans un panneau : c'est une decision a
     // consequences, elle merite mieux qu'un confirm() ou "OK" voudrait dire "ecrase tout".
-    importEnAttente = { parsed, nouvellesLignes, nouveauxProjets, nouveauxResponsables, nouveauBacklog, revisionEntrante };
+    importEnAttente = Object.assign({ parsed }, prep);
     ouvrirChoixImport();
   };
   reader.readAsText(file);
@@ -8501,6 +8517,11 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.8.0", date:"22/09/2026", points:[
+    "<b>Le suivi se synchronise tout seul.</b> Fini les exports JSON envoyés par e-mail : connectez-vous dans <b>Options → Cloud</b> avec votre email, et chaque saisie repart seule quelques secondes après — les modifications de l'autre arrivent à l'ouverture de l'outil ou en revenant sur l'onglet. Une pastille ☁ en pied de page dit où on en est.",
+    "<b>Vos données ne se mélangent jamais en silence.</b> Au premier branchement, l'outil montre ce que contient le cloud et ce que contient le poste (nombre d'essais, date, auteur) et demande qui fait autorité — avec un export de secours téléchargé avant tout remplacement. Le dépôt initial dans un cloud vide reste un geste volontaire.",
+    "<b>Chaque poste garde sa copie locale.</b> Sans réseau (proxy d'usine, coupure), l'outil marche comme avant ; la synchro repart dès que la connexion revient. Le cloud garde aussi les 20 dernières versions du suivi — un retour arrière est toujours possible."
+  ]},
   { version:"4.7.0", date:"09/09/2026", points:[
     "<b>Options, réorganisé.</b> Le panneau est maintenant découpé par nature — <b>Mesure &amp; essais</b>, <b>Coûts</b>, <b>Équipe</b> — et chaque réglage porte son badge de portée (<b>OP</b>, <b>Référence</b>, <b>Ligne</b>, <b>Tous</b>) : on voit enfin pourquoi le volume annuel se règle ailleurs que la tolérance.",
     "<b>Le coût horaire se saisit dans Options.</b> Fini le renvoi vers l'icône ⚙ de l'onglet de ligne pour finir une configuration commencée dans Options : le champ est là, dans la section Coûts. Même donnée, deux portes d'entrée.",
@@ -9062,6 +9083,429 @@ verifierNouveautes();
 </script>
 
 <script>
+/* ============================================================
+   Cloud (v4.8) — synchro du suivi entre postes via Supabase
+   ------------------------------------------------------------
+   Le localStorage reste la copie de travail : l'outil marche hors ligne
+   comme avant, le cloud ne fait qu'ajouter la partage. Côté cloud, UNE
+   ligne `etat` (exactement le JSON d'export) + un historique glissant de
+   20 versions. Tirage au chargement / au retour sur l'onglet / toutes les
+   90 s ; dépôt automatique quelques secondes après chaque saisie.
+   Premier contact : jamais de mélange silencieux — l'outil demande qui
+   fait autorité, avec export de secours avant tout remplacement.
+   Client écrit à la main en fetch() : pas de SDK, le fichier unique et
+   l'usage hors ligne (clé USB, proxy d'usine) restent la règle.
+   ============================================================ */
+const CLOUD_URL  = "https://cxjfyaorkkxemjnollnj.supabase.co";
+const CLOUD_KEY  = "sb_publishable_TQySmct-8qg3qMiS2WodbA_gQCcPp9Z";
+const CLOUD_SESSION_KEY = STORAGE_KEY + "_cloud_session";
+const CLOUD_STAMP_KEY   = STORAGE_KEY + "_cloud_stamp";
+
+let cloudSession = null;   // {access_token, refresh_token, expires_at, email}
+let cloudStamp = null;     // modifie_le du cloud tel que CE poste le connait
+let cloudSale = false;     // des saisies locales pas encore déposées
+let cloudEnCours = false;  // une synchro est en route
+let cloudPause = false;    // neutralise le hook pendant l'application d'un tirage
+let cloudErreur = "";
+let cloudDernierOK = null; // dernier échange réussi
+let cloudInfo = { vide:null, modifie_le:null, modifie_par:null };
+let cloudTimerPush = null, cloudTimerFocus = null, cloudDernierFocus = 0;
+
+try{ cloudSession = JSON.parse(localStorage.getItem(CLOUD_SESSION_KEY) || "null"); }catch(e){}
+try{ cloudStamp = localStorage.getItem(CLOUD_STAMP_KEY) || null; }catch(e){}
+
+function cloudSauverSession(){
+  try{
+    if(cloudSession) localStorage.setItem(CLOUD_SESSION_KEY, JSON.stringify(cloudSession));
+    else localStorage.removeItem(CLOUD_SESSION_KEY);
+  }catch(e){}
+}
+function cloudSauverStamp(){
+  try{ if(cloudStamp) localStorage.setItem(CLOUD_STAMP_KEY, cloudStamp); }catch(e){}
+}
+
+/* ---- transport : fetch avec délai max (un proxy qui hang ne doit pas bloquer l'outil) ---- */
+function cloudFetch(url, opts, delai){
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), delai || 15000);
+  return fetch(url, Object.assign({}, opts, { signal: ctl.signal })).finally(() => clearTimeout(t));
+}
+function cloudEntetes(extra){
+  return Object.assign({
+    "apikey": CLOUD_KEY,
+    "Authorization": "Bearer " + (cloudSession ? cloudSession.access_token : CLOUD_KEY),
+    "Content-Type": "application/json"
+  }, extra || {});
+}
+
+/* ---- auth : email + mot de passe, session rafraîchie à la demande ---- */
+async function cloudRequeteAuth(grant, body){
+  const r = await cloudFetch(CLOUD_URL + "/auth/v1/token?grant_type=" + grant, {
+    method: "POST",
+    headers: { "apikey": CLOUD_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  const j = await r.json().catch(() => ({}));
+  if(!r.ok){
+    const brut = j.error_description || j.msg || j.message || "connexion refusée";
+    throw new Error(/invalid login credentials/i.test(brut) ? "Email ou mot de passe incorrect." : brut);
+  }
+  return j;
+}
+async function cloudConnexion(email, motDePasse){
+  const j = await cloudRequeteAuth("password", { email, password: motDePasse });
+  cloudSession = {
+    access_token: j.access_token, refresh_token: j.refresh_token,
+    expires_at: Date.now() + (j.expires_in || 3600) * 1000,
+    email: (j.user && j.user.email) || email
+  };
+  cloudSauverSession();
+  cloudErreur = "";
+  cloudRenduOptions(); cloudRenduPastille();
+  cloudSync("connexion");
+}
+async function cloudRafraichirSession(){
+  if(!cloudSession || Date.now() < cloudSession.expires_at - 60000) return cloudSession ? true : false;
+  try{
+    const j = await cloudRequeteAuth("refresh_token", { refresh_token: cloudSession.refresh_token });
+    cloudSession.access_token = j.access_token;
+    cloudSession.refresh_token = j.refresh_token;
+    cloudSession.expires_at = Date.now() + (j.expires_in || 3600) * 1000;
+    cloudSauverSession();
+    return true;
+  }catch(e){
+    cloudSession = null; cloudSauverSession();
+    cloudErreur = "session expirée — reconnectez-vous dans Options";
+    cloudRenduOptions(); cloudRenduPastille();
+    return false;
+  }
+}
+async function cloudDeconnexion(){
+  try{ await cloudFetch(CLOUD_URL + "/auth/v1/logout", { method:"POST", headers: cloudEntetes() }, 5000); }catch(e){}
+  cloudSession = null; cloudSauverSession();
+  cloudErreur = "";
+  cloudRenduOptions(); cloudRenduPastille();
+}
+
+/* ---- lectures / écritures de l'état partagé ---- */
+async function cloudLireEtat(){
+  const r = await cloudFetch(CLOUD_URL + "/rest/v1/etat?id=eq.1&select=donnees,modifie_le,modifie_par", { headers: cloudEntetes() });
+  if(!r.ok) throw new Error("cloud injoignable (" + r.status + ")");
+  const j = await r.json();
+  return j[0] || null;
+}
+/* Dépose la version locale : archive l'ancienne (historique 20 versions), écrit la
+   nouvelle, retient le tampon horaire renvoyé par la base (jamais calculé côté client). */
+async function cloudEcrireEtat(){
+  syncActiveOp();
+  const donnees = JSON.parse(payloadSuivi());
+  const avant = await cloudLireEtat();
+  if(avant){
+    await cloudFetch(CLOUD_URL + "/rest/v1/etat_historique", {
+      method:"POST", headers: cloudEntetes({ "Prefer":"return=minimal" }),
+      body: JSON.stringify({ donnees: avant.donnees, sauve_par: avant.modifie_par || "" })
+    });
+  }
+  const corps = { id:1, donnees, modifie_par: auteurNom || (cloudSession && cloudSession.email) || "" };
+  let r = await cloudFetch(CLOUD_URL + "/rest/v1/etat?id=eq.1", {
+    method:"PATCH", headers: cloudEntetes({ "Prefer":"return=representation" }),
+    body: JSON.stringify(corps)
+  });
+  if(!r.ok) throw new Error("cloud injoignable (" + r.status + ")");
+  let j = await r.json();
+  if(!j.length){
+    r = await cloudFetch(CLOUD_URL + "/rest/v1/etat", {
+      method:"POST", headers: cloudEntetes({ "Prefer":"resolution=merge-duplicates,return=representation" }),
+      body: JSON.stringify(corps)
+    });
+    if(!r.ok) throw new Error("cloud injoignable (" + r.status + ")");
+    j = await r.json();
+  }
+  cloudStamp = j[0].modifie_le;
+  cloudSauverStamp();
+  cloudSale = false;
+  cloudDernierOK = new Date();
+  cloudInfo = { vide:false, modifie_le: cloudStamp, modifie_par: corps.modifie_par };
+}
+async function cloudArchiverLeCloudActuel(row){
+  await cloudFetch(CLOUD_URL + "/rest/v1/etat_historique", {
+    method:"POST", headers: cloudEntetes({ "Prefer":"return=minimal" }),
+    body: JSON.stringify({ donnees: row.donnees, sauve_par: row.modifie_par || "" })
+  });
+}
+
+/* ---- comptage d'essais, pour les résumés affichés avant décision ---- */
+function cloudCompterEssais(arbre){
+  return (arbre || []).reduce((n,l) => n + (l.references || []).reduce((m,r) => m + (r.ops || []).reduce((k,o) =>
+    k + (o.scenarios || []).reduce((x,s) => x + ((s.essais || []).length), 0), 0), 0), 0);
+}
+function cloudLocalEstExemple(){
+  try{
+    const l = lignes && lignes[0];
+    return !!l && (JSON.stringify(l).indexOf("[Exemple]") !== -1);
+  }catch(e){ return false; }
+}
+
+/* export de secours téléchargé AVANT tout remplacement des données locales */
+function cloudExportSecours(motif){
+  try{
+    const obj = JSON.parse(payloadSuivi());
+    obj.exporteLe = new Date().toISOString();
+    obj.exportePar = (auteurNom || "?") + " — secours avant " + motif;
+    const blob = new Blob([JSON.stringify(obj, null, 2)], { type:"application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const d = new Date();
+    const stamp = d.getFullYear() + String(d.getMonth()+1).padStart(2,"0") + String(d.getDate()).padStart(2,"0")
+                + "-" + String(d.getHours()).padStart(2,"0") + String(d.getMinutes()).padStart(2,"0");
+    a.href = url;
+    a.download = "SuiviOptimisation_secours_" + stamp + ".json";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }catch(e){}
+}
+
+/* applique la version du cloud au poste — le même chemin qu'un import « remplacer tout »,
+   avec son ↺ Restaurer et sa sauvegarde de sécurité ; silencieux = tirage de routine */
+async function cloudAdopter(row, silencieux){
+  const prep = preparerImportDepuis(row.donnees);
+  if(!prep){ cloudErreur = "contenu cloud illisible"; cloudRenduPastille(); return false; }
+  if(!silencieux) cloudExportSecours("la prise de la version du cloud");
+  const optionsOuvertes = !document.getElementById("optionsPanel").hidden;
+  cloudPause = true;
+  try{
+    importEnAttente = Object.assign({ parsed: row.donnees }, prep);
+    appliquerImport("remplace");
+  } finally { cloudPause = false; }
+  cloudStamp = row.modifie_le;
+  cloudSale = false;
+  cloudSauverStamp();
+  cloudDernierOK = new Date();
+  if(optionsOuvertes) ouvrirPanneau("optionsPanel");
+  return true;
+}
+
+/* premier contact avec un cloud déjà rempli : qui fait autorité ? Toujours demandé,
+   jamais tranché en silence — c'est la garde-fou « les données de Matis d'abord ». */
+async function cloudPremierContact(row){
+  const d = row.donnees || {};
+  const nCloud = cloudCompterEssais(d.lignes);
+  const quand = row.modifie_le ? new Date(row.modifie_le).toLocaleString("fr-FR") : "date inconnue";
+  const par = row.modifie_par || "inconnu";
+  const nLocal = cloudCompterEssais(lignes);
+  const ok = await dialogueConfirmer(
+    "Le cloud contient déjà un suivi : " + nCloud + " essai(s), dernière modification le " + quand + " par " + par + ".\n\n" +
+    "Votre version locale compte " + nLocal + " essai(s)" + (cloudLocalEstExemple() ? " et semble être le jeu d'exemple [Exemple]." : ".") + "\n\n" +
+    "Prendre la version du cloud sur ce poste ? Un export de secours de votre version locale sera téléchargé avant.",
+    { titre:"Cloud — ce poste et le cloud diffèrent", okLabel:"Prendre le cloud" });
+  if(ok){ await cloudAdopter(row, false); return; }
+  const ok2 = await dialogueConfirmer(
+    "Garder votre version locale et déposer celle-ci dans le cloud à la place ?\n\n" +
+    "La version actuellement dans le cloud ne est pas perdue : elle part dans l'historique (20 dernières versions gardées).",
+    { titre:"Déposer votre version à la place ?", danger:true, okLabel:"Déposer ma version" });
+  if(ok2){
+    try{ await cloudEcrireEtat(); cloudErreur = ""; }
+    catch(e){ cloudErreur = e.message || "dépôt impossible"; }
+  } else {
+    // on ne re-posera pas la question tant que le cloud n'a pas bougé
+    cloudStamp = row.modifie_le; cloudSauverStamp();
+  }
+}
+
+/* le cloud a bougé pendant que ce poste avait des saisies non déposées */
+async function cloudConflit(row){
+  const quand = new Date(row.modifie_le).toLocaleString("fr-FR");
+  const par = row.modifie_par || "un autre poste";
+  const ok = await dialogueConfirmer(
+    "Le cloud a reçu une version plus récente (" + quand + ", par " + par + ") et ce poste a des saisies non envoyées.\n\n" +
+    "Prendre la version du cloud ? Votre version locale sera téléchargée en secours avant. Sinon, on vous proposera de déposer la vôtre.",
+    { titre:"Synchronisation — modifié des deux côtés", okLabel:"Prendre le cloud" });
+  if(ok){ await cloudAdopter(row, false); return; }
+  const ok2 = await dialogueConfirmer(
+    "Déposer votre version locale à la place ? Celle du cloud reste archivée dans l'historique.",
+    { titre:"Déposer ma version ?", danger:true, okLabel:"Déposer ma version" });
+  if(ok2){
+    try{ await cloudEcrireEtat(); cloudErreur = ""; }
+    catch(e){ cloudErreur = e.message || "dépôt impossible"; }
+  } else {
+    cloudErreur = "conflit en attente de votre décision (Synchroniser dans Options)";
+  }
+}
+
+/* ---- le moteur : un aller-retour qui décrit tout ce qui peut se rencontrer ---- */
+async function cloudSync(raison){
+  if(!cloudSession || cloudEnCours) return;
+  if(!(await cloudRafraichirSession())) return;
+  cloudEnCours = true;
+  cloudRenduPastille();
+  try{
+    const row = await cloudLireEtat();
+    cloudInfo = row
+      ? { vide:false, modifie_le: row.modifie_le, modifie_par: row.modifie_par }
+      : { vide:true, modifie_le:null, modifie_par:null };
+
+    if(!row){
+      // cloud vide : rien à tirer. Le dépôt initial reste volontaire (bouton dans
+      // Options) — jamais un effet de bord d'une saisie, sinon le jeu d'exemple
+      // d'un poste partirait au cloud par accident.
+      cloudDernierOK = new Date();
+      cloudErreur = "";
+      return;
+    }
+    if(cloudStamp === null){
+      await cloudPremierContact(row);
+      return;
+    }
+    if(row.modifie_le !== cloudStamp){
+      if(cloudSale) await cloudConflit(row);
+      else await cloudAdopter(row, true);   // tirage silencieux — le cas nominal
+    } else if(cloudSale){
+      await cloudEcrireEtat();               // dépôt automatique après saisie
+    } else {
+      cloudDernierOK = new Date();
+    }
+    if(!cloudErreur) cloudErreur = "";
+  }catch(e){
+    cloudErreur = (e && e.name === "AbortError") ? "cloud injoignable (délai dépassé)" : ((e && e.message) || "cloud injoignable");
+  }finally{
+    cloudEnCours = false;
+    cloudRenduPastille();
+    const opt = document.getElementById("optionsPanel");
+    if(opt && !opt.hidden) cloudRenduOptions();
+  }
+}
+
+/* ---- déclencheurs ---- */
+/* appelé par saveData() à chaque saisie (voir hook dans le script principal) */
+function cloudApresSauvegarde(){
+  if(cloudPause || !cloudSession) return;
+  cloudSale = true;
+  cloudRenduPastille();
+  clearTimeout(cloudTimerPush);
+  cloudTimerPush = setTimeout(() => cloudSync("saisie"), 4000);
+}
+function cloudAuFocus(){
+  if(!cloudSession) return;
+  const t = Date.now();
+  if(t - cloudDernierFocus < 10000) return;
+  cloudDernierFocus = t;
+  clearTimeout(cloudTimerFocus);
+  cloudTimerFocus = setTimeout(() => cloudSync("focus"), 800);
+}
+
+/* dépôt initial volontaire (bouton Options, cloud vide) */
+async function cloudDeposerManuel(){
+  if(!cloudSession) return;
+  const nLocal = cloudCompterEssais(lignes);
+  const ok = await dialogueConfirmer(
+    "Déposer ce suivi dans le cloud ?\n\nIl compte " + nLocal + " essai(s). Il deviendra la version partagée que l'autre poste recevra à sa connexion." +
+    (cloudLocalEstExemple() ? "\n\nATTENTION : cette version semble être le jeu d'exemple [Exemple] — ne pas la déposer si le vrai suivi existe déjà sur un autre poste." : ""),
+    { titre:"Déposer ce suivi dans le cloud ?", danger: cloudLocalEstExemple(), okLabel:"Déposer" });
+  if(!ok) return;
+  cloudEnCours = true; cloudRenduPastille();
+  try{ await cloudEcrireEtat(); cloudErreur = ""; }
+  catch(e){ cloudErreur = e.message || "dépôt impossible"; }
+  cloudEnCours = false;
+  cloudRenduPastille(); cloudRenduOptions();
+}
+
+/* ---- pastille de pied de page ---- */
+function cloudRenduPastille(){
+  const el = document.getElementById("footCloud");
+  if(!el) return;
+  if(!cloudSession){ el.hidden = true; return; }
+  el.hidden = false;
+  el.classList.remove("alerte","critique");
+  let txt = "☁ à jour", title = "Synchro cloud du suivi";
+  if(cloudEnCours){ txt = "☁ synchro…"; }
+  else if(cloudErreur){
+    if(/conflit/.test(cloudErreur)){ txt = "☁ conflit"; el.classList.add("alerte"); }
+    else if(/expirée/.test(cloudErreur)){ txt = "☁ déconnecté"; el.classList.add("critique"); }
+    else { txt = "☁ hors ligne"; el.classList.add("alerte"); }
+    title += " — " + cloudErreur;
+  }
+  else if(cloudStamp === null && cloudInfo.vide === false){ txt = "☁ à régler"; el.classList.add("alerte"); title += " — première synchronisation à confirmer"; }
+  else if(cloudSale){ txt = "☁ en attente d'envoi"; }
+  else if(cloudInfo.vide){ txt = "☁ vide — dépôt à faire"; el.classList.add("alerte"); title += " — le cloud est vide : déposez ce suivi depuis Options"; }
+  if(cloudDernierOK && txt === "☁ à jour") title += " — dernière synchro " + cloudDernierOK.toLocaleTimeString("fr-FR");
+  el.textContent = txt;
+  el.title = title;
+}
+
+/* ---- zone Cloud du panneau Options ---- */
+function cloudRenduOptions(){
+  const z = document.getElementById("cloudZone");
+  if(!z) return;
+  if(!cloudSession){
+    z.innerHTML = `
+      <label>Synchro entre postes <i class="opt-scope">Tous</i></label>
+      <span class="opt-note" style="margin-bottom:10px; display:block;">Partage automatique du suivi entre vous et Matis : chaque saisie repart seule quelques secondes après, les modifications de l'autre arrivent à l'ouverture de l'outil ou en revenant sur l'onglet. Chaque poste garde sa copie locale — l'outil continue de marcher sans réseau.</span>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+        <input type="email" id="cloudEmail" placeholder="email" autocomplete="username" style="flex:1 1 170px; min-width:150px; text-align:left;">
+        <input type="password" id="cloudMdp" placeholder="mot de passe" autocomplete="current-password" style="flex:1 1 130px; min-width:120px; text-align:left;">
+        <button class="primary" id="cloudBtnConnexion">Se connecter</button>
+      </div>
+      <div class="opt-statut ko" id="cloudErreurUI" ${cloudErreur ? "" : "hidden"} style="margin-top:8px;"></div>`;
+    const btn = z.querySelector("#cloudBtnConnexion");
+    btn.addEventListener("click", async () => {
+      const email = z.querySelector("#cloudEmail").value.trim();
+      const mdp = z.querySelector("#cloudMdp").value;
+      if(!email || !mdp){
+        const e = z.querySelector("#cloudErreurUI"); e.hidden = false; e.textContent = "Email et mot de passe requis.";
+        return;
+      }
+      btn.disabled = true; btn.textContent = "Connexion…";
+      try{ await cloudConnexion(email, mdp); }
+      catch(err){
+        btn.disabled = false; btn.textContent = "Se connecter";
+        const e = z.querySelector("#cloudErreurUI"); e.hidden = false; e.textContent = err.message || "Connexion impossible.";
+      }
+    });
+    z.querySelector("#cloudMdp").addEventListener("keydown", ev => { if(ev.key === "Enter") btn.click(); });
+    return;
+  }
+  const dernier = cloudDernierOK ? cloudDernierOK.toLocaleString("fr-FR") : "—";
+  let etatCloud;
+  if(cloudInfo.vide === null) etatCloud = "non encore lu";
+  else if(cloudInfo.vide) etatCloud = "<b>vide</b> — ce poste peut y déposer son suivi";
+  else etatCloud = "dernier dépôt le " + new Date(cloudInfo.modifie_le).toLocaleString("fr-FR") + " par <b>" + escapeAttr(cloudInfo.modifie_par || "?") + "</b>";
+  z.innerHTML = `
+    <label>Connexion <i class="opt-scope">Tous</i></label>
+    <span class="opt-note" style="display:block; margin-bottom:8px;">Connecté en tant que <b>${escapeAttr(cloudSession.email || "?")}</b> — dernière synchro ${dernier}.</span>
+    <span class="opt-note" style="display:block; margin-bottom:10px;">État du cloud : ${etatCloud}.</span>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      ${cloudInfo.vide ? `<button class="primary" id="cloudBtnDeposer">Déposer ce suivi</button>` : ""}
+      <button class="ghost" id="cloudBtnSync">Synchroniser maintenant</button>
+      <button class="ghost" id="cloudBtnSortir">Se déconnecter</button>
+    </div>
+    <div class="opt-statut ko" id="cloudErreurUI" ${cloudErreur ? "" : "hidden"} style="margin-top:8px;"></div>`;
+  const errUI = z.querySelector("#cloudErreurUI");
+  if(cloudErreur){ errUI.hidden = false; errUI.textContent = cloudErreur; }
+  const d = z.querySelector("#cloudBtnDeposer");
+  if(d) d.addEventListener("click", cloudDeposerManuel);
+  z.querySelector("#cloudBtnSync").addEventListener("click", async (ev) => {
+    ev.target.disabled = true; ev.target.textContent = "Synchronisation…";
+    await cloudSync("manuel");
+  });
+  z.querySelector("#cloudBtnSortir").addEventListener("click", cloudDeconnexion);
+}
+
+function cloudDemarrage(){
+  const btnOpt = document.getElementById("optionsBtn");
+  if(btnOpt) btnOpt.addEventListener("click", cloudRenduOptions);
+  document.addEventListener("visibilitychange", () => { if(!document.hidden) cloudAuFocus(); });
+  window.addEventListener("focus", cloudAuFocus);
+  setInterval(() => cloudSync("periode"), 90000);
+  const el = document.getElementById("footCloud");
+  if(el) el.addEventListener("click", () => {
+    dialogueAlerte(cloudSession
+      ? "Synchro cloud : " + (cloudErreur || ("à jour" + (cloudDernierOK ? " (dernier échange " + cloudDernierOK.toLocaleTimeString("fr-FR") + ")" : ""))) + ".\nLe détail et les actions sont dans Options, section Cloud."
+      : "Synchro cloud désactivée : connectez-vous dans Options, section Cloud.", "Synchro cloud");
+  });
+  if(cloudSession) cloudSync("demarrage");
+  cloudRenduPastille();
+}
+cloudDemarrage();
 </script>
 
 <!-- ============================================================

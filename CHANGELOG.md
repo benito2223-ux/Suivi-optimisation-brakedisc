@@ -5,6 +5,43 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.8.0] — 2026-09-22
+
+La synchro multi-postes via Supabase : la fin de l'échange manuel de JSON entre
+Benjamin et Matis. Format de données inchangé — le cloud porte exactement le
+même JSON que l'export (format 8), les allers-retours avec un poste hors cloud
+restent donc possibles dans les deux sens.
+
+### Ajouté — Options → Cloud, et une pastille ☁ en pied de page
+Connexion par email + mot de passe (comptes créées côté Supabase). Une fois
+connecté, le poste synchronise : tirage au chargement, au retour sur l'onglet
+et toutes les 90 s ; dépôt automatique 4 s après chaque sauvegarde. Client
+écrit à la main en `fetch()` (auth + REST) : pas de SDK, le fichier unique et
+l'usage hors ligne restent la règle — sans réseau, l'outil marche comme avant
+et la pastille dit « hors ligne », la synchro repart au retour du réseau.
+
+### Le premier contact ne mélange jamais rien
+Un cloud vide ne reçoit rien sans geste volontaire (bouton « Déposer ce
+suivi ») — le jeu d'exemple d'un poste ne peut pas partir au cloud par
+accident. Un cloud déjà rempli face à un poste qui a des données : l'outil
+affiche le CV des deux versions (essais, date, auteur, marqueur [Exemple]) et
+demande qui fait autorité, avec export de secours téléchargé avant tout
+remplacement. Un conflit en cours de route (l'autre a déposé pendant que ce
+poste saisissait) suit le même rituel. Aucune fusion automatique au premier
+contact : la fusion essai par essai reste l'affaire de l'import manuel.
+
+### Sous le capot
+- Table `etat` (une ligne, `modifie_le` tenu par un trigger Postgres — le
+  tampon horaire d'arbitrage n'est jamais calculé côté client) + table
+  `etat_historique` plafonnée à 20 versions par trigger (filet de sécurité,
+  le plan Free n'ayant pas de backups). RLS `authenticated` + GRANT (leçons
+  Fellow), bucket privé `photos` préparé pour une étape suivante.
+- Le tirage réutilise la machine d'import (« remplacer tout », avec son
+  ↺ Restaurer) via un nouveau `preparerImportDepuis()` partagé par l'import
+  fichier et le cloud — mêmes migrations de format garanti des deux côtés.
+- Un hook dans `saveData()` marque le poste « sale » ; neutralisé pendant
+  l'application d'un tirage pour qu'un pull ne se re-pousse pas en boucle.
+
 ## [4.7.1] — 2026-09-22
 
 Deux corrections de la couche de fenêtres modales introduites en v4.6, dont une
