@@ -5,6 +5,52 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.9.0] — 2026-09-22
+
+Les critères de validation d'essai, refondus autour du retour terrain (Matis) :
+chacun ses côtés, ses bornes, son activation — et les specs usine verrouillées.
+Aucun changement de format : les nouveaux champs s'ajoutent aux objets existants
+et un ancien fichier reste lisible (et lisible PAR un ancien fichier).
+
+### Modifié — critères d'essai (bloc « Essais » de chaque scénario)
+- **Le battement se décoche.** Un essai peut ne porter que sur l'état de surface.
+- **Côtés Droite/Gauche sélectionnables par scénario** (les deux, droite seul,
+  gauche seul) — un test mené sur un seul côté n'est plus jugé sur l'autre.
+- **Critères supplémentaires en liste** : Ra, VE, ou tout critère libre nommé par
+  l'opérateur. Chacun : borne maxi, **mini optionnelle** (plage min–max), et axes
+  **Inter/Exter** (pistes) ou **Droite/Gauche** (broches) — une colonne de saisie
+  par critère × axe, dans le tableau, le mode atelier, le CSV et les deux rapports.
+  L'ancien « 2ᵉ critère » migre automatiquement vers cette liste au chargement.
+- **La tolérance s'édite dans le bloc Essais**, toujours visible — l'éditer la rend
+  spécifique au scénario (fini la case à cocher préalable) ; la valeur OP reste
+  affichée comme repère.
+
+### Ajouté — specs usine verrouillées (Options)
+Battement ≤ 0,04 et VE ≤ 0,01 mesurés Marposs sur disque fini (après OP40,
+finition) : référence pour toute l'usine, affichée sous les critères d'essai et
+dans les rapports. Portée « Tous », voyage dans le suivi (cloud compris). Les
+modifier exige une double validation : confirmation explicite, champs déverrouillés,
+réenregistrement au reverrouillage — le panneau reverrouille à chaque ouverture.
+
+### Ajouté — le graphe Marposs peut partir dans le rapport d'essai
+Le suivi Marposs d'un essai (fenêtre horaire début–fin, relevés du jour collés,
+graphe avec plage de l'essai surlignée) existait déjà dans l'outil ; une case
+« Inclure ce graphe dans le rapport de l'essai » (désactivée par défaut pour ne
+pas surcharger) ajoute au rapport généré la courbe du jour, la bande horaire de
+l'essai, les moyennes journée/essai et la ligne de tolérance.
+
+### Corrigé — l'ouverture des pièces jointes intégrées
+Les PDF intégrés au suivi (plans, fiches outil) ne s'ouvraient plus :
+`window.open()` sur une URL `data:` est bloqué par les navigateurs modernes.
+Les documents passent maintenant par un fichier temporaire ; les images par
+l'agrandissement plein écran.
+
+### Sous le capot — un piège désamorcé
+`loadAll()` est protégé par un `try/catch` silencieux : une variable déclarée
+après son appel (TDZ) faisait repliquer tout le chargement sur les données
+d'exemple sans aucun message. Les nouvelles globales se déclarent désormais
+avant l'appel, avec un commentaire qui explique le piège.
+
 ## [4.8.0] — 2026-09-22
 
 La synchro multi-postes via Supabase : la fin de l'échange manuel de JSON entre

@@ -1518,6 +1518,20 @@ body.atelier-on{overflow:hidden;}
       </div>
     </div>
 
+    <div class="opt-section">Specs usine — après OP40 (finition)</div>
+
+    <div class="opt-field on" style="padding-left:0;">
+      <label>Spécifications usine, disque fini (Marposs) <i class="opt-scope">Tous</i></label>
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <span>Battement ≤</span>
+        <input type="number" step="0.001" min="0" id="optUsineBatt" style="width:90px;" disabled>
+        <span>VE ≤</span>
+        <input type="number" step="0.001" min="0" id="optUsineVE" style="width:90px;" disabled>
+        <button class="ghost" id="optUsineUnlock">Modifier</button>
+      </div>
+      <span class="opt-note">Références pour toute l'usine, affichées dans l'outil et dans les rapports d'essai. Elles ne changent normalement jamais : la modification déverrouille les champs après une confirmation explicite, et repart synchronisée chez l'autre poste. La tolérance d'un essai (souvent plus lâche en OP10) se règle dans le bloc « Essais » du scénario, indépendamment de ces valeurs.</span>
+    </div>
+
     <div class="opt-section">Cloud — suivi partagé</div>
 
     <div class="opt-field on" style="padding-left:0;" id="cloudZone">
@@ -1775,7 +1789,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.8.0";
+const TOOL_VERSION = "4.9.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -2436,6 +2450,21 @@ function switchReference(ligneId, refId){
   switchOp(ligneId, r ? r.id : refId, r && r.ops[0] ? r.ops[0].id : null);
 }
 
+/* v4.9 — specs usine : battement max et variation d'épaisseur (VE) max mesurées Marposs
+   sur les disques FINIS (après OP40, finition). Valeurs de référence pour TOUTE l'usine,
+   affichées dans l'outil et les rapports ; elles ne changent normalement jamais — leur
+   modification dans Options exige une double validation. La tolérance d'un essai en OP10
+   peut être bien plus lâche : ce sont deux choses distinctes. Voyage dans le suivi
+   (synchronisé chez Matis via le cloud, repris par export/import).
+   DÉCLARÉ AVANT loadAll() : loadAll écrit cette variable et son appel est silencieusement
+   protégé par un try/catch — une déclaration après coup (TDZ) ferait repliquer tout le
+   chargement sur les données d'exemple sans le moindre message. */
+let specsUsine = { battement: 0.04, ve: 0.01 };
+function normaliserSpecsUsine(s){
+  s = s || {};
+  const nb = parseFloat(s.battement), nv = parseFloat(s.ve);
+  return { battement: isNaN(nb) ? 0.04 : nb, ve: isNaN(nv) ? 0.01 : nv };
+}
 loadAll();
 recomputeCycles();
 
@@ -2496,6 +2525,7 @@ function normalizeScenario(sc){
   // statut de vie : le scenario de reference est par definition ce qui tourne en serie,
   // les autres sont en essai tant qu'on n'a pas tranche
   const merged = Object.assign({ emag1:false, limitOverride:false, limitLabel:"Battement (mm)", limitValue:0.12, validationThreshold:5,
+    battActif:true, battCotes:"", criteresSup:[], marpossRapport:false,
     critere2Actif:false, limitLabel2:"Ra (µm)", limitValue2:0.8,
     statut: sc.baseline ? "serie" : "essai", statutMotif:"", statutDate:"", essais:[], scrapLog:[] }, sc);
   // v4.4 : le scenario en production (★) EST le scenario "en serie" -- un seul concept,
@@ -2559,11 +2589,29 @@ function normalizeScenario(sc){
         if(merged.emag1 && row.batt !== "" && row.batt != null && row.battD === "" && row.battG === ""){
           row.battD = row.batt; row.battG = row.batt;
         }
+        // v4.9 : report de l'ancienne valeur du 2e critere (critere2Actif) vers la
+        // structure generique des criteres supplementaires — elle redevient visible
+        // dans le tableau, l'atelier, le CSV et les rapports sans migration de format.
+        if(row.valeur2 !== "" && row.valeur2 != null && row.valeur2 !== undefined){
+          if(!row.valeurs || !row.valeurs["cs1"]) {
+            row.valeurs = row.valeurs || {};
+            row.valeurs["cs1"] = Object.assign({ v: row.valeur2 }, row.valeurs ? row.valeurs["cs1"] : {});
+          }
+        }
         return row;
       }) }
     );
   });
   merged.scrapLog = (sc.scrapLog || []).map(r => Object.assign({ id: r.id || ("r"+Math.random().toString(36).slice(2)), date:"", equipe:"", produites:"", rebutees:"" }, r));
+  // v4.9 — criteres supplementaires generiques (Ra, VE, critere libre...) : le 2e critere
+  // historique (une seule colonne) migre une fois pour toutes vers la liste. Fait ici
+  // (a chaque chargement/import) pour que TOUTES les donnees anciennes soient couvertes,
+  // sans changement de format : un fichier v4.x plus ancien relit ce suivi sans rien voir.
+  if(!Array.isArray(merged.criteresSup)) merged.criteresSup = [];
+  if(merged.critere2Actif && !merged.criteresSup.some(c => c.id === "cs1")){
+    merged.criteresSup.unshift({ id:"cs1", label: merged.limitLabel2 || "2e critère", maxi: merged.limitValue2, miniActif:false, mini:"", axes:[], actif:true });
+    merged.critere2Actif = false;
+  }
   return merged;
 }
 
@@ -2643,6 +2691,7 @@ function loadAll(){
         projets.forEach(purgerTagsMorts);
         backlog = (parsed.backlog || []).map(normalizeBacklogItem);
         revision = parsed.revision || 0;
+        specsUsine = normaliserSpecsUsine(parsed.specsUsine);
         const l = lignes.find(x => x.id === parsed.activeLigneId) || lignes[0];
         activeLigneId = l.id;
         const r = l.references.find(x => x.id === parsed.activeReferenceId) || l.references[0];
@@ -2739,6 +2788,7 @@ function appliquerArbre(source){
   lignes = migre ? migre.lignes : [];
   projets = migre ? migre.projets : [];
   responsables = migre ? migre.responsables : [];
+  specsUsine = normaliserSpecsUsine(source.specsUsine);
   if(!lignes.length) lignes = defaultLignes();
   projets.forEach(purgerTagsMorts);
   activeProjetId = projets.find(x => x.id === source.activeProjetId) ? source.activeProjetId : null;
@@ -2780,7 +2830,7 @@ function payloadSuivi(){
   // format 8 (v4.2) : `lignes` reste la racine, exactement comme les formats 5 et 7 -- une
   // version anterieure a la v4 lit ce fichier normalement, seuls `projets` et `responsables`
   // lui sont invisibles (elle ne les connait pas, elle ne les cherche pas).
-  return JSON.stringify({ format:8, lignes, projets, activeProjetId, responsables, backlog, revision, activeLigneId, activeReferenceId, activeOpId, activeScenarioId: activeId });
+  return JSON.stringify({ format:8, lignes, projets, activeProjetId, responsables, backlog, revision, specsUsine, activeLigneId, activeReferenceId, activeOpId, activeScenarioId: activeId });
 }
 
 /* Ce qui pese vraiment, nomme, pour que l'utilisateur puisse agir plutot que subir. */
@@ -3035,7 +3085,7 @@ const BACKUP_KEY = STORAGE_KEY + "_backup";
 function backupSnapshot(label){
   syncActiveOp();
   try{
-    localStorage.setItem(BACKUP_KEY, JSON.stringify({ savedAt: new Date().toISOString(), label, lignes, projets, activeProjetId, responsables, backlog, revision }));
+    localStorage.setItem(BACKUP_KEY, JSON.stringify({ savedAt: new Date().toISOString(), label, lignes, projets, activeProjetId, responsables, backlog, revision, specsUsine }));
   }catch(e){}
 }
 function hasBackup(){
@@ -3051,6 +3101,7 @@ function restoreBackup(){
     appliquerArbre(snap);
     backlog = (snap.backlog || []).map(normalizeBacklogItem);
     revision = snap.revision || 0;
+    specsUsine = normaliserSpecsUsine(snap.specsUsine);
     activeId = data[0] ? data[0].id : null;
     try{ localStorage.removeItem(BACKUP_KEY); }catch(e){}
     recomputeCycles();
@@ -3143,7 +3194,11 @@ function exportCSV(essaiIds){
     "Ligne de production","Reference disque","OP","Scenario","Outils (numero/logement:Vc/f/charniere)",
     "Essai","Date","Equipe","Operateur","Maturite bruts (j)","Observations essai","Logement mesure","Point de mesure",
     "N piece","Grandeur","Valeur","Droite","Gauche",
-    "Tolerance","2e critere (grandeur)","2e critere (valeur)","2e critere (tolerance)","Usure plaquette","Conforme"
+    "Tolerance",
+    // v4.9 : une colonne par critère supplémentaire actif × axe (à la place du 2e critère figé)
+    ...criteresSupActifs(sc).flatMap(c => axesDe(c).map(ax =>
+      (c.label || "critere") + (ax === "v" ? "" : " " + (AXE_LABELS[ax] || ax)) + " (tol " + (c.maxi ?? "?") + (c.miniActif ? " min " + c.mini : "") + ")")),
+    "Usure plaquette","Conforme"
   ].join(sep)];
 
   (sc.essais||[]).filter(es => !essaiIds || essaiIds.includes(es.id)).forEach(es => {
@@ -3162,7 +3217,10 @@ function exportCSV(essaiIds){
         num(sc.emag1 ? valeurMesuree(sc, r) : r.batt),
         num(sc.emag1 ? r.battD : ""), num(sc.emag1 ? r.battG : ""),
         num(limiteDe(sc)),
-        txt(sc.critere2Actif ? sc.limitLabel2 : ""), num(sc.critere2Actif ? r.valeur2 : ""), num(sc.critere2Actif ? sc.limitValue2 : ""),
+        ...criteresSupActifs(sc).flatMap(c => axesDe(c).map(ax => {
+          const v = ((r.valeurs || {})[c.id] || {})[ax];
+          return num(v === "" || v == null ? "" : v);
+        })),
         txt(USURE_LABELS[r.usure] || ""),
         conf === null ? "" : (conf ? "OUI" : "NON")
       ].join(sep));
@@ -3205,20 +3263,28 @@ function prelevementsDetailHTML(sc, es){
     return lp ? (String(lp.outilNumero||"?") + " " + String(lp.logementNom||"")).trim() : "";
   };
   const showLogementCol = snap.length > 1;
+  const csupCols = csupColonnes(sc);
+  const cotesR = battCotesDe(sc);
   const rows = (es.prelevements || []).slice()
     .sort((a,b) => parseFloat(a.piece) - parseFloat(b.piece))
     .map(r => {
       const exempte = !toleranceRequisePour(sc, r);
       const conform = checkConform(sc, r);
       const statut = exempte ? "Charnière seule" : conform === null ? "—" : conform ? "OK" : (raisonNonConforme(sc, r) || "Hors tolérance");
-      const valeur = sc.emag1 ? ("D " + fmtBatt(r.battD) + " / G " + fmtBatt(r.battG)) : fmtBatt(r.batt);
-      const valeur2 = sc.critere2Actif ? (r.valeur2 === "" || r.valeur2 == null ? "—" : r.valeur2) : "";
+      const valeur = sc.battActif === false ? "—"
+        : cotesR === "mono" ? fmtBatt(r.batt)
+        : cotesR === "D" ? ("D " + fmtBatt(r.battD))
+        : cotesR === "G" ? ("G " + fmtBatt(r.battG))
+        : ("D " + fmtBatt(r.battD) + " / G " + fmtBatt(r.battG));
       return `<tr>
         <td>${escapeAttr(r.piece)}</td>
         ${showLogementCol ? `<td>${escapeAttr(labelLogement(r.logementId))}</td>` : ""}
         <td>${escapeAttr(r.pointMesure) || "—"}</td>
         <td style="text-align:right;">${valeur}</td>
-        ${sc.critere2Actif ? `<td style="text-align:right;">${valeur2}</td>` : ""}
+        ${csupCols.map(col => {
+          const v = ((r.valeurs || {})[col.c.id] || {})[col.ax];
+          return `<td style="text-align:right;">${v === "" || v == null ? "—" : v}</td>`;
+        }).join("")}
         <td>${USURE_LABELS[r.usure] || "—"}</td>
         <td>${statut}</td>
       </tr>`;
@@ -3227,7 +3293,7 @@ function prelevementsDetailHTML(sc, es){
   return `
     <h3 style="font-size:12.5px; margin:16px 0 4px; color:#154d8a; text-transform:uppercase; letter-spacing:.03em;">${escapeAttr(es.titre)}${es.date ? " — " + escapeAttr(es.date) : ""}</h3>
     <table>
-      <tr><th>N° pièce</th>${showLogementCol ? "<th>Logement</th>" : ""}<th>Point de mesure</th><th>Valeur</th>${sc.critere2Actif ? `<th>${escapeAttr(sc.limitLabel2)}</th>` : ""}<th>Usure</th><th>Statut</th></tr>
+      <tr><th>N° pièce</th>${showLogementCol ? "<th>Logement</th>" : ""}<th>Point de mesure</th><th>Valeur</th>${csupCols.map(col => `<th>${escapeAttr(col.c.label || "critère")}${col.ax !== "v" ? " " + (AXE_LABELS[col.ax] || col.ax) : ""}</th>`).join("")}<th>Usure</th><th>Statut</th></tr>
       ${rows}
     </table>
   `;
@@ -3371,6 +3437,8 @@ function essaiRapportHTML(sc, essai){
 
   const mesureLabel = escapeAttr(libelleDe(sc));
   const showLogementCol = snap.length > 1;
+  const csupCols = csupColonnes(sc);
+  const cotesRap = battCotesDe(sc);
   const prelRows = (essai.prelevements || []).slice()
     .sort((a,b) => (parseFloat(a.piece)||0) - (parseFloat(b.piece)||0))
     .map(r => {
@@ -3379,18 +3447,44 @@ function essaiRapportHTML(sc, essai){
       const statut = exempte ? "Charnière seule" : conform === null ? "—" : conform ? "OK" : (raisonNonConforme(sc, r) || "Hors tolérance");
       const lp = snap.find(l => l.logementId === r.logementId);
       const logementTxt = lp ? (String(lp.outilNumero||"?") + " · " + String(lp.logementNom||"")).trim() : "—";
-      const valeur = sc.emag1 ? ("Droite " + fmtBatt(r.battD) + " / Gauche " + fmtBatt(r.battG)) : fmtBatt(r.batt);
-      const valeur2 = sc.critere2Actif ? (r.valeur2 === "" || r.valeur2 == null ? "—" : r.valeur2) : "";
+      const valeur = sc.battActif === false ? "—"
+        : cotesRap === "mono" ? fmtBatt(r.batt)
+        : cotesRap === "D" ? ("Droite " + fmtBatt(r.battD))
+        : cotesRap === "G" ? ("Gauche " + fmtBatt(r.battG))
+        : ("Droite " + fmtBatt(r.battD) + " / Gauche " + fmtBatt(r.battG));
       return `<tr>
         <td>${escapeAttr(r.piece)}</td>
         ${showLogementCol ? `<td>${escapeAttr(logementTxt)}</td>` : ""}
         <td>${escapeAttr(r.pointMesure) || "—"}</td>
         <td>${valeur}</td>
-        ${sc.critere2Actif ? `<td>${valeur2}</td>` : ""}
+        ${csupCols.map(col => {
+          const v = ((r.valeurs || {})[col.c.id] || {})[col.ax];
+          return `<td>${v === "" || v == null ? "—" : v}</td>`;
+        }).join("")}
         <td>${USURE_LABELS[r.usure] || "—"}</td>
         <td>${statut}</td>
       </tr>`;
     }).join("");
+  const csupHeadsRap = csupCols.map(col => `<th>${escapeAttr(col.c.label || "critère")}${col.ax !== "v" ? " " + (AXE_LABELS[col.ax] || col.ax) : ""}</th>`).join("");
+
+  /* v4.9 — section Marposs du rapport, uniquement si l'essai l'a cochée (pour ne pas
+     surcharger un rapport qui part chez le client) : fenêtre horaire, moyennes, graphe
+     du jour avec la plage de l'essai surlignée. Palette en dur : le rapport est un
+     fichier autonome sans les variables CSS de l'outil. */
+  const mRap = essai.marposs || { debut:"", fin:"", releves:[] };
+  const stRap = marpossStats(sc, essai);
+  const marpossRapportBloc = (mRap.marpossRapport && (mRap.releves||[]).length) ? `
+    <h2>Suivi Marposs — production du jour</h2>
+    <div class="grid">
+      <div><div class="l">Début de l'essai</div><div class="v">${escapeAttr(mRap.debut) || "—"}</div></div>
+      <div><div class="l">Fin de l'essai</div><div class="v">${escapeAttr(mRap.fin) || "—"}</div></div>
+      <div><div class="l">Relevés du jour</div><div class="v">${mRap.releves.length}</div></div>
+      <div><div class="l">Moyenne pendant l'essai</div><div class="v">${stRap.moyenneEssai === null ? "—" : fmt(stRap.moyenneEssai,3)} <span style="color:var(--ink-faint);">(${stRap.nbEssai} pièce(s))</span></div></div>
+      <div><div class="l">Moyenne journée</div><div class="v">${stRap.moyenneJour === null ? "—" : fmt(stRap.moyenneJour,3)}</div></div>
+    </div>
+    ${marpossChartSVG(sc, essai, { blue:"#0d47a1", red:"#c50018", teal:"#0b6e63", faint:"#5a6470" })}
+    <p style="font-size:10.5px; color:var(--ink-faint); margin-top:2px;">Chaque point : un disque contrôlé par la Marposs au fil de la journée. Bande bleue : plage de l'essai. Ligne rouge : tolérance d'essai.</p>
+  ` : "";
 
   return `<!doctype html>
 <html lang="fr"><head><meta charset="utf-8">
@@ -3471,13 +3565,16 @@ function essaiRapportHTML(sc, essai){
     ${plaquettesRows}
   </table>
 
-  <h2>Prélèvements — ${mesureLabel}</h2>
+  <h2>Prélèvements — ${mesureLabel}${sc.battActif === false ? " (battement non jugé)" : ""}</h2>
   <table>
-    <tr><th>N° pièce</th>${showLogementCol ? "<th>Logement</th>" : ""}<th>Point de mesure</th><th>Valeur</th>${sc.critere2Actif ? `<th>${escapeAttr(sc.limitLabel2)}</th>` : ""}<th>Usure</th><th>Statut</th></tr>
-    ${prelRows || `<tr><td colspan="${5 + (showLogementCol?1:0) + (sc.critere2Actif?1:0)}" style="text-align:center; color:#5a6470;">Aucun prélèvement enregistré</td></tr>`}
+    <tr><th>N° pièce</th>${showLogementCol ? "<th>Logement</th>" : ""}<th>Point de mesure</th><th>Valeur</th>${csupHeadsRap}<th>Usure</th><th>Statut</th></tr>
+    ${prelRows || `<tr><td colspan="${5 + (showLogementCol?1:0) + csupCols.length}" style="text-align:center; color:#5a6470;">Aucun prélèvement enregistré</td></tr>`}
   </table>
+  <p style="font-family:'IBM Plex Mono',Consolas,monospace; font-size:10.5px; color:var(--ink-faint); margin-top:4px;">Tolérance d'essai : ${escapeAttr(mesureLabel)} ≤ ${fmt(parseFloat(limiteDe(sc)),3)} · Spec usine (OP40, disque fini) : Battement ≤ ${fmt(specsUsine.battement,3)} · VE ≤ ${fmt(specsUsine.ve,3)}</p>
 
   ${essai.observations ? `<h2>Observations</h2><div class="obs-box">${escapeAttr(essai.observations)}</div>` : ""}
+
+  ${marpossRapportBloc}
 
   <footer>
     Rapport d'essai généré automatiquement par l'outil de suivi SPK OP10 (bilan_economique.html) — ${new Date().toLocaleString("fr-FR")}. Document 100% local, aucune donnée transmise.<br>
@@ -3768,6 +3865,8 @@ function appliquerImport(mode){
     activeProjetId = projets.find(x => x.id === parsed.activeProjetId) ? parsed.activeProjetId : null;
     backlog = nouveauBacklog;
     revision = Math.max(revision, revisionEntrante || 0);
+    // le fichier reçu fait autorité : ses specs usine remplacent les locales (défaut si absentes)
+    specsUsine = normaliserSpecsUsine(parsed.specsUsine);
   }
   projets.forEach(purgerTagsMorts);
 
@@ -4052,12 +4151,18 @@ function recomputeCycles(){
 }
 
 function checkConformPrincipal(sc, row){
+  // v4.9 : le battement se décoche (un essai peut ne porter que sur le Ra, par exemple) —
+  // un critère volontairement désactivé ne peut ni faire échouer, ni exempter.
+  if(sc.battActif === false) return true;
   if(!toleranceRequisePour(sc, row)) return null; // ce logement ne suit que la charniere, pas la tolerance
   const limit = parseFloat(limiteDe(sc));
   if(isNaN(limit)) return null;
   if(sc.emag1){
-    const d = parseFloat(row.battD), g = parseFloat(row.battG);
-    const vals = [d,g].filter(v => !isNaN(v));
+    // v4.9 : côtés sélectionnables par scénario — un essai peut ne porter qu'un seul côté
+    const cotes = battCotesDe(sc);
+    const vals = [];
+    if(cotes !== "G"){ const d = parseFloat(row.battD); if(!isNaN(d)) vals.push(d); }
+    if(cotes !== "D"){ const g = parseFloat(row.battG); if(!isNaN(g)) vals.push(g); }
     if(!vals.length) return null;
     return Math.max(...vals) <= limit;
   }
@@ -4065,17 +4170,59 @@ function checkConformPrincipal(sc, row){
   if(isNaN(b)) return null;
   return b <= limit;
 }
-/* 2e critere quantitatif optionnel (ex. etat de surface Ra/Rz/Rt en plus de la tolerance
-   dimensionnelle) : n'evalue que si le scenario l'a active ET qu'une valeur est saisie —
-   une case vide ne fait jamais echouer un prelevement par ailleurs conforme. */
-function checkConformCritere2(sc, row){
-  if(!sc.critere2Actif) return null;
-  const limit = parseFloat(sc.limitValue2);
-  if(isNaN(limit)) return null;
-  if(row.valeur2 === "" || row.valeur2 == null) return null;
-  const v = parseFloat(row.valeur2);
-  if(isNaN(v)) return null;
-  return v <= limit;
+/* côtés mesurés pour le battement : "DG" (défaut), "D" ou "G" (essai à un seul côté) ;
+   "mono" quand la mesure droite/gauche n'est pas activée du tout */
+function battCotesDe(sc){
+  if(!sc.emag1) return "mono";
+  return (sc.battCotes === "D" || sc.battCotes === "G") ? sc.battCotes : "DG";
+}
+/* v4.9 — critères supplémentaires génériques : Ra, VE, ou tout critère libre de
+   l'opérateur. Chacun porte ses bornes (maxi, mini optionnelle) et ses axes de mesure
+   (Droite/Gauche pour les broches, Inter/Exter pour les pistes — une valeur unique si
+   aucun axe). Les valeurs vivent dans prelevement.valeurs[critere.id][axe]. */
+function criteresSupActifs(sc){
+  return (sc.criteresSup || []).filter(c => c.actif !== false);
+}
+function axesDe(c){ return (c.axes && c.axes.length) ? c.axes : ["v"]; }
+const AXE_LABELS = { D:"Droite", G:"Gauche", I:"Inter", E:"Exter", v:"" };
+/* les colonnes affichées pour les critères supplémentaires : une par critère actif × axe */
+function csupColonnes(sc){
+  const cols = [];
+  criteresSupActifs(sc).forEach(c => { axesDe(c).forEach(ax => cols.push({ c, ax })); });
+  return cols;
+}
+/* une case vide ne fait jamais échouer un prélèvement par ailleurs conforme ; s'il n'y
+   a AUCUNE valeur saisie pour les critères actifs, le verdict est null (non évalué) */
+function evaluerCriteresSup(sc, row){
+  const actifs = criteresSupActifs(sc);
+  if(!actifs.length) return null;
+  let evalue = false, ok = true;
+  for(const c of actifs){
+    const vals = (row.valeurs || {})[c.id] || {};
+    for(const ax of axesDe(c)){
+      const v = parseFloat(vals[ax]);
+      if(isNaN(v)) continue;
+      evalue = true;
+      const maxi = parseFloat(c.maxi);
+      if(!isNaN(maxi) && v > maxi) ok = false;
+      if(c.miniActif){ const mini = parseFloat(c.mini); if(!isNaN(mini) && v < mini) ok = false; }
+    }
+  }
+  return evalue ? ok : null;
+}
+/* première valeur hors bornes, pour nommer précisément la raison (critère + axe) */
+function premiereHorsBornesSup(sc, row){
+  for(const c of criteresSupActifs(sc)){
+    const vals = (row.valeurs || {})[c.id] || {};
+    for(const ax of axesDe(c)){
+      const v = parseFloat(vals[ax]);
+      if(isNaN(v)) continue;
+      const maxi = parseFloat(c.maxi);
+      if(!isNaN(maxi) && v > maxi) return { label: c.label, axe: ax, v, borne: maxi, sens: "maxi" };
+      if(c.miniActif){ const mini = parseFloat(c.mini); if(!isNaN(mini) && v < mini) return { label: c.label, axe: ax, v, borne: mini, sens: "mini" }; }
+    }
+  }
+  return null;
 }
 /* usure visuelle : "a changer" fait toujours echouer le prelevement, quelle que soit la
    mesure — un outil visiblement use n'est pas rattrape par une cote encore dans la tol. */
@@ -4102,18 +4249,22 @@ function usureSelectHTML(row, attrs){
    visuelle ou l'etat de surface qui a fait basculer le verdict) */
 function raisonNonConforme(sc, row){
   if(checkConformPrincipal(sc, row) === false) return "hors tolérance";
-  if(checkConformCritere2(sc, row) === false) return (sc.limitLabel2 || "2e critère") + " hors tolérance";
+  const hb = premiereHorsBornesSup(sc, row);
+  if(hb){
+    const axe = hb.axe !== "v" ? " " + (AXE_LABELS[hb.axe] || hb.axe) : "";
+    return (hb.label || "critère") + axe + (hb.sens === "maxi" ? " : " + fmtBatt(hb.v) + " > " + fmtBatt(hb.borne) : " : " + fmtBatt(hb.v) + " < " + fmtBatt(hb.borne));
+  }
   if(checkUsure(row) === false) return "plaquette à changer (usure)";
   return "";
 }
-/* verdict combine d'un prelevement : conforme seulement si les 3 gardes passent. Le
-   critere principal reste seul maitre du null (pas de tolerance requise / valeur absente) ;
-   le 2e critere et l'usure ne peuvent que faire basculer un prelevement DEJA evalue de
-   conforme a non conforme, jamais l'inverse et jamais depuis le null. */
+/* verdict combine d'un prelevement : conforme seulement si toutes les gardes passent. Le
+   battement reste seul maitre du null (pas de tolerance requise / valeur absente) ; les
+   criteres supplementaires et l'usure ne peuvent que faire basculer un prelevement DEJA
+   evalue de conforme a non conforme, jamais l'inverse et jamais depuis le null. */
 function checkConform(sc, row){
   const principal = checkConformPrincipal(sc, row);
   if(principal !== true) return principal; // null (exempte/pas de valeur) ou false : inchange
-  if(checkConformCritere2(sc, row) === false) return false;
+  if(evaluerCriteresSup(sc, row) === false) return false;
   if(checkUsure(row) === false) return false;
   return true;
 }
@@ -4387,12 +4538,24 @@ function atelierHTML(){
         <span class="${c===false?"bad":c===true?"ok":"na"}">${c===false?"HORS TOL.":c===true?"OK":"—"}</span></div>`;
     }).join("") || `<div class="at-recent-vide">Aucune mesure pour l'instant</div>`;
 
-  const champs = sc.emag1
-    ? `<div class="at-champ"><label>Droite</label><input type="number" step="0.001" inputmode="decimal" id="atD" placeholder="0,000"></div>
-       <div class="at-champ"><label>Gauche</label><input type="number" step="0.001" inputmode="decimal" id="atG" placeholder="0,000"></div>`
-    : `<div class="at-champ"><label>${escapeAttr(libelleDe(sc))}</label><input type="number" step="0.001" inputmode="decimal" id="atV" placeholder="0,000"></div>`;
-  const champ2 = sc.critere2Actif
-    ? `<div class="at-champ"><label>${escapeAttr(sc.limitLabel2)}</label><input type="number" step="0.001" inputmode="decimal" id="atV2" placeholder="0,000"></div>` : "";
+  // v4.9 : champs de saisie construits depuis les critères actifs du scénario —
+  // battement (respecte les côtés choisis, peut être désactivé) puis critères
+  // supplémentaires (Ra, VE, libres) avec une case par axe.
+  const cotesAt = battCotesDe(sc);
+  const champs = [];
+  if(sc.battActif !== false){
+    if(cotesAt === "mono") champs.push(`<div class="at-champ"><label>${escapeAttr(libelleDe(sc))}</label><input type="number" step="0.001" inputmode="decimal" id="atV" placeholder="0,000"></div>`);
+    else {
+      if(cotesAt !== "G") champs.push(`<div class="at-champ"><label>Droite</label><input type="number" step="0.001" inputmode="decimal" id="atD" placeholder="0,000"></div>`);
+      if(cotesAt !== "D") champs.push(`<div class="at-champ"><label>Gauche</label><input type="number" step="0.001" inputmode="decimal" id="atG" placeholder="0,000"></div>`);
+    }
+  }
+  criteresSupActifs(sc).forEach(c => {
+    axesDe(c).forEach(ax => {
+      const suf = ax === "v" ? "" : " " + (AXE_LABELS[ax] || ax);
+      champs.push(`<div class="at-champ"><label>${escapeAttr(c.label || "critère")}${suf}</label><input type="number" step="0.001" inputmode="decimal" id="atCs_${c.id}_${ax}" placeholder="0,000"></div>`);
+    });
+  });
   const champUsure = `<div class="at-champ"><label>Usure plaquette</label>
     <select id="atUsure"><option value="">—</option><option value="ok">OK</option><option value="limite">Usure limite</option><option value="changer">À changer</option></select>
   </div>`;
@@ -4430,7 +4593,7 @@ function atelierHTML(){
       </div>
     </div>` : ""}
 
-    <div class="at-champs">${champs}${champ2}${champUsure}</div>
+    <div class="at-champs">${champs.join("")}${champUsure}</div>
 
     <button class="primary at-valider" id="atelierValider">Enregistrer et pièce suivante</button>
 
@@ -4466,19 +4629,31 @@ function renderAtelier(){
     const essai = sc && (sc.essais||[]).find(e => e.id === atelierCtx.essaiId);
     if(!sc || !essai) return;
     const piece = document.getElementById("atPiece").value;
-    const row = { id:"p"+Math.random().toString(36).slice(2), piece, batt:"", battD:"", battG:"", usure:"", valeur2:"",
+    const row = { id:"p"+Math.random().toString(36).slice(2), piece, batt:"", battD:"", battG:"", usure:"",
                   logementId: atelierCtx.logementId || "", pointMesure: atelierCtx.pointMesure || "" };
-    if(sc.critere2Actif) row.valeur2 = document.getElementById("atV2") ? document.getElementById("atV2").value : "";
+    // v4.9 : battement selon les côtés actifs, puis critères supplémentaires (une case par axe)
+    const cotesAt = battCotesDe(sc);
+    if(sc.battActif !== false){
+      if(cotesAt === "mono") row.batt = document.getElementById("atV") ? document.getElementById("atV").value : "";
+      else {
+        if(cotesAt !== "G") row.battD = document.getElementById("atD") ? document.getElementById("atD").value : "";
+        if(cotesAt !== "D") row.battG = document.getElementById("atG") ? document.getElementById("atG").value : "";
+      }
+    }
+    let nbValeurs = [row.batt, row.battD, row.battG].filter(v => v !== "" && v != null).length;
+    criteresSupActifs(sc).forEach(c => {
+      axesDe(c).forEach(ax => {
+        const inp = document.getElementById("atCs_" + c.id + "_" + ax);
+        if(!inp || inp.value === "") return;
+        row.valeurs = row.valeurs || {};
+        row.valeurs[c.id] = row.valeurs[c.id] || {};
+        row.valeurs[c.id][ax] = inp.value;
+        nbValeurs++;
+      });
+    });
+    if(nbValeurs === 0){ dialogueAlerte("Saisissez au moins une valeur mesurée.", "Mesure incomplète"); return; }
     const usureSel = document.getElementById("atUsure");
     if(usureSel) row.usure = usureSel.value;
-    if(sc.emag1){
-      row.battD = document.getElementById("atD").value;
-      row.battG = document.getElementById("atG").value;
-      if(row.battD==="" && row.battG===""){ dialogueAlerte("Saisissez au moins une valeur (Droite ou Gauche).", "Mesure incomplète"); return; }
-    } else {
-      row.batt = document.getElementById("atV").value;
-      if(row.batt===""){ dialogueAlerte("Saisissez la valeur mesurée.", "Mesure incomplète"); return; }
-    }
     essai.prelevements.push(row);
     toucherEssai(essai);
     essai.prelevements.sort((a,b)=>{
@@ -5535,32 +5710,52 @@ function scenarioBlockHTML(sc, interactive){
     </label>
   ` : `<div class="emag-toggle-print">${sc.emag1 ? "Mesure Droite / Gauche (EMAG 1)" : "Mesure simple (EMAG 2)"}</div>`;
 
+  /* v4.9 — le bloc de critères, refondu : le battement se décoche, sa tolérance s'édite
+     ici même (l'éditer la rend spécifique au scénario — plus de case à cocher au préalable),
+     ses côtés se sélectionnent (un essai peut ne porter qu'un seul côté), et les critères
+     supplémentaires (Ra, VE, critère libre) se gèrent en liste avec bornes et axes. */
   const limitRow = interactive ? `
     <div class="limit-row">
-      <span class="limit-global">${escapeAttr(libelleDe(sc))} ≤ <b>${fmt(parseFloat(limiteDe(sc)),3)}</b></span>
-      <label class="emag-toggle">
-        <input type="checkbox" data-id="${sc.id}" data-field="limitOverride" ${sc.limitOverride ? "checked" : ""}>
-        Tolérance spécifique à ce scénario
+      <label class="emag-toggle" title="Décocher si l'essai ne doit pas être jugé sur le battement (ex. essai uniquement sur l'état de surface)">
+        <input type="checkbox" data-id="${sc.id}" data-field="battActif" ${sc.battActif !== false ? "checked" : ""}>
+        Battement
       </label>
-      ${sc.limitOverride ? `
-        <input class="limit-label" data-id="${sc.id}" data-field="limitLabel" value="${escapeAttr(sc.limitLabel)}">
-        <span>≤</span>
-        <input class="limit-value" data-id="${sc.id}" data-field="limitValue" type="number" step="0.01" value="${sc.limitValue ?? ""}">` : ""}
+      <input class="limit-label" data-id="${sc.id}" data-field="limitLabel" value="${escapeAttr(libelleDe(sc))}" ${sc.battActif === false ? "disabled" : ""}>
+      <span>≤</span>
+      <input class="limit-value" data-id="${sc.id}" data-field="limitValue" type="number" step="0.001" value="${limiteDe(sc) ?? ""}" ${sc.battActif === false ? "disabled" : ""}>
+      ${battCotesDe(sc) !== "mono" ? `
+        <select class="cell small" data-id="${sc.id}" data-field="battCotes" title="Côtés mesurés — un essai peut ne porter qu'un seul côté">
+          <option value="DG" ${(sc.battCotes || "DG")==="DG"?"selected":""}>Droite + Gauche</option>
+          <option value="D" ${sc.battCotes==="D"?"selected":""}>Droite seul</option>
+          <option value="G" ${sc.battCotes==="G"?"selected":""}>Gauche seul</option>
+        </select>` : ""}
+      <span class="limit-op-note">${sc.limitOverride ? "tolérance spécifique" : "valeur OP — l'éditer la rend spécifique"}</span>
     </div>
-  ` : `<div class="limit-row-print">${escapeAttr(libelleDe(sc))} ≤ ${fmt(parseFloat(limiteDe(sc)),3)}${sc.limitOverride ? " (tolérance spécifique)" : ""}</div>`;
+  ` : `<div class="limit-row-print">${sc.battActif === false ? "Battement non jugé — " : ""}${escapeAttr(libelleDe(sc))} ≤ ${fmt(parseFloat(limiteDe(sc)),3)}${sc.limitOverride ? " (tolérance spécifique)" : ""}</div>`;
 
-  const critere2Row = interactive ? `
+  const AXES_DEFS = [["D","Droite"],["G","Gauche"],["I","Inter"],["E","Exter"]];
+  const csupRows = interactive ? (sc.criteresSup||[]).map(c => `
+    <div class="limit-row csup-row">
+      <label class="emag-toggle" title="Décocher sans supprimer (garde la saisie existante)"><input type="checkbox" data-id="${sc.id}" data-csup="${c.id}" data-csfield="actif" ${c.actif !== false ? "checked" : ""}></label>
+      <input class="limit-label" data-id="${sc.id}" data-csup="${c.id}" data-csfield="label" value="${escapeAttr(c.label || "")}" placeholder="ex. Ra (µm)">
+      <span>≤</span>
+      <input class="limit-value" data-id="${sc.id}" data-csup="${c.id}" data-csfield="maxi" type="number" step="0.001" value="${c.maxi ?? ""}">
+      <label class="emag-toggle" title="Activer une borne minimale (plage min–max)"><input type="checkbox" data-id="${sc.id}" data-csup="${c.id}" data-csfield="miniActif" ${c.miniActif ? "checked" : ""}>min</label>
+      <input class="limit-value" data-id="${sc.id}" data-csup="${c.id}" data-csfield="mini" type="number" step="0.001" value="${c.mini ?? ""}" ${c.miniActif ? "" : "disabled"} placeholder="min">
+      ${AXES_DEFS.map(([ax, nom]) => `
+        <label class="emag-toggle" title="Mesure ${nom}"><input type="checkbox" data-id="${sc.id}" data-csup="${c.id}" data-csfield="axe" data-axe="${ax}" ${((c.axes||[]).indexOf(ax)!==-1)?"checked":""}>${nom}</label>`).join("")}
+      <button class="log-del csup-del" data-id="${sc.id}" data-csup="${c.id}" title="Supprimer ce critère">✕</button>
+    </div>`).join("") : (sc.criteresSup||[]).filter(c => c.actif !== false).map(c => {
+      const axesTxt = (c.axes && c.axes.length) ? " — " + c.axes.map(a => ({D:"Droite",G:"Gauche",I:"Inter",E:"Exter"})[a] || a).join(" / ") : "";
+      return `<div class="limit-row-print">${escapeAttr(c.label || "critère")} ≤ ${fmt(parseFloat(c.maxi),3)}${c.miniActif ? " (min " + fmt(parseFloat(c.mini),3) + ")" : ""}${axesTxt}</div>`;
+    }).join("");
+  const csupAddRow = interactive ? `
     <div class="limit-row">
-      <label class="emag-toggle">
-        <input type="checkbox" data-id="${sc.id}" data-field="critere2Actif" ${sc.critere2Actif ? "checked" : ""}>
-        Suivre un 2e critère (ex. état de surface Ra/Rz/Rt, en plus de la tolérance ci-dessus)
-      </label>
-      ${sc.critere2Actif ? `
-        <input class="limit-label" data-id="${sc.id}" data-field="limitLabel2" value="${escapeAttr(sc.limitLabel2)}">
-        <span>≤</span>
-        <input class="limit-value" data-id="${sc.id}" data-field="limitValue2" type="number" step="0.01" value="${sc.limitValue2 ?? ""}">` : ""}
-    </div>
-  ` : (sc.critere2Actif ? `<div class="limit-row-print">${escapeAttr(sc.limitLabel2)} ≤ ${fmt(parseFloat(sc.limitValue2),3)} (2e critère)</div>` : "");
+      <button class="ghost small csup-add" data-id="${sc.id}" data-cstype="ra">+ Ra</button>
+      <button class="ghost small csup-add" data-id="${sc.id}" data-cstype="ve">+ VE</button>
+      <button class="ghost small csup-add" data-id="${sc.id}" data-cstype="libre">+ Autre critère…</button>
+      <span class="limit-op-note">État de surface, variation d'épaisseur, tout critère libre — bornes maxi (mini optionnelle), côtés Droite/Gauche ou Inter/Exter.</span>
+    </div>` : "";
 
   const thresholdRow = interactive ? `
     <div class="limit-row">
@@ -5576,7 +5771,7 @@ function scenarioBlockHTML(sc, interactive){
   const logSection = `
     <div class="log-section">
       <h3>Essais — relevés de contrôle (un essai = plusieurs prélèvements sur la charnière visée)</h3>
-      <div class="log-meta">${emagRow}${limitRow}${critere2Row}${thresholdRow}</div>
+      <div class="log-meta">${emagRow}${limitRow}${csupRows}${csupAddRow}${thresholdRow}<div class="limit-row-print">Spec usine (OP40, disque fini) : Battement ≤ ${fmt(specsUsine.battement,3)} · VE ≤ ${fmt(specsUsine.ve,3)}</div></div>
       <div class="essais-list">
         ${essaisHtml || `<div class="log-empty" style="padding:16px;">Aucun essai enregistré</div>`}
       </div>
@@ -5709,7 +5904,10 @@ function marpossStats(sc, essai){
   const moyenne = arr => arr.length ? arr.reduce((s,r) => s + (parseFloat(r.valeur)||0), 0) / arr.length : null;
   return { total: releves.length, moyenneJour: moyenne(releves), moyenneEssai: moyenne(dansEssai), nbEssai: dansEssai.length, debutMin, finMin };
 }
-function marpossChartSVG(sc, essai){
+function marpossChartSVG(sc, essai, pal){
+  // palette paramétrable : variables CSS dans l'outil, couleurs en dur dans le rapport
+  // autonome (qui n'a pas les variables de l'outil)
+  pal = Object.assign({ blue:"var(--blue)", red:"var(--red)", teal:"var(--teal-strong)", faint:"var(--ink-faint)" }, pal || {});
   const m = essai.marposs || { debut:"", fin:"", releves:[] };
   const releves = (m.releves||[]).map(r => ({ x: heureToMinutes(r.heure), y: parseFloat(r.valeur) }))
     .filter(p => p.x !== null && !isNaN(p.y));
@@ -5731,28 +5929,28 @@ function marpossChartSVG(sc, essai){
   if(stats.debutMin !== null && stats.finMin !== null){
     const x1 = X(Math.max(xMin, Math.min(stats.debutMin, stats.finMin)));
     const x2 = X(Math.min(xMax, Math.max(stats.debutMin, stats.finMin)));
-    if(x2 > x1) zone = `<rect x="${x1.toFixed(1)}" y="${mt}" width="${(x2-x1).toFixed(1)}" height="${ih}" fill="var(--blue)" opacity="0.12"/>`;
+    if(x2 > x1) zone = `<rect x="${x1.toFixed(1)}" y="${mt}" width="${(x2-x1).toFixed(1)}" height="${ih}" fill="${pal.blue}" opacity="0.12"/>`;
   }
   let tolLine = "";
   if(!isNaN(limite) && limite <= yMax){
     const yl = Y(limite);
-    tolLine = `<line x1="${ml}" y1="${yl.toFixed(1)}" x2="${W-mr}" y2="${yl.toFixed(1)}" stroke="var(--red)" stroke-width="1.5" stroke-dasharray="6 4"/>`;
+    tolLine = `<line x1="${ml}" y1="${yl.toFixed(1)}" x2="${W-mr}" y2="${yl.toFixed(1)}" stroke="${pal.red}" stroke-width="1.5" stroke-dasharray="6 4"/>`;
   }
   let ticksX = "";
   for(let i=0;i<=4;i++){
     const v = xMin + ((xMax-xMin)/4)*i;
     const hh = Math.floor(v/60), mm = Math.round(v%60);
-    ticksX += `<text x="${X(v).toFixed(1)}" y="${H-mb+16}" text-anchor="middle" font-size="10" fill="var(--ink-faint)" font-family="var(--font-mono)">${String(hh).padStart(2,"0")}:${String(mm).padStart(2,"0")}</text>`;
+    ticksX += `<text x="${X(v).toFixed(1)}" y="${H-mb+16}" text-anchor="middle" font-size="10" fill="${pal.faint}" font-family="Consolas,monospace">${String(hh).padStart(2,"0")}:${String(mm).padStart(2,"0")}</text>`;
   }
   const dots = releves.map(p => {
     const hors = !isNaN(limite) && p.y > limite;
-    return `<circle cx="${X(p.x).toFixed(1)}" cy="${Y(p.y).toFixed(1)}" r="2.2" fill="${hors ? "var(--red)" : "var(--teal-strong)"}" opacity="0.75"/>`;
+    return `<circle cx="${X(p.x).toFixed(1)}" cy="${Y(p.y).toFixed(1)}" r="2.2" fill="${hors ? pal.red : pal.teal}" opacity="0.75"/>`;
   }).join("");
 
   return `
     <svg class="chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Battement mesuré par la Marposs au fil de la journée">
-      <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt+ih}" stroke="var(--ink-faint)" stroke-width="1"/>
-      <line x1="${ml}" y1="${mt+ih}" x2="${W-mr}" y2="${mt+ih}" stroke="var(--ink-faint)" stroke-width="1"/>
+      <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt+ih}" stroke="${pal.faint}" stroke-width="1"/>
+      <line x1="${ml}" y1="${mt+ih}" x2="${W-mr}" y2="${mt+ih}" stroke="${pal.faint}" stroke-width="1"/>
       ${zone}${tolLine}${dots}${ticksX}
     </svg>
   `;
@@ -5776,6 +5974,7 @@ function marpossHTML(sc, essai){
         <div class="marposs-window">
           <label>Début essai <input type="time" class="cell" data-marposs-essai="${essai.id}" data-marposs-field="debut" value="${escapeAttr(m.debut)}"></label>
           <label>Fin essai <input type="time" class="cell" data-marposs-essai="${essai.id}" data-marposs-field="fin" value="${escapeAttr(m.fin)}"></label>
+          <label><input type="checkbox" data-marposs-essai="${essai.id}" data-marposs-field="marpossRapport" ${m.marpossRapport ? "checked" : ""}> Inclure ce graphe dans le rapport de l'essai</label>
           <span class="panel-hint" style="margin:0;">Le graphique colore en bleu la période de l'essai parmi les relevés de la journée.</span>
         </div>
         <div class="marposs-paste-row">
@@ -6412,11 +6611,16 @@ function essaiCardHTML(sc, essai, interactive){
   const snapLogements = (essai.params && essai.params.logements) || [];
   const showLogementCol = snapLogements.length > 1;
   const logementHead = showLogementCol ? `<th>Logement</th>` : "";
-  const critere2Head = sc.critere2Actif ? `<th class="num">${escapeAttr(sc.limitLabel2)}</th>` : "";
-  const usureHead = `<th>Usure</th>`;
-  const prelHead = sc.emag1
-    ? `${logementHead}<th class="num">N° pièce</th><th>Point de mesure</th><th class="num">Droite</th><th class="num">Gauche</th>${critere2Head}${usureHead}<th>Conf.</th>`
-    : `${logementHead}<th class="num">N° pièce</th><th>Point de mesure</th><th class="num">${mesureLabel}</th>${critere2Head}${usureHead}<th>Conf.</th>`;
+  // v4.9 : colonnes battement selon les côtés choisis ; critères supplémentaires : une
+  // colonne par critère actif × axe (ou une seule si le critère n'a pas d'axe)
+  const cotes = battCotesDe(sc);
+  const battHeads = cotes === "mono" ? `<th class="num">${mesureLabel}</th>`
+    : cotes === "D" ? `<th class="num">${mesureLabel} D</th>`
+    : cotes === "G" ? `<th class="num">${mesureLabel} G</th>`
+    : `<th class="num">Droite</th><th class="num">Gauche</th>`;
+  const csupCols = csupColonnes(sc);
+  const csupHeads = csupCols.map(col => `<th class="num">${escapeAttr(col.c.label || "critère")}${col.ax !== "v" ? " " + (AXE_LABELS[col.ax] || col.ax) : ""}</th>`).join("");
+  const prelHead = `${logementHead}<th class="num">N° pièce</th><th>Point de mesure</th>${sc.battActif !== false ? battHeads : ""}${csupHeads}<th>Usure</th><th>Conf.</th>`;
   const prelListe = interactive
     ? (essai.prelevements||[])
     : (essai.prelevements||[]).slice().sort((a,b) => (parseFloat(a.piece)||0) - (parseFloat(b.piece)||0));
@@ -6424,7 +6628,7 @@ function essaiCardHTML(sc, essai, interactive){
   const addPrelBtn = interactive ? `<button class="ghost prel-add" data-id="${sc.id}" data-essai="${essai.id}">+ Ajouter un prélèvement</button>
     <button class="primary atelier-open" data-id="${sc.id}" data-essai="${essai.id}" title="Saisie plein écran, gros champs — pour mesurer devant la machine"><svg class="icon" viewBox="0 0 18 18"><path d="M3.5 3.5h11v11h-11z" stroke-linejoin="round"/><path d="M6.5 9h5M9 6.5v5" stroke-linecap="round"/></svg>Mode atelier</button>
     <button class="ghost essai-rapport" data-id="${sc.id}" data-essai="${essai.id}" title="Génère un rapport HTML autonome de cet essai — interlocuteurs, but, plaquettes, mesures"><svg class="icon" viewBox="0 0 18 18"><path d="M5 2.5h5l3 3V15a.8.8 0 0 1-.8.8H5.8a.8.8 0 0 1-.8-.8V2.5Z" stroke-linejoin="round"/><path d="M6.5 9h5M6.5 11.5h5M6.5 6.5h2"/></svg>Rapport de l'essai</button>` : "";
-  const emptyColspan = (sc.emag1 ? 5 : 4) + (showLogementCol?1:0) + (interactive?1:0) + (sc.critere2Actif?1:0) + 1;
+  const emptyColspan = (showLogementCol?1:0) + 2 + (sc.battActif !== false ? (cotes === "DG" ? 2 : 1) : 0) + csupCols.length + 1 + (interactive?1:0);
 
   // une progression independante par logement : un outil peut atteindre sa charniere
   // pendant qu'un autre continue, chacun avec sa propre cible
@@ -6494,12 +6698,18 @@ function prelevementRowHTML(sc, essai, row, interactive, snapLogements, showLoge
         <option value="">—</option>
         ${snapLogements.map(lp => `<option value="${lp.logementId}" ${row.logementId===lp.logementId?"selected":""}>${escapeAttr(lp.outilNumero||"—")} · ${escapeAttr(lp.logementNom||"—")}</option>`).join("")}
       </select></td>` : "";
-    const measureCells = sc.emag1
-      ? `<td class="num"><input class="cell measure" data-id="${sc.id}" data-essai="${essai.id}" data-prel="${row.id}" data-field="battD" type="number" step="0.001" inputmode="decimal" value="${row.battD ?? ""}"></td>
-         <td class="num"><input class="cell measure" data-id="${sc.id}" data-essai="${essai.id}" data-prel="${row.id}" data-field="battG" type="number" step="0.001" inputmode="decimal" value="${row.battG ?? ""}"></td>`
-      : `<td class="num"><input class="cell measure" data-id="${sc.id}" data-essai="${essai.id}" data-prel="${row.id}" data-field="batt" type="number" step="0.001" inputmode="decimal" value="${row.batt ?? ""}"></td>`;
-    const critere2Cell = sc.critere2Actif
-      ? `<td class="num"><input class="cell measure" data-id="${sc.id}" data-essai="${essai.id}" data-prel="${row.id}" data-field="valeur2" type="number" step="0.001" inputmode="decimal" value="${row.valeur2 ?? ""}"></td>` : "";
+    // v4.9 : colonnes battement selon les côtés choisis (un essai peut n'en porter qu'un)
+    const cotes = battCotesDe(sc);
+    const battCell = (field, lbl) => `<td class="num"><input class="cell measure" data-id="${sc.id}" data-essai="${essai.id}" data-prel="${row.id}" data-field="${field}" type="number" step="0.001" inputmode="decimal" value="${row[field] ?? ""}" aria-label="${lbl}"></td>`;
+    const measureCells = sc.battActif === false ? ""
+      : cotes === "mono" ? battCell("batt", mesureLabel)
+      : cotes === "D" ? battCell("battD", "Droite")
+      : cotes === "G" ? battCell("battG", "Gauche")
+      : battCell("battD", "Droite") + battCell("battG", "Gauche");
+    const csupCells = csupColonnes(sc).map(col => {
+      const v = ((row.valeurs||{})[col.c.id]||{})[col.ax];
+      return `<td class="num"><input class="cell measure" data-id="${sc.id}" data-essai="${essai.id}" data-prel="${row.id}" data-csup="${col.c.id}" data-csax="${col.ax}" type="number" step="0.001" inputmode="decimal" value="${v ?? ""}"></td>`;
+    }).join("");
     const usureCell = `<td>${usureSelectHTML(row, `data-id="${sc.id}" data-essai="${essai.id}" data-prel="${row.id}"`)}</td>`;
     return `
       <tr class="${rowClass}">
@@ -6507,7 +6717,7 @@ function prelevementRowHTML(sc, essai, row, interactive, snapLogements, showLoge
         <td class="num"><input class="cell" data-id="${sc.id}" data-essai="${essai.id}" data-prel="${row.id}" data-field="piece" type="number" step="1" inputmode="numeric" value="${row.piece ?? ""}"></td>
         <td><input class="cell ref small" data-id="${sc.id}" data-essai="${essai.id}" data-prel="${row.id}" data-field="pointMesure" value="${escapeAttr(row.pointMesure)}" placeholder="Inter, Exter..."></td>
         ${measureCells}
-        ${critere2Cell}
+        ${csupCells}
         ${usureCell}
         <td>${badge}</td>
         <td><button class="log-del prel-del" data-id="${sc.id}" data-essai="${essai.id}" data-prel="${row.id}">✕</button></td>
@@ -6516,10 +6726,16 @@ function prelevementRowHTML(sc, essai, row, interactive, snapLogements, showLoge
   }
   const logementLabel = snapLogements.find(lp => lp.logementId === row.logementId);
   const logementCellPrint = showLogementCol ? `<td>${logementLabel ? escapeAttr(logementLabel.outilNumero||"—") + " · " + escapeAttr(logementLabel.logementNom||"—") : "—"}</td>` : "";
-  const measureCells = sc.emag1
-    ? `<td class="num">${fmtBatt(row.battD)}</td><td class="num">${fmtBatt(row.battG)}</td>`
-    : `<td class="num">${fmtBatt(row.batt)}</td>`;
-  const critere2CellPrint = sc.critere2Actif ? `<td class="num">${row.valeur2 === "" || row.valeur2 == null ? "—" : row.valeur2}</td>` : "";
+  const cotesP = battCotesDe(sc);
+  const measureCells = sc.battActif === false ? ""
+    : cotesP === "mono" ? `<td class="num">${fmtBatt(row.batt)}</td>`
+    : cotesP === "D" ? `<td class="num">${fmtBatt(row.battD)}</td>`
+    : cotesP === "G" ? `<td class="num">${fmtBatt(row.battG)}</td>`
+    : `<td class="num">${fmtBatt(row.battD)}</td><td class="num">${fmtBatt(row.battG)}</td>`;
+  const csupCellsPrint = csupColonnes(sc).map(col => {
+    const v = ((row.valeurs||{})[col.c.id]||{})[col.ax];
+    return `<td class="num">${v === "" || v == null ? "—" : v}</td>`;
+  }).join("");
   const usureCellPrint = `<td>${USURE_LABELS[row.usure] || "—"}</td>`;
   return `
     <tr class="${rowClass}">
@@ -6527,7 +6743,7 @@ function prelevementRowHTML(sc, essai, row, interactive, snapLogements, showLoge
       <td class="num">${row.piece === "" || row.piece === undefined || row.piece === null ? "—" : row.piece}</td>
       <td>${row.pointMesure ? escapeAttr(row.pointMesure) : "—"}</td>
       ${measureCells}
-      ${critere2CellPrint}
+      ${csupCellsPrint}
       ${usureCellPrint}
       <td>${badge}</td>
     </tr>
@@ -6841,7 +7057,11 @@ Connectez le dossier local (menu ••• → Dossier photos) : le fichier y se
   });
 }
 
-/* ouvre une piece jointe quel que soit son mode de stockage */
+/* ouvre une piece jointe quel que soit son mode de stockage.
+   Piège historique : window.open("data:...") est bloqué par Chrome/Edge (navigation
+   top-level vers une data: URL) — un PDF intégré ne s'ouvrait donc jamais. Les images
+   passent par la lightbox ; les documents sont convertis en Blob/ObjectURL (autorisé),
+   révoqué une minute plus tard, le temps que le lecteur du navigateur l'ait chargé. */
 async function ouvrirPieceJointe(pj){
   if(!pj) return;
   if(pj.stockage === "dossier"){
@@ -6849,8 +7069,18 @@ async function ouvrirPieceJointe(pj){
     const url = await readPhotoURL(pj.filename);
     if(!url){ dialogueAlerte("Fichier introuvable dans le dossier local : " + pj.filename, "Fichier introuvable"); return; }
     window.open(url, "_blank");
-  } else {
-    window.open(pj.dataUrl, "_blank");
+  } else if((pj.dataUrl || "").startsWith("data:image/")){
+    ouvrirLightbox(pj.dataUrl);
+  } else if(pj.dataUrl){
+    try{
+      const blob = await (await fetch(pj.dataUrl)).blob();
+      const url = URL.createObjectURL(blob);
+      const w = window.open(url, "_blank");
+      if(!w) dialogueAlerte("Le navigateur a bloqué l'ouverture dans un nouvel onglet. Autorisez les pop-ups pour ce site, ou connectez le dossier local (menu ••• → Dossier photos).", "Ouverture bloquée");
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    }catch(e){
+      dialogueAlerte("Ouverture impossible : " + e.message, "Ouverture impossible");
+    }
   }
 }
 
@@ -7666,7 +7896,7 @@ function attachDetailHandlers(sc){
       const es = sc.essais.find(e => e.id === essaiId);
       if(!es) return;
       if(!es.marposs) es.marposs = { debut:"", fin:"", releves:[] };
-      es.marposs[inp.getAttribute("data-marposs-field")] = inp.value;
+      es.marposs[inp.getAttribute("data-marposs-field")] = inp.type === "checkbox" ? inp.checked : inp.value;
       saveData(); render();
     });
   });
@@ -7764,6 +7994,77 @@ function attachDetailHandlers(sc){
   root.querySelectorAll('input[data-field="critere2Actif"]').forEach(inp => {
     inp.addEventListener("change", () => {
       sc.critere2Actif = inp.checked;
+      saveData(); render();
+    });
+  });
+  // v4.9 — critères du bloc Essais : battement on/off, côtés, tolérance éditée sur place
+  // (l'édition pose la spécificité au scénario, plus besoin de cocher au préalable),
+  // critères supplémentaires (label, bornes, axes, ajout, suppression).
+  root.querySelectorAll('input[data-field="battActif"]').forEach(inp => {
+    inp.addEventListener("change", () => { sc.battActif = inp.checked; saveData(); render(); });
+  });
+  root.querySelectorAll('select[data-field="battCotes"]').forEach(sel => {
+    sel.addEventListener("change", () => { sc.battCotes = sel.value; saveData(); render(); });
+  });
+  root.querySelectorAll('input[data-field="limitLabel"], input[data-field="limitValue"]').forEach(inp => {
+    inp.addEventListener("change", () => {
+      if(!sc.limitOverride) sc.limitOverride = true;
+      const lab = root.querySelector('input[data-field="limitLabel"]');
+      const val = root.querySelector('input[data-field="limitValue"]');
+      if(lab) sc.limitLabel = lab.value;
+      if(val) sc.limitValue = val.value === "" ? "" : parseFloat(val.value);
+      saveData(); render();
+    });
+  });
+  root.querySelectorAll('[data-csup][data-csfield]').forEach(inp => {
+    const apply = () => {
+      const c = (sc.criteresSup || []).find(x => x.id === inp.getAttribute("data-csup"));
+      if(!c) return;
+      const f = inp.getAttribute("data-csfield");
+      if(f === "actif" || f === "miniActif") c[f] = inp.checked;
+      else if(f === "axe"){
+        const ax = inp.getAttribute("data-axe");
+        c.axes = c.axes || [];
+        const i = c.axes.indexOf(ax);
+        if(inp.checked && i === -1) c.axes.push(ax);
+        if(!inp.checked && i !== -1) c.axes.splice(i, 1);
+      }
+      else if(f === "maxi" || f === "mini") c[f] = inp.value === "" ? "" : parseFloat(inp.value);
+      else c[f] = inp.value;
+      saveData();
+      // les axes changent les colonnes du tableau : reconstruction, mais pas à chaque frappe
+      if(f === "axe" || f === "actif" || f === "miniActif") render();
+    };
+    inp.addEventListener("change", apply);
+    if(inp.getAttribute("data-csfield") === "label") inp.addEventListener("input", apply);
+  });
+  root.querySelectorAll(".csup-del").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const cid = btn.getAttribute("data-csup");
+      const c = (sc.criteresSup || []).find(x => x.id === cid);
+      dialogueConfirmer("Supprimer le critère « " + ((c && c.label) || "?") + " » ?\n\nLes valeurs déjà saisies pour ce critère restent dans les données mais ne sont plus affichées ni évaluées.", { titre: "Supprimer le critère ?", danger: true, okLabel: "Supprimer" }).then(ok => {
+        if(!ok) return;
+        sc.criteresSup = (sc.criteresSup || []).filter(x => x.id !== cid);
+        saveData(); render();
+      });
+    });
+  });
+  root.querySelectorAll(".csup-add").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const type = btn.getAttribute("data-cstype");
+      sc.criteresSup = sc.criteresSup || [];
+      if(type === "libre"){
+        dialogueDemander("Nom du critère (ex. « Concentricité (mm) ») :", "", { titre: "Nouveau critère", okLabel: "Créer" }).then(nom => {
+          if(nom === null || !nom.trim()) return;
+          sc.criteresSup.push({ id: uid("cs"), label: nom.trim(), maxi: "", miniActif:false, mini:"", axes:[], actif:true });
+          saveData(); render();
+        });
+        return;
+      }
+      const def = type === "ra"
+        ? { label: "Ra (µm)", maxi: "", axes: ["I","E"] }
+        : { label: "VE (mm)", maxi: "", axes: ["D","G"] };
+      sc.criteresSup.push(Object.assign({ id: uid("cs"), miniActif:false, mini:"", actif:true }, def));
       saveData(); render();
     });
   });
@@ -8038,8 +8339,37 @@ function toucherEssai(es){
   if(es) es.modifieLe = new Date().toISOString();
 }
 
+/* v4.9 — champs des critères supplémentaires (config du bloc Essais ET cellules des
+   prélèvements) : écriture pure, sans sauvegarde ni rendu — le change event déclenche
+   la sauvegarde par le câblage générique, exactement comme les autres champs. */
+function ecrireCsup(el){
+  const sc = data.find(s => s.id === el.getAttribute("data-id"));
+  if(!sc) return null;
+  const cid = el.getAttribute("data-csup");
+  const prelId = el.getAttribute("data-prel");
+  const val = el.type === "number" ? (el.value === "" ? "" : parseFloat(el.value)) : el.value;
+  if(prelId){
+    const es = sc.essais.find(e => e.id === el.getAttribute("data-essai"));
+    const row = es && es.prelevements.find(r => r.id === prelId);
+    if(!row) return null;
+    const ax = el.getAttribute("data-csax") || "v";
+    row.valeurs = row.valeurs || {};
+    row.valeurs[cid] = row.valeurs[cid] || {};
+    row.valeurs[cid][ax] = val;
+    toucherEssai(es);
+  } else {
+    const c = (sc.criteresSup || []).find(x => x.id === cid);
+    if(!c) return null;
+    const field = el.getAttribute("data-csfield");
+    if(field === "maxi" || field === "mini") c[field] = val;
+    else if(field === "label") c.label = el.value;
+  }
+  return null;
+}
+
 function writeFieldValue(el){
   const id = el.getAttribute("data-id");
+  if(el.getAttribute("data-csup")) return ecrireCsup(el);
   const field = el.getAttribute("data-field");
   const outilId = el.getAttribute("data-outil");
   const logementId = el.getAttribute("data-logement");
@@ -8356,6 +8686,13 @@ function syncOptionsUI(){
     ` — chaque réglage porte son badge de portée : <i class="opt-scope">OP</i>, <i class="opt-scope">Référence</i>, <i class="opt-scope">Ligne</i> ou <i class="opt-scope">Tous</i>.`;
   // le cout horaire vit sur la ligne : champ en place (v4.7), meme donnee que l'icone ⚙
   optCoutHoraire.value = lg ? (lg.coutHoraire ?? "") : "";
+  // v4.9 : specs usine affichées, toujours reverrouillées à l'ouverture du panneau
+  usineUnlockOk = false;
+  optUsineBatt.value = specsUsine.battement;
+  optUsineVE.value = specsUsine.ve;
+  optUsineBatt.disabled = true;
+  optUsineVE.disabled = true;
+  optUsineUnlock.textContent = "Modifier";
   majChampsOptions();
   renderFicheOutil();
   renderResponsablesOptions();
@@ -8445,6 +8782,34 @@ let optionsInputDebounce = null;
   });
 });
 document.getElementById("optionsBtn").addEventListener("click", () => { syncOptionsUI(); ouvrirPanneau("optionsPanel"); });
+
+/* v4.9 — modification des specs usine : double validation. Le bouton déverrouille les
+   champs après confirmation explicite ; les valeurs ne sont écrites qu'au
+   reverrouillage (« Verrouiller et enregistrer »), et le panneau reverrouille tout seul
+   à sa prochaine ouverture. */
+let usineUnlockOk = false;
+document.getElementById("optUsineUnlock").addEventListener("click", () => {
+  const b = document.getElementById("optUsineUnlock");
+  const batt = document.getElementById("optUsineBatt");
+  const ve = document.getElementById("optUsineVE");
+  if(usineUnlockOk){
+    if(batt.value !== "" && !isNaN(parseFloat(batt.value))) specsUsine.battement = parseFloat(batt.value);
+    if(ve.value !== "" && !isNaN(parseFloat(ve.value))) specsUsine.ve = parseFloat(ve.value);
+    usineUnlockOk = false;
+    batt.disabled = ve.disabled = true;
+    b.textContent = "Modifier";
+    saveData();
+    dialogueAlerte("Specs usine enregistrées : Battement ≤ " + fmt(specsUsine.battement,3) + " · VE ≤ " + fmt(specsUsine.ve,3) + ".", "Specs usine");
+    return;
+  }
+  dialogueConfirmer("Modifier les spécifications usine ?\n\nCes valeurs (battement max et variation d'épaisseur max mesurées Marposs sur disque fini, après OP40) servent de référence pour TOUS les disques de l'usine et ne changent normalement jamais.\n\nNe continuer que si la spécification a réellement été revue officiellement.", { titre: "Modifier les specs usine ?", danger: true, okLabel: "Déverrouiller" }).then(ok => {
+    if(!ok) return;
+    usineUnlockOk = true;
+    batt.disabled = ve.disabled = false;
+    batt.focus();
+    b.textContent = "Verrouiller et enregistrer";
+  });
+});
 ["projetNom","projetProblematique","projetStatut","projetDateCible"].forEach(id => {
   const el = document.getElementById(id);
   if(el) el.addEventListener("change", enregistrerProjetInfo);
@@ -8517,6 +8882,13 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.9.0", date:"22/09/2026", points:[
+    "<b>Critères d'essai repensés.</b> Le battement se décoche (un essai peut ne porter que sur l'état de surface), ses côtés Droite/Gauche se choisissent par scénario (essai à un seul côté), et les critères supplémentaires — <b>Ra</b>, <b>VE</b>, ou tout critère libre — se gèrent en liste : borne maxi, mini optionnelle (plage min–max), axes Inter/Exter ou Droite/Gauche. Ancien « 2ᵉ critère » migré automatiquement, rien à refaire.",
+    "<b>La tolérance s'édite dans le bloc Essais.</b> Plus de détour par Options ni de case à cocher : le champ est là, toujours visible, et l'éditer le rend spécifique au scénario. La valeur OP reste affichée comme repère. Specs usine (Battement ≤ 0,04 · VE ≤ 0,01 après OP40) affichées en permanence sous les critères.",
+    "<b>Specs usine dans Options, verrouillées.</b> Les valeurs de référence pour tous les disques finis se consultent dans Options ; les modifier exige une double validation explicite — elles ne changent normalement jamais. Reprendues dans les rapports d'essai.",
+    "<b>Le graphe Marposs peut partir dans le rapport.</b> Dans le suivi Marposs d'un essai, une case « Inclure ce graphe dans le rapport de l'essai » ajoute au rapport généré la courbe du jour avec la plage horaire de l'essai surlignée, les moyennes et la fenêtre début–fin. Désactivé par défaut pour ne pas surcharger.",
+    "<b>Correction — l'ouverture des pièces jointes.</b> Les PDF intégrés au suivi (plans, fiches outil) ne s'ouvraient plus : le navigateur bloque l'ouverture des liens data:. Corrigé — les documents passent par un fichier temporaire, les images par l'agrandissement plein écran."
+  ]},
   { version:"4.8.0", date:"22/09/2026", points:[
     "<b>Le suivi se synchronise tout seul.</b> Fini les exports JSON envoyés par e-mail : connectez-vous dans <b>Options → Cloud</b> avec votre email, et chaque saisie repart seule quelques secondes après — les modifications de l'autre arrivent à l'ouverture de l'outil ou en revenant sur l'onglet. Une pastille ☁ en pied de page dit où on en est.",
     "<b>Vos données ne se mélangent jamais en silence.</b> Au premier branchement, l'outil montre ce que contient le cloud et ce que contient le poste (nombre d'essais, date, auteur) et demande qui fait autorité — avec un export de secours téléchargé avant tout remplacement. Le dépôt initial dans un cloud vide reste un geste volontaire.",
