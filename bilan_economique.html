@@ -1789,7 +1789,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.9.0";
+const TOOL_VERSION = "4.9.1";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -2575,7 +2575,7 @@ function normalizeScenario(sc){
       { id: e.id || ("e"+Math.random().toString(36).slice(2)), titre:"", date:"", equipe:"", operateur:"", observations:"", maturiteBruts:"", prelevements:[],
         // tracabilite terrain (v3.11) : sans ces defauts, un essai charge depuis un JSON
         // anterieur a cette version porte des champs undefined plutot que des chaines vides
-        redigePar:"", dateFin:"", heureFin:"", programme:"", programmeGauche:"", programmeDroit:"",
+        redigePar:"", dateFin:"", heureDebut:"", heureFin:"", programme:"", programmeGauche:"", programmeDroit:"",
         // horodatage de derniere modification (v3.16) : c'est lui qui arbitre la fusion de
         // deux fichiers. Vide sur un essai issu d'un JSON anterieur — la fusion traite alors
         // le cas en conflit plutot que de deviner.
@@ -3192,7 +3192,7 @@ function exportCSV(essaiIds){
   const opActive = getActiveOp();
   const csvLignes = [[
     "Ligne de production","Reference disque","OP","Scenario","Outils (numero/logement:Vc/f/charniere)",
-    "Essai","Date","Equipe","Operateur","Maturite bruts (j)","Observations essai","Logement mesure","Point de mesure",
+    "Essai","Date","Heure debut","Heure fin","Equipe","Operateur","Maturite bruts (j)","Observations essai","Logement mesure","Point de mesure",
     "N piece","Grandeur","Valeur","Droite","Gauche",
     "Tolerance",
     // v4.9 : une colonne par critère supplémentaire actif × axe (à la place du 2e critère figé)
@@ -3211,7 +3211,7 @@ function exportCSV(essaiIds){
       csvLignes.push([
         txt(ligneActive ? ligneActive.nom : ""), txt(refActive ? refActive.nom : ""), txt(opActive ? opActive.nom : ""),
         txt(sc.name), txt(outilsResume),
-        txt(es.titre), txt(es.date), txt(es.equipe), txt(es.operateur), num(es.maturiteBruts), txt(es.observations),
+        txt(es.titre), txt(es.date), txt(es.heureDebut || ""), txt(es.heureFin || ""), txt(es.equipe), txt(es.operateur), num(es.maturiteBruts), txt(es.observations),
         txt(logementMesure), txt(r.pointMesure),
         num(r.piece), txt(libelleDe(sc)),
         num(sc.emag1 ? valeurMesuree(sc, r) : r.batt),
@@ -3549,7 +3549,7 @@ function essaiRapportHTML(sc, essai){
 
   <h2>Informations essai</h2>
   <div class="grid">
-    <div><div class="l">Date</div><div class="v">${dateAff}${essai.dateFin ? " → " + new Date(essai.dateFin + "T00:00").toLocaleDateString("fr-FR") + (essai.heureFin ? " à " + essai.heureFin : "") : ""}</div></div>
+    <div><div class="l">Date</div><div class="v">${dateAff}${(essai.heureDebut || essai.heureFin) ? " · " + (essai.heureDebut || "—") + " → " + (essai.heureFin || "—") : ""}${essai.dateFin ? " → " + new Date(essai.dateFin + "T00:00").toLocaleDateString("fr-FR") + (essai.heureFin ? " à " + essai.heureFin : "") : ""}</div></div>
     <div><div class="l">Équipe</div><div class="v">${escapeAttr(essai.equipe) || "—"}</div></div>
     <div><div class="l">Opérateur</div><div class="v">${escapeAttr(essai.operateur) || "—"}</div></div>
     <div><div class="l">Rédigé par</div><div class="v">${escapeAttr(essai.redigePar) || "—"}</div></div>
@@ -6563,11 +6563,13 @@ function essaiCardHTML(sc, essai, interactive){
     ? `<div class="essai-params" style="flex-wrap:wrap;">
          <span title="Qui a rédigé ce rapport d'essai — peut différer de l'opérateur machine, renseigné plus haut.">Rédigé par —</span>
          <input class="cell ref" style="width:160px; min-width:120px;" data-id="${sc.id}" data-essai="${essai.id}" data-field="redigePar" value="${escapeAttr(essai.redigePar)}" placeholder="${escapeAttr(auteurNom) || "Nom du rédacteur"}" title="Nom du rédacteur du rapport — l'opérateur machine (champ ci-dessus) peut être une personne différente.">
+         <span style="margin-left:10px;">Début essai —</span>
+         <input class="cell" style="width:95px; min-width:80px;" type="time" data-id="${sc.id}" data-essai="${essai.id}" data-field="heureDebut" value="${essai.heureDebut ?? ""}" title="Pré-remplit la fenêtre horaire du suivi Marposs (si elle est encore vide)">
          <span style="margin-left:10px;">Fin d'essai —</span>
          <input class="cell" style="width:135px; min-width:120px;" type="date" data-id="${sc.id}" data-essai="${essai.id}" data-field="dateFin" value="${essai.dateFin ?? ""}">
-         <input class="cell" style="width:95px; min-width:80px;" type="time" data-id="${sc.id}" data-essai="${essai.id}" data-field="heureFin" value="${essai.heureFin ?? ""}">
+         <input class="cell" style="width:95px; min-width:80px;" type="time" data-id="${sc.id}" data-essai="${essai.id}" data-field="heureFin" value="${essai.heureFin ?? ""}" title="Pré-remplit la fenêtre horaire du suivi Marposs (si elle est encore vide)">
        </div>`
-    : ((essai.redigePar || essai.dateFin) ? `<div class="essai-obs-print">${essai.redigePar ? "Rédigé par : " + escapeAttr(essai.redigePar) : ""}${essai.dateFin ? (essai.redigePar ? " · " : "") + "Fin d'essai : " + essai.dateFin + (essai.heureFin ? " à " + essai.heureFin : "") : ""}</div>` : "");
+    : ((essai.redigePar || essai.dateFin || essai.heureDebut) ? `<div class="essai-obs-print">${essai.redigePar ? "Rédigé par : " + escapeAttr(essai.redigePar) : ""}${essai.dateFin ? (essai.redigePar ? " · " : "") + "Fin d'essai : " + essai.dateFin + (essai.heureFin ? " à " + essai.heureFin : "") : ""}${essai.heureDebut ? (essai.dateFin || essai.redigePar ? " · " : "") + "Début : " + essai.heureDebut : ""}</div>` : "");
 
   const programmeRow = sc.emag1
     ? (interactive
@@ -7900,6 +7902,22 @@ function attachDetailHandlers(sc){
       saveData(); render();
     });
   });
+  // v4.9.1 : l'heure de début/fin de l'essai pré-remplit la fenêtre du suivi Marposs si
+  // elle est encore vide (une seule saisie en pratique ; la fenêtre Marposs reste
+  // modifiable séparément — la machine, elle, contrôle toute la journée)
+  root.querySelectorAll('input[data-field="heureDebut"], input[data-field="heureFin"]').forEach(inp => {
+    inp.addEventListener("change", () => {
+      const es = sc.essais.find(e => e.id === inp.getAttribute("data-essai"));
+      if(!es) return;
+      if(!es.marposs) es.marposs = { debut:"", fin:"", releves:[] };
+      // lire l'INPUT et pas le modèle : ce listener peut partir avant le câblage générique
+      const v = (inp.value || "").trim();
+      let rempli = false;
+      if(v && inp.getAttribute("data-field") === "heureDebut" && !es.marposs.debut){ es.marposs.debut = v; rempli = true; }
+      if(v && inp.getAttribute("data-field") === "heureFin" && !es.marposs.fin){ es.marposs.fin = v; rempli = true; }
+      if(rempli){ saveData(); render(); }
+    });
+  });
   root.querySelectorAll(".marposs-import").forEach(btn => {
     btn.addEventListener("click", () => {
       const essaiId = btn.getAttribute("data-marposs-essai");
@@ -8882,6 +8900,10 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.9.1", date:"22/09/2026", points:[
+    "<b>Heure de début d'essai.</b> L'essai avait une heure de fin mais pas de début : le champ est là, à côté de « Fin d'essai ». Il apparaît dans le rapport (« 22/09/2026 · 08:00 → 09:30 ») et dans l'export CSV. Le choix Matin / Après-midi / Nuit reste ce qu'il a toujours été : l'<b>équipe</b> (poste), utilisée par la comparaison de dispersion entre équipes.",
+    "<b>Fenêtre Marposs pré-remplie.</b> Dès que l'heure de début et l'heure de fin de l'essai sont saisies, la fenêtre horaire du suivi Marposs se remplit avec — modifiable ensuite séparément, la machine contrôlant toute la journée."
+  ]},
   { version:"4.9.0", date:"22/09/2026", points:[
     "<b>Critères d'essai repensés.</b> Le battement se décoche (un essai peut ne porter que sur l'état de surface), ses côtés Droite/Gauche se choisissent par scénario (essai à un seul côté), et les critères supplémentaires — <b>Ra</b>, <b>VE</b>, ou tout critère libre — se gèrent en liste : borne maxi, mini optionnelle (plage min–max), axes Inter/Exter ou Droite/Gauche. Ancien « 2ᵉ critère » migré automatiquement, rien à refaire.",
     "<b>La tolérance s'édite dans le bloc Essais.</b> Plus de détour par Options ni de case à cocher : le champ est là, toujours visible, et l'éditer le rend spécifique au scénario. La valeur OP reste affichée comme repère. Specs usine (Battement ≤ 0,04 · VE ≤ 0,01 après OP40) affichées en permanence sous les critères.",

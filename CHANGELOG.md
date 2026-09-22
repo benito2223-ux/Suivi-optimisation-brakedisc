@@ -5,6 +5,19 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.9.1] — 2026-09-22
+
+### Ajouté — heure de début d'essai
+L'essai connaissait sa fin (date + heure) mais pas son début. Le champ « Début
+essai » complète « Fin d'essai » dans l'en-tête, apparaît dans le rapport d'essai
+(« 22/09/2026 · 08:00 → 09:30 ») et dans l'export CSV (colonnes « Heure debut » /
+« Heure fin »). Le choix Matin / Après-midi / Nuit n'est pas touché : c'est le
+champ Équipe (poste), utilisé par la dispersion entre équipes.
+
+Bonus : la saisie de ces heures pré-remplit la fenêtre horaire du suivi Marposs
+si elle est encore vide — la fenêtre reste modifiable séparément (la machine
+contrôle toute la journée, l'essai une plage). Une seule saisie en pratique.
+
 ## [4.9.0] — 2026-09-22
 
 Les critères de validation d'essai, refondus autour du retour terrain (Matis) :
