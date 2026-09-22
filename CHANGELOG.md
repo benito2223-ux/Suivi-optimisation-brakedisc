@@ -5,6 +5,15 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.11.2] — 2026-09-22
+
+### Ajouté — le graphe de Tendance peut partir dans les rapports d'essai
+Une case « Inclure le graphe de Tendance dans les rapports d'essai » dans le
+bloc Essais du scénario (désactivée par défaut) : quand elle est cochée, chaque
+rapport d'essai généré embarque les graphiques de tendance des critères suivis
+(battement, Ra Inter/Exter, VE...) avec leurs lignes de tolérance — rendus avec
+la palette du rapport, qui reste un fichier 100 % autonome.
+
 ## [4.11.1] — 2026-09-22
 
 ### Modifié — la Tendance trace tout critère évalué

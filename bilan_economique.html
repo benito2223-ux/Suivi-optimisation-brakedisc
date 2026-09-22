@@ -1791,7 +1791,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.11.1";
+const TOOL_VERSION = "4.11.2";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -2539,7 +2539,7 @@ function normalizeScenario(sc){
   // statut de vie : le scenario de reference est par definition ce qui tourne en serie,
   // les autres sont en essai tant qu'on n'a pas tranche
   const merged = Object.assign({ emag1:false, limitOverride:false, limitLabel:"Battement (mm)", limitValue:0.12, validationThreshold:5,
-    battActif:true, battCotes:"", criteresSup:[], marpossRapport:false,
+    battActif:true, battCotes:"", criteresSup:[], marpossRapport:false, tendanceRapport:false,
     critere2Actif:false, limitLabel2:"Ra (µm)", limitValue2:0.8,
     statut: sc.baseline ? "serie" : "essai", statutMotif:"", statutDate:"", essais:[], scrapLog:[] }, sc);
   // v4.4 : le scenario en production (★) EST le scenario "en serie" -- un seul concept,
@@ -3541,6 +3541,10 @@ function essaiRapportHTML(sc, essai){
   th,td{border-bottom:1px solid var(--border); padding:7px 10px; font-size:12.5px; text-align:left;}
   td{font-family:'IBM Plex Mono',Consolas,monospace;}
   th{font-family:'IBM Plex Mono',Consolas,monospace; font-size:10px; letter-spacing:.07em; text-transform:uppercase; color:var(--ink-faint); background:var(--surface-alt); font-weight:600;}
+  .chart-block{margin:18px 0;}
+  .chart-svg{width:100%; height:auto;}
+  .chart-legend{display:flex; gap:14px; flex-wrap:wrap; font-size:11px; color:var(--ink-soft); margin-top:8px; align-items:center;}
+  .chart-legend .tol{display:inline-block; width:20px; border-top:2px dashed var(--red); vertical-align:middle;}
   footer{margin-top:40px; padding-top:14px; border-top:1px solid var(--border); font-family:'IBM Plex Mono',Consolas,monospace; font-size:10.5px; color:var(--ink-faint); line-height:1.8;}
   footer b{color:var(--red);}
 </style></head><body>
@@ -3593,6 +3597,13 @@ function essaiRapportHTML(sc, essai){
   ${essai.observations ? `<h2>Observations</h2><div class="obs-box">${escapeAttr(essai.observations)}</div>` : ""}
 
   ${marpossRapportBloc}
+
+  ${sc.tendanceRapport ? `<h2>Tendance — évolution des critères</h2>
+  ${groupesTendance(sc).filter(g => g.series.length).map(g => tendanceChartHTML(sc, g, {
+    border:"#ccd1d8", faint:"#5a6470", red:"#c50018", blue:"#0d47a1", surface:"#ffffff", soft:"#454e59",
+    mono:"'IBM Plex Mono',Consolas,monospace"
+  })).join("")}
+  <p style="font-size:10.5px; color:var(--ink-faint); margin-top:2px;">Chaque point : un prélèvement mesuré au fil des pièces. Ligne rouge : tolérance du critère. Une couleur par axe mesuré (Inter/Exter...) et par essai.</p>` : ""}
 
   <footer>
     Rapport d'essai généré automatiquement par l'outil de suivi SPK OP10 (bilan_economique.html) — ${new Date().toLocaleString("fr-FR")}. Document 100% local, aucune donnée transmise.<br>
@@ -5049,7 +5060,7 @@ function seriesTendance(sc, valeurFn){
   return series;
 }
 
-function chartHTML(sc){
+function groupesTendance(sc){
   /* v4.11 — la Tendance trace QUELQUE SOIT le critère évalué : le battement (s'il est
      actif), puis chaque critère supplémentaire (Ra, VE, critère libre). Un graphe par
      critère — les échelles ne se mélangent pas — et à l'intérieur une courbe (une
@@ -5085,8 +5096,11 @@ function chartHTML(sc){
       series
     });
   });
+  return groupes;
+}
 
-  const sections = groupes.filter(g => g.series.length).map(g => tendanceChartHTML(sc, g));
+function chartHTML(sc){
+  const sections = groupesTendance(sc).filter(g => g.series.length).map(g => tendanceChartHTML(sc, g));
   if(!sections.length){
     return `<div class="chart-block">
       <h3>Tendance</h3>
@@ -5096,7 +5110,14 @@ function chartHTML(sc){
   return sections.join("");
 }
 
-function tendanceChartHTML(sc, g){
+function tendanceChartHTML(sc, g, pal){
+  // palette paramétrable : variables CSS dans l'outil, couleurs en dur dans le rapport
+  // autonome (qui n'a pas les variables de l'outil)
+  pal = Object.assign({
+    border:"var(--border)", faint:"var(--ink-faint)", red:"var(--red)",
+    blue:"var(--blue)", surface:"var(--surface)", soft:"var(--ink-soft)",
+    mono:"var(--font-mono)"
+  }, pal || {});
   const series = g.series;
   series.forEach((s, i) => Object.assign(s, { couleur: CHART_COLORS[i % CHART_COLORS.length], dash: STROKE_DASH[i % STROKE_DASH.length] }));
   // une meme piece peut porter plusieurs points de mesure (ex. Inter/Exter, Droite/Gauche
@@ -5132,20 +5153,20 @@ function tendanceChartHTML(sc, g){
   let grid = "", ticksY = "";
   for(let i = 0; i <= 4; i++){
     const v = (yMax / 4) * i, yy = Y(v);
-    grid += `<line x1="${ml}" y1="${yy.toFixed(1)}" x2="${W-mr}" y2="${yy.toFixed(1)}" stroke="var(--border)" stroke-width="1"/>`;
-    ticksY += `<text x="${ml-8}" y="${(yy+4).toFixed(1)}" text-anchor="end" font-size="11" fill="var(--ink-faint)" font-family="var(--font-mono)">${fmt(v, dec)}</text>`;
+    grid += `<line x1="${ml}" y1="${yy.toFixed(1)}" x2="${W-mr}" y2="${yy.toFixed(1)}" stroke="${pal.border}" stroke-width="1"/>`;
+    ticksY += `<text x="${ml-8}" y="${(yy+4).toFixed(1)}" text-anchor="end" font-size="11" fill="${pal.faint}" font-family="${pal.mono}">${fmt(v, dec)}</text>`;
   }
   let ticksX = "";
   for(let i = 0; i <= 4; i++){
     const v = (xMax / 4) * i, xx = X(v);
-    ticksX += `<text x="${xx.toFixed(1)}" y="${H-mb+18}" text-anchor="middle" font-size="11" fill="var(--ink-faint)" font-family="var(--font-mono)">${Math.round(v)}</text>`;
+    ticksX += `<text x="${xx.toFixed(1)}" y="${H-mb+18}" text-anchor="middle" font-size="11" fill="${pal.faint}" font-family="${pal.mono}">${Math.round(v)}</text>`;
   }
 
   const lignesBornes = bornes.map((v, i) => {
     if(isNaN(v) || v > yMax) return "";
     const yl = Y(v);
     const estMaxi = i === 0;
-    const couleur = estMaxi ? "var(--red)" : "var(--blue)";
+    const couleur = estMaxi ? pal.red : pal.blue;
     const etiquette = estMaxi ? `tolérance ${fmt(v, dec)}` : `min ${fmt(v, dec)}`;
     return `<line x1="${ml}" y1="${yl.toFixed(1)}" x2="${W-mr}" y2="${yl.toFixed(1)}" stroke="${couleur}" stroke-width="2" stroke-dasharray="7 5"/>
       <text x="${W-mr}" y="${(yl-7).toFixed(1)}" text-anchor="end" font-size="11" font-weight="600" fill="${couleur}" font-family="var(--font-mono)">${etiquette}</text>`;
@@ -5159,7 +5180,7 @@ function tendanceChartHTML(sc, g){
       const hors = !isNaN(limite) && p.y > limite;
       const cle = (p.pointMesure || "").trim().toLowerCase();
       const couleurPoint = cle ? couleurParPointMesure.get(cle) : null;
-      const fill = hors ? "var(--red)" : (couleurPoint || s.couleur);
+      const fill = hors ? pal.red : (couleurPoint || s.couleur);
       const titre = `Pièce ${p.x}${p.pointMesure ? " — " + escapeAttr(p.pointMesure) : ""} : ${fmt(p.y, dec)}`;
       return `<circle cx="${X(p.x).toFixed(1)}" cy="${Y(p.y).toFixed(1)}" r="${hors ? 5 : 3.8}" fill="${fill}" stroke="var(--surface)" stroke-width="1.5"><title>${titre}</title></circle>`;
     }).join("");
@@ -5174,7 +5195,7 @@ function tendanceChartHTML(sc, g){
     `<span>${dashSwatch(s.couleur, s.dash)}${escapeAttr(s.titre)}</span>`
   ).join("")
     + (isNaN(limite) ? "" : `<span><i class="tol"></i>Limite ${escapeAttr(g.label)}</span>`)
-    + (isNaN(mini) ? "" : `<span>${dashSwatch("var(--blue)", "7 5")}Min</span>`)
+    + (isNaN(mini) ? "" : `<span>${dashSwatch(pal.blue, "7 5")}Min</span>`)
     + (g.note ? `<span style="color:var(--ink-faint);">${escapeAttr(g.note)}</span>` : "")
     + legendPointsMesure;
 
@@ -5184,11 +5205,11 @@ function tendanceChartHTML(sc, g){
       <svg class="chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img"
            aria-label="Évolution de ${escapeAttr(g.label)} au fil des pièces produites, par essai">
         ${grid}
-        <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt+ih}" stroke="var(--ink-faint)" stroke-width="1"/>
-        <line x1="${ml}" y1="${mt+ih}" x2="${W-mr}" y2="${mt+ih}" stroke="var(--ink-faint)" stroke-width="1"/>
+        <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt+ih}" stroke="${pal.faint}" stroke-width="1"/>
+        <line x1="${ml}" y1="${mt+ih}" x2="${W-mr}" y2="${mt+ih}" stroke="${pal.faint}" stroke-width="1"/>
         ${ticksY}${ticksX}${lignesBornes}${paths}
-        <text x="${ml+iw/2}" y="${H-4}" text-anchor="middle" font-size="11.5" fill="var(--ink-soft)">N° de pièce</text>
-        <text x="14" y="${mt+ih/2}" text-anchor="middle" font-size="11.5" fill="var(--ink-soft)"
+        <text x="${ml+iw/2}" y="${H-4}" text-anchor="middle" font-size="11.5" fill="${pal.soft}">N° de pièce</text>
+        <text x="14" y="${mt+ih/2}" text-anchor="middle" font-size="11.5" fill="${pal.soft}"
               transform="rotate(-90 14 ${mt+ih/2})">${escapeAttr(g.label)}</text>
       </svg>
       <div class="chart-legend">${legend}</div>
@@ -5830,6 +5851,10 @@ function scenarioBlockHTML(sc, interactive){
       <span>Seuil de validation —</span>
       <input class="limit-value" data-id="${sc.id}" data-field="validationThreshold" type="number" step="1" min="1" value="${sc.validationThreshold ?? ""}">
       <span>relevés conformes</span>
+      <label class="emag-toggle" title="Coche cette case pour que le rapport de chaque essai embarque le(s) graphique(s) de Tendance (battement, Ra, VE... selon les critères suivis)">
+        <input type="checkbox" data-id="${sc.id}" data-field="tendanceRapport" ${sc.tendanceRapport ? "checked" : ""}>
+        Inclure le graphe de Tendance dans les rapports d'essai
+      </label>
     </div>
   ` : `<div class="limit-row-print">Seuil de validation : ${sc.validationThreshold ?? "—"} relevés conformes</div>`;
 
@@ -8141,6 +8166,9 @@ function attachDetailHandlers(sc){
   // critères supplémentaires (label, bornes, axes, ajout, suppression).
   root.querySelectorAll('input[data-field="battActif"]').forEach(inp => {
     inp.addEventListener("change", () => { sc.battActif = inp.checked; saveData(); render(); });
+  });
+  root.querySelectorAll('input[data-field="tendanceRapport"]').forEach(inp => {
+    inp.addEventListener("change", () => { sc.tendanceRapport = inp.checked; saveData(); });
   });
   root.querySelectorAll('select[data-field="battCotes"]').forEach(sel => {
     sel.addEventListener("change", () => { sc.battCotes = sel.value; saveData(); render(); });
