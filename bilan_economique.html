@@ -506,7 +506,7 @@ input.cell.sub{font-size:10.5px; color:var(--ink-faint);}
 .responsable-ligne:last-child{border-bottom:none;}
 .responsable-ligne .responsable-couleur{width:26px; height:26px; padding:1px; border:1px solid var(--border); border-radius:50%; background:var(--surface); cursor:pointer;}
 .responsable-ligne .responsable-nom{flex:1; font-size:13px; color:var(--ink);}
-@media print{ .projets-bandeau{ display:none !important; } }
+@media print{ .projets-bandeau, .reprise-bandeau{ display:none !important; } }
 
 /* v4.13 (CDC UX §3.1) : navigation en fil d'Ariane — Ligne › Référence › OP sur UNE ligne,
    à la place des trois rangées de pastilles identiques qui se ressemblaient toutes. Le
@@ -527,6 +527,30 @@ input.cell.sub{font-size:10.5px; color:var(--ink-faint);}
 .fil-item.danger{color:var(--red);}
 .fil-item.danger:hover{background:var(--red-bg);}
 @media (pointer: coarse){ .fil-seg{padding:11px 12px;} .fil-ico{padding:11px 9px;} .fil-item{padding:12px 12px;} }
+
+/* v4.14 : ligne de reprise — le dernier essai en cours touché, mode atelier à un clic. */
+.reprise-bandeau{display:flex; align-items:center; gap:12px; flex-wrap:wrap; background:var(--blue-bg); border:1px solid var(--blue); border-radius:var(--radius); padding:10px 14px; margin-bottom:14px;}
+.reprise-bandeau[hidden]{display:none;}
+.rep-ico{font-size:18px; color:var(--blue-dark); font-weight:700; flex:0 0 auto;}
+.rep-txt{flex:1 1 320px; font-size:13.5px; color:var(--ink); min-width:0; line-height:1.45;}
+.rep-fermer{flex:0 0 auto;}
+@media (pointer: coarse){ .reprise-bandeau button{min-height:44px;} }
+
+/* v4.14 : palette de recherche (Ctrl+K). */
+.panel-search{width:min(580px,94vw);}
+.panel-search #searchInput{width:100%; font-size:16px; padding:10px 12px; margin-bottom:8px;}
+.search-results{max-height:min(50vh,380px); overflow-y:auto; display:flex; flex-direction:column; gap:2px;}
+.search-item{display:flex; align-items:center; gap:10px; border:none; background:transparent; text-align:left; padding:8px 10px; border-radius:var(--radius-sm); cursor:pointer; font-family:var(--font-body); min-width:0;}
+.search-item:hover, .search-item.sel{background:var(--surface-alt);}
+.search-item.sel{outline:2px solid var(--blue); outline-offset:-2px;}
+.search-type{font-family:var(--font-mono); font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--blue-dark); background:var(--blue-bg); border-radius:999px; padding:2px 8px; flex:0 0 auto;}
+.search-label{font-weight:600; font-size:13.5px; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;}
+.search-sous{margin-left:auto; font-size:11px; color:var(--ink-faint); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:45%; flex:0 1 auto;}
+
+/* v4.14 : alerte de charnière en mode atelier — ambre à la charnière visée (le moment où
+   l'on décide), vert au-delà (la durée de vie dépasse l'objectif : bonne nouvelle). */
+.at-charniere{margin:12px 0 4px; padding:14px 18px; border-radius:var(--radius); background:var(--amber-bg); border:2px solid var(--amber); color:var(--amber); font-weight:700; font-size:17px; line-height:1.45;}
+.at-charniere.depassee{background:var(--green-bg); border-color:var(--green); color:var(--green);}
 
 /* tabs strip (also acts as comparative KPI summary) */
 .tabs-strip{display:flex; flex-direction:column; gap:10px; margin-bottom:18px;}
@@ -1389,6 +1413,7 @@ body.atelier-on{overflow:hidden;}
              menu part : un menu qui a besoin d'un mode d'emploi est un menu mal fichu. -->
         <div class="toolbar-more" id="toolbarMore" hidden>
           <div class="tb-grp">Consulter</div>
+          <button class="ghost" id="searchBtn" title="Rechercher partout : lignes, références, OP, scénarios, essais, projets (Ctrl+K)"><svg class="icon" viewBox="0 0 18 18"><circle cx="8" cy="8" r="4.5"/><path d="m11.5 11.5 4 4" stroke-linecap="round"/></svg>Rechercher</button>
           <button class="ghost" id="syntheseBtn" title="Comparer tous les scénarios dans un tableau, et superposer leurs courbes de tendance"><svg class="icon" viewBox="0 0 18 18"><rect x="4" y="3" width="10" height="12" rx="1.5"/><path d="M6.5 7h5M6.5 10h5M6.5 13h3" stroke-linecap="round"/></svg>Vue de synthèse</button>
           <button class="ghost" id="dashboardBtn" title="Toutes les lignes, références et OP : avancement des optimisations et gains cumulés"><svg class="icon" viewBox="0 0 18 18"><rect x="2.5" y="2.5" width="5.5" height="7" rx="1"/><rect x="10" y="2.5" width="5.5" height="4" rx="1"/><rect x="2.5" y="11.5" width="5.5" height="4" rx="1"/><rect x="10" y="8.5" width="5.5" height="7" rx="1"/></svg>Tableau de bord</button>
           <button class="ghost" id="csvBtn" title="Tous les prélèvements en tableau, pour Excel ou le système qualité"><svg class="icon" viewBox="0 0 18 18"><rect x="2.5" y="2.5" width="13" height="13" rx="1.5"/><path d="M2.5 7h13M2.5 11.5h13M7 2.5v13"/></svg>Export CSV</button>
@@ -1690,6 +1715,10 @@ body.atelier-on{overflow:hidden;}
   <div class="ctx-rail" id="ctxRail">
     <nav class="fil-ariane" id="filAriane" aria-label="Ligne, référence disque, OP"></nav>
   </div>
+  <!-- v4.14 : la ligne de reprise — le dernier essai EN COURS touché, avec le mode atelier
+       à un clic. Le geste n°1 de la journée (continuer la saisie d'hier) ne devait plus
+       coûter trois à quatre gestes devant la machine. -->
+  <div class="reprise-bandeau" id="repriseBandeau" hidden></div>
   <div class="tabs-strip" id="tabsStrip"></div>
   <div class="synthese-wrap" id="syntheseWrap" hidden></div>
   <div class="panel backlog-wrap" id="backlogWrap" hidden></div>
@@ -1713,6 +1742,13 @@ body.atelier-on{overflow:hidden;}
       <button class="ghost" id="dialogCancel" hidden>Annuler</button>
       <button class="primary" id="dialogOk">Confirmer</button>
     </div>
+  </div>
+  <!-- v4.14 : palette de recherche (Ctrl+K) — l'arbre grandit (lignes, OP, essais, projets),
+     taper un nom doit suffire pour atterrir dessus. Navigation clavier : ↑↓ puis Entrée. -->
+  <div class="panel panel-search" id="searchPanel" hidden>
+    <input type="text" id="searchInput" placeholder="Rechercher : ligne, référence, OP, scénario, essai, projet…" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="searchResults"></div>
+    <p class="panel-hint" style="margin:8px 2px 0;">↑↓ pour naviguer · Entrée pour ouvrir · Échap pour fermer</p>
   </div>
   <div class="panel panel-large" id="dashboardPanel" hidden></div>
   <div class="panel" id="importPanel" hidden>
@@ -1817,7 +1853,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.13.0";
+const TOOL_VERSION = "4.14.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -2167,6 +2203,12 @@ let activeId = null;
 // (chaque saisie de mesure regenere tout le HTML - sans ca, une tuile ouverte se
 // refermerait a chaque champ valide).
 let essaisOuverts = new Set();
+/* v4.14 — déclaré avant loadAll() (rituel anti-TDZ : loadAll avale ses exceptions, une
+   globale lue au chargement et déclarée trop tard repliquerait en silence sur l'exemple). */
+let repriseVueId = null;   // dernier essai "en cours" proposé par la ligne de reprise
+let repriseMasquee = false; // l'utilisateur a fermé la proposition pour cet essai
+let rechercheListe = [];   // résultats filtrés de la palette de recherche (Ctrl+K)
+let rechercheSel = 0;      // ligne sélectionnée au clavier dans la palette
 // La composition du scenario est depliee par defaut : on memorise donc l'inverse, les
 // scenarios dont l'utilisateur a referme le tableau.
 let configReplies = new Set();
@@ -3427,6 +3469,7 @@ function rapportValidationHTML(sc){
     <tr><th>Essai</th><th>Date</th><th>Équipe</th><th>Opérateur</th><th>Maturité bruts (j)</th><th>Pièces / charnière</th><th>% hors tol.</th><th>Statut</th></tr>
     ${essaisRows}
   </table>
+  <p style="font-size:12px; color:#4b524c;">Critère de passage en série : <b>${sc.validationThreshold || "—"} essais conformes</b>${parseFloat(sc.validationThreshold) === 5 ? " — protocole du site (sept. 2026) : un essai concluant est répété 5×, et la viabilité économique est vérifiée avant le passage en production" : ""}. Acquis à ce jour : <b>${stats.validCount}</b>.</p>
 
   <h2>Détail des prélèvements</h2>
   ${(sc.essais || []).map(es => prelevementsDetailHTML(sc, es)).join("") || `<p style="color:#5a6470;">Aucun prélèvement enregistré</p>`}
@@ -4594,6 +4637,11 @@ function atelierHTML(){
   const st = essaiStats(sc, essai);
   const prog = st.logementProgress.find(p => p.logementId === atelierCtx.logementId);
   const pct = prog && prog.target ? Math.min(100, ((prog.lastPiece||0)/prog.target)*100) : 0;
+  // v4.14 : le signal au bon moment. La barre de progression montrait la distance parcourue,
+  // rien ne disait QUAND décider : à la charnière visée, on resserre le pas de mesure ou on
+  // tranche (prolonger / arrêter) ; au-delà, la durée de vie dépasse l'objectif, c'est une
+  // bonne nouvelle à exploiter tant que la cote tient.
+  const viseeAtteinte = !!(prog && prog.target !== null && piece >= prog.target);
 
   // points de mesure deja utilises dans cet essai : proposes en raccourci
   const points = [...new Set((essai.prelevements||[]).map(r => (r.pointMesure||"").trim()).filter(Boolean))];
@@ -4655,6 +4703,9 @@ function atelierHTML(){
       </div>
       ${prog && prog.target ? `<div class="at-prog"><div class="at-prog-bar"><i style="width:${pct}%"></i></div>
         <span>${prog.lastPiece ?? 0} / ${prog.target} p — ${escapeAttr((lp&&lp.logementNom)||"")}</span></div>` : ""}
+      ${viseeAtteinte ? `<div class="at-charniere${piece > prog.target ? " depassee" : ""}">${piece > prog.target
+        ? `◎ Au-delà de la charnière visée (${prog.target} p) — la durée de vie dépasse l'objectif : prolongez tant que la cote tient, ou clôturez l'essai.`
+        : `◎ Cette pièce atteint la charnière visée (${prog.target} p) — resserrez le pas de mesure vers la fin, ou décidez : prolonger / arrêter.`}</div>` : ""}
     </div>
 
     ${points.length ? `<div class="at-points">
@@ -5571,7 +5622,7 @@ function renderTabs(){
         </span>
         <span class="tc-badges">
           <span class="statut-pill ${sc.statut || "essai"}">${statutLabel(sc.statut)}</span>
-          <span class="status-badge ${stats.validated ? "ok" : "pending"}">${stats.validated ? "✓ Validé" : `${stats.validCount}/${sc.validationThreshold || "—"} essais conformes`}</span>
+          <span class="status-badge ${stats.validated ? "ok" : "pending"}"${!stats.validated && parseFloat(sc.validationThreshold) === 5 ? ' title="Protocole site : un essai concluant est répété 5× avant passage en série"' : ""}>${stats.validated ? "✓ Validé" : `${stats.validCount}/${sc.validationThreshold || "—"} essais conformes`}</span>
         </span>
         ${projets.length ? `<span class="tc-tags">${projets.map(pj => {
           const dedans = projetContientScenario(pj, activeLigneId, activeReferenceId, activeOpId, sc.id);
@@ -5827,6 +5878,9 @@ function scenarioBlockHTML(sc, interactive){
         <div class="l">Validation scénario</div>
         <div class="v" style="font-size:18px;">${stats.validCount}<small>/ ${sc.validationThreshold || "—"} essais conformes</small></div>
         <div class="progress-track"><div class="progress-fill" style="width:${(sc.validationThreshold ? Math.min(100, stats.validCount/parseFloat(sc.validationThreshold)*100) : 0)}%;"></div></div>
+        ${parseFloat(sc.validationThreshold) === 5
+          ? `<div class="foot-sub" title="Protocole du site (sept. 2026) : un essai concluant est répété 5× ; validé 5× et viable économiquement, il passe en production.">Protocole site : essai concluant répété 5× + viabilité éco</div>`
+          : `<div class="foot-sub">Seuil de validation propre à ce scénario : ${sc.validationThreshold || "—"} essais conformes</div>`}
       </div>
     </div>
     ${seuilBasculeHTML(sc)}
@@ -7814,6 +7868,153 @@ document.addEventListener("keydown", (e) => {
   if(menu && !menu.hidden) menu.hidden = true;
 });
 
+/* ---- ligne de reprise (v4.14) ---------------------------------------------------------
+   Le geste n°1 de la journée, c'est de continuer l'essai commencé avant : ouvrir le bon
+   scénario, déplier le bon essai, entrer en mode atelier — trois ou quatre gestes avant de
+   pouvoir taper une mesure, debout devant la machine. Le bandeau propose directement le
+   dernier essai EN COURS touché (modifieLe le plus récent) : un essai déjà conforme ou non
+   conforme est une campagne close, on ne le repropose pas. Le ✕ masque la proposition pour
+   CET essai ; un essai différent touché plus tard repasse devant naturellement. */
+function dernierEssaiEnCours(){
+  let meilleur = null;
+  lignes.forEach(l => (l.references || []).forEach(r => (r.ops || []).forEach(o => (o.scenarios || []).forEach(sc => {
+    (sc.essais || []).forEach(es => {
+      const st = essaiStats(sc, es);
+      if(st.status !== "pending") return;
+      const t = es.modifieLe || (es.date ? es.date + "T00:00:00" : "");
+      if(!t) return;
+      if(!meilleur || t > meilleur.t) meilleur = { t, ligneId:l.id, refId:r.id, opId:o.id,
+        scId:sc.id, essaiId:es.id, scName:sc.name, essaiTitre:es.titre, date:es.date, st };
+    });
+  }))));
+  return meilleur;
+}
+function renderReprise(){
+  const el = document.getElementById("repriseBandeau");
+  if(!el) return;
+  const rep = dernierEssaiEnCours();
+  if(!rep){
+    el.hidden = true; el.innerHTML = ""; return;
+  }
+  if(rep.essaiId !== repriseVueId){ repriseVueId = rep.essaiId; repriseMasquee = false; }
+  const dejaOuvert = rep.scId === activeId && essaisOuverts.has(rep.scId + "|" + rep.essaiId);
+  if(repriseMasquee || dejaOuvert){ el.hidden = true; el.innerHTML = ""; return; }
+  const derniere = rep.st.lastPiece !== null ? "dernier prélèvement n°" + rep.st.lastPiece : "aucun prélèvement";
+  el.innerHTML = `
+    <span class="rep-ico">↻</span>
+    <span class="rep-txt"><b>Reprendre</b> — ${escapeAttr(rep.essaiTitre || "Essai")}${rep.date ? " (" + escapeAttr(rep.date) + ")" : ""} · ${escapeAttr(rep.scName)} · ${derniere}${rep.st.raison ? " · " + escapeAttr(rep.st.raison) : ""}</span>
+    <button class="primary" id="repAtelier">Mode atelier</button>
+    <button class="ghost" id="repOuvrir">Ouvrir</button>
+    <button class="ghost rep-fermer" id="repFermer" title="Masquer pour cet essai (il reviendra s'il redevient le plus récent)">✕</button>`;
+  el.hidden = false;
+  document.getElementById("repAtelier").addEventListener("click", () => {
+    allerVers(rep.ligneId, rep.refId, rep.opId, rep.scId, rep.essaiId);
+    ouvrirAtelier(rep.scId, rep.essaiId);
+  });
+  document.getElementById("repOuvrir").addEventListener("click", () => {
+    allerVers(rep.ligneId, rep.refId, rep.opId, rep.scId, rep.essaiId, true);
+  });
+  document.getElementById("repFermer").addEventListener("click", () => {
+    repriseMasquee = true; renderReprise();
+  });
+}
+/* navigation programmatique vers un essai précis, quel que soit l'endroit d'où l'on part :
+   l'arbre est repositionné (ligne/référence/OP), le filtre de projet sauté s'il cachait le
+   scénario visé, la tuile de l'essai dépliée, et l'écran défile jusqu'à elle si demandé. */
+function allerVers(ligneId, refId, opId, scId, essaiId, defiler){
+  if(activeProjetId){
+    const pj = projets.find(p => p.id === activeProjetId);
+    const visible = pj && projetContientScenario(pj, ligneId, refId, opId, scId);
+    if(!visible) activeProjetId = null; // jamais un scénario visé resté caché par le filtre
+  }
+  if(ligneId !== activeLigneId || refId !== activeReferenceId || opId !== activeOpId){
+    switchOp(ligneId, refId, opId); // fait déjà saveData + render
+  }
+  activeId = scId;
+  if(essaiId) essaisOuverts.add(scId + "|" + essaiId);
+  render();
+  if(essaiId && defiler){
+    const carte = document.querySelector('details.essai-card[data-essai-id="' + essaiId + '"]');
+    if(carte) carte.scrollIntoView({ block: "start" });
+  }
+}
+
+/* ---- palette de recherche (v4.14, Ctrl+K) --------------------------------------------
+   L'arbre grandit : deux lignes, plusieurs références et OP, des dizaines d'essais, des
+   projets. Taper « T513 » doit suffire pour atterrir sur l'essai. L'index est reconstruit
+   à chaque ouverture (quelques centaines d'entrées au plus, négligeable) ; le filtre ignore
+   la casse et les accents. ↑↓ naviguent, Entrée ouvre, un clic aussi. */
+function normaliserRecherche(s){
+  return (s || "").toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+function construireIndexRecherche(){
+  const items = [];
+  lignes.forEach(l => {
+    items.push({ type:"Ligne", label:l.nom || "Sans nom", sous:(l.references||[]).length + " référence(s)",
+      go:() => switchReference(l.id, l.references[0] ? l.references[0].id : null) });
+    (l.references || []).forEach(r => {
+      items.push({ type:"Référence", label:r.nom || "Sans nom", sous:l.nom || "",
+        go:() => switchReference(l.id, r.id) });
+      (r.ops || []).forEach(o => {
+        items.push({ type:"OP", label:o.nom || "Sans nom", sous:(l.nom||"") + " › " + (r.nom||""),
+          go:() => switchOp(l.id, r.id, o.id) });
+        (o.scenarios || []).forEach(sc => {
+          items.push({ type:"Scénario", label:sc.name, sous:(l.nom||"") + " › " + (r.nom||"") + " › " + (o.nom||"") + (sc.baseline ? " · ★ en production" : ""),
+            go:() => { switchOp(l.id, r.id, o.id); activeId = sc.id; render(); } });
+          (sc.essais || []).forEach(es => {
+            items.push({ type:"Essai", label:es.titre || "(sans titre)", sous:(sc.name||"") + (es.date ? " · " + es.date : ""),
+              go:() => allerVers(l.id, r.id, o.id, sc.id, es.id, true) });
+          });
+        });
+      });
+    });
+  });
+  (projets || []).forEach(pj => items.push({ type:"Projet", label:pj.nom || "Sans nom", sous:"filtre de lecture",
+    go:() => { activeProjetId = pj.id; render(); } }));
+  return items;
+}
+function ouvrirRecherche(){
+  rechercheListe = [];
+  rechercheSel = 0;
+  ouvrirPanneau("searchPanel");
+  const inp = document.getElementById("searchInput");
+  inp.value = "";
+  rendreRecherche("");
+}
+function rendreRecherche(q){
+  const nq = normaliserRecherche(q.trim());
+  const tous = construireIndexRecherche();
+  rechercheListe = (!nq ? tous.slice(0, 12) : tous
+      .map(it => ({ it, i: normaliserRecherche(it.type + " " + it.label + " " + (it.sous||"")).indexOf(nq) }))
+      .filter(x => x.i >= 0)
+      .sort((a,b) => a.i - b.i)
+      .slice(0, 20)
+      .map(x => x.it));
+  rechercheSel = 0;
+  const box = document.getElementById("searchResults");
+  box.innerHTML = rechercheListe.length ? rechercheListe.map((it, k) => `
+    <button class="search-item ${k === rechercheSel ? "sel" : ""}" data-idx="${k}">
+      <span class="search-type">${it.type}</span>
+      <span class="search-label">${escapeAttr(it.label)}</span>
+      <span class="search-sous">${escapeAttr(it.sous || "")}</span>
+    </button>`).join("")
+    : `<p class="log-empty" style="padding:12px 4px;">Aucun résultat — essayez un nom de scénario, d'essai, d'OP ou de projet.</p>`;
+  box.querySelectorAll(".search-item").forEach(b => b.addEventListener("click", () => {
+    allerRecherche(parseInt(b.getAttribute("data-idx"), 10));
+  }));
+}
+function allerRecherche(k){
+  const it = rechercheListe[k];
+  if(!it) return;
+  fermerPanneaux();
+  it.go();
+}
+function majSelRecherche(){
+  document.querySelectorAll("#searchResults .search-item").forEach((b, k) => b.classList.toggle("sel", k === rechercheSel));
+  const sel = document.querySelector("#searchResults .search-item.sel");
+  if(sel) sel.scrollIntoView({ block: "nearest" });
+}
+
 /* (v4.13) renderReferences et renderOps supprimés avec les rangées de pastilles :
    leurs sélecteurs vivent désormais dans le menu du fil d'Ariane (ouvrirFilMenu). */
 
@@ -7998,6 +8199,7 @@ function render(){
   renderProjets();
   renderParcours();
   renderFilAriane();
+  renderReprise();
   renderTabs();
   renderDetail();
   // #scenarioAll (impression), #syntheseWrap et #backlogWrap ne sont pas visibles en usage
@@ -8818,6 +9020,22 @@ document.getElementById("dashboardBtn").addEventListener("click", () => {
   renderDashboard();
   ouvrirPanneau("dashboardPanel");
 });
+/* v4.14 — palette de recherche : bouton du menu, frappe directe au clavier (Ctrl+K),
+   navigation flèches + Entrée dans la liste de résultats. */
+document.getElementById("searchBtn").addEventListener("click", ouvrirRecherche);
+document.getElementById("searchInput").addEventListener("input", (e) => rendreRecherche(e.target.value));
+document.getElementById("searchInput").addEventListener("keydown", (e) => {
+  const max = rechercheListe.length;
+  if(e.key === "ArrowDown" && max){ e.preventDefault(); rechercheSel = (rechercheSel + 1) % max; majSelRecherche(); }
+  else if(e.key === "ArrowUp" && max){ e.preventDefault(); rechercheSel = (rechercheSel - 1 + max) % max; majSelRecherche(); }
+  else if(e.key === "Enter"){ e.preventDefault(); allerRecherche(rechercheSel); }
+});
+document.addEventListener("keydown", (e) => {
+  if((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && (e.key === "k" || e.key === "K")){
+    e.preventDefault();
+    ouvrirRecherche();
+  }
+});
 document.getElementById("parcoursBtn").addEventListener("click", ouvrirParcours);
 document.getElementById("nouveautesBtn").addEventListener("click", ouvrirNouveautes);
 // des formes/rognage/legende non enregistres dans l'editeur d'annotation se perdaient
@@ -9152,6 +9370,12 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.14.0", date:"23/09/2026", points:[
+    "<b>Reprendre la saisie en un clic.</b> Le dernier essai <i>en cours</i> touché s'affiche en bandeau sous la navigation : son titre, son scénario, le dernier prélèvement saisi — et le <b>Mode atelier</b> directement dedans. Fini de rouvrir le scénario, déplier l'essai, chercher le bouton : devant la machine, une mesure de plus se tape tout de suite. Le ✕ masque la proposition ; elle revient toute seule pour un essai plus récent.",
+    "<b>Rechercher partout (Ctrl+K).</b> Tapez un nom de ligne, de référence, d'OP, de scénario, d'essai ou de projet : la palette vous y emmène — casse et accents ignorés, navigation au clavier (↑↓ puis Entrée). Le bouton <b>Rechercher</b> du menu ••• fait la même chose.",
+    "<b>Le protocole 5× est devenu visible.</b> La règle actée — un essai concluant répété 5×, viable économiquement, passe en production — s'affiche maintenant sous la validation du scénario, en info-bulle sur les tuiles, et dans le rapport de validation (« acquis : N/5 »). Plus besoin de s'en souvenir : l'outil le porte.",
+    "<b>Le mode atelier dit quand décider.</b> À la charnière visée, un bandeau ambre propose de resserrer le pas de mesure ou de trancher (prolonger / arrêter). Au-delà de la charnière, il passe au vert : la durée de vie dépasse l'objectif — à exploiter tant que la cote tient."
+  ]},
   { version:"4.13.0", date:"23/09/2026", points:[
     "<b>La navigation tient sur une ligne.</b> Les trois rangées de pastilles (Ligne / Référence / OP), toutes identiques, laissent place à un fil unique — <i>EMAG 1 › Référence › OP10</i>. Cliquez un maillon pour ouvrir son propre menu : changer, créer, renommer, supprimer. Le contenu commence plus haut à l'écran, et la hiérarchie se lit enfin d'un coup d'œil.",
     "<b>Le menu ••• se lit en groupes.</b> Les actions sont rangées par nature — <b>Consulter</b> (synthèse, tableau de bord, CSV), <b>Documenter</b> (rapport, PDF, nouveautés), <b>Gérer</b> (options, parcours, suggestions, dossier, historique) — et la zone rouge (Réinitialiser / Restaurer) reste bien séparée en bas. Aucune action n'a disparu.",

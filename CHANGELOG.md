@@ -5,6 +5,61 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.14.0] — 2026-09-23
+
+Ergonomie du quotidien : les trois gestes qui revenaient chaque jour (reprendre la
+saisie, retrouver un essai, savoir où on en est du protocole) deviennent des
+raccourcis. Aucun changement de format de données.
+
+### Ajouté — la ligne de reprise : le mode atelier à un clic
+Le geste n°1 de la journée, c'est de continuer l'essai commencé avant. Il fallait
+rouvrir le bon scénario, déplier le bon essai, trouver le bouton Mode atelier —
+trois ou quatre gestes avant de pouvoir taper une mesure, debout devant la machine.
+Un bandeau sous la navigation propose maintenant directement le dernier essai
+**en cours** touché (`modifieLe` le plus récent, tous scénarios et OP confondus) :
+titre, date, scénario, dernier prélèvement saisi, et ce qui manque. Boutons :
+**Mode atelier** (le chemin court), **Ouvrir** (bascule d'arbre, déplie la tuile et
+fait défiler jusqu'à elle — via le nouveau `allerVers()`, qui saute aussi le filtre
+de projet s'il cachait le scénario visé), et **✕** (masque la proposition pour cet
+essai ; elle revient seule dès qu'un essai plus récent devient le candidat). Un
+essai conforme ou non conforme est une campagne close : il n'est jamais reproposé.
+Si l'essai proposé est déjà ouvert à l'écran, le bandeau s'efface de lui-même.
+
+### Ajouté — recherche partout (Ctrl+K)
+L'arbre a grandi : lignes, références, OP, scénarios, dizaines d'essais, projets.
+Une palette de recherche (Ctrl+K, ou bouton **Rechercher** du menu •••) indexe tout
+cela : casse et accents ignorés (« reference disque » trouve « Référence disque »),
+navigation ↑↓ puis Entrée, ou clic. Entrer sur un résultat d'essai positionne
+l'arbre, déplie la tuile et y amène l'écran. L'index est reconstruit à chaque
+ouverture — négligeable à cette échelle.
+
+### Ajouté — le protocole 5× affiché là où on en est
+La règle actée au site (un essai concluant répété 5× ; validé 5× + viabilité
+économique → production) vivait en convention orale. Elle est maintenant portée par
+l'outil : sous la cellule « Validation scénario » (« Protocole site : essai
+concluant répété 5× + viabilité éco », avec info-bulle), en info-bulle sur le badge
+« N/5 essais conformes » des tuiles, et dans le rapport de validation (« Critère de
+passage en série : 5 essais conformes — protocole du site… Acquis à ce jour : N »).
+Un scénario avec un seuil différent reste explicite (« seuil propre à ce scénario »).
+
+### Ajouté — le mode atelier dit quand décider
+La barre de progression montrait la distance parcourue, rien ne disait QUAND
+trancher. À la charnière visée (la prochaine pièce l'atteint), un bandeau ambre
+propose de resserrer le pas de mesure ou de décider : prolonger / arrêter. Au-delà,
+il passe au vert : la durée de vie dépasse l'objectif — à exploiter tant que la
+cote tient. La charnière visée reste celle de l'instantané de l'essai (figée à sa
+création, comme les conditions de coupe).
+
+### Tests
+144/144 au vert. Vérifié en session au navigateur : bandeau de reprise (apparition
+sur essai en cours, texte exact, masquage ✕, retour après render, disparition si
+l'essai est déjà ouvert), Mode atelier depuis le bandeau (bon essai, bon logement),
+bannière charnière dans ses trois états (ambre à la visée, vert au-delà, absente
+loin), Ouvrir (bascule de scénario + tuile dépliée + carte dans le DOM), palette
+Ctrl+K (ouverture, recherche par titre d'essai, Entrée = navigation + tuile
+dépliée + panneau fermé, recherche insensible aux accents, état vide), protocole
+affiché sous la validation et en info-bulle de tuile, aucune erreur console.
+
 ## [4.13.0] — 2026-09-23
 
 Première tranche de la refonte UX cadrée dans `CAHIER_DES_CHARGES_UX_REFONTE.md`
