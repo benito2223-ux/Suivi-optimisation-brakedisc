@@ -1880,7 +1880,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.15.0";
+const TOOL_VERSION = "4.16.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -2105,6 +2105,16 @@ async function checkPhotosDirPermission(){
 async function deletePhotoFile(filename){
   try{ await photosDirHandle.removeEntry(filename); }catch(e){}
 }
+/* v4.16 — lecture d'une photo quel que soit son mode. Version de base ici (dossier
+   local, photos cloud indisponibles) : le bloc cloud, chargé juste après, RÉDÉFINIT
+   cette fonction avec le téléchargement + cache. Un stub est nécessaire parce que
+   loadPhotoThumbnails tourne au premier rendu, AVANT que le bloc cloud n'existe. */
+let cloudPhotoErreurDerniere = "";
+function photoObjectURL(p){
+  if(!p) return null;
+  if(p.stockage === "cloud") return null; // le bloc cloud apporte le vrai chargement
+  return readPhotoURL(p.filename);
+}
 /* backup general dans le meme dossier (sous-dossier backups/), independant du localStorage :
    filet de securite supplementaire, au plus 1 ecriture toutes les 5 minutes, 20 fichiers gardes */
 let lastFolderBackupAt = 0;
@@ -2238,6 +2248,11 @@ let rechercheListe = [];   // résultats filtrés de la palette de recherche (Ct
 let rechercheSel = 0;      // ligne sélectionnée au clavier dans la palette
 let tendanceEnPct = false; // v4.15 : vue des tendances en % de tolérance consommée
 let compareCtx = null;     // v4.15 : { a: "scId|essaiId", b: "scId|essaiId" }
+/* v4.16 — DÉCLARÉ ICI et pas dans le bloc cloud : la zone d'ajout de photos lit
+   cloudSession dès le premier rendu, qui arrive AVANT le chargement du bloc cloud.
+   loadAll() avalant ses exceptions (piège historique), une globale lue au rendu et
+   déclarée trop tard ferait repliquer le chargement sur l'exemple sans un mot. */
+let cloudSession = null;   // {access_token, refresh_token, expires_at, email}
 // La composition du scenario est depliee par defaut : on memorise donc l'inverse, les
 // scenarios dont l'utilisateur a referme le tableau.
 let configReplies = new Set();
@@ -6475,10 +6490,12 @@ function photosHTML(sc, essai){
   const photos = essai.photos;
   const thumbs = photos.map(p => {
     const hasAnnot = (p.annotations && p.annotations.length) || (p.crop && (p.crop.w < 0.999 || p.crop.h < 0.999));
+    const enCloud = p.stockage === "cloud";
     return `
     <div class="photo-thumb-wrap">
       <div class="photo-thumb">
-        <img data-photo-filename="${escapeAttr(p.filename)}" alt="${escapeAttr(p.filename)}">
+        <img data-photo-filename="${escapeAttr(p.filename)}" data-photo-stockage="${enCloud ? "cloud" : "dossier"}"
+             alt="${escapeAttr(p.filename)}"${enCloud ? ' title="Photo cloud — partagée avec l’autre poste"' : ""}>
         ${hasAnnot ? `<span class="photo-annot-badge" title="Photo annotée">✎</span>` : ""}
         <button class="photo-annot" data-essai="${essai.id}" data-photo="${p.id}" title="Annoter (rogner, flèches, texte...)">✎</button>
         <button class="photo-del" data-essai="${essai.id}" data-photo="${p.id}" title="Supprimer">✕</button>
@@ -6487,11 +6504,17 @@ function photosHTML(sc, essai){
     </div>
   `;
   }).join("");
-  const uploadZone = !fsPhotosSupported()
-    ? `<p class="panel-hint">Fonction disponible sur Edge/Chrome (ordinateur), via l'adresse en ligne de l'outil.</p>`
-    : !photosDirHandle
-      ? `<button class="ghost photos-connect-btn">📁 Connecter le dossier photos</button>`
-      : `<label class="backlog-image-add">＋ Ajouter des photos<input type="file" accept="image/*" multiple class="photo-input" data-essai="${essai.id}" hidden></label>`;
+  // v4.16 : trois façons d'ajouter une photo, par priorité — dossier local (zéro réseau),
+  // cloud privé (partagé avec l'autre poste), sinon l'invitation à se brancher.
+  const attributEssai = `data-essai="${essai.id}"`;
+  const uploadZone = photosDirHandle
+    ? `<label class="backlog-image-add">＋ Ajouter des photos<input type="file" accept="image/*" multiple class="photo-input" ${attributEssai} hidden></label>`
+    : cloudSession
+      ? `<label class="backlog-image-add" title="Sans dossier local connecté, les photos partent dans le cloud privé (comptes de l'équipe) et se partagent automatiquement avec l'autre poste.">＋ Ajouter des photos (cloud)<input type="file" accept="image/*" multiple class="photo-input" ${attributEssai} hidden></label>`
+      : (fsPhotosSupported()
+        ? `<button class="ghost photos-connect-btn">📁 Connecter le dossier photos</button>
+           <p class="panel-hint">Ou connectez-vous au cloud (Options → Cloud) : les photos y seront partagées avec l'autre poste.</p>`
+        : `<p class="panel-hint">Fonction disponible sur Edge/Chrome (ordinateur), via l'adresse en ligne de l'outil.</p>`);
   return `
     <details class="photos-block" ${photos.length ? "open" : ""}>
       <summary><svg class="icon" viewBox="0 0 18 18"><path d="M3 6.5a1 1 0 0 1 1-1h1.3l.8-1.3h3.8l.8 1.3H14a1 1 0 0 1 1 1V13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6.5Z" stroke-linejoin="round"/><circle cx="9" cy="9.5" r="2.3"/></svg>Photos ${photos.length ? `<span class="badge muted">${photos.length}</span>` : ""}</summary>
@@ -6503,18 +6526,25 @@ function photosHTML(sc, essai){
   `;
 }
 async function loadPhotoThumbnails(){
-  if(!photosDirHandle) return;
-  const imgs = document.querySelectorAll("img[data-photo-filename]");
+  // v4.16 : deux modes coexistent photo par photo — dossier local (readPhotoURL) et
+  // cloud (téléchargement à la demande + cache IndexedDB). Une photo cloud sans
+  // connexion ne casse rien : elle s'affiche estompée, avec la raison en info-bulle.
+  const imgs = [...document.querySelectorAll("img[data-photo-filename]")]
+    .filter(img => !img.src); // ne recharger que les vignettes pas encore résolues
   for(const img of imgs){
     const filename = img.getAttribute("data-photo-filename");
     if(!filename) continue;
-    const url = await readPhotoURL(filename);
+    const url = await photoObjectURL({ filename, stockage: img.getAttribute("data-photo-stockage") });
     if(url){
       // revoque des que l'image est decodee : le bitmap decode reste affichable, seul
       // l'objet Blob sous-jacent est libere (sinon fuite memoire a l'usage prolonge)
       img.addEventListener("load", () => URL.revokeObjectURL(url), { once:true });
       img.src = url;
-    } else img.classList.add("photo-missing");
+    } else {
+      img.classList.add("photo-missing");
+      if(img.getAttribute("data-photo-stockage") === "cloud")
+        img.title = "Photo cloud indisponible — " + cloudPhotoErreurDerniere;
+    }
   }
 }
 
@@ -6540,13 +6570,18 @@ function photoOfAnnot(){
   return es && (es.photos||[]).find(x => x.id === annot.photoId);
 }
 async function openPhotoAnnotator(essaiId, photoId){
-  if(!photosDirHandle){ dialogueAlerte("Connectez d'abord le dossier photos (bouton dans le bloc Photos).", "Dossier non connecté"); return; }
   const sc = data.find(s => s.essais && s.essais.some(e => e.id === essaiId));
   const es = sc && sc.essais.find(e => e.id === essaiId);
   const p = es && (es.photos||[]).find(x => x.id === photoId);
   if(!p) return;
-  const url = await readPhotoURL(p.filename);
-  if(!url){ dialogueAlerte("Photo introuvable dans le dossier connecté.", "Photo introuvable"); return; }
+  // v4.16 : dossier local OU cloud — photoObjectURL gère les deux modes
+  const url = await photoObjectURL(p);
+  if(!url){
+    dialogueAlerte(p.stockage === "cloud"
+      ? "Photo cloud indisponible — " + (cloudPhotoErreurDerniere || "vérifiez la connexion.")
+      : "Connectez d'abord le dossier photos (bouton dans le bloc Photos).", "Photo indisponible");
+    return;
+  }
   const img = new Image();
   img.onload = () => {
     URL.revokeObjectURL(url); // l'image est decodee, le Blob source n'est plus necessaire
@@ -6956,8 +6991,8 @@ async function openAnnotatedLightbox(essaiId, photoId){
   const sc = data.find(s => s.essais && s.essais.some(e => e.id === essaiId));
   const es = sc && sc.essais.find(e => e.id === essaiId);
   const p = es && (es.photos||[]).find(x => x.id === photoId);
-  if(!p || !photosDirHandle) return;
-  const url = await readPhotoURL(p.filename);
+  if(!p) return;
+  const url = await photoObjectURL(p); // v4.16 : dossier local ou cloud
   if(!url) return;
   const hasCrop = p.crop && (p.crop.w < 0.999 || p.crop.h < 0.999 || p.crop.x > 0 || p.crop.y > 0);
   if(!hasCrop && !(p.annotations && p.annotations.length)){
@@ -8659,16 +8694,27 @@ function attachDetailHandlers(sc){
     inp.addEventListener("change", async () => {
       const essaiId = inp.getAttribute("data-essai");
       const es = sc.essais.find(e => e.id === essaiId);
-      if(!es || !photosDirHandle) return;
+      // v4.16 : dossier local prioritaire ; sans dossier, les photos partent dans le
+      // cloud privé (bucket `photos`, comptes de l'équipe) et voyagent avec le suivi.
+      const versCloud = !photosDirHandle && !!cloudSession;
+      if(!es || (!photosDirHandle && !versCloud)) return;
       if(!es.photos) es.photos = [];
       const files = [...inp.files];
       for(const file of files){
         try{
           const blob = await compressImageFile(file, 1600, 0.82);
           const stamp = Date.now() + "-" + Math.random().toString(36).slice(2,6);
-          const filename = slugify(sc.name) + "_" + slugify(es.titre) + "_" + stamp + ".jpg";
-          await writePhotoBlob(filename, blob);
-          es.photos.push({ id: "ph"+Math.random().toString(36).slice(2), filename, addedAt: new Date().toISOString(), legende:"", crop:null, annotations:[] });
+          let filename, photo;
+          if(photosDirHandle){
+            filename = slugify(sc.name) + "_" + slugify(es.titre) + "_" + stamp + ".jpg";
+            await writePhotoBlob(filename, blob);
+            photo = { id: "ph"+Math.random().toString(36).slice(2), filename, addedAt: new Date().toISOString(), legende:"", crop:null, annotations:[], stockage:"dossier" };
+          } else {
+            filename = essaiId + "/" + stamp + ".jpg";
+            await cloudPhotoEnvoyer(filename, blob);
+            photo = { id: "ph"+Math.random().toString(36).slice(2), filename, addedAt: new Date().toISOString(), legende:"", crop:null, annotations:[], stockage:"cloud" };
+          }
+          es.photos.push(photo);
         }catch(err){ dialogueAlerte("Échec de l'enregistrement d'une photo : " + err.message, "Échec d'enregistrement"); }
       }
       saveData(); render();
@@ -8683,7 +8729,11 @@ function attachDetailHandlers(sc){
       if(!p) return;
       dialogueConfirmer("Supprimer cette photo ?", { titre: "Supprimer la photo ?", danger: true, okLabel: "Supprimer" }).then(async ok => {
         if(!ok) return;
-        if(photosDirHandle) await deletePhotoFile(p.filename);
+        if(p.stockage === "cloud"){
+          await cloudPhotoSupprimer(p.filename); // retire le fichier du bucket + le cache
+        } else if(photosDirHandle){
+          await deletePhotoFile(p.filename);
+        }
         es.photos = es.photos.filter(x => x.id !== photoId);
         saveData(); render();
       });
@@ -9649,6 +9699,11 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.16.0", date:"23/09/2026", points:[
+    "<b>Les photos voyagent avec le suivi.</b> Jusqu'ici une photo d'essai restait dans le dossier local de celui qui l'avait prise : l'autre poste n'en voyait rien. Sans dossier connecté, les photos partent maintenant dans le <b>cloud privé</b> (comptes de l'équipe uniquement) et l'autre poste les télécharge automatiquement — miniatures, agrandissement, annotation. Le dossier local reste prioritaire quand il est connecté ; les deux modes coexistent photo par photo.",
+    "<b>Le bouton devient « Ajouter des photos (cloud) »</b> quand vous êtes connecté au cloud sans dossier local : même geste, la photo est redimensionnée puis envoyée, et le suivi la référence par son chemin cloud. Une photo supprimée l'est aussi du cloud.",
+    "<b>Hors ligne, rien ne casse.</b> Une photo déjà vue est mise en cache locale : elle se réaffiche sans réseau. Une photo jamais téléchargée s'affiche estompée avec la raison, et tout le reste de l'outil continue de marcher comme avant."
+  ]},
   { version:"4.15.0", date:"23/09/2026", points:[
     "<b>Comparer deux essais.</b> Un bouton <b>Comparer…</b> sur chaque essai : conditions côte à côte (plaquettes figées, Vc/f, équipe, bruts), statuts, taux hors tolérance, et les <b>courbes superposées</b> avec leur tolérance. Deux essais du même scénario : c'est la <b>répétabilité</b> qu'on lit — le fond du protocole 5×. Deux scénarios : quelle dérive tient le mieux.",
     "<b>Les tendances en % de tolérance.</b> Sur chaque graphique de tendance, un bouton <b>Voir en % de tol.</b> exprime la mesure en pourcentage de la tolérance consommée (100 % = la limite, 0 % = la borne mini si plage). Pratique pour lire d'un coup d'œil un critère dont on ne connaît pas les valeurs par cœur — un bouton ramène les valeurs réelles."
@@ -10277,7 +10332,8 @@ const CLOUD_SESSION_KEY = STORAGE_KEY + "_cloud_session";
 const CLOUD_STAMP_KEY   = STORAGE_KEY + "_cloud_stamp";
 const CLOUD_VU_KEY      = STORAGE_KEY + "_cloud_vu";
 
-let cloudSession = null;   // {access_token, refresh_token, expires_at, email}
+/* cloudSession est déclarée dans le script principal (v4.16, anti-TDZ : la zone photos
+   la lit au premier rendu). Ici on ne fait que restaurer la session persistée. */
 let cloudStamp = null;     // modifie_le du cloud tel que CE poste le connait
 let cloudVu = null;        // dernier modifie_le annoncé/ vu (pour le journal à l'ouverture)
 let cloudSale = false;     // des saisies locales pas encore déposées
@@ -10380,6 +10436,108 @@ async function cloudDeconnexion(){
   cloudSession = null; cloudSauverSession();
   cloudErreur = "";
   cloudRenduOptions(); cloudRenduPastille();
+}
+
+/* ---- photos cloud (v4.16) --------------------------------------------------------------
+   Le suivi partage le JSON entre postes, mais les PHOTOS d'essai restaient coincées dans
+   le dossier local de celui qui les avait prises : l'autre poste (et son rapport) n'en
+   voyait rien. Deuxième mode de stockage : le bucket privé `photos` du projet Supabase
+   (accès réservé aux comptes de l'équipe). Sans dossier local connecté, une photo ajoutée
+   part au cloud et voyage avec le suivi ; l'autre poste la télécharge à la demande et la
+   met en cache IndexedDB pour l'usage hors ligne. Le dossier local reste prioritaire quand
+   il est connecté (zéro réseau, zéro quota) — les deux modes coexistent photo par photo. */
+const CLOUD_PHOTOS_BUCKET = "photos";
+
+function photoCacheOuvrir(){
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open("spk_photos_cloud", 1);
+    req.onupgradeneeded = () => req.result.createObjectStore("blobs");
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function photoCacheGet(cle){
+  try{
+    const db = await photoCacheOuvrir();
+    return await new Promise((resolve, reject) => {
+      const req = db.transaction("blobs", "readonly").objectStore("blobs").get(cle);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => reject(req.error);
+    });
+  }catch(e){ return null; }
+}
+async function photoCacheSet(cle, blob){
+  try{
+    const db = await photoCacheOuvrir();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction("blobs", "readwrite");
+      tx.objectStore("blobs").put(blob, cle);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }catch(e){ /* le cache est un confort, jamais une condition */ }
+}
+async function photoCacheEffacer(cle){
+  try{
+    const db = await photoCacheOuvrir();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction("blobs", "readwrite");
+      tx.objectStore("blobs").delete(cle);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }catch(e){}
+}
+/* le blob d'une photo cloud : cache d'abord, téléchargement ensuite (auth par session) */
+async function cloudPhotoBlob(chemin){
+  const enCache = await photoCacheGet(chemin);
+  if(enCache) return enCache;
+  if(!await cloudRafraichirSession()) throw new Error("non connecté au cloud (Options → Cloud)");
+  const rep = await fetch(CLOUD_URL + "/storage/v1/object/" + CLOUD_PHOTOS_BUCKET + "/" + chemin, {
+    headers: { "Authorization": "Bearer " + cloudSession.access_token }
+  });
+  if(!rep.ok) throw new Error(rep.status === 404 ? "photo introuvable dans le cloud" : "téléchargement impossible (" + rep.status + ")");
+  const blob = await rep.blob();
+  await photoCacheSet(chemin, blob);
+  return blob;
+}
+async function cloudPhotoEnvoyer(chemin, blob){
+  if(!await cloudRafraichirSession()) throw new Error("non connecté au cloud (Options → Cloud)");
+  const rep = await fetch(CLOUD_URL + "/storage/v1/object/" + CLOUD_PHOTOS_BUCKET + "/" + chemin, {
+    method: "POST",
+    headers: { "Authorization": "Bearer " + cloudSession.access_token, "Content-Type": (blob && blob.type) || "image/jpeg" },
+    body: blob
+  });
+  if(!rep.ok){
+    // 400 "Duplicate" = la photo existe déjà (ré-essai après un upload réussi) : pas une erreur
+    const corps = await rep.text().catch(() => "");
+    if(!/duplicate/i.test(corps)) throw new Error("envoi impossible (" + rep.status + ")");
+  }
+  await photoCacheSet(chemin, blob);
+}
+async function cloudPhotoSupprimer(chemin){
+  await photoCacheEffacer(chemin);
+  if(!await cloudRafraichirSession()) return; // le retrait du JSON suffit ; nettoyage du bucket à la prochaine suppression
+  await fetch(CLOUD_URL + "/storage/v1/object/" + CLOUD_PHOTOS_BUCKET + "/" + chemin, {
+    method: "DELETE",
+    headers: { "Authorization": "Bearer " + cloudSession.access_token }
+  }).catch(() => {});
+}
+/* objectURL d'une photo quel que soit son mode (dossier local ou cloud) — à révoquer
+   par l'appelant une fois l'image décodée. null = indisponible sur ce poste.
+   (rédefinit le stub du script principal, qui ne sait lire que le dossier local) */
+async function photoObjectURL(p){
+  if(!p) return null;
+  if(p.stockage === "cloud"){
+    try{
+      const blob = await cloudPhotoBlob(p.filename);
+      return URL.createObjectURL(blob);
+    }catch(e){
+      cloudPhotoErreurDerniere = e.message || "erreur";
+      return null;
+    }
+  }
+  return readPhotoURL(p.filename);
 }
 
 /* ---- lectures / écritures de l'état partagé ---- */

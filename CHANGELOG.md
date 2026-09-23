@@ -5,6 +5,52 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.16.0] — 2026-09-23
+
+Le dernier trou de la synchro : le JSON voyageait entre postes, pas les photos.
+Côté Supabase, le bucket privé `photos` (préparé depuis la v4.8, policy
+`photos_membres` ALL pour `authenticated` sur `bucket_id = 'photos'`) est branché.
+Aucun changement du JSON existant : une photo cloud ajoute seulement
+`stockage:"cloud"` et un chemin de bucket sur son objet — les photos de dossier
+local ne bougent pas.
+
+### Ajouté — les photos d'essai peuvent vivre dans le cloud
+Trois modes d'ajout, par priorité : **dossier local** connecté (inchangé, zéro
+réseau) ; sinon, **cloud privé** quand on est connecté (bouton « Ajouter des
+photos (cloud) ») — la photo est redimensionnée côté client (1600 px JPEG) puis
+envoyée dans le bucket, et le suivi ne porte que sa référence légère
+(`essaiId/horodatage.jpg`), qui voyage donc avec l'export, l'import ET la synchro ;
+sinon, l'invitation à se brancher reste affichée. L'autre poste télécharge la
+photo à la demande (auth par session, jamais d'URL signée publique) pour la
+miniature, l'agrandissement et l'annotation — et la met en **cache IndexedDB**
+(`spk_photos_cloud`) : une photo déjà vue se réaffiche hors ligne. Une photo
+jamais téléchargée s'affiche estompée avec la raison exacte en info-bulle. La
+suppression retire le fichier du bucket (best effort) et le cache local. Le
+dossier local reste prioritaire quand il est connecté ; les deux modes coexistent
+photo par photo (`stockage:"dossier"` / `"cloud"`).
+
+### Sous le capot
+- `photoObjectURL(p)` factorise la lecture quel que soit le mode ; elle existe en
+  stub dans le script principal (dossier seul) et est RÉDÉFINIE par le bloc cloud
+  (téléchargement + cache) — parce que le premier rendu de l'écran photos arrive
+  avant le chargement du module cloud. Dans la foulée, `cloudSession` est déplacée
+  dans les globales du script principal : la zone d'ajout la lit au premier rendu,
+  et une globale lue trop tard dans l'orbite de `loadAll()` est le piège TDZ
+  documenté depuis la v4.9.
+- Endpoints storage en REST direct (`/storage/v1/object/photos/…`, Bearer session,
+  rafraîchie par `cloudRafraichirSession`) — toujours sans SDK. Cache « 400
+  Duplicate » traité comme succès de ré-envoi.
+- Les rapports générés n'embarquent pas les photos (inchangé) : aucun impact.
+
+### Tests
+148/148 au vert. Vérifié en session au navigateur : zone d'ajout dans ses trois
+états (dossier / cloud / invitation), vignette cloud indisponible → estompée avec
+l'info-bulle exacte contre le vrai endpoint Supabase (échec d'auth simulé),
+suppression cloud sans exception, cache IndexedDB (écriture, lecture, effacement),
+migration de policies vérifiée en base, aucune erreur console. L'upload réel avec
+compte authentifié reste à éprouver sur le poste de Matis au premier usage — le
+chemin POST est symétrique du GET testé.
+
 ## [4.15.0] — 2026-09-23
 
 Analyse : les deux vues qui manquaient pour lire un essai dans son contexte — face à
