@@ -305,6 +305,11 @@ td.computed{font-family:var(--font-mono); font-variant-numeric:tabular-nums; tex
   padding-top:8px; border-top:1px solid var(--border);}
 .ap-manque{font-family:var(--font-mono); font-size:11px; font-weight:600; color:var(--amber); margin-top:6px;}
 .ap-manque.ap-bloquant{color:var(--red);}
+/* v4.20 — taux de rebut annuel, au-dessus du journal d'équipe */
+.rebut-annuel-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:2px 0 10px; font-size:12.5px; color:var(--ink-soft);}
+.rebut-annuel-row label{display:inline-flex; align-items:center; gap:8px; font-weight:600;}
+.rebut-source{font-size:11.5px; color:var(--ink-faint);}
+.rebut-source.ok{color:var(--ok, #1a7a3f);}
 /* v4.19 — coût annuel par logement, coloré selon sa part du coût outillage */
 .ap-annuel{display:block; margin-top:2px; font-family:var(--font-mono); font-size:11px; font-weight:600;}
 .ap-total-annuel{font-family:var(--font-mono); font-size:12px; color:var(--ink-soft); margin-left:10px;}
@@ -1891,7 +1896,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.19.0";
+const TOOL_VERSION = "4.20.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -2663,7 +2668,7 @@ function normalizeScenario(sc){
   // les autres sont en essai tant qu'on n'a pas tranche
   const merged = Object.assign({ emag1:false, limitOverride:false, limitLabel:"Battement (mm)", limitValue:0.12, validationThreshold:5,
     battActif:true, battCotes:"", criteresSup:[], marpossRapport:false, tendanceRapport:false,
-    critere2Actif:false, limitLabel2:"Ra (µm)", limitValue2:0.8,
+    critere2Actif:false, limitLabel2:"Ra (µm)", limitValue2:0.8, tauxRebutAnnuel:"",
     statut: sc.baseline ? "serie" : "essai", statutMotif:"", statutDate:"", essais:[], scrapLog:[] }, sc);
   // v4.4 : le scenario en production (★) EST le scenario "en serie" -- un seul concept,
   // pas deux qui pourraient diverger. Corrige silencieusement toute donnee anterieure ou
@@ -4894,14 +4899,27 @@ function scrapStats(sc){
   return { count: rows.length, totalProd, totalRebut, rate };
 }
 
+/* v4.20 — d'où vient le taux de rebut d'un scénario. Deux canaux : la saisie annuelle
+   (tauxRebutAnnuel, le chiffre Stellantis sur l'année, rentré par Matis sur le scénario
+   de référence puis affiné par essai) et le journal d'équipe (scrapLog, calculé). LA
+   SAISIE FAIT FOI quand elle est remplie — le journal continue de tracer le détail par
+   équipe, mais ce n'est plus lui qui pèse dans le bilan. Un seul point de vérité quel
+   que soit le canal, pour le coût pièce comme pour le gain annuel. */
+function tauxRebutDe(sc){
+  const manuel = parseFloat(sc.tauxRebutAnnuel);
+  if(!isNaN(manuel) && manuel >= 0) return { taux: manuel, source: "saisi" };
+  const r = scrapStats(sc).rate;
+  return r === null ? null : { taux: r, source: "journal" };
+}
+
 /* ---- modules optionnels ---- */
 function coutRebutPiece(sc, cfg){
   cfg = cfg || config;
   if(!cfg.coutRebutActif) return null;
   const cd = parseFloat(cfg.coutDisque);
-  const taux = scrapStats(sc).rate;
-  if(isNaN(cd) || taux === null) return null;
-  return (taux/100) * cd;
+  const tr = tauxRebutDe(sc);
+  if(isNaN(cd) || tr === null) return null;
+  return (tr.taux/100) * cd;
 }
 
 /* ---- pieces detachees : amorties comme une plaquette, mais sur leur propre charniere
@@ -6282,9 +6300,29 @@ function scenarioBlockHTML(sc, interactive){
   const scrapAddBtn = interactive ? `<button class="ghost scrap-add" data-id="${sc.id}">+ Ajouter un suivi équipe</button>` : "";
   const scrapEmptyColspan = interactive ? 6 : 5;
 
+  /* v4.20 — taux de rebut annuel : le chiffre de l'année, saisi en tête du suivi rebut.
+     Il fait foi sur le taux calculé du journal (voir tauxRebutDe) et pèse dans le gain
+     annuel dès que le module Coût de rebut est actif avec un prix de disque. */
+  const trAnnuel = tauxRebutDe(sc);
+  const moduleRebutOK = config.coutRebutActif && !isNaN(parseFloat(config.coutDisque));
+  const rebutAnnuelNote = !interactive ? "" : `<span class="rebut-source ${trAnnuel && trAnnuel.source === "saisi" ? "ok" : ""}">${
+    trAnnuel && trAnnuel.source === "saisi"
+      ? "fait foi — retenu pour le bilan" +
+        (moduleRebutOK ? "" : " · pour qu'il pèse : activer « Coût de rebut » et le prix du disque dans Options")
+      : trAnnuel
+        ? "non saisi — le taux calculé du journal (" + fmt(trAnnuel.taux,1) + " %) est retenu"
+        : "non saisi — le taux du journal s'appliquera dès qu'une ligne existe"
+  }</span>`;
+
   const scrapSection = `
     <div class="log-section">
       <h3>Suivi rebut — production équipe (taux de rebut battement, toutes pièces)</h3>
+      ${interactive ? `<div class="rebut-annuel-row">
+        <label>Taux de rebut annuel (%)
+          <input class="cell" data-id="${sc.id}" data-field="tauxRebutAnnuel" value="${escapeAttr(sc.tauxRebutAnnuel ?? "")}" placeholder="ex. 2,5" style="max-width:90px;" title="Le chiffre annuel (Stellantis) pour ce scénario. Rempli, il fait foi sur le taux calculé du journal et pèse dans le gain annuel via le module Coût de rebut.">
+        </label>
+        ${rebutAnnuelNote}
+      </div>` : ""}
       <div class="tbl-wrap">
         <table>
           <thead>
@@ -9810,6 +9848,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.20.0", date:"23/09/2026", points:[
+    "<b>Le taux de rebut annuel entre dans le bilan.</b> Un champ <b>Taux de rebut annuel (%)</b> arrive en tête du suivi rebut de chaque scénario — c'est le chiffre de l'année, rentré sur le scénario de référence et affiné pour chaque scénario d'essai. Rempli, il <b>fait foi</b> sur le taux calculé du journal d'équipe (qui continue de tracer le détail par équipe) et pèse dans le gain annuel dès que le module « Coût de rebut » est actif avec le prix du disque. Un indicateur dit en permanence quelle source est retenue."
+  ]},
   { version:"4.19.0", date:"23/09/2026", points:[
     "<b>Le coût annuel par logement, coloré.</b> La vue d'ensemble affiche maintenant ce que chaque logement pèse <b>sur l'année</b> (coût pièce × production annuelle) — c'est lui qui dit où travailler, pas le coût pièce seul. Une couleur compare la part de chaque logement aux autres : <span style=\"color:hsl(145,62%,34%); font-weight:600;\">vert</span> = mineur, <span style=\"color:hsl(73,62%,34%); font-weight:600;\">ambre</span> = notable, <span style=\"color:hsl(0,62%,34%); font-weight:600;\">rouge</span> = majeur — les postes à cibler en priorité se repèrent d'un coup d'œil. Le total annuel outillage rejoint le total pièce dans l'en-tête.",
     "<b>Réordonner les outils en glissant les tuiles.</b> La poignée ⠿ sur le bandeau de chaque fiche outil la déplace dans l'ordre — fiches, tuiles d'aperçu et pastilles numérotées suivent toutes, et l'ordre est conservé dans le suivi. Un clic simple ouvre toujours la fiche : seul un glissement déplace."
@@ -11127,6 +11168,13 @@ function runTests(){
     ok("coutRebutPiece : module eteint -> null", coutRebutPiece(B, cfg), null);
     cfg.coutRebutActif = true;
     ok("coutRebutPiece = taux de rebut x cout disque", coutRebutPiece(B, cfg), 0.4);
+    // v4.20 — la saisie annuelle fait foi sur le taux calcule du journal
+    B.tauxRebutAnnuel = 5;
+    ok("tauxRebutDe : la saisie annuelle fait foi", (() => { const t = tauxRebutDe(B); return t.taux === 5 && t.source === "saisi"; })(), true);
+    ok("coutRebutPiece : taux saisi remplace le taux du journal", coutRebutPiece(B, cfg), 1.0);
+    B.tauxRebutAnnuel = "";
+    ok("tauxRebutDe : sans saisie, taux du journal", (() => { const t = tauxRebutDe(B); return t.taux === 2 && t.source === "journal"; })(), true);
+    ok("tauxRebutDe : ni saisie ni journal -> null", tauxRebutDe(normalizeScenario({ id:"VR", name:"VR", outils:[] })), null);
 
     // ---- pieces detachees ----
     cfg.piecesActif = true;

@@ -5,6 +5,24 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.20.0] — 2026-09-23
+
+Le taux de rebut annuel entre dans le bilan économique. Décision actée avec
+Benjamin : le taux ne vit pas seulement sur la référence — réduire le rebut est
+un résultat d'essai possible, donc le champ existe **par scénario**. Nouveau
+champ `tauxRebutAnnuel` sur le scénario, aucun changement du reste du JSON.
+
+### Ajouté — taux de rebut annuel, saisie Matis qui fait foi
+Champ « Taux de rebut annuel (%) » en tête du suivi rebut de chaque scénario.
+`tauxRebutDe(sc)` devient l'unique point de vérité du taux : **la saisie
+annuelle fait foi** quand elle est remplie ; sinon le taux calculé du journal
+d'équipe (`scrapLog`) s'applique, comme avant. `coutRebutPiece` passe par ce
+point de vérité — le coût pièce, le coût total et donc **tout l'affichage
+« gain annuel » existant** (rapport, chips, synthèse, tuiles) intègrent
+automatiquement le rebut saisi, sans nouveau rendu. Un indicateur sous le champ
+dit quelle source est retenue et rappelle le prérequis (module « Coût de
+rebut » actif + prix du disque dans Options).
+
 ## [4.19.0] — 2026-09-23
 
 Deux demandes de terrain sur la vue d'ensemble : **où part l'argent** (coût
