@@ -5,6 +5,24 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.26.0] — 2026-09-23
+
+Deux retours d'usage (Matis/Benjamin) : le bandeau bleu « Reprendre » affichait
+un vieil essai (et les noms de logements d'époque, « Bol/Piste ») sur les
+nouvelles créations ; et la popup de démarrage listait TOUT l'historique des
+versions.
+
+### Modifié — le bandeau « Reprendre » est contextualisé
+`dernierEssaiEnCours` propose **d'abord un essai en cours du scénario
+affiché** (`activeId`) — là où l'on travaille ; à défaut seulement, l'essai en
+cours le plus récent de l'outil (comportement précédent). Recentrer la vue sur
+un autre scénario recalcule le bandeau.
+
+### Modifié — la fenêtre des nouveautés ne garde que 10 jours
+`nouveautesHTML` filtre les entrées à la dizaine écoulée (dates
+jj/mm/aaaa ; entrée illisible conservée par prudence ; jamais de liste vide —
+retombe sur la dernière version). L'entrée du jour est toujours là.
+
 ## [4.25.0] — 2026-09-23
 
 Question de Benjamin : « comment clôturer un essai arrêté avant la charnière

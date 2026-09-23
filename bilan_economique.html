@@ -1919,7 +1919,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.25.0";
+const TOOL_VERSION = "4.26.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -8495,18 +8495,27 @@ document.addEventListener("keydown", (e) => {
    conforme est une campagne close, on ne le repropose pas. Le ✕ masque la proposition pour
    CET essai ; un essai différent touché plus tard repasse devant naturellement. */
 function dernierEssaiEnCours(){
-  let meilleur = null;
+  /* v4.25 — le bandeau propose d'abord les essais en cours du scénario AFFICHÉ : là où
+     l'on travaille. Avant, le plus récent toutes lignes/scénarios confondues gagnait —
+     un vieil essai d'un autre scénario (et ses noms de logements d'époque) s'affichait
+     donc en tête des nouvelles créations. À défaut d'essai en cours ici, on retombe
+     sur le plus récent de l'outil, comme avant. */
+  const candidats = [];
   lignes.forEach(l => (l.references || []).forEach(r => (r.ops || []).forEach(o => (o.scenarios || []).forEach(sc => {
     (sc.essais || []).forEach(es => {
       const st = essaiStats(sc, es);
       if(st.status !== "pending") return;
       const t = es.modifieLe || (es.date ? es.date + "T00:00:00" : "");
       if(!t) return;
-      if(!meilleur || t > meilleur.t) meilleur = { t, ligneId:l.id, refId:r.id, opId:o.id,
-        scId:sc.id, essaiId:es.id, scName:sc.name, essaiTitre:es.titre, date:es.date, st };
+      candidats.push({ t, actif: sc.id === activeId, ligneId:l.id, refId:r.id, opId:o.id,
+        scId:sc.id, essaiId:es.id, scName:sc.name, essaiTitre:es.titre, date:es.date, st });
     });
   }))));
-  return meilleur;
+  if(!candidats.length) return null;
+  const actifs = candidats.filter(c => c.actif);
+  const pool = actifs.length ? actifs : candidats;
+  pool.sort((a, b) => (a.t < b.t ? 1 : a.t > b.t ? -1 : 0));
+  return pool[0];
 }
 function renderReprise(){
   const el = document.getElementById("repriseBandeau");
@@ -10111,6 +10120,10 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.26.0", date:"23/09/2026", points:[
+    "<b>Le bandeau « Reprendre » parle du scénario que vous avez sous les yeux.</b> Il proposait toujours l'essai en cours le plus récent toutes lignes confondues : en travaillant sur une création neuve, c'est un vieil essai d'un autre scénario (et les noms de logements d'époque) qui s'affichait. Désormais il propose <b>d'abord un essai en cours du scénario affiché</b> ; à défaut seulement, le plus récent de l'outil.",
+    "<b>La fenêtre des nouveautés ne raconte plus tout l'historique.</b> Seules les évolutions des <b>10 derniers jours</b> s'affichent au démarrage — le reste a été vu ou ne concerne plus."
+  ]},
   { version:"4.25.0", date:"23/09/2026", points:[
     "<b>Clôturer un essai arrêté avant sa charnière.</b> Jusqu'ici un essai stoppé net (insert cassé, brut éclaté, incident machine) restait « en cours — X pièces à saisir » pour toujours, et revenait dans le bandeau de reprise. Un bouton <b>⏹ Clôturer</b> sur chaque essai pose la décision : motif (casse, hors tolérance, brut, incident machine, autre), précision, date d'arrêt. L'essai passe <b>⏹ Arrêté</b> — ni conforme ni non conforme : il sort du compteur 5× et de la reprise, et le rapport d'essai l'affiche avec le motif. Réouvrable à tout moment, prélèvements intacts.",
     "<b>Compteur honnête.</b> Le résumé du scénario affiche désormais les essais « arrêtés avant charnière » à part — les non conformes restent les non conformes."
@@ -10377,7 +10390,17 @@ const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
 function nouveautesHTML(){
-  return NOUVEAUTES.map((n, i) => `
+  /* v4.25 — la popup au démarrage ne raconte que le très récent : au-delà de 10 jours,
+     les modifs ont été vues ou n'intéressent plus (Matis). On garde la dizaine écoulée,
+     date illisible exceptée (prudence), et jamais une liste vide. */
+  const limite = Date.now() - 10 * 24 * 3600 * 1000;
+  const recentes = NOUVEAUTES.filter(n => {
+    const [j, m, a] = (n.date || "").split("/").map(Number);
+    if(!j || !m || !a) return true;
+    return new Date(a, m - 1, j).getTime() >= limite;
+  });
+  const liste = recentes.length ? recentes : NOUVEAUTES.slice(0, 1);
+  return liste.map((n, i) => `
     <div class="nv-bloc${i === 0 ? " nv-actuelle" : ""}">
       <div class="nv-tete">
         <span class="nv-version">Version ${n.version}</span>
@@ -12068,6 +12091,37 @@ function runTests(){
       delete scC.essais[0].cloture;
       ok("cloture : réouverture redonne un essai en cours",
          essaiStats(scC, scC.essais[0]).status, "pending");
+    }
+
+    /* ---- v4.25 : bandeau de reprise contextualisé + nouveautés 10 jours ---- */
+    {
+      // le scénario AFFICHÉ gagne : son essai en cours passe, même moins récent
+      const scR = normalizeScenario({ id:"sReprise", name:"reprise", outils:[] });
+      const essaiVieux = { id:"eV", titre:"Essai ancien", date:"2026-09-01",
+        modifieLe:"2026-09-01T08:00:00.000Z", prelevements:[], params:{ logements:[] } };
+      const essaiRecent = { id:"eR", titre:"Essai récent ailleurs", date:"2026-09-23",
+        modifieLe:"2026-09-23T08:00:00.000Z", prelevements:[], params:{ logements:[] } };
+      const lignesSauvees = lignes, actifSauve = activeId;
+      lignes = [{ id:"lR", nom:"L", references:[{ id:"rR", nom:"R", ops:[{ id:"oR", nom:"OP", config:{},
+        scenarios:[
+          normalizeScenario(Object.assign({}, scR, { id:"sAutre" })),
+          normalizeScenario({ id:"sActif", name:"actif", outils:[], essais:[essaiVieux] })
+        ] } ] } ] }];
+      // essai récent dans l'AUTRE scénario, essai vieux dans le scénario affiché
+      lignes[0].references[0].ops[0].scenarios[0].essais = [essaiRecent];
+      activeId = "sActif";
+      ok("reprise : l'essai du scénario affiché passe devant le plus récent",
+         dernierEssaiEnCours().essaiId, "eV");
+      activeId = "sAutre";
+      ok("reprise : hors contexte, le plus récent gagne",
+         dernierEssaiEnCours().essaiId, "eR");
+      lignes = lignesSauvees; activeId = actifSauve;
+      // nouveautés : les entrées de plus de 10 jours ne s'affichent plus
+      NOUVEAUTES.push({ version:"0.0.0-test", date:"01/01/2026", points:["ancienne"] });
+      const htmlNv = nouveautesHTML();
+      NOUVEAUTES.pop();
+      ok("nouveautes : entrée de plus de 10 jours masquée", /0\.0\.0-test/.test(htmlNv), false);
+      ok("nouveautes : l'entrée du jour reste visible", /4\.25\.0/.test(htmlNv), true);
     }
 
     ok("normalizeScenario : plan conserve a travers l'arbre",
