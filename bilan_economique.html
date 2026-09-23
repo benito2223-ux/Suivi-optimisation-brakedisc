@@ -1791,7 +1791,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.11.2";
+const TOOL_VERSION = "4.12.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -2583,6 +2583,16 @@ function normalizeScenario(sc){
       }] : [] };
     }
     const marposs = Object.assign({ debut:"", fin:"", releves:[] }, e.marposs || {});
+    // v4.12 — extractions multiples : un essai mené sur plusieurs jours colle une
+    // extraction Marposs par jour, chacune avec ses heures et son graphe. Migration
+    // silencieuse : l'ancien marposs unique devient la première extraction. Aucun
+    // changement de format — un ancien fichier relit ce suivi sans rien voir.
+    let marpossListe = Array.isArray(e.marpossListe) && e.marpossListe.length
+      ? e.marpossListe.map(x => Object.assign({ id: x.id || ("mj"+Math.random().toString(36).slice(2)), jour:"", debut:"", fin:"", releves:[] }, x))
+      : null;
+    if(!marpossListe && ((marposs.releves || []).length || marposs.debut || marposs.fin)){
+      marpossListe = [{ id:"mj1", jour:"", debut: marposs.debut || "", fin: marposs.fin || "", releves: marposs.releves || [] }];
+    }
     const photos = (e.photos || []).map(p => Object.assign(
       { id: p.id || ("ph"+Math.random().toString(36).slice(2)), filename:"", addedAt:"", legende:"", crop:null, annotations:[] }, p));
     return Object.assign(
@@ -2595,7 +2605,9 @@ function normalizeScenario(sc){
         // le cas en conflit plutot que de deviner.
         modifieLe:"" },
       e,
-      { params, marposs, photos, prelevements: (e.prelevements || []).map(r => {
+      { params, marposs, marpossListe: marpossListe || [{ id:"mj1", jour:"", debut:"", fin:"", releves:[] }],
+        marpossRapport: !!(e.marpossRapport || marposs.marpossRapport),
+        photos, prelevements: (e.prelevements || []).map(r => {
         const row = Object.assign({ id: r.id || ("p"+Math.random().toString(36).slice(2)), piece:"", batt:"", battD:"", battG:"", logementId:"", pointMesure:"", usure:"", valeur2:"" }, r);
         // anciennes saisies (avant le split Droite/Gauche d'EMAG 1) : la mesure vivait
         // seule dans "batt". Si le scenario est en mode EMAG 1, on la reporte sur les deux
@@ -3485,22 +3497,25 @@ function essaiRapportHTML(sc, essai){
     }).join("");
   const csupHeadsRap = csupCols.map(col => `<th>${escapeAttr(col.c.label || "critère")}${col.ax !== "v" ? " " + (AXE_LABELS[col.ax] || col.ax) : ""}</th>`).join("");
 
-  /* v4.9 — section Marposs du rapport, uniquement si l'essai l'a cochée (pour ne pas
-     surcharger un rapport qui part chez le client) : fenêtre horaire, moyennes, graphe
-     du jour avec la plage de l'essai surlignée. Palette en dur : le rapport est un
-     fichier autonome sans les variables CSS de l'outil. */
-  const mRap = essai.marposs || { debut:"", fin:"", releves:[] };
-  const stRap = marpossStats(sc, essai);
-  const marpossRapportBloc = (mRap.marpossRapport && (mRap.releves||[]).length) ? `
-    <h2>Suivi Marposs — production du jour</h2>
-    <div class="grid">
-      <div><div class="l">Début de l'essai</div><div class="v">${escapeAttr(mRap.debut) || "—"}</div></div>
-      <div><div class="l">Fin de l'essai</div><div class="v">${escapeAttr(mRap.fin) || "—"}</div></div>
-      <div><div class="l">Relevés du jour</div><div class="v">${mRap.releves.length}</div></div>
-      <div><div class="l">Moyenne pendant l'essai</div><div class="v">${stRap.moyenneEssai === null ? "—" : fmt(stRap.moyenneEssai,3)} <span style="color:var(--ink-faint);">(${stRap.nbEssai} pièce(s))</span></div></div>
-      <div><div class="l">Moyenne journée</div><div class="v">${stRap.moyenneJour === null ? "—" : fmt(stRap.moyenneJour,3)}</div></div>
-    </div>
-    ${marpossChartSVG(sc, essai, { blue:"#0d47a1", red:"#c50018", teal:"#0b6e63", faint:"#5a6470" })}
+  /* v4.12 — section Marposs du rapport : UNE sous-section par extraction (par journée)
+     si l'essai a coché l'option. Palette en dur : le rapport est un fichier autonome
+     sans les variables CSS de l'outil. */
+  const mRaps = (essai.marpossListe || []).filter(ex => (ex.releves||[]).length);
+  const marpossRapportBloc = (essai.marpossRapport && mRaps.length) ? `
+    <h2>Suivi Marposs ${mRaps.length > 1 ? "— " + mRaps.length + " journées" : "— production du jour"}</h2>
+    ${mRaps.map((ex, i) => {
+      const st = marpossStats(ex);
+      return `
+      ${mRaps.length > 1 ? `<h3 style="font-size:12.5px; margin:14px 0 6px; color:#154d8a; text-transform:uppercase; letter-spacing:.03em;">Extraction ${i+1}${ex.jour ? " — " + escapeAttr(ex.jour) : ""}</h3>` : ""}
+      <div class="grid">
+        <div><div class="l">Début de l'essai</div><div class="v">${escapeAttr(ex.debut) || "—"}</div></div>
+        <div><div class="l">Fin de l'essai</div><div class="v">${escapeAttr(ex.fin) || "—"}</div></div>
+        <div><div class="l">Relevés du jour</div><div class="v">${ex.releves.length}</div></div>
+        <div><div class="l">Moyenne pendant l'essai</div><div class="v">${st.moyenneEssai === null ? "—" : fmt(st.moyenneEssai,3)} <span style="color:var(--ink-faint);">(${st.nbEssai} pièce(s))</span></div></div>
+        <div><div class="l">Moyenne journée</div><div class="v">${st.moyenneJour === null ? "—" : fmt(st.moyenneJour,3)}</div></div>
+      </div>
+      ${marpossChartSVG(sc, ex, { blue:"#0d47a1", red:"#c50018", teal:"#0b6e63", faint:"#5a6470" })}`;
+    }).join("")}
     <p style="font-size:10.5px; color:var(--ink-faint); margin-top:2px;">Chaque point : un disque contrôlé par la Marposs au fil de la journée. Bande bleue : plage de l'essai. Ligne rouge : tolérance d'essai.</p>
   ` : "";
 
@@ -5986,10 +6001,11 @@ function parseMarpossPaste(text){
   });
   return { rows, ignorees };
 }
-function marpossStats(sc, essai){
-  const m = essai.marposs || { debut:"", fin:"", releves:[] };
-  const releves = m.releves || [];
-  const debutMin = heureToMinutes(m.debut), finMin = heureToMinutes(m.fin);
+/* v4.12 — les stats portent sur UNE extraction (une journée) : {debut, fin, releves} */
+function marpossStats(ex){
+  ex = ex || {};
+  const releves = ex.releves || [];
+  const debutMin = heureToMinutes(ex.debut), finMin = heureToMinutes(ex.fin);
   const dansEssai = (debutMin === null || finMin === null) ? [] : releves.filter(r => {
     const hm = heureToMinutes(r.heure);
     return hm !== null && hm >= debutMin && hm <= finMin;
@@ -5997,16 +6013,16 @@ function marpossStats(sc, essai){
   const moyenne = arr => arr.length ? arr.reduce((s,r) => s + (parseFloat(r.valeur)||0), 0) / arr.length : null;
   return { total: releves.length, moyenneJour: moyenne(releves), moyenneEssai: moyenne(dansEssai), nbEssai: dansEssai.length, debutMin, finMin };
 }
-function marpossChartSVG(sc, essai, pal){
+function marpossChartSVG(sc, ex, pal){
   // palette paramétrable : variables CSS dans l'outil, couleurs en dur dans le rapport
   // autonome (qui n'a pas les variables de l'outil)
   pal = Object.assign({ blue:"var(--blue)", red:"var(--red)", teal:"var(--teal-strong)", faint:"var(--ink-faint)" }, pal || {});
-  const m = essai.marposs || { debut:"", fin:"", releves:[] };
+  const m = ex || { debut:"", fin:"", releves:[] };
   const releves = (m.releves||[]).map(r => ({ x: heureToMinutes(r.heure), y: parseFloat(r.valeur) }))
     .filter(p => p.x !== null && !isNaN(p.y));
   if(!releves.length) return "";
   const limite = parseFloat(limiteDe(sc));
-  const stats = marpossStats(sc, essai);
+  const stats = marpossStats(ex);
   const allX = releves.map(p=>p.x), allY = releves.map(p=>p.y);
   let xMin = Math.min(...allX), xMax = Math.max(...allX);
   if(xMax === xMin) xMax = xMin + 1;
@@ -6048,48 +6064,64 @@ function marpossChartSVG(sc, essai, pal){
     </svg>
   `;
 }
-function marpossHTML(sc, essai){
-  if(!essai.marposs) essai.marposs = { debut:"", fin:"", releves:[] };
-  const m = essai.marposs;
-  const stats = marpossStats(sc, essai);
-  const chart = marpossChartSVG(sc, essai);
-  const rows = (m.releves||[]).slice(0, 1000).map((r, i) => {
+function marpossBlocExHTML(sc, essai, ex, i){
+  const stats = marpossStats(ex);
+  const chart = marpossChartSVG(sc, ex);
+  const titre = "Extraction " + (i+1) + (ex.jour ? " — " + escapeAttr(ex.jour) : "");
+  const rows = (ex.releves||[]).slice(0, 1000).map((r, k) => {
     const conf = isNaN(parseFloat(limiteDe(sc))) ? null : parseFloat(r.valeur) <= parseFloat(limiteDe(sc));
-    return `<tr><td>${escapeAttr(r.heure)}</td><td class="num">${i+1}</td><td class="num">${fmtBatt(r.valeur)}</td>
+    return `<tr><td>${escapeAttr(r.heure)}</td><td class="num">${k+1}</td><td class="num">${fmtBatt(r.valeur)}</td>
       <td>${conf === null ? "—" : conf ? '<span class="badge ok">OUI</span>' : '<span class="badge risk">NON</span>'}</td></tr>`;
   }).join("");
-  const tropLong = (m.releves||[]).length > 1000 ? `<p class="panel-hint">Affichage limité aux 1000 premières lignes (${m.releves.length} au total) — les statistiques et le graphique portent bien sur l'ensemble.</p>` : "";
-
+  const tropLong = (ex.releves||[]).length > 1000 ? `<p class="panel-hint">Affichage limité aux 1000 premières lignes (${ex.releves.length} au total) — les statistiques et le graphique portent bien sur l'ensemble.</p>` : "";
   return `
-    <details class="marposs-block" ${m.releves.length ? "open" : ""}>
-      <summary><svg class="icon" viewBox="0 0 18 18"><path d="M2.5 13.5 7 8l3 3 5.5-7" stroke-linecap="round" stroke-linejoin="round"/></svg>Suivi Marposs — production du jour ${m.releves.length ? `<span class="badge muted">${m.releves.length} relevé(s)</span>` : ""}</summary>
+    <div class="marposs-ex" style="border-top:2px solid var(--border); margin-top:14px; padding-top:10px;">
+      <div class="marposs-window">
+        <b style="color:var(--teal);">${titre}</b>
+        <label>Jour <input type="date" class="cell" data-marposs-ex="${ex.id}" data-marposs-field="jour" value="${escapeAttr(ex.jour || "")}" title="Jour de cette extraction (un essai peut s'étendre sur plusieurs jours)"></label>
+        <label>Début <input type="time" class="cell" data-marposs-ex="${ex.id}" data-marposs-field="debut" value="${escapeAttr(ex.debut)}"></label>
+        <label>Fin <input type="time" class="cell" data-marposs-ex="${ex.id}" data-marposs-field="fin" value="${escapeAttr(ex.fin)}"></label>
+        ${(i > 0 || essai.marpossListe.length > 1) ? `<button class="ghost danger marposs-ex-del" data-essai="${essai.id}" data-marposs-ex="${ex.id}" title="Supprimer cette extraction">✕</button>` : ""}
+      </div>
+      <div class="marposs-paste-row">
+        <textarea class="marposs-paste" data-marposs-ex="${ex.id}" rows="3" placeholder="Collez ici les 2 colonnes copiées depuis l'extraction Marposs de ce jour : heure, puis valeur (une pièce par ligne)."></textarea>
+        <div class="marposs-paste-actions">
+          <button class="save marposs-import" data-marposs-ex="${ex.id}">Importer le collage</button>
+          ${ex.releves.length ? `<button class="ghost danger marposs-clear" data-marposs-ex="${ex.id}">Vider (${ex.releves.length})</button>` : ""}
+        </div>
+      </div>
+      ${ex.releves.length ? `
+        <div class="marposs-kpis">
+          <div><span class="l">Moyenne journée</span><span class="v">${stats.moyenneJour===null?"—":fmt(stats.moyenneJour,3)}</span></div>
+          <div><span class="l">Moyenne essai</span><span class="v">${stats.moyenneEssai===null?"—":fmt(stats.moyenneEssai,3)}</span><span class="foot-sub" style="display:block;">${stats.nbEssai} pièce(s) entre début et fin</span></div>
+          <div><span class="l">Total journée</span><span class="v">${stats.total}</span></div>
+        </div>
+        <div class="chart-block" style="padding:10px 0;border-top:none;">${chart}</div>
+        <div class="tbl-wrap" style="max-height:320px; overflow-y:auto;">
+          <table><thead><tr><th>Heure</th><th class="num">N° disque</th><th class="num">Battement</th><th>Conf.</th></tr></thead>
+          <tbody>${rows}</tbody></table>
+        </div>
+        ${tropLong}
+      ` : `<p class="panel-hint">Collez l'extraction de ce jour pour voir apparaître le tableau, les moyennes et le graphique.</p>`}
+    </div>`;
+}
+function marpossHTML(sc, essai){
+  if(!Array.isArray(essai.marpossListe) || !essai.marpossListe.length){
+    essai.marpossListe = [{ id:"mj1", jour:"", debut:"", fin:"", releves:[] }];
+  }
+  const nbReleves = essai.marpossListe.reduce((n, ex) => n + (ex.releves||[]).length, 0);
+  const plusieursJours = essai.marpossListe.length > 1;
+  const blocs = essai.marpossListe.map((ex, i) => marpossBlocExHTML(sc, essai, ex, i)).join("");
+  return `
+    <details class="marposs-block" ${nbReleves ? "open" : ""}>
+      <summary><svg class="icon" viewBox="0 0 18 18"><path d="M2.5 13.5 7 8l3 3 5.5-7" stroke-linecap="round" stroke-linejoin="round"/></svg>Suivi Marposs ${plusieursJours ? `— ${essai.marpossListe.length} journées` : ""} ${nbReleves ? `<span class="badge muted">${nbReleves} relevé(s)</span>` : ""}</summary>
       <div class="marposs-body">
-        <div class="marposs-window">
-          <label>Début essai <input type="time" class="cell" data-marposs-essai="${essai.id}" data-marposs-field="debut" value="${escapeAttr(m.debut)}"></label>
-          <label>Fin essai <input type="time" class="cell" data-marposs-essai="${essai.id}" data-marposs-field="fin" value="${escapeAttr(m.fin)}"></label>
-          <label><input type="checkbox" data-marposs-essai="${essai.id}" data-marposs-field="marpossRapport" ${m.marpossRapport ? "checked" : ""}> Inclure ce graphe dans le rapport de l'essai</label>
-          <span class="panel-hint" style="margin:0;">Le graphique colore en bleu la période de l'essai parmi les relevés de la journée.</span>
+        <div style="margin-bottom:10px;">
+          <label><input type="checkbox" data-marposs-rapport="${essai.id}" ${essai.marpossRapport ? "checked" : ""}> Inclure les graphes Marposs dans le rapport de l'essai</label>
+          <span class="panel-hint" style="margin:0;">Un essai sur plusieurs jours = une extraction par jour : « + Ajouter une extraction » crée la journée suivante, avec ses heures et son propre graphe.</span>
         </div>
-        <div class="marposs-paste-row">
-          <textarea class="marposs-paste" data-marposs-essai="${essai.id}" rows="3" placeholder="Collez ici les 2 colonnes copiées depuis l'extraction Marposs : heure, puis valeur de battement (une pièce par ligne)."></textarea>
-          <div class="marposs-paste-actions">
-            <button class="save marposs-import" data-marposs-essai="${essai.id}">Importer le collage</button>
-            ${m.releves.length ? `<button class="ghost danger marposs-clear" data-marposs-essai="${essai.id}">Vider (${m.releves.length})</button>` : ""}
-          </div>
-        </div>
-        ${m.releves.length ? `
-          <div class="marposs-kpis">
-            <div><span class="l">Moyenne journée</span><span class="v">${stats.moyenneJour===null?"—":fmt(stats.moyenneJour,3)}</span></div>
-            <div><span class="l">Moyenne essai</span><span class="v">${stats.moyenneEssai===null?"—":fmt(stats.moyenneEssai,3)}</span><span class="foot-sub" style="display:block;">${stats.nbEssai} pièce(s) entre début et fin</span></div>
-            <div><span class="l">Total journée</span><span class="v">${stats.total}</span></div>
-          </div>
-          <div class="chart-block" style="padding:10px 0;border-top:none;">${chart}</div>
-          <div class="tbl-wrap" style="max-height:320px; overflow-y:auto;">
-            <table><thead><tr><th>Heure</th><th class="num">N° disque</th><th class="num">Battement</th><th>Conf.</th></tr></thead>
-            <tbody>${rows}</tbody></table>
-          </div>
-          ${tropLong}
-        ` : `<p class="panel-hint">Collez l'extraction du jour pour voir apparaître le tableau, les moyennes et le graphique.</p>`}
+        ${blocs}
+        <button class="ghost marposs-add-ex" data-essai="${essai.id}" style="margin-top:10px;">+ Ajouter une extraction (autre journée…)</button>
       </div>
     </details>
   `;
@@ -7998,14 +8030,52 @@ function attachDetailHandlers(sc){
       if(es.prelevements.map(r => r.id).join(",") !== avant){ saveData(); render(); }
     });
   });
-  root.querySelectorAll('input[data-marposs-field]').forEach(inp => {
+  // v4.12 — champs d'une extraction Marposs (jour/début/fin) : ciblés par extraction
+  const trouverExtraction = (es, exId) => (es.marpossListe || []).find(x => x.id === exId);
+  root.querySelectorAll('input[data-marposs-ex][data-marposs-field]').forEach(inp => {
     inp.addEventListener("change", () => {
-      const essaiId = inp.getAttribute("data-marposs-essai");
-      const es = sc.essais.find(e => e.id === essaiId);
-      if(!es) return;
-      if(!es.marposs) es.marposs = { debut:"", fin:"", releves:[] };
-      es.marposs[inp.getAttribute("data-marposs-field")] = inp.type === "checkbox" ? inp.checked : inp.value;
+      const es = sc.essais.find(e => e.id === inp.getAttribute("data-essai"));
+      const ex = es && trouverExtraction(es, inp.getAttribute("data-marposs-ex"));
+      if(!ex) return;
+      ex[inp.getAttribute("data-marposs-field")] = inp.value;
+      toucherEssai(es);
       saveData(); render();
+    });
+  });
+  // case « inclure les graphes Marposs au rapport » : un seul drapeau pour tout l'essai
+  root.querySelectorAll('input[data-marposs-rapport]').forEach(inp => {
+    inp.addEventListener("change", () => {
+      const es = sc.essais.find(e => e.id === inp.getAttribute("data-marposs-rapport"));
+      if(!es) return;
+      es.marpossRapport = inp.checked;
+      toucherEssai(es);
+      saveData();
+    });
+  });
+  // + Ajouter une extraction (autre journée du même essai)
+  root.querySelectorAll(".marposs-add-ex").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const es = sc.essais.find(e => e.id === btn.getAttribute("data-essai"));
+      if(!es) return;
+      es.marpossListe = es.marpossListe || [];
+      es.marpossListe.push({ id: uid("mj"), jour: es.dateFin || "", debut:"", fin:"", releves:[] });
+      toucherEssai(es);
+      saveData(); render();
+    });
+  });
+  // supprimer une extraction (les autres restent)
+  root.querySelectorAll(".marposs-ex-del").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const es = sc.essais.find(e => e.id === btn.getAttribute("data-essai"));
+      const ex = es && trouverExtraction(es, btn.getAttribute("data-marposs-ex"));
+      if(!ex) return;
+      const nom = (ex.jour ? "du " + ex.jour + " " : "") + "(" + (ex.releves||[]).length + " relevé(s))";
+      dialogueConfirmer("Supprimer cette extraction " + nom + " ?\n\nLes autres journées de l'essai ne sont pas touchées.", { titre: "Supprimer l'extraction ?", danger: (ex.releves||[]).length > 0, okLabel: "Supprimer" }).then(ok => {
+        if(!ok) return;
+        es.marpossListe = es.marpossListe.filter(x => x.id !== ex.id);
+        toucherEssai(es);
+        saveData(); render();
+      });
     });
   });
   // v4.11 — sélection des logements suivis par essai : ✕ = ne plus suivre (le logement
@@ -8048,32 +8118,33 @@ function attachDetailHandlers(sc){
       saveData(); render();
     });
   });
-  // v4.9.1 : l'heure de début/fin de l'essai pré-remplit la fenêtre du suivi Marposs si
-  // elle est encore vide (une seule saisie en pratique ; la fenêtre Marposs reste
-  // modifiable séparément — la machine, elle, contrôle toute la journée)
+  // v4.9.1 : l'heure de début/fin de l'essai pré-remplit la fenêtre de la PREMIÈRE
+  // extraction Marposs si elle est encore vide (une seule saisie en pratique ; la fenêtre
+  // reste modifiable séparément — la machine, elle, contrôle toute la journée)
   root.querySelectorAll('input[data-field="heureDebut"], input[data-field="heureFin"]').forEach(inp => {
     inp.addEventListener("change", () => {
       const es = sc.essais.find(e => e.id === inp.getAttribute("data-essai"));
       if(!es) return;
-      if(!es.marposs) es.marposs = { debut:"", fin:"", releves:[] };
+      if(!Array.isArray(es.marpossListe) || !es.marpossListe.length) es.marpossListe = [{ id:"mj1", jour:"", debut:"", fin:"", releves:[] }];
+      const ex1 = es.marpossListe[0];
       // lire l'INPUT et pas le modèle : ce listener peut partir avant le câblage générique
       const v = (inp.value || "").trim();
       let rempli = false;
-      if(v && inp.getAttribute("data-field") === "heureDebut" && !es.marposs.debut){ es.marposs.debut = v; rempli = true; }
-      if(v && inp.getAttribute("data-field") === "heureFin" && !es.marposs.fin){ es.marposs.fin = v; rempli = true; }
+      if(v && inp.getAttribute("data-field") === "heureDebut" && !ex1.debut){ ex1.debut = v; rempli = true; }
+      if(v && inp.getAttribute("data-field") === "heureFin" && !ex1.fin){ ex1.fin = v; rempli = true; }
       if(rempli){ saveData(); render(); }
     });
   });
   root.querySelectorAll(".marposs-import").forEach(btn => {
     btn.addEventListener("click", () => {
-      const essaiId = btn.getAttribute("data-marposs-essai");
-      const es = sc.essais.find(e => e.id === essaiId);
-      const ta = root.querySelector(`.marposs-paste[data-marposs-essai="${essaiId}"]`);
+      const exId = btn.getAttribute("data-marposs-ex");
+      const es = sc.essais.find(e => (e.marpossListe||[]).some(x => x.id === exId));
+      const ta = root.querySelector(`.marposs-paste[data-marposs-ex="${exId}"]`);
       if(!es || !ta) return;
       const { rows, ignorees } = parseMarpossPaste(ta.value);
       if(!rows.length){ dialogueAlerte("Aucune ligne valide reconnue dans le collage (attendu : heure puis valeur, séparées par une tabulation).", "Collage non reconnu"); return; }
-      if(!es.marposs) es.marposs = { debut:"", fin:"", releves:[] };
-      es.marposs.releves = rows;
+      const ex = trouverExtraction(es, exId);
+      ex.releves = rows;
       toucherEssai(es);
       saveData(); render();
       dialogueAlerte(rows.length + " relevé(s) importé(s)" + (ignorees ? ", " + ignorees + " ligne(s) ignorée(s) (non reconnue(s))." : "."), "Relevés Marposs importés");
@@ -8081,12 +8152,13 @@ function attachDetailHandlers(sc){
   });
   root.querySelectorAll(".marposs-clear").forEach(btn => {
     btn.addEventListener("click", () => {
-      const essaiId = btn.getAttribute("data-marposs-essai");
-      const es = sc.essais.find(e => e.id === essaiId);
-      if(!es || !es.marposs) return;
-      dialogueConfirmer("Vider les " + es.marposs.releves.length + " relevé(s) Marposs de cet essai ?", { titre: "Vider les relevés ?", danger: true, okLabel: "Vider" }).then(ok => {
+      const exId = btn.getAttribute("data-marposs-ex");
+      const es = sc.essais.find(e => (e.marpossListe||[]).some(x => x.id === exId));
+      const ex = es && (es.marpossListe||[]).find(x => x.id === exId);
+      if(!ex) return;
+      dialogueConfirmer("Vider les " + (ex.releves||[]).length + " relevé(s) de cette extraction ?", { titre: "Vider les relevés ?", danger: true, okLabel: "Vider" }).then(ok => {
         if(!ok) return;
-        es.marposs.releves = [];
+        ex.releves = [];
         toucherEssai(es);
         saveData(); render();
       });
@@ -9054,6 +9126,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.12.0", date:"22/09/2026", points:[
+    "<b>Marposs : un essai sur plusieurs jours, une extraction par jour.</b> Suggestion de Matis : quand un essai s'étend sur deux journées (50 pièces le jour 1, 100 le jour 2), le bouton « + Ajouter une extraction » crée la journée suivante dans le même essai — son jour, ses heures, son collage, ses moyennes et <b>son propre graphe</b>. Chaque extraction se supprime indépendamment, et le rapport de l'essai présente une sous-section par journée. L'extraction Marposs existante migre automatiquement."
+  ]},
   { version:"4.11.1", date:"22/09/2026", points:[
     "<b>La Tendance trace tout critère évalué.</b> Le graphique ne se limitait au battement : désormais chaque critère suivi — Ra, VE, critère libre — a son propre graphe d'évolution en fonction du n° de pièce, avec sa ligne de tolérance (et sa borne mini si activée). Quand un critère porte deux mesures (Ra Inter / Ra Exter), deux courbes de couleurs distinctes tracent leurs évolutions côte à côte."
   ]},

@@ -5,6 +5,19 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.12.0] — 2026-09-22
+
+### Ajouté — extractions Marposs multiples par essai (suggestion de Matis)
+Un essai mené sur plusieurs jours (ex. 50 pièces le jour 1, 100 le jour 2) peut
+maintenant coller **une extraction Marposs par journée**, dans un seul essai :
+le bouton « + Ajouter une extraction » crée la journée suivante, avec son jour,
+ses heures début/fin, son collage, ses moyennes journée/essai et **son propre
+graphe** (plage horaire surlignée). Chaque extraction se supprime indépendamment.
+La case « inclure dans le rapport » devient un drapeau de l'essai : le rapport
+présente une sous-section par journée. Les données existantes migrent
+automatiquement (l'ancien marposs unique devient la première extraction) —
+aucun changement de format, rien à refaire.
+
 ## [4.11.2] — 2026-09-22
 
 ### Ajouté — le graphe de Tendance peut partir dans les rapports d'essai
