@@ -1,0 +1,16 @@
+{
+  "name": "Suivi_optimisation_SPK",
+  "short_name": "Suivi SPK",
+  "description": "Suivi d'essais et bilan économique — SPK by CeramTec",
+  "id": "spk-suivi-optimisation-septfons",
+  "start_url": "./bilan_economique.html",
+  "scope": "./",
+  "display": "standalone",
+  "theme_color": "#1b5ea6",
+  "background_color": "#0c0c0c",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

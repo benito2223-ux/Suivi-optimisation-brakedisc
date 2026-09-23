@@ -5,6 +5,35 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.18.0] — 2026-09-23
+
+L'outil devient installable (PWA) avec mise à jour automatique. Le HTML
+reste LA application : le manifeste et le service worker sont trois fichiers
+publiés à côté (`manifest.webmanifest`, `service-worker.js`, `icons/`), la
+`.surgeignore` est ouverte pour eux uniquement. Aucun changement du JSON ni de
+la synchro.
+
+### Ajouté — installation en application
+Le manifeste existait depuis longtemps… mais en **URL `data:`** — que Chrome
+refuse pour l'installation. Il devient un vrai fichier (`manifest.webmanifest`,
+mêmes métadonnées : nom, standalone, thème #1b5ea6), avec `start_url`,
+`scope` et `id` ajoutés, et les deux icônes PNG extraites du manifeste data:
+vers `icons/icon-192.png` / `icon-512.png` + une variante **maskable** (fond
+noir plein bord, logo réduit dans le cercle de sûreté). Le service worker
+s'enregistre sur https et localhost uniquement (file:// : pas de sens, catch
+silencieux).
+
+### Ajouté — mise à jour poussée, sans désinstallation
+Stratégie du service worker : **réseau d'abord pour le HTML** (la version à
+jour est servie dès que le réseau l'a vue — à l'ouverture suivante, sans
+aucune manipulation, et le numéro de version n'est pas dupliqué dans le SW),
+**cache d'abord pour le shell statique** (icônes, manifeste). Nouveau SW :
+`skipWaiting` + `clients.claim`, purge des vieux caches à l'activation. Le
+cache ne sert que de repli hors ligne. **Toute requête non-GET et tout domaine
+étranger (Supabase : auth, synchro, photos) sont non interceptés** — le cloud
+et l'offline-first existants restent strictement identiques. Le nom de cache
+ne bouge que si le SW lui-même change.
+
 ## [4.17.0] — 2026-09-23
 
 Deux irritants remontés par Benjamin et Matis à l'usage quotidien : la

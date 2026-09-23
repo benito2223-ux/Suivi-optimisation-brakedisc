@@ -1,5 +1,12 @@
-# Deploiement verrouille : seuls ces deux fichiers doivent jamais partir sur Surge.
+# Deploiement verrouille : seuls ces fichiers doivent jamais partir sur Surge.
 # Tout le reste (donnees d'essais reelles, notes internes, mode d'emploi, .git...) reste local.
 *
 !bilan_economique.html
 !index.html
+# PWA (v4.18) : manifeste reel + service worker + icones, publies a cote du HTML
+!manifest.webmanifest
+!service-worker.js
+!icons
+!icons/icon-192.png
+!icons/icon-512.png
+!icons/icon-512-maskable.png
