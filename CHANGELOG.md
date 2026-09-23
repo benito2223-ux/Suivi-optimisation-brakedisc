@@ -5,6 +5,31 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.19.0] — 2026-09-23
+
+Deux demandes de terrain sur la vue d'ensemble : **où part l'argent** (coût
+annuel par logement, coloré) et **remettre les outils dans l'ordre voulu** sans
+les retaper. Aucun changement du JSON — l'ordre des outils était déjà l'ordre
+du tableau `sc.outils`.
+
+### Ajouté — coût annuel par logement, coloré par part
+Chaque tuile de la vue d'ensemble affiche `coût pièce × production annuelle`
+(production de la référence courante, déjà connue) sous le coût pièce, et le
+total annuel outillage rejoint l'en-tête. La couleur compare la **part** du
+logement à sa part théorique (1/n logements) : `couleurPartCout` interpole le
+teinte 145° (vert, ratio ≤ 0,33) → 0° (rouge, ratio ≥ 2) — un logement 1/3
+sous sa part théorique est mineur, un logement 2× au-dessus est majeur.
+Sans production annuelle saisie, la ligne ne s'affiche pas (pas de faux —).
+`libelleAnnuel` bascule en k€/an au-delà de 10 000 €.
+
+### Ajouté — réordonner les outils par glissement de tuile
+Poignée ⠿ sur le bandeau de chaque fiche outil (draggable), lâcher sur une
+autre fiche réordonne le tableau : `deplacerOutil` (fonction pure, testée)
+splice `sc.outils`. Un seul geste met d'accord fiches, tuiles d'aperçu et
+pastilles numérotées, et l'ordre part dans la synchro. Un clic simple ouvre
+toujours la fiche — le drag ne déclenche pas de click. Repères visuels :
+fiche en cours de drag estompée, cible en pointillés bleus.
+
 ## [4.18.0] — 2026-09-23
 
 L'outil devient installable (PWA) avec mise à jour automatique. Le HTML

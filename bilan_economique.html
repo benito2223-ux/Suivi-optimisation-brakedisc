@@ -305,6 +305,9 @@ td.computed{font-family:var(--font-mono); font-variant-numeric:tabular-nums; tex
   padding-top:8px; border-top:1px solid var(--border);}
 .ap-manque{font-family:var(--font-mono); font-size:11px; font-weight:600; color:var(--amber); margin-top:6px;}
 .ap-manque.ap-bloquant{color:var(--red);}
+/* v4.19 — coût annuel par logement, coloré selon sa part du coût outillage */
+.ap-annuel{display:block; margin-top:2px; font-family:var(--font-mono); font-size:11px; font-weight:600;}
+.ap-total-annuel{font-family:var(--font-mono); font-size:12px; color:var(--ink-soft); margin-left:10px;}
 
 /* ---- fiche outil repliable ---- */
 .outil-carte > summary.outil-sommaire{cursor:pointer; list-style:none; display:flex; align-items:center;
@@ -315,6 +318,11 @@ td.computed{font-family:var(--font-mono); font-variant-numeric:tabular-nums; tex
 .outil-carte[open] > summary::before{transform:rotate(90deg);}
 .outil-carte > summary:hover{background:var(--surface-alt);}
 .outil-carte > summary:focus-visible{outline:2px solid var(--blue); outline-offset:-2px;}
+/* v4.19 — poignée de réordonnancement + repères de glisser-déposer */
+.os-grip{cursor:grab; color:var(--ink-faint); font-size:12px; line-height:1; padding:0 1px; user-select:none;}
+.os-grip:active{cursor:grabbing;}
+details.outil-carte.drag-en-cours{opacity:.5;}
+details.outil-carte.drag-cible{outline:2px dashed var(--blue); outline-offset:3px;}
 .os-numero{font-family:var(--font-mono); font-size:14.5px; font-weight:700; color:var(--ink);}
 .os-corr{font-family:var(--font-mono); font-size:11.5px; color:var(--ink-faint); border:1px solid var(--border);
   border-radius:var(--radius-sm); padding:1px 6px;}
@@ -1883,7 +1891,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.18.0";
+const TOOL_VERSION = "4.19.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -4106,6 +4114,23 @@ function scenarioCostPerEdge(sc){
 }
 function baselineScenario(){
   return data.find(s => s.baseline) || data[0];
+}
+
+/* ---- v4.19 — coût annuel par logement : où part l'argent de l'outillage ----
+   La vue d'ensemble donnait le coût PIÈCE de chaque logement, mais pas ce qu'il pesait
+   sur l'année : à 0,0020 €/pièce sur 150 000 disques, un logement « pas cher » peut
+   coûter plus que son voisin « cher ». La couleur cible les postes à travailler : la
+   part annuelle du logement est comparée à sa part théorique (1/nb logements) —
+   vert = mineur, ambre = notable, rouge = majeur. */
+function libelleAnnuel(v){
+  return v >= 10000 ? fmt(v / 1000, 1) + " k€/an" : fmt(v, 0) + " €/an";
+}
+function couleurPartCout(ratio){
+  // ratio = part réelle / part théorique. 0,33 -> vert (145°), 2 -> rouge (0°),
+  // interpolation linéaire entre les deux, bornée des deux côtés.
+  const r = Math.max(0.33, Math.min(2, ratio));
+  const teinte = Math.round(145 * (2 - r) / (2 - 0.33));
+  return "hsl(" + teinte + ", 62%, 34%)";
 }
 
 /* ============================================================================
@@ -7474,7 +7499,7 @@ function logementBlocHTML(sc, o, l, showFrFa, showCycleDetail){
    par logement, avec ce qu'on va vraiment chercher du regard — quelle plaquette, quelle
    duree de vie, a quelles conditions, pour combien. Ce qui manque est signale ici plutot
    que decouvert plus tard dans un calcul qui ne tombe pas. */
-function apercuLogementHTML(sc, o, l, couleur, oi){
+function apercuLogementHTML(sc, o, l, couleur, oi, volume, totalAnnuel, partRef){
   const pc = posCost(l);
   // Deux causes distinctes a un cout qui ne tombe pas, et il faut les nommer separement :
   // une case vide (on n'a pas encore saisi) et une valeur saisie mais inexploitable (0 arete,
@@ -7496,6 +7521,12 @@ function apercuLogementHTML(sc, o, l, couleur, oi){
     l.kappaR !== "" && l.kappaR != null ? "κr " + l.kappaR + "°" : null
   ].filter(Boolean).join(" · ");
   const reel = charniereReelle(sc, l.id);
+  // coût annuel du logement (v4.19) : seulement si coût pièce ET production annuelle connus
+  const annuel = (pc !== null && volume > 0) ? pc * volume : null;
+  const part = (annuel !== null && totalAnnuel > 0) ? annuel / totalAnnuel : null;
+  const ratio = (part !== null && partRef > 0) ? part / partRef : null;
+  const couleurAnnuelle = ratio === null ? null : couleurPartCout(ratio);
+  const pctPart = part === null ? null : Math.round(part * 100);
   return `
     <div class="ap-tuile" style="--outil-couleur:${couleur};">
       <div class="ap-tete">
@@ -7511,7 +7542,8 @@ function apercuLogementHTML(sc, o, l, couleur, oi){
           ${reel ? `<span class="ap-reel ${!reel.borneInf && !isNaN(parseFloat(l.charniere)) && reel.moyenne < parseFloat(l.charniere) - 0.5 ? "bad" : ""}">${reel.borneInf ? "≥ " : ""}${fmt(reel.moyenne,0)} réel</span>` : ""}</div>
         <div class="ap-c"><span class="ap-l">Plaquette</span><span class="ap-v">${l.prix === "" || l.prix == null ? "—" : fmt(parseFloat(l.prix),2)}<small>€</small></span>
           <span class="ap-reel">${l.aretes === "" || l.aretes == null ? "— arête" : l.aretes + " arêtes"}</span></div>
-        <div class="ap-c ap-cout"><span class="ap-l">Coût</span><span class="ap-v">${pc === null ? "—" : fmt(pc,4)}<small>€/pièce</small></span></div>
+        <div class="ap-c ap-cout"><span class="ap-l">Coût</span><span class="ap-v">${pc === null ? "—" : fmt(pc,4)}<small>€/pièce</small></span>
+          ${annuel !== null ? `<span class="ap-annuel" style="color:${couleurAnnuelle};" title="≈ ${escapeAttr(libelleAnnuel(annuel))} sur l'année (${pctPart} % du coût outillage) — la couleur compare la part de ce logement aux autres : vert = mineur, rouge = majeur, à cibler en priorité.">${escapeAttr(libelleAnnuel(annuel))}</span>` : ""}</div>
       </div>
       ${cond ? `<div class="ap-cond">${escapeAttr(cond)}</div>` : ""}
       ${manque.length ? `<div class="ap-manque">Manque : ${escapeAttr(manque.join(", "))}</div>` : ""}
@@ -7520,11 +7552,18 @@ function apercuLogementHTML(sc, o, l, couleur, oi){
 }
 
 function compositionApercuHTML(sc){
-  const tuiles = sc.outils.flatMap((o, oi) =>
-    o.logements.map(l => apercuLogementHTML(sc, o, l, OUTIL_COLORS[oi % OUTIL_COLORS.length], oi))).join("");
-  const nbOutils = sc.outils.length;
+  // v4.19 — coût annuel par logement : production annuelle de la référence courante.
+  // Le total annuel sert de dénominateur aux parts ; la part théorique (1/n) étalonne
+  // la couleur d'un logement face aux autres.
+  const refSc = getActiveReference();
+  const volume = refSc ? parseFloat(refSc.productionAnnuelle) : NaN;
   const nbLogements = sc.outils.reduce((n, o) => n + o.logements.length, 0);
   const total = scenarioCost(sc);
+  const totalAnnuelSc = (total !== null && volume > 0) ? total * volume : 0;
+  const partRefSc = nbLogements > 0 ? 1 / nbLogements : 0;
+  const tuiles = sc.outils.flatMap((o, oi) =>
+    o.logements.map(l => apercuLogementHTML(sc, o, l, OUTIL_COLORS[oi % OUTIL_COLORS.length], oi, volume, totalAnnuelSc, partRefSc))).join("");
+  const nbOutils = sc.outils.length;
   if(!tuiles) return `<div class="compo-apercu vide">Aucun outil configuré — ouvrez « Modifier la composition » pour en ajouter un.</div>`;
   return `
     <div class="compo-apercu">
@@ -7532,6 +7571,7 @@ function compositionApercuHTML(sc){
         <h4>Composition</h4>
         <span class="ap-compte">${nbOutils} outil${nbOutils>1?"s":""} · ${nbLogements} logement${nbLogements>1?"s":""}</span>
         <span class="ap-total">${total === null ? "—" : fmt(total,4)} <small>€ / pièce, outillage</small></span>
+        ${totalAnnuelSc > 0 ? `<span class="ap-total-annuel">≈ ${escapeAttr(libelleAnnuel(totalAnnuelSc))}</span>` : ""}
       </div>
       <div class="ap-grille">${tuiles}</div>
     </div>`;
@@ -7625,6 +7665,19 @@ function planOutilHTML(sc, o){
   </label>`;
 }
 
+/* ---- v4.19 — réordonner les outils par glissement de tuile ----
+   L'ordre des fiches était figé à l'ordre de création. Le glisser-déposer réordonne
+   directement le tableau sc.outils : c'est LUI qui fixe l'ordre partout (fiches,
+   tuiles d'aperçu, pastilles numérotées), donc un seul geste met tout d'accord.
+   Fonction pure pour être testée sans DOM. */
+function deplacerOutil(sc, srcId, cibleId){
+  const ids = (sc.outils || []).map(o => o.id);
+  const from = ids.indexOf(srcId), to = ids.indexOf(cibleId);
+  if(from < 0 || to < 0 || from === to) return false;
+  sc.outils.splice(to, 0, sc.outils.splice(from, 1)[0]);
+  return true;
+}
+
 function outilCarteHTML(sc, o, oi, showFrFa, showCycleDetail){
   const couleur = OUTIL_COLORS[oi % OUTIL_COLORS.length];
   const base = (field) => `data-id="${sc.id}" data-outil="${o.id}" data-field="${field}"`;
@@ -7634,6 +7687,7 @@ function outilCarteHTML(sc, o, oi, showFrFa, showCycleDetail){
   return `
     <details class="outil-carte"${outilsOuverts.has(cle) ? " open" : ""} data-outil-id="${o.id}" style="--outil-couleur:${couleur};">
       <summary class="outil-sommaire">
+        <span class="os-grip" title="Glisser pour déplacer cet outil dans l'ordre">⠿</span>
         <span class="outil-pastille">${oi + 1}</span>
         <span class="os-numero">${escapeAttr(o.numero || "Outil sans n°")}</span>
         ${o.correcteur ? `<span class="os-corr">${escapeAttr(o.correcteur)}</span>` : ""}
@@ -8524,6 +8578,32 @@ function attachDetailHandlers(sc){
     det.addEventListener("toggle", () => {
       const cle = sc.id + "|" + det.getAttribute("data-outil-id");
       if(det.open) outilsOuverts.add(cle); else outilsOuverts.delete(cle);
+    });
+    /* v4.19 — glisser-déposer : la poignée est le bandeau de la fiche (repliée ou non).
+       Un simple clic ouvre toujours la fiche : le drag ne déclenche pas de click. */
+    const som = det.querySelector(".outil-sommaire");
+    if(som){
+      som.setAttribute("draggable", "true");
+      som.addEventListener("dragstart", (e) => {
+        e.dataTransfer.setData("text/plain", det.getAttribute("data-outil-id"));
+        e.dataTransfer.effectAllowed = "move";
+        det.classList.add("drag-en-cours");
+      });
+      som.addEventListener("dragend", () => det.classList.remove("drag-en-cours"));
+    }
+    det.addEventListener("dragover", (e) => {
+      if(det.classList.contains("drag-en-cours")) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      det.classList.add("drag-cible");
+    });
+    det.addEventListener("dragleave", () => det.classList.remove("drag-cible"));
+    det.addEventListener("drop", (e) => {
+      e.preventDefault();
+      det.classList.remove("drag-cible");
+      const srcId = e.dataTransfer.getData("text/plain");
+      if(!srcId) return;
+      if(deplacerOutil(sc, srcId, det.getAttribute("data-outil-id"))){ saveData(); render(); }
     });
   });
   root.querySelectorAll("details.essai-card[data-essai-id]").forEach(det => {
@@ -9730,6 +9810,10 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.19.0", date:"23/09/2026", points:[
+    "<b>Le coût annuel par logement, coloré.</b> La vue d'ensemble affiche maintenant ce que chaque logement pèse <b>sur l'année</b> (coût pièce × production annuelle) — c'est lui qui dit où travailler, pas le coût pièce seul. Une couleur compare la part de chaque logement aux autres : <span style=\"color:hsl(145,62%,34%); font-weight:600;\">vert</span> = mineur, <span style=\"color:hsl(73,62%,34%); font-weight:600;\">ambre</span> = notable, <span style=\"color:hsl(0,62%,34%); font-weight:600;\">rouge</span> = majeur — les postes à cibler en priorité se repèrent d'un coup d'œil. Le total annuel outillage rejoint le total pièce dans l'en-tête.",
+    "<b>Réordonner les outils en glissant les tuiles.</b> La poignée ⠿ sur le bandeau de chaque fiche outil la déplace dans l'ordre — fiches, tuiles d'aperçu et pastilles numérotées suivent toutes, et l'ordre est conservé dans le suivi. Un clic simple ouvre toujours la fiche : seul un glissement déplace."
+  ]},
   { version:"4.18.0", date:"23/09/2026", points:[
     "<b>L'outil s'installe comme une application (PWA).</b> Ouvrez l'adresse en ligne et utilisez « Installer l'application » du navigateur : l'outil se lance dans sa fenêtre, avec l'icône SPK, sans barre d'adresse — depuis le bureau, le menu Démarrer ou l'écran d'accueil.",
     "<b>Les mises à jour se poussent toutes seules.</b> Le service worker sert la dernière version dès que le réseau l'a vue : ouvrez l'app installée en ligne, elle se met à jour à l'ouverture suivante — sans jamais désinstaller/réinstaller. Hors ligne, la dernière version connue s'ouvre comme avant (localStorage intact).",
@@ -11452,6 +11536,32 @@ function runTests(){
       { id:"tB", numero:"T-1", logements:[{ id:"gB", nom:"Piste", ref:"", prix:"", aretes:"", charniere:"" }] }] });
     ok("apercu : cases vides listees comme manquantes",
        /Manque : référence, prix, arêtes, charnière/.test(apercuLogementHTML(scVide, scVide.outils[0], scVide.outils[0].logements[0], "#000", 0)), true);
+
+    /* ---- v4.19 : ordre des outils par glisser-deposer + cout annuel par logement ---- */
+    {
+      const scOrd = normalizeScenario({ id:"sOrd", name:"ord", outils:[
+        { id:"tX", numero:"X", logements:[] },
+        { id:"tY", numero:"Y", logements:[] },
+        { id:"tZ", numero:"Z", logements:[] }
+      ]});
+      deplacerOutil(scOrd, "tY", "tX");
+      ok("deplacerOutil : le milieu passe en premiere position", scOrd.outils.map(o => o.id), ["tY","tX","tZ"]);
+      deplacerOutil(scOrd, "tY", "tY");
+      ok("deplacerOutil : deplacer sur soi-meme ne fait rien", scOrd.outils.map(o => o.id), ["tY","tX","tZ"]);
+      ok("deplacerOutil : id inconnu -> false", deplacerOutil(scOrd, "tQ", "tX"), false);
+      ok("libelleAnnuel : sous 10 k€ en euros", libelleAnnuel(950), "950 €/an");
+      ok("libelleAnnuel : au-dela en milliers d'euros", libelleAnnuel(12000), "12,0 k€/an");
+      ok("couleurPartCout : part majeure -> rouge", /^hsl\(0, /.test(couleurPartCout(3)), true);
+      ok("couleurPartCout : part mineure -> vert", /^hsl\(145, /.test(couleurPartCout(0.2)), true);
+      const scAnn = normalizeScenario({ id:"sAnn", name:"ann", outils:[
+        { id:"tA1", numero:"A", logements:[{ id:"gA1", nom:"Piste", ref:"R", prix:10, aretes:5, charniere:100 }] }] });
+      // posCost = 10/(5x100) = 0,02 €/piece ; volume 150 000 -> 3 000 €/an
+      const tuileAnn = apercuLogementHTML(scAnn, scAnn.outils[0], scAnn.outils[0].logements[0], "#000", 0, 150000, 3000, 1);
+      ok("apercu : cout annuel affiche sur la tuile quand volume connu",
+         /ap-annuel/.test(tuileAnn) && /3[\s\u00a0\u202f]000 €\/an/.test(tuileAnn), true);
+      ok("apercu : sans volume, pas de cout annuel",
+         /ap-annuel/.test(apercuLogementHTML(scAnn, scAnn.outils[0], scAnn.outils[0].logements[0], "#000", 0)), false);
+    }
 
     ok("normalizeScenario : plan conserve a travers l'arbre",
        normalizeScenario({ id:"sp2", name:"p", outils:[{ id:"t9", numero:"T9", plan:planTest, logements:[] }] }).outils[0].plan, planTest);
