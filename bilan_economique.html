@@ -1912,7 +1912,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.23.0";
+const TOOL_VERSION = "4.24.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -3608,7 +3608,7 @@ function telechargerRapport(sc){
    l'essai, plaquettes utilisees (avec leur reference, figee au moment de l'essai quand
    disponible), conditions de coupe, prelevements, observations. Mise en page reprend les
    tokens du design system SPK (Archivo/IBM Plex Mono, bleu/rouge de la charte). */
-function essaiRapportHTML(sc, essai){
+function essaiRapportHTML(sc, essai, photosRap){
   const ligneActive = getActiveLigne(), refActive = getActiveReference(), opActive = getActiveOp();
   const chemin = [ligneActive && ligneActive.nom, refActive && refActive.nom, opActive && opActive.nom].filter(Boolean).join(" — ");
   const est = essaiStats(sc, essai);
@@ -3729,6 +3729,11 @@ function essaiRapportHTML(sc, essai){
   .chart-svg{width:100%; height:auto;}
   .chart-legend{display:flex; gap:14px; flex-wrap:wrap; font-size:11px; color:var(--ink-soft); margin-top:8px; align-items:center;}
   .chart-legend .tol{display:inline-block; width:20px; border-top:2px dashed var(--red); vertical-align:middle;}
+  .photos-rap{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:16px; margin-top:8px;}
+  .photos-rap .ph{margin:0; break-inside:avoid;}
+  .photos-rap .ph img{width:100%; height:auto; border:1px solid var(--border); border-radius:8px; display:block; background:#fff;}
+  .photos-rap figcaption{font-family:'IBM Plex Mono',Consolas,monospace; font-size:10.5px; color:var(--ink-soft); margin-top:5px; line-height:1.5;}
+  .photos-rap .ph-absente{border:1px dashed var(--border); border-radius:8px; padding:26px 14px; text-align:center; font-family:'IBM Plex Mono',Consolas,monospace; font-size:10.5px; color:var(--ink-faint);}
   footer{margin-top:40px; padding-top:14px; border-top:1px solid var(--border); font-family:'IBM Plex Mono',Consolas,monospace; font-size:10.5px; color:var(--ink-faint); line-height:1.8;}
   footer b{color:var(--red);}
 </style></head><body>
@@ -3780,6 +3785,8 @@ function essaiRapportHTML(sc, essai){
 
   ${essai.observations ? `<h2>Observations</h2><div class="obs-box">${escapeAttr(essai.observations)}</div>` : ""}
 
+  ${photosRapportHTML(photosRap)}
+
   ${marpossRapportBloc}
 
   ${sc.tendanceRapport ? `<h2>Tendance — évolution des critères</h2>
@@ -3796,17 +3803,23 @@ function essaiRapportHTML(sc, essai){
 </body></html>`;
 }
 
-function telechargerRapportEssai(sc, essai){
-  const html = essaiRapportHTML(sc, essai);
-  const blob = new Blob([html], {type:"text/html;charset=utf-8"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  const d = new Date();
-  const stamp = d.getFullYear() + String(d.getMonth()+1).padStart(2,"0") + String(d.getDate()).padStart(2,"0");
-  a.href = url;
-  a.download = "Rapport_essai_" + (sc.name + "_" + essai.titre).replace(/[^a-z0-9]+/gi,"_") + "_" + stamp + ".html";
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 2000);
+async function telechargerRapportEssai(sc, essai){
+  try{
+    // v4.24 : les photos (aplaties + légendées) partent avec le rapport — voir photosPourRapport
+    const photosRap = await photosPourRapport(essai);
+    const html = essaiRapportHTML(sc, essai, photosRap);
+    const blob = new Blob([html], {type:"text/html;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const d = new Date();
+    const stamp = d.getFullYear() + String(d.getMonth()+1).padStart(2,"0") + String(d.getDate()).padStart(2,"0");
+    a.href = url;
+    a.download = "Rapport_essai_" + (sc.name + "_" + essai.titre).replace(/[^a-z0-9]+/gi,"_") + "_" + stamp + ".html";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }catch(e){
+    dialogueAlerte("La génération du rapport a échoué : " + ((e && e.message) || e) + "\n\nLe rapport sans photos reste disponible — réessayez, ou vérifiez la connexion au dossier/cloud photos.", "Génération impossible");
+  }
 }
 
 /* ============================================================================
@@ -6609,6 +6622,91 @@ function marpossHTML(sc, essai){
 
 /* ---- photos par essai : fichiers reels dans le dossier local connecte, jamais dans le
    JSON echange (seule une reference legere y voyage) ---- */
+/* ---- v4.24 — les photos de l'essai voyagent dans le rapport ---------------------------
+   Le rapport d'essai est un fichier autonome envoyé à des gens qui n'ont NI l'outil NI le
+   dossier photos : sans elles, un constat photographié perdait sa preuve. Chaque photo est
+   APLATIE (rognage et annotations appliqués, exactement comme à l'écran) en JPEG embarqué
+   en data URL — le rapport reste un seul fichier, lisible partout, sans appel réseau. Une
+   photo indisponible au moment de la génération (dossier déconnecté, cloud hors ligne) ne
+   casse rien : une case nommée avec la raison la remplace dans le rapport. */
+const RAPPORT_PHOTO_MAXW = 1200;
+function dimensionsAplaties(largSrc, hautSrc, crop, maxW){
+  const c = (crop && (crop.w < 0.999 || crop.h < 0.999)) ? crop : null;
+  const sw = c ? Math.max(1, Math.round(largSrc * c.w)) : largSrc;
+  const sh = c ? Math.max(1, Math.round(hautSrc * c.h)) : hautSrc;
+  const scale = Math.min(maxW / sw, 1);
+  return { w: Math.max(1, Math.round(sw * scale)), h: Math.max(1, Math.round(sh * scale)), crop: c };
+}
+function aplatirPhoto(img, p){
+  const { w: W, h: H, crop } = dimensionsAplaties(img.naturalWidth, img.naturalHeight, p.crop, RAPPORT_PHOTO_MAXW);
+  const canvas = document.createElement("canvas");
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, W, H);
+  if(crop){
+    ctx.drawImage(img, crop.x * img.naturalWidth, crop.y * img.naturalHeight,
+      crop.w * img.naturalWidth, crop.h * img.naturalHeight, 0, 0, W, H);
+  } else {
+    ctx.drawImage(img, 0, 0, W, H);
+  }
+  if(p.annotations && p.annotations.length){
+    drawAnnotShapes(ctx, p.annotations, W, H, -1, crop || defaultCrop());
+  }
+  return canvas.toDataURL("image/jpeg", 0.85);
+}
+function blobEnDataUrl(blob){
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = () => reject(new Error("lecture impossible"));
+    r.readAsDataURL(blob);
+  });
+}
+function chargerImageDepuisUrl(url){
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("décodage impossible"));
+    img.src = url;
+  });
+}
+/* Préparation de TOUTES les photos d'un essai pour le rapport. photoObjectURL gère les
+   deux stockages (dossier local, cloud + cache IndexedDB) ; un échec nominatif ne bloque
+   pas les autres photos. Renvoie [{legende, dataUrl}] ou [{legende, erreur}]. */
+async function photosPourRapport(essai){
+  const photos = (essai && essai.photos) || [];
+  const sorties = [];
+  for(const p of photos){
+    try{
+      const url = await photoObjectURL(p);
+      if(!url) throw new Error(p.stockage === "cloud" ? "photo cloud indisponible (hors ligne ?)" : "dossier photos local non connecté");
+      const blob = await (await fetch(url)).blob();
+      const dataUrl = await blobEnDataUrl(blob);
+      const img = await chargerImageDepuisUrl(dataUrl);
+      sorties.push({ legende: p.legende || "", dataUrl: aplatirPhoto(img, p) });
+      if(url.startsWith("blob:")) URL.revokeObjectURL(url);
+    }catch(e){
+      sorties.push({ legende: p.legende || "", erreur: (e && e.message) || "indisponible" });
+    }
+  }
+  return sorties;
+}
+function photosRapportHTML(photos){
+  if(!photos || !photos.length) return "";
+  const items = photos.map(ph => ph.dataUrl
+    ? `<figure class="ph"><img src="${ph.dataUrl}" alt="${escapeAttr(ph.legende || "Photo de l'essai")}">${ph.legende ? `<figcaption>${escapeAttr(ph.legende)}</figcaption>` : ""}</figure>`
+    : `<figure class="ph"><div class="ph-absente">Photo non incorporée — ${escapeAttr(ph.erreur)}</div>${ph.legende ? `<figcaption>${escapeAttr(ph.legende)}</figcaption>` : ""}</figure>`
+  ).join("");
+  const toutesAbsentes = photos.every(ph => !ph.dataUrl);
+  return `<h2>Photos — constats, métrologie, usures</h2>
+  <div class="photos-rap">${items}</div>
+  <p style="font-family:'IBM Plex Mono',Consolas,monospace; font-size:10.5px; color:var(--ink-faint); margin-top:6px;">${
+    toutesAbsentes
+      ? "Aucune photo n'a pu être incorporée à la génération du rapport — rouvrez l'outil avec le dossier photos connecté (ou en ligne pour le cloud) et regénérez."
+      : "Photos de l'onglet Photos de l'essai, telles qu'annotées dans l'outil (rognage et repères appliqués)."
+  }</p>`;
+}
+
 function photosHTML(sc, essai){
   if(!essai.photos) essai.photos = [];
   const photos = essai.photos;
@@ -6836,8 +6934,8 @@ function setupAnnotCanvas(){
   redrawAnnotCanvas();
   bindAnnotPointerEvents(canvas);
 }
-function fracToCanvas(fx, fy, W, H){
-  const c = annot.crop;
+function fracToCanvas(fx, fy, W, H, crop){
+  const c = crop || annot.crop; // crop explicite : composition hors editeur (rapport, v4.24)
   return [ (fx - c.x)/c.w * W, (fy - c.y)/c.h * H ];
 }
 function canvasToFrac(px, py, W, H){
@@ -6871,15 +6969,17 @@ function annotShapeBBox(s, W, H){
   }
   return { x:0,y:0,w:0,h:0 };
 }
-function drawAnnotShapes(ctx, shapes, W, H, selectedIdx){
+function drawAnnotShapes(ctx, shapes, W, H, selectedIdx, crop){
+  // crop explicite : composition hors editeur (aplatissage rapport, v4.24) — sinon
+  // c'est le crop de l'editeur ouvert (annot.crop) qui sert, comme avant.
   const lw = Math.max(2, Math.min(W,H)*0.006);
   shapes.forEach((s, i) => {
     ctx.strokeStyle = s.color; ctx.fillStyle = s.color; ctx.lineWidth = lw;
     if(s.type === "arrow" || s.type === "curve"){
-      const [x1,y1] = fracToCanvas(s.x1,s.y1,W,H), [x2,y2] = fracToCanvas(s.x2,s.y2,W,H);
+      const [x1,y1] = fracToCanvas(s.x1,s.y1,W,H,crop), [x2,y2] = fracToCanvas(s.x2,s.y2,W,H,crop);
       ctx.beginPath(); ctx.moveTo(x1,y1);
       if(s.type === "curve"){
-        const [cx,cy] = fracToCanvas(s.cx,s.cy,W,H);
+        const [cx,cy] = fracToCanvas(s.cx,s.cy,W,H,crop);
         ctx.quadraticCurveTo(cx,cy,x2,y2); ctx.stroke();
         drawAnnotArrowhead(ctx, cx, cy, x2, y2, lw*4);
       } else {
@@ -6887,15 +6987,15 @@ function drawAnnotShapes(ctx, shapes, W, H, selectedIdx){
         drawAnnotArrowhead(ctx, x1, y1, x2, y2, lw*4);
       }
     } else if(s.type === "rect"){
-      const [x,y] = fracToCanvas(s.x,s.y,W,H), [x2,y2] = fracToCanvas(s.x+s.w,s.y+s.h,W,H);
+      const [x,y] = fracToCanvas(s.x,s.y,W,H,crop), [x2,y2] = fracToCanvas(s.x+s.w,s.y+s.h,W,H,crop);
       ctx.strokeRect(x, y, x2-x, y2-y);
     } else if(s.type === "ellipse"){
-      const [x,y] = fracToCanvas(s.x,s.y,W,H), [x2,y2] = fracToCanvas(s.x+s.w,s.y+s.h,W,H);
+      const [x,y] = fracToCanvas(s.x,s.y,W,H,crop), [x2,y2] = fracToCanvas(s.x+s.w,s.y+s.h,W,H,crop);
       ctx.beginPath();
       ctx.ellipse((x+x2)/2, (y+y2)/2, Math.abs(x2-x)/2, Math.abs(y2-y)/2, 0, 0, Math.PI*2);
       ctx.stroke();
     } else if(s.type === "text"){
-      const [x,y] = fracToCanvas(s.x,s.y,W,H);
+      const [x,y] = fracToCanvas(s.x,s.y,W,H,crop);
       const fontSize = Math.max(14, Math.min(W,H)*0.045);
       ctx.font = `700 ${fontSize}px 'Archivo','Open Sans',Arial,sans-serif`;
       ctx.textBaseline = "top";
@@ -6910,7 +7010,7 @@ function drawAnnotShapes(ctx, shapes, W, H, selectedIdx){
       ctx.strokeRect(bb.x-4, bb.y-4, bb.w+8, bb.h+8);
       ctx.setLineDash([]);
       if(s.type === "curve"){
-        const [cx,cy] = fracToCanvas(s.cx, s.cy, W, H);
+        const [cx,cy] = fracToCanvas(s.cx, s.cy, W, H, crop);
         ctx.fillStyle = "#0d47a1"; ctx.beginPath(); ctx.arc(cx,cy,6,0,Math.PI*2); ctx.fill();
       }
       ctx.restore();
@@ -9969,6 +10069,10 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.24.0", date:"23/09/2026", points:[
+    "<b>Les photos de l'essai partent dans le rapport.</b> L'onglet Photos (rapport de métrologie photographié, usures de plaquettes, constats…) est désormais inclus au rapport d'essai généré, <b>avec leurs légendes</b> — suggestion de Matis : les destinataires du rapport ont enfin les preuves en même temps que les chiffres. Les photos partent <b>telles qu'annotées</b> : rognage et repères dessinés dans l'outil sont appliqués à l'image embarquée.",
+    "<b>Le rapport reste un seul fichier autonome.</b> Les images sont incorporées en data URL (pas de liens, pas de dossier à joindre) — il s'ouvre chez n'importe qui, sans l'outil. Une photo indisponible au moment de la génération (dossier déconnecté, cloud hors ligne) est remplacée par une case qui explique pourquoi, sans casser le rapport."
+  ]},
   { version:"4.23.0", date:"23/09/2026", points:[
     "<b>Le volume annuel porte sa référence en toutes lettres.</b> Le chiffre a toujours été rattaché à LA référence disque (et partagé entre ses OP), mais rien ne le disait au moment de saisir — sur un poste où plusieurs lignes coexistent, le doute « ce champ s'applique à qui ? » menait à écrire sur la mauvaise. Désormais le champ d'Options affiche <b>S'applique à : EMAG 1 › DV 356X26 RPI</b>, et la tuile « Production annuelle » de la composition est cliquable : elle ouvre Options pré-remplie pour LA référence affichée.",
     "<b>Chaque changement de volume est tracé.</b> La référence garde l'historique des 10 dernières valeurs (valeur, auteur, date), affiché sous le champ — de quoi documenter les montées en cadence et voir immédiatement qui a écrit quoi, quand, si un doute survient."
@@ -11824,6 +11928,31 @@ function runTests(){
       ok("volume annuel : historique plafonne a 10 entrees",
          refCap.volumeHistorique.length === 10 && refCap.volumeHistorique[0].valeur === 14, true);
       ok("volume annuel : reference absente -> sans effet", enregistrerVolumeAnnuel(null, 5), undefined);
+    }
+
+    /* ---- v4.24 : photos de l'essai dans le rapport autonome ---- */
+    {
+      ok("dimensionsAplaties : sans crop, taille entiere sous plafond", (() => {
+        const d = dimensionsAplaties(2000, 1000, null, 1200);
+        return d.w === 1200 && d.h === 600 && d.crop === null;
+      })(), true);
+      ok("dimensionsAplaties : le crop rogne avant le plafond", (() => {
+        const d = dimensionsAplaties(2000, 1000, { x:0.25, y:0.25, w:0.5, h:0.5 }, 1200);
+        return d.w === 1000 && d.h === 500 && !!d.crop;
+      })(), true);
+      ok("dimensionsAplaties : petite image jamais agrandie", (() => {
+        const d = dimensionsAplaties(800, 400, null, 1200);
+        return d.w === 800 && d.h === 400;
+      })(), true);
+      ok("photosRapportHTML : aucune section sans photos", photosRapportHTML(null), "");
+      ok("photosRapportHTML : photo absente nommee avec sa raison", (() => {
+        const h = photosRapportHTML([{ legende: "Usure arête", erreur: "dossier photos local non connecté" }]);
+        return /Photo non incorporée/.test(h) && /dossier photos local non connecté/.test(h) && /Usure arête/.test(h);
+      })(), true);
+      ok("photosRapportHTML : photo incorporée avec sa légende", (() => {
+        const h = photosRapportHTML([{ legende: "Metrologie portance", dataUrl: "data:image/jpeg;base64,XY" }]);
+        return /<img src="data:image\/jpeg/.test(h) && /Metrologie portance/.test(h);
+      })(), true);
     }
 
     ok("normalizeScenario : plan conserve a travers l'arbre",

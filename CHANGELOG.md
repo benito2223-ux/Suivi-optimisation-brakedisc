@@ -5,6 +5,31 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.24.0] — 2026-09-23
+
+Demande de Matis : faire apparaître dans le rapport d'essai les images de
+l'onglet Photos (avec leurs légendes) — rapport de métrologie photographié,
+usures de plaquettes, constats — pour que les destinataires aient les preuves
+en même temps que les chiffres. Le rapport reste **un seul fichier HTML
+autonome** : chaque photo est aplatie (rognage + annotations appliqués) en JPEG
+embarqué en data URL, jamais un lien ni un dossier à joindre.
+
+### Ajouté — les photos voyagent avec le rapport
+- `photosPourRapport(essai)` : pour chaque photo, `photoObjectURL` résout le
+  stockage (dossier local ou cloud + cache), l'image est décodée puis
+  **aplatie** — `aplatirPhoto` applique le crop (fractions de l'original) et
+  redessine les annotations via `drawAnnotShapes`, qui accepte désormais un
+  crop explicite (paramètre optionnel, comportement de l'éditeur inchangé).
+  Plafond 1200 px de large, JPEG 0,85 — une photo pèse ~150-400 ko dans le
+  rapport.
+- Section **« Photos — constats, métrologie, usures »** dans le rapport
+  (après Observations, avant Marposs), grille de figures avec légendes. Une
+  photo indisponible à la génération (dossier déconnecté, cloud hors ligne)
+  devient une case qui nomme la raison — les autres partent quand même, et un
+  message dédié s'affiche si AUCUNE n'a pu partir.
+- `telechargerRapportEssai` devient asynchrone (téléchargements cloud
+  éventuels) avec filet : échec → dialogue explicite.
+
 ## [4.23.0] — 2026-09-23
 
 Signalement de Benjamin : le volume annuel « n'est pas rattaché à une ligne et
