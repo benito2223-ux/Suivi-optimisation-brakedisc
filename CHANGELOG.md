@@ -5,6 +5,36 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.28.0] — 2026-09-23
+
+Deux points de Matis/Benjamin : « l'affichage Bol/Piste persiste » (copie
+écran OP40 HESSAPP — non reçue, remplacée par un balayage exhaustif du code),
+et l'ajout du **détail du calcul de coût annuel** au clic sur la tuile.
+
+### Corrigé — les quatre derniers affichages à noms figés
+Balayage complet des usages de `logementNom`/`outilNumero` : il restait quatre
+sites qui lisaient l'instantané figé de l'essai — la **barre de progression du
+mode atelier** (elle utilise maintenant `logementProgress`, déjà résolu), le
+**sélecteur de logement** des lignes de prélèvements, son équivalent à
+l'impression, et la **fenêtre de comparaison d'essais** (plaquettes et
+conditions ; elle affiche aussi désormais le statut « ⏹ Arrêté »). Tous
+relisent le nom actuel via `nomLogementActuel`.
+
+### Ajouté — le détail du calcul au clic sur la tuile
+Choix : **déploiement** plutôt qu'infobulle (lisible au doigt, copiable,
+découvrable). Un clic sur une tuile de la vue d'ensemble déplie les opérations
+avec les vrais chiffres : prix plaquette, durée de vie visée (arêtes ×
+charnière), coût pièce, production annuelle, plaquettes/an, coût annuel. Tuile
+non calculable : la raison exacte. L'état déplié survit aux re-rendus
+(`apDetailsOuverts`, même mécanique que les fiches outil) ; l'impression
+n'emporte le détail que s'il est déplié.
+
+### [4.27.1 / 4.27.2] — 2026-09-23 (retouches)
+Kaki HESSAPP renforcé (#556b2f, opacité 13 %), filigrane réduit (tuile
+240×150, police 54) pour plus de répétitions, puis suppression du filigrane
+sur HESSAPP (ligne unique : la teinte suffit — flag `sansFiligrane` par
+famille).
+
 ## [4.27.0] — 2026-09-23
 
 Info structurante de Benjamin/Matis : le plan machine de Sept Fons, du fond de

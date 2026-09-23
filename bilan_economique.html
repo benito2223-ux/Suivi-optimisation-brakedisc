@@ -313,6 +313,14 @@ td.computed{font-family:var(--font-mono); font-variant-numeric:tabular-nums; tex
 /* v4.19 — coût annuel par logement, coloré selon sa part du coût outillage */
 .ap-annuel{display:block; margin-top:2px; font-family:var(--font-mono); font-size:11px; font-weight:600;}
 .ap-total-annuel{font-family:var(--font-mono); font-size:12px; color:var(--ink-soft); margin-left:10px;}
+/* v4.28 — détail du calcul dépliable au clic sur la tuile */
+.ap-tuile[data-cle-detail]{cursor:pointer;}
+.ap-tuile[data-cle-detail]:hover{border-color:var(--blue);}
+.ap-detail{margin-top:8px; padding-top:8px; border-top:1px dashed var(--border); display:flex; flex-direction:column; gap:3px;}
+.ap-detail[hidden]{display:none;} /* display:flex sinon écraserait l'attribut hidden */
+.ap-detail-l{display:flex; justify-content:space-between; align-items:baseline; gap:10px; font-size:11px; color:var(--ink-soft);}
+.ap-detail-l b{font-family:var(--font-mono); font-weight:600; color:var(--ink); text-align:right;}
+.ap-detail-total{border-top:1px solid var(--border); padding-top:4px; margin-top:2px; color:var(--ink);}
 
 /* ---- fiche outil repliable ---- */
 .outil-carte > summary.outil-sommaire{cursor:pointer; list-style:none; display:flex; align-items:center;
@@ -1921,7 +1929,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.27.2";
+const TOOL_VERSION = "4.28.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -2301,6 +2309,9 @@ let configReplies = new Set();
 /* Fiches outil : repliees par defaut. L'apercu au-dessus donne la vue d'ensemble, la fiche
    ne s'ouvre que quand on veut modifier — sinon quatre outils deplies noient l'ecran. */
 let outilsOuverts = new Set();
+/* v4.28 — tuiles d'aperçu dont le détail de calcul du coût annuel est déplié
+   (clé "scId|logementId" : survit aux re-rendus comme les fiches outil). */
+let apDetailsOuverts = new Set();
 
 function normalizeBacklogItem(b){
   // v4.21 — le pense-bête devient un carnet de sujets chauds partagé : types « essai à
@@ -4868,7 +4879,7 @@ function atelierHTML(){
         <button class="at-step" data-at-piece="+">+</button>
       </div>
       ${prog && prog.target ? `<div class="at-prog"><div class="at-prog-bar"><i style="width:${pct}%"></i></div>
-        <span>${prog.lastPiece ?? 0} / ${prog.target} p — ${escapeAttr((lp&&lp.logementNom)||"")}</span></div>` : ""}
+        <span>${prog.lastPiece ?? 0} / ${prog.target} p — ${escapeAttr(prog.logementNom||"")}</span></div>` : ""}
       ${viseeAtteinte ? `<div class="at-charniere${piece > prog.target ? " depassee" : ""}">${piece > prog.target
         ? `◎ Au-delà de la charnière visée (${prog.target} p) — la durée de vie dépasse l'objectif : prolongez tant que la cote tient, ou clôturez l'essai.`
         : `◎ Cette pièce atteint la charnière visée (${prog.target} p) — resserrez le pas de mesure vers la fin, ou décidez : prolonger / arrêter.`}</div>` : ""}
@@ -5734,11 +5745,16 @@ function rendreComparaison(){
     : `Deux <b>scénarios différents</b> — comparez la dérive et le niveau des courbes, chacun avec sa propre tolérance.`;
 
   const stA = essaiStats(A.sc, A.es), stB = essaiStats(B.sc, B.es);
-  const statutTxt = st => st.status === "ok" ? "✓ Conforme" : st.status === "bad" ? "✗ Non conforme" : "En cours — " + st.raison;
-  const plaquettesDe = (sc, es) => logementsSuivis(es).map(lp =>
-    `${escapeAttr(lp.outilNumero || "?")}·${escapeAttr(lp.logementNom || "—")} ${escapeAttr(refLogementEssai(sc, lp) || "—")}`).join("<br>") || "—";
-  const coupeDe = (sc, es) => logementsSuivis(es).map(lp =>
-    `${escapeAttr(lp.outilNumero || "?")}·${escapeAttr(lp.logementNom || "—")} Vc ${lp.vc ?? "—"} / f ${lp.f ?? "—"} / ch. ${lp.charniere ?? "—"}`).join("<br>") || "—";
+  const statutTxt = st => st.status === "ok" ? "✓ Conforme" : st.status === "bad" ? "✗ Non conforme" : st.status === "arrete" ? "⏹ " + st.raison : "En cours — " + st.raison;
+  // v4.28 : noms actuels des logements, pas les noms figés à l'essai
+  const plaquettesDe = (sc, es) => logementsSuivis(es).map(lp => {
+    const n = nomLogementActuel(sc, lp);
+    return `${escapeAttr(n.outilNumero || "?")}·${escapeAttr(n.logementNom || "—")} ${escapeAttr(refLogementEssai(sc, lp) || "—")}`;
+  }).join("<br>") || "—";
+  const coupeDe = (sc, es) => logementsSuivis(es).map(lp => {
+    const n = nomLogementActuel(sc, lp);
+    return `${escapeAttr(n.outilNumero || "?")}·${escapeAttr(n.logementNom || "—")} Vc ${lp.vc ?? "—"} / f ${lp.f ?? "—"} / ch. ${lp.charniere ?? "—"}`;
+  }).join("<br>") || "—";
 
   const tableau = `
     <table class="cmp-table">
@@ -7475,7 +7491,8 @@ function prelevementRowHTML(sc, essai, row, interactive, snapLogements, showLoge
     const logementCell = showLogementCol ? `
       <td><select class="cell log-equipe small" data-id="${sc.id}" data-essai="${essai.id}" data-prel="${row.id}" data-field="logementId">
         <option value="">—</option>
-        ${snapLogements.map(lp => `<option value="${lp.logementId}" ${row.logementId===lp.logementId?"selected":""}>${escapeAttr(lp.outilNumero||"—")} · ${escapeAttr(lp.logementNom||"—")}</option>`).join("")}
+        ${snapLogements.map(lp => { const n = nomLogementActuel(sc, lp);
+          return `<option value="${lp.logementId}" ${row.logementId===lp.logementId?"selected":""}>${escapeAttr(n.outilNumero||"—")} · ${escapeAttr(n.logementNom||"—")}</option>`; }).join("")}
       </select></td>` : "";
     // v4.9 : colonnes battement selon les côtés choisis (un essai peut n'en porter qu'un)
     const cotes = battCotesDe(sc);
@@ -7504,7 +7521,8 @@ function prelevementRowHTML(sc, essai, row, interactive, snapLogements, showLoge
     `;
   }
   const logementLabel = snapLogements.find(lp => lp.logementId === row.logementId);
-  const logementCellPrint = showLogementCol ? `<td>${logementLabel ? escapeAttr(logementLabel.outilNumero||"—") + " · " + escapeAttr(logementLabel.logementNom||"—") : "—"}</td>` : "";
+  const nomLabel = logementLabel ? nomLogementActuel(sc, logementLabel) : null; // v4.28 : nom actuel
+  const logementCellPrint = showLogementCol ? `<td>${nomLabel ? escapeAttr(nomLabel.outilNumero||"—") + " · " + escapeAttr(nomLabel.logementNom||"—") : "—"}</td>` : "";
   const cotesP = battCotesDe(sc);
   const measureCells = sc.battActif === false ? ""
     : cotesP === "mono" ? `<td class="num">${fmtBatt(row.batt)}</td>`
@@ -7762,8 +7780,27 @@ function apercuLogementHTML(sc, o, l, couleur, oi, volume, totalAnnuel, partRef)
   const ratio = (part !== null && partRef > 0) ? part / partRef : null;
   const couleurAnnuelle = ratio === null ? null : couleurPartCout(ratio);
   const pctPart = part === null ? null : Math.round(part * 100);
+  /* v4.28 — le détail du calcul, dépliable au clic sur la tuile (choix : déploiement
+     plutôt qu'infobulle, lisible au doigt et copiable). Chaque ligne reprend une
+     opération avec SES chiffres : prix, durée de vie, coût pièce, production, plaquettes
+     par an, coût annuel. L'état ouvert survit aux re-rendus (Set, comme les fiches). */
+  const cleDetail = sc.id + "|" + l.id;
+  const detailOuvert = apDetailsOuverts.has(cleDetail);
+  const detailCalc = annuel !== null ? (() => {
+    const prix = parseFloat(l.prix), aretes = parseFloat(l.aretes), charn = parseFloat(l.charniere);
+    return `
+      <div class="ap-detail-l"><span>Prix plaquette</span><b>${fmt(prix,2)} €</b></div>
+      <div class="ap-detail-l"><span>Durée de vie visée</span><b>${aretes} arêtes × ${fmt(charn,0)} p/arête</b></div>
+      <div class="ap-detail-l"><span>Coût pièce = prix ÷ (arêtes × charnière)</span><b>${fmt(prix,2)} ÷ (${aretes} × ${fmt(charn,0)}) = ${fmt(pc,4)} €</b></div>
+      <div class="ap-detail-l"><span>Production annuelle</span><b>${fmt(volume,0)} disques</b></div>
+      <div class="ap-detail-l"><span>Plaquettes consommées / an</span><b>≈ ${fmt(volume / (aretes * charn),0)}</b></div>
+      <div class="ap-detail-l ap-detail-total"><span>Coût annuel = coût pièce × production</span><b>${fmt(pc,4)} × ${fmt(volume,0)} = ${escapeAttr(libelleAnnuel(annuel))}</b></div>`;
+  })() : `
+      <div class="ap-detail-l"><span>Coût annuel non calculable</span><b>${
+        volume > 0 ? "coût pièce indisponible (case manquante ou à zéro)" : "production annuelle non renseignée (Options › Volume annuel)"
+      }</b></div>`;
   return `
-    <div class="ap-tuile" style="--outil-couleur:${couleur};">
+    <div class="ap-tuile${detailOuvert ? " ouvert" : ""}" data-cle-detail="${escapeAttr(cleDetail)}" title="Cliquer pour déplier le détail du calcul${annuel !== null ? " du coût annuel" : ""}" style="--outil-couleur:${couleur};">
       <div class="ap-tete">
         <span class="ap-pastille">${oi + 1}</span>
         <span class="ap-outil">${escapeAttr(o.numero || "outil sans n°")}</span>
@@ -7780,6 +7817,7 @@ function apercuLogementHTML(sc, o, l, couleur, oi, volume, totalAnnuel, partRef)
         <div class="ap-c ap-cout"><span class="ap-l">Coût</span><span class="ap-v">${pc === null ? "—" : fmt(pc,4)}<small>€/pièce</small></span>
           ${annuel !== null ? `<span class="ap-annuel" style="color:${couleurAnnuelle};" title="≈ ${escapeAttr(libelleAnnuel(annuel))} sur l'année (${pctPart} % du coût outillage) — la couleur compare la part de ce logement aux autres : vert = mineur, rouge = majeur, à cibler en priorité.">${escapeAttr(libelleAnnuel(annuel))}</span>` : ""}</div>
       </div>
+      <div class="ap-detail"${detailOuvert ? "" : " hidden"}>${detailCalc}</div>
       ${cond ? `<div class="ap-cond">${escapeAttr(cond)}</div>` : ""}
       ${manque.length ? `<div class="ap-manque">Manque : ${escapeAttr(manque.join(", "))}</div>` : ""}
       ${bloquant.length ? `<div class="ap-manque ap-bloquant" title="Le coût pièce ne peut pas être calculé tant que cette valeur reste telle quelle.">Coût non calculable : ${escapeAttr(bloquant.join(", "))}</div>` : ""}
@@ -9415,6 +9453,16 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
       ouvrirPanneau("cloturePanel"); renderCloturePanel();
     });
   });
+  /* v4.28 — détail du calcul du coût annuel, dépliable au clic sur la tuile */
+  root.querySelectorAll(".ap-tuile[data-cle-detail]").forEach(tuile => {
+    tuile.addEventListener("click", () => {
+      const cle = tuile.getAttribute("data-cle-detail");
+      const det = tuile.querySelector(".ap-detail");
+      if(!det) return;
+      if(det.hidden){ det.hidden = false; apDetailsOuverts.add(cle); }
+      else { det.hidden = true; apDetailsOuverts.delete(cle); }
+    });
+  });
   /* v4.23 — la tuile du volume annuel emmène au bon champ : Options, pré-rempli pour LA
      référence affichée. Un seul geste, aucune ambiguïté sur la cible. */
   root.querySelectorAll(".volume-bandeau.clickable").forEach(el => {
@@ -10123,6 +10171,10 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.28.0", date:"23/09/2026", points:[
+    "<b>Le détail du calcul au clic sur la tuile.</b> Chaque tuile de la vue d'ensemble se déplie maintenant opération par opération : prix plaquette, durée de vie visée, coût pièce (prix ÷ arêtes × charnière), production annuelle, plaquettes consommées par an, et le coût annuel qui en résulte — avec les vrais chiffres du logement, pas une formule abstraite. L'état déplié survit aux rafraîchissements de l'écran.",
+    "<b>Derniers noms figés traqués.</b> Quatre affichages résistaient encore au renommage : la barre de progression du mode atelier, le sélecteur de logement des prélèvements, son équivalent à l'impression, et la fenêtre de comparaison d'essais (qui affiche aussi désormais le statut « Arrêté »). Tous relisent maintenant le nom actuel du scénario."
+  ]},
   { version:"4.27.2", date:"23/09/2026", points:[
     "<b>HESSAPP : plus de filigrane.</b> Ligne unique — la teinte kaki seule l'identifie ; le texte répété en fond a été retiré."
   ]},
