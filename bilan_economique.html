@@ -1921,7 +1921,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.27.1";
+const TOOL_VERSION = "4.27.2";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -10123,6 +10123,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.27.2", date:"23/09/2026", points:[
+    "<b>HESSAPP : plus de filigrane.</b> Ligne unique — la teinte kaki seule l'identifie ; le texte répété en fond a été retiré."
+  ]},
   { version:"4.27.1", date:"23/09/2026", points:[
     "<b>Fond de ligne : kaki HESSAPP renforcé et filigrane affiné.</b> Le vert kaki gagne en tenue, et le code ligne en filigrane est plus petit donc plus souvent répété — la ligne se reconnaît d'un coup d'œil depuis n'importe quel endroit de la page."
   ]},
@@ -10882,7 +10885,7 @@ const LIGNES_SEPT_FONS = [
 ];
 const FAMILLES_LIGNE = {
   weisser: { encre: "#c50018", alpha: 0.07 },
-  hessapp: { encre: "#556b2f", alpha: 0.13 },
+  hessapp: { encre: "#556b2f", alpha: 0.13, sansFiligrane: true }, // ligne unique : la couleur suffit
   emag:    { encre: "#545e68", alpha: 0.08 },
   pci:     { encre: "#1b5ea6", alpha: 0.07 }
 };
@@ -10938,11 +10941,14 @@ function appliquerFondLigne(){
   const encreTexte = sombre ? "#ffffff" : def.encre;
   const opaTexte = sombre ? Math.min(def.alpha + 0.04, 0.12) : def.alpha + 0.02;
   // la tuile porte la TEINTE (rect) et le FILIGRANE (texte) : un seul background-image
-  // répété, posé sur le body — rien ne flotte au-dessus du contenu, aucun z-index à gérer
+  // répété, posé sur le body — rien ne flotte au-dessus du contenu, aucun z-index à gérer.
+  // sansFiligrane (HESSAPP, ligne unique) : la teinte seule identifie, pas de texte.
+  const texte = def.sansFiligrane ? "" :
+    `<text x='120' y='97' font-family='Archivo,Arial,sans-serif' font-size='54' font-weight='800' ` +
+    `fill='${encreTexte}' fill-opacity='${opaTexte}' text-anchor='middle'>${code}</text>`;
   const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='240' height='150'>` +
     `<rect width='240' height='150' fill='${def.encre}' fill-opacity='${def.alpha}'/>` +
-    `<text x='120' y='97' font-family='Archivo,Arial,sans-serif' font-size='54' font-weight='800' ` +
-    `fill='${encreTexte}' fill-opacity='${opaTexte}' text-anchor='middle'>${code}</text></svg>`;
+    texte + `</svg>`;
   document.body.style.backgroundColor = "";
   document.body.style.backgroundImage = `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
 }
