@@ -5,6 +5,55 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.13.0] — 2026-09-23
+
+Première tranche de la refonte UX cadrée dans `CAHIER_DES_CHARGES_UX_REFONTE.md`
+(8 septembre 2026) : les étapes 1, 2 et les passes 3.4/3.6 du plan. Aucun changement
+de format de données, aucune logique de calcul touchée.
+
+### Modifié — un fil d'Ariane à la place des trois rangées de pastilles (CDC §3.1)
+Ligne, Référence et OP s'affichaient en trois rangées de pastilles visuellement
+identiques : trois strates à traverser avant le contenu, sans rien qui dise la
+hiérarchie. Un seul fil maintenant — « EMAG 1 › Référence › OP10 » — où le niveau
+courant se lit au poids du texte. Chaque maillon est cliquable et ouvre son propre
+sélecteur ; les créations (« + Nouvelle ligne… », etc.), renommages et suppressions
+vivent DANS ce sélecteur, avec les mêmes dialogues et les mêmes confirmations qu'avant.
+L'icône ⚙ (coût horaire, observations, maintenance de la ligne) reste visible à côté
+du premier maillon — leçon v4.2 : une action invisible n'est pas une action. En mode
+consultation, le sélecteur ne propose plus que la navigation. `renderLignes`,
+`renderReferences` et `renderOps` sont remplacées par `renderFilAriane()` ; un seul
+écouteur délégué au document pilote le tout et survit aux re-rendus.
+
+### Modifié — le menu ••• se lit en groupes nommés (CDC §3.2)
+Les quatorze actions du menu étaient une liste plate où Réinitialiser voisinait le
+Tableau de bord. Le menu est désormais groupé par nature — **Consulter** (Vue de
+synthèse, Tableau de bord, Export CSV), **Documenter** (Rapport de validation,
+Générer le PDF, Nouveautés), **Gérer** (Options, Démarrer un suivi, Suggestions,
+Dossier local, Historique, nom d'auteur, révision) — et la zone destructrice
+(Réinitialiser / Restaurer) reste séparée par un filet, en dernier. Le paragraphe
+d'explication qui occupait la tête du menu est supprimé (CDC §3.5 : l'aide se
+consulte via ⓘ, elle ne s'impose pas à chaque ouverture). Aucune action supprimée,
+aucun id de bouton changé.
+
+### Modifié — badges de même forme partout (CDC §3.4)
+`.statut-pill`, `.status-badge` et `.tag-pill` (étiquettes de projet) partageaient
+trois tailles de police, deux paddings et un traitement de casse différents. Ils ont
+désormais la même géométrie (mono 10,5 px, padding 3×10, rayon plein) — seule la
+couleur change selon le sens. Les statuts ne passent plus en majuscules forcées.
+
+### Corrigé — le titre de l'en-tête déborde du cadre noir (CDC §3.6)
+Un nom de référence long sortait du bandeau d'en-tête sans troncature propre. Le
+titre tronque maintenant avec une ellipse et porte l'info-bulle native avec le texte
+complet (`updateHeader` pose `title`). `text-wrap:balance` cédé la place au
+comportement de troncature.
+
+### Tests
+144/144 au vert. Vérifié en session au navigateur : fil rendu sur une ligne, menus
+des trois maillons (contenu selon niveau, maillon courant marqué ●), navigation
+réelle par le menu (re-render complet), fermeture au clic extérieur et par Échap,
+menu groupé dans l'ordre avec filet avant la zone rouge, mode consultation limité
+à la navigation, aucune erreur console.
+
 ## [4.12.0] — 2026-09-22
 
 ### Ajouté — extractions Marposs multiples par essai (suggestion de Matis)

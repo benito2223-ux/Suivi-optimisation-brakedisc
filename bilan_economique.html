@@ -142,7 +142,8 @@ body{ -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
 .hd-left{display:flex; align-items:center; gap:18px;}
 .hd-left img{height:52px; width:auto; display:block; box-sizing:content-box; background:#fff; border-radius:var(--radius-sm); padding:7px 11px;}
 .hd-eyebrow{font-family:var(--font-mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--head-ink-soft); font-weight:600; margin:0 0 4px;}
-.hd h1{font-family:var(--font-disp); font-weight:800; font-size:clamp(24px,3.4vw,32px); margin:0; line-height:1.05; text-wrap:balance; color:var(--head-ink);}
+.hd h1{font-family:var(--font-disp); font-weight:800; font-size:clamp(24px,3.4vw,32px); margin:0; line-height:1.05; color:var(--head-ink); min-width:0; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.hd-left > div{min-width:0;}
 .hd-meta{font-family:var(--font-mono); font-size:12px; color:var(--head-ink-soft); text-align:right; line-height:1.7;}
 .hd-meta b{color:var(--head-ink);}
 
@@ -178,7 +179,12 @@ button.primary .icon, button.save .icon{stroke-width:1.8;}
 .toolbar-more{position:absolute; top:calc(100% + 8px); right:0; z-index:45; width:270px; max-height:min(70vh,560px); overflow-y:auto; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow-pop); padding:10px; display:flex; flex-direction:column; gap:2px;}
 .toolbar-more[hidden]{display:none;}
 .toolbar-more button{width:100%; display:flex; align-items:center; justify-content:flex-start; text-align:left;}
-.toolbar-more-hint{font-size:11.5px; color:var(--ink-faint); margin:2px 6px 10px; line-height:1.5;}
+/* v4.13 (CDC UX §3.2) : le menu ••• se lit en groupes nommés — Consulter / Documenter /
+   Gérer — et la zone destructrice (Réinitialiser / Restaurer) reste séparée en dernier.
+   L'ancien paragraphe d'aide en tête de menu est supprimé : l'aide se consulte (ⓘ), elle
+   ne s'impose pas à chaque ouverture. */
+.tb-grp{font-family:var(--font-mono); font-size:9.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-faint); margin:9px 6px 3px;}
+.toolbar-more .tb-grp:first-child{margin-top:2px;}
 .toolbar-more-sep{height:1px; background:var(--border); margin:8px 6px;}
 .toolbar-more #photosDirStatus, .toolbar-more #revisionStatus{margin:2px 6px; display:block;}
 .toolbar-more #auteurInput{margin:4px 6px 6px; width:calc(100% - 12px);}
@@ -502,18 +508,25 @@ input.cell.sub{font-size:10.5px; color:var(--ink-faint);}
 .responsable-ligne .responsable-nom{flex:1; font-size:13px; color:var(--ink);}
 @media print{ .projets-bandeau{ display:none !important; } }
 
-/* onglets Ligne de production / Reference disque — controle segmente (piste grise, segment
-   actif elevé en blanc/ombre douce) plutot que des rectangles bordes individuels : un seul
-   repère visuel pour "la selection", pas une couleur de marque appliquee a chaque etat */
-.ligne-strip, .reference-strip{display:inline-flex; flex-wrap:wrap; gap:2px; margin-bottom:14px; background:var(--surface-alt); padding:4px; border-radius:var(--radius); border:1px solid var(--border); max-width:100%;}
-.ligne-tab, .reference-tab{position:relative; display:inline-flex; align-items:center; gap:8px; font-family:var(--font-body); font-weight:600; font-size:12.5px; padding:7px 14px; border-radius:calc(var(--radius) - 3px); border:1px solid transparent; background:transparent; color:var(--ink-faint); cursor:pointer; transition:background .15s ease, color .15s ease, box-shadow .15s ease;}
-.ligne-tab:hover, .reference-tab:hover{color:var(--ink);}
-.ligne-tab.active, .reference-tab.active{background:var(--surface); color:var(--ink); box-shadow:0 1px 1px rgba(20,24,22,.08), 0 2px 5px rgba(20,24,22,.1);}
-.ligne-tab.add, .reference-tab.add{color:var(--ink-faint); font-weight:500;}
-.ligne-tab.add:hover, .reference-tab.add:hover{color:var(--blue-dark);}
-.tab-del, .tab-ren, .tab-cfg{font-size:11px; color:var(--ink-faint); padding:0 2px;}
-.tab-del:hover{color:var(--red);}
-.tab-ren:hover, .tab-cfg:hover{color:var(--blue);}
+/* v4.13 (CDC UX §3.1) : navigation en fil d'Ariane — Ligne › Référence › OP sur UNE ligne,
+   à la place des trois rangées de pastilles identiques qui se ressemblaient toutes. Le
+   niveau courant se distingue par le poids du texte, pas par une pastille de plus ; chaque
+   maillon est cliquable et ouvre son propre sélecteur, où vivent aussi les créations. */
+.ctx-rail{position:relative; margin-bottom:14px; max-width:100%;}
+.fil-ariane{display:flex; align-items:center; flex-wrap:wrap; gap:1px; font-family:var(--font-body); font-size:14px; min-width:0;}
+.fil-seg{border:none; background:transparent; font:inherit; font-weight:500; color:var(--ink-faint); padding:6px 8px; border-radius:var(--radius-sm); cursor:pointer; white-space:nowrap; max-width:340px; overflow:hidden; text-overflow:ellipsis;}
+.fil-seg:hover{color:var(--ink); background:var(--surface-alt);}
+.fil-sep{color:var(--ink-faint); user-select:none; padding:0 2px;}
+.fil-ico{border:none; background:transparent; font-size:13px; line-height:1; color:var(--ink-faint); padding:6px 5px; border-radius:var(--radius-sm); cursor:pointer;}
+.fil-ico:hover{color:var(--blue);}
+.fil-menu{position:absolute; top:calc(100% + 4px); left:0; z-index:46; min-width:230px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow-pop); padding:6px; display:flex; flex-direction:column; gap:1px; max-height:min(60vh,420px); overflow-y:auto;}
+.fil-menu[hidden]{display:none;}
+.fil-item{border:none; background:transparent; font-family:var(--font-body); font-size:13px; text-align:left; padding:8px 10px; border-radius:var(--radius-sm); cursor:pointer; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:340px;}
+.fil-item:hover{background:var(--surface-alt);}
+.fil-item[data-fil-cur]{color:var(--blue-dark); font-weight:700;}
+.fil-item.danger{color:var(--red);}
+.fil-item.danger:hover{background:var(--red-bg);}
+@media (pointer: coarse){ .fil-seg{padding:11px 12px;} .fil-ico{padding:11px 9px;} .fil-item{padding:12px 12px;} }
 
 /* tabs strip (also acts as comparative KPI summary) */
 .tabs-strip{display:flex; flex-direction:column; gap:10px; margin-bottom:18px;}
@@ -539,8 +552,8 @@ input.cell.sub{font-size:10.5px; color:var(--ink-faint);}
 /* etiquettes de projet sur une carte de scenario : lecture ET bascule d'appartenance en
    un clic, sans quitter le bandeau des scenarios. */
 .tc-tags{display:flex; flex-wrap:wrap; gap:5px; margin-top:2px;}
-.tag-pill{font-family:var(--font-mono); font-size:10px; font-weight:600; letter-spacing:.02em;
-  padding:2px 8px; border-radius:999px; cursor:pointer; white-space:nowrap;
+.tag-pill{font-family:var(--font-mono); font-size:10.5px; font-weight:600; letter-spacing:.02em;
+  padding:3px 10px; border-radius:999px; cursor:pointer; white-space:nowrap;
   background:var(--surface-alt); color:var(--ink-faint); border:1px solid var(--border);
   transition:background .12s ease, color .12s ease, border-color .12s ease;}
 .tag-pill:hover{border-color:var(--blue); color:var(--blue-dark);}
@@ -863,9 +876,9 @@ body.locked .atelier input, body.locked .atelier textarea, body.locked .atelier 
 body.locked input.cell:hover, body.locked input.cell-cycle:hover, body.locked .essai-titre:hover{border-color:transparent;}
 body.locked #addBtn, body.locked #importBtn, body.locked #resetBtn, body.locked #restoreBtn,
 body.locked .sc-actions, body.locked .prel-add, body.locked .essai-add, body.locked .log-add,
-body.locked .log-del, body.locked .photo-del, body.locked .photo-annot, body.locked .tab-del,
-body.locked .baseline-pill, body.locked .backlog-image-add, body.locked .ligne-tab.add,
-body.locked .reference-tab.add, body.locked .statut-motif{display:none !important;}
+body.locked .log-del, body.locked .photo-del, body.locked .photo-annot,
+body.locked .baseline-pill, body.locked .backlog-image-add,
+body.locked .statut-motif{display:none !important;}
 body.locked #lockBtn{background:var(--amber); border-color:var(--amber); color:var(--on-accent);}
 /* Panne de sauvegarde : rouge, en haut, avec l'action de secours a portee de clic.
    Ce bandeau est le seul endroit de l'outil qui a le droit d'etre aussi insistant. */
@@ -1044,8 +1057,11 @@ select.log-equipe:focus{border-color:var(--blue); outline:none; background:var(-
 .statut-motif{font-family:var(--font-body); font-size:12px; padding:4px 9px; min-width:230px;
   border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); color:var(--ink);}
 .statut-motif:focus{outline:none; border-color:var(--red);}
-.statut-pill{display:inline-flex; align-items:center; font-family:var(--font-mono); font-size:10px; font-weight:600;
-  text-transform:uppercase; letter-spacing:.04em; padding:2px 8px; border-radius:999px;
+/* v4.13 (CDC UX §3.4) : géométrie de badge unifiée — .statut-pill, .status-badge et
+   .tag-pill partagent désormais la même forme (police, taille, rayon, padding) ; seule la
+   couleur change selon le sens. Fini de réapprendre un code visuel à chaque zone de l'écran. */
+.statut-pill{display:inline-flex; align-items:center; font-family:var(--font-mono); font-size:10.5px; font-weight:600;
+  letter-spacing:.02em; padding:3px 10px; border-radius:999px;
   background:var(--surface-alt); color:var(--ink-soft); border:1px solid var(--border); white-space:nowrap;}
 .statut-pill.valide{background:var(--green-bg); color:var(--green); border-color:var(--green);}
 .statut-pill.serie{background:var(--blue); color:var(--on-accent); border-color:var(--blue);}
@@ -1233,7 +1249,9 @@ body.atelier-on{overflow:hidden;}
   input.cell, select.cell, input.limit-label, input.limit-value{min-height:42px; font-size:15px;}
   input.cell.measure{min-height:48px; font-size:17px;}
   input.cell.small, select.cell.small{min-height:38px; font-size:13px;}
-  .ligne-tab, .reference-tab{min-height:44px; padding:10px 16px;}
+  .fil-seg{min-height:44px; padding:10px 14px;}
+  .fil-ico{min-height:44px; padding:10px 10px;}
+  .fil-item{min-height:46px; padding:12px 12px;}
   .log-del, .photo-del{min-width:38px; min-height:38px;}
   .annot-swatch, .annot-color-custom{width:36px; height:36px;}
   .annot-tool{min-height:40px; padding:9px 13px;}
@@ -1365,23 +1383,29 @@ body.atelier-on{overflow:hidden;}
       <button class="ghost" id="lockBtn" title="Passe l'outil en lecture seule — pour l'écran partagé d'atelier"><svg class="icon" viewBox="0 0 18 18"><rect x="4" y="8" width="10" height="7" rx="1.5"/><path d="M6.5 8V5.8a2.5 2.5 0 0 1 5 0V8"/></svg><span id="lockLabel">Verrouiller</span></button>
       <div class="toolbar-more-wrap">
         <button class="ghost" id="moreBtn" title="Plus d'actions"><svg class="icon" viewBox="0 0 18 18" style="margin-right:0;"><circle cx="4" cy="9" r="1.4"/><circle cx="9" cy="9" r="1.4"/><circle cx="14" cy="9" r="1.4"/></svg></button>
+        <!-- v4.13 (CDC UX §3.2) : menu groupé par nature (Consulter / Documenter / Gérer),
+             zone destructrice séparée en dernier. Les ids des boutons sont inchangés — seuls
+             l'ordre et le rangement bougent. L'ancien paragraphe d'explication en tête de
+             menu part : un menu qui a besoin d'un mode d'emploi est un menu mal fichu. -->
         <div class="toolbar-more" id="toolbarMore" hidden>
-          <p class="toolbar-more-hint">Un onglet par scénario, un essai par campagne menée jusqu'à la charnière, un prélèvement par disque contrôlé. La grandeur suivie et sa tolérance se règlent dans Options.</p>
-          <button class="ghost" id="csvBtn" title="Tous les prélèvements en tableau, pour Excel ou le système qualité"><svg class="icon" viewBox="0 0 18 18"><rect x="2.5" y="2.5" width="13" height="13" rx="1.5"/><path d="M2.5 7h13M2.5 11.5h13M7 2.5v13"/></svg>Export CSV</button>
+          <div class="tb-grp">Consulter</div>
           <button class="ghost" id="syntheseBtn" title="Comparer tous les scénarios dans un tableau, et superposer leurs courbes de tendance"><svg class="icon" viewBox="0 0 18 18"><rect x="4" y="3" width="10" height="12" rx="1.5"/><path d="M6.5 7h5M6.5 10h5M6.5 13h3" stroke-linecap="round"/></svg>Vue de synthèse</button>
-          <button class="ghost" id="nouveautesBtn" title="Ce qui a changé dans les dernières versions de l'outil"><svg class="icon" viewBox="0 0 18 18"><path d="M9 2.5 10.7 6.6 15 7l-3.2 3 .9 4.3L9 12.2 5.3 14.3l.9-4.3L3 7l4.3-.4Z" stroke-linejoin="round"/></svg>Nouveautés</button>
           <button class="ghost" id="dashboardBtn" title="Toutes les lignes, références et OP : avancement des optimisations et gains cumulés"><svg class="icon" viewBox="0 0 18 18"><rect x="2.5" y="2.5" width="5.5" height="7" rx="1"/><rect x="10" y="2.5" width="5.5" height="4" rx="1"/><rect x="2.5" y="11.5" width="5.5" height="4" rx="1"/><rect x="10" y="8.5" width="5.5" height="7" rx="1"/></svg>Tableau de bord</button>
+          <button class="ghost" id="csvBtn" title="Tous les prélèvements en tableau, pour Excel ou le système qualité"><svg class="icon" viewBox="0 0 18 18"><rect x="2.5" y="2.5" width="13" height="13" rx="1.5"/><path d="M2.5 7h13M2.5 11.5h13M7 2.5v13"/></svg>Export CSV</button>
+          <div class="tb-grp">Documenter</div>
+          <button class="ghost" id="rapportBtn" title="Génère un rapport HTML autonome du scénario affiché — prêt à envoyer par e-mail à Stellantis"><svg class="icon" viewBox="0 0 18 18"><path d="M2.5 9 15 3.5 10.5 15.5 8 9.5 2.5 9Z" stroke-linejoin="round"/></svg>Rapport de validation</button>
+          <button class="ghost" id="pdfBtn"><svg class="icon" viewBox="0 0 18 18"><path d="M5 2.5h5l3 3V15a.8.8 0 0 1-.8.8H5.8a.8.8 0 0 1-.8-.8V2.5Z" stroke-linejoin="round"/><path d="M9 8v4.5M7 10.5 9 12.5 11 10.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Générer le PDF</button>
+          <button class="ghost" id="nouveautesBtn" title="Ce qui a changé dans les dernières versions de l'outil"><svg class="icon" viewBox="0 0 18 18"><path d="M9 2.5 10.7 6.6 15 7l-3.2 3 .9 4.3L9 12.2 5.3 14.3l.9-4.3L3 7l4.3-.4Z" stroke-linejoin="round"/></svg>Nouveautés</button>
+          <div class="tb-grp">Gérer</div>
+          <button class="ghost" id="optionsBtn" title="Activer les modules de calcul complémentaires"><svg class="icon" viewBox="0 0 18 18"><path d="M2.5 5h8M13.5 5h2M2.5 13h2M7.5 13h8" stroke-linecap="round"/><circle cx="11.5" cy="5" r="1.6"/><circle cx="5.5" cy="13" r="1.6"/></svg>Options</button>
           <button class="ghost" id="parcoursBtn" title="L'ordre recommandé pour démarrer un suivi : production d'abord, projets ensuite"><svg class="icon" viewBox="0 0 18 18"><path d="M3 9h8M7 5l4 4-4 4M13 3v12" stroke-linecap="round" stroke-linejoin="round"/></svg>Démarrer un suivi</button>
           <button class="ghost" id="backlogBtn" title="Noter une idée ou un problème rencontré sur l'outil"><svg class="icon" viewBox="0 0 18 18"><path d="M9 2.5a4.5 4.5 0 0 0-2.5 8.2c.4.3.6.7.6 1.2v.6h3.8v-.6c0-.5.2-.9.6-1.2A4.5 4.5 0 0 0 9 2.5Z" stroke-linejoin="round"/><path d="M7.2 15h3.6" stroke-linecap="round"/></svg>Suggestions</button>
-          <button class="ghost" id="optionsBtn" title="Activer les modules de calcul complémentaires"><svg class="icon" viewBox="0 0 18 18"><path d="M2.5 5h8M13.5 5h2M2.5 13h2M7.5 13h8" stroke-linecap="round"/><circle cx="11.5" cy="5" r="1.6"/><circle cx="5.5" cy="13" r="1.6"/></svg>Options</button>
-          <button class="ghost" id="pdfBtn"><svg class="icon" viewBox="0 0 18 18"><path d="M5 2.5h5l3 3V15a.8.8 0 0 1-.8.8H5.8a.8.8 0 0 1-.8-.8V2.5Z" stroke-linejoin="round"/><path d="M9 8v4.5M7 10.5 9 12.5 11 10.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Générer le PDF</button>
-          <button class="ghost" id="rapportBtn" title="Génère un rapport HTML autonome du scénario affiché — prêt à envoyer par e-mail à Stellantis"><svg class="icon" viewBox="0 0 18 18"><path d="M2.5 9 15 3.5 10.5 15.5 8 9.5 2.5 9Z" stroke-linejoin="round"/></svg>Rapport de validation</button>
-          <button class="ghost" id="historyBtn" title="Voir les sauvegardes automatiques précédentes (filet de sécurité, en plus de l'export)"><svg class="icon" viewBox="0 0 18 18"><circle cx="9" cy="9" r="6.5"/><path d="M9 5.5V9l3 2" stroke-linecap="round" stroke-linejoin="round"/></svg>Historique</button>
           <button class="ghost photos-connect-btn" id="photosDirBtn" title="Connecter un dossier local pour les photos d'essai et un backup automatique (Edge/Chrome, version en ligne)"><svg class="icon" viewBox="0 0 18 18"><path d="M2.5 5.5a1 1 0 0 1 1-1H7l1.5 1.8H14.5a1 1 0 0 1 1 1V13a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1V5.5Z" stroke-linejoin="round"/></svg>Dossier local</button>
           <span class="save-status" id="photosDirStatus"></span>
-          <div class="toolbar-more-sep"></div>
+          <button class="ghost" id="historyBtn" title="Voir les sauvegardes automatiques précédentes (filet de sécurité, en plus de l'export)"><svg class="icon" viewBox="0 0 18 18"><circle cx="9" cy="9" r="6.5"/><path d="M9 5.5V9l3 2" stroke-linecap="round" stroke-linejoin="round"/></svg>Historique</button>
           <span class="save-status" id="revisionStatus"></span>
           <input type="text" id="auteurInput" class="limit-label" placeholder="Votre nom" title="Utilisé pour tracer qui a exporté chaque révision">
+          <div class="toolbar-more-sep"></div>
           <button class="ghost danger" id="resetBtn">Réinitialiser</button>
           <button class="ghost danger" id="restoreBtn" title="Restaurer l'état d'avant la dernière réinitialisation ou importation" hidden>↺ Restaurer</button>
         </div>
@@ -1659,10 +1683,12 @@ body.atelier-on{overflow:hidden;}
   <div class="parcours-bandeau" id="parcoursBandeau" hidden></div>
   <div class="projets-bandeau" id="projetsBandeau"></div>
 
+  <!-- v4.13 (CDC UX §3.1) : les trois rangées de pastilles identiques (ligne / référence /
+       OP) laissent place à un fil d'Ariane à un seul niveau de lecture. Chaque maillon est
+       cliquable et ouvre son propre sélecteur (les créations vivent dedans) ; le rendu est
+       fait par renderFilAriane(). -->
   <div class="ctx-rail" id="ctxRail">
-    <div class="ligne-strip" id="ligneStrip"></div>
-    <div class="reference-strip" id="referenceStrip"></div>
-    <div class="reference-strip" id="opStrip"></div>
+    <nav class="fil-ariane" id="filAriane" aria-label="Ligne, référence disque, OP"></nav>
   </div>
   <div class="tabs-strip" id="tabsStrip"></div>
   <div class="synthese-wrap" id="syntheseWrap" hidden></div>
@@ -1791,7 +1817,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.12.0";
+const TOOL_VERSION = "4.13.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -7619,178 +7645,177 @@ function supprimerProjetActif(){
   });
 }
 
-/* ---- onglets Ligne de production / Reference disque ---- */
-function renderLignes(){
-  const el = document.getElementById("ligneStrip");
+/* ---- navigation : fil d'Ariane (v4.13, CDC UX §3.1) --------------------------------
+   Les trois rangées de pastilles (ligne / référence / OP), toutes identiques, se lisaient
+   comme trois fois la même chose. Un seul fil maintenant : « EMAG 1 › Référence › OP10 ».
+   Chaque maillon est cliquable et ouvre son propre sélecteur — créations, renommages et
+   suppressions vivent DEDANS, la rangée reste propre. Le ⚙ (infos ligne) reste visible
+   à côté du premier maillon : une action invisible n'est pas une action (leçon v4.2). */
+function renderFilAriane(){
+  const el = document.getElementById("filAriane");
   if(!el) return;
-  el.innerHTML = lignes.map(l => `
-    <span class="ligne-tab ${l.id === activeLigneId ? "active" : ""}" data-ligne="${l.id}">
-      <span class="ligne-label" data-ligne-label="${l.id}">${escapeAttr(l.nom || "Sans nom")}</span>
-      ${l.id === activeLigneId ? `<span class="tab-cfg" data-cfg-ligne="${l.id}" title="Coût horaire, observations, maintenance">⚙</span><span class="tab-ren" data-ren-ligne="${l.id}" title="Renommer la ligne">✎</span>${lignes.length > 1 ? `<span class="tab-del" data-del-ligne="${l.id}" title="Supprimer la ligne">✕</span>` : ""}` : ""}
-    </span>
-  `).join("") + `<span class="ligne-tab add" id="addLigneBtn">+ Ligne de production</span>`;
+  const l = getActiveLigne(), r = getActiveReference(), op = getActiveOp();
+  const seg = (cle, nom) => `<button class="fil-seg" data-fil="${cle}" title="Cliquer pour choisir">${escapeAttr(nom || "—")}</button>`;
+  el.innerHTML = `
+    ${seg("ligne", l ? l.nom : "—")}
+    ${l ? `<button class="fil-ico" data-cfg-ligne="${l.id}" title="Coût horaire, observations, maintenance">⚙</button>` : ""}
+    <span class="fil-sep">›</span>
+    ${seg("ref", r ? r.nom : "—")}
+    <span class="fil-sep">›</span>
+    ${seg("op", op ? op.nom : "—")}
+    <span class="fil-menu" id="filMenu" hidden></span>`;
+}
 
-  el.querySelectorAll("[data-ligne]").forEach(b => {
-    b.addEventListener("click", (e) => {
-      if(e.target.closest("[data-ren-ligne],[data-del-ligne],[data-cfg-ligne]")) return;
-      const l = lignes.find(x => x.id === b.getAttribute("data-ligne"));
-      if(l) switchReference(l.id, l.references[0] ? l.references[0].id : null);
-    });
-  });
-  el.querySelectorAll("[data-cfg-ligne]").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      ouvrirLigneInfo(btn.getAttribute("data-cfg-ligne"));
-    });
-  });
-  el.querySelectorAll("[data-ren-ligne]").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const l = lignes.find(x => x.id === btn.getAttribute("data-ren-ligne"));
-      if(!l) return;
-      dialogueDemander("Renommer la ligne de production :", l.nom, { titre: "Renommer la ligne" }).then(nom => {
-        if(nom === null || !nom.trim()) return;
-        l.nom = nom.trim();
-        saveData(); render();
-      });
-    });
-  });
-  el.querySelectorAll("[data-del-ligne]").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const id = btn.getAttribute("data-del-ligne");
-      const l = lignes.find(x => x.id === id);
-      if(!l || lignes.length <= 1) return;
-      const nbRef = l.references.length;
-      dialogueConfirmer("Supprimer la ligne « " + l.nom + " » ?" + (nbRef ? "\n\nElle contient " + nbRef + " référence(s) disque qui seront perdues." : ""), { titre: "Supprimer la ligne ?", danger: true, okLabel: "Supprimer" }).then(ok => {
-        if(!ok) return;
-        lignes = lignes.filter(x => x.id !== id);
-        switchReference(lignes[0].id, lignes[0].references[0] ? lignes[0].references[0].id : null);
-      });
-    });
-  });
-  document.getElementById("addLigneBtn").addEventListener("click", () => {
+function filItem(action, id, label, opts){
+  opts = opts || {};
+  return `<button class="fil-item ${opts.cls || ""}" data-fil-item="${action}" data-fil-id="${escapeAttr(id || "")}"${opts.cur ? ' data-fil-cur="1"' : ""}>${opts.cur ? "●&nbsp; " : ""}${escapeAttr(label)}</button>`;
+}
+
+function ouvrirFilMenu(cle, ancre, menu){
+  const l = getActiveLigne(), r = getActiveReference(), op = getActiveOp();
+  const lecture = lectureSeule; // en consultation : naviguer oui, créer/renommer/supprimer non
+  let items = "";
+  if(cle === "ligne"){
+    items = lignes.map(x => filItem("go-ligne", x.id, x.nom || "Sans nom", { cur: l && x.id === l.id })).join("")
+      + `<div class="toolbar-more-sep"></div>`
+      + (lecture ? "" : filItem("add-ligne", "", "+ Nouvelle ligne…")
+        + (l ? filItem("ren-ligne", l.id, "Renommer la ligne…") : "")
+        + (l && lignes.length > 1 ? filItem("del-ligne", l.id, "Supprimer la ligne…", { cls: "danger" }) : ""));
+  } else if(cle === "ref"){
+    if(!l) return;
+    items = l.references.map(x => filItem("go-ref", x.id, x.nom || "Sans nom", { cur: r && x.id === r.id })).join("")
+      + `<div class="toolbar-more-sep"></div>`
+      + (lecture ? "" : filItem("add-ref", "", "+ Nouvelle référence disque…")
+        + (r ? filItem("ren-ref", r.id, "Renommer la référence…") : "")
+        + (r && l.references.length > 1 ? filItem("del-ref", r.id, "Supprimer la référence…", { cls: "danger" }) : ""));
+  } else if(cle === "op"){
+    if(!r) return;
+    items = r.ops.map(x => filItem("go-op", x.id, x.nom || "Sans nom", { cur: op && x.id === op.id })).join("")
+      + `<div class="toolbar-more-sep"></div>`
+      + (lecture ? "" : filItem("add-op", "", "+ Nouvelle OP…")
+        + (op ? filItem("ren-op", op.id, "Renommer l'OP…") : "")
+        + (op && r.ops.length > 1 ? filItem("del-op", op.id, "Supprimer l'OP…", { cls: "danger" }) : ""));
+  } else return;
+  menu.innerHTML = items;
+  menu.style.left = Math.max(0, ancre.offsetLeft) + "px";
+  menu.dataset.cle = cle;
+  menu.hidden = false;
+}
+
+function traiterFilItem(item, menu){
+  const action = item.getAttribute("data-fil-item");
+  const id = item.getAttribute("data-fil-id");
+  menu.hidden = true;
+  const l = getActiveLigne(), r = getActiveReference(), op = getActiveOp();
+  if(action === "go-ligne"){
+    const cible = lignes.find(x => x.id === id);
+    if(cible) switchReference(cible.id, cible.references[0] ? cible.references[0].id : null);
+  } else if(action === "go-ref"){
+    switchReference(activeLigneId, id);
+  } else if(action === "go-op"){
+    switchOp(activeLigneId, activeReferenceId, id);
+  } else if(action === "add-ligne"){
     dialogueDemander("Nom de la nouvelle ligne de production (ex. EMAG 1, EMAG 2, WEISSER 1, WEISSER 2, HESSAP...) :", "", { titre: "Nouvelle ligne de production" }).then(nom => {
       if(!nom || !nom.trim()) return;
-      const op = { id: uid("o"), nom: "OP10", ordre: 10, config: Object.assign({}, defaultConfig), scenarios: [] };
-      const ref = { id: uid("r"), nom: "Nouvelle référence", ops: [op] };
-      const l = { id: uid("l"), nom: nom.trim(), references: [ref] };
-      lignes.push(l);
-      switchReference(l.id, ref.id);
+      const nOp = { id: uid("o"), nom: "OP10", ordre: 10, config: Object.assign({}, defaultConfig), scenarios: [] };
+      const nRef = { id: uid("r"), nom: "Nouvelle référence", ops: [nOp] };
+      const nL = { id: uid("l"), nom: nom.trim(), references: [nRef] };
+      lignes.push(nL);
+      switchReference(nL.id, nRef.id);
     });
-  });
-}
-
-function renderReferences(){
-  const el = document.getElementById("referenceStrip");
-  if(!el) return;
-  const l = getActiveLigne();
-  if(!l){ el.innerHTML = ""; return; }
-  el.innerHTML = l.references.map(r => `
-    <span class="reference-tab ${r.id === activeReferenceId ? "active" : ""}" data-ref="${r.id}">
-      <span class="reference-label" data-ref-label="${r.id}">${escapeAttr(r.nom || "Sans nom")}</span>
-      ${r.id === activeReferenceId ? `<span class="tab-ren" data-ren-ref="${r.id}" title="Renommer la référence">✎</span>${l.references.length > 1 ? `<span class="tab-del" data-del-ref="${r.id}" title="Supprimer la référence">✕</span>` : ""}` : ""}
-    </span>
-  `).join("") + `<span class="reference-tab add" id="addRefBtn">+ Référence disque</span>`;
-
-  el.querySelectorAll("[data-ref]").forEach(b => {
-    b.addEventListener("click", (e) => {
-      if(e.target.closest("[data-ren-ref],[data-del-ref]")) return;
-      switchReference(activeLigneId, b.getAttribute("data-ref"));
+  } else if(action === "ren-ligne"){
+    if(!l) return;
+    dialogueDemander("Renommer la ligne de production :", l.nom, { titre: "Renommer la ligne" }).then(nom => {
+      if(nom === null || !nom.trim()) return;
+      l.nom = nom.trim();
+      saveData(); render();
     });
-  });
-  el.querySelectorAll("[data-ren-ref]").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const r = l.references.find(x => x.id === btn.getAttribute("data-ren-ref"));
-      if(!r) return;
-      dialogueDemander("Renommer la référence disque :", r.nom, { titre: "Renommer la référence" }).then(nom => {
-        if(nom === null || !nom.trim()) return;
-        r.nom = nom.trim();
-        saveData(); render();
-      });
+  } else if(action === "del-ligne"){
+    if(!l || lignes.length <= 1) return;
+    const nbRef = l.references.length;
+    dialogueConfirmer("Supprimer la ligne « " + l.nom + " » ?" + (nbRef ? "\n\nElle contient " + nbRef + " référence(s) disque qui seront perdues." : ""), { titre: "Supprimer la ligne ?", danger: true, okLabel: "Supprimer" }).then(ok => {
+      if(!ok) return;
+      lignes = lignes.filter(x => x.id !== l.id);
+      switchReference(lignes[0].id, lignes[0].references[0] ? lignes[0].references[0].id : null);
     });
-  });
-  el.querySelectorAll("[data-del-ref]").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const id = btn.getAttribute("data-del-ref");
-      if(l.references.length <= 1) return;
-      const r = l.references.find(x => x.id === id);
-      const nbSc = r ? r.ops.reduce((n, o) => n + o.scenarios.length, 0) : 0;
-      dialogueConfirmer("Supprimer la référence « " + (r ? r.nom : "") + " » ?" + (nbSc ? "\n\nElle contient " + nbSc + " scénario(s) (toutes OP confondues) qui seront perdus." : ""), { titre: "Supprimer la référence ?", danger: true, okLabel: "Supprimer" }).then(ok => {
-        if(!ok) return;
-        l.references = l.references.filter(x => x.id !== id);
-        switchReference(l.id, l.references[0].id);
-      });
-    });
-  });
-  document.getElementById("addRefBtn").addEventListener("click", () => {
+  } else if(action === "add-ref"){
+    if(!l) return;
     dialogueDemander("Nom de la nouvelle référence disque :", "", { titre: "Nouvelle référence disque" }).then(nom => {
       if(!nom || !nom.trim()) return;
-      const op = { id: uid("o"), nom: "OP10", ordre: 10, config: Object.assign({}, defaultConfig), scenarios: [] };
-      const ref = { id: uid("r"), nom: nom.trim(), ops: [op] };
-      l.references.push(ref);
-      switchReference(l.id, ref.id);
+      const nOp = { id: uid("o"), nom: "OP10", ordre: 10, config: Object.assign({}, defaultConfig), scenarios: [] };
+      const nRef = { id: uid("r"), nom: nom.trim(), ops: [nOp] };
+      l.references.push(nRef);
+      switchReference(l.id, nRef.id);
     });
-  });
-}
-
-/* ---- onglets OP (operation) : troisieme niveau, entre Reference et Scenario ---- */
-function renderOps(){
-  const el = document.getElementById("opStrip");
-  if(!el) return;
-  const r = getActiveReference();
-  if(!r){ el.innerHTML = ""; return; }
-  el.innerHTML = r.ops.map(o => `
-    <span class="reference-tab ${o.id === activeOpId ? "active" : ""}" data-op="${o.id}">
-      <span class="op-label" data-op-label="${o.id}">${escapeAttr(o.nom || "Sans nom")}</span>
-      ${o.id === activeOpId ? `<span class="tab-ren" data-ren-op="${o.id}" title="Renommer l'OP">✎</span>${r.ops.length > 1 ? `<span class="tab-del" data-del-op="${o.id}" title="Supprimer l'OP">✕</span>` : ""}` : ""}
-    </span>
-  `).join("") + `<span class="reference-tab add" id="addOpBtn">+ OP</span>`;
-
-  el.querySelectorAll("[data-op]").forEach(b => {
-    b.addEventListener("click", (e) => {
-      if(e.target.closest("[data-ren-op],[data-del-op]")) return;
-      switchOp(activeLigneId, activeReferenceId, b.getAttribute("data-op"));
+  } else if(action === "ren-ref"){
+    if(!r) return;
+    dialogueDemander("Renommer la référence disque :", r.nom, { titre: "Renommer la référence" }).then(nom => {
+      if(nom === null || !nom.trim()) return;
+      r.nom = nom.trim();
+      saveData(); render();
     });
-  });
-  el.querySelectorAll("[data-ren-op]").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const o = r.ops.find(x => x.id === btn.getAttribute("data-ren-op"));
-      if(!o) return;
-      dialogueDemander("Renommer l'OP :", o.nom, { titre: "Renommer l'OP" }).then(nom => {
-        if(nom === null || !nom.trim()) return;
-        o.nom = nom.trim();
-        saveData(); render();
-      });
+  } else if(action === "del-ref"){
+    if(!l || !r || l.references.length <= 1) return;
+    const nbSc = r.ops.reduce((n, o) => n + o.scenarios.length, 0);
+    dialogueConfirmer("Supprimer la référence « " + r.nom + " » ?" + (nbSc ? "\n\nElle contient " + nbSc + " scénario(s) (toutes OP confondues) qui seront perdus." : ""), { titre: "Supprimer la référence ?", danger: true, okLabel: "Supprimer" }).then(ok => {
+      if(!ok) return;
+      l.references = l.references.filter(x => x.id !== r.id);
+      switchReference(l.id, l.references[0].id);
     });
-  });
-  el.querySelectorAll("[data-del-op]").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const id = btn.getAttribute("data-del-op");
-      if(r.ops.length <= 1) return;
-      const o = r.ops.find(x => x.id === id);
-      const nbSc = o ? o.scenarios.length : 0;
-      dialogueConfirmer("Supprimer l'OP « " + (o ? o.nom : "") + " » ?" + (nbSc ? "\n\nElle contient " + nbSc + " scénario(s) qui seront perdus." : ""), { titre: "Supprimer l'OP ?", danger: true, okLabel: "Supprimer" }).then(ok => {
-        if(!ok) return;
-        r.ops = r.ops.filter(x => x.id !== id);
-        switchOp(activeLigneId, activeReferenceId, r.ops[0].id);
-      });
-    });
-  });
-  document.getElementById("addOpBtn").addEventListener("click", () => {
+  } else if(action === "add-op"){
+    if(!r) return;
     dialogueDemander("Nom de la nouvelle OP (ex. OP10, OP20, Perçage...) :", "", { titre: "Nouvelle OP" }).then(nom => {
       if(!nom || !nom.trim()) return;
       const ordreMax = r.ops.reduce((m, o) => Math.max(m, o.ordre || 0), 0);
-      const op = { id: uid("o"), nom: nom.trim(), ordre: ordreMax + 10, config: Object.assign({}, defaultConfig), scenarios: [] };
-      r.ops.push(op);
-      switchOp(activeLigneId, activeReferenceId, op.id);
+      const nOp = { id: uid("o"), nom: nom.trim(), ordre: ordreMax + 10, config: Object.assign({}, defaultConfig), scenarios: [] };
+      r.ops.push(nOp);
+      switchOp(activeLigneId, activeReferenceId, nOp.id);
     });
-  });
+  } else if(action === "ren-op"){
+    if(!op) return;
+    dialogueDemander("Renommer l'OP :", op.nom, { titre: "Renommer l'OP" }).then(nom => {
+      if(nom === null || !nom.trim()) return;
+      op.nom = nom.trim();
+      saveData(); render();
+    });
+  } else if(action === "del-op"){
+    if(!r || !op || r.ops.length <= 1) return;
+    const nbSc = op.scenarios.length;
+    dialogueConfirmer("Supprimer l'OP « " + op.nom + " » ?" + (nbSc ? "\n\nElle contient " + nbSc + " scénario(s) qui seront perdus." : ""), { titre: "Supprimer l'OP ?", danger: true, okLabel: "Supprimer" }).then(ok => {
+      if(!ok) return;
+      r.ops = r.ops.filter(x => x.id !== op.id);
+      switchOp(activeLigneId, activeReferenceId, r.ops[0].id);
+    });
+  }
 }
+
+/* un seul écouteur délégué, posé une fois pour toutes : le fil et son menu sont
+   reconstruits à chaque rendu, la délégation leur survit. Clic hors du fil = menu fermé. */
+document.addEventListener("click", (e) => {
+  const ariane = document.getElementById("filAriane");
+  if(!ariane) return;
+  const menu = document.getElementById("filMenu");
+  const seg = e.target.closest(".fil-seg");
+  if(seg && ariane.contains(seg)){
+    const cle = seg.getAttribute("data-fil");
+    if(menu && !menu.hidden && menu.dataset.cle === cle){ menu.hidden = true; return; }
+    if(menu) ouvrirFilMenu(cle, seg, menu);
+    return;
+  }
+  const cfg = e.target.closest(".fil-ico[data-cfg-ligne]");
+  if(cfg && ariane.contains(cfg)){ ouvrirLigneInfo(cfg.getAttribute("data-cfg-ligne")); return; }
+  const item = e.target.closest(".fil-item");
+  if(item && menu && menu.contains(item)){ traiterFilItem(item, menu); return; }
+  if(menu && !menu.hidden) menu.hidden = true;
+});
+document.addEventListener("keydown", (e) => {
+  if(e.key !== "Escape") return;
+  const menu = document.getElementById("filMenu");
+  if(menu && !menu.hidden) menu.hidden = true;
+});
+
+/* (v4.13) renderReferences et renderOps supprimés avec les rangées de pastilles :
+   leurs sélecteurs vivent désormais dans le menu du fil d'Ariane (ouvrirFilMenu). */
 
 /* ---- backlog : remontees de bugs/ameliorations par Matis/Arthur, voyage avec le fichier ---- */
 function backlogHTML(){
@@ -7926,6 +7951,9 @@ function updateHeader(){
   const hdE = document.getElementById("hdEyebrow"), hdT = document.getElementById("hdTitle");
   if(hdE) hdE.textContent = eyebrow;
   if(hdT) hdT.textContent = titre || " ";
+  // v4.13 (CDC UX §3.6) : le titre écran tronque maintenant proprement (ellipse en CSS) ;
+  // l'info-bulle native porte le texte complet, un nom long ne débordait plus du cadre noir.
+  if(hdT) hdT.title = titre || "";
   const prE = document.getElementById("printEyebrow"), prT = document.getElementById("printTitle");
   if(prE) prE.textContent = eyebrow;
   if(prT) prT.textContent = titre || " ";
@@ -7969,9 +7997,7 @@ function render(){
   updatePhotosDirUI();
   renderProjets();
   renderParcours();
-  renderLignes();
-  renderReferences();
-  renderOps();
+  renderFilAriane();
   renderTabs();
   renderDetail();
   // #scenarioAll (impression), #syntheseWrap et #backlogWrap ne sont pas visibles en usage
@@ -9126,6 +9152,11 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.13.0", date:"23/09/2026", points:[
+    "<b>La navigation tient sur une ligne.</b> Les trois rangées de pastilles (Ligne / Référence / OP), toutes identiques, laissent place à un fil unique — <i>EMAG 1 › Référence › OP10</i>. Cliquez un maillon pour ouvrir son propre menu : changer, créer, renommer, supprimer. Le contenu commence plus haut à l'écran, et la hiérarchie se lit enfin d'un coup d'œil.",
+    "<b>Le menu ••• se lit en groupes.</b> Les actions sont rangées par nature — <b>Consulter</b> (synthèse, tableau de bord, CSV), <b>Documenter</b> (rapport, PDF, nouveautés), <b>Gérer</b> (options, parcours, suggestions, dossier, historique) — et la zone rouge (Réinitialiser / Restaurer) reste bien séparée en bas. Aucune action n'a disparu.",
+    "<b>Détails :</b> le titre (nom de la référence) tronque proprement avec une info-bulle au lieu de sortir du cadre noir sur les noms longs, et les badges de statut, de validation et de projet ont désormais tous la même forme — seule la couleur change."
+  ]},
   { version:"4.12.0", date:"22/09/2026", points:[
     "<b>Marposs : un essai sur plusieurs jours, une extraction par jour.</b> Suggestion de Matis : quand un essai s'étend sur deux journées (50 pièces le jour 1, 100 le jour 2), le bouton « + Ajouter une extraction » crée la journée suivante dans le même essai — son jour, ses heures, son collage, ses moyennes et <b>son propre graphe</b>. Chaque extraction se supprime indépendamment, et le rapport de l'essai présente une sous-section par journée. L'extraction Marposs existante migre automatiquement."
   ]},
