@@ -1075,6 +1075,11 @@ select.log-equipe:focus{border-color:var(--blue); outline:none; background:var(-
 .vb-v{font-family:var(--font-disp); font-weight:800; font-size:30px; line-height:1; color:var(--fill-ink);
   letter-spacing:-.02em; display:flex; align-items:baseline; gap:7px;}
 .vb-v small{font-family:var(--font-body); font-weight:500; font-size:11.5px; color:var(--fill-ink-soft); letter-spacing:0;}
+/* v4.23 — la tuile volume emmène au champ Options de LA référence affichée */
+.volume-bandeau.clickable{cursor:pointer;}
+.volume-bandeau.clickable:hover{border-color:var(--blue);}
+.vb-edit{font-family:var(--font-body); font-size:10.5px; font-weight:600; color:var(--fill-ink-soft); opacity:.75;}
+.volume-bandeau.clickable:hover .vb-edit{opacity:1; text-decoration:underline;}
 @media (max-width:620px){ .volume-bandeau{float:none; align-items:flex-start; margin-left:0;} }
 
 /* --- consommation annuelle de plaquettes : la meme donnee, vue approvisionnement --- */
@@ -1592,6 +1597,7 @@ body.atelier-on{overflow:hidden;}
       <label for="optProductionAnnuelle">Disques / an pour cette référence</label>
       <input type="number" step="1000" min="0" id="optProductionAnnuelle" placeholder="ex. 200000">
       <span class="opt-note">Se règle par référence disque (partagé entre toutes ses OP), pas par scénario.</span>
+      <span class="opt-note" id="optVolumeTarget"></span>
     </div>
 
     <div class="opt-section">Équipe</div>
@@ -1906,7 +1912,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.22.0";
+const TOOL_VERSION = "4.23.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -5115,6 +5121,20 @@ function volumeAnnuel(ref, cfg){
   const v = r ? parseFloat(r.productionAnnuelle) : NaN;
   return (isNaN(v) || v <= 0) ? null : v;
 }
+/* v4.23 — l'écriture du volume annuel est tracée SUR la référence : chaque changement
+   enregistre valeur, auteur et date (10 dernières). Rôle double : documenter les montées
+   en cadence, et pouvoir dire QUI a écrit QUOI QUAND si deux références se retrouvent
+   avec la valeur de l'autre — le champ Options porte désormais sa cible en toutes
+   lettres, et la tuile de la composition emmène directement au bon champ. */
+function enregistrerVolumeAnnuel(ref, nv){
+  if(!ref) return;
+  if(String(ref.productionAnnuelle ?? "") !== String(nv)){
+    ref.volumeHistorique = ref.volumeHistorique || [];
+    ref.volumeHistorique.unshift({ valeur: nv, par: auteurNom || "?", date: new Date().toISOString() });
+    if(ref.volumeHistorique.length > 10) ref.volumeHistorique.length = 10;
+  }
+  ref.productionAnnuelle = nv;
+}
 /* consommation annuelle de plaquettes d'un logement : le carnet de commandes, en clair */
 function plaquettesParAn(l, volume){
   const a = parseFloat(l.aretes), c = parseFloat(l.charniere);
@@ -7404,9 +7424,10 @@ function volumeAnnuelHTML(){
   const v = volumeAnnuel();
   if(!v) return volumeInvalideHTML();
   const ref = getActiveReference();
-  return `<div class="volume-bandeau">
+  return `<div class="volume-bandeau clickable" title="Cliquer pour modifier le volume annuel de cette référence (Options, champ pré-rempli pour LA référence affichée)">
     <span class="vb-l">Production annuelle${ref && ref.nom ? " — " + escapeAttr(ref.nom) : ""}</span>
     <span class="vb-v">${fmt(v,0)}<small>disques / an</small></span>
+    <span class="vb-edit">✎ modifier</span>
   </div>`;
 }
 
@@ -9240,6 +9261,15 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
   root.querySelectorAll(".outils-copier").forEach(el => {
     el.addEventListener("click", () => { ouvrirPanneau("copieOutilsPanel"); renderCopieOutilsPanel(); });
   });
+  /* v4.23 — la tuile du volume annuel emmène au bon champ : Options, pré-rempli pour LA
+     référence affichée. Un seul geste, aucune ambiguïté sur la cible. */
+  root.querySelectorAll(".volume-bandeau.clickable").forEach(el => {
+    el.addEventListener("click", () => {
+      ouvrirPanneau("optionsPanel"); syncOptionsUI();
+      const f = document.getElementById("optProductionAnnuelle");
+      if(f) f.focus();
+    });
+  });
   root.querySelectorAll(".logement-add").forEach(el => {
     el.addEventListener("click", () => {
       const o = sc.outils.find(x => x.id === el.getAttribute("data-outil"));
@@ -9730,6 +9760,17 @@ function syncOptionsUI(){
   document.getElementById("optionsContexte").innerHTML =
     `${escapeAttr(op ? op.nom : "—")} · ${escapeAttr(ref ? ref.nom : "—")} · ${escapeAttr(lg ? lg.nom : "—")}` +
     ` — chaque réglage porte son badge de portée : <i class="opt-scope">OP</i>, <i class="opt-scope">Référence</i>, <i class="opt-scope">Ligne</i> ou <i class="opt-scope">Tous</i>.`;
+  // v4.23 — le champ volume porte sa cible en toutes lettres : ligne › référence, plus
+  // la trace de la dernière modification. Fini le doute « ce chiffre s'applique à qui ? »
+  const optVolumeTarget = document.getElementById("optVolumeTarget");
+  if(optVolumeTarget){
+    const dernierVol = ref && ref.volumeHistorique && ref.volumeHistorique[0];
+    const volDate = dernierVol ? new Date(dernierVol.date).toLocaleDateString("fr-FR") : "";
+    optVolumeTarget.innerHTML = ref && lg
+      ? `<b>S'applique à : ${escapeAttr(lg.nom)} › ${escapeAttr(ref.nom)}</b>` +
+        (dernierVol ? ` — dernière modification : ${escapeAttr(dernierVol.valeur === "" ? "champ vidé" : fmt(parseFloat(dernierVol.valeur),0) + " disques/an")} par ${escapeAttr(dernierVol.par || "?")}${volDate ? " le " + volDate : ""}` : "")
+      : "";
+  }
   // le cout horaire vit sur la ligne : champ en place (v4.7), meme donnee que l'icone ⚙
   optCoutHoraire.value = lg ? (lg.coutHoraire ?? "") : "";
   // v4.9 : specs usine affichées, toujours reverrouillées à l'ouverture du panneau
@@ -9803,7 +9844,7 @@ function appliquerOptions(){
   config.piecesActif = optPieces.checked;
   config.volumeActif = optVolume.checked;
   const ref = getActiveReference();
-  if(ref) ref.productionAnnuelle = optProductionAnnuelle.value === "" ? "" : parseFloat(optProductionAnnuelle.value);
+  if(ref) enregistrerVolumeAnnuel(ref, optProductionAnnuelle.value === "" ? "" : parseFloat(optProductionAnnuelle.value));
   // cout horaire saisi en place (v4.7) : il ecrit dans la ligne active, comme le ferait
   // l'icone ⚙ de son onglet — meme champ, deux portes d'entree, zero changement de format
   const lgOpt = getActiveLigne();
@@ -9928,6 +9969,10 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.23.0", date:"23/09/2026", points:[
+    "<b>Le volume annuel porte sa référence en toutes lettres.</b> Le chiffre a toujours été rattaché à LA référence disque (et partagé entre ses OP), mais rien ne le disait au moment de saisir — sur un poste où plusieurs lignes coexistent, le doute « ce champ s'applique à qui ? » menait à écrire sur la mauvaise. Désormais le champ d'Options affiche <b>S'applique à : EMAG 1 › DV 356X26 RPI</b>, et la tuile « Production annuelle » de la composition est cliquable : elle ouvre Options pré-remplie pour LA référence affichée.",
+    "<b>Chaque changement de volume est tracé.</b> La référence garde l'historique des 10 dernières valeurs (valeur, auteur, date), affiché sous le champ — de quoi documenter les montées en cadence et voir immédiatement qui a écrit quoi, quand, si un doute survient."
+  ]},
   { version:"4.22.0", date:"23/09/2026", points:[
     "<b>Renommer un outil ou un logement se voit enfin partout.</b> Les noms affichés étaient figés à la création de chaque essai : le graphe des prélèvements, les puces d'essai, le rapport et le bandeau de reprise gardaient l'ancien nom même après renommage. Désormais les noms sont relus dans le scénario au moment de l'affichage — les conditions de coupe, elles, restent fidèlement figées à l'essai. Si un logement a été retiré du scénario, l'essai garde son nom d'époque comme trace historique.",
     "<b>Copier les outils de la production en un geste.</b> Sur un scénario qui n'est pas la référence, un bouton <b>⧉ Copier les outils de « … »</b> ouvre une sélection : les outils cochés arrivent avec référence, prix, arêtes, charnière et conditions de coupe, sous de nouveaux identifiants (les essais de la production ne bougent pas). Les noms restent ceux de la production — mêmes positions physiques, et chaque courbe reste titrée par son essai, donc comparer deux essais reste lisible. Les plans joints ne sont pas copiés."
@@ -11760,6 +11805,25 @@ function runTests(){
       ok("copie outils : pas de plan copie", copieO.plan, null);
       data = dataSauvee;
       outilBase.plan = null;
+    }
+
+    /* ---- v4.23 : le volume annuel est trace sur la reference ---- */
+    {
+      const refV = { nom:"R", productionAnnuelle: 148942 };
+      enregistrerVolumeAnnuel(refV, 200000);
+      ok("volume annuel : changement trace avec valeur et date",
+         refV.productionAnnuelle === 200000 && refV.volumeHistorique.length === 1 &&
+         refV.volumeHistorique[0].valeur === 200000 && !!refV.volumeHistorique[0].date, true);
+      enregistrerVolumeAnnuel(refV, 200000);
+      ok("volume annuel : reecrire la meme valeur ne trace pas", refV.volumeHistorique.length === 1, true);
+      enregistrerVolumeAnnuel(refV, "");
+      ok("volume annuel : vider le champ est trace aussi",
+         refV.productionAnnuelle === "" && refV.volumeHistorique.length === 2, true);
+      const refCap = { productionAnnuelle: "" };
+      for(let i = 0; i < 15; i++) enregistrerVolumeAnnuel(refCap, i);
+      ok("volume annuel : historique plafonne a 10 entrees",
+         refCap.volumeHistorique.length === 10 && refCap.volumeHistorique[0].valeur === 14, true);
+      ok("volume annuel : reference absente -> sans effet", enregistrerVolumeAnnuel(null, 5), undefined);
     }
 
     ok("normalizeScenario : plan conserve a travers l'arbre",

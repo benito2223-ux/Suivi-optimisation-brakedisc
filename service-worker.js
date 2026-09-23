@@ -54,12 +54,16 @@ self.addEventListener("fetch", (e) => {
   const estHtml = url.pathname.endsWith("bilan_economique.html") || url.pathname.endsWith("index.html");
   if (estHtml) {
     // réseau d'abord : mise à jour automatique à chaque ouverture en ligne ;
-    // hors ligne, on sert la dernière version connue.
+    // hors ligne, on sert la dernière version connue. cache:"no-cache" garantit que
+    // le contrôle réseau n'est jamais répondu par le cache HTTP du navigateur (304)
+    // — sinon une version neuve pouvait rester invisible derrière un 304.
     e.respondWith(
-      fetch(req).then((rep) => {
-        const copie = rep.clone();
-        caches.open(CACHE).then((c) => c.put(req, copie));
-        return rep;
+      fetch(req, { cache: "no-cache" }).then((rep) => {
+        if (rep && rep.ok) {
+          const copie = rep.clone();
+          caches.open(CACHE).then((c) => c.put(req, copie));
+        }
+        return rep.ok ? rep : (caches.match(req).then((hit) => hit || caches.match("./bilan_economique.html")));
       }).catch(() =>
         caches.match(req).then((hit) => hit || caches.match("./bilan_economique.html"))
       )

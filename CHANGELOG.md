@@ -5,6 +5,32 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.23.0] — 2026-09-23
+
+Signalement de Benjamin : le volume annuel « n'est pas rattaché à une ligne et
+une référence » — en éditant la valeur sur une nouvelle ligne, il a vu
+l'ancienne valeur d'EMAG remplacée. Audit complet de toutes les écritures
+(`appliquerOptions`, création de ligne/référence/OP, import par identifiants,
+fusion cloud par identifiants) : **aucune écriture croisée n'existe dans le
+code** — la valeur a toujours été stockée sur la référence. Le vrai problème
+est l'ambiguïté de saisie : rien n'indiquait à QUELLE référence le champ
+s'appliquait, et la tuile de composition n'emmène nulle part. Correctif UX +
+traçabilité.
+
+### Modifié — le champ volume dit à qui il s'applique
+- Options : sous le champ, **« S'applique à : EMAG 1 › DV 356X26 RPI »**, plus
+  la trace de la dernière modification.
+- La tuile « Production annuelle » de la composition devient **cliquable** :
+  elle ouvre Options pré-remplie pour LA référence affichée (curseur, survol,
+  mention ✎ modifier). Un seul geste, zéro ambiguïté.
+
+### Ajouté — historique du volume sur la référence
+`enregistrerVolumeAnnuel(ref, nv)` (testée) trace chaque changement réel
+(valeur, auteur, date — 10 dernières entrées, réécrire la même valeur ne trace
+pas, vider le champ se trace). La dernière entrée s'affiche sous le champ
+Options : si un doute réapparaît, on voit immédiatement qui a écrit quoi,
+quand.
+
 ## [4.22.0] — 2026-09-23
 
 Deux demandes liées de Benjamin : les renommages d'outils/logements n'étaient
