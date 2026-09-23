@@ -5,6 +5,36 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.22.0] — 2026-09-23
+
+Deux demandes liées de Benjamin : les renommages d'outils/logements n'étaient
+pas pris en compte dans le graphe des prélèvements (« le nom initial reste en
+mémoire »), et un nouveau scénario devait pouvoir **copier les outils de la
+production par sélection** plutôt que tout retaper.
+
+### Corrigé — les noms affichés suivent le scénario
+L'instantané d'un essai (`params.logements`) gelait les conditions de coupe
+*et les noms*. `nomLogementActuel(sc, lp)` relit désormais les noms dans le
+scénario au moment de l'affichage (via `logementId`), avec repli sur le nom
+figé si le logement a été retiré (trace historique). Appliqué partout où le
+nom s'affiche : **graphe des prélèvements** (`seriesTendance`), puces
+d'essai, rapport de validation (`prelevementsDetailHTML`, tableaux du rapport
+d'essai), export CSV, message de divergence des conditions, bandeau de
+reprise, onglets du mode atelier. Les conditions elles-mêmes restent figées —
+c'est leur rôle. Décision actée pour la comparaison : les outils copiés
+conservent les noms de la production (mêmes positions physiques) et chaque
+courbe reste titrée par son essai — pas d'ambiguïté.
+
+### Ajouté — copier les outils de la production
+Bouton « ⧉ Copier les outils de « … » » dans la composition d'un scénario non
+référence (`copieDepuisPossible`), panneau à cases à cocher, et
+`copierOutilsDeProduction` (testée) : copie profonde des outils sélectionnés
+avec **nouveaux identifiants** outils/logements/pièces (aucune collision avec
+les instantanés d'essai de la production), plan non copié (fichier du
+scénario d'origine), essais existants du scénario cible inchangés (les
+logements copiés ne s'y suivent pas automatiquement — « + suivre un
+logement »).
+
 ## [4.21.0] — 2026-09-23
 
 Le panneau Suggestions devient le **carnet de sujets chauds partagé** décidé

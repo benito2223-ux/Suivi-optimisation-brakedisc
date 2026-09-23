@@ -650,6 +650,13 @@ select.backlog-type, select.backlog-statut{font-family:var(--font-body); font-si
 .backlog-cards{display:flex; flex-direction:column; gap:12px;}
 /* v4.21 — le déclencheur se repère au premier coup d'œil (à saisir si arrêt de ligne…) */
 .backlog-declencheur{border-left:3px solid var(--amber);}
+/* v4.22 — sélection des outils à copier depuis la production */
+.copie-outil-liste{display:flex; flex-direction:column; gap:6px; margin:10px 0 4px;}
+.copie-outil-row{display:flex; align-items:center; gap:9px; padding:7px 10px; border:1px solid var(--border);
+  border-radius:var(--radius-sm); background:var(--surface-alt); cursor:pointer; font-size:12.5px;}
+.copie-outil-row:hover{border-color:var(--blue);}
+.copie-outil-titre{font-family:var(--font-mono);}
+.copie-outil-log{color:var(--ink-faint); margin-left:auto; font-size:11.5px;}
 .backlog-card{border:1px solid var(--border); border-radius:var(--radius-lg); background:var(--surface-alt); padding:12px;}
 .backlog-card-head{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px;}
 .backlog-titre{width:100%; font-family:var(--font-disp); font-weight:700; font-size:14.5px; margin-bottom:6px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:6px 8px; color:var(--ink);}
@@ -1756,6 +1763,7 @@ body.atelier-on{overflow:hidden;}
   <div class="panel annot-panel" id="photoAnnotWrap" hidden></div>
   <div class="panel" id="historyPanel" hidden></div>
   <div class="panel" id="csvPanel" hidden></div>
+  <div class="panel" id="copieOutilsPanel" hidden></div>
   <div class="panel" id="nouveautesPanel" hidden></div>
   <div class="panel" id="parcoursPanel" hidden></div>
   <!-- dialogues in-app (v4.6) : les alert()/confirm()/prompt() natifs etaient les seuls
@@ -1898,7 +1906,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.21.0";
+const TOOL_VERSION = "4.22.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -2659,6 +2667,22 @@ function snapshotLogements(sc){
 function logementsSuivis(es){
   return ((es.params && es.params.logements) || []).filter(lp => lp.suivi !== false);
 }
+/* v4.22 — nom d'un logement d'essai : le nom ACTUEL du scénario, pas le nom figé.
+   L'instantané d'un essai (params.logements) gèle les conditions de coupe à sa création
+   — c'est son rôle. Mais il gelait aussi les NOMS : renommer un outil ou un logement
+   ne se voyait nulle part (graphe des prélèvements, puces d'essai, rapport) tant qu'un
+   nouvel essai n'était pas créé — « le nom initial reste en mémoire ». Les noms, eux,
+   décrivent la même position physique : on les relit dans le scénario au moment de
+   l'affichage, via logementId. Si le logement a été retiré entre-temps, on retombe sur
+   le nom figé — seule trace historique restante. */
+function nomLogementActuel(sc, lp){
+  const o = sc.outils.find(x => x.id === lp.outilId);
+  const l = o && o.logements.find(x => x.id === lp.logementId);
+  return {
+    outilNumero: l ? (o.numero || "—") : (lp.outilNumero || "?"),
+    logementNom: l ? (l.nom || "—") : (lp.logementNom || "?")
+  };
+}
 /* reference plaquette au moment de l'essai. Les essais crees avant l'ajout de "ref" au
    snapshot n'ont pas cette valeur figee : on retombe alors sur la reference actuelle du
    scenario pour ce logement (meilleur effort, mais peut differer si elle a change depuis). */
@@ -2815,7 +2839,8 @@ function paramsDivergences(sc, essai){
   const diffs = [];
   actifs.forEach(s => {
     const cur = courant.find(c => c.logementId === s.logementId);
-    const nom = (s.outilNumero||"?") + " · " + (s.logementNom||"—");
+    const nom = cur ? (cur.outilNumero||"?") + " · " + (cur.logementNom||"—")
+                    : (s.outilNumero||"?") + " · " + (s.logementNom||"—");
     if(!cur){ diffs.push(nom + " (retiré du scénario)"); return; }
     const champs = [];
     if(!memeVal(s.vc, cur.vc)) champs.push("Vc " + aff(s.vc) + "→" + aff(cur.vc));
@@ -3366,11 +3391,12 @@ function exportCSV(essaiIds){
 
   (sc.essais||[]).filter(es => !essaiIds || essaiIds.includes(es.id)).forEach(es => {
     const snap = logementsSuivis(es);
-    const outilsResume = snap.map(lp => `${lp.outilNumero||"?"}/${lp.logementNom||"?"}:Vc${lp.vc??"-"}/f${lp.f??"-"}/charn${lp.charniere??"-"}`).join(" | ");
+    const outilsResume = snap.map(lp => { const n = nomLogementActuel(sc, lp);
+      return `${n.outilNumero||"?"}/${n.logementNom||"?"}:Vc${lp.vc??"-"}/f${lp.f??"-"}/charn${lp.charniere??"-"}`; }).join(" | ");
     (es.prelevements||[]).forEach(r => {
       const conf = checkConform(sc, r);
       const lp = snap.find(x => x.logementId === r.logementId);
-      const logementMesure = lp ? `${lp.outilNumero||"?"}/${lp.logementNom||"?"}` : "";
+      const logementMesure = lp ? (() => { const n = nomLogementActuel(sc, lp); return `${n.outilNumero||"?"}/${n.logementNom||"?"}`; })() : "";
       csvLignes.push([
         txt(ligneActive ? ligneActive.nom : ""), txt(refActive ? refActive.nom : ""), txt(opActive ? opActive.nom : ""),
         txt(sc.name), txt(outilsResume),
@@ -3423,7 +3449,9 @@ function prelevementsDetailHTML(sc, es){
   const snap = (es.params && es.params.logements) || [];
   const labelLogement = (logementId) => {
     const lp = snap.find(l => l.logementId === logementId);
-    return lp ? (String(lp.outilNumero||"?") + " " + String(lp.logementNom||"")).trim() : "";
+    if(!lp) return "";
+    const nom = nomLogementActuel(sc, lp); // v4.22 : nom actuel, pas nom fige
+    return (String(nom.outilNumero||"?") + " " + String(nom.logementNom||"")).trim();
   };
   const showLogementCol = snap.length > 1;
   const csupCols = csupColonnes(sc);
@@ -3585,13 +3613,14 @@ function essaiRapportHTML(sc, essai){
   const logoSrc = (document.querySelector(".hd-left img") || {}).getAttribute ? document.querySelector(".hd-left img").getAttribute("src") : "";
 
   const plaquettesRows = snap.map(lp => {
+    const nom = nomLogementActuel(sc, lp); // v4.22 : nom actuel du scenario
     const outilLive = sc.outils.find(o => o.id === lp.outilId);
     return `
     <tr>
-      <td>${escapeAttr(lp.outilNumero)}</td>
+      <td>${escapeAttr(nom.outilNumero)}</td>
       <td>${escapeAttr(outilLive && outilLive.correcteur) || "—"}</td>
       <td>${escapeAttr(outilLive && outilLive.description) || "—"}</td>
-      <td>${escapeAttr(lp.logementNom)}</td>
+      <td>${escapeAttr(nom.logementNom)}</td>
       <td>${escapeAttr(refLogementEssai(sc, lp)) || "—"}</td>
       <td>${lp.vc === "" || lp.vc == null ? "—" : lp.vc}</td>
       <td>${lp.f === "" || lp.f == null ? "—" : lp.f}</td>
@@ -3610,7 +3639,7 @@ function essaiRapportHTML(sc, essai){
       const conform = checkConform(sc, r);
       const statut = exempte ? "Charnière seule" : conform === null ? "—" : conform ? "OK" : (raisonNonConforme(sc, r) || "Hors tolérance");
       const lp = snap.find(l => l.logementId === r.logementId);
-      const logementTxt = lp ? (String(lp.outilNumero||"?") + " · " + String(lp.logementNom||"")).trim() : "—";
+      const logementTxt = lp ? (() => { const n = nomLogementActuel(sc, lp); return (String(n.outilNumero||"?") + " · " + String(n.logementNom||"")).trim(); })() : "—";
       const valeur = sc.battActif === false ? "—"
         : cotesRap === "mono" ? fmtBatt(r.batt)
         : cotesRap === "D" ? ("Droite " + fmtBatt(r.battD))
@@ -4577,7 +4606,8 @@ function essaiStats(sc, essai){
     const hasTarget = !isNaN(target);
     const lastPieceLog = lastPieceLogement(essai, lp.logementId);
     const complete = hasTarget && lastPieceLog !== null && lastPieceLog >= target;
-    return { outilNumero: lp.outilNumero, logementNom: lp.logementNom, logementId: lp.logementId, target: hasTarget ? target : null, lastPiece: lastPieceLog, complete };
+    const nom = nomLogementActuel(sc, lp); // v4.22 : nom actuel (reprise, statut)
+    return { outilNumero: nom.outilNumero, logementNom: nom.logementNom, logementId: lp.logementId, target: hasTarget ? target : null, lastPiece: lastPieceLog, complete };
   });
   const targetsValides = logementProgress.filter(lp => lp.target !== null);
   const tousComplets = targetsValides.length > 0 && targetsValides.every(lp => lp.complete);
@@ -4771,10 +4801,11 @@ function atelierHTML(){
       <button class="ghost at-close" id="atelierClose">Fermer</button>
     </div>
 
-    ${snap.length > 1 ? `<div class="at-logements">${snap.map(l => `
-      <button class="at-log ${l.logementId===atelierCtx.logementId?"actif":""}" data-at-log="${l.logementId}">
-        ${escapeAttr(l.outilNumero||"?")}<span>${escapeAttr(l.logementNom||"—")}</span>
-      </button>`).join("")}</div>` : ""}
+    ${snap.length > 1 ? `<div class="at-logements">${snap.map(l => {
+      const nom = nomLogementActuel(sc, l); // v4.22 : nom actuel du scenario
+      return `<button class="at-log ${l.logementId===atelierCtx.logementId?"actif":""}" data-at-log="${l.logementId}">
+        ${escapeAttr(nom.outilNumero||"?")}<span>${escapeAttr(nom.logementNom||"—")}</span>
+      </button>`; }).join("")}</div>` : ""}
 
     <div class="at-piece">
       <label>N° pièce</label>
@@ -5249,7 +5280,8 @@ function seriesTendance(sc, valeurFn){
     };
     if(utiliseLogements){
       logementsSuivis(es).forEach(lp => {
-        pousse(`${es.titre} (${lp.outilNumero||"?"}·${lp.logementNom||"?"})`, prels.filter(r => r.logementId === lp.logementId));
+        const nom = nomLogementActuel(sc, lp);
+        pousse(`${es.titre} (${nom.outilNumero}·${nom.logementNom})`, prels.filter(r => r.logementId === lp.logementId));
       });
     } else {
       pousse(es.titre, prels);
@@ -6104,6 +6136,7 @@ function scenarioBlockHTML(sc, interactive){
   const posTable = `
     ${interactive ? posFiches : posTableau}
     ${interactive ? `<button class="ghost outil-add" data-id="${sc.id}" style="margin-top:10px;">+ Ajouter un outil</button>` : ""}
+    ${interactive && copieDepuisPossible(sc) ? `<button class="ghost outils-copier" data-id="${sc.id}" style="margin-top:10px;">⧉ Copier les outils de « ${escapeAttr(baselineScenario().name)} »</button>` : ""}
     ${interactive && !showFrFa ? `<p class="panel-hint" style="margin:8px 2px 0;">Rayon de bec et ap (affinage Fr·Fa) sont masqués — activez le module Fr·Fa dans <b>Options</b> si votre référence en a besoin.</p>` : ""}
     ${showCycleDetail ? cycleDetailStatusHTML(sc) : ""}
     ${consommationAnnuelleHTML(sc)}
@@ -7167,8 +7200,9 @@ function essaiCardHTML(sc, essai, interactive){
   const chips = snap.map(lp => {
     const oi = sc.outils.findIndex(o => o.id === lp.outilId);
     const couleur = oi >= 0 ? OUTIL_COLORS[oi % OUTIL_COLORS.length] : "var(--ink-faint)";
+    const nom = nomLogementActuel(sc, lp); // v4.22 : renommer se voit tout de suite
     const croix = interactive ? `<button class="essai-lp-del" data-id="${sc.id}" data-essai="${essai.id}" data-lp="${lp.logementId}" title="Ne plus suivre ce logement dans cet essai (le logement reste dans le scénario, re-suivable à tout moment)">✕</button>` : "";
-    return `<b style="border-left:3px solid ${couleur}; padding-left:6px;">${escapeAttr(lp.outilNumero||"—")} · ${escapeAttr(lp.logementNom||"—")} — Vc ${lp.vc === "" || lp.vc == null ? "—" : lp.vc} f ${lp.f === "" || lp.f == null ? "—" : lp.f} charnière ${lp.charniere === "" || lp.charniere == null ? "—" : lp.charniere} p${croix}</b>`;
+    return `<b style="border-left:3px solid ${couleur}; padding-left:6px;">${escapeAttr(nom.outilNumero||"—")} · ${escapeAttr(nom.logementNom||"—")} — Vc ${lp.vc === "" || lp.vc == null ? "—" : lp.vc} f ${lp.f === "" || lp.f == null ? "—" : lp.f} charnière ${lp.charniere === "" || lp.charniere == null ? "—" : lp.charniere} p${croix}</b>`;
   }).join("");
   const ajoutables = interactive
     ? snapshotLogements(sc).filter(c => !snap.some(s => s.logementId === c.logementId))
@@ -7719,6 +7753,38 @@ function deplacerOutil(sc, srcId, cibleId){
   if(from < 0 || to < 0 || from === to) return false;
   sc.outils.splice(to, 0, sc.outils.splice(from, 1)[0]);
   return true;
+}
+
+/* ---- v4.22 — copier les outils du scénario de production ----
+   Un nouveau scénario repartait d'un outil vide : tester une variante sur la même base
+   obligeait à retaper toutes les plaquettes. La copie par sélection reprend les outils
+   choisis du scénario de production — n°, correcteur, type, logements avec TOUTES leurs
+   données (réf, prix, arêtes, charnière, Vc/f, κr, rayon de bec, temps machine), pièces
+   détachées — avec de NOUVEAUX identifiants, donc aucune collision avec les instantanés
+   d'essai de la production. Les NOMS restent ceux de la production : mêmes positions
+   physiques ; chaque courbe de tendance reste titrée par son essai, comparer deux essais
+   reste lisible (décision actée avec Benjamin). Les plans joints ne sont pas copiés —
+   ce sont des fichiers du scénario d'origine ; se les réassocier si besoin. */
+function copieDepuisPossible(sc){
+  const base = baselineScenario();
+  return !!(base && base.id !== sc.id && (base.outils || []).length);
+}
+function copierOutilsDeProduction(sc, ids){
+  const base = baselineScenario();
+  if(!base) return 0;
+  let n = 0;
+  ids.forEach(idO => {
+    const src = base.outils.find(o => o.id === idO);
+    if(!src) return;
+    const copie = JSON.parse(JSON.stringify(src));
+    copie.id = "t"+Math.random().toString(36).slice(2);
+    copie.plan = null;
+    copie.logements = (copie.logements || []).map(l => Object.assign(l, { id: "g"+Math.random().toString(36).slice(2) }));
+    copie.pieces = (copie.pieces || []).map(p => Object.assign(p, { id: "pc"+Math.random().toString(36).slice(2) }));
+    sc.outils.push(copie);
+    n++;
+  });
+  return n;
 }
 
 function outilCarteHTML(sc, o, oi, showFrFa, showCycleDetail){
@@ -9170,6 +9236,10 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
       saveData(); render();
     });
   });
+  /* v4.22 — copie des outils du scenario de production, par selection */
+  root.querySelectorAll(".outils-copier").forEach(el => {
+    el.addEventListener("click", () => { ouvrirPanneau("copieOutilsPanel"); renderCopieOutilsPanel(); });
+  });
   root.querySelectorAll(".logement-add").forEach(el => {
     el.addEventListener("click", () => {
       const o = sc.outils.find(x => x.id === el.getAttribute("data-outil"));
@@ -9858,6 +9928,10 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.22.0", date:"23/09/2026", points:[
+    "<b>Renommer un outil ou un logement se voit enfin partout.</b> Les noms affichés étaient figés à la création de chaque essai : le graphe des prélèvements, les puces d'essai, le rapport et le bandeau de reprise gardaient l'ancien nom même après renommage. Désormais les noms sont relus dans le scénario au moment de l'affichage — les conditions de coupe, elles, restent fidèlement figées à l'essai. Si un logement a été retiré du scénario, l'essai garde son nom d'époque comme trace historique.",
+    "<b>Copier les outils de la production en un geste.</b> Sur un scénario qui n'est pas la référence, un bouton <b>⧉ Copier les outils de « … »</b> ouvre une sélection : les outils cochés arrivent avec référence, prix, arêtes, charnière et conditions de coupe, sous de nouveaux identifiants (les essais de la production ne bougent pas). Les noms restent ceux de la production — mêmes positions physiques, et chaque courbe reste titrée par son essai, donc comparer deux essais reste lisible. Les plans joints ne sont pas copiés."
+  ]},
   { version:"4.21.0", date:"23/09/2026", points:[
     "<b>Le pense-bête devient un carnet de sujets chauds.</b> Les Suggestions gagnent deux types — <b>Essai à planifier</b> et <b>Sujet technique</b> — un champ <b>déclencheur</b> bien visible (« à lancer dès un arrêt de ligne EMAG 1… ») pour anticiper les opportunités au lieu de les subir, et des statuts qui suivent la vie d'un sujet : Nouveau → En cours → Prêt à lancer → Lancé → Clos. Toujours partagé : ce que l'un note, l'autre le voit à l'ouverture."
   ]},
@@ -10455,6 +10529,36 @@ function renderCsvPanel(){
     if(!ids.length){ dialogueAlerte("Cochez au moins un essai.", "Rien à exporter"); return; }
     fermerPanneaux();
     exportCSV(ids);
+  });
+}
+
+/* ---- v4.22 — panneau de sélection pour la copie des outils de la production ---- */
+function renderCopieOutilsPanel(){
+  const wrap = document.getElementById("copieOutilsPanel");
+  if(!wrap || wrap.hidden) return;
+  const sc = data.find(s => s.id === activeId);
+  const base = baselineScenario();
+  if(!sc || !base || base.id === sc.id){ fermerPanneaux(); return; }
+  const rows = base.outils.map(o => `
+    <label class="copie-outil-row">
+      <input type="checkbox" class="copie-outil-chk" value="${o.id}" checked>
+      <span class="copie-outil-titre"><b>${escapeAttr(o.numero || "outil sans n°")}</b>${o.description ? " — " + escapeAttr(o.description) : ""}</span>
+      <span class="copie-outil-log">${o.logements.map(l => escapeAttr(l.nom || "—")).join(" + ") || "aucun logement"}</span>
+    </label>`).join("");
+  wrap.innerHTML = `
+    <h3>Copier les outils de « ${escapeAttr(base.name)} »</h3>
+    <p class="panel-hint">Cochez les outils à reprendre dans « ${escapeAttr(sc.name)} » : référence, prix, arêtes, charnière et conditions de coupe voyagent avec, sous de nouveaux identifiants (les essais de la production ne bougent pas). Les <b>noms restent ceux de la production</b> — mêmes positions physiques ; comparer deux essais reste lisible puisque chaque courbe est titrée par son essai. Les plans joints ne sont pas copiés. Les essais existants de ce scénario ne suivent pas automatiquement les logements copiés : utilisez « + suivre un logement ».</p>
+    <div class="copie-outil-liste">${rows}</div>
+    <div class="panel-actions">
+      <button class="ghost" id="copieOutilsAnnuler">Annuler</button>
+      <button class="primary" id="copieOutilsGo">Copier la sélection</button>
+    </div>`;
+  document.getElementById("copieOutilsAnnuler").addEventListener("click", fermerPanneaux);
+  document.getElementById("copieOutilsGo").addEventListener("click", () => {
+    const ids = [...wrap.querySelectorAll(".copie-outil-chk:checked")].map(c => c.value);
+    if(!ids.length){ dialogueAlerte("Cochez au moins un outil.", "Rien à copier"); return; }
+    const n = copierOutilsDeProduction(sc, ids);
+    if(n){ saveData(); fermerPanneaux(); render(); }
   });
 }
 document.getElementById("csvBtn").addEventListener("click", () => {
@@ -11622,6 +11726,40 @@ function runTests(){
          /ap-annuel/.test(tuileAnn) && /3[\s\u00a0\u202f]000 €\/an/.test(tuileAnn), true);
       ok("apercu : sans volume, pas de cout annuel",
          /ap-annuel/.test(apercuLogementHTML(scAnn, scAnn.outils[0], scAnn.outils[0].logements[0], "#000", 0)), false);
+    }
+
+    /* ---- v4.22 : noms actuels dans les graphes + copie des outils de la production ---- */
+    {
+      const scNom = normalizeScenario({ id:"sNom", name:"nom", baseline:true, outils:[
+        { id:"tN1", numero:"T-A", logements:[{ id:"gN1", nom:"Piste", prix:10, aretes:5, charniere:100, vc:500, f:0.35 }] }
+      ]});
+      scNom.essais = [ essaiBrut("eN1", [prel("pN1",10,0.05)]) ];
+      scNom.essais[0].params = { logements: snapshotLogements(scNom) };
+      scNom.essais[0].prelevements[0].logementId = "gN1";
+      // renommage APRES la creation de l'essai : le graphe doit suivre (bug "nom reste en memoire")
+      scNom.outils[0].numero = "T-B";
+      scNom.outils[0].logements[0].nom = "Piste V2";
+      const series = seriesTendance(scNom, r => valeurMesuree(scNom, r));
+      ok("noms actuels : le graphe des prelevements suit le renommage",
+         /T-B·Piste V2/.test(series[0].titre), true);
+      const nFallback = nomLogementActuel(scNom, { outilId:"tX", logementId:"gDisparu", outilNumero:"T-Ancien", logementNom:"Bol ancien" });
+      ok("noms actuels : logement retire -> repli sur le nom fige",
+         nFallback.outilNumero === "T-Ancien" && nFallback.logementNom === "Bol ancien", true);
+      const scCopie = normalizeScenario({ id:"sCopie", name:"copie", outils:[] });
+      // on isole data le temps du test, pour que baselineScenario() soit deterministe
+      const dataSauvee = data;
+      data = [scNom, scCopie];
+      const outilBase = scNom.outils[0];
+      outilBase.plan = { filename:"p.pdf", stockage:"fichier", dataUrl:"x" };
+      const nCopies = copierOutilsDeProduction(scCopie, [outilBase.id]);
+      const copieO = scCopie.outils[0];
+      ok("copie outils : la selection arrive complete",
+         nCopies === 1 && copieO.numero === "T-B" && copieO.logements[0].nom === "Piste V2" && copieO.logements[0].prix === 10, true);
+      ok("copie outils : nouveaux identifiants, pas de collision",
+         copieO.id !== "tN1" && copieO.logements[0].id !== "gN1", true);
+      ok("copie outils : pas de plan copie", copieO.plan, null);
+      data = dataSauvee;
+      outilBase.plan = null;
     }
 
     ok("normalizeScenario : plan conserve a travers l'arbre",
