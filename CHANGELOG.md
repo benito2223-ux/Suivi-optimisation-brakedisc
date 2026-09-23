@@ -5,6 +5,23 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.21.0] — 2026-09-23
+
+Le panneau Suggestions devient le **carnet de sujets chauds partagé** décidé
+avec Benjamin (bugs et améliorations outil, essais à planifier, sujets
+techniques abordés avec Matis, anticipation des arrêts de ligne). Nouveau
+champ `declencheur` sur les items, types et statuts étendus — les items
+existants migrent sans rien faire.
+
+### Modifié — Suggestions enrichies
+- Types : Bug · Amélioration · **Essai à planifier** · **Sujet technique**.
+- Champ **déclencheur** (repéré par une barre ambre) : la condition qui rend le
+  sujet saisable — « à lancer dès un arrêt de ligne EMAG 1 ».
+- Statuts étendus pour suivre une opportunité : Nouveau → En cours →
+  **Prêt à lancer** → **Lancé** → Clos (l'ancien « Traité » garde sa valeur
+  `traite`, seul le libellé change).
+- Texte d'en-tête aligné sur le nouveau rôle (pense-bête d'équipe, synchronisé).
+
 ## [4.20.0] — 2026-09-23
 
 Le taux de rebut annuel entre dans le bilan économique. Décision actée avec

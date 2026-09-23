@@ -648,6 +648,8 @@ select.backlog-type, select.backlog-statut{font-family:var(--font-body); font-si
 .badge.type-bug{background:var(--red-bg); color:var(--red);}
 .badge.type-amelioration{background:var(--blue-bg); color:var(--blue-dark);}
 .backlog-cards{display:flex; flex-direction:column; gap:12px;}
+/* v4.21 — le déclencheur se repère au premier coup d'œil (à saisir si arrêt de ligne…) */
+.backlog-declencheur{border-left:3px solid var(--amber);}
 .backlog-card{border:1px solid var(--border); border-radius:var(--radius-lg); background:var(--surface-alt); padding:12px;}
 .backlog-card-head{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px;}
 .backlog-titre{width:100%; font-family:var(--font-disp); font-weight:700; font-size:14.5px; margin-bottom:6px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:6px 8px; color:var(--ink);}
@@ -1896,7 +1898,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.20.0";
+const TOOL_VERSION = "4.21.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -2277,7 +2279,10 @@ let configReplies = new Set();
 let outilsOuverts = new Set();
 
 function normalizeBacklogItem(b){
-  return Object.assign({ id: b.id || ("b"+Math.random().toString(36).slice(2)), date:"", auteur:"", type:"amelioration", titre:"", description:"", statut:"nouveau", image:"" }, b);
+  // v4.21 — le pense-bête devient un carnet de sujets chauds partagé : types « essai à
+  // planifier » et « sujet technique », champ déclencheur (à saisir si arrêt de ligne…),
+  // et des statuts qui suivent la vie d'une opportunité, pas seulement d'un bug.
+  return Object.assign({ id: b.id || ("b"+Math.random().toString(36).slice(2)), date:"", auteur:"", type:"amelioration", titre:"", description:"", statut:"nouveau", declencheur:"", image:"" }, b);
 }
 function normalizeOp(o){
   return Object.assign({ id: o.id || ("o"+Math.random().toString(36).slice(2)), nom:"", ordre: 10, ficheOutil: null }, o, {
@@ -8423,15 +8428,20 @@ function backlogHTML(){
         <select class="backlog-type" data-backlog="${b.id}" data-field="type">
           <option value="bug" ${b.type==="bug"?"selected":""}>Bug</option>
           <option value="amelioration" ${b.type==="amelioration"?"selected":""}>Amélioration</option>
+          <option value="essai" ${b.type==="essai"?"selected":""}>Essai à planifier</option>
+          <option value="technique" ${b.type==="technique"?"selected":""}>Sujet technique</option>
         </select>
         <select class="backlog-statut" data-backlog="${b.id}" data-field="statut">
           <option value="nouveau" ${b.statut==="nouveau"?"selected":""}>Nouveau</option>
           <option value="encours" ${b.statut==="encours"?"selected":""}>En cours</option>
-          <option value="traite" ${b.statut==="traite"?"selected":""}>Traité</option>
+          <option value="pret" ${b.statut==="pret"?"selected":""}>Prêt à lancer</option>
+          <option value="lance" ${b.statut==="lance"?"selected":""}>Lancé</option>
+          <option value="traite" ${b.statut==="traite"?"selected":""}>Clos</option>
         </select>
         <button class="log-del" data-backlog-del="${b.id}" style="margin-left:auto;">✕</button>
       </div>
       <input class="cell ref backlog-titre" data-backlog="${b.id}" data-field="titre" value="${escapeAttr(b.titre)}" placeholder="Titre court">
+      <input class="cell ref backlog-declencheur" data-backlog="${b.id}" data-field="declencheur" value="${escapeAttr(b.declencheur || "")}" placeholder="⚡ Déclencheur — ex. « à lancer dès un arrêt de ligne EMAG 1 »">
       <textarea class="backlog-desc" data-backlog="${b.id}" data-field="description" placeholder="Description, contexte, étapes pour reproduire...">${escapeAttr(b.description)}</textarea>
       <div class="backlog-image-row">
         ${b.image
@@ -8444,7 +8454,7 @@ function backlogHTML(){
   return `
     <div class="backlog-block">
       <h3>Suggestions — vos idées et remarques sur l'outil</h3>
-      <p class="hint">Notez ici tout ce que vous aimeriez voir corrigé ou amélioré. Ces lignes voyagent avec le fichier exporté — Benjamin les retrouve directement à l'ouverture, pas besoin d'un autre canal.</p>
+      <p class="hint">Le pense-bête partagé de l'équipe : bugs et améliorations de l'outil, <b>essais à planifier</b> et <b>sujets techniques</b> abordés ensemble — avec leur <b>déclencheur</b> (« à lancer dès un arrêt de ligne… ») pour anticiper au lieu de subir. Tout voyage avec le fichier synchronisé : ce que l'un note, l'autre le voit à l'ouverture.</p>
       <div class="backlog-cards">${cards}</div>
       <button class="ghost" id="backlogAddBtn" style="margin-top:10px;">+ Ajouter une suggestion</button>
       <div class="panel-actions"><button class="primary" id="backlogClose">Fermer</button></div>
@@ -9848,6 +9858,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.21.0", date:"23/09/2026", points:[
+    "<b>Le pense-bête devient un carnet de sujets chauds.</b> Les Suggestions gagnent deux types — <b>Essai à planifier</b> et <b>Sujet technique</b> — un champ <b>déclencheur</b> bien visible (« à lancer dès un arrêt de ligne EMAG 1… ») pour anticiper les opportunités au lieu de les subir, et des statuts qui suivent la vie d'un sujet : Nouveau → En cours → Prêt à lancer → Lancé → Clos. Toujours partagé : ce que l'un note, l'autre le voit à l'ouverture."
+  ]},
   { version:"4.20.0", date:"23/09/2026", points:[
     "<b>Le taux de rebut annuel entre dans le bilan.</b> Un champ <b>Taux de rebut annuel (%)</b> arrive en tête du suivi rebut de chaque scénario — c'est le chiffre de l'année, rentré sur le scénario de référence et affiné pour chaque scénario d'essai. Rempli, il <b>fait foi</b> sur le taux calculé du journal d'équipe (qui continue de tracer le détail par équipe) et pèse dans le gain annuel dès que le module « Coût de rebut » est actif avec le prix du disque. Un indicateur dit en permanence quelle source est retenue."
   ]},
