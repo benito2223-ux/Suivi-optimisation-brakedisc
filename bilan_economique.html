@@ -657,6 +657,9 @@ select.backlog-type, select.backlog-statut{font-family:var(--font-body); font-si
 .copie-outil-row:hover{border-color:var(--blue);}
 .copie-outil-titre{font-family:var(--font-mono);}
 .copie-outil-log{color:var(--ink-faint); margin-left:auto; font-size:11.5px;}
+/* v4.25 — panneau de clôture d'essai */
+.cloture-champ{display:flex; align-items:center; gap:10px; margin:10px 0; font-size:13px; font-weight:600; color:var(--ink-soft);}
+.cloture-champ select, .cloture-champ input{flex:1; font-weight:400;}
 .backlog-card{border:1px solid var(--border); border-radius:var(--radius-lg); background:var(--surface-alt); padding:12px;}
 .backlog-card-head{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px;}
 .backlog-titre{width:100%; font-family:var(--font-disp); font-weight:700; font-size:14.5px; margin-bottom:6px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:6px 8px; color:var(--ink);}
@@ -1010,6 +1013,9 @@ button.ghost.small{padding:4px 8px; font-size:11px;}
 .status-badge.ok::before{content:"✓";}
 .status-badge.pending{background:var(--amber); color:var(--on-accent);}
 .status-badge.pending::before{content:"⏳";}
+/* v4.25 — essai clôturé (arrêt anticipé) : neutre, distinct du non conforme (rouge) */
+.status-badge.arrete{background:var(--ink-faint); color:#fff;}
+.status-badge.arrete::before{content:"⏹";}
 select.log-equipe{font-family:var(--font-body); font-size:12.5px; border:1px solid transparent; border-radius:var(--radius-sm); padding:5px 4px; background:transparent; color:var(--ink); width:100%;}
 select.log-equipe:hover{border-color:var(--border);}
 select.log-equipe:focus{border-color:var(--blue); outline:none; background:var(--surface);}
@@ -1770,6 +1776,7 @@ body.atelier-on{overflow:hidden;}
   <div class="panel" id="historyPanel" hidden></div>
   <div class="panel" id="csvPanel" hidden></div>
   <div class="panel" id="copieOutilsPanel" hidden></div>
+  <div class="panel" id="cloturePanel" hidden></div>
   <div class="panel" id="nouveautesPanel" hidden></div>
   <div class="panel" id="parcoursPanel" hidden></div>
   <!-- dialogues in-app (v4.6) : les alert()/confirm()/prompt() natifs etaient les seuls
@@ -1912,7 +1919,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.24.0";
+const TOOL_VERSION = "4.25.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -2280,6 +2287,7 @@ let rechercheListe = [];   // résultats filtrés de la palette de recherche (Ct
 let rechercheSel = 0;      // ligne sélectionnée au clavier dans la palette
 let tendanceEnPct = false; // v4.15 : vue des tendances en % de tolérance consommée
 let compareCtx = null;     // v4.15 : { a: "scId|essaiId", b: "scId|essaiId" }
+let clotureCtx = null;     // v4.25 : { scId, essaiId } — l'essai à clôturer/réouvrir
 /* v4.16 — DÉCLARÉ ICI et pas dans le bloc cloud : la zone d'ajout de photos lit
    cloudSession dès le premier rendu, qui arrive AVANT le chargement du bloc cloud.
    loadAll() avalant ses exceptions (piège historique), une globale lue au rendu et
@@ -3612,8 +3620,8 @@ function essaiRapportHTML(sc, essai, photosRap){
   const ligneActive = getActiveLigne(), refActive = getActiveReference(), opActive = getActiveOp();
   const chemin = [ligneActive && ligneActive.nom, refActive && refActive.nom, opActive && opActive.nom].filter(Boolean).join(" — ");
   const est = essaiStats(sc, essai);
-  const badgeClass = est.status === "ok" ? "ok" : est.status === "bad" ? "bad" : "pending";
-  const badgeLabel = est.status === "ok" ? "Conforme" : est.status === "bad" ? "Non conforme" : "En cours";
+  const badgeClass = est.status === "ok" ? "ok" : est.status === "bad" ? "bad" : est.status === "arrete" ? "arrete" : "pending";
+  const badgeLabel = est.status === "ok" ? "Conforme" : est.status === "bad" ? "Non conforme" : est.status === "arrete" ? est.raison : "En cours";
   const snap = logementsSuivis(essai);
   const dateAff = essai.date ? new Date(essai.date + "T00:00").toLocaleDateString("fr-FR") : "—";
   const logoSrc = (document.querySelector(".hd-left img") || {}).getAttribute ? document.querySelector(".hd-left img").getAttribute("src") : "";
@@ -3715,6 +3723,7 @@ function essaiRapportHTML(sc, essai, photosRap){
   .verdict.ok{background:var(--green-bg); color:var(--green);}
   .verdict.bad{background:var(--red-bg); color:var(--red);}
   .verdict.pending{background:var(--amber-bg); color:var(--amber);}
+  .verdict.arrete{background:#e4e7eb; color:var(--ink-soft);}
   h2{font-family:'IBM Plex Mono',Consolas,monospace; font-size:11px; text-transform:uppercase; letter-spacing:.1em; color:var(--ink-faint); margin:26px 0 10px; padding-bottom:6px; border-bottom:1px solid var(--border);}
   .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:16px 24px;}
   .grid .l{font-family:'IBM Plex Mono',Consolas,monospace; font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:3px;}
@@ -3747,7 +3756,7 @@ function essaiRapportHTML(sc, essai, photosRap){
     <div class="hd-meta">${escapeAttr(sc.name)}<br>${dateAff}</div>
   </div>
 
-  <span class="verdict ${badgeClass}">${badgeLabel}${est.raison ? " — " + escapeAttr(est.raison) : ""}</span>
+  <span class="verdict ${badgeClass}">${badgeLabel}${est.raison && est.status !== "arrete" ? " — " + escapeAttr(est.raison) : ""}</span>
 
   <h2>Interlocuteurs</h2>
   <div class="grid">
@@ -4632,7 +4641,16 @@ function essaiStats(sc, essai){
   const tousComplets = targetsValides.length > 0 && targetsValides.every(lp => lp.complete);
 
   let status = "pending", raison = "";
-  if(anyBad){
+  if(essai.cloture && essai.cloture.motif){
+    /* v4.25 — clôture (arrêt anticipé) : la décision de record passe AVANT tout. Un essai
+       arrêté pour casse avant la charnière n'est ni "en cours" (il n'attend plus rien),
+       ni "non conforme" (la casse n'est pas une sortie de tolérance mesurée) : il est
+       "arrêté", avec son motif. Ses prélèvements restent intacts pour les courbes. */
+    status = "arrete";
+    raison = "Arrêté — " + libelleMotifArret(essai.cloture.motif) +
+      (essai.cloture.date ? " le " + essai.cloture.date.split("-").reverse().join("/") : "") +
+      (essai.cloture.detail ? " · " + essai.cloture.detail : "");
+  } else if(anyBad){
     status = "bad";
     const premierBad = evaluated.find(r => checkConform(sc,r) === false);
     raison = premierBad ? raisonNonConforme(sc, premierBad) : "hors tolérance";
@@ -4653,17 +4671,31 @@ function essaiStats(sc, essai){
            lastPiece, logementProgress, complete: tousComplets, anyBad, status, raison };
 }
 
+/* v4.25 — motifs d'arrêt anticipé d'un essai clôturé avant sa charnière */
+const MOTIFS_ARRET = [
+  ["casse", "Casse / éclat d'arête"],
+  ["horsTolerance", "Hors tolérance"],
+  ["brut", "Problème de brut (éclat, maturité…)"],
+  ["machine", "Incident machine"],
+  ["autre", "Autre"]
+];
+function libelleMotifArret(m){
+  const t = MOTIFS_ARRET.find(x => x[0] === m);
+  return t ? t[1] : (m || "motif inconnu");
+}
+
 function scenarioStats(sc){
   const essais = sc.essais || [];
   const list = essais.map(e => essaiStats(sc, e));
   const validCount = list.filter(s => s.status === "ok").length;
   const badCount = list.filter(s => s.status === "bad").length;
+  const arreteCount = list.filter(s => s.status === "arrete").length;
   const threshold = parseFloat(sc.validationThreshold);
   const validated = !isNaN(threshold) && threshold > 0 && validCount >= threshold;
   const allEvaluated = essais.flatMap(e => (e.prelevements||[]).filter(r => checkConform(sc,r) !== null));
   const allBad = allEvaluated.filter(r => checkConform(sc,r) === false).length;
   const rate = allEvaluated.length ? (allBad/allEvaluated.length)*100 : null;
-  return { essaisCount: essais.length, validCount, badCount, rate, validated };
+  return { essaisCount: essais.length, validCount, badCount, arreteCount, rate, validated };
 }
 
 /* ---- bandeau verdict : la reponse a la question que l'outil sert a trancher ----
@@ -6361,6 +6393,7 @@ function scenarioBlockHTML(sc, interactive){
         <span class="status-badge ${stats.validated ? "ok" : "pending"}">${stats.validated ? "✓ Scénario validé" : `En cours de validation — ${stats.validCount}/${sc.validationThreshold || "—"} essais conformes`}</span>
         <span><b>${stats.essaisCount}</b> essai${stats.essaisCount>1?"s":""} enregistré${stats.essaisCount>1?"s":""}</span>
         <span><b>${stats.badCount}</b> non conforme${stats.badCount>1?"s":""}</span>
+        ${stats.arreteCount ? `<span><b>${stats.arreteCount}</b> arrêté${stats.arreteCount>1?"s":""} avant charnière</span>` : ""}
         <span><b>${stats.rate === null ? "—" : fmt(stats.rate,0)+" %"}</b> de prélèvements hors tolérance (tous essais)</span>
       </div>
     </div>
@@ -7253,9 +7286,10 @@ function equipeOptions(selected){
 
 function essaiCardHTML(sc, essai, interactive){
   const es = essaiStats(sc, essai);
-  const badgeClass = es.status === "ok" ? "ok" : es.status === "bad" ? "risk" : "pending";
+  const badgeClass = es.status === "ok" ? "ok" : es.status === "bad" ? "risk" : es.status === "arrete" ? "arrete" : "pending";
   const badgeText = es.status === "ok" ? "✓ Conforme"
     : es.status === "bad" ? "✗ Non conforme — " + es.raison
+    : es.status === "arrete" ? "⏹ " + es.raison
     : "En cours — " + es.raison;
 
   const head = interactive ? `
@@ -7264,6 +7298,7 @@ function essaiCardHTML(sc, essai, interactive){
     <select class="cell log-equipe" data-id="${sc.id}" data-essai="${essai.id}" data-field="equipe">${equipeOptions(essai.equipe)}</select>
     <input class="cell ref" data-id="${sc.id}" data-essai="${essai.id}" data-field="operateur" value="${escapeAttr(essai.operateur)}" placeholder="Opérateur">
     <span class="status-badge ${badgeClass}">${badgeText}</span>
+    <button class="ghost small essai-cloture" data-id="${sc.id}" data-essai="${essai.id}" title="${essai.cloture ? "Modifier le motif ou réouvrir cet essai arrêté" : "Clôturer cet essai — arrêt anticipé avant la charnière (casse, brut, incident...)"}">${essai.cloture ? "⏹ Arrêté" : "⏹ Clôturer"}</button>
     <button class="log-del essai-del" data-id="${sc.id}" data-essai="${essai.id}">✕ Essai</button>
   ` : `
     <span class="sc-name-print" style="font-size:14px;">${escapeAttr(essai.titre)}</span>
@@ -9361,6 +9396,13 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
   root.querySelectorAll(".outils-copier").forEach(el => {
     el.addEventListener("click", () => { ouvrirPanneau("copieOutilsPanel"); renderCopieOutilsPanel(); });
   });
+  /* v4.25 — clôture d'essai (arrêt anticipé) */
+  root.querySelectorAll(".essai-cloture").forEach(el => {
+    el.addEventListener("click", () => {
+      clotureCtx = { scId: el.getAttribute("data-id"), essaiId: el.getAttribute("data-essai") };
+      ouvrirPanneau("cloturePanel"); renderCloturePanel();
+    });
+  });
   /* v4.23 — la tuile du volume annuel emmène au bon champ : Options, pré-rempli pour LA
      référence affichée. Un seul geste, aucune ambiguïté sur la cible. */
   root.querySelectorAll(".volume-bandeau.clickable").forEach(el => {
@@ -10069,6 +10111,10 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.25.0", date:"23/09/2026", points:[
+    "<b>Clôturer un essai arrêté avant sa charnière.</b> Jusqu'ici un essai stoppé net (insert cassé, brut éclaté, incident machine) restait « en cours — X pièces à saisir » pour toujours, et revenait dans le bandeau de reprise. Un bouton <b>⏹ Clôturer</b> sur chaque essai pose la décision : motif (casse, hors tolérance, brut, incident machine, autre), précision, date d'arrêt. L'essai passe <b>⏹ Arrêté</b> — ni conforme ni non conforme : il sort du compteur 5× et de la reprise, et le rapport d'essai l'affiche avec le motif. Réouvrable à tout moment, prélèvements intacts.",
+    "<b>Compteur honnête.</b> Le résumé du scénario affiche désormais les essais « arrêtés avant charnière » à part — les non conformes restent les non conformes."
+  ]},
   { version:"4.24.0", date:"23/09/2026", points:[
     "<b>Les photos de l'essai partent dans le rapport.</b> L'onglet Photos (rapport de métrologie photographié, usures de plaquettes, constats…) est désormais inclus au rapport d'essai généré, <b>avec leurs légendes</b> — suggestion de Matis : les destinataires du rapport ont enfin les preuves en même temps que les chiffres. Les photos partent <b>telles qu'annotées</b> : rognage et repères dessinés dans l'outil sont appliqués à l'image embarquée.",
     "<b>Le rapport reste un seul fichier autonome.</b> Les images sont incorporées en data URL (pas de liens, pas de dossier à joindre) — il s'ouvre chez n'importe qui, sans l'outil. Une photo indisponible au moment de la génération (dossier déconnecté, cloud hors ligne) est remplacée par une case qui explique pourquoi, sans casser le rapport."
@@ -10708,6 +10754,53 @@ function renderCopieOutilsPanel(){
     if(!ids.length){ dialogueAlerte("Cochez au moins un outil.", "Rien à copier"); return; }
     const n = copierOutilsDeProduction(sc, ids);
     if(n){ saveData(); fermerPanneaux(); render(); }
+  });
+}
+
+/* ---- v4.25 — clôture d'un essai arrêté avant sa charnière (casse, brut, incident) ----
+   Le statut d'un essai est CALCULÉ : sans ça, un essai arrêté net (insert cassé sans
+   sortie de tolérance mesurée) restait "en cours — X pièces à saisir" pour toujours et
+   re-remplissait le bandeau de reprise. La clôture pose une décision de record : le
+   statut devient "arrêté", il sort du protocole 5× et de la reprise, et le rapport
+   d'essai le documente avec le motif. Réouvrable : la donnée n'est jamais perdue. */
+function renderCloturePanel(){
+  const wrap = document.getElementById("cloturePanel");
+  if(!wrap || wrap.hidden) return;
+  const sc = data.find(s => s.id === (clotureCtx && clotureCtx.scId));
+  const es = sc && (sc.essais || []).find(e => e.id === (clotureCtx && clotureCtx.essaiId));
+  if(!es){ fermerPanneaux(); return; }
+  const c = es.cloture || {};
+  const options = MOTIFS_ARRET.map(([v, l]) => `<option value="${v}" ${c.motif === v ? "selected" : ""}>${escapeAttr(l)}</option>`).join("");
+  wrap.innerHTML = `
+    <h3>${c.motif ? "Essai arrêté" : "Clôturer l'essai"} — ${escapeAttr(es.titre || "")}</h3>
+    <p class="panel-hint">Un essai arrêté avant sa charnière reste dans le suivi et dans le rapport d'essai (avec le motif), mais il ne compte ni comme conforme ni comme non conforme : il sort du compteur 5× et du bandeau de reprise. Ses prélèvements restent intacts — courbes et historique ne bougent pas. Réouvrable à tout moment.</p>
+    <label class="cloture-champ">Motif d'arrêt
+      <select id="clotureMotif" class="cell">${options}</select></label>
+    <label class="cloture-champ">Précision
+      <input id="clotureDetail" class="cell ref" value="${escapeAttr(c.detail || "")}" placeholder="ex. éclat d'arête Inter à la pièce 37"></label>
+    <label class="cloture-champ">Date d'arrêt
+      <input id="clotureDate" type="date" class="cell" value="${escapeAttr(c.date || new Date().toISOString().slice(0,10))}"></label>
+    <div class="panel-actions">
+      <button class="ghost" id="clotureAnnuler">Annuler</button>
+      ${c.motif ? `<button class="ghost" id="clotureReouvrir">Réouvrir l'essai</button>` : ""}
+      <button class="primary" id="clotureGo">${c.motif ? "Mettre à jour" : "Clôturer l'essai"}</button>
+    </div>`;
+  document.getElementById("clotureAnnuler").addEventListener("click", fermerPanneaux);
+  document.getElementById("clotureGo").addEventListener("click", () => {
+    es.cloture = {
+      motif: document.getElementById("clotureMotif").value,
+      detail: document.getElementById("clotureDetail").value.trim(),
+      date: document.getElementById("clotureDate").value
+    };
+    toucherEssai(es); saveData(); fermerPanneaux(); render();
+  });
+  const re = document.getElementById("clotureReouvrir");
+  if(re) re.addEventListener("click", () => {
+    dialogueConfirmer("Réouvrir cet essai ? Il redevient « en cours » et repart à sa place dans le protocole.", { titre: "Réouvrir l'essai ?", okLabel: "Réouvrir" }).then(ok => {
+      if(!ok) return;
+      delete es.cloture;
+      toucherEssai(es); saveData(); fermerPanneaux(); render();
+    });
   });
 }
 document.getElementById("csvBtn").addEventListener("click", () => {
@@ -11953,6 +12046,28 @@ function runTests(){
         const h = photosRapportHTML([{ legende: "Metrologie portance", dataUrl: "data:image/jpeg;base64,XY" }]);
         return /<img src="data:image\/jpeg/.test(h) && /Metrologie portance/.test(h);
       })(), true);
+    }
+
+    /* ---- v4.25 : clôture d'essai (arrêt anticipé) ---- */
+    {
+      const scC = normalizeScenario({ id:"sC", name:"c", baseline:true, outils:[
+        { id:"tC1", numero:"T-1", logements:[{ id:"gC1", nom:"Piste", charniere:100 }] }] });
+      scC.essais = [ essaiBrut("eC1", [prel("pC1",10,0.05)]) ];
+      scC.essais[0].params = { logements: snapshotLogements(scC) };
+      ok("cloture : sans cloture, essai en cours", essaiStats(scC, scC.essais[0]).status, "pending");
+      scC.essais[0].cloture = { motif: "casse", detail: "éclat arête Inter p37", date: "2026-09-23" };
+      const stC = essaiStats(scC, scC.essais[0]);
+      ok("cloture : statut arrete avec motif et detail",
+         stC.status === "arrete" && /Casse/.test(stC.raison) && /éclat arête/.test(stC.raison), true);
+      const sStats = scenarioStats(scC);
+      ok("cloture : ni conforme ni non conforme dans le protocole 5x",
+         sStats.validCount === 0 && sStats.badCount === 0 && sStats.arreteCount === 1, true);
+      ok("cloture : sort du bandeau de reprise",
+         (dernierEssaiEnCours() || { essaiId: null }).essaiId !== "eC1", true);
+      ok("cloture : libelle motif inconnu non bloquant", libelleMotifArret("x"), "x");
+      delete scC.essais[0].cloture;
+      ok("cloture : réouverture redonne un essai en cours",
+         essaiStats(scC, scC.essais[0]).status, "pending");
     }
 
     ok("normalizeScenario : plan conserve a travers l'arbre",

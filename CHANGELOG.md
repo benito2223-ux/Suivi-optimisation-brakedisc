@@ -5,6 +5,30 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.25.0] — 2026-09-23
+
+Question de Benjamin : « comment clôturer un essai arrêté avant la charnière
+cause fail ? » — et le constat : le cas du fail **mesuré** était déjà couvert
+(un prélèvement hors tolérance → « Non conforme » automatique), mais pas
+l'arrêt **net** (insert cassé, brut éclaté, incident machine) : le statut étant
+calculé, l'essai restait « en cours — X pièces à saisir » pour toujours et
+remplissait le bandeau de reprise. Nouveau champ `cloture` sur l'essai
+(`{motif, detail, date}`), absent = non clôturé — aucune migration.
+
+### Ajouté — clôturer un essai (arrêt anticipé)
+Bouton **⏹ Clôturer** sur la carte d'essai → panneau motif/précision/date
+(casse, hors tolérance, brut, incident machine, autre). L'essai passe
+**⏹ Arrêté — motif · détail** :
+- **statut `arrete`** calculé en tête de la chaîne de décision de `essaiStats`
+  (la décision de record passe avant tout) ;
+- sort du **bandeau de reprise** (déjà : seul `pending` y entre) et du
+  **protocole 5×** (`scenarioStats.arreteCount` — ni conforme ni non conforme) ;
+- **résumé du scénario** : les essais arrêtés s'affichent à part
+  (« N arrêtés avant charnière ») ;
+- **rapport d'essai** : verdict « Arrêté — motif · détail », pastille grise ;
+- **réouvrable** (suppression du champ, retour « en cours ») — les
+  prélèvements, courbes et photos ne bougent jamais.
+
 ## [4.24.0] — 2026-09-23
 
 Demande de Matis : faire apparaître dans le rapport d'essai les images de
