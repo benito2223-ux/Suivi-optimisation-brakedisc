@@ -810,7 +810,18 @@ tr.row-bad td{background:var(--red-bg);}
 
 /* graphique de tendance */
 .chart-block{padding:16px; border-top:1px solid var(--border);}
-.chart-block h3{font-family:var(--font-body); font-weight:600; font-size:13.5px; text-transform:uppercase; letter-spacing:.03em; color:var(--ink-faint); margin:0 0 12px;}
+.chart-block h3{font-family:var(--font-body); font-weight:600; font-size:13.5px; text-transform:uppercase; letter-spacing:.03em; color:var(--ink-faint); margin:0 0 12px; display:flex; align-items:center; justify-content:space-between; gap:8px;}
+.chart-block h3 > span{flex:1; min-width:0;}
+.pct-toggle{flex:0 0 auto; text-transform:none; letter-spacing:0; font-weight:600;}
+
+/* v4.15 : panneau de comparaison de deux essais */
+.cmp-selects{display:flex; align-items:center; gap:10px; margin:10px 0 14px; flex-wrap:wrap;}
+.cmp-selects select{flex:1 1 220px; max-width:340px; font-family:var(--font-body); font-size:13px; padding:7px 9px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); color:var(--ink);}
+.cmp-vs{font-family:var(--font-mono); font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase;}
+.cmp-table{width:100%; border-collapse:collapse; margin-bottom:8px;}
+.cmp-table th, .cmp-table td{border-bottom:1px solid var(--border); padding:6px 8px; font-size:12.5px; text-align:left; vertical-align:top;}
+.cmp-table th{font-family:var(--font-mono); font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-faint);}
+.cmp-table td:first-child{color:var(--ink-faint); width:26%;}
 .chart-svg{width:100%; height:auto; display:block; overflow:visible;}
 .chart-legend{display:flex; flex-wrap:wrap; gap:14px; margin-top:10px; font-size:12px; color:var(--ink-soft);}
 .chart-legend span{display:inline-flex; align-items:center; gap:6px;}
@@ -1108,6 +1119,8 @@ select.log-equipe:focus{border-color:var(--blue); outline:none; background:var(-
 
 /* --- tableau de bord multi-lignes --- */
 .panel.panel-large{max-width:1120px;}
+/* v4.15 : la comparaison a besoin de la largeur du tableau à deux colonnes + graphe */
+.panel-compare.panel{width:min(880px, calc(100vw - 32px));}
 .db-filtre{display:flex; align-items:center; gap:8px; margin:2px 0 10px;}
 .db-filtre label{font-family:var(--font-mono); font-size:11px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em;}
 .db-filtre select{font-family:var(--font-body); font-size:13px; padding:5px 8px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); color:var(--ink);}
@@ -1750,6 +1763,20 @@ body.atelier-on{overflow:hidden;}
     <div class="search-results" id="searchResults"></div>
     <p class="panel-hint" style="margin:8px 2px 0;">↑↓ pour naviguer · Entrée pour ouvrir · Échap pour fermer</p>
   </div>
+  <!-- v4.15 : comparaison de deux essais — conditions côte à côte et courbes superposées.
+       Deux essais du même scénario : la superposition montre la répétabilité (protocole 5×).
+       Deux scénarios : on compare la dérive des courbes. -->
+  <div class="panel panel-large panel-compare" id="comparePanel" hidden>
+    <h3>Comparer deux essais</h3>
+    <p class="panel-hint" id="compareSous"></p>
+    <div class="cmp-selects">
+      <select id="cmpA" aria-label="Essai A"></select>
+      <span class="cmp-vs">vs</span>
+      <select id="cmpB" aria-label="Essai B"></select>
+    </div>
+    <div id="compareBody"></div>
+    <div class="panel-actions"><button class="primary" id="compareClose">Fermer</button></div>
+  </div>
   <div class="panel panel-large" id="dashboardPanel" hidden></div>
   <div class="panel" id="importPanel" hidden>
     <h3>Importer un suivi</h3>
@@ -1853,7 +1880,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.14.0";
+const TOOL_VERSION = "4.15.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -2209,6 +2236,8 @@ let repriseVueId = null;   // dernier essai "en cours" proposé par la ligne de 
 let repriseMasquee = false; // l'utilisateur a fermé la proposition pour cet essai
 let rechercheListe = [];   // résultats filtrés de la palette de recherche (Ctrl+K)
 let rechercheSel = 0;      // ligne sélectionnée au clavier dans la palette
+let tendanceEnPct = false; // v4.15 : vue des tendances en % de tolérance consommée
+let compareCtx = null;     // v4.15 : { a: "scId|essaiId", b: "scId|essaiId" }
 // La composition du scenario est depliee par defaut : on memorise donc l'inverse, les
 // scenarios dont l'utilisateur a referme le tableau.
 let configReplies = new Set();
@@ -5098,6 +5127,17 @@ function escapeAttr(s){
 
 /* ---- graphique de tendance ---- */
 const CHART_COLORS = ["#3b82f6","#14b8a6","#a78bfa","#f59e0b","#22c55e","#94a3b8","#ec4899","#0ea5e9"];
+
+/* v4.15 — mesure exprimée en % de la tolérance consommée : 100 % = la borne maxi, 0 % =
+   la borne mini si elle existe (plage min–max), sinon zéro. Permet de superposer sur une
+   même lecture des grandeurs physiquement différentes (battement, Ra, VE) — en option
+   d'affichage seulement : un pourcentage reste une normalisation, pas une mesure. */
+function pourcentageTolerance(y, limite, mini){
+  const L = parseFloat(limite), M = parseFloat(mini);
+  if(!isNaN(M) && !isNaN(L) && L > M) return (y - M) / (L - M) * 100;
+  if(!isNaN(L) && L !== 0) return y / L * 100;
+  return null;
+}
 /* palette dediee aux points partageant le meme n° de piece (ex. mesures Inter/Exter
    d'une meme piece) : volontairement distincte de CHART_COLORS (couleur de courbe) et
    du rouge (reserve au hors-tolerance), pour ne pas creer de confusion visuelle */
@@ -5226,27 +5266,37 @@ function tendanceChartHTML(sc, g, pal){
   }));
 
   const limite = g.tolerance, mini = g.toleranceMini;
-  const bornes = [limite, mini].filter(v => !isNaN(v));
   const charnieresSc = sc.outils.flatMap(o => o.logements.map(l => parseFloat(l.charniere))).filter(v => !isNaN(v));
   const charniere = charnieresSc.length ? Math.max(...charnieresSc) : NaN;
+  // v4.15 — vue en % de tolérance consommée (option d'affichage, jamais par défaut) :
+  // 100 % = la limite, 0 % = la borne mini si plage min–max, sinon zéro. Normalise la
+  // lecture d'un critère dont on ne connaît pas les valeurs « raisonnables » par coeur.
+  const plageMiniValide = !isNaN(mini) && !isNaN(limite) && limite > mini;
+  const pctUtilisable = !!tendanceEnPct && !isNaN(limite) && limite > 0;
+  const yDe = p => pctUtilisable ? pourcentageTolerance(p.y, limite, plageMiniValide ? mini : NaN) : p.y;
   const allX = series.flatMap(s => s.pts.map(p => p.x));
-  const allY = series.flatMap(s => s.pts.map(p => p.y));
+  const allY = series.flatMap(s => s.pts.map(yDe)).filter(v => !isNaN(v));
   // +8 % a droite (v4.6) : le dernier point (souvent le plus haut n° de piece, ou la
   // charniere elle-meme) tombait exactement sur le bord — colle au cadre, moitie coupe.
   let xMax = Math.max(...allX, isNaN(charniere) ? 0 : charniere) * 1.08 || 1;
-  let yMax = Math.max(...allY, ...bornes) * 1.18 || 1;
+  // en %, l'axe est calé sur un multiple de 20 : les graduations tombent rondes
+  // (0 / 30 / 60 / 90 / 120) au lieu de couper un pourcentage à vif
+  let yMax = pctUtilisable
+    ? Math.max(Math.ceil(Math.max(...allY, 100) / 20) * 20, 120)
+    : Math.max(...allY, ...[limite, mini].filter(v => !isNaN(v))) * 1.18 || 1;
 
   const W = 720, H = 250, ml = 58, mr = 14, mt = 12, mb = 38;
   const iw = W - ml - mr, ih = H - mt - mb;
   const X = v => ml + (v / xMax) * iw;
   const Y = v => mt + ih - (v / yMax) * ih;
-  const dec = yMax < 1 ? 3 : yMax < 10 ? 2 : 0;
+  const dec = pctUtilisable ? 0 : yMax < 1 ? 3 : yMax < 10 ? 2 : 0;
+  const unite = pctUtilisable ? " %" : "";
 
   let grid = "", ticksY = "";
   for(let i = 0; i <= 4; i++){
     const v = (yMax / 4) * i, yy = Y(v);
     grid += `<line x1="${ml}" y1="${yy.toFixed(1)}" x2="${W-mr}" y2="${yy.toFixed(1)}" stroke="${pal.border}" stroke-width="1"/>`;
-    ticksY += `<text x="${ml-8}" y="${(yy+4).toFixed(1)}" text-anchor="end" font-size="11" fill="${pal.faint}" font-family="${pal.mono}">${fmt(v, dec)}</text>`;
+    ticksY += `<text x="${ml-8}" y="${(yy+4).toFixed(1)}" text-anchor="end" font-size="11" fill="${pal.faint}" font-family="${pal.mono}">${fmt(v, dec)}${unite}</text>`;
   }
   let ticksX = "";
   for(let i = 0; i <= 4; i++){
@@ -5254,27 +5304,31 @@ function tendanceChartHTML(sc, g, pal){
     ticksX += `<text x="${xx.toFixed(1)}" y="${H-mb+18}" text-anchor="middle" font-size="11" fill="${pal.faint}" font-family="${pal.mono}">${Math.round(v)}</text>`;
   }
 
-  const lignesBornes = bornes.map((v, i) => {
-    if(isNaN(v) || v > yMax) return "";
-    const yl = Y(v);
-    const estMaxi = i === 0;
-    const couleur = estMaxi ? pal.red : pal.blue;
-    const etiquette = estMaxi ? `tolérance ${fmt(v, dec)}` : `min ${fmt(v, dec)}`;
+  // lignes de bornes : en vue % elles sont fixes (100 % = limite, 0 % = mini si plage)
+  const lignesBornesData = pctUtilisable
+    ? [{ v:100, lbl:"tolérance (100 %)" }, ...(plageMiniValide ? [{ v:0, lbl:"min (0 %)", min:true }] : [])]
+    : [{ v:limite, lbl:isNaN(limite) ? "" : `tolérance ${fmt(limite, dec)}` },
+       ...(isNaN(mini) ? [] : [{ v:mini, lbl:`min ${fmt(mini, dec)}`, min:true }])];
+  const lignesBornes = lignesBornesData.map(b => {
+    if(isNaN(b.v) || b.v > yMax || b.v < 0) return "";
+    const yl = Y(b.v);
+    const couleur = b.min ? pal.blue : pal.red;
     return `<line x1="${ml}" y1="${yl.toFixed(1)}" x2="${W-mr}" y2="${yl.toFixed(1)}" stroke="${couleur}" stroke-width="2" stroke-dasharray="7 5"/>
-      <text x="${W-mr}" y="${(yl-7).toFixed(1)}" text-anchor="end" font-size="11" font-weight="600" fill="${couleur}" font-family="var(--font-mono)">${etiquette}</text>`;
+      <text x="${W-mr}" y="${(yl-7).toFixed(1)}" text-anchor="end" font-size="11" font-weight="600" fill="${couleur}" font-family="var(--font-mono)">${escapeAttr(b.lbl)}</text>`;
   }).join("");
 
   const paths = series.map(s => {
-    const d = s.pts.map(p => `${X(p.x).toFixed(1)},${Y(p.y).toFixed(1)}`).join(" ");
+    const d = s.pts.map(p => `${X(p.x).toFixed(1)},${Y(yDe(p)).toFixed(1)}`).join(" ");
     const line = s.pts.length > 1
       ? `<polyline points="${d}" fill="none" stroke="${s.couleur}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"${dashAttr(s.dash)}/>` : "";
     const dots = s.pts.map(p => {
+      const yp = yDe(p);
       const hors = !isNaN(limite) && p.y > limite;
       const cle = (p.pointMesure || "").trim().toLowerCase();
       const couleurPoint = cle ? couleurParPointMesure.get(cle) : null;
       const fill = hors ? pal.red : (couleurPoint || s.couleur);
-      const titre = `Pièce ${p.x}${p.pointMesure ? " — " + escapeAttr(p.pointMesure) : ""} : ${fmt(p.y, dec)}`;
-      return `<circle cx="${X(p.x).toFixed(1)}" cy="${Y(p.y).toFixed(1)}" r="${hors ? 5 : 3.8}" fill="${fill}" stroke="var(--surface)" stroke-width="1.5"><title>${titre}</title></circle>`;
+      const titre = `Pièce ${p.x}${p.pointMesure ? " — " + escapeAttr(p.pointMesure) : ""} : ${fmt(p.y, dec)}${pctUtilisable && yp !== null ? ` (${fmt(yp,0)} %)` : ""}`;
+      return `<circle cx="${X(p.x).toFixed(1)}" cy="${Y(yp).toFixed(1)}" r="${hors ? 5 : 3.8}" fill="${fill}" stroke="var(--surface)" stroke-width="1.5"><title>${titre}</title></circle>`;
     }).join("");
     return line + dots;
   }).join("");
@@ -5286,14 +5340,19 @@ function tendanceChartHTML(sc, g, pal){
   const legend = series.map(s =>
     `<span>${dashSwatch(s.couleur, s.dash)}${escapeAttr(s.titre)}</span>`
   ).join("")
-    + (isNaN(limite) ? "" : `<span><i class="tol"></i>Limite ${escapeAttr(g.label)}</span>`)
-    + (isNaN(mini) ? "" : `<span>${dashSwatch(pal.blue, "7 5")}Min</span>`)
+    + (isNaN(limite) ? "" : `<span><i class="tol"></i>Limite ${escapeAttr(g.label)}${pctUtilisable ? " (100 %)" : ""}</span>`)
+    + (isNaN(mini) ? "" : `<span>${dashSwatch(pal.blue, "7 5")}Min${pctUtilisable && plageMiniValide ? " (0 %)" : ""}</span>`)
     + (g.note ? `<span style="color:var(--ink-faint);">${escapeAttr(g.note)}</span>` : "")
     + legendPointsMesure;
 
+  // v4.15 : la bascule « % de tolérance » n'existe que si le critère a une limite exploitable ;
+  // l'état est partagé par toutes les tendances de l'écran (tendanceEnPct), le libellé suit.
+  const peutPct = !isNaN(limite) && limite > 0;
+
   return `
     <div class="chart-block">
-      <h3>Tendance — ${escapeAttr(g.label)} en fonction du n° de pièce</h3>
+      <h3><span>Tendance — ${escapeAttr(g.label)} en fonction du n° de pièce</span>
+        ${peutPct ? `<button class="ghost small pct-toggle" title="${pctUtilisable ? "Revenir aux valeurs mesurées" : "Exprimer la mesure en % de la tolérance consommée (100 % = limite)"}">${pctUtilisable ? "Voir les valeurs" : "Voir en % de tol."}</button>` : ""}</h3>
       <svg class="chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img"
            aria-label="Évolution de ${escapeAttr(g.label)} au fil des pièces produites, par essai">
         ${grid}
@@ -5302,7 +5361,7 @@ function tendanceChartHTML(sc, g, pal){
         ${ticksY}${ticksX}${lignesBornes}${paths}
         <text x="${ml+iw/2}" y="${H-4}" text-anchor="middle" font-size="11.5" fill="${pal.soft}">N° de pièce</text>
         <text x="14" y="${mt+ih/2}" text-anchor="middle" font-size="11.5" fill="${pal.soft}"
-              transform="rotate(-90 14 ${mt+ih/2})">${escapeAttr(g.label)}</text>
+              transform="rotate(-90 14 ${mt+ih/2})">${escapeAttr(pctUtilisable ? "% de la tolérance consommée" : g.label)}</text>
       </svg>
       <div class="chart-legend">${legend}</div>
     </div>
@@ -5402,6 +5461,208 @@ function multiChartHTML(){
         <text x="${ml+iw/2}" y="${H-4}" text-anchor="middle" font-size="11.5" fill="var(--ink-soft)">N° de pièce</text>
         <text x="14" y="${mt+ih/2}" text-anchor="middle" font-size="11.5" fill="var(--ink-soft)"
               transform="rotate(-90 14 ${mt+ih/2})">${escapeAttr(config.limitLabel)}</text>
+      </svg>
+      <div class="chart-legend">${legend}</div>
+    </div>
+  `;
+}
+
+/* ---- comparaison de deux essais (v4.15) ------------------------------------------------
+   Deux usages, un seul écran : deux essais du MÊME scénario (la superposition montre la
+   répétabilité — le fond du protocole 5×), ou deux essais de scénarios DIFFÉRENTS (quelle
+   dérive tient le mieux ?). Les courbes reprennent exactement les séries de la Tendance
+   (même lecture Droite/Gauche, points de mesure, critères), restreintes à chaque essai. */
+function grandeurCleDeLabel(label){
+  return "csup:" + normaliserRecherche(label || "");
+}
+function groupeTendanceUnEssai(sc, es, cle){
+  // les mêmes séries que groupesTendance, pour UN essai et UNE grandeur
+  const scSolo = Object.assign({}, sc, { essais: [es] });
+  if(cle === "batt"){
+    if(sc.battActif === false) return null;
+    return { label: libelleDe(sc), tolerance: parseFloat(limiteDe(sc)), toleranceMini: NaN,
+      series: seriesTendance(scSolo, r => valeurMesuree(sc, r)) };
+  }
+  const cleLabel = cle.slice(5);
+  const c = criteresSupActifs(sc).find(x => normaliserRecherche(x.label || "") === cleLabel);
+  if(!c) return null;
+  const series = [];
+  axesDe(c).forEach(ax => {
+    seriesTendance(scSolo, r => {
+      const v = ((r.valeurs || {})[c.id] || {})[ax];
+      const n = parseFloat(v);
+      return isNaN(n) ? null : n;
+    }).forEach(s => series.push({
+      titre: s.titre + (ax !== "v" ? " — " + (AXE_LABELS[ax] || ax) : ""), pts: s.pts
+    }));
+  });
+  return { label: c.label || "critère", tolerance: parseFloat(c.maxi),
+    toleranceMini: c.miniActif ? parseFloat(c.mini) : NaN, series };
+}
+function grandeursComparees(scA, scB){
+  const cles = [];
+  if(scA.battActif !== false || scB.battActif !== false) cles.push("batt");
+  const labels = new Set([
+    ...criteresSupActifs(scA).map(c => normaliserRecherche(c.label || "")),
+    ...criteresSupActifs(scB).map(c => normaliserRecherche(c.label || ""))
+  ].filter(Boolean));
+  labels.forEach(l => cles.push("csup:" + l));
+  return cles;
+}
+function essaiComparaison(cle){
+  const [scId, essaiId] = cle.split("|");
+  const sc = data.find(s => s.id === scId);
+  const es = sc && (sc.essais || []).find(e => e.id === essaiId);
+  return sc && es ? { sc, es } : null;
+}
+function optionsComparaisonPour(cleSelectionnee){
+  return data.map(sc => {
+    const inner = (sc.essais || []).map(es => {
+      const cle = sc.id + "|" + es.id;
+      const lbl = (es.titre || "(sans titre)") + (es.date ? " — " + es.date : "") + (es.prelevements && es.prelevements.length ? "" : " (aucune mesure)");
+      return `<option value="${cle}" ${cle === cleSelectionnee ? "selected" : ""}>${escapeAttr(lbl)}</option>`;
+    }).join("");
+    return inner ? `<optgroup label="${escapeAttr(sc.name)}">${inner}</optgroup>` : "";
+  }).join("");
+}
+function ouvrirComparaison(scId, essaiId){
+  compareCtx = { a: scId + "|" + essaiId, b: null };
+  ouvrirPanneau("comparePanel");
+  remplirComparaison();
+}
+function trouverPaireComparaison(aCle){
+  // B par défaut : le premier AUTRE essai mesuré, de préférence dans le même scénario
+  const [scAid, esAid] = aCle.split("|");
+  const scA = data.find(s => s.id === scAid);
+  const autres = ((scA && scA.essais) || []).filter(e => e.id !== esAid && (e.prelevements || []).length);
+  if(autres.length) return scAid + "|" + autres[0].id;
+  for(const sc of data){
+    for(const e of (sc.essais || [])){
+      const cle = sc.id + "|" + e.id;
+      if(cle !== aCle && (e.prelevements || []).length) return cle;
+    }
+  }
+  return null;
+}
+function remplirComparaison(){
+  const selA = document.getElementById("cmpA"), selB = document.getElementById("cmpB");
+  if(!compareCtx.b) compareCtx.b = trouverPaireComparaison(compareCtx.a) || compareCtx.a;
+  selA.innerHTML = optionsComparaisonPour(compareCtx.a);
+  selB.innerHTML = optionsComparaisonPour(compareCtx.b);
+  rendreComparaison();
+}
+function comparerConditionsLigne(label, va, vb){
+  return `<tr><td>${label}</td><td>${va}</td><td>${vb}</td></tr>`;
+}
+function rendreComparaison(){
+  const body = document.getElementById("compareBody");
+  const sous = document.getElementById("compareSous");
+  const A = essaiComparaison(compareCtx.a), B = essaiComparaison(compareCtx.b);
+  if(!A || !B){
+    body.innerHTML = `<p class="log-empty">Choisissez deux essais à comparer (il en faut deux, dans les scénarios de cet OP).</p>`;
+    sous.textContent = "";
+    return;
+  }
+  const memeScenario = A.sc.id === B.sc.id;
+  sous.innerHTML = memeScenario
+    ? `Deux essais du <b>même scénario</b> — la superposition montre la <b>répétabilité</b> : c'est exactement ce que demande le protocole (un essai concluant répété 5×).`
+    : `Deux <b>scénarios différents</b> — comparez la dérive et le niveau des courbes, chacun avec sa propre tolérance.`;
+
+  const stA = essaiStats(A.sc, A.es), stB = essaiStats(B.sc, B.es);
+  const statutTxt = st => st.status === "ok" ? "✓ Conforme" : st.status === "bad" ? "✗ Non conforme" : "En cours — " + st.raison;
+  const plaquettesDe = (sc, es) => logementsSuivis(es).map(lp =>
+    `${escapeAttr(lp.outilNumero || "?")}·${escapeAttr(lp.logementNom || "—")} ${escapeAttr(refLogementEssai(sc, lp) || "—")}`).join("<br>") || "—";
+  const coupeDe = (sc, es) => logementsSuivis(es).map(lp =>
+    `${escapeAttr(lp.outilNumero || "?")}·${escapeAttr(lp.logementNom || "—")} Vc ${lp.vc ?? "—"} / f ${lp.f ?? "—"} / ch. ${lp.charniere ?? "—"}`).join("<br>") || "—";
+
+  const tableau = `
+    <table class="cmp-table">
+      <tr><th></th><th>${escapeAttr(A.es.titre || "Essai A")}</th><th>${escapeAttr(B.es.titre || "Essai B")}</th></tr>
+      ${comparerConditionsLigne("Scénario", escapeAttr(A.sc.name) + (A.sc.baseline ? " ★" : ""), escapeAttr(B.sc.name) + (B.sc.baseline ? " ★" : ""))}
+      ${comparerConditionsLigne("Date / équipe", `${A.es.date || "—"} · ${escapeAttr(A.es.equipe) || "—"}`, `${B.es.date || "—"} · ${escapeAttr(B.es.equipe) || "—"}`)}
+      ${comparerConditionsLigne("Opérateur", escapeAttr(A.es.operateur) || "—", escapeAttr(B.es.operateur) || "—")}
+      ${comparerConditionsLigne("Bruts (jours)", A.es.maturiteBruts === "" || A.es.maturiteBruts == null ? "—" : A.es.maturiteBruts, B.es.maturiteBruts === "" || B.es.maturiteBruts == null ? "—" : B.es.maturiteBruts)}
+      ${comparerConditionsLigne("Plaquettes (figées à l'essai)", plaquettesDe(A.sc, A.es), plaquettesDe(B.sc, B.es))}
+      ${comparerConditionsLigne("Conditions de coupe", coupeDe(A.sc, A.es), coupeDe(B.sc, B.es))}
+      ${comparerConditionsLigne("Prélèvements", `${stA.count} (dernier n° ${stA.lastPiece ?? "—"})`, `${stB.count} (dernier n° ${stB.lastPiece ?? "—"})`)}
+      ${comparerConditionsLigne("Hors tolérance", stA.tauxHorsTol === null ? "—" : fmt(stA.tauxHorsTol, 0) + " %", stB.tauxHorsTol === null ? "—" : fmt(stB.tauxHorsTol, 0) + " %")}
+      ${comparerConditionsLigne("Statut", statutTxt(stA), statutTxt(stB))}
+    </table>`;
+
+  // une courbe superposée par grandeur commune (battement, puis critères par libellé)
+  const sections = grandeursComparees(A.sc, B.sc).map(cle => {
+    const gA = groupeTendanceUnEssai(A.sc, A.es, cle);
+    const gB = groupeTendanceUnEssai(B.sc, B.es, cle);
+    const series = [
+      ...(gA ? gA.series.map(s => ({ titre: "A · " + s.titre, pts: s.pts, couleur: "#3b82f6", dash: "none" })) : []),
+      ...(gB ? gB.series.map(s => ({ titre: "B · " + s.titre, pts: s.pts, couleur: "#f59e0b", dash: "7 5" })) : [])
+    ].filter(s => s.pts.length);
+    if(!series.length) return "";
+    const label = (gA || gB).label;
+    return comparaisonChartHTML(label, series, gA, gB);
+  }).join("");
+
+  body.innerHTML = tableau + (sections || `<p class="chart-empty">Aucune mesure mesurée à superposer : le graphique apparaîtra dès que les deux essais portent des prélèvements.</p>`);
+}
+function comparaisonChartHTML(label, series, gA, gB){
+  const allX = series.flatMap(s => s.pts.map(p => p.x));
+  const allY = series.flatMap(s => s.pts.map(p => p.y));
+  const xMax = Math.max(...allX, 1) * 1.08;
+  const yMax = Math.max(...allY, ...[gA, gB].map(g => g ? g.tolerance : NaN).filter(v => !isNaN(v)), 0.001) * 1.18;
+
+  const W = 720, H = 260, ml = 58, mr = 14, mt = 12, mb = 38;
+  const iw = W - ml - mr, ih = H - mt - mb;
+  const X = v => ml + (v / xMax) * iw;
+  const Y = v => mt + ih - (v / yMax) * ih;
+  const dec = yMax < 1 ? 3 : yMax < 10 ? 2 : 0;
+
+  let grid = "", ticksY = "";
+  for(let i = 0; i <= 4; i++){
+    const v = (yMax / 4) * i, yy = Y(v);
+    grid += `<line x1="${ml}" y1="${yy.toFixed(1)}" x2="${W-mr}" y2="${yy.toFixed(1)}" stroke="var(--border)" stroke-width="1"/>`;
+    ticksY += `<text x="${ml-8}" y="${(yy+4).toFixed(1)}" text-anchor="end" font-size="11" fill="var(--ink-faint)" font-family="var(--font-mono)">${fmt(v, dec)}</text>`;
+  }
+  let ticksX = "";
+  for(let i = 0; i <= 4; i++){
+    const v = (xMax / 4) * i, xx = X(v);
+    ticksX += `<text x="${xx.toFixed(1)}" y="${H-mb+18}" text-anchor="middle" font-size="11" fill="var(--ink-faint)" font-family="var(--font-mono)">${Math.round(v)}</text>`;
+  }
+  // tolérances : une ligne par essai, fusionnées si elles sont identiques
+  const tols = [];
+  if(gA && !isNaN(gA.tolerance)) tols.push({ v: gA.tolerance, lbl: "tol. A " + fmt(gA.tolerance, dec) });
+  if(gB && !isNaN(gB.tolerance) && !(gA && !isNaN(gA.tolerance) && gA.tolerance === gB.tolerance))
+    tols.push({ v: gB.tolerance, lbl: "tol. B " + fmt(gB.tolerance, dec) });
+  const lignesTol = tols.map(t => {
+    if(t.v > yMax) return "";
+    const yl = Y(t.v);
+    return `<line x1="${ml}" y1="${yl.toFixed(1)}" x2="${W-mr}" y2="${yl.toFixed(1)}" stroke="var(--red)" stroke-width="2" stroke-dasharray="7 5"/>
+      <text x="${W-mr}" y="${(yl-7).toFixed(1)}" text-anchor="end" font-size="11" font-weight="600" fill="var(--red)" font-family="var(--font-mono)">${escapeAttr(t.lbl)}</text>`;
+  }).join("");
+
+  const paths = series.map(s => {
+    const d = s.pts.map(p => `${X(p.x).toFixed(1)},${Y(p.y).toFixed(1)}`).join(" ");
+    const line = s.pts.length > 1
+      ? `<polyline points="${d}" fill="none" stroke="${s.couleur}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"${dashAttr(s.dash)}/>` : "";
+    const dots = s.pts.map(p =>
+      `<circle cx="${X(p.x).toFixed(1)}" cy="${Y(p.y).toFixed(1)}" r="3.6" fill="${s.couleur}" stroke="var(--surface)" stroke-width="1.5"><title>Pièce ${p.x} : ${fmt(p.y, dec)}</title></circle>`).join("");
+    return line + dots;
+  }).join("");
+
+  const legend = series.map(s =>
+    `<span>${dashSwatch(s.couleur, s.dash)}${escapeAttr(s.titre)}</span>`).join("");
+
+  return `
+    <div class="chart-block">
+      <h3><span>${escapeAttr(label)} — essais superposés</span></h3>
+      <svg class="chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img"
+           aria-label="Comparaison de deux essais sur ${escapeAttr(label)}">
+        ${grid}
+        <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt+ih}" stroke="var(--ink-faint)" stroke-width="1"/>
+        <line x1="${ml}" y1="${mt+ih}" x2="${W-mr}" y2="${mt+ih}" stroke="var(--ink-faint)" stroke-width="1"/>
+        ${ticksY}${ticksX}${lignesTol}${paths}
+        <text x="${ml+iw/2}" y="${H-4}" text-anchor="middle" font-size="11.5" fill="var(--ink-soft)">N° de pièce</text>
+        <text x="14" y="${mt+ih/2}" text-anchor="middle" font-size="11.5" fill="var(--ink-soft)"
+              transform="rotate(-90 14 ${mt+ih/2})">${escapeAttr(label)}</text>
       </svg>
       <div class="chart-legend">${legend}</div>
     </div>
@@ -6847,6 +7108,7 @@ function essaiCardHTML(sc, essai, interactive){
   const prelRows = prelListe.map(p => prelevementRowHTML(sc, essai, p, interactive, snapLogements, showLogementCol)).join("");
   const addPrelBtn = interactive ? `<button class="ghost prel-add" data-id="${sc.id}" data-essai="${essai.id}">+ Ajouter un prélèvement</button>
     <button class="primary atelier-open" data-id="${sc.id}" data-essai="${essai.id}" title="Saisie plein écran, gros champs — pour mesurer devant la machine"><svg class="icon" viewBox="0 0 18 18"><path d="M3.5 3.5h11v11h-11z" stroke-linejoin="round"/><path d="M6.5 9h5M9 6.5v5" stroke-linecap="round"/></svg>Mode atelier</button>
+    <button class="ghost essai-comparer" data-id="${sc.id}" data-essai="${essai.id}" title="Superposer cet essai à un autre : conditions côte à côte, courbes, répétabilité"><svg class="icon" viewBox="0 0 18 18"><path d="M3 15V6M9 15V3M15 15v-7" stroke-linecap="round"/></svg>Comparer…</button>
     <button class="ghost essai-rapport" data-id="${sc.id}" data-essai="${essai.id}" title="Génère un rapport HTML autonome de cet essai — interlocuteurs, but, plaquettes, mesures"><svg class="icon" viewBox="0 0 18 18"><path d="M5 2.5h5l3 3V15a.8.8 0 0 1-.8.8H5.8a.8.8 0 0 1-.8-.8V2.5Z" stroke-linejoin="round"/><path d="M6.5 9h5M6.5 11.5h5M6.5 6.5h2"/></svg>Rapport de l'essai</button>` : "";
   const emptyColspan = (showLogementCol?1:0) + 2 + (sc.battActif !== false ? (cotes === "DG" ? 2 : 1) : 0) + csupCols.length + 1 + (interactive?1:0);
 
@@ -8655,6 +8917,13 @@ function attachDetailHandlers(sc){
       if(es) telechargerRapportEssai(sc, es);
     });
   });
+  // v4.15 — comparaison de deux essais + bascule des tendances en % de tolérance
+  root.querySelectorAll(".essai-comparer").forEach(el => {
+    el.addEventListener("click", () => ouvrirComparaison(el.getAttribute("data-id"), el.getAttribute("data-essai")));
+  });
+  root.querySelectorAll(".pct-toggle").forEach(el => {
+    el.addEventListener("click", () => { tendanceEnPct = !tendanceEnPct; renderDetail(); });
+  });
   root.querySelectorAll(".prel-add").forEach(el => {
     el.addEventListener("click", () => {
       const essaiId = el.getAttribute("data-essai");
@@ -9036,6 +9305,16 @@ document.addEventListener("keydown", (e) => {
     ouvrirRecherche();
   }
 });
+/* v4.15 — comparaison d'essais : les menus A/B re-remplissent le panneau au changement. */
+document.getElementById("cmpA").addEventListener("change", (e) => {
+  compareCtx = { a: e.target.value, b: compareCtx ? compareCtx.b : null };
+  remplirComparaison();
+});
+document.getElementById("cmpB").addEventListener("change", (e) => {
+  compareCtx = { a: compareCtx ? compareCtx.a : null, b: e.target.value };
+  remplirComparaison();
+});
+document.getElementById("compareClose").addEventListener("click", fermerPanneaux);
 document.getElementById("parcoursBtn").addEventListener("click", ouvrirParcours);
 document.getElementById("nouveautesBtn").addEventListener("click", ouvrirNouveautes);
 // des formes/rognage/legende non enregistres dans l'editeur d'annotation se perdaient
@@ -9370,6 +9649,10 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.15.0", date:"23/09/2026", points:[
+    "<b>Comparer deux essais.</b> Un bouton <b>Comparer…</b> sur chaque essai : conditions côte à côte (plaquettes figées, Vc/f, équipe, bruts), statuts, taux hors tolérance, et les <b>courbes superposées</b> avec leur tolérance. Deux essais du même scénario : c'est la <b>répétabilité</b> qu'on lit — le fond du protocole 5×. Deux scénarios : quelle dérive tient le mieux.",
+    "<b>Les tendances en % de tolérance.</b> Sur chaque graphique de tendance, un bouton <b>Voir en % de tol.</b> exprime la mesure en pourcentage de la tolérance consommée (100 % = la limite, 0 % = la borne mini si plage). Pratique pour lire d'un coup d'œil un critère dont on ne connaît pas les valeurs par cœur — un bouton ramène les valeurs réelles."
+  ]},
   { version:"4.14.0", date:"23/09/2026", points:[
     "<b>Reprendre la saisie en un clic.</b> Le dernier essai <i>en cours</i> touché s'affiche en bandeau sous la navigation : son titre, son scénario, le dernier prélèvement saisi — et le <b>Mode atelier</b> directement dedans. Fini de rouvrir le scénario, déplier l'essai, chercher le bouton : devant la machine, une mesure de plus se tape tout de suite. Le ✕ masque la proposition ; elle revient toute seule pour un essai plus récent.",
     "<b>Rechercher partout (Ctrl+K).</b> Tapez un nom de ligne, de référence, d'OP, de scénario, d'essai ou de projet : la palette vous y emmène — casse et accents ignorés, navigation au clavier (↑↓ puis Entrée). Le bouton <b>Rechercher</b> du menu ••• fait la même chose.",
@@ -10967,6 +11250,13 @@ function runTests(){
          new Set(ids).size, 200);
       ok("uid : le prefixe est respecte", /^s[a-z0-9]+$/.test(ids[0]), true);
     }
+
+    /* ---- pourcentageTolerance : la vue % des tendances (v4.15) --------------------- */
+    ok("pctTol : borne maxi seule -> y/limite", pourcentageTolerance(0.05, 0.1), 50, 1e-9);
+    ok("pctTol : plage min-max -> (y-min)/(max-min)",
+       pourcentageTolerance(1.0, 1.6, 0.8), 25, 1e-9);
+    ok("pctTol : hors tolerance -> au-dela de 100", pourcentageTolerance(0.12, 0.1), 120, 1e-9);
+    ok("pctTol : pas de limite exploitable -> null", pourcentageTolerance(0.05, NaN), null);
 
   } catch(err){
     T.push({ nom:"Exception pendant les tests : " + err.message, pass:false,

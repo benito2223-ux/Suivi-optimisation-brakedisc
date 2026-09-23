@@ -5,6 +5,44 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.15.0] — 2026-09-23
+
+Analyse : les deux vues qui manquaient pour lire un essai dans son contexte — face à
+un autre essai, et face à sa propre tolérance. Aucun changement de format de données.
+
+### Ajouté — comparer deux essais
+Le bouton **Comparer…** sur chaque essai ouvre un panneau : deux menus (A vs B,
+groupés par scénario), les conditions côte à côte (scénario, date/équipe,
+opérateur, maturité des bruts, **plaquettes figées à l'essai**, Vc/f/charnière,
+nombre de prélèvements, % hors tolérance, statut) et les **courbes superposées**
+par grandeur — battement puis chaque critère supplémentaire retrouvé par libellé —
+chacune avec sa ligne de tolérance (« tol. A » / « tol. B », fusionnées si
+identiques). Essai A en bleu plein, essai B en ambre tireté ; les séries reprennent
+exactement la lecture de la Tendance (max Droite/Gauche sur EMAG 1, points de
+mesure, axes par critère). Deux essais du même scénario affichent d'emblée le sens
+de la lecture : la **répétabilité** — le fond du protocole 5× ; deux scénarios
+différents : la comparaison de dérive. B est pré-rempli avec le premier autre essai
+mesuré, de préférence du même scénario.
+
+### Ajouté — les tendances en % de tolérance consommée
+Chaque graphique de Tendance porte un bouton **« Voir en % de tol. »** : la mesure
+est exprimée en pourcentage de la tolérance consommée (100 % = la limite, 0 % = la
+borne mini si le critère a une plage min–max, sinon zéro), avec la ligne de
+tolérance tracée à 100 % et un axe calé sur des graduations rondes. Utile pour lire
+d'un coup d'œil un critère dont on ne connaît pas les valeurs par cœur, et pour
+comparer des critères de nature différente sans mélanger leurs échelles physiques.
+Option d'affichage seulement — jamais le défaut : un pourcentage reste une
+normalisation, pas une mesure. Le bouton redevient « Voir les valeurs ». Nouveau
+helper pur `pourcentageTolerance()` (4 tests).
+
+### Tests
+148/148 au vert (4 nouveaux). Vérifié en session au navigateur : panneau de
+comparaison (tableau complet à deux colonnes, sélection A/B par optgroup, courbes
+superposées avec légendes A/B, tolérances fusionnées quand identiques), cas
+répétabilité (deux essais du même scénario, sous-titre dédié), bascule % dans les
+deux sens (axe « % de la tolérance consommée », ligne « tolérance (100 %) »,
+graduations 0/30/60/90/120, retour aux valeurs), aucune erreur console.
+
 ## [4.14.0] — 2026-09-23
 
 Ergonomie du quotidien : les trois gestes qui revenaient chaque jour (reprendre la
