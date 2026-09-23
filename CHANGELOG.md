@@ -5,6 +5,32 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.27.0] — 2026-09-23
+
+Info structurante de Benjamin/Matis : le plan machine de Sept Fons, du fond de
+l'atelier vers l'entrée — Weisser 1-4, HESSAPP (double OP droite/gauche, comme
+EMAG 1), EMAG 1 (double OP), EMAG 2-3, PCI 1-2. Deux usages : le semis des
+lignes manquantes dans l'arbre, et l'orientation visuelle par famille.
+
+### Ajouté — référentiel des lignes de Sept Fons
+Au premier lancement de cette version (`localStorage: spk_lignes_septfons_
+semees`, une seule fois), les lignes du référentiel absentes de l'arbre sont
+créées **vides** et l'ensemble est remis dans l'**ordre physique de
+l'atelier** (`rangLigneSeptFons`, lignes inconnues après le référentiel).
+Une ligne supprimée volontairement ensuite ne revient pas. HESSAPP est notée
+double OP dans la fenêtre des nouveautés — ses OP se créeront avec ses
+premiers essais.
+
+### Ajouté — teinte de fond par famille de machines
+Quand une ligne est affichée, le fond de page prend une teinte légère selon sa
+famille (préfixe du nom : Weisser → rouge, HESSAP* → kaki, EMAG* → gris,
+PCI* → bleu) avec le **code ligne en filigrane répété** (W1…W4, HESSAPP, E1-E3,
+P1-P2). Implémentation : un seul `background-image` SVG data-URL posé sur le
+body (rect teinté + texte en filigrane dans la tuile répétée) — rien ne flotte
+au-dessus du contenu. L'encre du filigrane s'adapte au thème (sombre sur fond
+clair, blanche sur fond sombre) ; ni teinte ni filigrane à l'impression.
+Ligne hors référentiel : pas de teinte.
+
 ## [4.26.0] — 2026-09-23
 
 Deux retours d'usage (Matis/Benjamin) : le bandeau bleu « Reprendre » affichait

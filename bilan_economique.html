@@ -1367,6 +1367,8 @@ body.atelier-on{overflow:hidden;}
   .wrap{ max-width:none; padding:0; }
   .hd, .toolbar, .util-row, .sc-actions, .baseline-pill, #resetBtn, #restoreBtn, #historyBtn, #addBtn, #pdfBtn, #rapportBtn, #syntheseBtn, #backlogBtn,
   .ligne-strip, .reference-strip, .tabs-strip, #syntheseWrap, #backlogWrap, #scenarioDetail, .panel, .panel-backdrop, .aide{ display:none !important; }
+  /* v4.27 : la teinte et le filigrane de ligne ne s'impriment pas */
+  body{ background-image:none !important; }
   .synthese-block{ break-inside:avoid; padding:10px 12px; margin-bottom:10px; }
   table.synthese td, table.synthese th{ font-size:9.5px; padding:4px 6px; }
   table.synthese th.crit, table.synthese td.crit{ position:static; font-size:10px; }
@@ -1919,7 +1921,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.26.0";
+const TOOL_VERSION = "4.27.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -8843,6 +8845,7 @@ function render(){
   renderBacklog();
   applyLockState(); // le rendu recree les champs : l'etat de verrouillage doit etre re-applique
   renderBandeauStockage();
+  appliquerFondLigne(); // v4.27 : teinte + filigrane de la ligne affichée
 }
 
 function attachDetailHandlers(sc){
@@ -10120,6 +10123,10 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.27.0", date:"23/09/2026", points:[
+    "<b>L'atelier entier est dans l'outil.</b> Les 10 lignes de Sept Fons sont créées d'office, dans l'ordre physique du fond vers l'entrée : Weisser 1-4, HESSAPP, EMAG 1-3, PCI 1-2 (les lignes déjà existantes ne bougent pas ; une ligne supprimée volontairement ne revient pas). HESSAPP est notée double OP droite/gauche, comme EMAG 1 — ses OP se créeront au moment de ses premiers essais.",
+    "<b>La page prend la couleur de la ligne affichée.</b> Fond teinté léger par famille — <b>Weisser = rouge</b>, <b>HESSAPP = kaki</b>, <b>EMAG = gris</b>, <b>PCI = bleu</b> — avec le code ligne (W1, E1, P1…) en filigrane répété. S'adapte au mode nuit, ne s'imprime pas."
+  ]},
   { version:"4.26.0", date:"23/09/2026", points:[
     "<b>Le bandeau « Reprendre » parle du scénario que vous avez sous les yeux.</b> Il proposait toujours l'essai en cours le plus récent toutes lignes confondues : en travaillant sur une création neuve, c'est un vieil essai d'un autre scénario (et les noms de logements d'époque) qui s'affichait. Désormais il propose <b>d'abord un essai en cours du scénario affiché</b> ; à défaut seulement, le plus récent de l'outil.",
     "<b>La fenêtre des nouveautés ne raconte plus tout l'historique.</b> Seules les évolutions des <b>10 derniers jours</b> s'affichent au démarrage — le reste a été vu ou ne concerne plus."
@@ -10844,6 +10851,100 @@ document.getElementById("importInput").addEventListener("change", (e) => {
   e.target.value = "";
 });
 
+/* ============================================================================
+   LIGNES DE SEPT FONS (v4.27) — référentiel atelier
+   ----------------------------------------------------------------------------
+   Les lignes de machines, du FOND de l'atelier vers l'ENTRÉE (info Matis/Benjamin) :
+   Weisser 1 → 4, HESSAPP (double OP droite/gauche, comme EMAG 1), EMAG 1 (double OP),
+   EMAG 2, EMAG 3, PCI 1, PCI 2. Ce référentiel sert à deux choses :
+   - le SEMIS : au premier lancement de cette version, les lignes manquantes sont
+     créées vides et tout l'arbre est remis dans l'ordre physique (une seule fois —
+     une ligne supprimée volontairement ensuite ne revient pas) ;
+   - la TEINTE de fond : quand une ligne est affichée, la page prend une teinte légère
+     selon la famille de machines (Weisser = rouge, HESSAPP = kaki, EMAG = gris,
+     PCI = bleu) avec le code ligne en filigrane répété — pour se repérer d'un coup
+     d'œil sans lire le fil d'Ariane.
+   ============================================================================ */
+const LIGNES_SEPT_FONS = [
+  { nom: "Weisser 1", famille: "weisser", code: "W1" },
+  { nom: "Weisser 2", famille: "weisser", code: "W2" },
+  { nom: "Weisser 3", famille: "weisser", code: "W3" },
+  { nom: "Weisser 4", famille: "weisser", code: "W4" },
+  { nom: "HESSAPP", famille: "hessapp", code: "HESSAPP" },
+  { nom: "EMAG 1", famille: "emag", code: "E1" },
+  { nom: "EMAG 2", famille: "emag", code: "E2" },
+  { nom: "EMAG 3", famille: "emag", code: "E3" },
+  { nom: "PCI 1", famille: "pci", code: "P1" },
+  { nom: "PCI 2", famille: "pci", code: "P2" }
+];
+const FAMILLES_LIGNE = {
+  weisser: { encre: "#c50018", alpha: 0.07 },
+  hessapp: { encre: "#6b6e40", alpha: 0.09 },
+  emag:    { encre: "#545e68", alpha: 0.08 },
+  pci:     { encre: "#1b5ea6", alpha: 0.07 }
+};
+function familleDeLigne(nom){
+  const n = String(nom || "").trim().toLowerCase();
+  if(n.startsWith("weisser")) return "weisser";
+  if(n.startsWith("hessap")) return "hessapp";
+  if(n.startsWith("emag")) return "emag";
+  if(n.startsWith("pci")) return "pci";
+  return "";
+}
+function rangLigneSeptFons(nom){
+  const n = String(nom || "").trim().toLowerCase();
+  const i = LIGNES_SEPT_FONS.findIndex(d => d.nom.toLowerCase() === n);
+  return i === -1 ? LIGNES_SEPT_FONS.length : i; // lignes inconnues : après le référentiel
+}
+const CLE_SEMIS_LIGNES = "spk_lignes_septfons_semees";
+function semerLignesSeptFons(){
+  try{
+    if(localStorage.getItem(CLE_SEMIS_LIGNES) === "1") return;
+    let ajoute = false;
+    LIGNES_SEPT_FONS.forEach(def => {
+      const existe = lignes.some(l => String(l.nom || "").trim().toLowerCase() === def.nom.toLowerCase());
+      if(existe) return;
+      lignes.push(normalizeLigne({ id: uid("l"), nom: def.nom, references: [] }));
+      ajoute = true;
+    });
+    lignes.sort((a, b) => rangLigneSeptFons(a.nom) - rangLigneSeptFons(b.nom));
+    try{ localStorage.setItem(CLE_SEMIS_LIGNES, "1"); }catch(e){}
+    if(ajoute) saveData();
+  }catch(e){}
+}
+/* la teinte : fond de page légèrement coloré + code ligne en filigrane répété.
+   En data-URL SVG sur le body (multiple backgrounds) : rien ne flotte au-dessus du
+   contenu, l'encre s'adapte au thème (encre sombre sur fond clair, blanche sur fond
+   sombre), et l'impression n'imprime ni l'un ni l'autre. */
+function appliquerFondLigne(){
+  const lg = getActiveLigne();
+  const fam = familleDeLigne(lg && lg.nom);
+  const def = FAMILLES_LIGNE[fam];
+  if(!def){
+    document.body.style.backgroundColor = "";
+    document.body.style.backgroundImage = "";
+    return;
+  }
+  const nomNorm = String(lg.nom || "").trim().toLowerCase();
+  const trouvee = LIGNES_SEPT_FONS.find(d => d.nom.toLowerCase() === nomNorm);
+  const code = trouvee ? trouvee.code : String(lg.nom || "").trim().toUpperCase().slice(0, 8);
+  // encre du filigrane : sombre sur thème clair, claire sur thème sombre
+  const bg = getComputedStyle(document.body).backgroundColor || "rgb(255,255,255)";
+  const rgb = bg.match(/\d+/g) || ["255","255","255"];
+  const sombre = (Number(rgb[0]) + Number(rgb[1]) + Number(rgb[2])) < 384;
+  const encreTexte = sombre ? "#ffffff" : def.encre;
+  const opaTexte = sombre ? Math.min(def.alpha + 0.04, 0.12) : def.alpha + 0.02;
+  // la tuile porte la TEINTE (rect) et le FILIGRANE (texte) : un seul background-image
+  // répété, posé sur le body — rien ne flotte au-dessus du contenu, aucun z-index à gérer
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='460' height='300'>` +
+    `<rect width='460' height='300' fill='${def.encre}' fill-opacity='${def.alpha}'/>` +
+    `<text x='230' y='185' font-family='Archivo,Arial,sans-serif' font-size='120' font-weight='800' ` +
+    `fill='${encreTexte}' fill-opacity='${opaTexte}' text-anchor='middle'>${code}</text></svg>`;
+  document.body.style.backgroundColor = "";
+  document.body.style.backgroundImage = `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+}
+
+semerLignesSeptFons();
 render();
 try{
   const meta = JSON.parse(localStorage.getItem(STORAGE_KEY + "_meta") || "null");
@@ -12122,6 +12223,22 @@ function runTests(){
       NOUVEAUTES.pop();
       ok("nouveautes : entrée de plus de 10 jours masquée", /0\.0\.0-test/.test(htmlNv), false);
       ok("nouveautes : l'entrée du jour reste visible", /4\.25\.0/.test(htmlNv), true);
+    }
+
+    /* ---- v4.27 : référentiel lignes Sept Fons (familles, ordre atelier) ---- */
+    {
+      ok("familleDeLigne : Weisser -> rouge", familleDeLigne("Weisser 2"), "weisser");
+      ok("familleDeLigne : HESSAPP (orthographes) -> kaki",
+         familleDeLigne("HESSAPP") === "hessapp" && familleDeLigne("Hessapp 1") === "hessapp", true);
+      ok("familleDeLigne : EMAG -> gris, PCI -> bleu",
+         familleDeLigne("EMAG 3") === "emag" && familleDeLigne("PCI 1") === "pci", true);
+      ok("familleDeLigne : inconnue -> vide", familleDeLigne("TOSHIBA 1"), "");
+      ok("rangLigneSeptFons : l'ordre atelier du fond vers l'entrée",
+         rangLigneSeptFons("Weisser 1") < rangLigneSeptFons("HESSAPP") &&
+         rangLigneSeptFons("HESSAPP") < rangLigneSeptFons("EMAG 1") &&
+         rangLigneSeptFons("EMAG 1") < rangLigneSeptFons("PCI 2"), true);
+      ok("rangLigneSeptFons : ligne inconnue après le référentiel",
+         rangLigneSeptFons("MACHINE X") === LIGNES_SEPT_FONS.length, true);
     }
 
     ok("normalizeScenario : plan conserve a travers l'arbre",
