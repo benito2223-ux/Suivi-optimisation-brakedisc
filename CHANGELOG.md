@@ -5,6 +5,34 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.17.0] — 2026-09-23
+
+Deux irritants remontés par Benjamin et Matis à l'usage quotidien : la
+reconnexion à chaque ouverture, et le premier clic sur l'upload de plan qui ne
+fait rien. Aucun changement de données.
+
+### Corrigé — la session cloud survit aux ouvertures hors réseau
+`cloudRafraichirSession()` détruisait la session sur **tout** échec du
+rafraîchissement — y compris `Failed to fetch` et l'`AbortError` du délai
+d'attente. Ouvrir l'outil avant que le réseau soit monté (ou derrière le proxy
+d'usine qui hang) suffisait à se faire déconnecter, alors que le refresh token
+restait valable : il fallait se reconnecter **à chaque ouverture**. Désormais la
+session n'est détruite que sur un refus formel du serveur (HTTP 400/401/403 —
+jeton révoqué, refresh déjà consommé, mauvais identifiants). Hors ligne, la
+pastille affiche « cloud injoignable — session conservée » et le rafraîchissement
+retente au prochain contact (focus, 90 s, saisie), comme le reste de la synchro.
+
+### Corrigé — le premier clic sur « Joindre le plan de l'outil »
+Le `blur` d'un champ déclenche son `change`, qui reconstruit tout l'écran —
+**pendant le mousedown** du clic suivant. Le nœud sous le pointeur étant
+remplacé entre mousedown et mouseup, le click final partait sur l'ancêtre
+commun au lieu du bouton : le sélecteur de fichier ne s'ouvrait qu'au deuxième
+clic, dès qu'on venait de saisir un champ. Un mini-mécanisme global
+(`renderApresClic`, capture `mousedown`/`mouseup` sur `document`) retarde le
+render à la fin du clic en cours — et seulement dans ce cas : un `change` hors
+clic (Tab, Entrée) reste immédiat comme avant. Routé sur les deux seuls `render`
+déclenchés par un blur : `onInputChange` et le tri des prélèvements.
+
 ## [4.16.0] — 2026-09-23
 
 Le dernier trou de la synchro : le JSON voyageait entre postes, pas les photos.

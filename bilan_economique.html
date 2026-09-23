@@ -1880,7 +1880,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.16.0";
+const TOOL_VERSION = "4.17.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -8552,7 +8552,7 @@ function attachDetailHandlers(sc){
         if(isNaN(vb)) return -1;
         return va - vb;
       });
-      if(es.prelevements.map(r => r.id).join(",") !== avant){ saveData(); render(); }
+      if(es.prelevements.map(r => r.id).join(",") !== avant){ saveData(); renderApresClic(); }
     });
   });
   // v4.12 — champs d'une extraction Marposs (jour/début/fin) : ciblés par extraction
@@ -9199,6 +9199,34 @@ function writeFieldValue(el){
 
 /* au blur (ou Entree/Tab qui en decoule) : on ecrit la valeur finale, on recalcule ce qui
    en depend, on sauvegarde et on reconstruit l'affichage complet (badges, couts, graphique). */
+
+/* ---- v4.17 — ne jamais reconstruire l'ecran AU MILIEU d'un clic ----
+   Le blur qui declenche `change` se produit pendant le MOUSEDOWN du clic suivant (l'action
+   par defaut du mousedown est de deplacer le focus). Un render() immediat remplace alors le
+   noeud sous le pointeur entre mousedown et mouseup : le click final part sur l'ancetre
+   commun au lieu du bouton, et le clic est avele. Symptome exact du « Joindre le plan de
+   l'outil » qui n'ouvrait le sélecteur de fichier qu'au DEUXIEME clic des que l'on venait
+   de saisir un champ. On retarde donc le render a la fin du clic en cours — sans le
+   retarder du tout quand le change arrive hors clic (Tab, Entree), ou le comportement
+   reste immediat comme avant. */
+let clicSourisEnCours = false;
+let renderEnAttenteClic = false;
+document.addEventListener("mousedown", () => { clicSourisEnCours = true; }, true);
+document.addEventListener("mouseup", () => {
+  clicSourisEnCours = false;
+  if(renderEnAttenteClic){
+    renderEnAttenteClic = false;
+    setTimeout(render, 0); // apres le click (dispatche synchrone des mouseup), jamais avant
+  }
+}, true);
+function renderApresClic(){
+  if(!clicSourisEnCours){ render(); return; }
+  if(renderEnAttenteClic) return;
+  renderEnAttenteClic = true;
+  // filet de securite : mouseup perdu (bouton relache hors de la fenetre) -> on rend quand meme
+  setTimeout(() => { if(renderEnAttenteClic){ renderEnAttenteClic = false; render(); } }, 400);
+}
+
 function onInputChange(e){
   const el = e.target;
   // le statut d'un scenario passe par sa propre logique (verrouillage du scenario en
@@ -9224,7 +9252,7 @@ function onInputChange(e){
     ctx.sc.statutDate = new Date().toISOString().slice(0,10);
   }
   saveData();
-  render();
+  renderApresClic();
 }
 
 document.getElementById("importAnnuler").addEventListener("click", fermerPanneaux);
@@ -9699,6 +9727,10 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.17.0", date:"23/09/2026", points:[
+    "<b>On ne se reconnecte plus à chaque ouverture.</b> Le lien cloud survivait mal aux ouvertures hors réseau : au démarrage, une simple panne de connexion (proxy d'usine, Wi-Fi pas encore monté) détruisait la session alors que le jeton de reconnexion était encore valable — d'où un relogin systématique. Désormais la session ne meurt que sur un refus formel du serveur ; hors ligne, l'outil affiche « session conservée » et retente au prochain contact, comme le reste de l'outil.",
+    "<b>Le premier clic sur « Joindre le plan de l'outil » marche.</b> Saisir un champ puis cliquer directement sur le bouton d'upload ne faisait rien : la sauvegarde reconstruisait l'écran au moment exact du clic, qui s'évanouissait. Désormais la reconstruction attend la fin du clic — le sélecteur de fichier s'ouvre du premier coup, partout où un bouton suit une saisie."
+  ]},
   { version:"4.16.0", date:"23/09/2026", points:[
     "<b>Les photos voyagent avec le suivi.</b> Jusqu'ici une photo d'essai restait dans le dossier local de celui qui l'avait prise : l'autre poste n'en voyait rien. Sans dossier connecté, les photos partent maintenant dans le <b>cloud privé</b> (comptes de l'équipe uniquement) et l'autre poste les télécharge automatiquement — miniatures, agrandissement, annotation. Le dossier local reste prioritaire quand il est connecté ; les deux modes coexistent photo par photo.",
     "<b>Le bouton devient « Ajouter des photos (cloud) »</b> quand vous êtes connecté au cloud sans dossier local : même geste, la photo est redimensionnée puis envoyée, et le suivi la référence par son chemin cloud. Une photo supprimée l'est aussi du cloud.",
@@ -10399,7 +10431,12 @@ async function cloudRequeteAuth(grant, body){
   const j = await r.json().catch(() => ({}));
   if(!r.ok){
     const brut = j.error_description || j.msg || j.message || "connexion refusée";
-    throw new Error(/invalid login credentials/i.test(brut) ? "Email ou mot de passe incorrect." : brut);
+    const err = new Error(/invalid login credentials/i.test(brut) ? "Email ou mot de passe incorrect." : brut);
+    /* 400/401/403 = le serveur a REJETE le jeton (révoqué, déjà utilisé, mauvais identifiants) :
+       définitif. Un 5xx ou une réponse illisible est temporaire — crucial pour ne pas
+       détruire une session encore valable à cause d'une indisponibilité passagère. */
+    if(r.status === 400 || r.status === 401 || r.status === 403) err.definitif = true;
+    throw err;
   }
   return j;
 }
@@ -10425,6 +10462,18 @@ async function cloudRafraichirSession(){
     cloudSauverSession();
     return true;
   }catch(e){
+    /* v4.17 — la session ne meurt plus qu'en cas de refus DEFINITIF du serveur (jeton
+       révoqué, refresh déjà consommé). Avant : TOUT échec détruisait la session — y
+       compris un simple "Failed to fetch" ou un AbortError du délai d'attente. Ouvrir
+       l'outil hors réseau (usine, démarrage avant la montée du Wi-Fi) suffisait donc à
+       se faire déconnecter, alors que le refresh token restait parfaitement valable :
+       il fallait se reconnecter à chaque ouverture. Désormais la session est conservée
+       et le rafraîchissement retentera au prochain contact (focus, 90 s, saisie). */
+    if(!e || !e.definitif){
+      cloudErreur = "cloud injoignable — session conservée, nouvelle tentative au prochain contact";
+      cloudRenduOptions(); cloudRenduPastille();
+      return false;
+    }
     cloudSession = null; cloudSauverSession();
     cloudErreur = "session expirée — reconnectez-vous dans Options";
     cloudRenduOptions(); cloudRenduPastille();
