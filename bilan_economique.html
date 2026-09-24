@@ -2032,7 +2032,7 @@ body.atelier-on{overflow:hidden;}
 </style>
 
 <script>
-const TOOL_VERSION = "4.36.0";
+const TOOL_VERSION = "4.37.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -6602,8 +6602,8 @@ function scenarioBlockHTML(sc, interactive){
     ${interactive ? `<button class="ghost outil-add" data-id="${sc.id}" style="margin-top:10px;">+ Ajouter un outil</button>` : ""}
     ${interactive && copieDepuisPossible(sc) ? `<button class="ghost outils-copier" data-id="${sc.id}" style="margin-top:10px;">⧉ Copier les outils de « ${escapeAttr(baselineScenario().name)} »</button>` : ""}
     ${interactive && !showFrFa ? `<p class="panel-hint" style="margin:8px 2px 0;">Rayon de bec et ap (affinage Fr·Fa) sont masqués — activez le module Fr·Fa dans <b>Options</b> si votre référence en a besoin.</p>` : ""}
+    ${interactive ? `<details class="zone-det"><summary>Détail du calcul, consommation annuelle &amp; pièces détachées</summary>` : ""}
     ${showCycleDetail ? cycleDetailStatusHTML(sc) : ""}
-    ${interactive ? `<details class="zone-det"><summary>Consommation annuelle &amp; pièces détachées</summary>` : ""}
     ${consommationAnnuelleHTML(sc)}
     ${piecesDetacheesHTML(sc, interactive)}
     ${interactive ? `</details>` : ""}
@@ -10595,6 +10595,10 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.37.0", date:"24/09/2026", points:[
+    "<b>Zone de détail regroupée.</b> Détail du calcul, consommation annuelle et pièces détachées ne font plus qu\'un seul bloc repliable : l\'écran montre la décision (zones 1 et 2) et tient le calcul à un clic.",
+    "Rappel 4.36 : écran en trois zones nommées (Réponse / Scénarios / Traçabilité)."
+  ]},
   { version:"4.36.0", date:"24/09/2026", points:[
     "<b>Écran en trois zones nommées.</b> 1 · Réponse (base de comparaison et meilleur coût), 2 · Scénarios, 3 · Traçabilité du scénario ouvert. On sait toujours où l\'on est dans l\'écran.",
     "Rappel 4.35 : repère de zone, deux niveaux de libellés, blocs périphériques repliés."
