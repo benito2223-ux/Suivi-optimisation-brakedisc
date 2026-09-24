@@ -5,6 +5,55 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.30.0] — 2026-09-24
+
+Session dédiée UI (audit densité + typographie du détail scénario, captures
+des deux thèmes à l'appui). Cadrage acté avec Benjamin : fusion verdict +
+bande de chiffres, contexte d'essai repliable, refonte de la ligne critères,
+normalisation typographique. Travaillé sur la branche `dev`.
+
+### Modifié — verdict et chiffres fondus en un seul tableau de bord
+La bande verdict (titre + sous-titre + chips) et la bande de chiffres
+disparaissent au profit d'**une seule bande** (`.scenario-foot`) : la zone
+verdict (`.foot-verdict`, état coloré sur l'aplat : vert/rouge/ambre, neutre
+pour la référence) ouvre la marche, suivie des cellules coût/pièce,
+gain annuel, **durée de vie visée** (nouvelle cellule — elle quittait les
+chips ; la valeur de la référence s'affiche à côté pour un scénario d'essai),
+€/arête, cycle, validation (qui gagne le **% de prélèvements hors tolérance**,
+lui aussi ex-chip). Chaque nombre n'apparaît plus qu'une fois au lieu de
+trois-quatre. Le détail du coût annuel (v4.29) se déplie désormais **en bas
+de bande** sur toute la largeur au lieu de couper la rangée de cellules.
+`verdictHTML` est réécrite (plus de chips), `dureeVieScenario` extraite
+(testée) ; le CSS `.verdict`/`.vchip` de la feuille principale est supprimé
+(les gabarits de rapport gardent le leur).
+
+### Ajouté — le contexte de l'essai se replie
+But, observations, rédacteur, début/fin d'essai et programme CNC regroupés
+dans un bloc `details.essai-ctx` : **ouvert tant que l'essai est vierge**
+(mode création), **replié dès qu'un champ est rempli**, avec un aperçu du
+but dans le bandeau. L'état ouvert/replié posé par l'utilisateur survit aux
+re-rendus (`essaiCtxOuverts`, même mécanique que les fiches outil).
+L'impression reste inchangée (lignes à plat).
+
+### Modifié — ligne critères d'essais resserrée
+Les boutons + Ra / + VE / + Autre critère ne s'empilent plus en colonne :
+leur phrase d'explication passe en info-bulle. La note « valeur OP — l'éditer
+la rend spécifique » devient « valeur OP » nowrap (phrase en info-bulle).
+La spéc usine s'aligne à droite de la meta-ligne (`.spec-usine`).
+
+### Corrigé — typographie des chiffres
+- **Faux gras mono éliminé** : IBM Plex Mono n'embarque que 400/500/600, tous
+  les `font-weight:700` mono (badges, `.tc-val`, `.os-numero`, pastilles
+  outil, valeurs atelier…) passent à la vraie graisse 600.
+- **`tabular-nums` complet** sur les héros qui en manquaient
+  (`.foot-cell .v`, `input.cell-cycle`, `.kvf-item .v`, `.vb-v`).
+- **Échelle de héros fermée** dans la bande : 38 / `.mid` 24 / `.small` 19 —
+  les `font-size:26px/18px` inline disparaissent.
+- **Unités `<small>` normalisées** : Public Sans 600 / 10,5 px partout
+  (le pied de bande était en 500/12 px, le total compo en 11,5).
+- **Impression** : les valeurs saisies du tableau (`td.num`) passent en mono
+  tabulaire — mêmes polices qu'à l'écran, plus de mélange dans une ligne.
+
 ## [4.29.0] — 2026-09-24
 
 Deux points de Benjamin : le piège « rattacher un scénario d'une ligne à un

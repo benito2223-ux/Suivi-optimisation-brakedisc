@@ -130,9 +130,9 @@ body{background:var(--bg); color:var(--ink); font-family:var(--font-body); font-
    IBM Plex Mono reste sur les chiffres : c'est le coeur d'un outil de mesure. */
 [style*="--font-disp"], .hd h1, .sc-name, .sc-name-print, .tc-name, .foot-cell .v,
 .foot-cell input.cell-cycle, .essai-titre, .aide-step b, .marposs-kpis .v, .panel h3,
-.backlog-titre, .at-titre, .verdict-titre{ letter-spacing:-.015em; }
-.foot-cell .v, .foot-cell input.cell-cycle, .verdict-titre{ letter-spacing:-.025em; }
-:where(.foot-cell .v, .vchip .v, .tc-val, .at-piece-row input, .at-champ input,
+.backlog-titre, .at-titre, .fv-titre{ letter-spacing:-.015em; }
+.foot-cell .v, .foot-cell input.cell-cycle, .fv-titre{ letter-spacing:-.025em; }
+:where(.foot-cell .v, .tc-val, .at-piece-row input, .at-champ input,
   .marposs-kpis .v, td.computed, input.cell){ font-variant-numeric:tabular-nums; }
 /* rendu plus net des grandes graisses */
 body{ -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
@@ -186,7 +186,7 @@ button.primary .icon, button.save .icon{stroke-width:1.8;}
    Gérer — et la zone destructrice (Réinitialiser / Restaurer) reste séparée en dernier.
    L'ancien paragraphe d'aide en tête de menu est supprimé : l'aide se consulte (ⓘ), elle
    ne s'impose pas à chaque ouverture. */
-.tb-grp{font-family:var(--font-mono); font-size:9.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-faint); margin:9px 6px 3px;}
+.tb-grp{font-family:var(--font-mono); font-size:9.5px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-faint); margin:9px 6px 3px;}
 .toolbar-more .tb-grp:first-child{margin-top:2px;}
 .toolbar-more-sep{height:1px; background:var(--border); margin:8px 6px;}
 .toolbar-more #photosDirStatus, .toolbar-more #revisionStatus{margin:2px 6px; display:block;}
@@ -229,7 +229,7 @@ button:focus-visible{outline:2px solid var(--blue); outline-offset:2px;}
 .kvf-widget{display:flex; gap:20px; flex-wrap:wrap; padding:10px 16px; background:linear-gradient(180deg, var(--blue-bg), var(--surface-alt)); border-bottom:1px solid var(--border);}
 .kvf-item{display:flex; align-items:baseline; gap:8px;}
 .kvf-item .l{font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.03em; font-size:10.5px; color:var(--ink-faint);}
-.kvf-item .v{font-family:var(--font-disp); font-weight:700; font-size:19px; color:var(--ink-soft);}
+.kvf-item .v{font-family:var(--font-disp); font-weight:700; font-size:19px; color:var(--ink-soft); font-variant-numeric:tabular-nums;}
 .kvf-item .v.in{color:var(--green);}
 .kvf-item .v.out{color:var(--amber);}
 .kvf-item .ref{font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint);}
@@ -275,16 +275,16 @@ td.computed{font-family:var(--font-mono); font-variant-numeric:tabular-nums; tex
 .ap-compte{font-family:var(--font-mono); font-size:12px; color:var(--ink-faint);}
 .ap-total{margin-left:auto; font-family:var(--font-disp); font-weight:800; font-size:22px;
   letter-spacing:-.03em; color:var(--blue); font-variant-numeric:tabular-nums;}
-.ap-total small{font-family:var(--font-body); font-weight:600; font-size:11.5px; color:var(--ink-faint); letter-spacing:0; margin-left:3px;}
+.ap-total small{font-family:var(--font-body); font-weight:600; font-size:10.5px; color:var(--ink-faint); letter-spacing:0; margin-left:3px;}
 
 .ap-grille{display:grid; grid-template-columns:repeat(auto-fit,minmax(290px,1fr)); gap:10px;}
 .ap-tuile{border:1px solid var(--border); border-left:4px solid var(--outil-couleur, var(--blue));
   border-radius:var(--radius-sm); padding:11px 13px 12px; background:var(--surface-alt);}
 .ap-tete{display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-bottom:5px;}
 .ap-pastille{width:20px; height:20px; border-radius:var(--radius-sm); background:var(--outil-couleur, var(--blue));
-  color:#fff; font-family:var(--font-mono); font-size:11px; font-weight:700;
+  color:#fff; font-family:var(--font-mono); font-size:11px; font-weight:600;
   display:flex; align-items:center; justify-content:center; flex:0 0 auto;}
-.ap-outil{font-family:var(--font-mono); font-size:14px; font-weight:700; color:var(--ink);}
+.ap-outil{font-family:var(--font-mono); font-size:14px; font-weight:600; color:var(--ink);}
 .ap-sep{color:var(--ink-faint);}
 .ap-logement{font-size:15px; font-weight:700; color:var(--ink); letter-spacing:-.01em;}
 .ap-flag{font-family:var(--font-mono); font-size:10px; font-weight:600; padding:2px 7px; border-radius:var(--radius-sm);
@@ -300,7 +300,7 @@ td.computed{font-family:var(--font-mono); font-variant-numeric:tabular-nums; tex
 .ap-v small{font-family:var(--font-body); font-weight:600; font-size:10.5px; color:var(--ink-faint); letter-spacing:0; margin-left:3px;}
 .ap-cout .ap-v{color:var(--blue);}
 .ap-reel{font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint); margin-top:1px;}
-.ap-reel.bad{color:var(--red); font-weight:700;}
+.ap-reel.bad{color:var(--red); font-weight:600;}
 .ap-cond{font-family:var(--font-mono); font-size:12px; color:var(--ink-soft); margin-top:9px;
   padding-top:8px; border-top:1px solid var(--border);}
 .ap-manque{font-family:var(--font-mono); font-size:11px; font-weight:600; color:var(--amber); margin-top:6px;}
@@ -336,7 +336,7 @@ td.computed{font-family:var(--font-mono); font-variant-numeric:tabular-nums; tex
 .os-grip:active{cursor:grabbing;}
 details.outil-carte.drag-en-cours{opacity:.5;}
 details.outil-carte.drag-cible{outline:2px dashed var(--blue); outline-offset:3px;}
-.os-numero{font-family:var(--font-mono); font-size:14.5px; font-weight:700; color:var(--ink);}
+.os-numero{font-family:var(--font-mono); font-size:14.5px; font-weight:600; color:var(--ink);}
 .os-corr{font-family:var(--font-mono); font-size:11.5px; color:var(--ink-faint); border:1px solid var(--border);
   border-radius:var(--radius-sm); padding:1px 6px;}
 .os-desc{font-size:13px; color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:34ch;}
@@ -372,7 +372,7 @@ details.outil-carte.drag-cible{outline:2px dashed var(--blue); outline-offset:3p
   padding-bottom:12px; border-bottom:1px solid var(--border);}
 .outil-pastille{flex:0 0 auto; width:26px; height:26px; border-radius:var(--radius-sm);
   background:var(--outil-couleur, var(--blue)); color:#fff; font-family:var(--font-mono);
-  font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:600; display:flex; align-items:center; justify-content:center;
   margin-bottom:3px;}
 
 /* un champ : libelle + saisie. Les largeurs sont des minima, les champs s'etirent ensuite. */
@@ -406,8 +406,8 @@ details.outil-carte.drag-cible{outline:2px dashed var(--blue); outline-offset:3p
 .lb-groupe{flex:1 1 auto; min-width:0; background:var(--surface-alt); border:1px solid var(--border);
   border-radius:var(--radius-sm); padding:9px 12px 11px;}
 .lb-groupe.lb-resultats{flex:0 0 auto; margin-left:auto; background:var(--blue-bg); border-color:color-mix(in srgb, var(--blue) 30%, transparent);}
-.lb-groupe.lb-resultats .oc-calc{background:var(--surface); color:var(--blue-dark); font-weight:700;}
-.lb-legende{font-family:var(--font-mono); font-size:9.5px; font-weight:700; letter-spacing:.1em;
+.lb-groupe.lb-resultats .oc-calc{background:var(--surface); color:var(--blue-dark); font-weight:600;}
+.lb-legende{font-family:var(--font-mono); font-size:9.5px; font-weight:600; letter-spacing:.1em;
   text-transform:uppercase; color:var(--ink-faint); margin-bottom:8px;}
 .lb-groupe.lb-resultats .lb-legende{color:var(--blue-dark);}
 .lb-champs{display:flex; flex-wrap:wrap; gap:9px 12px; align-items:flex-start;}
@@ -426,6 +426,9 @@ details.outil-carte.drag-cible{outline:2px dashed var(--blue); outline-offset:3p
 table.postable{min-width:920px; table-layout:fixed; font-size:11px;}
 table.postable th{padding:5px 6px; font-size:9.5px; white-space:normal; line-height:1.25; overflow-wrap:break-word;}
 table.postable td{padding:4px 6px; font-size:11px; overflow:hidden;}
+/* v4.30 — l'impression lit les mêmes chiffres que l'écran : valeurs statiques en mono
+   tabulaire (les colonnes calculées l'étaient déjà, pas les cellules saisies). */
+table.postable td.num{font-family:var(--font-mono); font-variant-numeric:tabular-nums;}
 table.postable input.cell{font-size:11px; padding:3px 4px; min-width:0; width:100%;}
 table.postable input.cell.ref{overflow:hidden; text-overflow:ellipsis;}
 table.postable .ref-stack{min-width:0;}
@@ -440,11 +443,20 @@ input.cell.sub{font-size:10.5px; color:var(--ink-faint);}
    quel chiffre est le chiffre. La derniere cellule (validation) part en vert : c'est le seul
    indicateur d'avancement de la campagne, il ne se confond plus avec les couts. */
 .scenario-foot{display:grid; grid-template-columns:repeat(auto-fit,minmax(185px,1fr)); gap:0; background:var(--fill); color:var(--fill-ink);}
+/* v4.30 — le verdict ouvre le tableau de bord : plus de bande au-dessus répétant les mêmes
+   nombres en chips. Deux colonnes de grille, titre coloré par état (encre claire sur l'aplat). */
+.foot-verdict{grid-column:span 2; padding:14px 16px; border-right:1px solid var(--fill-line); min-width:0;}
+.foot-verdict .fv-eyebrow{margin:0 0 5px; font-family:var(--font-mono); font-size:9.5px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; color:var(--fill-ink-soft);}
+.foot-verdict .fv-titre{font-family:var(--font-body); font-weight:700; font-size:clamp(17px,1.6vw,21px); line-height:1.15; letter-spacing:-.015em; color:var(--fill-ink); text-wrap:balance;}
+.foot-verdict.ok .fv-titre{color:var(--on-fill-good);}
+.foot-verdict.bad .fv-titre{color:var(--on-fill-bad);}
+.foot-verdict.pending .fv-titre{color:var(--on-fill-warn);}
+.foot-verdict .fv-sous{margin-top:5px; font-size:12px; line-height:1.45; color:var(--fill-ink-soft);}
 .foot-cell-wide{grid-column:span 2;}
-@media (max-width:760px){ .foot-cell-wide{grid-column:span 1;} }
+@media (max-width:760px){ .foot-cell-wide, .foot-verdict{grid-column:span 1;} }
 .foot-sub{font-family:var(--font-mono); font-size:11.5px; color:var(--fill-ink-soft); margin-top:4px;}
 .foot-cell{padding:14px 16px; border-right:1px solid var(--fill-line);}
-/* v4.29 — tuile coût annuel cliquable + détail dépliable sous la rangée */
+/* v4.29 — tuile coût annuel cliquable + détail dépliable sous la rangée (v4.30 : en bas de bande) */
 .foot-cell-annuel{cursor:pointer;}
 .foot-cell-annuel:hover{background:var(--fill-line);}
 .foot-detail{grid-column:1/-1; border-top:1px solid var(--fill-line); padding:10px 16px 12px;}
@@ -455,8 +467,13 @@ input.cell.sub{font-size:10.5px; color:var(--ink-faint);}
 .foot-cell:last-child{border-right:none; background:var(--fill-good);}
 .foot-cell:last-child .l, .foot-cell:last-child .foot-sub{color:var(--fill-good-ink-soft);}
 .foot-cell .l{font-size:9.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--fill-ink-soft); margin-bottom:7px; font-weight:600;}
-.foot-cell .v{font-family:var(--font-disp); font-weight:800; font-size:38px; color:var(--fill-ink); line-height:1; letter-spacing:-.01em;}
-.foot-cell .v small{font-family:var(--font-body); font-weight:500; font-size:12px; color:var(--fill-ink-soft); margin-left:4px;}
+/* v4.30 — échelle fermée des chiffres héros : 38 (héros), 24 (intermédiaire), 19 (sensibles :
+   validation). tabular-nums partout : les digits de Manrope sont proportionnels, un chiffre
+   qui change ne doit pas faire bouger ses voisins. */
+.foot-cell .v{font-family:var(--font-disp); font-weight:800; font-size:38px; color:var(--fill-ink); line-height:1; letter-spacing:-.01em; font-variant-numeric:tabular-nums;}
+.foot-cell .v.mid{font-size:24px; line-height:1.1;}
+.foot-cell .v.small{font-size:19px; line-height:1.1;}
+.foot-cell .v small{font-family:var(--font-body); font-weight:600; font-size:10.5px; color:var(--fill-ink-soft); margin-left:4px;}
 .foot-cell .delta{font-family:var(--font-mono); font-size:13px; margin-top:4px; font-weight:600;}
 .delta.pos{color:var(--red);}
 .delta.neg{color:var(--green);}
@@ -466,7 +483,7 @@ input.cell.sub{font-size:10.5px; color:var(--ink-faint);}
 .scenario-foot .delta.neg{color:var(--on-fill-good);}
 .scenario-foot .delta.zero{color:var(--fill-ink-soft);}
 /* le temps de cycle reste saisissable : le pointille clair est la pour que ca se voie */
-.foot-cell input.cell-cycle{font-family:var(--font-disp); font-weight:800; font-size:38px; letter-spacing:-.01em; color:var(--fill-ink); width:100%; border:1px solid transparent; border-bottom:2px dashed rgba(255,255,255,.5); border-radius:var(--radius-sm); background:transparent; padding:0 4px;}
+.foot-cell input.cell-cycle{font-family:var(--font-disp); font-weight:800; font-size:38px; letter-spacing:-.01em; font-variant-numeric:tabular-nums; color:var(--fill-ink); width:100%; border:1px solid transparent; border-bottom:2px dashed rgba(255,255,255,.5); border-radius:var(--radius-sm); background:transparent; padding:0 4px;}
 .foot-cell input.cell-cycle:hover{border-color:rgba(255,255,255,.5); background:rgba(255,255,255,.08);}
 .foot-cell input.cell-cycle:focus{border-color:var(--surface); outline:none; background:var(--surface); color:var(--blue);}
 .foot-cell input.cell-cycle::selection{background:var(--surface); color:var(--fill);}
@@ -512,7 +529,7 @@ input.cell.sub{font-size:10.5px; color:var(--ink-faint);}
 .pj-haut{display:flex; align-items:center; gap:8px; flex-wrap:wrap; width:100%;}
 .pj-nom{font-family:var(--font-disp); font-weight:800; font-size:15.5px; letter-spacing:-.015em; color:var(--ink);}
 .pj-carte.active .pj-nom{color:var(--blue-dark);}
-.pj-statut{font-family:var(--font-mono); font-size:10px; font-weight:700; letter-spacing:.04em;
+.pj-statut{font-family:var(--font-mono); font-size:10px; font-weight:600; letter-spacing:.04em;
   text-transform:uppercase; padding:2px 7px; border-radius:var(--radius-sm);
   background:var(--surface-alt); color:var(--ink-soft); border:1px solid var(--border);}
 .pj-carte.pj-termine .pj-statut{background:var(--green-bg); color:var(--green); border-color:var(--green);}
@@ -522,7 +539,7 @@ input.cell.sub{font-size:10.5px; color:var(--ink-faint);}
 .pj-pb{font-size:12.5px; color:var(--ink-soft); line-height:1.4; white-space:pre-wrap;}
 .pj-chiffres{display:flex; flex-wrap:wrap; gap:4px 12px; font-family:var(--font-mono);
   font-size:11.5px; color:var(--ink-faint); margin-top:2px;}
-.pj-chiffres b{color:var(--ink); font-weight:700;}
+.pj-chiffres b{color:var(--ink); font-weight:600;}
 .pj-serie b, .pj-serie{color:var(--blue-dark);}
 .pj-gain{font-family:var(--font-disp); font-weight:800; font-size:14px; letter-spacing:-.02em;}
 .pj-gain.pos{color:var(--green);} .pj-gain.neg{color:var(--red);}
@@ -531,7 +548,7 @@ input.cell.sub{font-size:10.5px; color:var(--ink-faint);}
 /* bouton "Modifier" : texte visible en permanence, pas une icone a decouvrir au survol
    (l'ancienne icone ⚙ 22x22 transparente ne se voyait pas -- retour direct d'usage). */
 .pj-modifier{position:absolute; top:10px; right:10px; font-family:var(--font-mono); font-size:10.5px;
-  font-weight:700; padding:5px 10px; border-radius:var(--radius-sm);
+  font-weight:600; padding:5px 10px; border-radius:var(--radius-sm);
   background:var(--surface-alt); border:1px solid var(--border); color:var(--ink-soft);}
 .pj-modifier:hover{background:var(--surface); border-color:var(--blue); color:var(--blue-dark);}
 .responsable-ligne{display:flex; align-items:center; gap:9px; padding:6px 0; border-bottom:1px solid var(--border);}
@@ -632,7 +649,7 @@ input.cell.sub{font-size:10.5px; color:var(--ink-faint);}
 }
 .tc-row{display:flex; align-items:baseline; gap:7px; font-size:12px; color:var(--ink-faint);}
 .tc-label{text-transform:uppercase; letter-spacing:.04em; font-size:9.5px;}
-.tc-val{font-family:var(--font-mono); font-weight:700; font-size:15px; color:var(--ink); font-variant-numeric:tabular-nums;}
+.tc-val{font-family:var(--font-mono); font-weight:600; font-size:15px; color:var(--ink); font-variant-numeric:tabular-nums;}
 .tc-delta{font-family:var(--font-mono); font-size:11px; font-weight:600;}
 .tc-delta.pos{color:var(--red);}
 .tc-delta.neg{color:var(--green);}
@@ -725,17 +742,36 @@ select.backlog-type, select.backlog-statut{font-family:var(--font-body); font-si
 .log-section{padding:16px; border-top:1px solid var(--border);}
 .log-section h3{font-family:var(--font-body); font-weight:600; font-size:13.5px; text-transform:uppercase; letter-spacing:.03em; color:var(--ink-faint); margin:0 0 12px;}
 .log-meta{display:flex; gap:20px; flex-wrap:wrap; margin-bottom:12px;}
+/* v4.30 — le contexte de l'essai (but, observations, rédaction, programme) se replie :
+   le quotidien, ce sont les conditions et les prélèvements. Ouvert tant que rien n'est
+   saisi (mode création), replié ensuite — l'état manuel survit aux re-rendus. */
+.essai-ctx{margin:8px 12px 4px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface-alt);}
+.essai-ctx > summary{cursor:pointer; list-style:none; display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  padding:8px 12px; font-family:var(--font-mono); font-size:10.5px; font-weight:600; letter-spacing:.04em;
+  text-transform:uppercase; color:var(--ink-faint);}
+.essai-ctx > summary::-webkit-details-marker{display:none;}
+.essai-ctx > summary::before{content:"+"; flex:0 0 auto; font-weight:600; color:var(--ink-soft);}
+.essai-ctx[open] > summary::before{content:"–";}
+.essai-ctx-resume{margin-left:auto; max-width:55%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  font-family:var(--font-body); font-weight:500; text-transform:none; letter-spacing:0; color:var(--ink-soft);}
+.essai-ctx-body{padding:0 6px 6px;}
+.essai-ctx-body .essai-but-wrap, .essai-ctx-body .essai-obs-wrap{margin:6px 4px 0;}
+.essai-ctx-body .essai-params{border-radius:var(--radius-sm); margin-top:6px;}
 .emag-toggle{display:flex; align-items:center; gap:8px; font-size:13px; color:var(--ink-soft); cursor:pointer;}
 .emag-toggle input{width:16px; height:16px; accent-color:var(--blue);}
 .emag-toggle-print, .limit-row-print{font-size:12px; color:var(--ink-soft);}
 .limit-row{display:flex; align-items:center; gap:8px;}
 .limit-row span{color:var(--ink-faint); font-family:var(--font-mono);}
+/* v4.30 — la note « valeur OP » ne wrappe plus sur trois lignes : texte court, la phrase
+   entière passe en info-bulle. La spéc usine s'aligne à droite de la même meta-ligne. */
+.limit-op-note{white-space:nowrap; font-size:10.5px !important;}
+.log-meta .spec-usine{margin-left:auto; font-family:var(--font-mono); font-size:10px; color:var(--ink-faint); white-space:nowrap;}
 input.limit-label{font-family:var(--font-body); font-size:13px; border:1px solid var(--border); border-radius:var(--radius-sm); padding:5px 8px; background:var(--surface); color:var(--ink); min-width:150px;}
 input.limit-value{font-family:var(--font-mono); font-size:13px; border:1px solid var(--border); border-radius:var(--radius-sm); padding:5px 8px; background:var(--surface); color:var(--ink); width:80px; text-align:right;}
 input.limit-label:focus, input.limit-value:focus{border-color:var(--blue); outline:none;}
 tr.row-ok td{background:var(--green-bg);}
 tr.row-bad td{background:var(--red-bg);}
-.badge{display:inline-flex; align-items:center; gap:4px; font-family:var(--font-mono); font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:20px; letter-spacing:.02em;}
+.badge{display:inline-flex; align-items:center; gap:4px; font-family:var(--font-mono); font-size:10.5px; font-weight:600; padding:3px 9px; border-radius:20px; letter-spacing:.02em;}
 .badge.ok{background:var(--green); color:var(--on-accent);}
 .badge.ok::before{content:"✓";}
 .badge.risk{background:var(--red); color:var(--on-accent);}
@@ -861,7 +897,7 @@ tr.row-bad td{background:var(--red-bg);}
 /* v4.15 : panneau de comparaison de deux essais */
 .cmp-selects{display:flex; align-items:center; gap:10px; margin:10px 0 14px; flex-wrap:wrap;}
 .cmp-selects select{flex:1 1 220px; max-width:340px; font-family:var(--font-body); font-size:13px; padding:7px 9px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); color:var(--ink);}
-.cmp-vs{font-family:var(--font-mono); font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase;}
+.cmp-vs{font-family:var(--font-mono); font-size:11px; font-weight:600; color:var(--ink-faint); text-transform:uppercase;}
 .cmp-table{width:100%; border-collapse:collapse; margin-bottom:8px;}
 .cmp-table th, .cmp-table td{border-bottom:1px solid var(--border); padding:6px 8px; font-size:12.5px; text-align:left; vertical-align:top;}
 .cmp-table th{font-family:var(--font-mono); font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-faint);}
@@ -980,7 +1016,7 @@ body.locked #lockBtn{background:var(--amber); border-color:var(--amber); color:v
 .parcours-bandeau button.primary{flex:0 0 auto;}
 .pc-step{display:grid; grid-template-columns:26px 1fr; gap:11px; align-items:start; padding:12px 0; border-top:1px solid var(--border);}
 .pc-num{width:24px; height:24px; border-radius:50%; border:2px solid var(--blue); color:var(--blue-dark);
-  display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-weight:700; font-size:12px; margin-top:2px;}
+  display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-weight:600; font-size:12px; margin-top:2px;}
 .pc-step.pc-fait .pc-num{background:var(--green); border-color:var(--green); color:#fff;}
 .pc-step b{display:block; font-size:14.5px; font-weight:700; color:var(--ink);}
 .pc-step.pc-fait b{color:var(--green);}
@@ -1024,7 +1060,7 @@ button.ghost.small{padding:4px 8px; font-size:11px;}
 .log-summary{display:flex; gap:20px; flex-wrap:wrap; margin-top:12px; font-size:12.5px; color:var(--ink-soft);}
 .log-summary b{color:var(--ink); font-family:var(--font-mono);}
 .sc-name-print{font-family:var(--font-disp); font-weight:700; font-size:19px; color:var(--ink);}
-.status-badge{display:inline-flex; align-items:center; gap:4px; font-family:var(--font-mono); font-size:10.5px; font-weight:700; padding:3px 10px; border-radius:20px; letter-spacing:.02em; white-space:nowrap;}
+.status-badge{display:inline-flex; align-items:center; gap:4px; font-family:var(--font-mono); font-size:10.5px; font-weight:600; padding:3px 10px; border-radius:20px; letter-spacing:.02em; white-space:nowrap;}
 .status-badge.ok{background:var(--green); color:var(--on-accent);}
 .status-badge.ok::before{content:"✓";}
 .status-badge.pending{background:var(--amber); color:var(--on-accent);}
@@ -1095,7 +1131,7 @@ select.log-equipe:focus{border-color:var(--blue); outline:none; background:var(-
   border-radius:var(--radius-lg);}
 .vb-l{font-family:var(--font-mono); font-size:9.5px; letter-spacing:.09em; text-transform:uppercase; color:var(--fill-ink-soft); font-weight:600;}
 .vb-v{font-family:var(--font-disp); font-weight:800; font-size:30px; line-height:1; color:var(--fill-ink);
-  letter-spacing:-.02em; display:flex; align-items:baseline; gap:7px;}
+  letter-spacing:-.02em; display:flex; align-items:baseline; gap:7px; font-variant-numeric:tabular-nums;}
 .vb-v small{font-family:var(--font-body); font-weight:500; font-size:11.5px; color:var(--fill-ink-soft); letter-spacing:0;}
 /* v4.23 — la tuile volume emmène au champ Options de LA référence affichée */
 .volume-bandeau.clickable{cursor:pointer;}
@@ -1221,25 +1257,9 @@ select.log-equipe:focus{border-color:var(--blue); outline:none; background:var(-
 .foot-poids.critique{color:var(--red); border-color:var(--red); font-weight:600;}
 
 /* ---- bandeau verdict : la conclusion, en haut, en grand ---- */
-.verdict{display:flex; align-items:center; justify-content:space-between; gap:24px; flex-wrap:wrap;
-  padding:22px 24px; border-bottom:1px solid var(--border); background:var(--surface-alt);}
-.verdict.ref{background:linear-gradient(100deg, var(--blue-bg), var(--surface-alt));}
-.verdict.ok{background:linear-gradient(100deg, var(--green-bg), var(--surface-alt));}
-.verdict.bad{background:linear-gradient(100deg, var(--red-bg), var(--surface-alt));}
-.verdict.pending{background:linear-gradient(100deg, var(--amber-bg), var(--surface-alt));}
-.verdict-main{min-width:min(320px,100%); flex:1 1 320px;}
-.verdict-titre{font-family:var(--font-body); font-weight:700; font-size:clamp(22px,2.6vw,30px);
-  line-height:1.12; letter-spacing:-.02em; color:var(--ink); text-wrap:balance;}
-.verdict.ok .verdict-titre{color:var(--green);}
-.verdict.bad .verdict-titre{color:var(--red);}
-.verdict.ref .verdict-titre{color:var(--blue-dark);}
-.verdict-sous{margin-top:7px; font-size:13.5px; color:var(--ink-soft); line-height:1.5;}
-.verdict-chips{display:flex; gap:10px; flex-wrap:wrap;}
-.vchip{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
-  padding:9px 14px; min-width:96px;}
-.vchip .l{display:block; font-size:9.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-faint);}
-.vchip .v{display:block; margin-top:3px; font-family:var(--font-mono); font-variant-numeric:tabular-nums;
-  font-weight:700; font-size:16px; color:var(--ink);}
+/* v4.30 — la bande verdict indépendante disparaît : le verdict vit désormais dans le
+   tableau de bord (.foot-verdict, bloc scenario-foot). Les gabarits de rapport d'essai
+   gardent leur propre .verdict, stylé dans leurs gabarits. */
 
 /* ---- configuration outils : repliee une fois la campagne lancee ---- */
 .config-block{border-top:1px solid var(--border);}
@@ -1266,7 +1286,7 @@ body.atelier-on{overflow:hidden;}
 
 .at-logements{display:flex; gap:10px; flex-wrap:wrap;}
 .at-log{flex:1 1 130px; min-height:64px; border-radius:var(--radius); border:2px solid var(--border);
-  background:var(--surface); color:var(--ink-soft); font-family:var(--font-mono); font-size:13px; font-weight:700;
+  background:var(--surface); color:var(--ink-soft); font-family:var(--font-mono); font-size:13px; font-weight:600;
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; cursor:pointer;}
 .at-log span{font-family:var(--font-body); font-size:15px; font-weight:600;}
 .at-log.actif{border-color:var(--blue); background:var(--blue-bg); color:var(--blue-dark);}
@@ -1275,7 +1295,7 @@ body.atelier-on{overflow:hidden;}
   letter-spacing:.06em; color:var(--ink-faint); margin-bottom:8px; font-weight:600;}
 .at-piece-row{display:flex; gap:10px; align-items:stretch;}
 .at-piece-row input{flex:1 1 0; min-width:0; min-height:72px; font-family:var(--font-mono); font-variant-numeric:tabular-nums;
-  font-size:38px; font-weight:700; text-align:center; border:2px solid var(--border); border-radius:var(--radius);
+  font-size:38px; font-weight:600; text-align:center; border:2px solid var(--border); border-radius:var(--radius);
   background:var(--surface); color:var(--ink);}
 .at-piece-row input:focus{border-color:var(--blue); outline:none;}
 .at-step{flex:0 0 auto; width:72px; min-height:72px; font-size:30px; font-weight:700; border-radius:var(--radius);
@@ -1314,9 +1334,9 @@ body.atelier-on{overflow:hidden;}
 .at-recent-row .p{flex:0 0 auto; min-width:74px; color:var(--ink-soft);}
 .at-recent-row .pm{flex:1 1 0; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   font-family:var(--font-body); font-size:13px; color:var(--ink-faint);}
-.at-recent-row .v{font-weight:700; color:var(--ink);}
-.at-recent-row .ok{color:var(--green); font-size:11px; font-weight:700; min-width:80px; text-align:right;}
-.at-recent-row .bad{color:var(--red); font-size:11px; font-weight:700; min-width:80px; text-align:right;}
+.at-recent-row .v{font-weight:600; color:var(--ink);}
+.at-recent-row .ok{color:var(--green); font-size:11px; font-weight:600; min-width:80px; text-align:right;}
+.at-recent-row .bad{color:var(--red); font-size:11px; font-weight:600; min-width:80px; text-align:right;}
 .at-recent-row .na{color:var(--ink-faint); font-size:11px; min-width:80px; text-align:right;}
 .at-recent-vide{color:var(--ink-faint); font-style:italic; font-size:14px;}
 
@@ -1937,7 +1957,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.29.0";
+const TOOL_VERSION = "4.30.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -2322,6 +2342,10 @@ let outilsOuverts = new Set();
 let apDetailsOuverts = new Set();
 /* v4.29 — détail du coût annuel GÉNÉRAL déplié (pied du scénario affiché). */
 let coutAnnuelDetailOuvert = false;
+/* v4.30 — contextes d'essai ouverts manuellement (clé "scId|essaiId") : le bloc « Contexte »
+   (but, observations, rédaction, programme) est ouvert tant qu'il est vide, replié dès qu'il
+   est rempli — sauf si l'utilisateur l'a ouvert ou replié lui-même. */
+let essaiCtxOuverts = new Set();
 
 function normalizeBacklogItem(b){
   // v4.21 — le pense-bête devient un carnet de sujets chauds partagé : types « essai à
@@ -4736,14 +4760,22 @@ function scenarioStats(sc){
 /* ---- bandeau verdict : la reponse a la question que l'outil sert a trancher ----
    "est-ce que ce scenario est meilleur que ce qui tourne aujourd'hui, et de combien ?"
    Avant, il fallait lire trois cartes et faire le calcul de tete. */
+/* v4.30 — durée de vie du scénario = charnière du logement de référence (pièces par arête).
+   Sert à la fois au verdict (le ratio « × la durée de vie ») et à sa cellule du tableau
+   de bord (la valeur absolue, qui quittait les chips du verdict). */
+function dureeVieScenario(sc){
+  const l = logementCycle(sc);
+  const v = parseFloat(l && l.charniere);
+  return isNaN(v) ? null : v;
+}
+
 function verdictHTML(sc){
   const base = baselineScenario();
   const stats = scenarioStats(sc);
   const cost = scenarioCost(sc), baseCost = base ? scenarioCost(base) : null;
 
   // duree de vie = charniere du logement de reference (pieces par arete)
-  const charn = l => { const v = parseFloat(l && l.charniere); return isNaN(v) ? null : v; };
-  const vieSc = charn(logementCycle(sc)), vieBase = base ? charn(logementCycle(base)) : null;
+  const vieSc = dureeVieScenario(sc), vieBase = base ? dureeVieScenario(base) : null;
 
   // des que plusieurs postes de cout sont actifs, c'est le cout complet qui fait foi :
   // annoncer -93 % sur les seules plaquettes quand le temps machine double serait faux
@@ -4754,22 +4786,20 @@ function verdictHTML(sc){
   const refBase = complet ? (coutsBase ? coutsBase.total : null) : baseCost;
   const annuel = bilanAnnuel(sc);
 
-  const chips = [];
-  let titre, sousTitre, classe;
+  let titre, sousTitre, classe, eyebrow;
 
   if(sc.baseline){
     classe = "ref";
-    titre = "Référence de production";
-    sousTitre = "Base 100 — tous les autres scénarios se comparent à celui-ci.";
-    if(refCout !== null) chips.push({ l: complet ? "Coût total / pièce" : "Coût outil / pièce", v: fmt(refCout,4) + " €" });
-    if(vieSc !== null) chips.push({ l:"Durée de vie", v: vieSc + " p/arête" });
-    if(annuel && annuel.coutAnnuel !== null) chips.push({ l:"Coût annuel", v: fmtEuroCourt(annuel.coutAnnuel) });
+    eyebrow = "Référence de production";
+    titre = "Base 100 — tous les autres scénarios se comparent à celui-ci.";
+    sousTitre = "";
   } else {
     const dCost = (refCout !== null && refBase) ? ((refCout - refBase) / refBase) * 100 : null;
     const rVie  = (vieSc !== null && vieBase) ? vieSc / vieBase : null;
     const gain = dCost !== null && dCost < 0;
 
     classe = stats.validated ? "ok" : (stats.badCount > 0 ? "bad" : "pending");
+    eyebrow = stats.validated ? "Bilan validé" : "Verdict d'essai";
     if(dCost === null){
       titre = "Renseignez prix, arêtes et charnière";
       sousTitre = "Le gain se calcule dès que les plaquettes sont décrites.";
@@ -4787,23 +4817,16 @@ function verdictHTML(sc){
           : "validation en cours (" + stats.validCount + "/" + (sc.validationThreshold||"—") + ")");
       sousTitre = bouts.join(" · ") + " — vs " + escapeAttr(base.name);
     }
-    if(refCout !== null) chips.push({ l: complet ? "Coût total / pièce" : "Coût / pièce", v: fmt(refCout,4) + " €" });
-    if(complet && couts.machine !== null) chips.push({ l:"dont temps machine", v: fmt(couts.machine,4) + " €" });
-    if(vieSc !== null) chips.push({ l:"Durée de vie", v: vieSc + " p/arête" });
-    if(annuel && annuel.gainAnnuel !== undefined) chips.push({ l: annuel.gainAnnuel >= 0 ? "Gain annuel" : "Perte annuelle", v: fmtEuroCourt(Math.abs(annuel.gainAnnuel)) });
-    if(stats.rate !== null) chips.push({ l:"Hors tolérance", v: fmt(stats.rate,0) + " %" });
   }
 
-  return `
-    <div class="verdict ${classe}">
-      <div class="verdict-main">
-        <div class="verdict-titre">${titre}</div>
-        <div class="verdict-sous">${sousTitre}</div>
-      </div>
-      ${chips.length ? `<div class="verdict-chips">${chips.map(c =>
-        `<div class="vchip"><span class="l">${c.l}</span><span class="v">${c.v}</span></div>`).join("")}</div>` : ""}
-    </div>
-  `;
+  /* v4.30 — plus de chips : chaque chiffre qu'elles répétaient a sa cellule dans la bande
+     (coût/pièce, dont temps machine dans la décomposition, durée de vie, gain annuel,
+     hors tolérance dans la cellule validation). Ici : l'état, la réponse, la raison. */
+  return `<div class="foot-verdict ${classe}">
+    <p class="fv-eyebrow">${eyebrow}</p>
+    <div class="fv-titre">${titre}</div>
+    ${sousTitre ? `<div class="fv-sous">${sousTitre}</div>` : ""}
+  </div>`;
 }
 
 /* ---- MODE ATELIER : saisie plein ecran, pensee pour etre utilisee debout devant la
@@ -6378,19 +6401,31 @@ function scenarioBlockHTML(sc, interactive){
       <div class="foot-cell foot-cell-annuel${coutAnnuelDetailOuvert ? " ouvert" : ""}" title="Cliquer pour déplier le détail du calcul${sc.baseline ? "" : " du gain"}">
         <div class="l">${sc.baseline ? "Coût annuel" : "Gain annuel"}</div>
         ${sc.baseline || annuel.gainAnnuel === undefined
-          ? `<div class="v" style="font-size:26px;">${annuel.coutAnnuel === null ? "—" : fmtEuroCourt(annuel.coutAnnuel)}</div>
+          ? `<div class="v mid">${annuel.coutAnnuel === null ? "—" : fmtEuroCourt(annuel.coutAnnuel)}</div>
              <div class="foot-sub">${fmt(annuel.volume,0)} disques/an</div>`
-          : `<div class="v" style="font-size:26px; color:${annuel.gainAnnuel >= 0 ? "var(--on-fill-good)" : "var(--on-fill-bad)"};">${(annuel.gainAnnuel>=0?"+":"−") + fmtEuroCourt(Math.abs(annuel.gainAnnuel))}</div>
+          : `<div class="v mid" style="color:${annuel.gainAnnuel >= 0 ? "var(--on-fill-good)" : "var(--on-fill-bad)"};">${(annuel.gainAnnuel>=0?"+":"−") + fmtEuroCourt(Math.abs(annuel.gainAnnuel))}</div>
              <div class="foot-sub">sur ${fmt(annuel.volume,0)} disques/an${annuel.heuresAnnuelles !== undefined ? ` · ${annuel.heuresAnnuelles>=0?"+":"−"}${fmt(Math.abs(annuel.heuresAnnuelles),0)} h machine` : ""}</div>`}
         ${(!sc.baseline && !config.coutMachineActif && baseCycle && !isNaN(cyc) && Math.abs(cyc - baseCycle) > 0.5)
           ? `<div class="foot-sub" style="color:var(--on-fill-warn);">⚠ écart de cycle non chiffré ici — activez « Intégrer le temps machine au coût pièce » dans Options</div>` : ""}
-      </div>
-      <div class="foot-detail"${coutAnnuelDetailOuvert ? "" : " hidden"}>${coutAnnuelDetailHTML(sc, annuel)}</div>` : "";
+      </div>` : "";
 
+  /* v4.30 — un seul tableau de bord : le verdict ouvre la bande, les chiffres suivent.
+     La durée de vie a sa cellule (elle quittait les chips du verdict) ; le % hors tolérance
+     rejoint la cellule validation. Le détail du coût annuel (v4.29) se déplie en bas de
+     bande, sur toute la largeur, au lieu de couper la rangée de cellules en deux. */
+  const vieScCell = dureeVieScenario(sc), vieBaseCell = base ? dureeVieScenario(base) : null;
   const foot = `
     <div class="scenario-foot">
+      ${verdictHTML(sc)}
       ${coutCell}
       ${annuelCell}
+      <div class="foot-cell">
+        <div class="l">Durée de vie visée</div>
+        <div class="v mid">${vieScCell === null ? "—" : fmt(vieScCell,0)}<small>p/arête</small></div>
+        ${!sc.baseline && vieBaseCell !== null
+          ? `<div class="foot-sub">réf. ${fmt(vieBaseCell,0)} p/arête</div>`
+          : `<div class="foot-sub">charnière du logement de référence</div>`}
+      </div>
       <div class="foot-cell">
         <div class="l">€ / arête (bol + piste)</div>
         <div class="v">${fmt(scenarioCostPerEdge(sc), 3)}<small>€</small></div>
@@ -6404,12 +6439,14 @@ function scenarioBlockHTML(sc, interactive){
       </div>
       <div class="foot-cell">
         <div class="l">Validation scénario</div>
-        <div class="v" style="font-size:18px;">${stats.validCount}<small>/ ${sc.validationThreshold || "—"} essais conformes</small></div>
+        <div class="v small">${stats.validCount}<small>/ ${sc.validationThreshold || "—"} essais conformes</small></div>
         <div class="progress-track"><div class="progress-fill" style="width:${(sc.validationThreshold ? Math.min(100, stats.validCount/parseFloat(sc.validationThreshold)*100) : 0)}%;"></div></div>
+        ${stats.rate !== null ? `<div class="foot-sub">${fmt(stats.rate,0)} % de prélèvements hors tolérance</div>` : ""}
         ${parseFloat(sc.validationThreshold) === 5
           ? `<div class="foot-sub" title="Protocole du site (sept. 2026) : un essai concluant est répété 5× ; validé 5× et viable économiquement, il passe en production.">Protocole site : essai concluant répété 5× + viabilité éco</div>`
           : `<div class="foot-sub">Seuil de validation propre à ce scénario : ${sc.validationThreshold || "—"} essais conformes</div>`}
       </div>
+      ${annuel ? `<div class="foot-detail"${coutAnnuelDetailOuvert ? "" : " hidden"}>${coutAnnuelDetailHTML(sc, annuel)}</div>` : ""}
     </div>
     ${seuilBasculeHTML(sc)}
     ${ecartsCharniereHTML(sc)}
@@ -6441,7 +6478,7 @@ function scenarioBlockHTML(sc, interactive){
           <option value="D" ${sc.battCotes==="D"?"selected":""}>Droite seul</option>
           <option value="G" ${sc.battCotes==="G"?"selected":""}>Gauche seul</option>
         </select>` : ""}
-      <span class="limit-op-note">${sc.limitOverride ? "tolérance spécifique" : "valeur OP — l'éditer la rend spécifique"}</span>
+      <span class="limit-op-note" title="${sc.limitOverride ? "Tolérance spécifique à ce scénario (la valeur OP a été éditée)." : "Valeur OP — l'éditer la rend spécifique à ce scénario."}">${sc.limitOverride ? "tolérance spécifique" : "valeur OP"}</span>
     </div>
   ` : `<div class="limit-row-print">${sc.battActif === false ? "Battement non jugé — " : ""}${escapeAttr(libelleDe(sc))} ≤ ${fmt(parseFloat(limiteDe(sc)),3)}${sc.limitOverride ? " (tolérance spécifique)" : ""}</div>`;
 
@@ -6463,10 +6500,9 @@ function scenarioBlockHTML(sc, interactive){
     }).join("");
   const csupAddRow = interactive ? `
     <div class="limit-row">
-      <button class="ghost small csup-add" data-id="${sc.id}" data-cstype="ra">+ Ra</button>
-      <button class="ghost small csup-add" data-id="${sc.id}" data-cstype="ve">+ VE</button>
-      <button class="ghost small csup-add" data-id="${sc.id}" data-cstype="libre">+ Autre critère…</button>
-      <span class="limit-op-note">État de surface, variation d'épaisseur, tout critère libre — bornes maxi (mini optionnelle), côtés Droite/Gauche ou Inter/Exter.</span>
+      <button class="ghost small csup-add" data-id="${sc.id}" data-cstype="ra" title="État de surface Ra (µm) — borne maxi, mini optionnelle, côtés Droite/Gauche ou Inter/Exter">+ Ra</button>
+      <button class="ghost small csup-add" data-id="${sc.id}" data-cstype="ve" title="Variation d'épaisseur VE (mm) — borne maxi, mini optionnelle, côtés Droite/Gauche ou Inter/Exter">+ VE</button>
+      <button class="ghost small csup-add" data-id="${sc.id}" data-cstype="libre" title="Tout critère libre — libellé, borne maxi (mini optionnelle), côtés Droite/Gauche ou Inter/Exter">+ Autre critère…</button>
     </div>` : "";
 
   const thresholdRow = interactive ? `
@@ -6487,7 +6523,7 @@ function scenarioBlockHTML(sc, interactive){
   const logSection = `
     <div class="log-section">
       <h3>Essais — relevés de contrôle (un essai = plusieurs prélèvements sur la charnière visée)</h3>
-      <div class="log-meta">${emagRow}${limitRow}${csupRows}${csupAddRow}${thresholdRow}<div class="limit-row-print">Spec usine (OP40, disque fini) : Battement ≤ ${fmt(specsUsine.battement,3)} · VE ≤ ${fmt(specsUsine.ve,3)}</div></div>
+      <div class="log-meta">${emagRow}${limitRow}${csupRows}${csupAddRow}${thresholdRow}<div class="limit-row-print spec-usine">Spec usine (OP40, disque fini) : Battement ≤ ${fmt(specsUsine.battement,3)} · VE ≤ ${fmt(specsUsine.ve,3)}</div></div>
       <div class="essais-list">
         ${essaisHtml || `<div class="log-empty" style="padding:16px;">Aucun essai enregistré</div>`}
       </div>
@@ -6567,7 +6603,6 @@ function scenarioBlockHTML(sc, interactive){
   return `
     <div class="scenario ${sc.baseline ? "baseline" : ""}">
       <div class="scenario-head">${head}<span class="status-badge ${stats.validated ? "ok" : "pending"}">${stats.validated ? "✓ Validé" : "En cours"}</span></div>
-      ${verdictHTML(sc)}
       ${foot}
       <div class="sec-plaquettes">${configSection}</div>
       <div class="sec-graph">${chartHTML(sc)}</div>
@@ -7523,13 +7558,25 @@ function essaiCardHTML(sc, essai, interactive){
       </div>`;
   }).join("");
 
+  // v4.30 — contexte repliable : le quotidien d'un essai, ce sont les conditions, les
+  // prélèvements et la progression. Le but, les observations, la rédaction et le programme
+  // sont du contexte de création : regroupés, ouverts tant que tout est vide, repliés dès
+  // qu'un champ est rempli (un résumé du but reste lisible dans le bandeau replié).
+  const ctxKey = sc.id + "|" + essai.id;
+  const ctxVide = !(essai.but || essai.observations || essai.redigePar || essai.dateFin || essai.heureDebut || essai.heureFin || essai.programme || essai.programmeGauche || essai.programmeDroit);
+  const butTxt = String(essai.but || "");
+  const ctxResume = butTxt ? escapeAttr(butTxt.length > 90 ? butTxt.slice(0, 90) + "…" : butTxt) : "";
+  const ctxBloc = interactive
+    ? `<details class="essai-ctx"${(ctxVide || essaiCtxOuverts.has(ctxKey)) ? " open" : ""} data-essai-id="${essai.id}">
+        <summary>Contexte — but, observations, rédaction, programme${ctxResume ? `<span class="essai-ctx-resume">◎ ${ctxResume}</span>` : ""}</summary>
+        <div class="essai-ctx-body">${butRow}${obsRow}${finEssaiRow}${programmeRow}</div>
+      </details>`
+    : `${butRow}${obsRow}${finEssaiRow}${programmeRow}`;
+
   const body = `
       <div class="essai-head">${head}</div>
       ${paramsRow}
-      ${butRow}
-      ${obsRow}
-      ${finEssaiRow}
-      ${programmeRow}
+      ${ctxBloc}
       <div class="tbl-wrap">
         <table>
           <thead><tr>${prelHead}${interactive?"<th></th>":""}</tr></thead>
@@ -9018,6 +9065,13 @@ function attachDetailHandlers(sc){
       else essaisOuverts.delete(key);
     });
   });
+  /* v4.30 — contexte d'essai : l'état ouvert/replié posé par l'utilisateur survit aux re-rendus */
+  root.querySelectorAll("details.essai-ctx[data-essai-id]").forEach(det => {
+    det.addEventListener("toggle", () => {
+      const cle = sc.id + "|" + det.getAttribute("data-essai-id");
+      if(det.open) essaiCtxOuverts.add(cle); else essaiCtxOuverts.delete(cle);
+    });
+  });
   root.querySelectorAll("input.cell, input.sc-name, input.cell-cycle, input.limit-label, input.limit-value, input.essai-obs, input.essai-but, select.log-equipe, select.statut-select, input.statut-motif, select.usure-select").forEach(inp => {
     inp.addEventListener("change", onInputChange);
     // a chaque caractere : on ecrit juste la valeur (pas de reconstruction de l'ecran).
@@ -10265,6 +10319,12 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.30.0", date:"24/09/2026", points:[
+    "<b>Le verdict et les gros chiffres fusionnent en un seul tableau de bord.</b> Fini la bande de verdict au-dessus d'une bande de chiffres qui répétait les mêmes nombres en tuiles : désormais une seule bande — la réponse (gain, verdict d'essai, référence) ouvre la marche, suivie du coût pièce, du gain annuel, de la durée de vie visée (nouvelle cellule, avec la référence à côté), du €/arête, du cycle et de la validation (qui affiche aussi le % de prélèvements hors tolérance).",
+    "<b>Le contexte de l'essai se replie.</b> But, observations, rédacteur, dates de début/fin et programme CNC sont regroupés dans un bloc « Contexte » : ouvert tant que l'essai est vierge, replié dès qu'il est rempli (un aperçu du but reste lisible). L'écran d'un essai commence désormais par ce qui compte tous les jours : conditions, prélèvements, progression.",
+    "<b>Ligne critères d'essais resserrée.</b> Les boutons + Ra / + VE / + Autre critère tiennent sur la ligne au lieu de s'empiler en colonne, la note « valeur OP » ne wrappe plus sur trois lignes (la phrase complète passe en info-bulle), et la spéc usine s'aligne à droite de la même ligne.",
+    "<b>Typographie des chiffres assainie.</b> Le mono repasse sur sa vraie graisse 600 partout où le faux gras 700 était synthétisé (IBM Plex Mono 700 n'est pas embarqué), les gros chiffres deviennent tabulaires (un chiffre qui change ne fait plus bouger ses voisins), les unités sont normalisées (10,5 px) et le tableau d'impression utilise la même police mono que l'écran pour les valeurs saisies."
+  ]},
   { version:"4.29.0", date:"24/09/2026", points:[
     "<b>Étiquettes de projet : le rattachement cross-lignes ne passe plus en silence.</b> Un projet peut légitimement grouper plusieurs lignes (une plaquette testée sur deux machines) — mais rattacher un scénario de HESSAPP au projet « coût EMAG 1 » est presque toujours un accident. Désormais l'info-bulle de chaque étiquette dit quelles lignes le projet couvre déjà, et un clic qui traverse les lignes demande confirmation. On avertit, on ne bloque pas.",
     "<b>Le coût annuel général se déplie aussi.</b> Un clic sur la tuile « Coût annuel » (ou « Gain annuel ») du scénario détaille le calcul : chaque composante du coût complet — outillage (logement par logement, avec le prix ÷ arêtes × charnière de chacun), pièces détachées, temps machine, rebut — multipliée par la production. Pour un scénario d'essai : référence vs scénario, et le gain qui en résulte, heures machine comprises."
@@ -12429,6 +12489,13 @@ function runTests(){
       ok("coutAnnuelDetail : sans volume, rien à détailler",
          coutAnnuelDetailHTML(A, null), "");
     }
+
+    /* ---- v4.30 : durée de vie du scénario (cellule du tableau de bord + ratio du verdict) ---- */
+    ok("dureeVieScenario = charnière du logement de référence", dureeVieScenario(A), 100);
+    ok("dureeVieScenario : scénario d'essai", dureeVieScenario(B), 200);
+    ok("dureeVieScenario : charnière manquante -> null",
+       dureeVieScenario(normalizeScenario({ id:"X", name:"X", baseline:false,
+         outils:[{ id:"tX", numero:"TX", logements:[{ id:"gX", nom:"Piste", prix:10, aretes:8, charniere:"", vc:500, f:0.5 }] }] })), null);
 
     ok("normalizeScenario : plan conserve a travers l'arbre",
        normalizeScenario({ id:"sp2", name:"p", outils:[{ id:"t9", numero:"T9", plan:planTest, logements:[] }] }).outils[0].plan, planTest);
