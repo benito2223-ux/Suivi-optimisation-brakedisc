@@ -2032,7 +2032,7 @@ body.atelier-on{overflow:hidden;}
 </style>
 
 <script>
-const TOOL_VERSION = "4.37.0";
+const TOOL_VERSION = "4.38.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -6881,7 +6881,7 @@ function scenarioBlockHTML(sc, interactive){
       <div class="scenario-head">${head}<span class="status-badge ${stats.validated ? "ok" : "pending"}">${stats.validated ? "✓ Validé" : "En cours"}</span></div>
       ${foot}
       <div class="sec-plaquettes">${configSection}</div>
-      <div class="sec-graph">${chartHTML(sc)}</div>
+      <div class="sec-graph">${interactive ? `<details class="zone-det"><summary>Tendance â€” Ã©volution au fil des piÃ¨ces</summary>` : ""}${chartHTML(sc)}${interactive ? `</details>` : ""}</div>
       <div class="sec-essais">${logSection}</div>
       <div class="sec-rebut">${scrapSection}</div>
     </div>
@@ -10595,6 +10595,10 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.38.0", date:"24/09/2026", points:[
+    "<b>La tendance passe en zone de lecture.</b> Le graphique d\'Ã©volution au fil des piÃ¨ces est repliÃ© par dÃ©faut : il ne concurrence plus la saisie des essais, et s\'ouvre au clic.",
+    "Rappel 4.37 : zone de dÃ©tail regroupÃ©e (calcul, consommation annuelle, piÃ¨ces dÃ©tachÃ©es)."
+  ]},
   { version:"4.37.0", date:"24/09/2026", points:[
     "<b>Zone de détail regroupée.</b> Détail du calcul, consommation annuelle et pièces détachées ne font plus qu\'un seul bloc repliable : l\'écran montre la décision (zones 1 et 2) et tient le calcul à un clic.",
     "Rappel 4.36 : écran en trois zones nommées (Réponse / Scénarios / Traçabilité)."
