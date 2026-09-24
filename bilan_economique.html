@@ -2032,7 +2032,7 @@ body.atelier-on{overflow:hidden;}
 </style>
 
 <script>
-const TOOL_VERSION = "4.35.0";
+const TOOL_VERSION = "4.36.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -6449,7 +6449,7 @@ function renderTabs(){
   // autant de colonnes qu'elle peut en tenir et ecraserait les autres tuiles a 200 px.
   const ouverte = ordre.filter(o => o.sc.id === activeId);
   const autres  = ordre.filter(o => o.sc.id !== activeId);
-  el.innerHTML = baseBannerHTML() + ouverte.map(carte).join("") +
+  el.innerHTML = '<div class="zone-band"><b>1 &middot; Reponse</b><span>à quoi on compare, et quel scénario gagne</span></div>' + baseBannerHTML() + '<div class="zone-band"><b>2 &middot; Scénarios</b><span>le scénario ouvert d abord, les autres ensuite</span></div>' + ouverte.map(carte).join("") +
     (autres.length ? `<div class="tabs-rest">${autres.map(carte).join("")}</div>` : "");
   const selBase = document.getElementById("baseSel");
   if(selBase) selBase.addEventListener("change", () => { setBaseComparaison(selBase.value); render(); });
@@ -8456,7 +8456,7 @@ function renderDetail(){
   const sc = data.find(s => s.id === activeId) || data[0];
   const wrap = document.getElementById("scenarioDetail");
   if(!sc){ wrap.innerHTML = ""; return; }
-  wrap.innerHTML = `<div class="zone-band"><b>Détail du scénario ouvert</b><span>outils, cycle, essais, rebut — la traçabilité de ce scénario</span></div>` + scenarioBlockHTML(sc, true);
+  wrap.innerHTML = `<div class="zone-band"><b>3 &middot; Traçabilité du scénario ouvert</b><span>outils, cycle, essais, rebut</span></div>` + scenarioBlockHTML(sc, true);
   attachDetailHandlers(sc);
   loadPhotoThumbnails();
 }
@@ -10595,6 +10595,10 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.36.0", date:"24/09/2026", points:[
+    "<b>Écran en trois zones nommées.</b> 1 · Réponse (base de comparaison et meilleur coût), 2 · Scénarios, 3 · Traçabilité du scénario ouvert. On sait toujours où l\'on est dans l\'écran.",
+    "Rappel 4.35 : repère de zone, deux niveaux de libellés, blocs périphériques repliés."
+  ]},
   { version:"4.35.0", date:"24/09/2026", points:[
     "<b>Repère de zone.</b> On voit où commence la traçabilité du scénario ouvert (outils, cycle, essais, rebut), au lieu d\'enchaîner les blocs à la suite.",
     "Rappel 4.34 : deux niveaux de libellés — étiquettes en recul, valeurs en avant."
