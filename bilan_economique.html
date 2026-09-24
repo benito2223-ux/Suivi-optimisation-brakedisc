@@ -444,6 +444,14 @@ input.cell.sub{font-size:10.5px; color:var(--ink-faint);}
 @media (max-width:760px){ .foot-cell-wide{grid-column:span 1;} }
 .foot-sub{font-family:var(--font-mono); font-size:11.5px; color:var(--fill-ink-soft); margin-top:4px;}
 .foot-cell{padding:14px 16px; border-right:1px solid var(--fill-line);}
+/* v4.29 — tuile coût annuel cliquable + détail dépliable sous la rangée */
+.foot-cell-annuel{cursor:pointer;}
+.foot-cell-annuel:hover{background:var(--fill-line);}
+.foot-detail{grid-column:1/-1; border-top:1px solid var(--fill-line); padding:10px 16px 12px;}
+.foot-detail[hidden]{display:none;}
+.foot-detail-inner{display:flex; flex-direction:column; gap:3px;}
+.foot-detail-l{display:flex; justify-content:space-between; align-items:baseline; gap:14px; font-size:11.5px; color:var(--fill-ink-soft);}
+.foot-detail-l b{font-family:var(--font-mono); font-weight:600; color:var(--fill-ink); text-align:right; white-space:nowrap;}
 .foot-cell:last-child{border-right:none; background:var(--fill-good);}
 .foot-cell:last-child .l, .foot-cell:last-child .foot-sub{color:var(--fill-good-ink-soft);}
 .foot-cell .l{font-size:9.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--fill-ink-soft); margin-bottom:7px; font-weight:600;}
@@ -1929,7 +1937,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.28.0";
+const TOOL_VERSION = "4.29.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -2312,6 +2320,8 @@ let outilsOuverts = new Set();
 /* v4.28 — tuiles d'aperçu dont le détail de calcul du coût annuel est déplié
    (clé "scId|logementId" : survit aux re-rendus comme les fiches outil). */
 let apDetailsOuverts = new Set();
+/* v4.29 — détail du coût annuel GÉNÉRAL déplié (pied du scénario affiché). */
+let coutAnnuelDetailOuvert = false;
 
 function normalizeBacklogItem(b){
   // v4.21 — le pense-bête devient un carnet de sujets chauds partagé : types « essai à
@@ -2448,6 +2458,18 @@ function purgerTagsMorts(pj){
 }
 function projetContientScenario(pj, ligneId, referenceId, opId, scenarioId){
   return pj.tags.some(t => t.ligneId===ligneId && t.referenceId===referenceId && t.opId===opId && t.scenarioId===scenarioId);
+}
+/* v4.29 — les lignes que couvre un projet, dédoublonnées. Un projet EST une playlist qui
+   peut légitimement traverser les lignes (une plaquette testée sur deux machines) ; mais
+   un projet « coût EMAG 1 » qui se retrouve avec un scénario de HESSAPP est presque
+   toujours un étiquetage accidentel — d'où l'avertissement au clic et l'info-bulle. */
+function lignesDuProjet(pj){
+  const noms = new Set();
+  (pj.tags || []).forEach(t => {
+    const r = resoudreTag(t);
+    if(r) noms.add(r.ligne.nom || "Sans nom");
+  });
+  return [...noms].sort((a,b) => a.localeCompare(b, "fr"));
 }
 function toggleTagScenario(pj, ligneId, referenceId, opId, scenarioId){
   const i = pj.tags.findIndex(t => t.ligneId===ligneId && t.referenceId===referenceId && t.opId===opId && t.scenarioId===scenarioId);
@@ -5218,6 +5240,46 @@ function bilanAnnuel(sc, cfg, ligne, ref){
   return out;
 }
 
+/* v4.29 — détail dépliable de la tuile « Coût annuel / Gain annuel » du pied de
+   scénario : chaque composante du coût complet, multipliée par la production, et le
+   détail logement par logement pour l'outillage. Même point de vérité que le chiffre
+   de tête (coutsDetail sans ligne explicite = ligne active en repli), pour que le
+   détail tombe toujours juste sous le total affiché. Renvoie "" si rien à détailler. */
+function coutAnnuelDetailHTML(sc, annuel){
+  if(!annuel) return "";
+  const cfg = config, vol = annuel.volume;
+  const ligne = (l, v) => `<div class="foot-detail-l"><span>${l}</span><b>${v}</b></div>`;
+  const euros = v => fmtEuroCourt(v) + "/an";
+  let corps = "";
+  const base = baselineScenario();
+  if(!sc.baseline && base && annuel.gainAnnuel !== undefined){
+    const cB = coutsDetail(base, cfg), cS = coutsDetail(sc, cfg);
+    if(cB.total !== null) corps += ligne("Référence « " + (base.name || "—") + " » : coût complet pièce × production",
+      fmt(cB.total,4) + " € × " + fmt(vol,0) + " = " + euros(cB.total * vol));
+    if(cS.total !== null) corps += ligne("Ce scénario : coût complet pièce × production",
+      fmt(cS.total,4) + " € × " + fmt(vol,0) + " = " + euros(cS.total * vol));
+    corps += ligne("Gain annuel = référence − scénario",
+      (annuel.gainAnnuel >= 0 ? "+" : "−") + fmtEuroCourt(Math.abs(annuel.gainAnnuel)) + "/an" +
+      (annuel.heuresAnnuelles !== undefined ? " · " + (annuel.heuresAnnuelles >= 0 ? "+" : "−") + fmt(Math.abs(annuel.heuresAnnuelles),0) + " h machine/an" : ""));
+  } else {
+    const cd = coutsDetail(sc, cfg);
+    if(cd.plaquettes !== null){
+      corps += ligne("Outillage : coût plaquette pièce × production",
+        fmt(cd.plaquettes,4) + " € × " + fmt(vol,0) + " = " + euros(cd.plaquettes * vol));
+      corps += (sc.outils||[]).flatMap(o => o.logements.map(l => {
+        const pc = posCost(l);
+        if(pc === null) return null;
+        return ligne((o.numero || "—") + " · " + (l.nom || "—") + " (" + fmt(parseFloat(l.prix),2) + " € ÷ " + l.aretes + " × " + l.charniere + ")", euros(pc * vol));
+      })).filter(Boolean).join("");
+    }
+    if(cd.pieces !== null) corps += ligne("Pièces détachées pièce × production", fmt(cd.pieces,4) + " € × " + fmt(vol,0) + " = " + euros(cd.pieces * vol));
+    if(cd.machine !== null) corps += ligne("Temps machine pièce × production", fmt(cd.machine,4) + " € × " + fmt(vol,0) + " = " + euros(cd.machine * vol));
+    if(cd.rebut !== null) corps += ligne("Rebut pièce × production", fmt(cd.rebut,4) + " € × " + fmt(vol,0) + " = " + euros(cd.rebut * vol));
+    if(cd.total !== null) corps += ligne("Total = coût complet pièce × production", fmt(cd.total,4) + " € × " + fmt(vol,0) + " = " + euros(cd.total * vol));
+  }
+  return corps ? `<div class="foot-detail-inner">${corps}</div>` : "";
+}
+
 /* ---- seuil de bascule : le point ou le scenario cesse d'etre gagnant ----
    C'est la question que pose toujours l'atelier : "jusqu'ou je peux ralentir avant que
    ca ne vaille plus le coup ?" */
@@ -6072,7 +6134,11 @@ function renderTabs(){
           // etiquettes actives sur un meme scenario, chacune reste identifiable sans lire
           // le texte -- la meme couleur que le petit point sur sa carte de projet.
           const style = dedans ? ` style="background:${couleurProjet(pj)}; border-color:${couleurProjet(pj)};"` : "";
-          return `<span class="tag-pill ${dedans ? "on" : ""}"${style} data-projet="${pj.id}" title="${dedans ? "Retirer de" : "Ajouter à"} « ${escapeAttr(pj.nom)} »">${dedans ? "✓ " : "+ "}${escapeAttr(pj.nom)}</span>`;
+          // v4.29 : l'info-bulle dit quelles lignes le projet couvre déjà — le piège
+          // « rattacher un scénario de HESSAPP au projet coût EMAG 1 » se voit AVANT le clic
+          const ses = lignesDuProjet(pj);
+          const ctx = ses.length ? ` — contient : ${escapeAttr(ses.join(", "))}` : "";
+          return `<span class="tag-pill ${dedans ? "on" : ""}"${style} data-projet="${pj.id}" title="${dedans ? "Retirer de" : "Ajouter à"} « ${escapeAttr(pj.nom)} »${ctx}">${dedans ? "✓ " : "+ "}${escapeAttr(pj.nom)}</span>`;
         }).join("")}</span>` : ""}
         <span class="tc-row"><span class="tc-label">${couts.multiPoste ? "€/pièce total" : "€/pièce"}</span><span class="tc-val">${cRef === null ? "—" : fmt(cRef,4)}</span>${deltaHtml}</span>
         ${an && an.gainAnnuel !== undefined ? `<span class="tc-row"><span class="tc-label">${an.gainAnnuel>=0?"Gain/an":"Perte/an"}</span><span class="tc-val ${an.gainAnnuel>=0?"tc-gain":"tc-perte"}">${(an.gainAnnuel>=0?"+":"−")+fmtEuroCourt(Math.abs(an.gainAnnuel))}</span></span>` : ""}
@@ -6095,8 +6161,26 @@ function renderTabs(){
       const pill = e.target.closest(".tag-pill");
       if(pill){
         const pj = projets.find(x => x.id === pill.getAttribute("data-projet"));
-        if(pj) toggleTagScenario(pj, activeLigneId, activeReferenceId, activeOpId, b.getAttribute("data-tab"));
-        saveData(); render();
+        const scId = b.getAttribute("data-tab");
+        if(!pj) return;
+        /* v4.29 — rattacher un scénario à un projet d'une AUTRE ligne est possible (un
+           projet peut légitimement traverser les lignes) mais jamais silencieux : le
+           projet « coût EMAG 1 » qui se retrouve avec un scénario de HESSAPP fausse sa
+           lecture. On avertit, on ne bloque pas — la philosophie v4.5. */
+        const rattler = () => { toggleTagScenario(pj, activeLigneId, activeReferenceId, activeOpId, scId); saveData(); render(); };
+        if(!projetContientScenario(pj, activeLigneId, activeReferenceId, activeOpId, scId)){
+          const ses = lignesDuProjet(pj);
+          const ligneCourante = getActiveLigne();
+          if(ses.length && ligneCourante && !ses.includes(ligneCourante.nom)){
+            dialogueConfirmer(
+              "« " + pj.nom + " » ne contient que des scénarios de : " + ses.join(", ") + ".\n" +
+              "Vous êtes sur " + (ligneCourante.nom || "une autre ligne") + " — rattacher quand même ce scénario ?\n\n" +
+              "Un projet peut légitimement grouper plusieurs lignes (une plaquette testée sur deux machines) ; c'est juste pour éviter l'étiquetage accidentel.",
+              { titre: "Projet d'une autre ligne ?", okLabel: "Rattacher" }).then(ok => { if(ok) rattler(); });
+            return;
+          }
+        }
+        rattler();
         return;
       }
       activeId = b.getAttribute("data-tab"); render();
@@ -6291,7 +6375,7 @@ function scenarioBlockHTML(sc, interactive){
 
   const annuel = bilanAnnuel(sc, config, null, null);
   const annuelCell = annuel ? `
-      <div class="foot-cell">
+      <div class="foot-cell foot-cell-annuel${coutAnnuelDetailOuvert ? " ouvert" : ""}" title="Cliquer pour déplier le détail du calcul${sc.baseline ? "" : " du gain"}">
         <div class="l">${sc.baseline ? "Coût annuel" : "Gain annuel"}</div>
         ${sc.baseline || annuel.gainAnnuel === undefined
           ? `<div class="v" style="font-size:26px;">${annuel.coutAnnuel === null ? "—" : fmtEuroCourt(annuel.coutAnnuel)}</div>
@@ -6300,7 +6384,8 @@ function scenarioBlockHTML(sc, interactive){
              <div class="foot-sub">sur ${fmt(annuel.volume,0)} disques/an${annuel.heuresAnnuelles !== undefined ? ` · ${annuel.heuresAnnuelles>=0?"+":"−"}${fmt(Math.abs(annuel.heuresAnnuelles),0)} h machine` : ""}</div>`}
         ${(!sc.baseline && !config.coutMachineActif && baseCycle && !isNaN(cyc) && Math.abs(cyc - baseCycle) > 0.5)
           ? `<div class="foot-sub" style="color:var(--on-fill-warn);">⚠ écart de cycle non chiffré ici — activez « Intégrer le temps machine au coût pièce » dans Options</div>` : ""}
-      </div>` : "";
+      </div>
+      <div class="foot-detail"${coutAnnuelDetailOuvert ? "" : " hidden"}>${coutAnnuelDetailHTML(sc, annuel)}</div>` : "";
 
   const foot = `
     <div class="scenario-foot">
@@ -9463,6 +9548,15 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
       else { det.hidden = true; apDetailsOuverts.delete(cle); }
     });
   });
+  /* v4.29 — détail du coût annuel GÉNÉRAL (pied de scénario) */
+  root.querySelectorAll(".foot-cell-annuel").forEach(cell => {
+    cell.addEventListener("click", () => {
+      coutAnnuelDetailOuvert = !coutAnnuelDetailOuvert;
+      const det = root.querySelector(".foot-detail");
+      if(det) det.hidden = !coutAnnuelDetailOuvert;
+      cell.classList.toggle("ouvert", coutAnnuelDetailOuvert);
+    });
+  });
   /* v4.23 — la tuile du volume annuel emmène au bon champ : Options, pré-rempli pour LA
      référence affichée. Un seul geste, aucune ambiguïté sur la cible. */
   root.querySelectorAll(".volume-bandeau.clickable").forEach(el => {
@@ -10171,6 +10265,10 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.29.0", date:"24/09/2026", points:[
+    "<b>Étiquettes de projet : le rattachement cross-lignes ne passe plus en silence.</b> Un projet peut légitimement grouper plusieurs lignes (une plaquette testée sur deux machines) — mais rattacher un scénario de HESSAPP au projet « coût EMAG 1 » est presque toujours un accident. Désormais l'info-bulle de chaque étiquette dit quelles lignes le projet couvre déjà, et un clic qui traverse les lignes demande confirmation. On avertit, on ne bloque pas.",
+    "<b>Le coût annuel général se déplie aussi.</b> Un clic sur la tuile « Coût annuel » (ou « Gain annuel ») du scénario détaille le calcul : chaque composante du coût complet — outillage (logement par logement, avec le prix ÷ arêtes × charnière de chacun), pièces détachées, temps machine, rebut — multipliée par la production. Pour un scénario d'essai : référence vs scénario, et le gain qui en résulte, heures machine comprises."
+  ]},
   { version:"4.28.0", date:"23/09/2026", points:[
     "<b>Le détail du calcul au clic sur la tuile.</b> Chaque tuile de la vue d'ensemble se déplie maintenant opération par opération : prix plaquette, durée de vie visée, coût pièce (prix ÷ arêtes × charnière), production annuelle, plaquettes consommées par an, et le coût annuel qui en résulte — avec les vrais chiffres du logement, pas une formule abstraite. L'état déplié survit aux rafraîchissements de l'écran.",
     "<b>Derniers noms figés traqués.</b> Quatre affichages résistaient encore au renommage : la barre de progression du mode atelier, le sélecteur de logement des prélèvements, son équivalent à l'impression, et la fenêtre de comparaison d'essais (qui affiche aussi désormais le statut « Arrêté »). Tous relisent maintenant le nom actuel du scénario."
@@ -12300,6 +12398,36 @@ function runTests(){
          rangLigneSeptFons("EMAG 1") < rangLigneSeptFons("PCI 2"), true);
       ok("rangLigneSeptFons : ligne inconnue après le référentiel",
          rangLigneSeptFons("MACHINE X") === LIGNES_SEPT_FONS.length, true);
+    }
+
+    /* ---- v4.29 : détail du coût annuel + lignes couvertes par un projet ---- */
+    {
+      // arbre contrôlé : les sections précédentes reassignent lignes/data, on isole
+      const volAvant = config.volumeActif;
+      const sauve = { lignes, data, activeLigneId, activeReferenceId, activeOpId, activeId };
+      config.volumeActif = true;
+      lignes = [ normalizeLigne({ id:"l29", nom:"Ligne test", coutHoraire:50,
+        references:[{ id:"r29", nom:"Ref", productionAnnuelle:100000,
+          ops:[{ id:"o29", nom:"OP", ordre:10, config, scenarios:[A, B] }] }] }) ];
+      activeLigneId = "l29"; activeReferenceId = "r29"; activeOpId = "o29";
+      data = [A, B]; activeId = "A";
+      const pjT = { id:"pjX", nom:"coût EMAG 1", tags:[
+        { ligneId:"l29", referenceId:"r29", opId:"o29", scenarioId:"A" }
+      ]};
+      ok("lignesDuProjet : la ligne du scénario étiqueté", lignesDuProjet(pjT), ["Ligne test"]);
+      const detA = coutAnnuelDetailHTML(A, bilanAnnuel(A, config, null, null));
+      ok("coutAnnuelDetail : la baseline détaille outillage par logement + total",
+         /Outillage : coût plaquette/.test(detA) && /Piste \(40,00 € ÷ 8 × 100\)/.test(detA) &&
+         /Total = coût complet pièce × production/.test(detA), true);
+      const detB = coutAnnuelDetailHTML(B, bilanAnnuel(B, config, null, null));
+      ok("coutAnnuelDetail : le scénario d'essai détaille le gain vs la référence",
+         /Référence «/.test(detB) && /Gain annuel = référence − scénario/.test(detB), true);
+      lignes = sauve.lignes; data = sauve.data;
+      activeLigneId = sauve.activeLigneId; activeReferenceId = sauve.activeReferenceId;
+      activeOpId = sauve.activeOpId; activeId = sauve.activeId;
+      config.volumeActif = volAvant;
+      ok("coutAnnuelDetail : sans volume, rien à détailler",
+         coutAnnuelDetailHTML(A, null), "");
     }
 
     ok("normalizeScenario : plan conserve a travers l'arbre",

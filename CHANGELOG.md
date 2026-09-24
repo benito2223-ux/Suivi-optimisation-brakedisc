@@ -5,6 +5,31 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.29.0] — 2026-09-24
+
+Deux points de Benjamin : le piège « rattacher un scénario d'une ligne à un
+projet d'une autre ligne » (ex. un scénario HESSAPP dans le projet « coût
+EMAG 1 »), et le coût annuel GÉNÉRAL du pied de scénario qui mérite le même
+détail dépliable que les tuiles de logement.
+
+### Modifié — les étiquettes de projet traversent les lignes, mais plus en silence
+Le modèle v4.1 reste entier : un projet est une playlist qui peut légitimement
+couvrir plusieurs lignes. Mais désormais `lignesDuProjet(pj)` (testée) liste
+les lignes couvertes : **l'info-bulle de chaque étiquette** dit « contient :
+EMAG 1 », et un clic qui rattache un scénario depuis une ligne absente du
+projet ouvre une **confirmation** (« y rattacher quand même ? ») — on avertit,
+on ne bloque pas (philosophie v4.5).
+
+### Ajouté — le coût annuel général se déplie
+La tuile « Coût annuel / Gain annuel » du pied de scénario est cliquable ;
+un bandeau de détail se déploie sous la rangée, avec le même point de vérité
+que le chiffre de tête (`coutsDetail` sans ligne explicite) : **Coût annuel** —
+outillage × production, détail logement par logement (prix ÷ arêtes ×
+charnière de chacun), puis pièces détachées / temps machine / rebut si leurs
+modules sont actifs, et le total. **Gain annuel** — référence × production,
+scénario × production, le gain et les heures machine. État déplié mémorisé
+(`coutAnnuelDetailOuvert`), bandeau masqué à l'impression si replié.
+
 ## [4.28.0] — 2026-09-23
 
 Deux points de Matis/Benjamin : « l'affichage Bol/Piste persiste » (copie
