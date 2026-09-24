@@ -2008,8 +2008,23 @@ body.atelier-on{overflow:hidden;}
     background:var(--surface); }
 </style>
 
+<style>
+  /* v4.34 — deux niveaux de libellés : les étiquettes reculent, les valeurs avancent.
+     L'outil empilait jusqu'ici de petits libellés mono en majuscules au même poids que
+     les chiffres : c'est la première cause de l'impression « tout au même niveau ». */
+  .foot-cell .l, .tc-label, .pos-label, .conso-lab, .kvf-item .l,
+  .sc-r .l, .mini-stat .ms-l, .log-section .l, .outil-sommaire .l {
+    font-size:10.5px; letter-spacing:.07em; color:var(--ink-faint);
+  }
+  .foot-cell .v, .tc-val, .kvf-item .v {
+    color:var(--ink); font-variant-numeric:tabular-nums;
+  }
+  /* les blocs majeurs se détachent : le titre de section porte la hiérarchie */
+  .synthese-block > h3, .chart-block > h3 { margin-bottom:12px; }
+</style>
+
 <script>
-const TOOL_VERSION = "4.33.0";
+const TOOL_VERSION = "4.34.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -10572,6 +10587,10 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.34.0", date:"24/09/2026", points:[
+    "<b>Deux niveaux de libellés.</b> Les étiquettes (petites, grises) reculent, les valeurs et les chiffres avancent : l\'écran se lit par niveaux au lieu d\'un aplat uniforme.",
+    "Rappel 4.33 : blocs périphériques repliés par défaut, respiration entre les blocs, polices embarquées réellement actives."
+  ]},
   { version:"4.33.0", date:"24/09/2026", points:[
     "<b>L\'écran respire.</b> Les blocs périphériques (consommation annuelle, pièces détachées) sont repliés par défaut : l\'essentiel reste visible, le détail s\'ouvre au clic — et l\'impression reste complète.",
     "<b>Zones mieux séparées.</b> Espacements revus entre les grands blocs pour que l\'œil distingue les zones au lieu de lire un flux continu.",
