@@ -1957,7 +1957,7 @@ body.atelier-on{overflow:hidden;}
 </div>
 
 <script>
-const TOOL_VERSION = "4.30.0";
+const TOOL_VERSION = "4.31.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -3614,7 +3614,52 @@ function rapportValidationHTML(sc){
   .kpi .l{font-size:10px; text-transform:uppercase; color:#7c837c;}
   .kpi .v{font-family:Consolas,monospace; font-size:20px; font-weight:600;}
   footer{margin-top:36px; padding-top:12px; border-top:1px solid #d8dad3; font-size:11px; color:#7c837c;}
-</style></head><body>
+</style><style>
+  /* v4.30 — vue de synthèse comparative : regroupement + meilleure valeur en évidence */
+  table.synthese.syn2 { min-width:760px; }
+  table.synthese.syn2 td.val { font-weight:600; }
+  table.synthese.syn2 tr.syn2-grp td {
+    background:var(--blue-bg); color:var(--blue-dark); text-align:left; white-space:normal;
+    font-family:var(--font-body); font-size:10.5px; font-weight:700; letter-spacing:.08em;
+    text-transform:uppercase; padding:6px 10px;
+  }
+  table.synthese.syn2 td.syn2-best { background:var(--green-bg); color:var(--green); }
+  table.synthese.syn2 td.syn2-worst { background:var(--red-bg); color:var(--red); }
+  table.synthese.syn2 th .sc-name { display:block; }
+  table.synthese.syn2 th .syn2-wins {
+    display:block; margin-top:3px; font-family:var(--font-body); font-size:9.5px; font-weight:600;
+    letter-spacing:.02em; text-transform:none; color:var(--ink-faint);
+  }
+  table.synthese.syn2 th.is-lead { box-shadow:inset 0 -3px 0 var(--red); }
+  table.synthese.syn2 th.is-lead .syn2-wins { color:var(--blue-dark); }
+  .syn2-legende { display:flex; gap:16px; flex-wrap:wrap; margin-top:10px; font-size:11.5px; color:var(--ink-soft); }
+  .syn2-legende span { display:inline-flex; align-items:center; gap:6px; }
+  .syn2-legende i { width:12px; height:12px; border-radius:3px; display:inline-block; flex:none; }
+  .syn2-legende .sw-best { background:var(--green-bg); border:1px solid rgba(18,101,58,.35); }
+  .syn2-legende .sw-worst { background:var(--red-bg); border:1px solid rgba(197,0,24,.3); }
+  .syn2-legende .sw-grp { background:var(--blue-bg); border:1px solid rgba(13,71,161,.35); }
+
+  /* cascade du gain */
+  .syn2-wf-sub { margin:0 0 14px; font-size:12.5px; color:var(--ink-soft); }
+  .syn2-wf { display:flex; align-items:flex-end; gap:8px; min-height:180px; padding:8px 2px 0; border-bottom:2px solid var(--border); }
+  .syn2-wf-col { flex:1; min-width:0; display:flex; flex-direction:column; justify-content:flex-end; height:100%; }
+  .syn2-wf-bar { border-radius:var(--radius-sm) var(--radius-sm) 0 0; display:flex; align-items:flex-start; justify-content:center;
+                 padding-top:5px; font-family:var(--font-mono); font-size:11.5px; font-weight:600; color:var(--on-accent); overflow:hidden; }
+  .syn2-wf-bar.ref { background:var(--ink-soft); }
+  .syn2-wf-bar.save { background:var(--green); }
+  .syn2-wf-bar.up { background:var(--red); }
+  .syn2-wf-bar.tot { background:var(--blue); }
+  .syn2-wf-lab { margin-top:7px; font-size:11px; color:var(--ink-soft); text-align:center; line-height:1.25; }
+  .syn2-wf-foot { display:flex; gap:12px; flex-wrap:wrap; margin-top:14px; }
+  .syn2-wf-card { border:1px solid var(--border); border-left:4px solid var(--green); border-radius:var(--radius);
+                  background:var(--green-bg); padding:11px 14px; min-width:210px; }
+  .syn2-wf-card.piece { border-left-color:var(--blue); background:var(--blue-bg); }
+  .syn2-wf-card .b { font-family:var(--font-disp); font-weight:700; font-size:24px; line-height:1.05; color:var(--green); }
+  .syn2-wf-card.piece .b { color:var(--blue-dark); }
+  .syn2-wf-card .l { font-size:11.5px; color:var(--ink-soft); margin-top:3px; }
+  @media print { .syn2-wf { border-bottom-color:#999; } .syn2-wf-card { background:#fff; } }
+</style>
+</head><body>
   <p style="font-family:Consolas,monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:#0d47a1;">${escapeAttr([ligneActive && ligneActive.nom, refActive && refActive.nom, opActive && opActive.nom].filter(Boolean).join(" — "))} — Rapport de validation</p>
   <h1>${escapeAttr(sc.name)}${sc.baseline ? " — Référence" : ""}</h1>
   <p style="color:#4b524c;">${new Date().toLocaleDateString("fr-FR")}</p>
@@ -5948,10 +5993,18 @@ function syntheseTableHTML(){
     const stats = scenarioStats(sc);
     const scrap = scrapStats(sc);
     const cost = scenarioCost(sc);
+    const cd = coutsDetail(sc);
+    const an = bilanAnnuel(sc);
+    const cbase = base ? coutsDetail(base) : null;
     let deltaCost = "réf.";
     if(!sc.baseline && baseCost !== null && cost !== null){
       const d = ((cost - baseCost) / baseCost) * 100;
       deltaCost = (d > 0 ? "+" : "") + fmt(d,1) + " %";
+    }
+    let deltaTotal = "réf.";
+    if(!sc.baseline && cbase && cbase.total && cd.total !== null){
+      const p = ((cd.total - cbase.total) / cbase.total) * 100;
+      deltaTotal = (p > 0 ? "+" : "") + fmt(p,1) + " %";
     }
     const cyc = parseFloat(sc.cycle);
     let deltaCycle = "réf.";
@@ -5965,66 +6018,154 @@ function syntheseTableHTML(){
     const nbOutils = sc.outils.length, nbLogements = sc.outils.reduce((n,o)=>n+o.logements.length,0);
     return {
       sc, stats, scrap,
-      statut: stats.validated ? "✓ Validé" : `${stats.validCount}/${sc.validationThreshold || "—"} essais`,
-      coutOutil: cost === null ? "—" : fmt(cost,4) + " € (" + deltaCost + ")",
-      coutTotal: (() => {
-        const c = coutsDetail(sc);
-        if(!c.multiPoste) return null;
-        const cb = base ? coutsDetail(base) : null;
-        let d = "réf.";
-        if(!sc.baseline && cb && cb.total && c.total !== null){
-          const p = ((c.total - cb.total) / cb.total) * 100;
-          d = (p > 0 ? "+" : "") + fmt(p,1) + " %";
-        }
-        return c.total === null ? "—" : fmt(c.total,4) + " € (" + d + ")";
-      })(),
-      gainAnnuel: (() => {
-        const a = bilanAnnuel(sc);
-        if(!a) return null;
-        if(a.gainAnnuel === undefined) return a.coutAnnuel === null ? "—" : fmtEuroCourt(a.coutAnnuel) + " / an";
-        return ((a.gainAnnuel>=0?"+":"−") + fmtEuroCourt(Math.abs(a.gainAnnuel))) + " / an";
-      })(),
-      parArete: fmt(scenarioCostPerEdge(sc), 3) + " €",
-      outils: nbOutils ? `${nbOutils} outil${nbOutils>1?"s":""} / ${nbLogements} logement${nbLogements>1?"s":""}` : "—",
-      vcf: logCycle && (logCycle.vc || logCycle.f) ? `${logCycle.vc || "—"} / ${logCycle.f || "—"}` : "—",
-      frfa: frfa === null ? "—" : fmt(frfa,2),
-      tauxHorsTol: stats.rate === null ? "—" : fmt(stats.rate,0) + " %",
-      cycle: (sc.cycle === "" || sc.cycle == null) ? "—" :
+      nCoutTotal: cd.multiPoste ? cd.total : null,
+      nCoutOutil: cost,
+      nGain: (an && an.gainAnnuel !== undefined) ? an.gainAnnuel : null,
+      nArete: scenarioCostPerEdge(sc),
+      nCycle: isNaN(cyc) ? null : cyc,
+      nHorsTol: stats.rate,
+      nBad: stats.badCount,
+      nRebut: scrap.rate,
+      tCoutTotal: cd.multiPoste ? (cd.total === null ? "—" : fmt(cd.total,4) + " € (" + deltaTotal + ")") : null,
+      tCoutOutil: cost === null ? "—" : fmt(cost,4) + " € (" + deltaCost + ")",
+      tGain: (an && an.gainAnnuel !== undefined)
+              ? ((an.gainAnnuel>=0?"+":"−") + fmtEuroCourt(Math.abs(an.gainAnnuel)) + " / an")
+              : (an && an.coutAnnuel !== null ? fmtEuroCourt(an.coutAnnuel) + " / an" : null),
+      tArete: fmt(scenarioCostPerEdge(sc), 3) + " €",
+      tOutils: nbOutils ? (nbOutils + " / " + nbLogements) : "—",
+      tVcf: logCycle && (logCycle.vc || logCycle.f) ? ((logCycle.vc || "—") + " / " + (logCycle.f || "—")) : "—",
+      tFrfa: frfa === null ? "—" : fmt(frfa,2),
+      tCycle: (sc.cycle === "" || sc.cycle == null) ? "—" :
         fmt(parseFloat(sc.cycle),0) + " (" + deltaCycle + ")" +
         (config.cycleSecActif && secs !== null ? " · " + fmt(secs,1) + " s" + (cadence ? " · " + fmt(cadence,0) + " p/h" : "") : ""),
-      essaisBad: stats.badCount,
-      rebut: scrap.rate === null ? "—" : fmt(scrap.rate,1) + " %"
+      tHorsTol: stats.rate === null ? "—" : fmt(stats.rate,0) + " %",
+      tBad: stats.badCount,
+      tRebut: scrap.rate === null ? "—" : fmt(scrap.rate,1) + " %",
+      tStatut: `<span class="statut-pill ${sc.statut||"essai"}">${statutLabel(sc.statut)}</span>`,
+      tVal: stats.validated ? "✓ Validé" : (stats.validCount + "/" + (sc.validationThreshold || "—") + " essais")
     };
   });
 
-  const head = `<tr><th class="crit">Critère</th>${cols.map(c =>
-    `<th class="sc-col${c.sc.baseline ? " is-baseline" : ""}">${escapeAttr(c.sc.name)}${c.sc.baseline ? " ★" : ""}</th>`).join("")}</tr>`;
-  const row = (label, fn) => `<tr><td class="crit">${label}</td>${cols.map(c => `<td>${fn(c)}</td>`).join("")}</tr>`;
+  // v4.30 — critères regroupés : la comparaison se lit par blocs au lieu d'une liste plate.
+  const groups = [
+    { titre:"Économique", rows:[
+      { label:"Coût total / pièce (tous postes)", key:"tCoutTotal", num:"nCoutTotal", better:"min", skip:() => cols.every(x => x.tCoutTotal === null) },
+      { label:"dont coût outil / pièce", key:"tCoutOutil", num:"nCoutOutil", better:"min" },
+      { label:"Gain annuel", key:"tGain", num:"nGain", better:"max", skip:() => cols.every(x => x.tGain === null) },
+      { label:"€ / arête (tous logements)", key:"tArete", num:"nArete", better:"min" }
+    ]},
+    { titre:"Process", rows:[
+      { label:"Outils / logements", key:"tOutils", num:null, better:null },
+      { label:"Vc / f (logement de référence cycle)", key:"tVcf", num:null, better:null },
+      ...(config.forceRatioActif ? [{ label:"Fr/Fa ≈ cot(κr) (logement de référence cycle)", key:"tFrfa", num:null, better:null }] : []),
+      { label:"Temps de cycle (indice réf. 100)", key:"tCycle", num:"nCycle", better:"min" }
+    ]},
+    { titre:"Qualité & essais", rows:[
+      { label:"Statut de validation", key:"tVal", num:null, better:null },
+      { label:"Statut du scénario", key:"tStatut", num:null, better:null },
+      { label:"Taux hors tolérance (battement, tous essais)", key:"tHorsTol", num:"nHorsTol", better:"min" },
+      { label:"Essais non conformes", key:"tBad", num:"nBad", better:"min" },
+      { label:"Taux de rebut ligne (équipe)", key:"tRebut", num:"nRebut", better:"min" }
+    ]}
+  ];
 
-  const body = [
-    row("Statut de validation", c => c.statut),
-    row("Statut du scénario", c => `<span class="statut-pill ${c.sc.statut||"essai"}">${statutLabel(c.sc.statut)}</span>`),
-    ...(cols.some(c => c.coutTotal !== null) ? [row("Coût total / pièce (tous postes)", c => c.coutTotal ?? "—")] : []),
-    row("dont coût outil / pièce", c => c.coutOutil),
-    ...(cols.some(c => c.gainAnnuel !== null) ? [row("Gain annuel", c => c.gainAnnuel ?? "—")] : []),
-    row("€ / arête (tous logements)", c => c.parArete),
-    row("Outils / logements", c => c.outils),
-    row("Vc / f (logement de référence cycle)", c => c.vcf),
-    ...(config.forceRatioActif ? [row("Fr/Fa ≈ cot(κr) (logement de référence cycle)", c => c.frfa)] : []),
-    row("Taux hors tolérance (battement, tous essais)", c => c.tauxHorsTol),
-    row("Temps de cycle (indice réf. 100)", c => c.cycle),
-    row("Essais non conformes", c => c.essaisBad),
-    row("Taux de rebut ligne (équipe)", c => c.rebut)
-  ].join("");
+  // compteur de « meilleures valeurs » par scénario : qui gagne le plus de critères ?
+  const wins = cols.map(() => 0);
+  groups.forEach(g => g.rows.forEach(r => {
+    if(!r.num || !r.better) return;
+    const nums = cols.map(c => c[r.num]).filter(v => v !== null && v !== undefined && !isNaN(v));
+    if(nums.length < 2) return;
+    const best = r.better === "min" ? Math.min.apply(null, nums) : Math.max.apply(null, nums);
+    cols.forEach((c, i) => { if(c[r.num] === best) wins[i]++; });
+  }));
+  const lead = Math.max.apply(null, wins);
+
+  const head = `<tr><th class="crit" scope="col">Critère</th>` + cols.map((c, i) =>
+    `<th class="sc-col${c.sc.baseline ? " is-baseline" : ""}${(lead > 0 && wins[i] === lead) ? " is-lead" : ""}" scope="col">`
+    + `<span class="sc-name">${escapeAttr(c.sc.name)}${c.sc.baseline ? " ★" : ""}</span>`
+    + (lead > 0 ? `<span class="syn2-wins">${wins[i]} meilleur${wins[i] > 1 ? "s" : ""} critère${wins[i] > 1 ? "s" : ""}</span>` : "")
+    + `</th>`).join("") + `</tr>`;
+
+  const rowHtml = (r) => {
+    const nums = r.num ? cols.map(c => c[r.num]).filter(v => v !== null && v !== undefined && !isNaN(v)) : [];
+    let best = null, worst = null;
+    if(r.num && r.better && nums.length >= 2){
+      best = r.better === "min" ? Math.min.apply(null, nums) : Math.max.apply(null, nums);
+      worst = r.better === "min" ? Math.max.apply(null, nums) : Math.min.apply(null, nums);
+    }
+    return `<tr><td class="crit">${r.label}</td>` + cols.map(c => {
+      const isBest = best !== null && c[r.num] === best;
+      const isWorst = worst !== null && worst !== best && c[r.num] === worst;
+      return `<td class="val${isBest ? " syn2-best" : ""}${isWorst ? " syn2-worst" : ""}">${c[r.key] == null ? "—" : c[r.key]}</td>`;
+    }).join("") + `</tr>`;
+  };
+
+  const body = groups.map(g => {
+    const rows = g.rows.filter(r => !(r.skip && r.skip()));
+    if(!rows.length) return "";
+    return `<tr class="syn2-grp"><td colspan="${cols.length + 1}">${g.titre}</td></tr>` + rows.map(rowHtml).join("");
+  }).join("");
 
   return `
     <div class="synthese-block">
       <h3>Vue de synthèse comparative — tous scénarios</h3>
       <div class="tbl-wrap">
-        <table class="synthese">
+        <table class="synthese syn2">
           <thead>${head}</thead>
           <tbody>${body}</tbody>
         </table>
+      </div>
+      <div class="syn2-legende">
+        <span><i class="sw-best"></i>Meilleure valeur du critère</span>
+        <span><i class="sw-worst"></i>Valeur la plus défavorable</span>
+        <span><i class="sw-grp"></i>Regroupement de critères</span>
+      </div>
+    </div>
+  `;
+}
+
+/* ---- v4.30 cascade du gain : d'ou vient chaque euro economise -------------------------------
+   Le tableau dit « combien ». La cascade dit « pourquoi » : on part du cout/pièce du scenario
+   de reference et on montre, poste par poste, ce que le scenario ouvert economise (vert) ou
+   coute en plus (rouge). Elle ne s'affiche que face a la reference, et seulement quand le
+   detail par poste existe (plusieurs postes actifs) — sinon elle n'ajouterait rien. */
+function cascadeGainHTML(){
+  const base = baselineScenario();
+  if(!base) return "";
+  const actif = data.find(sc => sc.id === activeId);
+  if(!actif || actif.id === base.id) return "";
+  const cb = coutsDetail(base), ca = coutsDetail(actif);
+  if(cb.total === null || ca.total === null || !cb.multiPoste) return "";
+  const postes = COUT_POSTES
+    .map(p => ({ label:p.label, delta:(cb[p.key]||0) - (ca[p.key]||0), a: cb[p.key], b: ca[p.key] }))
+    .filter(p => Math.abs(p.delta) > 0.0005);
+  if(!postes.length) return "";
+  const gainPiece = cb.total - ca.total;
+  const an = bilanAnnuel(actif);
+  const maxV = Math.max(cb.total, ca.total, ...postes.map(p => Math.abs(p.delta)), 0.0001);
+  const h = v => Math.max(6, Math.round((v / maxV) * 150)) + "px";
+  const col = (label, value, cls, sub, titre) =>
+    `<div class="syn2-wf-col" title="${titre || ""}">` +
+      `<div class="syn2-wf-bar ${cls}" style="height:${h(value)}">${sub}</div>` +
+      `<div class="syn2-wf-lab">${label}</div></div>`;
+  const colsHtml = [
+    col("Référence<br>" + escapeAttr(base.name), cb.total, "ref", fmt(cb.total,2) + " €", "Coût total / pièce de la référence"),
+    ...postes.map(p => col(escapeAttr(p.label), Math.abs(p.delta), p.delta >= 0 ? "save" : "up",
+        (p.delta >= 0 ? "−" : "+") + fmt(Math.abs(p.delta),2) + " €",
+        p.label + " : " + fmt(p.a,2) + " € → " + fmt(p.b,2) + " €")),
+    col("Scénario<br>" + escapeAttr(actif.name), ca.total, "tot", fmt(ca.total,2) + " €", "Coût total / pièce du scénario ouvert")
+  ].join("");
+  const gainHtml = (an && an.gainAnnuel !== undefined)
+    ? `<div class="syn2-wf-card save"><div class="b">${(an.gainAnnuel>=0?"+":"−")}${fmtEuroCourt(Math.abs(an.gainAnnuel))}</div><div class="l">Gain annuel projeté — ${escapeAttr(actif.name)} vs ${escapeAttr(base.name)}</div></div>`
+    : "";
+  return `
+    <div class="synthese-block">
+      <h3>Cascade du gain — d'où vient l'économie</h3>
+      <p class="syn2-wf-sub">Écart de coût / pièce entre <b>${escapeAttr(base.name)}</b> (référence) et <b>${escapeAttr(actif.name)}</b>, poste par poste. Barre verte = le scénario dépense moins sur ce poste.</p>
+      <div class="syn2-wf">${colsHtml}</div>
+      <div class="syn2-wf-foot">
+        ${gainHtml}
+        <div class="syn2-wf-card piece"><div class="b">${(gainPiece>=0?"−":"+")}${fmt(Math.abs(gainPiece),2)} €</div><div class="l">Écart par pièce (${fmt(cb.total,2)} € → ${fmt(ca.total,2)} €)</div></div>
       </div>
     </div>
   `;
@@ -6092,7 +6233,7 @@ function dispersionEquipeHTML(){
 }
 
 function syntheseHTML(){
-  return syntheseTableHTML() + dispersionEquipeHTML() + multiChartHTML();
+  return syntheseTableHTML() + cascadeGainHTML() + dispersionEquipeHTML() + multiChartHTML();
 }
 function renderSynthese(){
   const wrap = document.getElementById("syntheseWrap");
@@ -10319,6 +10460,12 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.31.0", date:"24/09/2026", points:[
+    "<b>Vue de synthèse comparative regroupée.</b> Les critères sont rangés en trois blocs — Économique, Process, Qualité &amp; essais — au lieu d'une liste plate.",
+    "<b>Meilleure valeur mise en évidence.</b> Pour chaque critère, le meilleur résultat passe en vert et le plus défavorable en rouge ; l'en-tête de chaque scénario compte les critères qu'il remporte.",
+    "<b>Cascade du gain.</b> Un bloc explique d'où vient l'économie, poste par poste (plaquettes, pièces détachées, temps machine, rebut), face au scénario de référence.",
+    "Aucun changement de logique de calcul ni de donnée : seuls l'ordre, le regroupement et la mise en évidence évoluent."
+  ]},
   { version:"4.30.0", date:"24/09/2026", points:[
     "<b>Le verdict et les gros chiffres fusionnent en un seul tableau de bord.</b> Fini la bande de verdict au-dessus d'une bande de chiffres qui répétait les mêmes nombres en tuiles : désormais une seule bande — la réponse (gain, verdict d'essai, référence) ouvre la marche, suivie du coût pièce, du gain annuel, de la durée de vie visée (nouvelle cellule, avec la référence à côté), du €/arête, du cycle et de la validation (qui affiche aussi le % de prélèvements hors tolérance).",
     "<b>Le contexte de l'essai se replie.</b> But, observations, rédacteur, dates de début/fin et programme CNC sont regroupés dans un bloc « Contexte » : ouvert tant que l'essai est vierge, replié dès qu'il est rempli (un aperçu du but reste lisible). L'écran d'un essai commence désormais par ce qui compte tous les jours : conditions, prélèvements, progression.",
