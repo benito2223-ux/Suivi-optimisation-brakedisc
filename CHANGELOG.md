@@ -100,6 +100,72 @@ compléter avant tout passage en production.
   existantes « Piste » n'était pas le premier logement, l'indice recalculé
   peut varier légèrement au rechargement.
 
+## [4.38.0] — 2026-09-24
+
+### Modifié — la tendance passe en zone de lecture repliable
+Le graphique d'évolution au fil des pièces est replié par défaut : il ne
+concurrence plus la saisie des essais et s'ouvre au clic. (Rappel 4.37 :
+zone de détail regroupée.)
+
+## [4.37.0] — 2026-09-24
+
+### Ajouté — zone de détail regroupée
+Détail du calcul, consommation annuelle et pièces détachées ne font plus
+qu'un seul bloc repliable : l'écran montre la décision (zones 1 et 2) et
+tient le calcul à un clic. (Rappel 4.36 : écran en trois zones nommées.)
+
+## [4.36.0] — 2026-09-24
+
+### Ajouté — écran structuré en trois zones nommées
+**1 · Réponse** (base de comparaison et meilleur coût), **2 · Scénarios**,
+**3 · Traçabilité du scénario ouvert** : on sait toujours où l'on est dans
+l'écran. (Rappel 4.35 : repère de zone, deux niveaux de libellés, blocs
+périphériques repliés.)
+
+## [4.35.0] — 2026-09-24
+
+### Ajouté — repère de zone avant la traçabilité
+Un bandeau marque l'entrée dans la traçabilité du scénario ouvert (outils,
+cycle, essais, rebut), au lieu d'enchaîner les blocs à la suite.
+(Rappel 4.34 : deux niveaux de libellés.)
+
+## [4.34.0] — 2026-09-24
+
+### Modifié — deux niveaux de libellés
+Les étiquettes (petites, grises) reculent, les valeurs et les chiffres
+avancent : l'écran se lit par niveaux au lieu d'un aplat uniforme.
+(Note : le bandeau bleu du tableau de bord a été exclu de ce recul en
+4.40 — voir [4.40.0].)
+
+## [4.33.0] — 2026-09-24
+
+### Modifié — densité de l'écran : l'écran respire
+Les blocs périphériques (consommation annuelle, pièces détachées) sont
+repliés par défaut : l'essentiel reste visible, le détail s'ouvre au clic.
+Espacements revus entre les grands blocs. Correction : les styles ajoutés
+(polices embarquées + bandeau de base) étaient partis dans le gabarit de
+rapport au lieu de la feuille de l'app. L'impression reste complète.
+
+## [4.32.0] — 2026-09-24
+
+### Ajouté — base de comparaison explicite + identité SPK by CeramTec
+Le ★ (scénario en production) est dissocié du **choix de base** : un
+bandeau nomme la base, un sélecteur par OP permet d'en changer sans
+toucher au statut ; si la base est la plus chère, l'outil l'annonce et
+nomme le meilleur coût. Identité SPK by CeramTec : bleu #1B5EA6, rouge
+#E2001A en accent, rayon 3 px, polices embarquées, hiérarchie des titres.
+Aucun changement de logique de calcul.
+
+## [4.31.0] — 2026-09-24
+
+### Ajouté — vue de synthèse comparative regroupée
+Les critères sont rangés en trois blocs — Économique, Process, Qualité &
+essais — au lieu d'une liste plate. Pour chaque critère, la meilleure
+valeur passe en vert et la plus défavorable en rouge ; chaque scénario
+compte les critères qu'il remporte. Un bloc « cascade du gain » explique
+l'économie poste par poste (plaquettes, pièces détachées, temps machine,
+rebut) face à la référence. Aucun changement de calcul ni de donnée.
+
 ## [4.30.0] — 2026-09-24
 
 Session dédiée UI (audit densité + typographie du détail scénario, captures
