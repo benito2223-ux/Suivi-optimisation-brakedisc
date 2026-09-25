@@ -5,6 +5,31 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.40.0] — 2026-09-25
+
+Deux corrections de Benjamin sur la 4.39 (déployée entre-temps sur
+l'adresse projet uniquement) : le simultané ne peut pas s'appliquer au
+scénario entier, et le bandeau bleu est redevenu illisible.
+
+### Corrigé — le simultané est un mode ENTRE OUTILS, pas entre logements
+La physique d'une OP : **dans un outil, les logements enchaînent toujours
+à la suite** (leurs temps de coupe s'additionnent, quel que soit le mode) ;
+ce sont les **outils** qui tournent en simultané (ébauche ou finition piste
+sur deux stations) — le cycle est alors **le temps de l'outil le plus
+long**, pas celui du plus long logement. `logementsParalleles` devient
+`outilsParalleles` (le champ 4.39 n'a jamais quitté l'adresse projet,
+aucune donnée réelle à migrer). Sélecteur, statut de composition, dépliant
+de tuile et tests alignés : outil à 2 logements 30+20 s + outil à 20 s →
+70 s en série, 50 s en simultané.
+
+### Corrigé — les libellés du bandeau bleu écrasés en gris/noir
+Le bloc « deux niveaux de libellés » (4.34) forçait `.foot-cell .l` en
+`--ink-faint` et `.foot-cell .v` en `--ink` — gris foncé et noir sur
+l'aplat bleu du tableau de bord (et jusque sur le vert de la cellule
+validation). Le bandeau est exclu du recul d'étiquettes : il garde sa
+hiérarchie d'encre propre (`--fill-ink-soft` / `--fill-ink`), lisible sur
+le bleu comme sur le vert.
+
 ## [4.39.0] — 2026-09-25
 
 Cadrage discuté avec Benjamin (temps de cycle vs coût machine) : la
