@@ -321,6 +321,11 @@ td.computed{font-family:var(--font-mono); font-variant-numeric:tabular-nums; tex
 .ap-detail-l{display:flex; justify-content:space-between; align-items:baseline; gap:10px; font-size:11px; color:var(--ink-soft);}
 .ap-detail-l b{font-family:var(--font-mono); font-weight:600; color:var(--ink); text-align:right;}
 .ap-detail-total{border-top:1px solid var(--border); padding-top:4px; margin-top:2px; color:var(--ink);}
+/* v4.39 — section cycle du dépliant de tuile + sélecteur de mode dans la cellule cycle */
+.ap-detail-sep{margin-top:5px; padding-top:6px; border-top:1px dashed var(--border); font-family:var(--font-mono); font-size:9.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint);}
+.foot-mode{margin-top:7px; max-width:100%; font-family:var(--font-mono); font-size:10.5px; font-weight:600; color:var(--fill-ink); background:rgba(0,0,0,.22); border:1px solid var(--fill-line); border-radius:var(--radius-sm); padding:3px 6px; cursor:pointer;}
+.foot-mode:hover{border-color:var(--fill-ink-soft);}
+.foot-mode:focus{outline:none; border-color:var(--surface);}
 
 /* ---- fiche outil repliable ---- */
 .outil-carte > summary.outil-sommaire{cursor:pointer; list-style:none; display:flex; align-items:center;
@@ -2032,7 +2037,7 @@ body.atelier-on{overflow:hidden;}
 </style>
 
 <script>
-const TOOL_VERSION = "4.38.0";
+const TOOL_VERSION = "4.39.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -2846,6 +2851,7 @@ function normalizeScenario(sc){
   const merged = Object.assign({ emag1:false, limitOverride:false, limitLabel:"Battement (mm)", limitValue:0.12, validationThreshold:5,
     battActif:true, battCotes:"", criteresSup:[], marpossRapport:false, tendanceRapport:false,
     critere2Actif:false, limitLabel2:"Ra (µm)", limitValue2:0.8, tauxRebutAnnuel:"",
+    logementsParalleles:false, // v4.39 : false = logements en série (somme) ; true = simultanés (le plus long)
     statut: sc.baseline ? "serie" : "essai", statutMotif:"", statutDate:"", essais:[], scrapLog:[] }, sc);
   // v4.4 : le scenario en production (★) EST le scenario "en serie" -- un seul concept,
   // pas deux qui pourraient diverger. Corrige silencieusement toute donnee anterieure ou
@@ -4476,8 +4482,11 @@ function appliquerChangementStatut(el){
 /* le logement "de reference" pour le temps de cycle : celui nomme Piste (retro-compat)
    si migre depuis l'ancien format, sinon le premier logement disponible */
 function logementCycle(sc){
+  /* v4.39 — plus d'heuristique par nom : « Piste » venait de la toute première saisie et
+     n'avait pas à gouverner le calcul pour toujours. Le logement d'ancrage de l'indice de
+     cycle est le PREMIER logement du scénario — l'ordre des fiches fait foi. */
   const tous = sc.outils.flatMap(o => o.logements);
-  return tous.find(l => (l.nom||"").toLowerCase() === "piste") || tous[0] || null;
+  return tous[0] || null;
 }
 
 /* ---- indice thermique K et ratio d'effort radial/axial, temps reel a la saisie ---- */
@@ -5219,31 +5228,42 @@ function coutPiecesDetachees(sc, cfg){
 function cycleDetailStatus(sc, cfg){
   cfg = cfg || config;
   const logements = (sc.outils||[]).flatMap(o => o.logements||[]);
-  let filled = 0, secs = 0;
+  let filled = 0;
+  const coupes = [];
   logements.forEach(l => {
-    const c = parseFloat(l.tempsCoupe), d = parseFloat(l.tempsDeplacement);
-    if(!isNaN(c) && !isNaN(d)){ filled++; secs += c + d; }
+    const c = parseFloat(l.tempsCoupe);
+    if(!isNaN(c)){ filled++; coupes.push(c); }
   });
   const total = logements.length;
   const complete = total > 0 && filled === total;
-  return { actif: !!(cfg && cfg.cycleDetailActif), complete, filled, total, secs: complete ? secs : null };
+  /* v4.39 — le temps de déplacement sort du calcul : inchronométrable et invariable d'un
+     scénario à l'autre, il ne devait rien dire. Et les logements ne tournent pas tous en
+     série : en finition OP40 (le cas majoritaire), les deux outils usinent en simultané —
+     le cycle est alors le temps du plus long, pas la somme (choix par scénario). */
+  const denom = sc.logementsParalleles ? Math.max(...coupes) : coupes.reduce((a,b) => a+b, 0);
+  const secs = complete ? denom : null;
+  return { actif: !!(cfg && cfg.cycleDetailActif), complete, filled, total, secs, parallele: !!sc.logementsParalleles };
 }
-/* statut affiche sous la composition du scenario : dit clairement quel calcul est
+/* statut affiché sous la composition du scenario : dit clairement quel calcul est
    REELLEMENT utilise pour ce scenario, puisque le detail par logement retombe
    silencieusement sur l'indice base 100 des qu'un seul logement manque */
 function cycleDetailStatusHTML(sc){
   const st = cycleDetailStatus(sc, config);
-  if(!st.total) return "";
+  // v4.39 — la ligne n'apparaît que si les mesures sont commencées ou si le module est
+  // affiché : pas d'avertissement permanent sur un scénario qui n'a jamais saisi de temps.
+  if(!st.total || (!st.filled && !st.actif)) return "";
+  const mode = st.parallele ? "logements simultanés — cycle = temps du plus long" : "logements en série — cycle = somme des temps";
   return st.complete
-    ? `<p class="panel-hint cycle-detail-ok">✓ ${st.filled}/${st.total} logements renseignés — temps de cycle calculé sur mesures machine (${fmt(st.secs,1)} s).</p>`
-    : `<p class="panel-hint cycle-detail-ko">⚠ ${st.filled}/${st.total} logements renseignés — incomplet, ce scénario retombe sur l'indice base 100 tant que tous les logements ne sont pas renseignés (temps coupe et temps déplacement).</p>`;
+    ? `<p class="panel-hint cycle-detail-ok">✓ ${st.filled}/${st.total} logements renseignés — temps de cycle calculé sur mesures machine (${fmt(st.secs,1)} s · ${mode}).</p>`
+    : `<p class="panel-hint cycle-detail-ko">⚠ ${st.filled}/${st.total} logements renseignés (temps de coupe) — incomplet, ce scénario retombe sur l'indice base 100 tant que tous les logements ne sont pas renseignés.</p>`;
 }
 function cycleSecondes(sc, cfg){
   cfg = cfg || config;
-  if(cfg.cycleDetailActif){
-    const det = cycleDetailStatus(sc, cfg);
-    if(det.complete) return det.secs;
-  }
+  /* v4.39 — les mesures machine comptent dès qu'elles sont complètes, sans interrupteur :
+     la règle « tous les logements ou rien » est le garde-fou, pas une option. L'option
+     « détail du cycle » ne décide plus que de l'affichage de la colonne à l'impression. */
+  const det = cycleDetailStatus(sc, cfg);
+  if(det.complete) return det.secs;
   const ref = parseFloat(cfg.cycleRefSec);
   const idx = parseFloat(sc.cycle);
   if(isNaN(ref) || isNaN(idx)) return null;
@@ -6538,7 +6558,7 @@ function scenarioBlockHTML(sc, interactive){
   // toujours visible car il alimente aussi le widget K (suivi thermique), utile meme sans Fr·Fa.
   const showFrFa = !!config.forceRatioActif;
   const showCycleDetail = !!config.cycleDetailActif;
-  const posColspan = (interactive ? 15 : 14) - (showFrFa ? 0 : 2) + (showCycleDetail ? 2 : 0);
+  const posColspan = (interactive ? 15 : 14) - (showFrFa ? 0 : 2) + (showCycleDetail ? 1 : 0);
   // largeurs explicites : sans elles le navigateur repartit les colonnes a peu pres egalement,
   // ce qui coupe "Reference plaquette" (texte le plus long) et laisse des colonnes numeriques
   // courtes (Aretes, ap...) bien trop larges
@@ -6555,7 +6575,7 @@ function scenarioBlockHTML(sc, interactive){
       <col style="width:${showFrFa ? 5 : 6}%">
       <col style="width:5%">
       ${showFrFa ? '<col style="width:7%"><col style="width:4%">' : ""}
-      ${showCycleDetail ? '<col style="width:6%"><col style="width:6%">' : ""}
+      ${showCycleDetail ? '<col style="width:6%">' : ""}
       <col style="width:6%">
       <col style="width:6%">
       ${interactive ? '<col style="width:2%">' : ""}
@@ -6578,7 +6598,7 @@ function scenarioBlockHTML(sc, interactive){
             <th class="num">f (mm/rev)</th>
             <th class="num">κr (°)</th>
             ${showFrFa ? '<th class="num">Rayon de bec rε (mm)</th><th class="num">ap (mm)</th>' : ""}
-            ${showCycleDetail ? '<th class="num">Temps coupe (s)</th><th class="num">Temps déplacement (s)</th>' : ""}
+            ${showCycleDetail ? '<th class="num">Temps coupe (s)</th>' : ""}
             <th class="num">€ / arête</th>
             <th class="num">€ / pièce</th>
           </tr>
@@ -6603,7 +6623,7 @@ function scenarioBlockHTML(sc, interactive){
     ${interactive && copieDepuisPossible(sc) ? `<button class="ghost outils-copier" data-id="${sc.id}" style="margin-top:10px;">⧉ Copier les outils de « ${escapeAttr(baselineScenario().name)} »</button>` : ""}
     ${interactive && !showFrFa ? `<p class="panel-hint" style="margin:8px 2px 0;">Rayon de bec et ap (affinage Fr·Fa) sont masqués — activez le module Fr·Fa dans <b>Options</b> si votre référence en a besoin.</p>` : ""}
     ${interactive ? `<details class="zone-det"><summary>Détail du calcul, consommation annuelle &amp; pièces détachées</summary>` : ""}
-    ${showCycleDetail ? cycleDetailStatusHTML(sc) : ""}
+    ${cycleDetailStatusHTML(sc)}
     ${consommationAnnuelleHTML(sc)}
     ${piecesDetacheesHTML(sc, interactive)}
     ${interactive ? `</details>` : ""}
@@ -6637,8 +6657,23 @@ function scenarioBlockHTML(sc, interactive){
 
   const secs = cycleSecondes(sc);
   const cadence = cadenceHeure(sc);
-  const cycleSecLine = config.cycleSecActif
-    ? `<div class="foot-sub">${secs === null ? "—" : fmt(secs,1)+" s"}${cadence ? " · " + fmt(cadence,0) + " p/h" : ""}</div>` : "";
+  /* v4.39 — la cellule cycle raconte tout : valeur, cadence, d'où elle vient (mesures
+     machine complètes ou indice), comment les logements composent le cycle (série ou
+     simultané), et ce qu'il coûte en machine — AFFICHÉ dès que le taux horaire existe,
+     la pondération dans le coût pièce restant de son côté décidée par l'option. */
+  const stCycle = cycleDetailStatus(sc, config);
+  const cycleSecLine = `<div class="foot-sub">${secs === null ? "—" : fmt(secs,1)+" s"}${cadence ? " · " + fmt(cadence,0) + " p/h" : ""}${stCycle.complete ? ` · mesures machine (${stCycle.filled}/${stCycle.total} logements)` : ""}</div>`;
+  const cycleModeLine = interactive
+    ? (stCycle.total > 1 ? `<select class="foot-mode" data-id="${sc.id}" data-field="logementsParalleles" title="Comment les temps des logements composent le cycle : en série (usinage l'un après l'autre = somme) ou en simultané (finition OP40 : les deux outils tournent ensemble = le plus long)">
+        <option value="" ${!sc.logementsParalleles ? "selected" : ""}>logements en série — somme des temps</option>
+        <option value="1" ${sc.logementsParalleles ? "selected" : ""}>logements simultanés — le plus long</option>
+      </select>` : "")
+    : `<div class="foot-sub">${sc.logementsParalleles ? "logements simultanés — le plus long" : "logements en série — somme des temps"}</div>`;
+  const tauxLigne = (() => { const lg = getActiveLigne(); const t = lg ? parseFloat(lg.coutHoraire) : NaN; return isNaN(t) ? null : t; })();
+  const coutMachPiece = (tauxLigne !== null && secs !== null) ? (tauxLigne/3600)*secs : null;
+  const cycleMachineLine = coutMachPiece !== null
+    ? `<div class="foot-sub">${fmt(coutMachPiece,4)} € machine/pièce${config.coutMachineActif ? "" : " · affiché, non pondéré (option inactive)"}</div>`
+    : (config.coutMachineActif ? `<div class="foot-sub" style="color:var(--on-fill-warn);">taux horaire de la ligne non renseigné — le temps machine ne peut pas être chiffré</div>` : "");
   // recomputeCycles() ne peut rien recalculer sans Vc/f exploitables sur la reference : le
   // dire, plutot que laisser un indice fige sans explication (cas silencieux avant ce fix)
   const baseLogCycle = sc.baseline ? null : (base ? logementCycle(base) : null);
@@ -6703,14 +6738,16 @@ function scenarioBlockHTML(sc, interactive){
           : `<div class="foot-sub">charnière du logement de référence</div>`}
       </div>
       <div class="foot-cell">
-        <div class="l">€ / arête (bol + piste)</div>
+        <div class="l">€ / arête (tous logements)</div>
         <div class="v">${fmt(scenarioCostPerEdge(sc), 3)}<small>€</small></div>
       </div>
       <div class="foot-cell">
         <div class="l">Temps de cycle — indice base 100 (éditable)</div>
         ${cycleCell}
         ${cycleDeltaHtml}
+        ${cycleModeLine}
         ${cycleSecLine}
+        ${cycleMachineLine}
         ${cycleVfWarnLine}
       </div>
       <div class="foot-cell">
@@ -8110,8 +8147,7 @@ function logementBlocHTML(sc, o, l, showFrFa, showCycleDetail){
     num("kappaR", "κr <span>°</span>", "1", 'min="0" max="90"', "Angle de direction d'arête : alimente le rapport Fr/Fa et le suivi thermique."),
     showFrFa ? num("rayonBec", "rε <span>mm</span>", "0.1", 'min="0"', "Rayon de bec — affine le κr effectif quand la coupe se fait sur le bec.") : "",
     showFrFa ? num("apPiste", "ap <span>mm</span>", "0.1", 'min="0"', "Profondeur de passe — affine le κr effectif.") : "",
-    showCycleDetail ? num("tempsCoupe", "Temps coupe <span>s</span>", "0.1", 'min="0"') : "",
-    showCycleDetail ? num("tempsDeplacement", "Déplacement <span>s</span>", "0.1", 'min="0"') : ""
+    num("tempsCoupe", "Temps de coupe <span>s</span>", "0.1", 'min="0"')
   ].filter(Boolean).join("");
 
   return `
@@ -8207,6 +8243,29 @@ function apercuLogementHTML(sc, o, l, couleur, oi, volume, totalAnnuel, partRef)
       <div class="ap-detail-l"><span>Coût annuel non calculable</span><b>${
         volume > 0 ? "coût pièce indisponible (case manquante ou à zéro)" : "production annuelle non renseignée (Options › Volume annuel)"
       }</b></div>`;
+  /* v4.39 — section cycle du dépliant : le temps mesuré du logement, sa part du cycle
+     (somme ou plus-long selon le mode du scénario) et l'indice conditions vs base (Vc·f —
+     une estimation, distincte de la mesure). Rappelle aussi pourquoi le scénario ignore
+     éventuellement les mesures : elles ne comptent que complètes, jamais un mélange. */
+  const coupe = parseFloat(l.tempsCoupe);
+  const stC = cycleDetailStatus(sc, config);
+  const cycPart = (!isNaN(coupe) && stC.complete && stC.secs > 0) ? coupe / stC.secs : null;
+  let indiceCond = null;
+  if(!sc.baseline){
+    const flatsSc = sc.outils.flatMap(o => o.logements||[]);
+    const baseB = baselineScenario();
+    const lb = baseB ? (baseB.outils.flatMap(o => o.logements||[]))[flatsSc.indexOf(l)] : null;
+    if(lb){
+      const vSc = parseFloat(l.vc) * parseFloat(l.f), vB = parseFloat(lb.vc) * parseFloat(lb.f);
+      if(vSc > 0 && vB > 0) indiceCond = vB / vSc * 100;
+    }
+  }
+  const detailCycle = `
+      <div class="ap-detail-sep">Cycle</div>
+      <div class="ap-detail-l"><span>Temps de coupe (mesure machine)</span><b>${isNaN(coupe) ? "—" : fmt(coupe,1)+" s"}</b></div>
+      ${cycPart !== null ? `<div class="ap-detail-l"><span>Part du cycle — ${stC.parallele ? "simultané, le plus long" : "en série"}</span><b>${fmt(cycPart*100,0)} %</b></div>` : ""}
+      ${indiceCond !== null ? `<div class="ap-detail-l"><span>Indice conditions vs base (Vc·f, 100 = base)</span><b>${fmt(indiceCond,0)}</b></div>` : ""}
+      ${!stC.complete ? `<div class="ap-detail-l"><span>Pris en compte dans le cycle</span><b>non — ${stC.filled}/${stC.total} logements renseignés, l'indice global s'applique</b></div>` : ""}`;
   return `
     <div class="ap-tuile${detailOuvert ? " ouvert" : ""}" data-cle-detail="${escapeAttr(cleDetail)}" title="Cliquer pour déplier le détail du calcul${annuel !== null ? " du coût annuel" : ""}" style="--outil-couleur:${couleur};">
       <div class="ap-tete">
@@ -8225,7 +8284,7 @@ function apercuLogementHTML(sc, o, l, couleur, oi, volume, totalAnnuel, partRef)
         <div class="ap-c ap-cout"><span class="ap-l">Coût</span><span class="ap-v">${pc === null ? "—" : fmt(pc,4)}<small>€/pièce</small></span>
           ${annuel !== null ? `<span class="ap-annuel" style="color:${couleurAnnuelle};" title="≈ ${escapeAttr(libelleAnnuel(annuel))} sur l'année (${pctPart} % du coût outillage) — la couleur compare la part de ce logement aux autres : vert = mineur, rouge = majeur, à cibler en priorité.">${escapeAttr(libelleAnnuel(annuel))}</span>` : ""}</div>
       </div>
-      <div class="ap-detail"${detailOuvert ? "" : " hidden"}>${detailCalc}</div>
+      <div class="ap-detail"${detailOuvert ? "" : " hidden"}>${detailCalc}${detailCycle}</div>
       ${cond ? `<div class="ap-cond">${escapeAttr(cond)}</div>` : ""}
       ${manque.length ? `<div class="ap-manque">Manque : ${escapeAttr(manque.join(", "))}</div>` : ""}
       ${bloquant.length ? `<div class="ap-manque ap-bloquant" title="Le coût pièce ne peut pas être calculé tant que cette valeur reste telle quelle.">Coût non calculable : ${escapeAttr(bloquant.join(", "))}</div>` : ""}
@@ -8444,8 +8503,7 @@ function logementRowHTML(sc, o, l, couleur, showFrFa, showCycleDetail){
       <td class="num">${l.rayonBec === "" || l.rayonBec == null ? "—" : l.rayonBec}</td>
       <td class="num">${l.apPiste === "" || l.apPiste == null ? "—" : l.apPiste}</td>` : ""}
       ${showCycleDetail ? `
-      <td class="num">${l.tempsCoupe === "" || l.tempsCoupe == null ? "—" : l.tempsCoupe}</td>
-      <td class="num">${l.tempsDeplacement === "" || l.tempsDeplacement == null ? "—" : l.tempsDeplacement}</td>` : ""}
+      <td class="num">${l.tempsCoupe === "" || l.tempsCoupe == null ? "—" : l.tempsCoupe}</td>` : ""}
       <td class="computed">${perEdge === null ? "—" : fmt(perEdge,3)}</td>
       <td class="computed">${perPiece === null ? "—" : fmt(perPiece,4)}</td>
     </tr>
@@ -9603,6 +9661,10 @@ function attachDetailHandlers(sc){
   root.querySelectorAll('select[data-field="battCotes"]').forEach(sel => {
     sel.addEventListener("change", () => { sc.battCotes = sel.value; saveData(); render(); });
   });
+  /* v4.39 — mode de composition du cycle : en série (somme) ou simultané (le plus long) */
+  root.querySelectorAll('select[data-field="logementsParalleles"]').forEach(sel => {
+    sel.addEventListener("change", () => { sc.logementsParalleles = sel.value === "1"; saveData(); render(); });
+  });
   root.querySelectorAll('input[data-field="limitLabel"], input[data-field="limitValue"]').forEach(inp => {
     inp.addEventListener("change", () => {
       if(!sc.limitOverride) sc.limitOverride = true;
@@ -10595,6 +10657,12 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.39.0", date:"25/09/2026", points:[
+    "<b>Le cycle par logement devient lisible et pilotable.</b> Le dépliant de chaque tuile logement gagne une section Cycle : temps de coupe mesuré, part du cycle, indice conditions vs base. La cellule Temps de cycle du tableau de bord affiche désormais toujours les secondes, la cadence, d'où vient la valeur (mesures machine ou indice), et le coût machine par pièce dès que le taux horaire de la ligne est rempli — affiché même quand l'option ne le pondère pas encore dans le coût. Et les mesures comptent dès qu'elles sont complètes (tous les logements), sans interrupteur : l'option « détail du cycle » ne décide plus que de la colonne à l'impression.",
+    "<b>Logements en série ou en simultané — au choix, par scénario.</b> En finition OP40, les deux outils tournent en même temps : le cycle est alors le temps du plus long, pas la somme. Un sélecteur dans la cellule Temps de cycle bascule le calcul ; en usinage séquentiel, la somme s'applique comme avant.",
+    "<b>Le temps de déplacement sort du calcul.</b> Inchronométrable et invariable d'un scénario à l'autre, il ne devait rien dire : il quitte la saisie, le tableau d'impression et le total (les valeurs déjà saisies restent dans les données, simplement ignorées).",
+    "<b>Fini les « Bol + Piste » gravés dans le code.</b> Le logement qui ancre l'indice de cycle est le premier logement du scénario (l'ordre des fiches fait foi), plus de recherche par nom héritée de la toute première saisie ; le libellé « €/arête (bol + piste) » devient « €/arête (tous logements) »."
+  ]},
   { version:"4.38.0", date:"24/09/2026", points:[
     "<b>La tendance passe en zone de lecture.</b> Le graphique d\'Ã©volution au fil des piÃ¨ces est repliÃ© par dÃ©faut : il ne concurrence plus la saisie des essais, et s\'ouvre au clic.",
     "Rappel 4.37 : zone de dÃ©tail regroupÃ©e (calcul, consommation annuelle, piÃ¨ces dÃ©tachÃ©es)."
@@ -12810,6 +12878,29 @@ function runTests(){
     ok("dureeVieScenario : charnière manquante -> null",
        dureeVieScenario(normalizeScenario({ id:"X", name:"X", baseline:false,
          outils:[{ id:"tX", numero:"TX", logements:[{ id:"gX", nom:"Piste", prix:10, aretes:8, charniere:"", vc:500, f:0.5 }] }] })), null);
+
+    /* ---- v4.39 : cycle par logement — somme ou max, déplacement hors calcul, complétude ---- */
+    {
+      const mkCyc = (parallele, coupe2) => normalizeScenario({
+        id:"C", name:"C", baseline:false, logementsParalleles:parallele,
+        outils:[ { id:"tC", numero:"TC", logements: [
+          { id:"gC1", nom:"Logement 1", prix:20, aretes:8, charniere:100, vc:800, f:0.4, tempsCoupe:30, tempsDeplacement:7 },
+          { id:"gC2", nom:"Logement 2", prix:20, aretes:8, charniere:100, vc:400, f:0.4, tempsCoupe:coupe2, tempsDeplacement:7 }
+        ] } ],
+        essais: []
+      });
+      ok("cycleDetailStatus : en série = somme des coupes, déplacement ignoré",
+         cycleDetailStatus(mkCyc(false, 20), {}).secs, 50);
+      ok("cycleDetailStatus : simultané = le plus long",
+         cycleDetailStatus(mkCyc(true, 20), {}).secs, 30);
+      ok("cycleDetailStatus : simultané suit le logement le plus long quand il change",
+         cycleDetailStatus(mkCyc(true, 45), {}).secs, 45);
+      const stIncomplet = cycleDetailStatus(mkCyc(false, ""), {});
+      ok("cycleDetailStatus : un temps de coupe manquant -> mesures ignorées (null)",
+         [stIncomplet.complete, stIncomplet.secs, stIncomplet.filled], [false, null, 1]);
+      ok("logementCycle : le premier logement ancre l'indice, quel que soit son nom",
+         logementCycle(mkCyc(false, 20)).nom, "Logement 1");
+    }
 
     ok("normalizeScenario : plan conserve a travers l'arbre",
        normalizeScenario({ id:"sp2", name:"p", outils:[{ id:"t9", numero:"T9", plan:planTest, logements:[] }] }).outils[0].plan, planTest);

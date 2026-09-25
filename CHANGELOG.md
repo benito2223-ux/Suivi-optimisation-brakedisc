@@ -5,6 +5,51 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.39.0] — 2026-09-25
+
+Cadrage discuté avec Benjamin (temps de cycle vs coût machine) : la
+mécanique existait (mesures par logement, indice base 100, coût machine)
+mais dispersée dans Options et muette sur sa propre logique. Décisions :
+déplacement hors calcul, somme **ou** max par scénario, plus aucun nom
+figé dans le code. ⚠ Note : les entrées 4.31 → 4.38 manquent à ce
+CHANGELOG (itérations UI sur dev, annonces in-app présentes) — à
+compléter avant tout passage en production.
+
+### Ajouté — le cycle par logement lisible et pilotable
+- **Section Cycle dans le dépliant de chaque tuile logement** : temps de
+  coupe mesuré, part du cycle (selon le mode), indice conditions vs base
+  (Vc·f, estimation distincte de la mesure) et rappel explicite quand les
+  mesures sont ignorées (« 1/2 logements renseignés »).
+- **Cellule Temps de cycle du tableau de bord** : secondes et cadence
+  toujours affichées (l'option `cycleSecActif` ne gate plus l'écran),
+  mention de la source (mesures machine n/n ou indice), et
+  **€ machine/pièce affiché dès que le taux horaire de la ligne existe** —
+  affiché même quand l'option « Intégrer le temps machine » est inactive
+  (mention « affiché, non pondéré »). Un scénario appartient à une ligne :
+  le taux horaire de la ligne suffit, confirmé.
+- **Les mesures comptent sans interrupteur** : `cycleSecondes` retient le
+  total mesuré dès qu'il est complet (tous les logements), l'option
+  « détail du cycle par logement » ne décide plus que de l'affichage de la
+  colonne à l'impression. Le champ Temps de coupe est visible en fiche
+  outil en permanence.
+- **Sélecteur série/simultané par scénario** (dans la cellule) :
+  `logementsParalleles` — en série le cycle est la somme des temps de
+  coupe ; en simultané (finition OP40, les deux outils tournent ensemble)
+  c'est le temps du plus long. Le statut sous la composition nomme le
+  mode appliqué.
+
+### Modifié — déplacement hors calcul, noms défigés
+- `tempsDeplacement` quitte la saisie (fiche outil), le tableau
+  d'impression et le total du cycle ; les valeurs déjà stockées restent
+  dans les données, ignorées. La complétude exige désormais les temps de
+  **coupe** de tous les logements, rien qu'eux.
+- `logementCycle()` ne cherche plus un logement nommé « Piste » (héritage
+  de la toute première saisie) : **le premier logement du scénario** ancre
+  l'indice — l'ordre des fiches fait foi. Libellé « €/arête (bol + piste) »
+  → « €/arête (tous logements) ». Impact possible : si dans des données
+  existantes « Piste » n'était pas le premier logement, l'indice recalculé
+  peut varier légèrement au rechargement.
+
 ## [4.30.0] — 2026-09-24
 
 Session dédiée UI (audit densité + typographie du détail scénario, captures
