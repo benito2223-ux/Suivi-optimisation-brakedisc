@@ -5,6 +5,25 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.43.0] — 2026-09-25
+
+### Modifié — le système de polices assaini (héritage 4.32)
+Le passage à l'identité SPK (4.32) avait changé les tokens sans nettoyer.
+- **`--font-mono` redevient une vraie chasse fixe** : IBM Plex Mono, déjà
+  embarquée pour les gabarits de rapport — saisie, cellules et libellés
+  data retrouvent le rendu « outil de mesure ».
+- **Manrope et Public Sans supprimées** (−67 Ko) : embarquées depuis la
+  4.31, plus aucune utilisation. Archivo reste (canvas du logo), Plex Mono
+  reste (gabarits).
+- **Faux gras 800 éliminé** : Open Sans Condensed n'est embarquée qu'en
+  700 — les 16 règles `--font-disp` en 800 synthétisaient un gras artificiel.
+  La hiérarchie titres/chiffres vient désormais de la taille et de
+  l'encre. Le 700 du gabarit de rapport passe à 600 (vraie graisse).
+- **Commentaires et aide remis en phase** : en-têtes CSS (ils racontaient
+  encore Manrope/Plex), commentaire de `fmt()` (Archivo), aide (plus de
+  « plaquettes bol et piste » ni « ap piste »). L'annonce historique
+  3.x restant inchangée : on ne réécrit pas l'histoire.
+
 ## [4.42.0] — 2026-09-25
 
 ### Modifié — le coefficient K devient une botte secrete
