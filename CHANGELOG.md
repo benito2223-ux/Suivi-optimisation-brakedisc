@@ -5,6 +5,31 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.41.0] — 2026-09-25
+
+Précision de Benjamin sur la 4.40 : le simultané ne concerne pas le
+scénario entier mais **deux outils précis à la fois** — il faut pouvoir
+cocher l'un puis l'autre. Modèle validé : groupes d'outils simultanés,
+on additionne les groupes.
+
+### Ajouté — le simultané se coche outil par outil
+Chaque fiche outil (sauf la première, qui ouvre la marche) gagne une case
+**« ⇉ Tourne en simultané avec l'outil précédent »** (`simultaneAvecPrecedent`,
+avec le n° du voisin dans le libellé). Le regroupement est consécutif :
+cochée, l'outil rejoint le groupe de son voisin. Le calcul
+(`cycleDetailStatus`) forme les groupes, chaque groupe vaut le temps de son
+outil le plus long (logements d'un même outil toujours additionnés), et le
+cycle est la **somme des groupes**. Aucune case cochée = outils en série.
+- Badge **« ⇉ simultané »** visible sur la fiche repliée.
+- La cellule Temps de cycle du tableau de bord et le statut de composition
+  annoncent le nombre de groupes et la règle.
+- Migration : le mode global 4.39/4.40 (`outilsParalleles`) coche
+  « simultané » sur tous les outils sauf le premier (un seul groupe =
+  même résultat) ; le champ `logementsParalleles` de la 4.39 n'a jamais
+  quitté l'adresse projet.
+- Exemple testé : outil 2 logements (30+20 s) ; TC2 (20 s) simultané ;
+  TC3 (25 s) à part → 30 + 25 = **55 s** au lieu de 95 s en série.
+
 ## [4.40.0] — 2026-09-25
 
 Deux corrections de Benjamin sur la 4.39 (déployée entre-temps sur

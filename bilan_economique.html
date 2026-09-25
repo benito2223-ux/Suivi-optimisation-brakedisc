@@ -323,9 +323,14 @@ td.computed{font-family:var(--font-mono); font-variant-numeric:tabular-nums; tex
 .ap-detail-total{border-top:1px solid var(--border); padding-top:4px; margin-top:2px; color:var(--ink);}
 /* v4.39 — section cycle du dépliant de tuile + sélecteur de mode dans la cellule cycle */
 .ap-detail-sep{margin-top:5px; padding-top:6px; border-top:1px dashed var(--border); font-family:var(--font-mono); font-size:9.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint);}
-.foot-mode{margin-top:7px; max-width:100%; font-family:var(--font-mono); font-size:10.5px; font-weight:600; color:var(--fill-ink); background:rgba(0,0,0,.22); border:1px solid var(--fill-line); border-radius:var(--radius-sm); padding:3px 6px; cursor:pointer;}
-.foot-mode:hover{border-color:var(--fill-ink-soft);}
-.foot-mode:focus{outline:none; border-color:var(--surface);}
+/* v4.41 — case « simultané avec l'outil précédent » sur la fiche + badge dans le sommaire */
+.oc-simultane{display:flex; align-items:center; gap:8px; margin:0 0 10px; padding:6px 10px;
+  border:1px dashed var(--border); border-radius:var(--radius-sm); font-size:12px;
+  color:var(--ink-soft); cursor:pointer; background:var(--surface-alt);}
+.oc-simultane:hover{border-color:var(--blue); color:var(--ink);}
+.os-sim{font-family:var(--font-mono); font-size:9.5px; font-weight:600; letter-spacing:.04em;
+  text-transform:uppercase; color:var(--blue-dark); background:var(--blue-bg);
+  border-radius:999px; padding:2px 8px; white-space:nowrap;}
 
 /* ---- fiche outil repliable ---- */
 .outil-carte > summary.outil-sommaire{cursor:pointer; list-style:none; display:flex; align-items:center;
@@ -2046,7 +2051,7 @@ body.atelier-on{overflow:hidden;}
 </style>
 
 <script>
-const TOOL_VERSION = "4.40.0";
+const TOOL_VERSION = "4.41.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -2860,8 +2865,8 @@ function normalizeScenario(sc){
   const merged = Object.assign({ emag1:false, limitOverride:false, limitLabel:"Battement (mm)", limitValue:0.12, validationThreshold:5,
     battActif:true, battCotes:"", criteresSup:[], marpossRapport:false, tendanceRapport:false,
     critere2Actif:false, limitLabel2:"Ra (µm)", limitValue2:0.8, tauxRebutAnnuel:"",
-    logementsParalleles:false, // v4.39 (obsolète, remplacé par outilsParalleles) : conservé pour les données intermédiaires
-    outilsParalleles:false, // v4.40 : false = outils en série (somme) ; true = simultanés (le plus long outil)
+    logementsParalleles:false, // v4.39 (obsolète) : conservé pour les données intermédiaires
+    outilsParalleles:false, // v4.40 (obsolète, remplacé par les cases par outil v4.41)
     statut: sc.baseline ? "serie" : "essai", statutMotif:"", statutDate:"", essais:[], scrapLog:[] }, sc);
   // v4.4 : le scenario en production (★) EST le scenario "en serie" -- un seul concept,
   // pas deux qui pourraient diverger. Corrige silencieusement toute donnee anterieure ou
@@ -2872,6 +2877,9 @@ function normalizeScenario(sc){
 
   if(Array.isArray(sc.outils)){
     merged.outils = sc.outils.map(normalizeOutil);
+    /* v4.41 — migration du mode global 4.39/4.40 : tous les outils sauf le premier
+       deviennent « simultané avec le précédent » (un seul groupe = même résultat). */
+    if(merged.outilsParalleles) merged.outils.forEach((o,i) => { if(i > 0) o.simultaneAvecPrecedent = true; });
   } else {
     // ancien format bol/piste -> migration en outils/logements. Meme N° outil des
     // deux cotes = un seul outil a 2 logements ; sinon, deux outils distincts.
@@ -5237,28 +5245,29 @@ function coutPiecesDetachees(sc, cfg){
    partiel qui aurait l'air complet. */
 function cycleDetailStatus(sc, cfg){
   cfg = cfg || config;
-  /* v4.39/v4.40 — la physique d'une OP : DANS un outil, les logements enchaînent toujours
-     à la suite (somme) ; ce sont les OUTILS qui peuvent tourner en simultané (ébauche ou
-     finition piste sur deux stations) — le cycle est alors le temps de l'outil le plus
-     long, pas celui du plus long logement. Le temps de déplacement sort du calcul :
-     inchronométrable et invariable, il ne devait rien dire. */
-  const outils = (sc.outils||[]).map(o => o.logements||[]);
+  /* v4.41 — la physique d'une OP, par groupes d'outils : DANS un outil, les logements
+     enchaînent toujours à la suite (somme) ; un outil cochés « simultané avec le
+     précédent » rejoint le groupe de son voisin — le groupe vaut le temps de son outil
+     le plus long, et le cycle est la somme des groupes. Aucune case cochée = outils en
+     série (somme de tout). Le temps de déplacement reste hors calcul (invariant). */
+  const outils = sc.outils || [];
   let filled = 0, total = 0;
-  const sommeOutil = outils.map(logs => {
+  const groupes = [];
+  outils.forEach((o, idx) => {
     let s = 0;
-    logs.forEach(l => {
+    (o.logements||[]).forEach(l => {
       total++;
       const c = parseFloat(l.tempsCoupe);
       if(!isNaN(c)){ filled++; s += c; }
     });
-    return s;
+    if(idx > 0 && o.simultaneAvecPrecedent && groupes.length) groupes[groupes.length-1].push(s);
+    else groupes.push([s]);
   });
   const complete = total > 0 && filled === total;
-  const denom = sc.outilsParalleles
-    ? Math.max(...sommeOutil)
-    : sommeOutil.reduce((a,s) => a+s, 0);
+  const denom = groupes.reduce((acc,g) => acc + Math.max(...g), 0);
   const secs = complete ? denom : null;
-  return { actif: !!(cfg && cfg.cycleDetailActif), complete, filled, total, secs, parallele: !!sc.outilsParalleles };
+  return { actif: !!(cfg && cfg.cycleDetailActif), complete, filled, total, secs,
+           nbGroupes: groupes.length, nbOutils: outils.length };
 }
 /* statut affiché sous la composition du scenario : dit clairement quel calcul est
    REELLEMENT utilise pour ce scenario, puisque le detail par logement retombe
@@ -5268,7 +5277,9 @@ function cycleDetailStatusHTML(sc){
   // v4.39 — la ligne n'apparaît que si les mesures sont commencées ou si le module est
   // affiché : pas d'avertissement permanent sur un scénario qui n'a jamais saisi de temps.
   if(!st.total || (!st.filled && !st.actif)) return "";
-  const mode = st.parallele ? "outils simultanés — cycle = temps de l'outil le plus long" : "outils en série — cycle = somme des temps";
+  const mode = st.nbGroupes < st.nbOutils
+    ? st.nbGroupes + " groupe" + (st.nbGroupes>1?"s":"") + " d'outils simultanés — cycle = somme des groupes, chaque groupe valant son outil le plus long"
+    : "outils en série — cycle = somme des temps";
   return st.complete
     ? `<p class="panel-hint cycle-detail-ok">✓ ${st.filled}/${st.total} logements renseignés — temps de cycle calculé sur mesures machine (${fmt(st.secs,1)} s · ${mode}).</p>`
     : `<p class="panel-hint cycle-detail-ko">⚠ ${st.filled}/${st.total} logements renseignés (temps de coupe) — incomplet, ce scénario retombe sur l'indice base 100 tant que tous les logements ne sont pas renseignés.</p>`;
@@ -6679,12 +6690,11 @@ function scenarioBlockHTML(sc, interactive){
      la pondération dans le coût pièce restant de son côté décidée par l'option. */
   const stCycle = cycleDetailStatus(sc, config);
   const cycleSecLine = `<div class="foot-sub">${secs === null ? "—" : fmt(secs,1)+" s"}${cadence ? " · " + fmt(cadence,0) + " p/h" : ""}${stCycle.complete ? ` · mesures machine (${stCycle.filled}/${stCycle.total} logements)` : ""}</div>`;
-  const cycleModeLine = interactive
-    ? (stCycle.total > 1 ? `<select class="foot-mode" data-id="${sc.id}" data-field="outilsParalleles" title="Comment les temps des outils composent le cycle : les outils se suivent (somme de tout) ou tournent en simultané — ébauche ou finition piste sur deux stations (le temps de l'outil le plus long). Dans tous les cas, les logements d'un même outil enchaînent à la suite.">
-        <option value="" ${!sc.outilsParalleles ? "selected" : ""}>outils en série — somme des temps</option>
-        <option value="1" ${sc.outilsParalleles ? "selected" : ""}>outils simultanés — le plus long</option>
-      </select>` : "")
-    : `<div class="foot-sub">${sc.outilsParalleles ? "outils simultanés — le plus long" : "outils en série — somme des temps"}</div>`;
+  const cycleModeLine = stCycle.total > 1 && stCycle.nbOutils > 1
+    ? `<div class="foot-sub">${stCycle.nbGroupes < stCycle.nbOutils
+        ? stCycle.nbGroupes + " groupe" + (stCycle.nbGroupes>1?"s":"") + " d'outils simultanés — chaque groupe vaut son outil le plus long"
+        : "outils en série — les temps s'additionnent"}</div>`
+    : "";
   const tauxLigne = (() => { const lg = getActiveLigne(); const t = lg ? parseFloat(lg.coutHoraire) : NaN; return isNaN(t) ? null : t; })();
   const coutMachPiece = (tauxLigne !== null && secs !== null) ? (tauxLigne/3600)*secs : null;
   const cycleMachineLine = coutMachPiece !== null
@@ -8279,7 +8289,7 @@ function apercuLogementHTML(sc, o, l, couleur, oi, volume, totalAnnuel, partRef)
   const detailCycle = `
       <div class="ap-detail-sep">Cycle</div>
       <div class="ap-detail-l"><span>Temps de coupe (mesure machine)</span><b>${isNaN(coupe) ? "—" : fmt(coupe,1)+" s"}</b></div>
-      ${cycPart !== null ? `<div class="ap-detail-l"><span>Part du cycle — ${stC.parallele ? "outils simultanés, le plus long outil" : "outils en série"}</span><b>${fmt(cycPart*100,0)} %</b></div>` : ""}
+      ${cycPart !== null ? `<div class="ap-detail-l"><span>Part du cycle — ${stC.nbGroupes < stC.nbOutils ? stC.nbGroupes + " groupe" + (stC.nbGroupes>1?"s":"") + " d'outils simultanés" : "outils en série"}</span><b>${fmt(cycPart*100,0)} %</b></div>` : ""}
       ${indiceCond !== null ? `<div class="ap-detail-l"><span>Indice conditions vs base (Vc·f, 100 = base)</span><b>${fmt(indiceCond,0)}</b></div>` : ""}
       ${!stC.complete ? `<div class="ap-detail-l"><span>Pris en compte dans le cycle</span><b>non — ${stC.filled}/${stC.total} logements renseignés, l'indice global s'applique</b></div>` : ""}`;
   return `
@@ -8481,10 +8491,15 @@ function outilCarteHTML(sc, o, oi, showFrFa, showCycleDetail){
         ${o.correcteur ? `<span class="os-corr">${escapeAttr(o.correcteur)}</span>` : ""}
         <span class="os-desc">${escapeAttr(o.description || "")}</span>
         <span class="os-logements">${o.logements.map(l => escapeAttr(l.nom || "—")).join(" + ") || "aucun logement"}</span>
+        ${oi > 0 && o.simultaneAvecPrecedent ? `<span class="os-sim" title="Cet outil usine en même temps que le précédent — leurs temps ne s'additionnent pas, le groupe vaut le plus long.">⇉ simultané</span>` : ""}
         ${o.plan ? `<span class="os-plan" title="Un plan est joint à cet outil">${(o.plan.mime||"").startsWith("image/") ? "🖼" : "📄"} plan</span>` : ""}
         ${aDesCouts ? `<span class="os-cout">${fmt(coutOutil,4)} <small>€/pièce</small></span>` : ""}
       </summary>
       <div class="outil-corps">
+        ${oi > 0 ? `<label class="oc-simultane" title="Coche cette case si cet outil usine en même temps que « ${escapeAttr((sc.outils[oi-1]||{}).numero || "l'outil précédent")} » (ébauche et finition piste sur deux stations, par exemple) : leurs temps ne s'additionnent pas, le groupe d'outils simultanés vaut le temps du plus long. Décochée, l'outil enchaîne après les autres.">
+          <input type="checkbox" data-id="${sc.id}" data-outil="${o.id}" data-ofield="simultaneAvecPrecedent" ${o.simultaneAvecPrecedent ? "checked" : ""}>
+          ⇉ Tourne en simultané avec l'outil précédent (${escapeAttr((sc.outils[oi-1]||{}).numero || "sans n°")})
+        </label>` : ""}
         <div class="outil-tete">
           ${champHTML("N° outil", `<input class="cell ref" ${base("numero")} value="${escapeAttr(o.numero)}" placeholder="T513.1">`, "oc-moyen")}
           ${champHTML("Correcteur", `<input class="cell ref" ${base("correcteur")} value="${escapeAttr(o.correcteur)}" placeholder="—">`, "oc-court")}
@@ -9677,9 +9692,15 @@ function attachDetailHandlers(sc){
   root.querySelectorAll('select[data-field="battCotes"]').forEach(sel => {
     sel.addEventListener("change", () => { sc.battCotes = sel.value; saveData(); render(); });
   });
-  /* v4.39 — mode de composition du cycle : outils en série (somme) ou simultanés (le plus long) */
-  root.querySelectorAll('select[data-field="outilsParalleles"]').forEach(sel => {
-    sel.addEventListener("change", () => { sc.outilsParalleles = sel.value === "1"; saveData(); render(); });
+  /* v4.41 — case « tourne en simultané avec l'outil précédent » : regroupe les outils,
+     le cycle vaut la somme des groupes (chaque groupe = son outil le plus long) */
+  root.querySelectorAll('input[data-ofield="simultaneAvecPrecedent"]').forEach(inp => {
+    inp.addEventListener("change", () => {
+      const o = (sc.outils||[]).find(x => x.id === inp.getAttribute("data-outil"));
+      if(!o) return;
+      o.simultaneAvecPrecedent = inp.checked;
+      saveData(); render();
+    });
   });
   root.querySelectorAll('input[data-field="limitLabel"], input[data-field="limitValue"]').forEach(inp => {
     inp.addEventListener("change", () => {
@@ -10673,6 +10694,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.41.0", date:"25/09/2026", points:[
+    "<b>Le simultané se coche outil par outil.</b> Chaque fiche outil (sauf la première) gagne une case « ⇉ Tourne en simultané avec l'outil précédent » : cochée, l'outil rejoint le groupe de son voisin — le groupe vaut le temps de son outil le plus long, et le cycle est la somme des groupes. Exemple : outil à 2 logements (30+20 s), puis deux outils simultanés de 20 et 25 s → cycle 55 s, pas 95. Un badge « ⇉ simultané » reste visible sur les fiches repliées, et la cellule Temps de cycle nomme le nombre de groupes."
+  ]},
   { version:"4.40.0", date:"25/09/2026", points:[
     "<b>Le mode « simultané » passe au niveau des outils, plus du scénario entier.</b> La physique d'une OP : dans un outil, les logements enchaînent toujours à la suite (leurs temps s'additionnent) ; ce sont les outils qui tournent en simultané — ébauche ou finition piste sur deux stations — et le cycle est alors le temps de l'outil le plus long. Le sélecteur de la cellule Temps de cycle reflète cette logique (« outils en série / outils simultanés »).",
     "<b>Les libellés du bandeau bleu redeviennent lisibles.</b> La passe « étiquettes en recul » de la 4.34 écrasait aussi les libellés et les valeurs du tableau de bord en gris/noir sur l'aplat bleu. Le bandeau garde désormais sa propre hiérarchie d'encre claire, sur le bleu comme sur le vert de la cellule validation."
@@ -12899,32 +12923,37 @@ function runTests(){
        dureeVieScenario(normalizeScenario({ id:"X", name:"X", baseline:false,
          outils:[{ id:"tX", numero:"TX", logements:[{ id:"gX", nom:"Piste", prix:10, aretes:8, charniere:"", vc:500, f:0.5 }] }] })), null);
 
-    /* ---- v4.39/v4.40 : cycle par logement — somme DANS l'outil, max ENTRE outils ---- */
+    /* ---- v4.39/v4.41 : cycle par logement — somme DANS l'outil, groupes d'outils simultanés ---- */
     {
-      const mkCyc = (parallele, coupe2) => normalizeScenario({
-        id:"C", name:"C", baseline:false, outilsParalleles:parallele,
+      const mkCyc = (sims, coupe2) => normalizeScenario({
+        id:"C", name:"C", baseline:false,
         outils: [
           { id:"tC1", numero:"TC1", logements: [
             { id:"gC1", nom:"Logement 1", prix:20, aretes:8, charniere:100, vc:800, f:0.4, tempsCoupe:30, tempsDeplacement:7 },
             { id:"gC2", nom:"Logement 2", prix:20, aretes:8, charniere:100, vc:400, f:0.4, tempsCoupe:coupe2, tempsDeplacement:7 }
           ] },
-          { id:"tC2", numero:"TC2", logements: [
+          { id:"tC2", numero:"TC2", simultaneAvecPrecedent: sims[0], logements: [
             { id:"gC3", nom:"Piste", prix:20, aretes:8, charniere:100, vc:500, f:0.5, tempsCoupe:20, tempsDeplacement:7 }
+          ] },
+          { id:"tC3", numero:"TC3", simultaneAvecPrecedent: sims[1], logements: [
+            { id:"gC4", nom:"Finition", prix:20, aretes:8, charniere:100, vc:500, f:0.5, tempsCoupe:25, tempsDeplacement:7 }
           ] }
         ],
         essais: []
       });
-      ok("cycleDetailStatus : outils en série = somme de tout (déplacement ignoré)",
-         cycleDetailStatus(mkCyc(false, 20), {}).secs, 70);
-      ok("cycleDetailStatus : dans un outil, les logements s'additionnent dans les deux modes",
-         cycleDetailStatus(mkCyc(true, 20), {}).secs, 50);
-      ok("cycleDetailStatus : outils simultanés = temps de l'outil le plus long (30+20 > 20)",
-         cycleDetailStatus(mkCyc(true, 20), {}).secs, 50);
-      const stIncomplet = cycleDetailStatus(mkCyc(false, ""), {});
+      ok("cycleDetailStatus : aucune case = outils en série, somme de tout (déplacement ignoré)",
+         cycleDetailStatus(mkCyc([false,false], 20), {}).secs, 95);
+      ok("cycleDetailStatus : TC2 simultané avec TC1 -> groupes [TC1+TC2]=50 et [TC3]=25",
+         cycleDetailStatus(mkCyc([true,false], 20), {}).secs, 75);
+      ok("cycleDetailStatus : TC2 et TC3 simultanés -> un seul groupe, le plus long outil",
+         cycleDetailStatus(mkCyc([true,true], 20), {}).secs, 50);
+      ok("cycleDetailStatus : TC3 seul simultané -> groupes [TC1]=50 et [TC2+TC3]=25",
+         cycleDetailStatus(mkCyc([false,true], 20), {}).secs, 75);
+      const stIncomplet = cycleDetailStatus(mkCyc([false,false], ""), {});
       ok("cycleDetailStatus : un temps de coupe manquant -> mesures ignorées (null)",
-         [stIncomplet.complete, stIncomplet.secs, stIncomplet.filled], [false, null, 2]);
+         [stIncomplet.complete, stIncomplet.secs, stIncomplet.filled], [false, null, 3]);
       ok("logementCycle : le premier logement ancre l'indice, quel que soit son nom",
-         logementCycle(mkCyc(false, 20)).nom, "Logement 1");
+         logementCycle(mkCyc([false,false], 20)).nom, "Logement 1");
     }
 
     ok("normalizeScenario : plan conserve a travers l'arbre",
