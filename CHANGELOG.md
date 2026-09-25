@@ -5,6 +5,20 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.42.0] — 2026-09-25
+
+### Modifié — le coefficient K devient une botte secrete
+L'indice thermique du widget Fr·Fa (Vc × f × sin(κr), équivalent exact de
+Vc × Hex en tournage) est désormais réservé à l'auteur du projet : il ne
+s'affiche que sur son poste (nom d'auteur ou drapeau local) et ne part
+JAMAIS dans les pages imprimées. La ligne « Formules du widget K » de
+l'aide disparaît pour les autres accès. Le calcul (kvfDe) et la saisie du
+κr restent inchangés ; Fr/Fa reste visible de tous.
+
+### Tests
+Sortie du widget avec et sans autorisation (aucun K sans, K présent avec,
+Fr/Fa dans les deux cas).
+
 ## [4.41.1] — 2026-09-25
 
 Correctifs issus de l'audit complet du 25/09 (rapports croisés ZCode +

@@ -1757,9 +1757,9 @@ body.atelier-on{overflow:hidden;}
         <li>Vos saisies restent sur ce poste. <b>💾 Exporter le suivi</b> en fin de séance : c'est le fichier à archiver ou à envoyer.</li>
       </ul>
 
-      <h4>Formules du widget K / Fr·Fa</h4>
+      <h4 id="aideTitreK">Formules du widget K / Fr·Fa</h4>
       <ul>
-        <li><b>K = Vc × f × sin(κr)</b> — indice thermique/charge spécifique, comparé aux deux points déjà validés en production (174 et 448). κr est l'angle de direction d'arête (piste) renseigné dans le tableau plaquettes.</li>
+        <li class="aide-k"><b>K = Vc × f × sin(κr)</b> — indice thermique/charge spécifique, comparé aux deux points déjà validés en production (174 et 448). κr est l'angle de direction d'arête renseigné dans le tableau plaquettes.</li>
         <li><b>Fr/Fa ≈ cot(κr)</b> — rapport effort radial / effort axial (modèle simplifié de décomposition en tournage : Fr = R·cos κr, Fa = R·sin κr). Plus κr se rapproche de 90°, plus l'effort radial diminue par rapport à l'axial — c'est ce qui limite le battement sur bruts peu matures. Comparé aux deux angles réels utilisés (75° habituel, 85° validé le 26/08).</li>
         <li><b>Affinage par rayon de bec</b> (optionnel, champs "Rayon de bec rε" et "ap piste") — quand la profondeur de passe ap est plus petite que le rayon de bec rε, la coupe se fait uniquement sur la partie arrondie du bec, dont l'angle local passe progressivement de 0° à κr nominal. L'angle effectif utilisé alors pour Fr/Fa est <code>κr_eff = arccos(1 − ap/rε)</code> ; au-delà de cette profondeur de transition, l'arête droite domine et κr_eff revient à κr nominal. Sans rayon de bec ni ap renseignés, Fr/Fa utilise directement κr nominal.</li>
         <li>Ces deux indices restent des <b>indices comparatifs</b>, pas un modèle physique absolu (pas de coefficients Kienzle, pas d'effet d'usure) — ils servent à situer un scénario par rapport aux points déjà éprouvés en production, pas à prédire un effort en Newtons ou une température en °C.</li>
@@ -2052,7 +2052,7 @@ body.atelier-on{overflow:hidden;}
 </style>
 
 <script>
-const TOOL_VERSION = "4.41.1";
+const TOOL_VERSION = "4.42.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -4558,22 +4558,32 @@ function dansEncadrementPrecis(v, ref, eps){
 /* K s'affiche partout ou kappa_r est renseigne (indice thermique, toujours utile) ;
    Fr/Fa reste optionnel (config.forceRatioActif, par OP) — specifique a certaines
    references/plaquettes, pas systematique. */
-function kvfWidgetHTML(sc){
+/* v4.42 — botte secrete : le coefficient K ne s'affiche que pour l'auteur du projet
+   (auteurNom contient « Rouquette », ou drapeau local spk_k_secrete=1) et JAMAIS dans
+   les chemins d'impression. Le calcul (kvfDe) reste inchangé : seule la sortie visible
+   est conditionnée. */
+function kAutorise(){
+  try{ if(localStorage.getItem("spk_k_secrete") === "1") return true; }catch(e){}
+  return /rouquette/i.test(auteurNom || "");
+}
+function kvfWidgetHTML(sc, autoriseK){
   const items = [];
   sc.outils.forEach((o, oi) => {
     o.logements.forEach(l => {
       if(l.kappaR === "" || l.kappaR == null || isNaN(parseFloat(l.kappaR))) return;
       const couleur = OUTIL_COLORS[oi % OUTIL_COLORS.length];
       const label = escapeAttr(o.numero || "—") + " · " + escapeAttr(l.nom || "—");
-      const { k } = kvfDe(l);
-      const kOk = k === null ? null : dansEncadrement(k, K_REF);
-      items.push(`
+      if(autoriseK){
+        const { k } = kvfDe(l);
+        const kOk = k === null ? null : dansEncadrement(k, K_REF);
+        items.push(`
         <div class="kvf-item" style="border-left:3px solid ${couleur}; padding-left:8px;">
           <span class="l">${label} — K</span>
           <span class="v ${k === null ? "" : (kOk ? "in" : "out")}">${k === null ? "—" : fmt(k,0)}</span>
           <span class="ref">réf. encadrement ${K_REF[0]}–${K_REF[1]}</span>
         </div>
       `);
+      }
       if(config.forceRatioActif){
         const krNominal = parseFloat(l.kappaR);
         const krEff = kappaEffectif(l);
@@ -6936,9 +6946,9 @@ function scenarioBlockHTML(sc, interactive){
     ${compositionApercuHTML(sc)}
     <details class="config-block"${replie ? "" : " open"} data-config-id="${sc.id}">
       <summary>Modifier la composition<span class="config-resume">outils, plaquettes, conditions de coupe${nbOutilsSc ? " — " + nbOutilsSc + " fiche" + (nbOutilsSc>1?"s":"") : ""}</span></summary>
-      <div class="config-body">${volumeAnnuelHTML()}${kvfWidgetHTML(sc)}${posTable}</div>
+      <div class="config-body">${volumeAnnuelHTML()}${kvfWidgetHTML(sc, kAutorise())}${posTable}</div>
     </details>
-  ` : `${compositionApercuHTML(sc)}${volumeAnnuelHTML()}${kvfWidgetHTML(sc)}${posTable}`;
+  ` : `${compositionApercuHTML(sc)}${volumeAnnuelHTML()}${kvfWidgetHTML(sc, false)}${posTable}`;
 
   return `
     <div class="scenario ${sc.baseline ? "baseline" : ""}">
@@ -10695,6 +10705,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.42.0", date:"25/09/2026", points:[
+    "<b>Retour d'audit : resserrement de la confidentialité.</b> L'indice thermique du widget Fr·Fa ne s'affiche plus que pour l'auteur du projet et ne part jamais dans les pages imprimées — le reste de l'outil (saisie, calculs, Fr/Fa) est inchangé."
+  ]},
   { version:"4.41.1", date:"25/09/2026", points:[
     "<b>Petites réparations d'affichage repérées par l'audit.</b> Textes corrompus réparés (résumé de la Tendance, annonces 4.38), libellé de la cellule Validation éclairci pour retrouver le contraste réglementaire, secondes de cycle désormais affichées aussi dans les tuiles de scénarios (comme dans le tableau de bord), et textes d'Options remis en phase avec le fonctionnement réel du module cycle."
   ]},
@@ -12976,6 +12989,15 @@ function runTests(){
          /1 groupe d.outils simultanés/.test(cycleDetailStatusHTML(mig)), true);
     }
 
+    /* ---- v4.42 : botte secrete K — sortie conditionnee, impression jamais ---- */
+    ok("kvfWidgetHTML : sans autorisation, aucun K en sortie",
+       /— K</.test(kvfWidgetHTML(A, false)), false);
+    ok("kvfWidgetHTML : avec autorisation, le K apparait",
+       /— K</.test(kvfWidgetHTML(A, true)), true);
+    ok("kvfWidgetHTML : Fr/Fa reste quelle que soit l'autorisation",
+       [/Fr/Fa/.test(kvfWidgetHTML(A, false)), /Fr/Fa/.test(kvfWidgetHTML(A, true))],
+       [config.forceRatioActif, config.forceRatioActif]);
+
     ok("normalizeScenario : plan conserve a travers l'arbre",
        normalizeScenario({ id:"sp2", name:"p", outils:[{ id:"t9", numero:"T9", plan:planTest, logements:[] }] }).outils[0].plan, planTest);
 
@@ -13035,6 +13057,14 @@ function runTests(){
   console.table(T.map(t => ({ test: t.nom, ok: t.pass })));
   return { total: T.length, echecs: echecs.length, details: T };
 }
+/* v4.42 — botte secrete : la partie K de l'aide disparait pour les autres acces */
+(function(){
+  const ok = kAutorise();
+  const li = document.querySelector(".aide-k");
+  if(li) li.hidden = !ok;
+  const titre = document.getElementById("aideTitreK");
+  if(titre && !ok) titre.textContent = "Formules du widget Fr·Fa";
+})();
 if(location.hash === "#tests") runTests();
 </script>
 
