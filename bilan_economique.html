@@ -76,7 +76,7 @@
   --on-accent:#ffffff;
   --head:#2F4159; --head-ink:#ffffff; --head-ink-soft:#a7b6c9; --head-line:rgba(255,255,255,.16);
   --fill:#1B5EA6; --fill-ink:#ffffff; --fill-ink-soft:#c6dbf7; --fill-line:rgba(255,255,255,.22);
-  --fill-good:#1a7a3f; --fill-good-ink-soft:#c2e5d2;
+  --fill-good:#1a7a3f; --fill-good-ink-soft:#dcf2e4;
   --on-fill-good:#8ce0ae; --on-fill-bad:#ffb3bd; --on-fill-warn:#ffd08a;
   --font-disp:'Open Sans Condensed','Open Sans',Arial,sans-serif;
   --font-body:'Open Sans',Arial,sans-serif;
@@ -1564,16 +1564,17 @@ body.atelier-on{overflow:hidden;}
       <input type="checkbox" id="optCycleDetail">
       <span>
         <b>Détailler le temps de cycle par logement (mesures machine) <i class="opt-scope">OP</i></b>
-        <em>Remplace l'indice base 100 par un temps coupe + un temps déplacement, relevés sur machine, pour chaque logement. Plus fidèle qu'un indice unique quand un scénario ne change qu'une partie de l'outillage (ex. un seul côté passe en céramique).</em>
+        <em>Remplace l'indice base 100 par un temps de coupe relevé sur machine pour chaque logement. Plus fidèle qu'un indice unique quand un scénario ne change qu'une partie de l'outillage (ex. un seul côté passe en céramique).</em>
       </span>
     </label>
     <div class="opt-field on" id="optCycleDetailField">
       <div class="note" style="margin:0 0 12px;">
-        <b>Calcul précis seulement si TOUS les logements du scénario sont renseignés</b> (temps coupe ET temps
-        déplacement, colonnes ajoutées à la composition du scénario). Il en manque un seul et le scénario retombe
-        silencieusement sur l'indice base 100 habituel — un statut l'indique alors sous le tableau. Extraire ces
-        temps machine par logement est un vrai relevé terrain : discutez-en avec Benjamin si besoin avant d'activer
-        ce module sur une référence.
+        <b>Calcul précis seulement si TOUS les logements du scénario sont renseignés</b> (temps de coupe,
+        colonne ajoutée à la composition du scénario). Il en manque un seul et le scénario retombe
+        sur l'indice base 100 habituel — un statut l'indique sous la composition et dans chaque tuile.
+        Depuis la 4.39, les mesures complètes comptent sans interrupteur : cette option ne décide que de
+        l'affichage de la colonne à l'impression. Extraire ces temps machine par logement est un vrai
+        relevé terrain : discutez-en avec Benjamin si besoin avant d'activer ce module sur une référence.
       </div>
       <div id="ficheOutilWrap"></div>
       <span class="opt-note">Fiche outil (PDF ou image) : n° d'outils et trajectoires par logement pour cette OP — sert de repère pendant la saisie des temps ci-dessus.</span>
@@ -1605,8 +1606,8 @@ body.atelier-on{overflow:hidden;}
     <label class="opt-row">
       <input type="checkbox" id="optCycleSec">
       <span>
-        <b>Afficher le temps de cycle en secondes <i class="opt-scope">OP</i></b>
-        <em>Convertit l'indice base 100 en secondes réelles et en cadence pièces/heure.</em>
+        <b>Secondes de cycle dans les tuiles de scénarios <i class="opt-scope">OP</i></b>
+        <em>Le tableau de bord affiche toujours les secondes et la cadence. Coché, les tuiles de scénarios affichent aussi la conversion de l'indice en secondes réelles et en cadence pièces/heure.</em>
       </span>
     </label>
 
@@ -2051,7 +2052,7 @@ body.atelier-on{overflow:hidden;}
 </style>
 
 <script>
-const TOOL_VERSION = "4.41.0";
+const TOOL_VERSION = "4.41.1";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -3097,7 +3098,7 @@ function loadAll(){
         }
         return;
       }
-    }catch(e){}
+    }catch(e){ console.warn("loadAll : lecture du suivi impossible — repli ancien format/exemple", e); }
   }
   // pas de nouveau format : reprendre l'ancien fichier mono-reference s'il existe
   let legacyData = null, legacyConfig = null;
@@ -6220,7 +6221,7 @@ function syntheseTableHTML(){
       tFrfa: frfa === null ? "—" : fmt(frfa,2),
       tCycle: (sc.cycle === "" || sc.cycle == null) ? "—" :
         fmt(parseFloat(sc.cycle),0) + " (" + deltaCycle + ")" +
-        (config.cycleSecActif && secs !== null ? " · " + fmt(secs,1) + " s" + (cadence ? " · " + fmt(cadence,0) + " p/h" : "") : ""),
+        (secs !== null ? " · " + fmt(secs,1) + " s" + (cadence ? " · " + fmt(cadence,0) + " p/h" : "") : ""),
       tHorsTol: stats.rate === null ? "—" : fmt(stats.rate,0) + " %",
       tBad: stats.badCount,
       tRebut: scrap.rate === null ? "—" : fmt(scrap.rate,1) + " %",
@@ -6486,7 +6487,7 @@ function renderTabs(){
         ${an && an.gainAnnuel !== undefined ? `<span class="tc-row"><span class="tc-label">${an.gainAnnuel>=0?"Gain/an":"Perte/an"}</span><span class="tc-val ${an.gainAnnuel>=0?"tc-gain":"tc-perte"}">${(an.gainAnnuel>=0?"+":"−")+fmtEuroCourt(Math.abs(an.gainAnnuel))}</span></span>` : ""}
         ${sc.id !== activeId ? "" : `
         ${couts.multiPoste ? `<span class="tc-row"><span class="tc-label">dont plaquettes</span><span class="tc-val">${couts.plaquettes === null ? "—" : fmt(couts.plaquettes,4)}</span></span>` : ""}
-        <span class="tc-row"><span class="tc-label">Temps cycle</span><span class="tc-val">${sc.cycle === "" || sc.cycle == null ? "—" : fmt(parseFloat(sc.cycle),0)}${config.cycleSecActif && cycleSecondes(sc) !== null ? " · " + fmt(cycleSecondes(sc),1) + " s" : ""}</span></span>
+        <span class="tc-row"><span class="tc-label">Temps cycle</span><span class="tc-val">${sc.cycle === "" || sc.cycle == null ? "—" : fmt(parseFloat(sc.cycle),0)}${cycleSecondes(sc) !== null ? " · " + fmt(cycleSecondes(sc),1) + " s" : ""}</span></span>
         <span class="tc-row"><span class="tc-label">Essais</span><span class="tc-val">${stats.essaisCount}${stats.badCount ? ` — ${stats.badCount} non conforme${stats.badCount>1?"s":""}` : ""}</span></span>
         <span class="tc-row"><span class="tc-label">Rebut ligne (équipe)</span><span class="tc-val">${scrap.rate === null ? "—" : fmt(scrap.rate,1)+" %"}</span></span>`}
       </button>
@@ -6944,7 +6945,7 @@ function scenarioBlockHTML(sc, interactive){
       <div class="scenario-head">${head}<span class="status-badge ${stats.validated ? "ok" : "pending"}">${stats.validated ? "✓ Validé" : "En cours"}</span></div>
       ${foot}
       <div class="sec-plaquettes">${configSection}</div>
-      <div class="sec-graph">${interactive ? `<details class="zone-det"><summary>Tendance â€” Ã©volution au fil des piÃ¨ces</summary>` : ""}${chartHTML(sc)}${interactive ? `</details>` : ""}</div>
+      <div class="sec-graph">${interactive ? `<details class="zone-det"><summary>Tendance — évolution au fil des pièces</summary>` : ""}${chartHTML(sc)}${interactive ? `</details>` : ""}</div>
       <div class="sec-essais">${logSection}</div>
       <div class="sec-rebut">${scrapSection}</div>
     </div>
@@ -10694,6 +10695,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.41.1", date:"25/09/2026", points:[
+    "<b>Petites réparations d'affichage repérées par l'audit.</b> Textes corrompus réparés (résumé de la Tendance, annonces 4.38), libellé de la cellule Validation éclairci pour retrouver le contraste réglementaire, secondes de cycle désormais affichées aussi dans les tuiles de scénarios (comme dans le tableau de bord), et textes d'Options remis en phase avec le fonctionnement réel du module cycle."
+  ]},
   { version:"4.41.0", date:"25/09/2026", points:[
     "<b>Le simultané se coche outil par outil.</b> Chaque fiche outil (sauf la première) gagne une case « ⇉ Tourne en simultané avec l'outil précédent » : cochée, l'outil rejoint le groupe de son voisin — le groupe vaut le temps de son outil le plus long, et le cycle est la somme des groupes. Exemple : outil à 2 logements (30+20 s), puis deux outils simultanés de 20 et 25 s → cycle 55 s, pas 95. Un badge « ⇉ simultané » reste visible sur les fiches repliées, et la cellule Temps de cycle nomme le nombre de groupes."
   ]},
@@ -10708,8 +10712,8 @@ const NOUVEAUTES = [
     "<b>Fini les « Bol + Piste » gravés dans le code.</b> Le logement qui ancre l'indice de cycle est le premier logement du scénario (l'ordre des fiches fait foi), plus de recherche par nom héritée de la toute première saisie ; le libellé « €/arête (bol + piste) » devient « €/arête (tous logements) »."
   ]},
   { version:"4.38.0", date:"24/09/2026", points:[
-    "<b>La tendance passe en zone de lecture.</b> Le graphique d\'Ã©volution au fil des piÃ¨ces est repliÃ© par dÃ©faut : il ne concurrence plus la saisie des essais, et s\'ouvre au clic.",
-    "Rappel 4.37 : zone de dÃ©tail regroupÃ©e (calcul, consommation annuelle, piÃ¨ces dÃ©tachÃ©es)."
+    "<b>La tendance passe en zone de lecture.</b> Le graphique d\'évolution au fil des pièces est replié par défaut : il ne concurrence plus la saisie des essais, et s\'ouvre au clic.",
+    "Rappel 4.37 : zone de détail regroupée (calcul, consommation annuelle, pièces détachées)."
   ]},
   { version:"4.37.0", date:"24/09/2026", points:[
     "<b>Zone de détail regroupée.</b> Détail du calcul, consommation annuelle et pièces détachées ne font plus qu\'un seul bloc repliable : l\'écran montre la décision (zones 1 et 2) et tient le calcul à un clic.",
@@ -12954,6 +12958,22 @@ function runTests(){
          [stIncomplet.complete, stIncomplet.secs, stIncomplet.filled], [false, null, 3]);
       ok("logementCycle : le premier logement ancre l'indice, quel que soit son nom",
          logementCycle(mkCyc([false,false], 20)).nom, "Logement 1");
+    }
+
+    /* ---- v4.41.1 : cadenceHeure + migration du mode global 4.39/4.40 ---- */
+    ok("cadenceHeure : indice 100 sur reference 60 s -> 60 p/h", cadenceHeure(A, cfg), 60);
+    ok("cadenceHeure : cycle absent -> null", cadenceHeure(normalizeScenario({ id:"Z", name:"Z", baseline:false, cycle:"", outils:[] }), cfg), null);
+    {
+      const mig = normalizeScenario({ id:"M", name:"M", baseline:false, outilsParalleles:true,
+        outils: [
+          { id:"tM1", numero:"M1", logements:[{ id:"gM1", nom:"A", prix:10, aretes:8, charniere:100, tempsCoupe:10 }] },
+          { id:"tM2", numero:"M2", logements:[{ id:"gM2", nom:"B", prix:10, aretes:8, charniere:100, tempsCoupe:10 }] },
+          { id:"tM3", numero:"M3", logements:[{ id:"gM3", nom:"C", prix:10, aretes:8, charniere:100, tempsCoupe:10 }] }
+        ] });
+      ok("migration 4.41 : le mode global coche tous les outils sauf le premier",
+         mig.outils.map(o => !!o.simultaneAvecPrecedent), [false, true, true]);
+      ok("cycleDetailStatusHTML : nomme le nombre de groupes d'outils simultanes",
+         /1 groupe d.outils simultanés/.test(cycleDetailStatusHTML(mig)), true);
     }
 
     ok("normalizeScenario : plan conserve a travers l'arbre",

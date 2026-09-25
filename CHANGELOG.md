@@ -5,6 +5,33 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.41.1] — 2026-09-25
+
+Correctifs issus de l'audit complet du 25/09 (rapports croisés ZCode +
+Hermes). Aucun changement de calcul ni de donnée.
+
+### Corrigé
+- **Textes corrompus** : le résumé replié de la Tendance et deux annonces
+  4.38 affichaient des séquences d'encodage corrompues (« Ã©volution ») ;
+  balayage complet du fichier et réparation de toutes les occurrences.
+- **Contraste de la cellule Validation** (thème clair) : l'encre passe à
+  #dcf2e4 sur le vert — 4,58:1, au-dessus du seuil WCAG AA (était 3,96:1).
+- **Secondes de cycle alignées** : les tuiles de scénarios affichent
+  désormais les secondes/cadence comme le tableau de bord, sans condition
+  d'option ; le libellé de l'option est reformulé (elle ne concerne plus
+  que les tuiles).
+- **Options remises en phase** : le module « Détailler le temps de cycle »
+  ne mentionne plus le temps de déplacement (sorti du calcul en 4.39) et
+  décrit la règle réelle (mesures complètes = comptées, l'option ne gère
+  que la colonne d'impression).
+- **Débogage** : un échec de lecture du suivi au chargement laisse
+  désormais une trace en console au lieu d'un repli silencieux.
+
+### Tests
+`cadenceHeure` (jamais couverte), la migration du mode global 4.39/4.40
+vers les cases par outil, et l'annonce du nombre de groupes dans le statut
+de composition.
+
 ## [4.41.0] — 2026-09-25
 
 Précision de Benjamin sur la 4.40 : le simultané ne concerne pas le
