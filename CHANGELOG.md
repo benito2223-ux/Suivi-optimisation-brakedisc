@@ -5,6 +5,21 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.44.0] — 2026-09-25
+
+### Modifié — la feuille de style remise d'aplomb
+- **Patchs consolidés** : les blocs `<style>` datés 4.32→4.41 (identité SPK,
+  respiration 4.33, hiérarchie 4.34, repère de zone 4.35) fusionnent en un
+  seul bloc documenté, toujours après la feuille principale (cascade
+  conservée à l'identique). C'est la pile « dernier gagne » qui avait causé
+  l'écrasement d'encre corrigé en 4.40 — un seul bloc, plus de surprise.
+- **Classes mortes purgées** (recoupage des émissions dynamiques fait) :
+  `.pos-label`, `.ref-stack`, `.badge.type-bug/.type-amelioration`,
+  `.log-add`, `.limit-global`, `.mini-stat`, `.sc-r`, et retrait de
+  `.ligne-strip`/`.reference-strip` du masquage d'impression.
+- **Couleurs tokenisées** : hover du bouton de sauvegarde en `color-mix`
+  sur `--green`, fond des badges photo en `--photo-overlay`.
+
 ## [4.43.0] — 2026-09-25
 
 ### Modifié — le système de polices assaini (héritage 4.32)
