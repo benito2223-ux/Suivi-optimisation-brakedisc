@@ -5,6 +5,19 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.47.1] — 2026-09-28
+
+### Corrigé — un scénario d'essai ne s'affichait pas au clic (retour Benjamin)
+Sur EMAG 1 OP40, cliquer le scénario DWG laissait l'écran figé sur la
+sélection précédente. Cause : `prelevementRowHTML` référençait
+`mesureLabel`, variable qui n'existait que dans la portée d'
+`essaiCardHTML` — bug latent depuis la v4.9, qui ne se déclenchait que
+sur la branche « mono » du battement (scénarios **sans** `emag1`, cas
+des scénarios OP40 de la nouvelle base). Le rendu levait une
+ReferenceError et le DOM gardait l'ancien contenu. Le libellé est
+désormais calculé dans la fonction elle-même. Vérifié : les 23 scénarios
+de la base rendent sans erreur.
+
 ## [4.47.0] — 2026-09-28
 
 Retour UI de Benjamin : « la simultanéité est visuellement pauvre ».

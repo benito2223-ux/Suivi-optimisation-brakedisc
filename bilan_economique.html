@@ -2062,7 +2062,7 @@ body.atelier-on{overflow:hidden;}
 </style>
 
 <script>
-const TOOL_VERSION = "4.47.0";
+const TOOL_VERSION = "4.47.1";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -8021,6 +8021,10 @@ function essaiCardHTML(sc, essai, interactive){
 function prelevementRowHTML(sc, essai, row, interactive, snapLogements, showLogementCol){
   snapLogements = snapLogements || logementsSuivis(essai);
   showLogementCol = showLogementCol !== undefined ? showLogementCol : snapLogements.length > 1;
+  /* v4.47.1 — calculé ICI : ce nom ne vivait que dans la portée de essaiCardHTML, la
+     branche « mono » (scénario sans emag1) levait une ReferenceError qui figeait l'écran
+     sur la sélection précédente au lieu de rendre le scénario cliqué */
+  const mesureLabel = escapeAttr(libelleDe(sc));
   const conform = checkConform(sc, row);
   const exempte = !toleranceRequisePour(sc, row);
   const badge = exempte ? `<span class="badge muted" title="Ce logement ne suit que la charnière, pas la tolérance dimensionnelle.">🔓 Charnière</span>`
@@ -10776,6 +10780,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.47.1", date:"28/09/2026", points:[
+    "<b>Corrigé : un scénario d'essai ne s'affichait pas au clic.</b> Sur les scénarios sans mesure Droite/Gauche (les scénarios OP40 notamment), le rendu plantait silencieusement et l'écran restait figé sur le scénario précédent. La cause était un bug latent présent depuis toujours, révélé par les nouveaux scénarios de la base 2026/2027."
+  ]},
   { version:"4.47.0", date:"28/09/2026", points:[
     "<b>Le travail simultané se voit maintenant d'un coup d'œil.</b> Les outils qui usinent ensemble sont enfermés dans un bloc ambre avec l'en-tête « ⇉ Travail simultané — seul le plus long compte dans le cycle », dans la vue d'ensemble de la composition. Le badge de la fiche repliée passe à la même couleur ambre : un seul code visuel pour le concept."
   ]},
