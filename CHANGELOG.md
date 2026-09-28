@@ -5,6 +5,19 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.47.0] — 2026-09-28
+
+Retour UI de Benjamin : « la simultanéité est visuellement pauvre ».
+
+### Ajouté — les groupes d'outils simultanés deviennent visibles
+Dans la vue d'ensemble de la composition, les tuiles des outils d'un même
+groupe simultané sont enfermées dans un **bloc ambre à bordure pointillée**
+avec l'en-tête « ⇉ Travail simultané — n outils usinent ensemble, seul le
+plus long compte dans le cycle ». Le badge de la fiche repliée et la case
+de la fiche ouverte passent à la même couleur ambre : un seul code visuel
+pour le concept (ambre = simultanéité). La disposition reflète
+exactement le calcul v4.41 (regroupement consécutif).
+
 ## [4.46.1] — 2026-09-28
 
 ### Ajouté — cible de coût pièce par référence
