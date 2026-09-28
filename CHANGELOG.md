@@ -5,6 +5,31 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.45.0] — 2026-09-28
+
+Retour du terrain (Benjamin) : sur un scénario d'essai avec mesures de
+cycle complètes, le coût pièce intégrait le temps machine pendant que la
+référence (sans mesures, sans cycle de référence en secondes) restait en
+plaquettes seules — le delta comparait deux périmètres différents.
+
+### Corrigé — périmètre de comparaison synchronisé
+- `perimetreCompare()` (testée) : un poste n'entre dans un delta que s'il
+  est chiffrable **des deux côtés** ; les postes à un seul côté sont exclus
+  et signalés.
+- **% du coût par pièce** (tableau de bord + verdict) : calculés sur le
+  périmètre commun ; titre qualifié « (hors temps machine) » et
+  avertissement explicite avec l'invitation à renseigner le cycle de
+  référence en secondes pour un « tout compris ».
+- **Gain annuel** : même règle — poste commun seulement, drapeau
+  `perimetrePartiel` remonté jusqu'à la cellule et au détail dépliable.
+- Les heures machine annuelles exigeaient déjà les deux cycles : inchangé.
+- Le coût total affiché de chaque scénario reste sa vérité propre (avec sa
+  machine) ; seul le delta porte le périmètre commun.
+
+### Tests
+`perimetreCompare` (exclusion, totaux communs, périmètre complet) et
+`bilanAnnuel` asymétrique (gain hors machine = 4 375 €/an sur le jeu rond).
+
 ## [4.44.0] — 2026-09-25
 
 ### Modifié — la feuille de style remise d'aplomb

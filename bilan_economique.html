@@ -2049,7 +2049,7 @@ body.atelier-on{overflow:hidden;}
 </style>
 
 <script>
-const TOOL_VERSION = "4.44.0";
+const TOOL_VERSION = "4.45.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -4937,8 +4937,11 @@ function verdictHTML(sc){
   const couts = coutsDetail(sc);
   const coutsBase = base ? coutsDetail(base) : null;
   const complet = couts.multiPoste;
-  const refCout = complet ? couts.total : cost;
-  const refBase = complet ? (coutsBase ? coutsBase.total : null) : baseCost;
+  /* v4.45 — le % de coût se calcule sur le périmètre commun scénario/référence */
+  const periVerdict = base ? perimetreCompare(couts, coutsBase) : null;
+  const refCout = (periVerdict && periVerdict.communs.length) ? periVerdict.sc : (complet ? couts.total : cost);
+  const refBase = (periVerdict && periVerdict.communs.length) ? periVerdict.base : (complet ? (coutsBase ? coutsBase.total : null) : baseCost);
+  const horsMachine = !!(periVerdict && periVerdict.exclus.includes("temps machine"));
   const annuel = bilanAnnuel(sc);
 
   let titre, sousTitre, classe, eyebrow;
@@ -4959,7 +4962,7 @@ function verdictHTML(sc){
       titre = "Renseignez prix, arêtes et charnière";
       sousTitre = "Le gain se calcule dès que les plaquettes sont décrites.";
     } else {
-      titre = (gain ? "−" : "+") + fmt(Math.abs(dCost),1) + " % de coût par pièce" + (complet ? " (tout compris)" : " outil");
+      titre = (gain ? "−" : "+") + fmt(Math.abs(dCost),1) + " % de coût par pièce" + (horsMachine ? " (hors temps machine)" : complet ? " (tout compris)" : " outil");
       const bouts = [];
       if(annuel && annuel.gainAnnuel !== undefined){
         bouts.push((annuel.gainAnnuel >= 0 ? "" : "perte de ") + fmtEuroCourt(Math.abs(annuel.gainAnnuel)) + "/an");
@@ -4970,6 +4973,7 @@ function verdictHTML(sc){
         : stats.badCount > 0
           ? stats.badCount + " essai" + (stats.badCount>1?"s":"") + " non conforme" + (stats.badCount>1?"s":"")
           : "validation en cours (" + stats.validCount + "/" + (sc.validationThreshold||"—") + ")");
+      if(horsMachine) bouts.push("comparaison hors temps machine — la référence n'a pas de cycle chiffrable");
       sousTitre = bouts.join(" · ") + " — vs " + escapeAttr(base.name);
     }
   }
@@ -5339,6 +5343,28 @@ function coutsDetail(sc, cfg, ligne){
 function coutTotalPiece(sc, cfg, ligne){
   return coutsDetail(sc, cfg, ligne).total;
 }
+/* v4.45 — périmètre de comparaison synchronisé : un poste n'entre dans un delta que
+   s'il est chiffrable DES DEUX côtés (scénario ET référence). Comparer un total avec
+   machine à un total sans (cas typique : l'essai a des mesures de cycle complètes,
+   la référence non) faisait paraître le scénario plus cher qu'il n'était.
+   Retourne les postes communs, les postes exclus (avec leur libellé) et les deux
+   totaux sur le périmètre commun. */
+function perimetreCompare(couts, coutsBase){
+  const postes = [
+    ["plaquettes", "plaquettes"],
+    ["machine", "temps machine"],
+    ["rebut", "coût du rebut"],
+    ["pieces", "pièces détachées"]
+  ];
+  const communs = [], exclus = [];
+  postes.forEach(([cle, lib]) => {
+    const a = couts[cle], b = coutsBase ? coutsBase[cle] : null;
+    if(a !== null && b !== null) communs.push([cle, lib]);
+    else if(a !== null || b !== null) exclus.push(lib);
+  });
+  const somme = cs => communs.reduce((acc,[cle]) => acc + (cs[cle] || 0), 0);
+  return { communs, exclus, sc: somme(couts), base: coutsBase ? somme(coutsBase) : null };
+}
 
 /* ---- charniere reellement atteinte ----
    On ne peut affirmer qu'une duree de vie a ete tenue que jusqu'au dernier prelevement
@@ -5428,7 +5454,11 @@ function bilanAnnuel(sc, cfg, ligne, ref, baseCmp){
   const out = { volume, coutAnnuel: cSc.total === null ? null : cSc.total * volume };
   if(base && base.id !== sc.id){
     const cBase = coutsDetail(base, cfg, ligne);
-    if(cBase.total !== null && cSc.total !== null) out.gainAnnuel = (cBase.total - cSc.total) * volume;
+    /* v4.45 — le gain annuel ne mélange plus les périmètres : poste commun seulement,
+       et drapeau perimetrePartiel quand un poste n'est chiffrable que d'un côté. */
+    const peri = perimetreCompare(cSc, cBase);
+    if(peri.communs.length && peri.base > 0) out.gainAnnuel = (peri.base - peri.sc) * volume;
+    if(peri.exclus.length) out.perimetrePartiel = peri.exclus;
     const sBase = cycleSecondes(base, cfg), sSc = cycleSecondes(sc, cfg);
     if(sBase !== null && sSc !== null) out.heuresAnnuelles = ((sSc - sBase) * volume) / 3600;
   }
@@ -5459,6 +5489,9 @@ function coutAnnuelDetailHTML(sc, annuel){
     corps += ligne("Gain annuel = référence − scénario",
       (annuel.gainAnnuel >= 0 ? "+" : "−") + fmtEuroCourt(Math.abs(annuel.gainAnnuel)) + "/an" +
       (annuel.heuresAnnuelles !== undefined ? " · " + (annuel.heuresAnnuelles >= 0 ? "+" : "−") + fmt(Math.abs(annuel.heuresAnnuelles),0) + " h machine/an" : ""));
+    if(annuel.perimetrePartiel && annuel.perimetrePartiel.length)
+      corps += ligne("Comparaison hors : " + annuel.perimetrePartiel.join(", "),
+        "non chiffrable sur la référence");
   } else {
     const cd = coutsDetail(sc, cfg);
     if(cd.plaquettes !== null){
@@ -6723,10 +6756,14 @@ function scenarioBlockHTML(sc, interactive){
   // le delta se calcule sur le meme perimetre que le chiffre affiche : des que plusieurs
   // postes entrent en jeu, comparer les seules plaquettes n'a plus de sens
   let deltaTotalHtml = `<span class="delta zero">réf.</span>`;
-  if(!sc.baseline && coutsBase && coutsBase.total && couts.total !== null){
-    const d = ((couts.total - coutsBase.total) / coutsBase.total) * 100;
+  const periFoot = (!sc.baseline && coutsBase) ? perimetreCompare(couts, coutsBase) : null;
+  if(periFoot && periFoot.communs.length && periFoot.base > 0){
+    const d = ((periFoot.sc - periFoot.base) / periFoot.base) * 100;
     const cls = d > 0.05 ? "pos" : d < -0.05 ? "neg" : "zero";
-    deltaTotalHtml = `<span class="delta ${cls}">${d>0?"+":""}${fmt(d,1)} %</span>`;
+    const titre = periFoot.exclus.length
+      ? "Comparaison sur le périmètre commun (" + periFoot.communs.map(c => c[1]).join(" + ") + ") — hors : " + periFoot.exclus.join(", ")
+      : "Comparaison à périmètre identique (tous les postes chiffrables)";
+    deltaTotalHtml = `<span class="delta ${cls}" title="${titre}">${d>0?"+":""}${fmt(d,1)} %</span>`;
   }
   const coutCell = couts.multiPoste ? `
       <div class="foot-cell foot-cell-wide">
@@ -6734,6 +6771,7 @@ function scenarioBlockHTML(sc, interactive){
         <div class="v">${couts.total === null ? "—" : fmt(couts.total,4)}<small>€</small></div>
         ${couts.multiPoste ? deltaTotalHtml : deltaHtml}
         ${coutBreakdownHTML(couts)}
+        ${periFoot && periFoot.exclus.includes("temps machine") ? `<div class="foot-sub" style="color:var(--on-fill-warn);" title="Le coût affiché intègre le temps machine de CE scénario, mais la référence n'a pas de cycle chiffrable (ni mesures complètes, ni cycle de référence en secondes). Le % compare donc les périmètres communs.">Comparaison hors temps machine — la référence n'a pas de cycle chiffrable · renseigne le cycle de référence en secondes pour un « tout compris »</div>` : ""}
       </div>` : `
       <div class="foot-cell">
         <div class="l">Coût outil / pièce</div>
@@ -6752,6 +6790,8 @@ function scenarioBlockHTML(sc, interactive){
              <div class="foot-sub">sur ${fmt(annuel.volume,0)} disques/an${annuel.heuresAnnuelles !== undefined ? ` · ${annuel.heuresAnnuelles>=0?"+":"−"}${fmt(Math.abs(annuel.heuresAnnuelles),0)} h machine` : ""}</div>`}
         ${(!sc.baseline && !config.coutMachineActif && baseCycle && !isNaN(cyc) && Math.abs(cyc - baseCycle) > 0.5)
           ? `<div class="foot-sub" style="color:var(--on-fill-warn);">⚠ écart de cycle non chiffré ici — activez « Intégrer le temps machine au coût pièce » dans Options</div>` : ""}
+        ${(!sc.baseline && annuel && annuel.perimetrePartiel && annuel.perimetrePartiel.includes("temps machine"))
+          ? `<div class="foot-sub" style="color:var(--on-fill-warn);">Gain annuel hors temps machine — la référence n'a pas de cycle chiffrable · renseigne le cycle de référence en secondes pour une comparaison tout compris</div>` : ""}
       </div>` : "";
 
   /* v4.30 — un seul tableau de bord : le verdict ouvre la bande, les chiffres suivent.
@@ -10702,6 +10742,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.45.0", date:"28/09/2026", points:[
+    "<b>Retour du terrain : les comparaisons ne mélangent plus les périmètres.</b> Quand un scénario a des mesures de cycle complètes (donc un coût avec temps machine) et que sa référence n'a pas de cycle chiffrable, le % de gain se calculait sur un total avec machine contre un total sans — le scénario paraissait plus cher qu'il n'était. Désormais le % se calcule sur le périmètre commun des deux côtés, hors machine si besoin, avec un avertissement explicite et l'invitation à renseigner le cycle de référence en secondes pour un « tout compris ». Le gain annuel suit la même règle."
+  ]},
   { version:"4.44.0", date:"25/09/2026", points:[
     "<b>Retour d'audit : la feuille de style remise d'aplomb.</b> Les patchs datés des versions 4.32 à 4.41 sont consolidés en un seul bloc documenté (fini la pile « dernier gagne » qui avait causé le bug d'affichage 4.40), les classes CSS mortes des refontes sont purgées, et les dernières couleurs en dur rejoignent les tokens."
   ]},
@@ -12378,7 +12421,11 @@ function runTests(){
     cfg.volumeActif = true;
     const an = bilanAnnuel(B, cfg, ligne, refT);
     ok("bilanAnnuel : cout annuel = cout piece x volume", an.coutAnnuel, cB.total * 100000, 1e-6);
-    ok("bilanAnnuel : gain annuel = ecart x volume", an.gainAnnuel, (totA - cB.total) * 100000, 1e-6);
+    /* v4.45 — périmètre commun : B porte des pièces détachées que A n'a pas, elles
+       sortent du gain (sinon on comparerait un total avec pièces à un total sans) */
+    ok("bilanAnnuel : gain annuel sur le périmètre commun (hors pièces de B, machine des deux côtés)",
+       an.gainAnnuel, (totA - cB.total + 0.02) * 100000, 1e-6);
+    ok("bilanAnnuel : le poste asymétrique est signalé", an.perimetrePartiel, ["pièces détachées"]);
     ok("bilanAnnuel : heures machine = ecart de cycle x volume / 3600", an.heuresAnnuelles, (90-60)*100000/3600, 1e-6);
     ok("bilanAnnuel : plaquettes/an = volume/(aretes x charniere)", an.plaquettes[0].nb, 100000/(8*200), 1e-9);
 
@@ -12990,6 +13037,30 @@ function runTests(){
          mig.outils.map(o => !!o.simultaneAvecPrecedent), [false, true, true]);
       ok("cycleDetailStatusHTML : nomme le nombre de groupes d'outils simultanes",
          /1 groupe d.outils simultanés/.test(cycleDetailStatusHTML(mig)), true);
+    }
+
+    /* ---- v4.45 : périmètre de comparaison synchronisé (fini les deltas mixtes) ---- */
+    {
+      const un = { plaquettes:0.05, machine:null, rebut:null, pieces:null };
+      const deux = { plaquettes:0.075, machine:0.7, rebut:null, pieces:null };
+      const peri = perimetreCompare(deux, un);
+      ok("perimetreCompare : la machine chiffrable d'un seul côté -> exclue du delta",
+         peri.exclus, ["temps machine"]);
+      ok("perimetreCompare : totaux sur le périmètre commun (plaquettes)",
+         [peri.sc, peri.base], [0.075, 0.05]);
+      ok("perimetreCompare : tout chiffrable des deux côtés -> périmètre complet",
+         perimetreCompare({plaquettes:1,machine:0.5,rebut:null,pieces:null},
+                          {plaquettes:2,machine:0.4,rebut:null,pieces:null}).exclus, []);
+      const volAvant = config.volumeActif;
+      config.volumeActif = true;
+      const cfgM = Object.assign({}, cfg, { coutMachineActif:true, cycleRefSec:"" });
+      ligne.coutHoraire = 50;
+      const Bmes = normalizeScenario({ id:"BM", name:"BM", baseline:false,
+        outils:[ { id:"tBM", numero:"TBM", logements:[ { id:"gBM", nom:"Piste", prix:10, aretes:8, charniere:200, vc:500, f:0.5, tempsCoupe:50 } ] } ], essais: [] });
+      const ann = bilanAnnuel(Bmes, cfgM, ligne, refT, A);
+      ok("bilanAnnuel : gain hors temps machine + rebut (Bmes n'a pas de journal) quand la référence n'est pas chiffrable",
+         [ann.perimetrePartiel, Math.round(ann.gainAnnuel)], [["temps machine", "coût du rebut"], 4375]);
+      config.volumeActif = volAvant;
     }
 
     /* ---- v4.42 : botte secrete K — sortie conditionnee, impression jamais ---- */
