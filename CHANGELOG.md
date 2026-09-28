@@ -5,6 +5,20 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.49.2] — 2026-09-28
+
+### Corrigé — le graphe de tendance redevient lisible après complétion
+L'échelle horizontale était calée sur la plus grande charnière de TOUT
+l'outillage du scénario. Depuis « Compléter depuis la prod », un scénario
+d'essai porte aussi les outils longs de l'excel (jusqu'à 300-4000 pièces)
+qui ne sont pas suivis par l'essai : leur max écrasait les prélèvements
+réels sur une fine bande du graphe (retour Benjamin : « visibilité
+impactée fortement »). L'échelle suit désormais les charnières des
+**logements réellement suivis** par les essais tracés — vérifié sur le
+SL500 OP40 : axe 0-54 au lieu de 0-324, les 50 pièces mesurées occupent
+toute la largeur. Le rapport d'essai embarqué bénéficie du même correctif
+(fonction partagée).
+
 ## [4.49.1] — 2026-09-28
 
 ### Corrigé — la fusion ne crie plus au conflit pour rien

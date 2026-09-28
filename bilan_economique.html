@@ -2097,7 +2097,7 @@ body.atelier-on{overflow:hidden;}
 </style>
 
 <script>
-const TOOL_VERSION = "4.49.1";
+const TOOL_VERSION = "4.49.2";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -5798,7 +5798,17 @@ function tendanceChartHTML(sc, g, pal){
   }));
 
   const limite = g.tolerance, mini = g.toleranceMini;
-  const charnieresSc = sc.outils.flatMap(o => o.logements.map(l => parseFloat(l.charniere))).filter(v => !isNaN(v));
+  /* v4.49.2 — l'échelle X suit la charnière des logements SUIVIS par les essais tracés,
+     pas celle de tout l'outillage du scénario. Depuis « Compléter depuis la prod », un
+     scénario d'essai porte aussi des outils à charnière très longue (300, 600, 4000
+     pièces de l'excel) qui ne sont pas suivis par l'essai : leur max écrasait les
+     prélèvements réels sur une fine bande du graphe (retour Benjamin : « visibilité
+     impactée fortement »). Les logements représentés dans les séries font foi. */
+  const idsSuivis = new Set();
+  (sc.essais||[]).forEach(es => (logementsSuivis(es)||[]).forEach(lp => idsSuivis.add(lp.logementId)));
+  const logementsRepresentes = (sc.outils||[]).flatMap(o => o.logements||[])
+    .filter(l => !idsSuivis.size || idsSuivis.has(l.id));
+  const charnieresSc = logementsRepresentes.map(l => parseFloat(l.charniere)).filter(v => !isNaN(v));
   const charniere = charnieresSc.length ? Math.max(...charnieresSc) : NaN;
   // v4.15 — vue en % de tolérance consommée (option d'affichage, jamais par défaut) :
   // 100 % = la limite, 0 % = la borne mini si plage min–max, sinon zéro. Normalise la
@@ -10986,6 +10996,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.49.2", date:"28/09/2026", points:[
+    "<b>Corrigé : le graphe de tendance redevient lisible après complétion.</b> Son échelle horizontale était calée sur la plus grande charnière de TOUT l'outillage du scénario — depuis « Compléter depuis la prod », les outils longs de l'excel (300 à 4000 pièces) écrasaient les prélèvements réels sur une fine bande. L'échelle suit désormais les charnières des logements réellement suivis par les essais tracés."
+  ]},
   { version:"4.49.1", date:"28/09/2026", points:[
     "<b>Corrigé : la fusion ne crie plus au conflit pour rien.</b> La comparaison d'essais à l'import/synchro était sensible à l'ordre des clés du fichier JSON — un aller-retour export/import suffisait à déclarer des « conflits à vérifier » sur des essais strictement identiques (5 faux positifs constatés). La comparaison est désormais canonique : seul le contenu compte."
   ]},
