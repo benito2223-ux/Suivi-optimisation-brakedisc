@@ -325,6 +325,41 @@ td.computed{font-family:var(--font-mono); font-variant-numeric:tabular-nums; tex
 .ap-detail-total{border-top:1px solid var(--border); padding-top:4px; margin-top:2px; color:var(--ink);}
 /* v4.39 — section cycle du dépliant de tuile + sélecteur de mode dans la cellule cycle */
 .ap-detail-sep{margin-top:5px; padding-top:6px; border-top:1px dashed var(--border); font-family:var(--font-mono); font-size:9.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint);}
+/* v4.49 — bandeau coût pièce complet (Zone 1) + feuille de route (Synthèse) */
+.pcb-banner{display:flex; align-items:center; gap:12px 16px; flex-wrap:wrap; background:var(--surface);
+  border:1px solid var(--border); border-left:4px solid var(--green); border-radius:var(--radius);
+  padding:10px 14px; margin-bottom:14px;}
+.pcb-l{font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-faint);}
+.pcb-ops{display:flex; gap:8px; flex-wrap:wrap;}
+.pcb-op{font-family:var(--font-mono); font-size:11px; color:var(--ink-soft); background:var(--surface-alt);
+  border-radius:var(--radius-sm); padding:4px 9px; white-space:nowrap;}
+.pcb-op b{color:var(--ink);}
+.pcb-op em{font-style:normal; color:var(--green);}
+.pcb-total{margin-left:auto; font-family:var(--font-disp); font-weight:700; font-size:19px; color:var(--ink);}
+.pcb-total small{font-family:var(--font-body); font-weight:600; font-size:10.5px; color:var(--ink-faint); margin-left:4px;}
+.pcb-encours{font-family:var(--font-mono); font-size:11px; color:var(--green);}
+.pcb-st{font-family:var(--font-mono); font-size:9.5px; font-weight:600; letter-spacing:.03em; font-style:normal;
+  border-radius:999px; padding:2px 8px; margin-left:6px; white-space:nowrap;}
+.pcb-st.ok{background:var(--green-bg); color:var(--green);}
+.pcb-st.pending{background:var(--amber-bg); color:var(--amber);}
+.pcb-st.arrete{background:var(--surface-alt); color:var(--ink-faint);}
+.route-wrap{flex:1 1 320px; min-width:260px;}
+.route-track{position:relative; height:26px; background:var(--surface-alt); border:1px solid var(--border);
+  border-radius:999px; overflow:hidden; display:flex; align-items:center;}
+.route-fill{position:absolute; top:0; bottom:0; left:0; background:linear-gradient(90deg, var(--green-bg), var(--green)); opacity:.55;}
+.route-mono,.route-pct,.route-cible{position:relative; font-family:var(--font-mono); font-size:10px; font-weight:600; padding:0 9px; white-space:nowrap;}
+.route-mono{color:var(--ink-soft);}
+.route-pct{color:var(--green); font-weight:700;}
+.route-cible{margin-left:auto; color:var(--ink-faint);}
+.fr-global{margin-bottom:14px;}
+.fr-chiffres{display:flex; gap:8px 22px; flex-wrap:wrap; font-size:12.5px; color:var(--ink-soft); margin-bottom:9px;}
+.fr-chiffres b{color:var(--ink);}
+.fr-gain{color:var(--green); font-weight:600;}
+.fr-row{display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:8px 2px; border-top:1px solid var(--border); font-size:12.5px;}
+.fr-op{font-family:var(--font-mono); font-size:11px; font-weight:600; color:var(--blue-dark); flex:0 0 170px;}
+.fr-prod{font-family:var(--font-mono); font-size:11px; color:var(--ink-faint); flex:0 0 110px;}
+.fr-essai{flex:1 1 300px; color:var(--ink-soft);}
+.fr-essai b{color:var(--ink);}
 /* v4.47 — groupe d'outils simultanés : bloc ambre visible dans la vue d'ensemble.
    L'ambre est LA couleur du concept (fiche, badge, groupe) : on sait en un regard
    quels outils tournent ensemble. */
@@ -2062,7 +2097,7 @@ body.atelier-on{overflow:hidden;}
 </style>
 
 <script>
-const TOOL_VERSION = "4.47.1";
+const TOOL_VERSION = "4.49.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -6367,13 +6402,22 @@ function cascadeGainHTML(){
   const base = baseComparaison();
   if(!base) return "";
   const actif = data.find(sc => sc.id === activeId);
-  if(!actif || actif.id === base.id) return "";
+  /* v4.48 — la cascade ne disparaît plus silencieusement : quand le scénario ouvert EST
+     la base ou qu'aucun poste n'est chiffrable, le bloc reste visible et dit pourquoi —
+     une barre absente se lit comme un bug, pas comme une absence d'écarts. */
+  if(!actif || actif.id === base.id){
+    return `<div class="synthese-block"><h3>Cascade du gain — d'où vient l'économie</h3>
+      <p class="chart-empty">Le scénario ouvert est la base de comparaison — ouvrez un scénario d'essai pour voir d'où vient chaque euro économisé, poste par poste.</p></div>`;
+  }
   const cb = coutsDetail(base), ca = coutsDetail(actif);
-  if(cb.total === null || ca.total === null || !cb.multiPoste) return "";
+  if(cb.total === null || ca.total === null) return "";
   const postes = COUT_POSTES
     .map(p => ({ label:p.label, delta:(cb[p.key]||0) - (ca[p.key]||0), a: cb[p.key], b: ca[p.key] }))
     .filter(p => Math.abs(p.delta) > 0.0005);
-  if(!postes.length) return "";
+  if(!postes.length){
+    return `<div class="synthese-block"><h3>Cascade du gain — d'où vient l'économie</h3>
+      <p class="chart-empty">${escapeAttr(actif.name)} et la base ont des coûts identiques poste par poste — aucun écart à détailler.</p></div>`;
+  }
   const gainPiece = cb.total - ca.total;
   const an = bilanAnnuel(actif, null, null, null, base);
   const maxV = Math.max(cb.total, ca.total, ...postes.map(p => Math.abs(p.delta)), 0.0001);
@@ -6467,7 +6511,7 @@ function dispersionEquipeHTML(){
 }
 
 function syntheseHTML(){
-  return syntheseTableHTML() + cascadeGainHTML() + dispersionEquipeHTML() + multiChartHTML();
+  return feuilleRouteHTML() + syntheseTableHTML() + cascadeGainHTML() + dispersionEquipeHTML() + multiChartHTML();
 }
 function renderSynthese(){
   const wrap = document.getElementById("syntheseWrap");
@@ -6552,7 +6596,7 @@ function renderTabs(){
   // autant de colonnes qu'elle peut en tenir et ecraserait les autres tuiles a 200 px.
   const ouverte = ordre.filter(o => o.sc.id === activeId);
   const autres  = ordre.filter(o => o.sc.id !== activeId);
-  el.innerHTML = '<div class="zone-band"><b>1 &middot; Reponse</b><span>à quoi on compare, et quel scénario gagne</span></div>' + baseBannerHTML() + '<div class="zone-band"><b>2 &middot; Scénarios</b><span>le scénario ouvert d abord, les autres ensuite</span></div>' + ouverte.map(carte).join("") +
+  el.innerHTML = '<div class="zone-band"><b>1 &middot; Reponse</b><span>à quoi on compare, et quel scénario gagne</span></div>' + baseBannerHTML() + pieceCPPBannerHTML() + '<div class="zone-band"><b>2 &middot; Scénarios</b><span>le scénario ouvert d abord, les autres ensuite</span></div>' + ouverte.map(carte).join("") +
     (autres.length ? `<div class="tabs-rest">${autres.map(carte).join("")}</div>` : "");
   const selBase = document.getElementById("baseSel");
   if(selBase) selBase.addEventListener("change", () => { setBaseComparaison(selBase.value); render(); });
@@ -6704,6 +6748,7 @@ function scenarioBlockHTML(sc, interactive){
     ${interactive ? posFiches : posTableau}
     ${interactive ? `<button class="ghost outil-add" data-id="${sc.id}" style="margin-top:10px;">+ Ajouter un outil</button>` : ""}
     ${interactive && copieDepuisPossible(sc) ? `<button class="ghost outils-copier" data-id="${sc.id}" style="margin-top:10px;">⧉ Copier les outils de « ${escapeAttr(baselineScenario().name)} »</button>` : ""}
+    ${interactive && outilsManquants(sc).length ? `<button class="ghost outils-completer" data-id="${sc.id}" style="margin-top:10px;" title="Ajouter à ce scénario les outils qui tournent en prod mais manquent ici (base excel) — les outils d'essai et les essais enregistrés ne sont pas touchés. Comparer un scénario incomplet à une prod complète fausse le coût pièce.">⊞ Compléter depuis la prod (${outilsManquants(sc).length} outil${outilsManquants(sc).length>1?"s":""} manquant${outilsManquants(sc).length>1?"s":""})</button>` : ""}}
     ${interactive && !showFrFa ? `<p class="panel-hint" style="margin:8px 2px 0;">Rayon de bec et ap (affinage Fr·Fa) sont masqués — activez le module Fr·Fa dans <b>Options</b> si votre référence en a besoin.</p>` : ""}
     ${interactive ? `<details class="zone-det"><summary>Détail du calcul, consommation annuelle &amp; pièces détachées</summary>` : ""}
     ${cycleDetailStatusHTML(sc)}
@@ -8544,6 +8589,132 @@ function copieDepuisPossible(sc){
   const base = baselineScenario();
   return !!(base && base.id !== sc.id && (base.outils || []).length);
 }
+/* v4.48 — le scénario « Prod actuelle (base excel) » du même OP : la base économique
+   figée, source du complément d'outils pour les scénarios d'essai incomplets. */
+function scenarioBaseExcel(sc){
+  return (data || []).find(x => x.id !== sc.id && /base excel/i.test(x.name || "")) || null;
+}
+/* v4.48 — outils de la base excel absents du scénario. Rapprochement par préfixe de
+   numéro (T548 ↔ T548 D1 = le même outil : la convention de nommage diffère entre les
+   scénarios de Matis et l'excel). Un outil déjà présent à l'essai n'est JAMAIS remplacé :
+   ses conditions d'essai font foi ; seuls les manquants seront ajoutés. */
+function outilsManquants(sc){
+  const base = scenarioBaseExcel(sc);
+  if(!base || sc.baseline) return [];
+  const prefixe = n => String(n || "").trim().toLowerCase().split(/\s+/)[0] || "?";
+  const dispo = {};
+  (sc.outils || []).forEach(t => { const p = prefixe(t.numero); dispo[p] = (dispo[p] || 0) + 1; });
+  const manquants = [];
+  const restants = Object.assign({}, dispo);
+  (base.outils || []).forEach(t => {
+    const p = prefixe(t.numero);
+    if((restants[p] || 0) > 0){ restants[p]--; return; }
+    manquants.push(t);
+  });
+  return manquants;
+}
+
+/* ---- v4.49 — le coût pièce COMPLET : la pièce n'est pas une OP ------------------------
+   L'outil pense par OP ; l'atelier pense par pièce. Cette agrégation somme, pour la
+   référence affichée, le CPP de prod (scénario « base excel ») de chaque OP, le meilleur
+   scénario d'essai disponible par OP, et le confronte à la cible du site (cibleCPP).
+   % de chemin = ce que le meilleur en cours a déjà parcouru de prod vers la cible. */
+function pieceCPPComplet(){
+  const ref = getActiveReference();
+  if(!ref) return null;
+  const ops = [];
+  ref.ops.forEach(op => {
+    ops.push(dansContexteOp(op, () => {
+      const base = (op.scenarios||[]).find(x => /base excel/i.test(x.name||""));
+      const tBase = base ? coutsDetail(base).total : null;
+      let meilleur = null;
+      (op.scenarios||[]).forEach(sc => {
+        if(/base excel/i.test(sc.name||"")) return;
+        const t = coutsDetail(sc).total;
+        if(t === null) return;
+        if(!meilleur || t < meilleur.cout) meilleur = { sc, cout: t };
+      });
+      return { op, base, tBase, meilleur };
+    }));
+  });
+  const connues = ops.filter(o => o.tBase !== null && o.tBase !== undefined);
+  if(!connues.length) return null;
+  const prod = connues.reduce((a,o) => a + o.tBase, 0);
+  const enCours = connues.reduce((a,o) => a + (o.meilleur && o.meilleur.cout < o.tBase ? o.meilleur.cout : o.tBase), 0);
+  const cible = (ref.cibleCPP !== "" && ref.cibleCPP != null && !isNaN(parseFloat(ref.cibleCPP))) ? parseFloat(ref.cibleCPP) : null;
+  let chemin = null;
+  if(cible !== null && prod > cible && prod > 0) chemin = Math.max(0, Math.min(100, ((prod - enCours) / (prod - cible)) * 100));
+  return { ref, ops: connues, prod, enCours, cible, chemin };
+}
+/* statut de progression d'une OP : ce que l'atelier demande — réalisé / en cours / rien */
+function statutOP(o){
+  const scs = (o.op.scenarios||[]).filter(sc => !/base excel/i.test(sc.name||""));
+  if(scs.some(sc => sc.statut === "serie")) return { cls:"ok", txt:"passé en série" };
+  if(scs.some(sc => sc.statut === "valide")) return { cls:"ok", txt:"validé 5× — à passer en série" };
+  if(scs.some(sc => (sc.essais||[]).length)) return { cls:"pending", txt:"essai en cours" };
+  return { cls:"arrete", txt:"prod seule" };
+}
+/* la barre prod → cible, partagée par le bandeau pièce (Zone 1) et la feuille de route */
+function barreRouteHTML(p){
+  if(!p) return "";
+  const pct = p.chemin === null ? 0 : Math.round(p.chemin);
+  const cibleTxt = p.cible === null ? "cible non renseignée" : "cible site : " + fmt(p.cible,3) + " €";
+  return `<div class="route-wrap">
+    <div class="route-track"><div class="route-fill" style="width:${pct}%;"></div>
+      <span class="route-mono">${fmt(p.prod,3)} € prod</span>
+      ${p.chemin !== null ? `<span class="route-pct">${pct} % du chemin</span>` : ""}
+      <span class="route-cible">${cibleTxt}</span>
+    </div>
+  </div>`;
+}
+/* bandeau Zone 1 : la pièce complète d'un coup d'œil */
+function pieceCPPBannerHTML(){
+  const p = pieceCPPComplet();
+  if(!p) return "";
+  const chips = p.ops.map(o => {
+    const st = statutOP(o);
+    const delta = o.meilleur && o.meilleur.cout < o.tBase ? ` <em>· ${escapeAttr(String(o.meilleur.sc.name).slice(0,26))} −${fmt(o.tBase - o.meilleur.cout,3)} €</em>` : "";
+    return `<span class="pcb-op">${escapeAttr(String(o.op.nom||"OP").trim())} <b>${fmt(o.tBase,3)} €</b>${delta} <i class="pcb-st ${st.cls}">${st.txt}</i></span>`;
+  }).join("");
+  return `<div class="pcb-banner">
+    <span class="pcb-l">Coût pièce complet — ${escapeAttr(p.ref.nom || "")}</span>
+    <div class="pcb-ops">${chips}</div>
+    <span class="pcb-total">${fmt(p.prod,3)} €<small>/pièce toutes OP</small></span>
+    ${p.enCours < p.prod ? `<span class="pcb-encours">meilleur en cours : ${fmt(p.enCours,3)} € (−${fmt(p.prod - p.enCours,3)} €)</span>` : ""}
+    ${barreRouteHTML(p)}
+  </div>`;
+}
+/* feuille de route dans la vue de synthèse : global, par OP, statuts */
+function feuilleRouteHTML(){
+  const p = pieceCPPComplet();
+  if(!p) return `<div class="synthese-block"><h3>Feuille de route — coût pièce complet</h3><p class="chart-empty">Aucune OP de cette référence n'a de scénario « base excel » chiffrable.</p></div>`;
+  const vol = parseFloat(p.ref.productionAnnuelle);
+  const rows = p.ops.map(o => {
+    const st = statutOP(o);
+    const essaiTxt = o.meilleur
+      ? `${escapeAttr(o.meilleur.sc.name)} — <b>${fmt(o.meilleur.cout,3)} €</b> (−${fmt(o.tBase - o.meilleur.cout,3)} €/pièce${!isNaN(vol) && vol > 0 ? " · " + escapeAttr(libelleAnnuel((o.tBase - o.meilleur.cout) * vol)) + "/an" : ""})`
+      : "aucun essai — prod seule";
+    return `<div class="fr-row">
+      <span class="fr-op">${escapeAttr(String(o.op.nom||"OP").trim())}</span>
+      <span class="fr-prod">prod ${fmt(o.tBase,3)} €</span>
+      <span class="fr-essai">${essaiTxt}</span>
+      <span class="pcb-st ${st.cls}">${st.txt}</span>
+    </div>`;
+  }).join("");
+  return `<div class="synthese-block">
+    <h3>Feuille de route — coût pièce complet vs cible</h3>
+    <div class="fr-global">
+      <div class="fr-chiffres">
+        <span><b>${fmt(p.prod,3)} €</b> prod (somme des OP)</span>
+        ${p.enCours < p.prod ? `<span><b>${fmt(p.enCours,3)} €</b> meilleur en cours</span>` : ""}
+        ${p.cible !== null ? `<span><b>${fmt(p.cible,3)} €</b> cible site</span>` : `<span>cible non renseignée</span>`}
+        ${p.chemin !== null && !isNaN(vol) && vol > 0 ? `<span class="fr-gain">gain disponible aujourd'hui : ${escapeAttr(libelleAnnuel((p.prod - p.enCours) * vol))}/an</span>` : ""}
+      </div>
+      ${barreRouteHTML(p)}
+    </div>
+    <div class="fr-rows">${rows}</div>
+  </div>`;
+}
 function copierOutilsDeProduction(sc, ids){
   const base = baselineScenario();
   if(!base) return 0;
@@ -10046,6 +10217,28 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
   root.querySelectorAll(".outils-copier").forEach(el => {
     el.addEventListener("click", () => { ouvrirPanneau("copieOutilsPanel"); renderCopieOutilsPanel(); });
   });
+  /* v4.48 — compléter depuis la prod (base excel) : ajout SEUL, jamais de remplacement */
+  root.querySelectorAll(".outils-completer").forEach(el => {
+    el.addEventListener("click", () => {
+      const manquants = outilsManquants(sc);
+      if(!manquants.length) return;
+      const liste = manquants.map(t => "\u00b7 " + (t.numero || "outil sans n\u00b0") + ((t.logements||[]).length > 1 ? " (" + t.logements.length + " logements)" : "")).join("\n");
+      dialogueConfirmer("Compl\u00e9ter ce sc\u00e9nario avec " + manquants.length + " outil(s) de la prod (base excel) ?\n\n" + liste + "\n\nVos outils d'essai gardent leurs conditions — seuls les outils manquants sont ajoutés, tels qu'ils tournent en prod. Les essais, prélèvements et photos enregistrés ne sont pas touchés.",
+        { titre: "Compléter depuis la prod ?", okLabel: "Compléter" }).then(ok => {
+        if(!ok) return;
+        manquants.forEach(src => {
+          const copie = JSON.parse(JSON.stringify(src));
+          copie.id = "t" + Math.random().toString(36).slice(2);
+          copie.plan = null;
+          copie.logements = (copie.logements || []).map(l => Object.assign(l, { id: "g" + Math.random().toString(36).slice(2) }));
+          copie.pieces = (copie.pieces || []).map(pc => Object.assign(pc, { id: "pc" + Math.random().toString(36).slice(2) }));
+          sc.outils.push(copie);
+        });
+        saveData(); render();
+      });
+    });
+  });
+
   /* v4.25 — clôture d'essai (arrêt anticipé) */
   root.querySelectorAll(".essai-cloture").forEach(el => {
     el.addEventListener("click", () => {
@@ -10780,6 +10973,12 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.49.0", date:"28/09/2026", points:[
+    "<b>La feuille de route arrive.</b> Un bandeau « Coût pièce complet » en tête d'écran somme le CPP de prod de toutes les OPs de la référence, le confronte à la cible du site et montre le meilleur essai en cours par OP. La vue de synthèse ouvre sur la feuille de route : barre prod → cible avec le % de chemin parcouru, statut par OP (passé en série / validé 5× / essai en cours / prod seule), gain disponible annualisé. Et la cascade du gain ne disparaît plus silencieusement : elle explique pourquoi elle est vide quand c'est le cas."
+  ]},
+  { version:"4.48.0", date:"28/09/2026", points:[
+    "<b>« ⊞ Compléter depuis la prod ».</b> Sur un scénario d'essai incomplet, un bouton ajoute les outils qui tournent en prod (base excel) mais manquent ici — avec aperçu et confirmation. Les outils d'essai gardent leurs conditions, les essais/prélèvements/photos ne sont pas touchés : un ajout pur, indispensable pour comparer un scénario d'essai à une prod complète sans fausser le coût pièce."
+  ]},
   { version:"4.47.1", date:"28/09/2026", points:[
     "<b>Corrigé : un scénario d'essai ne s'affichait pas au clic.</b> Sur les scénarios sans mesure Droite/Gauche (les scénarios OP40 notamment), le rendu plantait silencieusement et l'écran restait figé sur le scénario précédent. La cause était un bug latent présent depuis toujours, révélé par les nouveaux scénarios de la base 2026/2027."
   ]},
@@ -13087,6 +13286,27 @@ function runTests(){
          mig.outils.map(o => !!o.simultaneAvecPrecedent), [false, true, true]);
       ok("cycleDetailStatusHTML : nomme le nombre de groupes d'outils simultanes",
          /1 groupe d.outils simultanés/.test(cycleDetailStatusHTML(mig)), true);
+    }
+
+    /* ---- v4.48 : compléter depuis la prod — rapprochement par préfixe ---- */
+    {
+      const dAvant = data;
+      const mk = (nom, base, outils) => normalizeScenario({ id:"cc-"+nom, name:nom, baseline:base, cycle: base?100:"", outils, essais:[], scrapLog:[] });
+      data = [
+        mk("Prod actuelle (base excel 2026/2027)", true, [
+          { id:"te1", numero:"T548 D1", logements:[{ id:"ge1", nom:"Plaquette", prix:9.56, aretes:8, charniere:50 }] },
+          { id:"te2", numero:"T543 D1", logements:[{ id:"ge2", nom:"Plaquette", prix:11.87, aretes:6, charniere:30 }] },
+          { id:"te3", numero:"T546 D1", logements:[{ id:"ge3", nom:"Plaquette", prix:3.68, aretes:4, charniere:60 }] }
+        ]),
+        mk("Essai SL500", false, [
+          { id:"tt1", numero:"T548", logements:[{ id:"gt1", nom:"Piste ext.", prix:9.56, aretes:8, charniere:50 }] }
+        ])
+      ];
+      ok("outilsManquants : T548 rapproché par préfixe -> non proposé ; T543/T546 manquants",
+         outilsManquants(data[1]).map(t => t.numero), ["T543 D1", "T546 D1"]);
+      ok("outilsManquants : sur la base elle-même -> rien (baseline)",
+         outilsManquants(data[0]).length, 0);
+      data = dAvant;
     }
 
     /* ---- v4.46.1 : cibleCPP de référence persistée à la normalisation ---- */

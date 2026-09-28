@@ -5,6 +5,52 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.49.0] — 2026-09-28
+
+Cadrage acté avec Benjamin : l'outil devient la feuille de route commune
+des économies (tracker les progrès réalisés et en cours, globalement, par
+OP, par outil).
+
+### Ajouté — coût pièce complet et feuille de route
+- **Bandeau « Coût pièce complet » (Zone 1)** : somme du CPP de prod
+  (base excel) de toutes les OPs de la référence — la 356x26 affiche
+  0,747 € (OP10 0,158 + OP40 0,539 + OP30 0,050) — avec par OP le
+  meilleur essai en cours et son statut, et la barre prod → cible du
+  site (cibleCPP).
+- **Feuille de route en tête de la vue de synthèse** : barre prod →
+  cible avec le % de chemin parcouru, une ligne par OP (CPP prod,
+  meilleur essai, gain annualisé, statut « passé en série / validé 5× /
+  essai en cours / prod seule »), et le gain disponible aujourd'hui.
+- `pieceCPPComplet()` agrège par référence en respectant le contexte de
+  config de chaque OP ; `statutOP()` dérive l'avancement des scénarios.
+
+### Corrigé — la cascade du gain ne disparaît plus
+Quand le scénario ouvert est la base, ou qu'aucun poste n'est chiffrable
+(gate `multiPoste` retirée), ou que les coûts sont identiques : le bloc
+reste affiché et EXPLIQUE pourquoi il est vide — une barre absente se
+lisait comme un bug (retour Benjamin : « aucune barre ne s'affiche »).
+
+## [4.48.0] — 2026-09-28
+
+### Ajouté — « ⊞ Compléter depuis la prod »
+Sur un scénario d'essai incomplet, un bouton ajoute les outils qui
+tournent en prod (scénario base excel du même OP) mais manquent au
+scénario — rapprochement par préfixe de numéro (T548 ↔ T548 D1 :
+convention de nommage Matis ≠ excel), aperçu de la liste et
+confirmation. Ajout PUR : les outils d'essai gardent leurs conditions,
+les essais/prélèvements/photos ne sont pas touchés. Comparer un scénario
+incomplet à une prod complète faussait le CPP — c'est le prérequis des
+comparaisons OP40 (vérifié sur le DWG réel : propose exactement T546 D1,
+T543 D2, T543 D1).
+
+### Note exploitation — clients périmés
+Incident du 28/09 18h59 : un client resté sur une version ≤ 4.46 a
+rapatrié le cloud puis repoussé l'arbre normalisé par son ancien code —
+qui ne connaissait pas `cibleCPP` — et a strippé les cibles du cloud.
+Restaurées le soir même (les 6, vérifiées). Le risque disparaît quand
+tous les postes tournent la même version (merge prod) ; en attendant,
+fermer les onglets/PWA périmés de l'outil.
+
 ## [4.47.1] — 2026-09-28
 
 ### Corrigé — un scénario d'essai ne s'affichait pas au clic (retour Benjamin)
