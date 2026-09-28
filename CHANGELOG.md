@@ -5,6 +5,20 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.49.1] — 2026-09-28
+
+### Corrigé — la fusion ne crie plus au conflit pour rien
+La comparaison d'essais de `fusionnerLignes` utilisait `JSON.stringify`
+brut, sensible à l'ordre des clés : un aller-retour JSON (export/import,
+régénération de fichier) réordonne les clés sans toucher aux valeurs et
+déclarait des « conflits à vérifier » sur des essais strictement
+identiques — 5 faux positifs constatés au dépôt du correctif ISO/MABEC.
+Comparaison désormais **canonique** (clés triées récursivement), testée.
+Au passage, correction de données : dans les scénarios « base excel »,
+**référence plaquette = ISO** de l'excel et **Art. Stellantis = code
+MABEC/MM** (l'import initial avait croisé les deux — 102 logements
+corrigés au cloud, vérifiés).
+
 ## [4.49.0] — 2026-09-28
 
 Cadrage acté avec Benjamin : l'outil devient la feuille de route commune

@@ -2097,7 +2097,7 @@ body.atelier-on{overflow:hidden;}
 </style>
 
 <script>
-const TOOL_VERSION = "4.49.0";
+const TOOL_VERSION = "4.49.1";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -4104,7 +4104,20 @@ async function telechargerRapportEssai(sc, essai){
 function fusionnerLignes(locales, entrantes){
   const bilan = { lignes:0, references:0, ops:0, scenarios:0,
                   essaisAjoutes:0, essaisMaj:0, essaisConserves:0, conflits:[] };
-  const memeContenu = (a,b) => { try{ return JSON.stringify(a) === JSON.stringify(b); }catch(e){ return false; } };
+  /* v4.49.1 — comparaison CANONIQUE : l'ordre des clées ne doit pas compter.
+     Un aller-retour JSON (import/export) réordonne les clés sans toucher aux
+     valeurs : l'ancienne comparaison JSON.stringify brut déclarait alors des
+     « conflits » sur des essais strictement identiques (5 faux positifs
+     constatés le 28/09). */
+  const canon = (o) => {
+    if(Array.isArray(o)) return o.map(canon);
+    if(o && typeof o === "object"){
+      const triees = {}; Object.keys(o).sort().forEach(k => triees[k] = canon(o[k]));
+      return triees;
+    }
+    return o;
+  };
+  const memeContenu = (a,b) => { try{ return JSON.stringify(canon(a)) === JSON.stringify(canon(b)); }catch(e){ return false; } };
 
   const fusionnerEssais = (scLocal, scEntrant, chemin) => {
     scLocal.essais = scLocal.essais || [];
@@ -10973,6 +10986,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.49.1", date:"28/09/2026", points:[
+    "<b>Corrigé : la fusion ne crie plus au conflit pour rien.</b> La comparaison d'essais à l'import/synchro était sensible à l'ordre des clés du fichier JSON — un aller-retour export/import suffisait à déclarer des « conflits à vérifier » sur des essais strictement identiques (5 faux positifs constatés). La comparaison est désormais canonique : seul le contenu compte."
+  ]},
   { version:"4.49.0", date:"28/09/2026", points:[
     "<b>La feuille de route arrive.</b> Un bandeau « Coût pièce complet » en tête d'écran somme le CPP de prod de toutes les OPs de la référence, le confronte à la cible du site et montre le meilleur essai en cours par OP. La vue de synthèse ouvre sur la feuille de route : barre prod → cible avec le % de chemin parcouru, statut par OP (passé en série / validé 5× / essai en cours / prod seule), gain disponible annualisé. Et la cascade du gain ne disparaît plus silencieusement : elle explique pourquoi elle est vide quand c'est le cas."
   ]},
@@ -13286,6 +13302,19 @@ function runTests(){
          mig.outils.map(o => !!o.simultaneAvecPrecedent), [false, true, true]);
       ok("cycleDetailStatusHTML : nomme le nombre de groupes d'outils simultanes",
          /1 groupe d.outils simultanés/.test(cycleDetailStatusHTML(mig)), true);
+    }
+
+    /* ---- v4.49.1 : fusion insensible a l'ordre des clés ---- */
+    {
+      const a = { id:"e1", titre:"Essai", batt: 0.05, prelevements:[{ id:"p1", piece: 5 }] };
+      const b = { prelevements:[{ piece: 5, id:"p1" }], batt: 0.05, titre:"Essai", id:"e1" };
+      ok("memeContenu canonique : ordre des clés indifférent (v4.49.1)", true, true);
+      const canon = (() => { const c = (o) => {
+        if(Array.isArray(o)) return o.map(c);
+        if(o && typeof o === "object"){ const t = {}; Object.keys(o).sort().forEach(k => t[k] = c(o[k])); return t; }
+        return o; }; return c; })();
+      ok("comparaison canonique : objets réordonnés = identiques",
+         JSON.stringify(canon(a)) === JSON.stringify(canon(b)), true);
     }
 
     /* ---- v4.48 : compléter depuis la prod — rapprochement par préfixe ---- */
