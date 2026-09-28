@@ -5,6 +5,23 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.46.1] — 2026-09-28
+
+### Ajouté — cible de coût pièce par référence
+Les cibles du site (colonne « Cible » des onglets « Evolution coût pièce »
+de l'excel de Matis) deviennent un champ de la référence (`cibleCPP`) :
+persistées à l'import/export, affichées dans la cellule coût du scénario
+de référence (« cible site : 0,212 €/pièce »). Positionnées sur les 6
+références retenues : DV 356x26 RPI 0,575 · DV 304x28 RPE 0,212 ·
+DP 290x12 0,232 · DP 330x14 0,384 · DV 330x28 RPE K0 0,218 ·
+DV 302x26 RPI (HESSAPP) 0,129.
+
+### Restreint — références implémentées
+L'assemblage de base ne crée que les **6 références qui comptent**
+(liste Matis) : les autres de l'excel (usinées très rarement) ne sont
+pas créées — l'excel reste la source si une référence rare devait
+être ajoutée un jour.
+
 ## [4.46.0] — 2026-09-28
 
 Deux chantiers : la base de départ 2026/2027 (fichier de Matis) et le

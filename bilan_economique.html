@@ -2053,7 +2053,7 @@ body.atelier-on{overflow:hidden;}
 </style>
 
 <script>
-const TOOL_VERSION = "4.46.0";
+const TOOL_VERSION = "4.46.1";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -2467,7 +2467,9 @@ function normalizeReference(r){
   }
   ops.sort((a,b) => (a.ordre||0) - (b.ordre||0));
   return { id: r.id || ("r"+Math.random().toString(36).slice(2)), nom: r.nom || "",
-           productionAnnuelle: r.productionAnnuelle ?? "", ops };
+           productionAnnuelle: r.productionAnnuelle ?? "",
+           cibleCPP: r.cibleCPP ?? "", // v4.46.1 — cible de coût pièce du site (excel suivi consommations), lue par le tableau de bord
+           ops };
 }
 /* ============================================================================
    PROJETS COMME ETIQUETTES, PAS COMME PROPRIETAIRES (v4.1)
@@ -6769,18 +6771,23 @@ function scenarioBlockHTML(sc, interactive){
       : "Comparaison à périmètre identique (tous les postes chiffrables)";
     deltaTotalHtml = `<span class="delta ${cls}" title="${titre}">${d>0?"+":""}${fmt(d,1)} %</span>`;
   }
+  const refActive = getActiveReference();
+  const cibleCPP = refActive && refActive.cibleCPP !== "" && refActive.cibleCPP != null && !isNaN(parseFloat(refActive.cibleCPP)) ? parseFloat(refActive.cibleCPP) : null;
+  const cibleLine = (cibleCPP !== null && !sc.baseline) ? "" : (cibleCPP !== null ? `<div class="foot-sub">cible site : ${fmt(cibleCPP,3)} €/pièce (excel consommations)</div>` : "");
   const coutCell = couts.multiPoste ? `
       <div class="foot-cell foot-cell-wide">
         <div class="l">Coût total / pièce</div>
         <div class="v">${couts.total === null ? "—" : fmt(couts.total,4)}<small>€</small></div>
         ${couts.multiPoste ? deltaTotalHtml : deltaHtml}
         ${coutBreakdownHTML(couts)}
+        ${cibleLine}
         ${periFoot && periFoot.exclus.includes("temps machine") ? `<div class="foot-sub" style="color:var(--on-fill-warn);" title="Le coût affiché intègre le temps machine de CE scénario, mais la référence n'a pas de cycle chiffrable (ni mesures complètes, ni cycle de référence en secondes). Le % compare donc les périmètres communs.">Comparaison hors temps machine — la référence n'a pas de cycle chiffrable · renseigne le cycle de référence en secondes pour un « tout compris »</div>` : ""}
       </div>` : `
       <div class="foot-cell">
         <div class="l">Coût outil / pièce</div>
         <div class="v">${cost === null ? "—" : fmt(cost,4)}<small>€</small></div>
         ${deltaHtml}
+        ${cibleLine}
       </div>`;
 
   const annuel = bilanAnnuel(sc, config, null, null);
@@ -10746,6 +10753,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.46.1", date:"28/09/2026", points:[
+    "<b>Cible de coût pièce par référence.</b> Le coût cible du site (onglets « Evolution coût pièce » de l'excel consommations — 0,212 € sur la 304x28, 0,129 € sur la 302x26 HESSAPP…) est désormais une donnée de la référence : importée, persistée, et affichée dans la cellule coût du scénario de référence pour comparer d'un coup d'œil le réalisé à l'objectif."
+  ]},
   { version:"4.46.0", date:"28/09/2026", points:[
     "<b>Retour au design system d'origine.</b> Manrope et Public Sans reprennent les titres, les gros chiffres et le texte (l'identité posée à la v4.29), IBM Plex Mono garde les chiffres — l'identité couleur SPK by CeramTec et toutes les évolutions d'écran restent inchangées."
   ]},
@@ -13045,6 +13055,12 @@ function runTests(){
       ok("cycleDetailStatusHTML : nomme le nombre de groupes d'outils simultanes",
          /1 groupe d.outils simultanés/.test(cycleDetailStatusHTML(mig)), true);
     }
+
+    /* ---- v4.46.1 : cibleCPP de référence persistée à la normalisation ---- */
+    ok("normalizeReference : cibleCPP préservée",
+       normalizeReference({ id:"rT2", nom:"T", cibleCPP:0.212, ops:[] }).cibleCPP, 0.212);
+    ok("normalizeReference : cibleCPP absente -> chaîne vide",
+       normalizeReference({ id:"rT3", nom:"T2", ops:[] }).cibleCPP, "");
 
     /* ---- v4.45 : périmètre de comparaison synchronisé (fini les deltas mixtes) ---- */
     {
