@@ -5,6 +5,32 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.46.0] — 2026-09-28
+
+Deux chantiers : la base de départ 2026/2027 (fichier de Matis) et le
+retour au design system d'origine.
+
+### Ajouté — base_depart_2026_2027.json (fichier à importer, hors outil)
+Les 16 références disques de l'excel consommation de Matis (EMAG 1/2/3 +
+HESSAPP) sont figées en scénarios « Prod actuelle » baseline : 210
+outils/logements avec N° d'outil, ISO en description, référence plaquette
+MABEC, prix UHT, arêtes et charnière (DDV) — la formule du fichier
+(prix ÷ arêtes × DDV = CPP) coïncide avec le modèle de l'outil. Import
+vérifié par la chaîne standard (4 lignes, 16 scénarios baseline, 210
+outils). Notes pour Benjamin :
+- les « Production » des onglets sont reprises en volume annuel — à
+  confirmer/corriger (champ éditable dans Options) ;
+- 4 références sans outil exploitable (prix/DDV absents dans l'excel) :
+  E1 302x26 RPI, H 266x13, H 266x22 RPI, H 283x26 RPI ;
+- quelques arêtes recalées sur le CPP du fichier (T533/T535 notamment).
+
+### Modifié — design system v4.29 restauré
+Manrope (titres, gros chiffres, en 800) et Public Sans (texte) reprennent
+le design system posé à la v4.29, IBM Plex Mono garde les chiffres ;
+l'identité couleur SPK by CeramTec (4.32) et toutes les évolutions
+d'écran 4.30→4.45 restent inchangées. (Retour d'usage : Open Sans
+Condensed, posé en 4.32, ne faisait pas l'unanimité.)
+
 ## [4.45.0] — 2026-09-28
 
 Retour du terrain (Benjamin) : sur un scénario d'essai avec mesures de
