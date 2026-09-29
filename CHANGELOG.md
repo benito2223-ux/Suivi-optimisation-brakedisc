@@ -5,6 +5,92 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.54.0] — 2026-09-29
+
+**La fiche poste (couche 1)** — la porte qui manquait entre la carte et le
+détail. Décision **D1-SÛRE** (Benjamin) : le poste reste **dérivé** — aucun
+changement de format, aucune migration — mais la couche 1 existe et devient un
+point d'entrée réel.
+
+### Ajouté — la fiche du poste
+- **Survol (desktop) ou premier toucher (tablette)** sur une tuile → la fiche
+  s'ouvre **dans la carte**, pas dans un second panneau : c'est la couche 1 du même
+  écran, donc le retour n'est jamais une question ;
+- elle répond à la seule question qui compte en atelier — *« qu'est-ce qui se
+  passe sur CETTE machine ? »* : la référence principale, les références qui y
+  travaillent, leur statut, leurs gains, le chemin vers la cible ;
+- **la porte explicite « Ouvrir le poste → »** vers la couche 2 (v4.52) : le geste
+  double (R3) devient découvrable — personne n'a à deviner qu'un second geste
+  entre dans le détail. Un poste d'« opportunité » n'expose pas de porte morte ;
+- **`prochaineEtapePoste()`** : l'information qui manquait le plus, en toutes
+  lettres — « Terminer le protocole 5× — 2/5 essais relevés », « Cible du site
+  posée, aucune mesure », « Jamais travaillé ». Elle se **déduit de l'état**
+  (constitution §3), donc elle ne peut pas mentir ;
+- survol, toucher **et** clavier (Entrée/Espace) ouvrent la fiche ; le survol n'écrase
+  jamais une fiche déjà ouverte (on ne la substitue pas sous les yeux du lecteur) ;
+- la fiche survit au changement de filtre si le poste reste visible, et se referme
+  proprement sinon — pas de fiche orpheline.
+
+### Corrigé — « 0/5 essais » sur un poste en production
+La fiche affichait le compteur de protocole y compris pour une machine déjà en
+série, ce qui laissait croire à une absence de travail — exactement le chiffre
+mensonger que la constitution §3.5 interdit. L'avancement n'est affiché que pour
+un protocole réellement en cours.
+
+### Tests
+270 → **283** (13 nouveaux) : prochaine étape selon l'état, rendu de la fiche
+(machine, ligne, référence, porte, étape, état en toutes lettres), gain identique à
+celui de la tuile (D3), pas de porte sur une opportunité, pas de « 0/5 » en série.
+Tout est vert.
+
+### Dette documentaire repayée dans le même commit
+Le CHANGELOG avait perdu l'entrée **4.51.2** (la carte) et l'entrée **4.53.0**
+(livraisons) n'avait jamais été écrite ; l'ordre était cassé (4.52/4.53 après
+4.49.3). Les trois entrées sont restaurées, ordonnées et uniques.
+
+## [4.53.0] — 2026-09-29
+
+Décision 3 de la constitution : **la livraison**, l'objet que la hiérarchie lit.
+
+### Ajouté — les livraisons (instantané figé et daté)
+- Une **livraison** est un instantané FIGÉ des gains du plan (gains actés, gains
+  en cours, plan par poste, cibles du site, nombre d'essais) : **elle ne se
+  recalcule jamais**, c'est le document que Matis montre à sa hiérarchie
+  (« livré en date du…, X €/an actés ») ;
+- créée depuis la carte atelier, listée dans le dossier, imprimable en A4 ;
+- **source unique** : `creerLivraison()` consomme `cartePostes()`, exactement
+  comme l'affichage de la carte — aucune somme recalculée à la main ;
+- elle **voyage avec la donnée** : cloud, export et fusion (cumul sans doublon),
+  `normalizeLivraison()` n'assurant que la forme — l'exactitude est figée.
+
+> Note de rédaction : cette entrée a été ajoutée par Hermes le 29/09, Z Code ayant
+> livré la 4.53.0 sans écrire son entrée CHANGELOG.
+
+## [4.52.0] — 2026-09-29
+
+Phase 1 de la carte atelier (spec croisée Hermes × Z Code, arbitrages
+Benjamin) — implémentée par Z Code après validation du socle 4.51.0/4.51.1
+d'Hermes.
+
+### Ajouté — couche 2 : « Ouvrir le poste → » et retour carte
+Chaque tuile actionnable de la carte porte **« Ouvrir le poste → »** :
+un clic positionne la navigation experte (ligne › référence › OP) sur la
+prod du poste (★ puis excel) et referme la carte. Depuis la zone
+Traçabilité, un bouton **« ⇠ Carte atelier »** permet de revenir — jamais
+de cul-de-sac entre les deux lectures (A1).
+
+### Ajouté — l'A4 Mission (livrable hiérarchie, imprimable)
+Bouton « 🖨 A4 Mission » dans la carte : un imprimable qui raconte la
+démarche de Matis — gains **ACTÉS** en production, gains **EN COURS**
+(validés ou en essai), timeline des essais récents avec prélèvements,
+plan poste par poste, le protocole 5× et le partenariat SPK by CeramTec.
+**Une seule source de vérité** : l'A4 consomme `gainPoste()` — la carte,
+le bandeau et l'A4 ne peuvent pas diverger (A3).
+
+### Ajouté — défense serveur (rappel du round)
+Trigger Postgres `preserve_cibles_cpp` : testé en production — un push
+intégralement strippé atterrit avec les 6 cibles réinjectées.
+
 ## [4.51.2] — 2026-09-29
 
 **La carte atelier (couche 0, lecture seule).** L'écran d'entrée spatial de
@@ -162,31 +248,6 @@ les efface, référence par référence (id, repli ligne+nom). Testé en
 production : un push intégralement strippé atterrit avec les 6 cibles
 intactes. La donnée est défendue côté serveur, quelle que soit la version
 du client.
-
-## [4.52.0] — 2026-09-29
-
-Phase 1 de la carte atelier (spec croisée Hermes × Z Code, arbitrages
-Benjamin) — implémentée par Z Code après validation du socle 4.51.0/4.51.1
-d'Hermes.
-
-### Ajouté — couche 2 : « Ouvrir le poste → » et retour carte
-Chaque tuile actionnable de la carte porte **« Ouvrir le poste → »** :
-un clic positionne la navigation experte (ligne › référence › OP) sur la
-prod du poste (★ puis excel) et referme la carte. Depuis la zone
-Traçabilité, un bouton **« ⇠ Carte atelier »** permet de revenir — jamais
-de cul-de-sac entre les deux lectures (A1).
-
-### Ajouté — l'A4 Mission (livrable hiérarchie, imprimable)
-Bouton « 🖨 A4 Mission » dans la carte : un imprimable qui raconte la
-démarche de Matis — gains **ACTÉS** en production, gains **EN COURS**
-(validés ou en essai), timeline des essais récents avec prélèvements,
-plan poste par poste, le protocole 5× et le partenariat SPK by CeramTec.
-**Une seule source de vérité** : l'A4 consomme `gainPoste()` — la carte,
-le bandeau et l'A4 ne peuvent pas diverger (A3).
-
-### Ajouté — défense serveur (rappel du round)
-Trigger Postgres `preserve_cibles_cpp` : testé en production — un push
-intégralement strippé atterrit avec les 6 cibles réinjectées.
 
 ## [4.49.3] — 2026-09-29
 

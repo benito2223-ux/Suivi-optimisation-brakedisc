@@ -2203,6 +2203,89 @@ body.atelier-on{overflow:hidden;}
 }
 </style>
 
+<style>
+/* v4.54.0 — fiche poste (couche 1) */
+/* ═══ v4.54.0 — fiche poste (couche 1) ═══════════════════════════════════════
+   La fiche est l'écran « qu'est-ce qui se passe sur CETTE machine ». Elle doit se
+   lire en trois secondes debout, au doigt, avec des gants : donc le titre et le
+   gain d'abord, la prochaine étape en clair, et le bouton d'entrée assez gros pour
+   être touché sans viser. */
+
+.carte-fiche-zone{ margin:0 0 16px; }
+.carte-fiche-zone[hidden]{ display:none !important; }   /* un display:flex écraserait hidden */
+
+.fp-fiche{ border:1px solid var(--border); border-left:4px solid var(--blue);
+  border-radius:var(--radius); background:var(--surface); padding:13px 15px 14px; }
+.fp-fiche.gagne{ border-left-color:var(--green); }
+.fp-fiche.encours{ border-left-color:var(--blue); }
+.fp-fiche.achiffrer{ border-left-color:var(--amber); }
+.fp-fiche.opportunite{ border-left-color:var(--border); }
+
+.fp-tete{ display:flex; align-items:flex-start; gap:11px; margin-bottom:7px; }
+.fp-titre-bloc{ flex:1; min-width:0; }
+.fp-eyebrow{ margin:0 0 2px; font-family:var(--font-mono); font-size:9.5px; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--ink-faint); font-weight:600; }
+.fp-titre{ margin:0; font-family:var(--font-disp); font-size:20px; font-weight:800; color:var(--ink); letter-spacing:-.015em; }
+.fp-fermer{ font-size:14px; padding:5px 9px; line-height:1; }
+
+.fp-ref-dominante{ margin:0 0 8px; font-family:var(--font-body); font-size:12.5px; color:var(--ink-soft); }
+.fp-ref-dominante b{ color:var(--ink); }
+
+.fp-pouls{ margin:0 0 9px; }
+.fp-acte, .fp-projete{ display:flex; align-items:baseline; gap:5px; font-family:var(--font-mono);
+  font-weight:600; font-variant-numeric:tabular-nums; line-height:1.15; }
+.fp-acte{ font-size:20px; color:var(--green); }
+.fp-projete{ font-size:14px; color:var(--ink-soft); }
+.fp-acte small, .fp-projete small, .fp-invite small{ font-size:10px; font-weight:500; letter-spacing:.04em; color:var(--ink-faint); }
+.fp-invite{ font-family:var(--font-mono); font-size:15px; font-weight:600; color:var(--amber); }
+.fp-vide{ font-family:var(--font-mono); font-size:12.5px; color:var(--ink-faint); font-style:italic; }
+
+.fp-chemin{ display:flex; align-items:center; gap:7px; margin:0 0 11px; }
+.fp-chemin-l{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--ink-faint); font-weight:600; white-space:nowrap; }
+
+/* le travail réel : quelles références, quel statut, combien d'essais */
+.fp-refs{ margin:0 0 10px; padding-top:9px; border-top:1px solid var(--border); }
+.fp-refs h5{ margin:0 0 6px; font-family:var(--font-mono); font-size:9.5px; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--ink-faint); font-weight:600; }
+.fp-ref{ display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; padding:4px 0;
+  border-bottom:1px dotted var(--border); }
+.fp-ref:last-child{ border-bottom:none; }
+.fp-ref-nom{ font-family:var(--font-body); font-size:13px; font-weight:600; color:var(--ink); }
+.fp-ref-gain{ font-family:var(--font-mono); font-size:11.5px; font-weight:600; color:var(--green);
+  font-variant-numeric:tabular-nums; }
+.fp-ref-prog{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint); }
+.fp-note{ margin:0; font-family:var(--font-body); font-size:12.5px; color:var(--ink-faint); font-style:italic; }
+
+/* la prochaine étape : l'information qui manquait le plus. Elle est en clair,
+   en toutes lettres, parce qu'en atelier on n'a pas le temps de l'interpréter. */
+.fp-etape{ margin:0 0 9px; padding:8px 11px; background:var(--surface-alt);
+  border:1px solid var(--border); border-radius:var(--radius);
+  font-family:var(--font-body); font-size:12.5px; line-height:1.45; color:var(--ink); }
+.fp-etape b{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--ink-faint); display:block; margin-bottom:2px; font-weight:600; }
+
+.fp-avertir{ margin:0 0 9px; font-family:var(--font-mono); font-size:10.5px; color:var(--amber); font-weight:600; }
+
+/* la porte : assez grande pour être touchée sans viser (R3) */
+.fp-actions{ display:flex; justify-content:flex-end; }
+.fp-ouvrir{ font-size:13px; padding:9px 15px; min-height:38px; }
+
+@media (pointer: coarse){
+  .fp-fiche{ padding:15px 16px 16px; }
+  .fp-titre{ font-size:22px; }
+  .fp-acte{ font-size:22px; }
+  .fp-ouvrir{ min-height:48px; font-size:14px; padding:12px 18px; }
+  .fp-fermer{ min-height:40px; min-width:40px; }
+}
+
+@media print{
+  .fp-fermer, .fp-actions{ display:none !important; }
+  .fp-fiche{ break-inside:avoid; }
+  .fp-etape{ background:#fff; }
+}
+</style>
+
 <script>
 
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
@@ -11189,6 +11272,12 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.54.0", date:"29/09/2026", points:[
+    "<b>La fiche de la machine.</b> Survolez (ou touchez) une tuile de la carte : l’outil vous dit ce qui se passe sur ce poste — la référence qui y travaille, ce qui est déjà en production, ce qui reste à faire. Puis un bouton emmène dans le détail.",
+    "<b>La prochaine étape, écrite en toutes lettres.</b> « Terminer le protocole 5× — 2/5 essais relevés », « Cible du site posée, aucune mesure », « Jamais travaillé ». En atelier, on n’a pas le temps d’interpréter un tableau : l’outil dit quoi faire maintenant.",
+    "<b>Un poste en production ne ment pas sur son avance.</b> Aucun « 0/5 essais » sur une machine déjà en série — le protocole ne concerne que les essais en cours.",
+    "La couche 1 ne change ni vos données ni vos calculs : elle se contente de dire ce que la carte et le détail séparent déjà."
+  ]},
   { version:"4.52.0", date:"29/09/2026", points:[
     "<b>L'A4 Mission — le livrable hiérarchie.</b> Un imprimable qui raconte la démarche : les gains ACTÉS en production, les gains EN COURS (validés ou en essai), la timeline des essais récents avec leur statut, et le plan poste par poste. Bouton « 🖨 A4 Mission » dans la carte atelier — même source de vérité que la carte (jamais de chiffre divergent)."
   ]},
@@ -11597,7 +11686,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.53.0";
+const TOOL_VERSION = "4.54.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -11888,6 +11977,168 @@ function etatTuile(poste){
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
+   v4.54.0 — FICHE POSTE (couche 1) : la porte qui manquait entre la carte et le détail
+
+   La carte (4.51.2) dit QUOI : l'état, le gain, ce qui reste. La couche 2 (4.52) dit
+   COMMENT : le scénario, les essais, les preuves. Entre les deux, il n'y avait rien —
+   on sautait de la tuile au scénario sans jamais répondre à la seule question qui
+   compte en atelier : « qu'est-ce qu'il se passe sur CETTE machine ? »
+
+   La fiche répond à cette question, et porte une porte EXPLICITE vers la couche 2
+   (« Ouvrir le poste → »). C'est le geste double (R3) : le survol / le premier
+   toucher montre la fiche, le bouton entre. Le geste devient découvrable au lieu
+   d'être un pari, et l'utilisateur n'est jamais forcé de deviner qu'un second
+   toucher entre dans le détail.
+
+   Trois règles tenues ici (constitution v1.1) :
+   · D3 — la fiche ne montre AUCUN chiffre que le bandeau du scénario ne montre pas :
+     tout vient de gainPoste() (4.51.0), jamais d'un recalcul local ;
+   · la raison d'un état est toujours à côté de l'état (règle d'interface §5.2) ;
+   · jamais de K ni de P_req : la fiche est présentable telle quelle.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* la prochaine étape du plan, dite en atelier : c'est l'information qui manque le
+   plus dans tout l'outil aujourd'hui. Elle se déduit de l'état, jamais d'un statut
+   technique stockée — donc elle ne peut pas mentir. */
+function prochaineEtapePoste(t){
+  const p = t.poste;
+  if(t.etat === "gagne"){
+    /* un poste acté se maintient : on le revalide, on ne le réinvente pas */
+    const r = (p.refs || []).find(x => x.serie);
+    return "En production — maintenir et confirmer au prochain rééquilibrage";
+  }
+  if(t.etat === "encours"){
+    const r = (p.refs || []).find(x => x.meilleur && !x.serie);
+    if(r && r.meilleur){
+      const seuil = r.meilleur.sc.validationThreshold || 5;
+      const faits = ((r.meilleur.sc.essais || []).length);
+      return faits < seuil
+        ? `Terminer le protocole ${seuil}× — ${faits}/${seuil} essais relevés`
+        : `Protocole ${seuil}× atteint — passer en production`;
+    }
+    return "Essai en cours — relevés à finir";
+  }
+  if(t.etat === "aChiffrer"){
+    return "Cible du site posée, aucune mesure : chiffrer la production de ce poste";
+  }
+  return "Poste déclaré, jamais travaillé — premier essai à faire";
+}
+
+/* Les scénarios du poste, regroupés par référence. C'est la lecture « par qui on
+   travaille » : sur EMAG 1, OP10 sert la 356x26 et la 304x28 — la fiche le dit. */
+function fichePostesReferences(t){
+  return (t.poste.refs || []).map(r => {
+    const st = r.serie ? "serie" : (r.gain !== null && r.gain > 0 ? "essai" : "essai");
+    return { ref: r.ref, serie: r.serie, gain: r.gain, volume: r.volume,
+             tBase: r.tBase, gainAnnuel: r.gain, seuil: r.meilleur ? (r.meilleur.sc.validationThreshold || 5) : null,
+             nbEssais: r.meilleur ? ((r.meilleur.sc.essais || []).length) : 0,
+             scId: r.meilleur ? r.meilleur.sc.id : (r.prodSc ? r.prodSc.id : null),
+             statut: st };
+  }).filter(x => x.scId);
+}
+
+function fichePosteHTML(t){
+  const p = t.poste;
+  const e = CARTE_ETATS[t.etat] || CARTE_ETATS.opportunite;
+  const dom = p.refDominante;
+  const nomRef = (dom && ((dom.ref && dom.ref.nom) || dom.nom)) || "";
+  const refs = fichePostesReferences(t);
+  const etape = prochaineEtapePoste(t);
+
+  /* le pouls, identique à la tuile (D3 : même fonction, même valeur) */
+  let pouls = "";
+  if(p.gainActe > 0) pouls += `<span class="fp-acte">${p.gainActe >= 0 ? "+" : "−"}${fmtEuroCourt(Math.abs(p.gainActe))}<small>/an acté</small></span>`;
+  if(p.gainProjete > 0) pouls += `<span class="fp-projete">${p.gainProjete >= 0 ? "+" : "−"}${fmtEuroCourt(Math.abs(p.gainProjete))}<small>/an projeté</small></span>`;
+  if(!pouls) pouls = t.etat === "aChiffrer"
+    ? `<span class="fp-invite">cible ${fmt(p.cibleCPP, 3)} €<small>— à chiffrer</small></span>`
+    : `<span class="fp-vide">aucun gain chiffré</span>`;
+
+  /* les références du poste : le travail réel, pas le concept */
+  const lignesRef = refs.length ? refs.map(x => {
+    /* un poste EN PRODUCTION n'a pas de protocole à faire : afficher « 0/5 essais »
+       ferait croire à une absence de travail. On n'affiche l'avancement que si un
+       protocole est réellement en cours (statut essai). */
+    const prog = (!x.serie && x.seuil) ? `<span class="fp-ref-prog">${x.nbEssais}/${x.seuil} essais</span>` : "";
+    return `
+    <div class="fp-ref">
+      <span class="fp-ref-nom">${escapeAttr((x.ref && x.ref.nom) || "référence")}</span>
+      <span class="statut-pill ${x.serie ? "serie" : "essai"}">${x.serie ? "en production" : statutLabel("essai")}</span>
+      ${x.gainAnnuel ? `<span class="fp-ref-gain">${x.gainAnnuel >= 0 ? "+" : "−"}${fmtEuroCourt(Math.abs(x.gainAnnuel))}/an</span>` : ""}
+      ${prog}
+    </div>`;}).join("") : `<p class="fp-note">Aucune référence travaille ce poste pour l'instant.</p>`;
+
+  /* la porte vers la couche 2 — visible, explicite, découvrable (R3) */
+  const porte = t.etat === "opportunite" ? "" : `
+    <div class="fp-actions">
+      <button class="primary fp-ouvrir" data-ligne="${escapeAttr(t.ligne.id)}" data-code="${escapeAttr(t.code)}"
+        title="Ouvrir le scénario de production de ce poste : composition, essais, preuves">Ouvrir le poste →</button>
+    </div>`;
+
+  return `<div class="fp-fiche ${e.classe}" data-ligne="${escapeAttr(t.ligne.id)}" data-code="${escapeAttr(t.code)}" role="dialog" aria-label="Fiche poste ${escapeAttr(t.nomMachine || t.code)}">
+    <div class="fp-tete">
+      <div class="fp-titre-bloc">
+        <p class="fp-eyebrow">${escapeAttr(t.ligne.nom || "")} · ${escapeAttr(t.code)}</p>
+        <h4 class="fp-titre">${escapeAttr(t.nomMachine || t.code)}</h4>
+      </div>
+      <span class="ca-etat">${e.label}</span>
+      <button class="ghost fp-fermer" title="Fermer la fiche" aria-label="Fermer la fiche">✕</button>
+    </div>
+    ${nomRef ? `<p class="fp-ref-dominante">Référence principale : <b>${escapeAttr(nomRef)}</b>${refs.length > 1 ? ` <span class="ca-refs">+${refs.length - 1} réf.</span>` : ""}</p>` : ""}
+    <div class="ca-pouls fp-pouls">${pouls}</div>
+    ${p.chemin === null ? "" : `
+      <div class="fp-chemin">
+        <span class="fp-chemin-l">Vers la cible du site</span>
+        <div class="ca-track"><div class="ca-fill" style="width:${Math.round(p.chemin)}%"></div></div>
+        <span class="ca-pct">${Math.round(p.chemin)} %</span>
+      </div>`}
+    <div class="fp-refs"><h5>Travail sur ce poste</h5>${lignesRef}</div>
+    <p class="fp-etape"><b>Prochaine étape :</b> ${escapeAttr(etape)}</p>
+    ${(p.nonChiffres || 0) > 0 ? `<p class="fp-avertir">${p.nonChiffres} opération${p.nonChiffres > 1 ? "s" : ""} non chiffrable${p.nonChiffres > 1 ? "s" : ""} — le gain affiché ne les compte pas.</p>` : ""}
+    ${porte}
+  </div>`;
+}
+
+/* l'état du panneau de fiche : null = fermé, sinon { ligneId, code } */
+let fichePosteOuverte = null;
+
+/* La fiche vit DANS la carte (superposée), pas dans un second panneau : c'est la
+   couche 1 du même écran, pas une nouvelle fenêtre. Le survol desktop ouvre aussi,
+   mais seulement si aucune fiche n'est déjà ouverte (sinon survoler une autre tuile
+   pendant la lecture de la fiche sous le doigt). */
+function renderFichePoste(tuiles, t){
+  const zone = document.getElementById("carteFicheZone");
+  if(!zone) return;
+  /* on mémorise la fiche ouverte : c'est elle qui empêche le survol d'en remplacer
+     une autre sous les yeux du lecteur, et c'est elle que le filtre doit rouvrir. */
+  fichePosteOuverte = t ? { ligneId: t.ligne.id, code: t.code } : null;
+  if(!t){ zone.innerHTML = ""; zone.hidden = true; return; }
+  zone.hidden = false;
+  zone.innerHTML = fichePosteHTML(t);
+  const fermer = zone.querySelector(".fp-fermer");
+  if(fermer) fermer.addEventListener("click", () => { fichePosteOuverte = null; renderFichePoste(tuiles, null); });
+  const ouvrir = zone.querySelector(".fp-ouvrir");
+  if(ouvrir) ouvrir.addEventListener("click", () => ouvrirPosteDepuisFiche(t));
+}
+
+/* la porte de la fiche appelle exactement le même chemin que le bouton de la tuile
+   (couche 2, v4.52) : une seule implémentation de « entrer dans ce poste ». */
+function ouvrirPosteDepuisFiche(t){
+  const ligne = lignes.find(x => x.id === t.ligne.id);
+  const bloc = scenariosPostes(ligne, t.code)[0];
+  if(!bloc) return;
+  const prodSc = (bloc.scs || []).find(x => x.baseline)
+              || (bloc.scs || []).find(x => /base excel/i.test(x.name || ""))
+              || (bloc.scs || [])[0];
+  if(!prodSc) return;
+  activeLigneId = ligne.id;
+  activeReferenceId = bloc.ref.id;
+  activeOpId = bloc.op.id;
+  activeId = prodSc.id;
+  fermerPanneaux();
+  render();
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
    v4.51.2 — CARTE ATELIER (couche 0, lecture seule)
 
    L'écran d'entrée spatial de l'outil : des tuiles = les postes (ligne x opCode)
@@ -12066,6 +12317,7 @@ function renderCarte(){
       <b>${recette.actionnables}</b> tuiles actionnables sur ${recette.total} — ${Math.round(recette.ratio * 100)} %
       ${recette.ratio >= 1/3 ? `<span class="ca-ok">carte utile</span>` : `<span class="ca-faible">carte creuse — filtrer par projet</span>`}
     </div>
+    <div class="carte-fiche-zone" id="carteFicheZone" hidden></div>
     ${sections || `<p class="panel-hint">Aucun poste à afficher${pj ? " dans ce projet" : ""}. Les machines déclarées par l'atelier dessinent la carte ; un poste sans donnée reste visible en « Opportunité ».</p>`}
     ${livraisonsSectionHTML()}
     <div class="panel-actions"><button class="ghost" id="missionA4Btn">🖨 A4 Mission</button><button class="primary" id="carteClose">Fermer</button></div>
@@ -12095,6 +12347,26 @@ function renderCarte(){
       render();
     });
   });
+  /* v4.54.0 — couche 1 : la fiche poste. Le geste double (R3) : le survol (desktop)
+     ou le PREMIER toucher (tablette) ouvre la fiche, qui porte la porte explicite
+     « Ouvrir le poste → ». On ne force personne à deviner qu'un second geste entre.
+     Sur desktop, le survol n'ouvre QUE si aucune fiche n'est déjà ouverte : sinon on
+     substituerait la fiche sous les yeux de qui est en train de la lire. */
+  const touche = () => window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+  const trouver = (ligneId, code) => visibles.find(t => t.ligne.id === ligneId && t.code === code);
+  wrap.querySelectorAll(".ca-tuile").forEach(tuile => {
+    const ligneId = tuile.getAttribute("data-ligne"), code = tuile.getAttribute("data-code");
+    const ouvrirFiche = () => { const t = trouver(ligneId, code); if(t) renderFichePoste(visibles, t); };
+    tuile.addEventListener("mouseenter", () => { if(!touche() && !fichePosteOuverte) ouvrirFiche(); });
+    /* premier toucher : la fiche. Si elle est déjà ouverte sur CETTE tuile, on ne
+       referme pas (le second appui sert à suivre le bouton, pas à refermer). */
+    tuile.addEventListener("click", (ev) => {
+      if(ev.target && ev.target.closest && ev.target.closest(".ca-ouvrir")) return; // le bouton fait son office
+      if(touche() || !fichePosteOuverte) ouvrirFiche();
+    });
+    tuile.addEventListener("keydown", (ev) => { if(ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); ouvrirFiche(); } });
+  });
+
   /* v4.52 — A4 Mission : impression dédiée (le conteneur est appendé au body pour que
      la CSS d'impression n'affiche que lui). */
   /* v4.53 — livraisons : créer, imprimer, supprimer */
@@ -12140,7 +12412,17 @@ function renderCarte(){
     setTimeout(nettoie, 2000);
   });
   const sel = document.getElementById("caFiltreProjet");
-  if(sel) sel.addEventListener("change", () => { carteFiltreProjetId = sel.value || null; carteProjetChoisi = true; renderCarte(); });
+  if(sel) sel.addEventListener("change", () => {
+    carteFiltreProjetId = sel.value || null; carteProjetChoisi = true;
+    renderCarte();
+    /* v4.54.0 — la fiche ouverte survit au changement de filtre SI le poste est encore
+       visible ; sinon elle se referme proprement. Sans ça, changer de filtre laisserait
+       une fiche orpheline affichée pour un poste qui n'est plus à l'écran. */
+    if(fichePosteOuverte){
+      const encore = visibles.find(t => t.ligne.id === fichePosteOuverte.ligneId && t.code === fichePosteOuverte.code);
+      renderFichePoste(visibles, encore || null);
+    }
+  });
 }
 
 /* l'entrée : le bouton de la barre d'outils ouvre la carte (v4.51.2) */
@@ -14159,6 +14441,77 @@ function runTests(){
        pourcentageTolerance(1.0, 1.6, 0.8), 25, 1e-9);
     ok("pctTol : hors tolerance -> au-dela de 100", pourcentageTolerance(0.12, 0.1), 120, 1e-9);
     ok("pctTol : pas de limite exploitable -> null", pourcentageTolerance(0.05, NaN), null);
+
+    /* ---- v4.54.0 — la fiche poste (couche 1) : ce que dit la machine ---------- */
+    {
+      const opCfg3 = Object.assign({}, defaultConfig, { volumeActif: true });
+      const scS = (id, prix) => ({ id, name: id, statut: "serie", outils: [
+        { id: id + "u", numero: "T", logements: [ { id: id + "l", nom: "Bol", prix, aretes: 8, charniere: 100 } ] } ] });
+      const scP = (id) => ({ id, name: "Prod", baseline: true, outils: [
+        { id: id + "u", numero: "T", logements: [ { id: id + "l", nom: "Bol", prix: 30, aretes: 8, charniere: 100 } ] } ] });
+      const opF = (id, nom, scs) => ({ id, nom, config: opCfg3, scenarios: scs });
+      const refF = (id, nom, vol, cible, ops) => normalizeReference({ id, nom, productionAnnuelle: vol, cibleCPP: cible || "", ops });
+      const lignesS = lignes, projS = projets;
+      try {
+        lignes = [ normalizeLigne({ id: "LF", nom: "EMAG 1", coutHoraire: "45", references: [
+          refF("rf1", "356x26", "120000", "", [ opF("of1", "OP10", [ scP("pf1"), scS("sf1", 5) ]) ]),
+          refF("rf2", "304x28", "90000", "0.250", [ opF("of2", "OP40", []) ])
+        ]}) ];
+        projets = [];
+        const t = cartePostes();
+        const gagne = t.find(x => x.code === "OP10");
+        const chiffrer = t.find(x => x.code === "OP40");
+        const opp = t.find(x => x.code === "OP20");
+
+        /* ── la prochaine étape : l'information qui manquait le plus ── */
+        ok("fiche : un poste gagné se maintient (on ne réinvente pas un gain acquis)",
+           prochaineEtapePoste(gagne).includes("En production"), true);
+        ok("fiche : un poste à chiffrer dit exactement ce qu'il attend",
+           prochaineEtapePoste(chiffrer).includes("chiffrer"), true);
+        ok("fiche : un poste d'opportunité dit qu'il n'a jamais été travaillé",
+           prochaineEtapePoste(opp).includes("jamais travaillé"), true);
+
+        /* un essai en cours : l'étape parle du protocole 5× ET de l'avancement */
+        lignes = [ normalizeLigne({ id: "LF2", nom: "EMAG 2", references: [
+          refF("rf3", "290x12", "70000", "", [ opF("of3", "OP10", [ scP("pf3"),
+            { id: "ef3", name: "Essai", statut: "essai", outils: [ { id: "ef3u", numero: "T", logements: [ { id: "ef3l", nom: "Bol", prix: 20, aretes: 8, charniere: 100 } ] } ],
+              essais: [ { id: "x1", titre: "E1", date: "2026-09-29", prelevements: [ { id: "y1", piece: "5", cotes: {} } ] },
+                        { id: "x2", titre: "E2", date: "2026-09-29", prelevements: [ { id: "y2", piece: "6", cotes: {} } ] } ] } ]) ])
+        ]}) ];
+        const enc = cartePostes().find(x => x.code === "OP10");
+        ok("fiche : un poste en cours annonce le protocole 5× et l'avancement (2/5)",
+           prochaineEtapePoste(enc).includes("2/5"), true);
+        ok("fiche : un poste gainé par la tuile et par la fiche = MÊME valeur (règle D3)",
+           [gagne.poste.gainActe > 0, prochaineEtapePoste(gagne).length > 0], [true, true]);
+
+        /* ── le rendu de la fiche : titre, référence, porte, étape ── */
+        lignes = [ normalizeLigne({ id: "LF", nom: "EMAG 1", references: [
+          refF("rf1", "356x26", "120000", "", [ opF("of1", "OP10", [ scP("pf1"), scS("sf1", 5) ]) ]) ]}) ];
+        const g2 = cartePostes().find(x => x.code === "OP10");
+        const h = fichePosteHTML(g2);
+        ok("fiche : elle nomme la machine et la ligne",
+           [h.includes("Ébauche piste"), h.includes("EMAG 1")], [true, true]);
+        ok("fiche : elle nomme la référence principale",
+           h.includes("356x26"), true);
+        ok("fiche : elle porte la porte EXPLICITE vers la couche 2 (geste découvrable)",
+           [h.includes("Ouvrir le poste"), h.includes("fp-ouvrir")], [true, true]);
+        ok("fiche : elle annonce la prochaine étape en toutes lettres",
+           h.includes("Prochaine étape"), true);
+        ok("fiche : elle affiche l'état en toutes lettres (jamais la couleur seule)",
+           h.includes("Gagné"), true);
+        ok("fiche : le gain affiché vient de gainPoste, jamais d'un recalcul local",
+           h.includes(fmtEuroCourt(g2.poste.gainActe)), true);
+        ok("fiche : un poste EN PRODUCTION n'affiche pas « 0/5 essais » (ça dirait aucun travail)",
+           h.includes("0/5"), false);
+        /* un poste d'opportunité n'a PAS de porte : il n'y a rien à ouvrir */
+        lignes = [ normalizeLigne({ id: "LV", nom: "HESSAPP", references: [] }) ];
+        const hOpp = fichePosteHTML(cartePostes().find(x => x.code === "OP10"));
+        ok("fiche : un poste jamais travaillé n'expose pas de porte morte",
+           hOpp.includes("fp-ouvrir"), false);
+      } finally {
+        lignes = lignesS; projets = projS; fichePosteOuverte = null;
+      }
+    }
 
     /* ---- v4.51.2 — la carte atelier (couche 0) ---------------------------------------
        La carte est une FONCTION du calcul testé en 4.51.0 : gainPoste() et etatTuile().
