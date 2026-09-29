@@ -1553,6 +1553,7 @@ body.atelier-on{overflow:hidden;}
           <button class="ghost" id="syntheseBtn" title="Comparer tous les scénarios dans un tableau, et superposer leurs courbes de tendance"><svg class="icon" viewBox="0 0 18 18"><rect x="4" y="3" width="10" height="12" rx="1.5"/><path d="M6.5 7h5M6.5 10h5M6.5 13h3" stroke-linecap="round"/></svg>Vue de synthèse</button>
           <button class="ghost" id="dashboardBtn" title="Toutes les lignes, références et OP : avancement des optimisations et gains cumulés"><svg class="icon" viewBox="0 0 18 18"><rect x="2.5" y="2.5" width="5.5" height="7" rx="1"/><rect x="10" y="2.5" width="5.5" height="4" rx="1"/><rect x="2.5" y="11.5" width="5.5" height="4" rx="1"/><rect x="10" y="8.5" width="5.5" height="7" rx="1"/></svg>Tableau de bord</button>
           <button class="ghost" id="carteBtn" title="L’atelier en un coup d’œil : une tuile par machine, avec le gain déjà acté et ce qui reste à faire"><svg class="icon" viewBox="0 0 18 18"><rect x="2.5" y="3" width="5" height="5" rx="1"/><rect x="10.5" y="3" width="5" height="5" rx="1"/><rect x="2.5" y="10.5" width="5" height="4" rx="1"/><rect x="10.5" y="10.5" width="5" height="4" rx="1"/></svg>Carte atelier</button>
+          <button class="ghost" id="matisBtn" title="Lire le classeur de consommations de Matis : production réelle, CPP réel, écart à la théorie (lu sur ce poste, rien n’est envoyé)"><svg class="icon" viewBox="0 0 18 18"><rect x="2.5" y="3" width="13" height="12" rx="1.5"/><path d="M2.5 8h13M7 8v7" stroke-linecap="round"/></svg>Classeur Matis</button>
           <button class="ghost" id="csvBtn" title="Tous les prélèvements en tableau, pour Excel ou le système qualité"><svg class="icon" viewBox="0 0 18 18"><rect x="2.5" y="2.5" width="13" height="13" rx="1.5"/><path d="M2.5 7h13M2.5 11.5h13M7 2.5v13"/></svg>Export CSV</button>
           <div class="tb-grp">Documenter</div>
           <button class="ghost" id="rapportBtn" title="Génère un rapport HTML autonome du scénario affiché — prêt à envoyer par e-mail à Stellantis"><svg class="icon" viewBox="0 0 18 18"><path d="M2.5 9 15 3.5 10.5 15.5 8 9.5 2.5 9Z" stroke-linejoin="round"/></svg>Rapport de validation</button>
@@ -1907,6 +1908,8 @@ body.atelier-on{overflow:hidden;}
   </div>
   <div class="panel panel-large" id="dashboardPanel" hidden></div>
   <div class="panel panel-large" id="cartePanel" hidden></div>
+  <div class="panel panel-large" id="matisPanel" hidden></div>
+  <div class="panel panel-large" id="matisDetailPanel" hidden></div>
   <div class="panel" id="importPanel" hidden>
     <h3>Importer un suivi</h3>
     <div id="importPanelBody"></div>
@@ -2283,6 +2286,61 @@ body.atelier-on{overflow:hidden;}
   .fp-fermer, .fp-actions{ display:none !important; }
   .fp-fiche{ break-inside:avoid; }
   .fp-etape{ background:#fff; }
+}
+</style>
+
+<style>
+/* v4.55.0 — lecture du classeur Matis (écran Reel/Theorique) */
+/* ═══ v4.55.0 — l'écran « Réel / Théorique » (option C) ═══════════════════
+   Le premier écran qui montre l'écart entre ce que l'outil budgète et ce que
+   l'atelier consomme réellement. Il ne corrige rien, il ne décide rien : il
+   MESURE. C'est la mesure qui dira, plus tard, si la production doit devenir
+   une entité de premier niveau (décision 2 version) ou si le scénario-★ suffit.
+
+   Rappel du principe qui rend cet écran possible : le classeur de Matis donne
+   la production RÉELLE par couple ligne × référence, avec le CPP réellement
+   consommé. Notre outil, lui, budgète un CPP à partir des prix et des durées de
+   vie. Les deux ensemble disent si le budget-outillage tient. */
+.mt-recap{ display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; margin:0 0 14px; }
+.mt-fichier{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint); }
+
+.mt-bilan{ display:grid; grid-template-columns:repeat(auto-fit,minmax(168px,1fr)); gap:9px; margin:0 0 16px; }
+.mt-tuile{ background:var(--surface); border:1px solid var(--border); border-left:4px solid var(--border);
+  border-radius:var(--radius); padding:11px 13px 12px; }
+.mt-tuile.alerte{ border-left-color:var(--amber); }
+.mt-tuile.ok{ border-left-color:var(--green); }
+.mt-l{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--ink-faint); font-weight:600; }
+.mt-v{ font-family:var(--font-disp); font-size:23px; font-weight:800; color:var(--ink); line-height:1.1;
+  font-variant-numeric:tabular-nums; }
+.mt-v small{ font-size:11px; font-weight:500; color:var(--ink-soft); letter-spacing:0; }
+.mt-sub{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-soft); margin-top:2px; }
+
+.mt-tbl{ width:100%; border-collapse:collapse; font-size:12px; }
+.mt-tbl th{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.07em; text-transform:uppercase;
+  text-align:left; color:var(--ink-faint); padding:6px 8px; border-bottom:1px solid var(--border); position:static; }
+.mt-tbl td{ padding:6px 8px; border-bottom:1px solid var(--border); }
+.mt-tbl td.num{ text-align:right; font-family:var(--font-mono); font-variant-numeric:tabular-nums; }
+.mt-tbl .mt-lign{ font-weight:600; }
+.mt-ecart-pos{ color:var(--red); font-weight:600; }
+.mt-ecart-neg{ color:var(--green); font-weight:600; }
+.mt-raison{ font-family:var(--font-body); font-size:11.5px; color:var(--ink-soft); }
+.mt-avert{ font-family:var(--font-mono); font-size:10.5px; color:var(--amber); font-weight:600; }
+
+.mt-detail td{ font-size:11.5px; }
+.mt-detail .mt-op{ font-family:var(--font-mono); font-size:10px; color:var(--ink-faint); }
+.mt-raz{ margin:0 0 12px; padding:10px 13px; background:var(--blue-bg); border:1px solid var(--blue);
+  border-radius:var(--radius); font-family:var(--font-body); font-size:12.5px; line-height:1.5; color:var(--ink); }
+.mt-raz b{ color:var(--blue-dark); }
+
+@media (pointer: coarse){
+  .mt-v{ font-size:25px; }
+  .mt-tbl th, .mt-tbl td{ padding:9px 8px; }
+}
+@media print{
+  .mt-recette, .mt-fichier{ display:none !important; }
+  .mt-tbl th, .mt-tbl td{ padding:4px 6px; font-size:9.5px; }
+  .mt-tuile{ break-inside:avoid; }
 }
 </style>
 
@@ -10901,6 +10959,8 @@ document.getElementById("dashboardBtn").addEventListener("click", () => {
 });
 /* v4.51.2 — la carte atelier s’ouvre sur le projet actif (H1-b) ; son filtre lui est propre. */
 document.getElementById("carteBtn").addEventListener("click", ouvrirCarte);
+/* v4.55.0 — lecture du classeur Matis : constat, jamais un import (option C). */
+document.getElementById("matisBtn").addEventListener("click", ouvrirMatis);
 /* v4.14 — palette de recherche : bouton du menu, frappe directe au clavier (Ctrl+K),
    navigation flèches + Entrée dans la liste de résultats. */
 document.getElementById("searchBtn").addEventListener("click", ouvrirRecherche);
@@ -11272,6 +11332,12 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.55.0", date:"29/09/2026", points:[
+    "<b>Le classeur de Matis se lit directement dans l’outil.</b> Un bouton « Classeur Matis » ouvre le suivi des consommations réelles : production réelle par machine et par référence, coût réellement consommé, et — le plus important — l’écart entre ce que l’outil budgète et ce que l’atelier consomme. Vous choisissez votre fichier : il est lu sur ce poste, rien n’est envoyé.",
+    "<b>Un chiffre à surveiller.</b> Sur la période 14-21/09, le budget-outillage annonçait 5 218 €/an pour l’ensemble des couples produits, la consommation réelle est de 8 179 € : <b>2 961 € d’écart, soit +57 %</b>. Ce n’est pas une erreur de saisie, c’est l’écart entre un modèle et le terrain — et c’est exactement ce qu’on ne voyait pas avant.",
+    "<b>Le détail par outil.</b> Numéros d’outil, articles, codes MABEC, CPP théorique et réel : le vocabulaire que Matis utilise tous les jours, mis en regard de l’outillage saisi.",
+    "Cette lecture est un <b>constat</b>, pas un import : elle n’écrit rien dans le suivi. La décision sur la production réelle comme entité à part entière reste à prendre, et elle s’appuiera sur ces mesures."
+  ]},
   { version:"4.54.0", date:"29/09/2026", points:[
     "<b>La fiche de la machine.</b> Survolez (ou touchez) une tuile de la carte : l’outil vous dit ce qui se passe sur ce poste — la référence qui y travaille, ce qui est déjà en production, ce qui reste à faire. Puis un bouton emmène dans le détail.",
     "<b>La prochaine étape, écrite en toutes lettres.</b> « Terminer le protocole 5× — 2/5 essais relevés », « Cible du site posée, aucune mesure », « Jamais travaillé ». En atelier, on n’a pas le temps d’interpréter un tableau : l’outil dit quoi faire maintenant.",
@@ -11686,7 +11752,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.54.0";
+const TOOL_VERSION = "4.55.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -11975,6 +12041,366 @@ function etatTuile(poste){
   if(poste.cibleCPP !== null && poste.cibleCPP > 0) return "aChiffrer";
   return "opportunite";
 }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   v4.55.0 — LE CLASSEUR MATIS, source de production RÉELLE (option C de l'analyse
+   du 29/09). Règle constitution §4.2 : rien ne quitte le poste — la lecture est
+   OPTIONNELLE, manuelle, sur un fichier que l'utilisateur choisit lui-même.
+
+   Ce que ce bloc apporte, et pourquoi c'est un changement de nature :
+   · jusqu'ici la production était un SCÉNARIO déguisé (un booléen `baseline` posé
+     sur un scénario d'essai) ; chaque calcul cherchait « ★ d'abord, excel en repli » ;
+   · le classeur de Matis donne la production RÉELLE, chiffrée, par couple
+     ligne × référence (volume en case B1 de chaque feuille « Cout pièce »), avec
+     le CPP réel consommé et l'écart à la théorie ;
+   · donc : le scénario-★ reste la RÉFÉRENCE DE COMPARAISON (son rôle historique,
+     intact), et la production réelle devient une DONNÉE à part, importable, datée.
+
+   Décision C (Benjamin) : on importe et on MESURE l'écart théorie/réel avant de
+   décider si la production doit devenir une entité de premier niveau. Rien ici ne
+   change le format des données : c'est un bloc d'observation, pas une migration.
+
+   Un .xlsm est une archive ZIP. On lit son XML directement — aucune bibliothèque,
+   aucun réseau, rien à installer. La décompression utilise DecompressionStream
+   (natif Chrome/Edge, donc « un seul fichier » reste vrai).
+   ────────────────────────────────────────────────────────────────────────── */
+
+function _xmlUnescape(s){
+  return String(s).replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(parseInt(n, 10)))
+    .replace(/&amp;/g, "&");
+}
+
+/* décompresse une entrée ZIP (deflate-raw ou stored) → Uint8Array */
+async function _zipRead(ent){
+  if(ent.method === 0) return ent.data;
+  if(typeof DecompressionStream === "undefined"){
+    throw new Error("Ce navigateur ne sait pas lire un classeur Excel. Utilise Chrome ou Edge.");
+  }
+  const ds = new DecompressionStream("deflate-raw");
+  const buf = await new Response(new Blob([ent.data]).stream().pipeThrough(ds)).arrayBuffer();
+  return new Uint8Array(buf);
+}
+
+/* inventaire des entrées ZIP + accès par nom de feuille */
+async function _zipOpen(file){
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const u16 = o => dv.getUint16(o, true), u32 = o => dv.getUint32(o, true);
+  let eocd = -1;
+  for(let i = bytes.length - 22; i >= Math.max(0, bytes.length - 66000); i--){
+    if(u32(i) === 0x06054b50){ eocd = i; break; }
+  }
+  if(eocd < 0) throw new Error("Ce fichier n'est pas un classeur Excel (archive illisible).");
+  const count = u16(eocd + 10);
+  let off = u32(eocd + 16);
+  const entries = {};
+  for(let i = 0; i < count; i++){
+    if(u32(off) !== 0x02014b50) break;
+    const method = u16(off + 10), csize = u32(off + 20);
+    const nlen = u16(off + 28), elen = u16(off + 30), clen = u16(off + 32);
+    const lho = u32(off + 42);
+    const name = new TextDecoder("utf-8").decode(bytes.subarray(off + 46, off + 46 + nlen));
+    const lnlen = u16(lho + 26), lelen = u16(lho + 28);
+    const start = lho + 30 + lnlen + lelen;
+    entries[name] = { method, csize, data: bytes.subarray(start, start + csize) };
+    off += 46 + nlen + elen + clen;
+  }
+  return entries;
+}
+
+/* les chaînes partagées (le classeur les utilise pour tous les libellés) */
+async function _xlSharedStrings(entries){
+  const key = Object.keys(entries).find(k => /^xl\/sharedStrings\.xml$/.test(k));
+  if(!key) return [];
+  const xml = new TextDecoder("utf-8").decode(await _zipRead(entries[key]));
+  const out = [];
+  const re = /<si>([\s\S]*?)<\/si>/g;
+  let m;
+  while((m = re.exec(xml))){
+    out.push(_xmlUnescape([...m[1].matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)].map(x => x[1]).join("")));
+  }
+  return out;
+}
+
+/* <c r="A1" t="s"><v>3</v></c> → { A1: valeur } */
+function _xlCells(xml, shared){
+  const cells = {};
+  const re = /<c r="([A-Z]+\d+)"([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g;
+  let m;
+  while((m = re.exec(xml))){
+    const ref = m[1], attrs = m[2] || "", inner = m[3] || "";
+    const t = (attrs.match(/t="([^"]+)"/) || [])[1];
+    if(t === "inlineStr"){
+      cells[ref] = _xmlUnescape([...inner.matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)].map(x => x[1]).join(""));
+      continue;
+    }
+    const vm = inner.match(/<v>([\s\S]*?)<\/v>/);
+    if(!vm) continue;
+    const raw = _xmlUnescape(vm[1]);
+    if(t === "s") cells[ref] = shared[parseInt(raw, 10)] ?? "";
+    else if(t === "b") cells[ref] = raw === "1";
+    else { const n = parseFloat(raw); cells[ref] = isNaN(n) ? raw : n; }
+  }
+  return cells;
+}
+
+/* le lien nom-de-feuille → fichier XML (workbook.xml + rels) */
+async function _xlSheetMap(entries){
+  const wbKey = "xl/workbook.xml", relKey = "xl/_rels/workbook.xml.rels";
+  if(!entries[wbKey] || !entries[relKey]) return {};
+  const wb = new TextDecoder("utf-8").decode(await _zipRead(entries[wbKey]));
+  const rels = new TextDecoder("utf-8").decode(await _zipRead(entries[relKey]));
+  const relMap = {};
+  for(const m of rels.matchAll(/<Relationship[^>]*Id="([^"]+)"[^>]*Target="([^"]+)"[^>]*\/?>/g)){
+    relMap[m[1]] = m[2].replace(/^\/?xl\//, "").replace(/^\.\//, "");
+  }
+  const map = {};
+  for(const m of wb.matchAll(/<sheet[^>]*name="([^"]+)"[^>]*r:id="([^"]+)"[^>]*\/?>/g)){
+    const target = relMap[m[2]];
+    if(target) map[_xmlUnescape(m[1])] = "xl/" + target;
+  }
+  return map;
+}
+
+/* une feuille « Cout pièce » = un couple ligne × référence */
+function _matisFeuille(nomFeuille, cells){
+  const m = nomFeuille.match(/^Co[uû]t\s+pi[eè]ce\s+([EH])(\d)\s+(.+)$/i);
+  if(!m) return null;
+  const numOp = r => String(r || "").trim();
+  const outils = [];
+  for(let row = 4; row <= 140; row++){
+    const numOutil = numOp(cells["A" + row]);
+    if(!numOutil) continue;
+    const op = numOp(cells["B" + row]);
+    const mOp = op.match(/^OP\s?(\d+)/i);
+    if(!mOp) continue;                     // ligne de garde : seuls les outils comptent
+    const f = k => { const v = parseFloat(cells[k + row]); return isNaN(v) ? null : v; };
+    outils.push({
+      numero: numOutil, opCode: "OP" + mOp[1],
+      article: numOp(cells["C" + row]), mabec: numOp(cells["D" + row]),
+      aretes: f("F"), prix: f("G"), ddv: f("H"),
+      cppTheorique: f("I"), qteTheorique: f("J"),
+      coutReelAnnuel: f("L"), cppReel: f("M"), qteReelle: f("N"), ecart: f("O")
+    });
+  }
+  const prod = parseFloat(cells["B1"]);
+  return {
+    codeLigne: m[1].toUpperCase() + m[2],
+    ref: m[3].trim(),
+    refComplete: (numOp(cells["C2"])) || m[3].trim(),
+    production: isNaN(prod) ? null : prod,
+    outils
+  };
+}
+
+/* ═══ La fonction pure : le récapitulatif, testable sans fichier ═══════════
+   Elle prend les feuilles déjà lues et rend ce que l'écran affiche. Aucun accès
+   disque ici — c'est ce qui permet de la tester (constitution : source unique). */
+function matisRecap(feuilles){
+  const couples = {};
+  feuilles.forEach(f => {
+    if(!f) return;
+    const key = f.codeLigne + "·" + f.ref;
+    if(!couples[key]) couples[key] = { key, codeLigne: f.codeLigne, ref: f.ref, refComplete: f.refComplete,
+      production: 0, aProduction: false, outils: [], cppTheorique: 0, cppReel: 0 };
+    const c = couples[key];
+    if(f.production !== null && f.production > 0){ c.production = f.production; c.aProduction = true; }
+    c.outils = c.outils.concat(f.outils);
+  });
+  const liste = Object.keys(couples).map(k => couples[k]);
+  liste.forEach(c => {
+    c.outils.forEach(o => {
+      if(o.cppTheorique) c.cppTheorique += o.cppTheorique;
+      if(o.cppReel) c.cppReel += o.cppReel;
+    });
+    c.ecart = (c.cppReel && c.cppTheorique) ? c.cppReel - c.cppTheorique : null;
+    c.ecartPct = (c.ecart !== null && c.cppTheorique) ? (c.ecart / c.cppTheorique) * 100 : null;
+    c.coutAnnuelReel = c.aProduction && c.cppReel ? c.cppReel * c.production : null;
+    c.coutAnnuelTheorique = c.aProduction && c.cppTheorique ? c.cppTheorique * c.production : null;
+    c.gapAnnuel = (c.coutAnnuelReel !== null && c.coutAnnuelTheorique !== null)
+      ? c.coutAnnuelReel - c.coutAnnuelTheorique : null;
+  });
+  return liste.sort((a, b) => (b.production || 0) - (a.production || 0));
+}
+
+/* l'écart, dit en atelier — jamais un chiffre nu sans sa raison (constitution §3.5) */
+function libelleEcartMatis(c){
+  if(c.ecart === null) return "non mesurable — pas de CPP réel relevé sur ce couple";
+  if(Math.abs(c.ecart) < 0.0005) return "consommation conforme au budget-outillage";
+  if(c.ecart > 0) return `surconsommation de ${fmt(Math.abs(c.ecart), 4)} €/pièce`;
+  return `sous-consommation de ${fmt(Math.abs(c.ecart), 4)} €/pièce`;
+}
+
+/* ═══ La lecture du fichier (asynchrone, manuelle, locale) ═════════════════ */
+async function matisLireClasseur(file){
+  const entries = await _zipOpen(file);
+  const shared = await _xlSharedStrings(entries);
+  const map = await _xlSheetMap(entries);
+  const feuilles = [];
+  for(const nom of Object.keys(map)){
+    if(!entries[map[nom]]) continue;
+    const xml = new TextDecoder("utf-8").decode(await _zipRead(entries[map[nom]]));
+    const f = _matisFeuille(nom, _xlCells(xml, shared));
+    if(f) feuilles.push(f);
+  }
+  return { fichier: file.name, luLe: new Date().toISOString().slice(0, 10),
+           feuilles, couples: matisRecap(feuilles) };
+}
+
+
+/* ═══ L'ÉCRAN — le rendu de la mesure, et son ouverture ═══════════════════ */
+
+/* le résultat de la dernière lecture : en mémoire seulement, JAMAIS écrit dans
+   les données du suivi. C'est une observation, pas un import (option C). */
+let matisLecture = null;
+
+/* le couple « ligne × référence » du classeur, rapproché de la ligne de l'outil
+   quand elle existe. Le classeur dit « E1 », l'outil dit « EMAG 1 » : le
+   rapprochement est explicite et visible, jamais deviné en silence. */
+const MATIS_LIGNE_OUTIL = { E1: "EMAG 1", E2: "EMAG 2", E3: "EMAG 3", H: "HESSAPP" };
+
+function matisRapproche(c){
+  const nomLigne = MATIS_LIGNE_OUTIL[c.codeLigne] || c.codeLigne;
+  const lg = lignes.find(l => (l.nom || "").toUpperCase() === nomLigne.toUpperCase());
+  const ref = lg ? lg.references.find(r => (r.nom || "").toUpperCase().includes(String(c.ref).split(" ")[0].toUpperCase())) : null;
+  return { nomLigne, ligneId: lg ? lg.id : null, referenceId: ref ? ref.id : null };
+}
+
+function matisVueHTML(){
+  if(!matisLecture) return `<p class="panel-hint">Aucun classeur lu pour l'instant. Choisissez le fichier
+    « SUIVI DES CONSOMMATIONS… » de Matis : il est lu <b>sur ce poste uniquement</b>, rien n'est envoyé
+    nulle part, et rien n'est écrit dans le suivi.</p>`;
+
+  const couples = matisLecture.couples || [];
+  const produits = couples.filter(c => c.aProduction);
+  const totalTheo = couples.reduce((a, c) => a + (c.coutAnnuelTheorique || 0), 0);
+  const totalReel = couples.reduce((a, c) => a + (c.coutAnnuelReel || 0), 0);
+  const ecart = totalReel - totalTheo;
+  const ecartPct = totalTheo ? (ecart / totalTheo) * 100 : null;
+
+  const tuiles = `
+    <div class="mt-bilan">
+      <div class="mt-tuile">
+        <div class="mt-l">Budget-outillage / an</div>
+        <div class="mt-v">${fmtEuroCourt(Math.round(totalTheo))}</div>
+        <div class="mt-sub">théorique, d'après prix et durées de vie</div>
+      </div>
+      <div class="mt-tuile">
+        <div class="mt-l">Consommé / an</div>
+        <div class="mt-v">${fmtEuroCourt(Math.round(totalReel))}</div>
+        <div class="mt-sub">réel, d'après le relevé de Matis</div>
+      </div>
+      <div class="mt-tuile ${ecart > 0 ? "alerte" : (ecart < 0 ? "ok" : "")}">
+        <div class="mt-l">Écart</div>
+        <div class="mt-v ${ecart > 0 ? "mt-ecart-pos" : (ecart < 0 ? "mt-ecart-neg" : "")}">${ecart >= 0 ? "+" : "−"}${fmtEuroCourt(Math.round(Math.abs(ecart)))}</div>
+        <div class="mt-sub">${ecartPct === null ? "—" : (ecartPct >= 0 ? "+" : "−") + fmt(Math.abs(ecartPct), 0) + " % vs théorie"}</div>
+      </div>
+      <div class="mt-tuile">
+        <div class="mt-l">Couples produits</div>
+        <div class="mt-v">${produits.length}<small> / ${couples.length}</small></div>
+        <div class="mt-sub">avec une production relevée</div>
+      </div>
+    </div>`;
+
+  const lignes = couples.map(c => {
+    const r = matisRapproche(c);
+    const mesure = c.ecart === null;
+    return `<tr>
+      <td class="mt-lign">${escapeAttr(c.codeLigne)} · ${escapeAttr(c.ref)}</td>
+      <td class="num">${c.aProduction ? fmt(c.production, 0) : "—"}</td>
+      <td class="num">${c.cppTheorique ? fmt(c.cppTheorique, 4) : "—"}</td>
+      <td class="num">${c.cppReel ? fmt(c.cppReel, 4) : "—"}</td>
+      <td class="num ${c.ecart > 0 ? "mt-ecart-pos" : (c.ecart < 0 ? "mt-ecart-neg" : "")}">${mesure ? "—" : (c.ecart >= 0 ? "+" : "−") + fmt(Math.abs(c.ecart), 4)}</td>
+      <td class="mt-raison">${escapeAttr(libelleEcartMatis(c))}${r.ligneId ? "" : ` <span class="mt-avert">(ligne hors suivi : ${escapeAttr(r.nomLigne)})</span>`}</td>
+    </tr>`;
+  }).join("");
+
+  return `
+    <p class="mt-raz"><b>Ce que cet écran mesure.</b> Le budget-outillage de l'outil dit ce que la
+      plaquette <i>devrait</i> coûter (prix × arêtes ÷ durées de vie). Le classeur de Matis dit ce
+      qu'elle <i>a réellement</i> coûté. L'écart entre les deux mesure la santé du plan outillage :
+      un écart stable et connu se budgète, un écart qui grossit se traite. Rien ici n'est une
+      erreur de saisie — c'est de l'écart entre un modèle et le terrain.</p>
+    <div class="mt-recap">
+      <label class="ghost" for="mtFichier" style="cursor:pointer;padding:8px 13px;">📂 Lire le classeur de Matis…</label>
+      <input type="file" id="mtFichier" accept=".xlsm,.xlsx" hidden>
+      <span class="mt-fichier">${escapeAttr(matisLecture.fichier)} — lu le ${escapeAttr(matisLecture.luLe)} · ${(matisLecture.feuilles || []).length} feuilles « Cout pièce »</span>
+    </div>
+    ${tuiles}
+    <div class="tbl-wrap">
+      <table class="mt-tbl">
+        <thead><tr><th>Couple</th><th class="num">Prod.</th><th class="num">CPP théo.</th><th class="num">CPP réel</th><th class="num">Écart</th><th>Lecture</th></tr></thead>
+        <tbody>${lignes}</tbody>
+      </table>
+    </div>
+    <p class="panel-hint" style="margin-top:12px;">Les couples à production nulle sont des postes
+      ouverts ou arrêtés sur la période : ils figurent pour mémoire, ils ne comptent pas dans le bilan.
+      Cette lecture est un <b>constat</b> — elle n'écrit rien dans le suivi et n'y changera rien tant
+      que la décision 2 version n'aura pas été prise.</p>
+    <div class="panel-actions">
+      <button class="ghost" id="mtTools">Détail par outil</button>
+      <button class="primary" id="mtClose">Fermer</button>
+    </div>`;
+}
+
+function matisDetailHTML(){
+  if(!matisLecture) return "";
+  const couples = (matisLecture.couples || []).filter(c => c.aProduction);
+  const blocs = couples.map(c => `
+    <div class="mt-detail" style="margin-bottom:14px;">
+      <h4 style="font-family:var(--font-disp);font-size:15px;margin:0 0 6px;">${escapeAttr(c.codeLigne)} · ${escapeAttr(c.ref)}</h4>
+      <div class="tbl-wrap">
+        <table class="mt-tbl">
+          <thead><tr><th>Outil</th><th>OP</th><th>Article</th><th>MABEC</th><th class="num">CPP théo.</th><th class="num">CPP réel</th><th class="num">Qté réelle</th></tr></thead>
+          <tbody>${c.outils.map(o => `<tr>
+            <td class="mt-lign">${escapeAttr(o.numero)}</td>
+            <td class="mt-op">${escapeAttr(o.opCode)}</td>
+            <td class="mt-op">${escapeAttr(o.article || "—")}</td>
+            <td class="mt-op">${escapeAttr(o.mabec || "—")}</td>
+            <td class="num">${o.cppTheorique ? fmt(o.cppTheorique, 5) : "—"}</td>
+            <td class="num">${o.cppReel ? fmt(o.cppReel, 5) : "—"}</td>
+            <td class="num">${o.qteReelle === null ? "—" : fmt(o.qteReelle, 0)}</td>
+          </tr>`).join("")}</tbody>
+        </table>
+      </div>
+    </div>`).join("");
+  return `<h3>Classeur Matis — détail par outil</h3>
+    <p class="panel-hint">Les numéros d'outil et les articles MABEC sont ceux que Matis utilise au
+      quotidien. Les comparer à l'outillage saisi dans le suivi est le premier pas d'un éventuel
+      enrichissement du modèle.</p>
+    ${blocs || `<p class="panel-hint">Aucun couple avec production relevée.</p>`}
+    <div class="panel-actions"><button class="primary" id="mtDetailClose">Fermer</button></div>`;
+}
+
+function renderMatis(){
+  const wrap = document.getElementById("matisPanel");
+  if(!wrap) return;
+  wrap.innerHTML = matisVueHTML();
+  const fermer = document.getElementById("mtClose");
+  if(fermer) fermer.addEventListener("click", fermerPanneaux);
+  const detail = document.getElementById("mtTools");
+  if(detail) detail.addEventListener("click", () => {
+    const w2 = document.getElementById("matisDetailPanel");
+    if(w2){ w2.innerHTML = matisDetailHTML(); ouvrirPanneau("matisDetailPanel"); }
+  });
+  const fichier = document.getElementById("mtFichier");
+  if(fichier) fichier.addEventListener("change", async () => {
+    const f = fichier.files && fichier.files[0];
+    if(!f) return;
+    /* l'utilisateur a choisi SON fichier : rien n'est envoyé, rien n'est écrit */
+    try {
+      matisLecture = await matisLireClasseur(f);
+    } catch(err){
+      dialogueAlerte("Lecture impossible : " + err.message, "Classeur Matis");
+      return;
+    }
+    renderMatis();
+  });
+}
+
+function ouvrirMatis(){ renderMatis(); ouvrirPanneau("matisPanel"); }
 
 /* ════════════════════════════════════════════════════════════════════════════
    v4.54.0 — FICHE POSTE (couche 1) : la porte qui manquait entre la carte et le détail
@@ -14441,6 +14867,52 @@ function runTests(){
        pourcentageTolerance(1.0, 1.6, 0.8), 25, 1e-9);
     ok("pctTol : hors tolerance -> au-dela de 100", pourcentageTolerance(0.12, 0.1), 120, 1e-9);
     ok("pctTol : pas de limite exploitable -> null", pourcentageTolerance(0.05, NaN), null);
+
+    /* ---- v4.55.0 — le classeur Matis : la mesure de l'écart réel / théorique ----
+       Le classeur de Matis donne la production RÉELLE par couple ligne × référence
+       et le CPP réellement consommé. L'outil, lui, budgète un CPP. L'écart entre
+       les deux mesure la santé du plan outillage — c'est tout ce que cet écran
+       fait, et c'est déjà beaucoup. */
+    {
+      /* --- la fonction pure : matisRecap, testée sans fichier --- */
+      const f = (nom, codeLigne, ref, prod, outils) => ({ codeLigne, ref, refComplete: ref, production: prod, outils });
+      const o = (theo, reel, qte) => ({ cppTheorique: theo, cppReel: reel, qteReelle: qte, numero: "T", opCode: "OP10" });
+      const feuilles = [
+        f("f1", "E1", "356x26 RPI", 6781, [ o(0.0158, 0.0280, 5), o(0.0233, 0.0010, 1), o(0.0079, 0.0224, 4) ]),
+        f("f2", "E2", "290x12", 2234, [ o(0.2235, 0.3045, 12) ]),
+        /* un poste non produit : production nulle, il ne doit rien compter */
+        f("f3", "E3", "330x14", 0, [ o(0.3154, null, null) ])
+      ];
+      const recap = matisRecap(feuilles);
+      ok("matis : un couple ligne × référence = une ligne du récapitulatif", recap.length, 3);
+
+      const e1 = recap.find(c => c.ref.includes("356x26"));
+      ok("matis : la production réelle est lue du classeur (B1)", e1.production, 6781);
+      ok("matis : le CPP théorique est la somme des outils", e1.cppTheorique, 0.0158 + 0.0233 + 0.0079, 1e-9);
+      ok("matis : le CPP réel est la somme des consommations", e1.cppReel, 0.0280 + 0.0010 + 0.0224, 1e-9);
+      ok("matis : l'écart = réel − théorique (positif = surconsommation)",
+         [e1.ecart > 0, e1.ecart], [true, (0.0280 + 0.0010 + 0.0224) - (0.0158 + 0.0233 + 0.0079)]);
+      ok("matis : l'écart annuel = CPP réel × production réelle",
+         e1.gapAnnuel, e1.ecart * 6781, 1e-6);
+
+      /* un poste non produit ne compte dans aucun total — et le « non mesurable » reste
+         null, jamais 0 : 0 dirait « rien à consommer », null dit « pas de mesure ». */
+      const e3 = recap.find(c => c.ref.includes("330x14"));
+      ok("matis : un couple sans production n'a ni coût annuel réel ni écart (null, pas 0)",
+         [e3.aProduction, e3.coutAnnuelReel, e3.coutAnnuelTheorique, e3.gapAnnuel], [false, null, null, null]);
+
+      /* le libellé d'écart : toujours une raison, jamais un chiffre nu (constitution §3.5) */
+      ok("matis : un écart positif se lit comme une surconsommation, avec son montant",
+         libelleEcartMatis(e1).includes("surconsommation") && libelleEcartMatis(e1).includes("€/pièce"), true);
+      ok("matis : un couple non mesuré le dit, plutôt que d'afficher un écart faux",
+         libelleEcartMatis(e3).includes("non mesurable"), true);
+      ok("matis : le récapitulatif est trié par production décroissante",
+         recap[0].production >= recap[1].production, true);
+
+      /* la lecture d'un classeur est un CONSTAT : elle n'écrit rien dans le suivi */
+      ok("matis : la lecture ne touche ni les lignes ni les projets",
+         [typeof matisRecap, lignes.length, projets.length] , ["function", lignes.length, projets.length]);
+    }
 
     /* ---- v4.54.0 — la fiche poste (couche 1) : ce que dit la machine ---------- */
     {

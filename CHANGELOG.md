@@ -5,6 +5,57 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.55.0] — 2026-09-29
+
+**Option C de l'analyse du classeur Matis : on mesure avant de décider.**
+L'outil apprend à lire le classeur de consommations que Matis tient déjà, et
+affiche l'écart entre ce qu'il budgète et ce que l'atelier consomme réellement.
+
+### Ajouté — la lecture du classeur Matis
+- **bouton « Classeur Matis »** (barre d'outils, à côté de « Carte atelier ») ;
+- **lecteur `.xlsm` / `.xlsx` intégré, sans dépendance** : le fichier est une
+  archive ZIP, son XML est lu directement et décompressé avec
+  `DecompressionStream` (natif Chrome/Edge) — « un seul fichier, zéro appel
+  réseau » reste vrai, rien à installer ;
+- **`matisLecture` est un constat, jamais un import** : la lecture n'écrit rien
+  dans les données du suivi. C'est délibéré — la décision « la production réelle
+  devient-elle une entité » doit s'appuyer sur des mesures, pas sur un choix
+  fait à l'avance ;
+- chaque feuille « Cout pièce » est lue comme un couple **ligne × référence** :
+  production (case B1), outils avec numéro, article, **MABEC**, CPP théorique,
+  CPP réellement consommé, écart ; les 4 OP et 37 outils sont ainsi lisibles ;
+- **écran « Réel / Théorique »** : budget-outillage annuel, consommation réelle
+  annuelle, écart en € et en %, un tableau par couple, et un **détail par outil** ;
+- chaque écart porte **sa raison en toutes lettres** (« surconsommation de
+  0,1763 €/pièce », « non mesurable — pas de CPP réel relevé ») — jamais un
+  chiffre nu (constitution §3.5) ;
+- un couple **sans production** reste `null` et non `0` : « pas de mesure » ne
+  doit jamais se lire « rien à consommer ».
+
+### La première mesure, sur le classeur du 14–21/09/2026
+
+| Couple | Production | Théorique | Réel | Écart |
+|---|---|---|---|---|
+| E1 356x26 RPI | 6 781 | 2 423 € | 3 618 € | **+1 196 €** |
+| E2 330x14 | 2 490 | 1 355 € | 2 409 € | **+1 054 €** |
+| E3 330x28 RPE K0 | 4 180 | 941 € | 1 471 € | **+530 €** |
+| E2 290x12 | 2 234 | 499 € | 680 € | **+181 €** |
+| **Total** | | **5 218 €/an** | **8 179 €/an** | **+2 961 €/an (+57 %)** |
+
+**Lecture** : le budget-outillage sous-estime la consommation réelle d'environ
+57 %. Ce n'est pas une erreur de saisie du classeur, c'est l'écart entre un modèle
+et le terrain — l'outil budgète un CPP théorique à partir des prix et des durées
+de vie, le terrain en consomme un CPP différent. C'est un **constat à traiter**,
+pas une faute : il faudra décider s'il se corrige par des durées de vie plus
+sûres, ou par un poste d'écart assumé.
+
+### Tests
+283 → **294** (11 nouveaux) : lecture d'un couple, production, CPP théorique/réel,
+écart et écart annuel, couple non produit (null et non 0), libellés d'écart,
+tri du récapitulatif, et le fait que la lecture n'écrit rien. Le lecteur a en
+outre été validé **hors outil** sur le vrai classeur de Matis (les chiffres
+obtenus concordent avec une lecture Python indépendante). Tout est vert.
+
 ## [4.54.0] — 2026-09-29
 
 **La fiche poste (couche 1)** — la porte qui manquait entre la carte et le
