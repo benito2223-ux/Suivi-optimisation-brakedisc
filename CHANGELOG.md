@@ -5,6 +5,59 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.51.2] — 2026-09-29
+
+**La carte atelier (couche 0, lecture seule).** L'écran d'entrée spatial de
+l'outil : une tuile par machine, lisible en un coup d'œil, avant toute saisie.
+
+### Ajouté — la carte
+- **Bouton « Carte atelier »** dans la barre d'outils, à côté du Tableau de bord
+  (qui reste vivant : la décision d'entrée par défaut se prend après la recette A2) ;
+- **`cartePanel`**, mécanique `ouvrirPanneau` existante, rempli par `renderCarte()` ;
+- **Tuiles = (ligne déclarée × machine déclarée)** de `LIGNES_SEPT_FONS` (v4.50) :
+  l'usine entière est dessinable, un poste déclaré mais jamais travaillé reste
+  visible. Aucune tuile n'est inventée ;
+- **Quatre états**, tous portés par la classe **et** par le mot — jamais la couleur
+  seule (lisibilité daltonienne, mode nuit, impression) : `gagne` (vert, gain
+  acté), `encours` (bleu, essai ouvert ou gain projeté), `aChiffrer` (ambre, cible
+  posée sans mesure), `opportunite` (gris, poste déclaré non travaillé) ;
+- **Pouls = 2 chiffres maximum** (D2) : €/an **acté** en gros, €/an **projeté** en
+  dessous. Un poste sans gain n'affiche **jamais « 0 € »** : il affiche sa cible
+  (« à chiffrer ») ou son silence (« jamais travaillé ») ;
+- **Chemin prod → cible** affiché quand il existe, plafonné à 100 % ;
+- **Multi-références** : référence dominante (plus gros volume) + compteur « +n réf. » ;
+- **Filtre « mon projet / toute l'usine »**, défaut = le projet actif (H1-b), avec
+  son propre état (indépendant du filtre du tableau de bord) ;
+- **Recette A2 affichée** : la carte dit elle-même combien de ses tuiles portent
+  une information actionnable, et signale le « carte creuse » sous 1/3.
+
+### Corrigé — un poste à chiffrer était invisible
+`gainPoste()` faisait sortir de `refs` toute opération sans prod chiffrable, donc
+une référence qui porte une `cibleCPP` sans aucune mesure tombait en « opportunité »
+— **l'invitation que l'atelier doit voir disparaissait**. La cible se lit désormais
+avant tout calcul de coût, et l'opération reste visible (marquée `nonChiffre`) sans
+contribuer à un gain. C'est le cas H1(a) : « à chiffrer » est une invitation, pas
+une absence.
+
+### Corrigé — la tuile affichait « aucune référence »
+`refDominante` est l'entrée `{ ref, volume, … }` du tableau, pas l'objet référence :
+le rendu faisait `ref.ref.nom` et affichait « aucune référence » alors que la
+dominante existait. Six tests verrouillent désormais le **rendu** (nom de machine,
+état, référence dominante, compteur, cible), pas seulement le calcul.
+
+### Décision (a) — le contrat du coût machine est écrit
+`pieceCPPComplet()` (4.49) appelle `coutsDetail()` **sans la ligne**, ce qui retombe
+sur `getActiveLigne()` : correct **parce qu'il ne s'appelle qu'en contexte de
+référence ouverte**, fragile autrement (écart mesuré ×19 sur une ligne à taux
+horaire). Le contrat est désormais écrit dans les deux modules : le coût machine
+exige la ligne du poste ; la carte et l'A4 Mission consomment `gainPoste()`.
+Aucun changement de comportement.
+
+### Tests
+246 → **267** (21 nouveaux) : topologie déclarée, les quatre états, référence
+dominante, filtre projet (dont le cas des étiquettes à quadruplet exact), recette
+A2, et le rendu de la tuile. Tout est vert.
+
 ## [4.51.1] — 2026-09-29
 
 Correctif issu de la **revue croisée Z Code** de la 4.51.0 (§2 : divergence

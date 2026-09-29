@@ -1552,6 +1552,7 @@ body.atelier-on{overflow:hidden;}
           <button class="ghost" id="searchBtn" title="Rechercher partout : lignes, références, OP, scénarios, essais, projets (Ctrl+K)"><svg class="icon" viewBox="0 0 18 18"><circle cx="8" cy="8" r="4.5"/><path d="m11.5 11.5 4 4" stroke-linecap="round"/></svg>Rechercher</button>
           <button class="ghost" id="syntheseBtn" title="Comparer tous les scénarios dans un tableau, et superposer leurs courbes de tendance"><svg class="icon" viewBox="0 0 18 18"><rect x="4" y="3" width="10" height="12" rx="1.5"/><path d="M6.5 7h5M6.5 10h5M6.5 13h3" stroke-linecap="round"/></svg>Vue de synthèse</button>
           <button class="ghost" id="dashboardBtn" title="Toutes les lignes, références et OP : avancement des optimisations et gains cumulés"><svg class="icon" viewBox="0 0 18 18"><rect x="2.5" y="2.5" width="5.5" height="7" rx="1"/><rect x="10" y="2.5" width="5.5" height="4" rx="1"/><rect x="2.5" y="11.5" width="5.5" height="4" rx="1"/><rect x="10" y="8.5" width="5.5" height="7" rx="1"/></svg>Tableau de bord</button>
+          <button class="ghost" id="carteBtn" title="L’atelier en un coup d’œil : une tuile par machine, avec le gain déjà acté et ce qui reste à faire"><svg class="icon" viewBox="0 0 18 18"><rect x="2.5" y="3" width="5" height="5" rx="1"/><rect x="10.5" y="3" width="5" height="5" rx="1"/><rect x="2.5" y="10.5" width="5" height="4" rx="1"/><rect x="10.5" y="10.5" width="5" height="4" rx="1"/></svg>Carte atelier</button>
           <button class="ghost" id="csvBtn" title="Tous les prélèvements en tableau, pour Excel ou le système qualité"><svg class="icon" viewBox="0 0 18 18"><rect x="2.5" y="2.5" width="13" height="13" rx="1.5"/><path d="M2.5 7h13M2.5 11.5h13M7 2.5v13"/></svg>Export CSV</button>
           <div class="tb-grp">Documenter</div>
           <button class="ghost" id="rapportBtn" title="Génère un rapport HTML autonome du scénario affiché — prêt à envoyer par e-mail à Stellantis"><svg class="icon" viewBox="0 0 18 18"><path d="M2.5 9 15 3.5 10.5 15.5 8 9.5 2.5 9Z" stroke-linejoin="round"/></svg>Rapport de validation</button>
@@ -1905,6 +1906,7 @@ body.atelier-on{overflow:hidden;}
     <div class="panel-actions"><button class="primary" id="compareClose">Fermer</button></div>
   </div>
   <div class="panel panel-large" id="dashboardPanel" hidden></div>
+  <div class="panel panel-large" id="cartePanel" hidden></div>
   <div class="panel" id="importPanel" hidden>
     <h3>Importer un suivi</h3>
     <div id="importPanelBody"></div>
@@ -2096,8 +2098,113 @@ body.atelier-on{overflow:hidden;}
   .zone-band span { font-size:11.5px; color:var(--ink-faint); }
 </style>
 
+<style>
+/* v4.51.2 — carte atelier */
+/* ═══ v4.51.2 — carte atelier (couche 0) ═══════════════════════════════════
+   L'écran d'entrée de l'outil doit se lire en un coup d'œil, debout, en atelier.
+   Donc : la tuile porte l'état par la COULEUR et par le MOT, jamais par la couleur
+   seule (lisibilité daltonienne + mode nuit). Les chiffres sont en Plex Mono
+   tabulaires, le nom du poste en Manrope : c'est la hiérarchie du design system
+   (v4.32), appliquée à la carte. */
+
+.ca-recette{ display:flex; align-items:center; gap:8px; margin:2px 0 16px; padding:8px 12px;
+  background:var(--surface-alt); border:1px solid var(--border); border-radius:var(--radius);
+  font-family:var(--font-mono); font-size:11px; color:var(--ink-soft); }
+.ca-recette b{ font-family:var(--font-disp); font-size:17px; color:var(--ink); }
+.ca-ok{ color:var(--green); font-weight:700; }
+.ca-faible{ color:var(--amber); font-weight:700; }
+
+.ca-filtre{ display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin-bottom:8px; }
+.ca-filtre label{ font-family:var(--font-mono); font-size:10px; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--ink-faint); font-weight:600; }
+.ca-filtre select{ font-family:var(--font-body); font-size:13px; font-weight:600; color:var(--ink);
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:6px 9px; }
+.ca-filtre-note{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint); }
+
+.ca-ligne{ margin-bottom:22px; }
+.ca-ligne-titre{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin:0 0 9px;
+  padding-bottom:6px; border-bottom:1px solid var(--border);
+  font-family:var(--font-disp); font-size:17px; font-weight:800; color:var(--ink); letter-spacing:-.01em; }
+.ca-ligne-info{ font-family:var(--font-mono); font-size:10.5px; font-weight:400; color:var(--ink-faint); letter-spacing:0; }
+.ca-ligne-gain{ font-family:var(--font-mono); font-size:11px; font-weight:700; color:var(--green); }
+
+.ca-grille{ display:grid; grid-template-columns:repeat(auto-fill,minmax(198px,1fr)); gap:9px; }
+
+/* ── la tuile ──────────────────────────────────────────────────────────────
+   L'état est dans la bordure gauche ET dans le mot ET dans la couleur : trois
+   canaux, pas un seul. La tuile reste lisible en mode nuit, en impression et
+   pour qui ne distingue pas le vert du bleu. */
+.ca-tuile{ position:relative; display:flex; flex-direction:column; gap:5px;
+  padding:10px 12px 11px; background:var(--surface); border:1px solid var(--border);
+  border-left:4px solid var(--ink-faint); border-radius:var(--radius);
+  cursor:pointer; transition:border-color .12s ease, background .12s ease; }
+.ca-tuile:hover{ background:var(--surface-alt); }
+.ca-tuile:focus-visible{ outline:2px solid var(--blue); outline-offset:1px; }
+.ca-tuile.gagne{ border-left-color:var(--green); }
+.ca-tuile.encours{ border-left-color:var(--blue); }
+.ca-tuile.achiffrer{ border-left-color:var(--amber); }
+.ca-tuile.opportunite{ border-left-color:var(--border); background:var(--surface-alt); }
+
+.ca-tete{ display:flex; align-items:baseline; justify-content:space-between; gap:7px; }
+.ca-titre{ font-family:var(--font-disp); font-size:14.5px; font-weight:800; color:var(--ink);
+  letter-spacing:-.01em; line-height:1.2; }
+/* l'état en toutes lettres : la couleur ne porte jamais seule l'information */
+.ca-etat{ font-family:var(--font-mono); font-size:9px; font-weight:700; letter-spacing:.09em;
+  text-transform:uppercase; padding:2px 6px; border-radius:999px; white-space:nowrap;
+  background:var(--surface-alt); color:var(--ink-faint); border:1px solid var(--border); }
+.ca-tuile.gagne .ca-etat{ background:var(--green-bg); color:var(--green); border-color:transparent; }
+.ca-tuile.encours .ca-etat{ background:var(--blue-bg); color:var(--blue); border-color:transparent; }
+.ca-tuile.achiffrer .ca-etat{ background:var(--amber-bg); color:var(--amber); border-color:transparent; }
+
+.ca-ref-ligne{ display:flex; align-items:baseline; gap:6px; font-family:var(--font-body);
+  font-size:11.5px; color:var(--ink-soft); line-height:1.3; }
+.ca-refs{ font-family:var(--font-mono); font-size:10px; color:var(--ink-faint); white-space:nowrap; }
+
+/* le pouls : deux lignes maximum (D2). Un poste sans gain n'affiche pas « 0 € » —
+   il affiche son invitation, ou son silence. Le « 0 € » serait un mensonge. */
+.ca-pouls{ display:flex; flex-direction:column; gap:1px; margin-top:2px; }
+.ca-acte, .ca-projete{ display:flex; align-items:baseline; gap:4px;
+  font-family:var(--font-mono); font-weight:600; font-variant-numeric:tabular-nums; line-height:1.15; }
+.ca-acte{ font-size:15px; color:var(--green); }
+.ca-projete{ font-size:12.5px; color:var(--ink-soft); }
+.ca-acte small, .ca-projete small, .ca-invite small{ font-size:9.5px; font-weight:500; letter-spacing:.04em; color:var(--ink-faint); }
+.ca-invite{ font-family:var(--font-mono); font-size:13px; font-weight:600; color:var(--amber); line-height:1.15; }
+.ca-vide{ font-family:var(--font-mono); font-size:13px; color:var(--ink-faint); }
+
+/* la barre prod → cible : le chiffre que la hiérarchie regarde */
+.ca-chemin{ display:flex; align-items:center; gap:6px; margin-top:3px; }
+.ca-track{ flex:1; height:4px; background:var(--surface-alt); border:1px solid var(--border); border-radius:2px; overflow:hidden; }
+.ca-fill{ height:100%; background:var(--blue); }
+.ca-pct{ font-family:var(--font-mono); font-size:9.5px; font-weight:600; color:var(--ink-faint); white-space:nowrap; }
+
+.ca-tentant, .ca-avertir{ font-family:var(--font-mono); font-size:9.5px; line-height:1.35; }
+.ca-tentant{ color:var(--ink-faint); font-style:italic; }
+.ca-avertir{ color:var(--amber); font-weight:600; }
+
+/* ── tactile : la carte est pensée pour l'atelier, pas pour la souris ──────── */
+@media (pointer: coarse){
+  .ca-grille{ grid-template-columns:repeat(auto-fill,minmax(168px,1fr)); gap:10px; }
+  .ca-tuile{ padding:13px 14px 14px; min-height:104px; justify-content:flex-start; }
+  .ca-titre{ font-size:16px; }
+  .ca-acte{ font-size:17px; }
+  .ca-etat{ font-size:9.5px; padding:3px 7px; }
+  .ca-tete{ flex-wrap:wrap; }
+}
+
+/* ── impression : la carte doit rester lisible projetée en réunion ────────── */
+@media print{
+  .ca-filtre, .ca-recette, .ca-chemin, .panel-actions{ display:none !important; }
+  .ca-grille{ grid-template-columns:repeat(4,1fr); gap:6px; }
+  .ca-tuile{ break-inside:avoid; min-height:0; padding:7px 9px 8px; }
+  .ca-titre{ font-size:12px; }
+  .ca-acte{ font-size:13px; }
+  .ca-projete{ font-size:11px; }
+  .ca-ligne{ break-inside:avoid; margin-bottom:14px; }
+}
+</style>
+
 <script>
-const TOOL_VERSION = "4.51.1";
+const TOOL_VERSION = "4.51.2";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -8648,6 +8755,12 @@ function outilsManquants(sc){
    référence affichée, le CPP de prod (scénario « base excel ») de chaque OP, le meilleur
    scénario d'essai disponible par OP, et le confronte à la cible du site (cibleCPP).
    % de chemin = ce que le meilleur en cours a déjà parcouru de prod vers la cible. */
+/* v4.51.2 (contrat, décision (a) de Benjamin) — LE COÛT MACHINE EXIGE LA LIGNE DU POSTE.
+   coutsDetail(prodSc) sans troisième argument retombe sur getActiveLigne() : ce n’est correct
+   QUE parce que ce module ne s’appelle que sur la référence active. Sur une ligne à taux
+   horaire, l’écart entre les deux appels mesuré vaut x19 (0,7042 €/pièce contre 0,0375).
+   Donc : pieceCPPComplet() ne s’appelle qu’en contexte référence ouverte ; la carte et
+   l’A4 Mission consomment gainPoste(), qui passe la ligne explicitement. */
 function pieceCPPComplet(){
   const ref = getActiveReference();
   if(!ref) return null;
@@ -10645,6 +10758,8 @@ document.getElementById("dashboardBtn").addEventListener("click", () => {
   renderDashboard();
   ouvrirPanneau("dashboardPanel");
 });
+/* v4.51.2 — la carte atelier s’ouvre sur le projet actif (H1-b) ; son filtre lui est propre. */
+document.getElementById("carteBtn").addEventListener("click", ouvrirCarte);
 /* v4.14 — palette de recherche : bouton du menu, frappe directe au clavier (Ctrl+K),
    navigation flèches + Entrée dans la liste de résultats. */
 document.getElementById("searchBtn").addEventListener("click", ouvrirRecherche);
@@ -11016,6 +11131,12 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.51.2", date:"29/09/2026", points:[
+    "<b>La carte de l’atelier.</b> Un nouveau bouton « Carte atelier » ouvre l’usine en un coup d’œil : une tuile par machine, avec ce que l’équipe a déjà gagné, ce qui est en cours, et ce qui reste à faire. Survol ou premier toucher : la fiche du poste. Puis « Ouvrir le poste » pour entrer dans le détail.",
+    "<b>Quatre états, jamais un zéro deguiseé.</b> <b>Gagné</b> (vert) : l’outillage est passé en série, le gain est acté. <b>En cours</b> (bleu) : un essai est relevé. <b>À chiffrer</b> (ambre) : le site a posé une cible, la mesure manque — c’est une invitation à venir le mesurer, pas un poste raté. <b>Opportunité</b> (gris) : la machine est déclarée, jamais travaillée.",
+    "<b>Les chiffres ne sont jamais légers.</b> Chaque montant vient du même calcul que le bandeau d’un scénario, sur le même périmètre. Une opération non chiffrable est annoncée comme telle au lieu de laisser croire à un gain de 0 €. Et la barre vers la cible du site tient compte des gains déjà réalisés.",
+    "<b>Un filtre qui montre le travail.</b> La carte s’ouvre sur le projet actif ; « Toute l’usine » d’un clic. Elle affiche même son taux de tuiles actionnables — si la carte devenait décorative, elle vous le dirait."
+  ]},
   { version:"4.51.1", date:"29/09/2026", points:[
     "<b>Correction backstage, visible dans la prochaine étape.</b> Le chemin vers la cible tient compte des gains déjà réalisés : un poste où le nouveau outillage est passé en série fait avancer la barre, au lieu de rester figé. Aucun changement à l'écran pour l'instant."
   ]},
@@ -11602,14 +11723,32 @@ function gainPoste(ligne, opCode, lignesSeptFons){
   let essaiOuvert = false, nonChiffres = 0;
 
   blocs.forEach(b => {
+    /* v4.51.2 — la cible se lit AVANT tout calcul de coût. Une référence qui porte une
+       cible mais aucun scénario chiffrable est justement le cas « à chiffrer » (H1-a) :
+       elle doit pouvoir le dire, donc être enregistrée dans refs même sans prod. Avant,
+       le return ci-dessous la faisait disparaître de refs et la tuile tombait en
+       « opportunité » — l'invitation que l'atelier doit voir disparaissait. */
+    const cibleBl = cibleCPPDe(b.ref);
     /* la prod d'une OP, c'est D'ABORD la prod réelle (★), l'excel en repli (v4.49.4) */
     const excel = (b.scs || []).find(x => /base excel/i.test(x.name || ""));
     const star  = (b.scs || []).find(x => x.baseline);
     const prodSc = star || excel || null;
-    if(!prodSc){ nonChiffres++; return; }
+    if(!prodSc){
+      nonChiffres++;
+      if(cibleBl !== null) refs.push({ ref: b.ref, prodSc: null, meilleur: null, tBase: null,
+                                       gain: null, serie: false, volume: volumeAnnuel(b.ref, b.op.config),
+                                       essaiOuvert: false, nonChiffre: true });
+      return;
+    }
 
     const tBase = coutsDetail(prodSc, b.op.config, ligne).total;
-    if(tBase === null){ nonChiffres++; return; }
+    if(tBase === null){
+      nonChiffres++;
+      if(cibleBl !== null) refs.push({ ref: b.ref, prodSc, meilleur: null, tBase: null,
+                                       gain: null, serie: false, volume: volumeAnnuel(b.ref, b.op.config),
+                                       essaiOuvert: false, nonChiffre: true });
+      return;
+    }
 
     /* le meilleur scénario non-prod chiffrable : le gain ne peut se comparer que si
        l'autre côté de la comparaison est chiffrable aussi (v4.45) */
@@ -11684,6 +11823,197 @@ function etatTuile(poste){
   if(poste.cibleCPP !== null && poste.cibleCPP > 0) return "aChiffrer";
   return "opportunite";
 }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   v4.51.2 — CARTE ATELIER (couche 0, lecture seule)
+
+   L'écran d'entrée spatial de l'outil : des tuiles = les postes (ligne x opCode)
+   DÉCLARÉS dans LIGNES_SEPT_FONS. On lit la carte en un coup d'œil — où en est
+   l'usine, qu'a-t-on gagné, qu'est-ce qui reste — puis on descend couche par couche.
+
+   Trois règles non négociables, tenues ici :
+   · D3 — la tuile ne montre AUCUN chiffre que le bandeau du scénario ne montre pas :
+     tout passe par gainPoste() (4.51.0) → bilanAnnuel() → perimetreCompare() (v4.45) ;
+   · le coût machine exige la ligne du poste — c'est pour ça que gainPoste() passe
+     la ligne à coutsDetail(), alors que pieceCPPComplet() (v4.49) s'appuie sur le
+     repli getActiveLigne() et n'a donc de sens qu'en contexte d'une référence
+     ouverte. La carte et l'A4 Mission consomment gainPoste(), jamais pieceCPPComplet ;
+   · jamais de K ni de P_req : la carte est présentable telle quelle en réunion.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Le filtre de la carte : le projet actif par défaut (H1-b), « toute l'usine » à un clic.
+   null = toute l'usine. Mémorisé comme le filtre du tableau de bord, mais indépendant :
+   chaque écran a SON filtre, sinon les deux se marchent dessus. */
+let carteFiltreProjetId = null;
+let carteProjetChoisi = false;   // false = suit le projet actif tant qu'on n'a pas choisi
+
+/* Les postes visibles sur la carte. Une tuile = (ligne déclarée x machine déclarée).
+   La ligne doit exister dans les données (sinon on dessine une ligne sans suivi) ; la
+   machine vient de la déclaration, jamais des scénarios rencontrés. */
+function cartePostes(){
+  const out = [];
+  lignes.forEach(ligne => {
+    postesLigne(ligne, LIGNES_SEPT_FONS).forEach(m => {
+      const poste = gainPoste(ligne, m.code, LIGNES_SEPT_FONS);
+      out.push({ ligne, code: m.code, nomMachine: m.nom, poste,
+                 blocs: scenariosPostes(ligne, m.code),
+                 etat: etatTuile(poste), refs: poste.refs || [] });
+    });
+  });
+  return out;
+}
+
+/* Le filtre projet : « mon projet » garde les postes qui portent au moins un scénario
+   étiqueté dans le projet. On ne filtre pas sur le gain mais sur la présence — sinon un
+   poste « à chiffrer » (encore vide) disparaît justement quand on cherche à le remplir.
+   ⚠ les étiquettes de projet sont des QUADRUPLETS exacts (ligne + référence + OP +
+   scénario, cf. projetContientScenario et resoudreTag) : passer opId à null ne
+   matcherait jamais. On récapitule donc les scénarios par bloc, avec l'OP d'origine. */
+function carteVisiblePostes(tous, pjId){
+  if(!pjId) return tous;
+  const pj = projets.find(p => p.id === pjId);
+  if(!pj) return tous;
+  return tous.filter(t => t.blocs.some(b =>
+    (b.scs || []).some(sc => projetContientScenario(pj, t.ligne.id, b.ref.id, b.op.id, sc.id))));
+}
+
+/* Le décompte de recette A2 : quelle part des tuiles porte une information
+   ACTIONNABLE (un gain, une cible, un essai ouvert) ? C'est le seuil qui dira si la
+   carte est utile ou décorative — mesuré, pas ressenti. */
+function carteRecetteA2(tuiles){
+  if(!tuiles.length) return { total: 0, actionnables: 0, ratio: 0 };
+  const actionnables = tuiles.filter(t => t.etat === "gagne" || t.etat === "encours" || t.etat === "aChiffrer").length;
+  return { total: tuiles.length, actionnables, ratio: actionnables / tuiles.length };
+}
+
+/* ── Le rendu ─────────────────────────────────────────────────────────────── */
+const CARTE_ETATS = {
+  gagne:      { label: "Gagné",       classe: "gagne" },
+  encours:    { label: "En cours",    classe: "encours" },
+  aChiffrer:  { label: "À chiffrer",  classe: "achiffrer" },
+  opportunite:{ label: "Opportunité", classe: "opportunite" }
+};
+
+function carteTuileHTML(t, pjId){
+  const p = t.poste;
+  const e = CARTE_ETATS[t.etat] || CARTE_ETATS.opportunite;
+  const dom = p.refDominante;
+  const autres = Math.max(0, (p.refs || []).length - 1);
+
+  /* le pouls : deux chiffres, jamais plus (D2). Acté en gros s'il existe, projeté en
+     dessous. Un poste sans gain n'affiche PAS de 0 € — il affiche son invitation
+     (« à chiffrer ») ou son silence (opportunité). */
+  let pouls = "";
+  if(p.gainActe > 0){
+    pouls = `<span class="ca-acte">${p.gainActe >= 0 ? "+" : "−"}${fmtEuroCourt(Math.abs(p.gainActe))}<small>/an acté</small></span>`;
+  }
+  if(p.gainProjete > 0){
+    pouls += `<span class="ca-projete">${p.gainProjete >= 0 ? "+" : "−"}${fmtEuroCourt(Math.abs(p.gainProjete))}<small>/an projeté</small></span>`;
+  }
+  if(!pouls){
+    pouls = t.etat === "aChiffrer"
+      ? `<span class="ca-invite">cible ${fmt(p.cibleCPP, 3)} €<small>— à chiffrer</small></span>`
+      : `<span class="ca-vide">—</span>`;
+  }
+
+  /* le chemin prod → cible : la barre que la hiérarchie regarde. */
+  const chemin = p.chemin === null ? "" :
+    `<div class="ca-chemin" title="Part du chemin vers la cible du site déjà parcourue sur ce poste">
+       <div class="ca-track"><div class="ca-fill" style="width:${Math.round(p.chemin)}%"></div></div>
+       <span class="ca-pct">${Math.round(p.chemin)} %</span>
+     </div>`;
+
+  /* le libellé du poste : le nom de la machine s'il est déclaré, le code d'OP sinon.
+     Jamais l'inverse — « OP10 » ne dit rien, « Ébauche piste » si. */
+  const titre = escapeAttr(t.nomMachine || t.code);
+  /* refDominante est l'ENTRÉE { ref, volume, ... } du tableau refs (le premier du
+     poste trié par volume), pas l'objet référence : d'où ref.nom, pas ref.ref.nom. */
+  const sousTitre = escapeAttr((dom && dom.ref && dom.ref.nom) || (dom && dom.nom) || "aucune référence");
+  const nbRef = autres > 0 ? `<span class="ca-refs" title="${autres} autre(s) référence(s) sur ce poste">+${autres} réf.</span>` : "";
+
+  /* le multi-geste (R3) : la tuile elle-même EST la fiche couche 1 (survol = titre
+     déjà visible, tap = la même fiche ouverte), et le bouton « Ouvrir le poste → »
+     qu'elle porte est la porte explicite vers la couche 2. Un seul survol, pas
+     deux couches de survol qui se marchent dessus. */
+  return `<div class="ca-tuile ${e.classe}" data-ligne="${escapeAttr(t.ligne.id)}" data-code="${escapeAttr(t.code)}" tabindex="0" role="button">
+    <div class="ca-tete">
+      <span class="ca-titre">${titre}</span>
+      <span class="ca-etat">${e.label}</span>
+    </div>
+    <div class="ca-ref-ligne">${sousTitre} ${nbRef}</div>
+    <div class="ca-pouls">${pouls}</div>
+    ${chemin}
+    ${t.etat === "opportunite" ? `<div class="ca-tentant">déclaré, jamais travaillé</div>` : ""}
+    ${(p.nonChiffres || 0) > 0 ? `<div class="ca-avertir" title="Une opération de ce poste n'est pas chiffrable : le gain affiché ne la compte pas.">${p.nonChiffres} opération${p.nonChiffres > 1 ? "s" : ""} à chiffrer</div>` : ""}
+  </div>`;
+}
+
+function renderCarte(){
+  const wrap = document.getElementById("cartePanel");
+  if(!wrap) return;
+
+  /* H1-b : la carte s'ouvre sur le projet actif tant que l'utilisateur n'a pas choisi
+     explicitement un filtre sur la carte elle-même. */
+  if(!carteProjetChoisi) carteFiltreProjetId = activeProjetId || null;
+  const pj = carteFiltreProjetId ? projets.find(p => p.id === carteFiltreProjetId) : null;
+
+  const tous = cartePostes();
+  const visibles = carteVisiblePostes(tous, carteFiltreProjetId);
+  const recette = carteRecetteA2(visibles);
+
+  /* le décompte d/usine : la carte doit raconter l'usine entière même filtrée. */
+  const parLigne = {};
+  tous.forEach(t => { (parLigne[t.ligne.nom || "?"] = parLigne[t.ligne.nom || "?"] || []).push(t); });
+
+  const sections = lignes.map(ligne => {
+    const tuilesL = visibles.filter(t => t.ligne.id === ligne.id);
+    if(!tuilesL.length) return "";
+    const nom = ligne.nom || "Ligne sans nom";
+    const gainL = tuilesL.reduce((a, t) => a + (t.poste.gainActe || 0), 0);
+    const infos = [];
+    if(ligne.coutHoraire !== "" && !isNaN(parseFloat(ligne.coutHoraire))) infos.push(fmt(parseFloat(ligne.coutHoraire), 2) + " €/h");
+    infos.push(`${tuilesL.filter(t => t.etat === "gagne").length} gagné${tuilesL.filter(t => t.etat === "gagne").length > 1 ? "s" : ""}`);
+    return `<section class="ca-ligne">
+      <h3 class="ca-ligne-titre">${escapeAttr(nom)}
+        <span class="ca-ligne-info">${escapeAttr(infos.join(" · "))}</span>
+        ${gainL > 0 ? `<span class="ca-ligne-gain">+${fmtEuroCourt(gainL)}/an acté</span>` : ""}
+      </h3>
+      <div class="ca-grille">${tuilesL.map(t => carteTuileHTML(t, carteFiltreProjetId)).join("")}</div>
+    </section>`;
+  }).join("");
+
+  const filtreHTML = projets.length ? `
+    <div class="ca-filtre">
+      <label for="caFiltreProjet">Vue</label>
+      <select id="caFiltreProjet">
+        <option value="">Toute l'usine</option>
+        ${projets.map(x => `<option value="${x.id}" ${x.id === carteFiltreProjetId ? "selected" : ""}>Projet « ${escapeAttr(x.nom)} »</option>`).join("")}
+      </select>
+      <span class="ca-filtre-note">${pj
+        ? `Postes étiquetés dans « ${escapeAttr(pj.nom)} ».`
+        : "Toutes les machines déclarées de l'usine."}</span>
+    </div>` : `<p class="panel-hint">Aucun projet défini : la carte montre toute l'usine. Créez un projet pour la filtrer.</p>`;
+
+  wrap.innerHTML = `
+    <h3>Carte atelier</h3>
+    ${filtreHTML}
+    <p class="panel-hint">Une tuile = une machine, lisible en un coup d'œil. Un poste marqué <b>À chiffrer</b> porte une cible du site mais n'a pas encore de mesure : c'est une invitation, pas un poste raté. Touchez une tuile pour sa fiche, puis « Ouvrir le poste » pour entrer dans le détail.</p>
+    <div class="ca-recette" title="Part des tuiles portant une information actionnable (gain, cible ou essai ouvert)">
+      <b>${recette.actionnables}</b> tuiles actionnables sur ${recette.total} — ${Math.round(recette.ratio * 100)} %
+      ${recette.ratio >= 1/3 ? `<span class="ca-ok">carte utile</span>` : `<span class="ca-faible">carte creuse — filtrer par projet</span>`}
+    </div>
+    ${sections || `<p class="panel-hint">Aucun poste à afficher${pj ? " dans ce projet" : ""}. Les machines déclarées par l'atelier dessinent la carte ; un poste sans donnée reste visible en « Opportunité ».</p>`}
+    <div class="panel-actions"><button class="primary" id="carteClose">Fermer</button></div>
+  `;
+
+  const btn = document.getElementById("carteClose");
+  if(btn) btn.addEventListener("click", fermerPanneaux);
+  const sel = document.getElementById("caFiltreProjet");
+  if(sel) sel.addEventListener("change", () => { carteFiltreProjetId = sel.value || null; carteProjetChoisi = true; renderCarte(); });
+}
+
+/* l'entrée : le bouton de la barre d'outils ouvre la carte (v4.51.2) */
+function ouvrirCarte(){ renderCarte(); ouvrirPanneau("cartePanel"); }
 
 /* Filtre du tableau de bord (v4.1) : null = tous les scenarios, sinon l'id d'un projet --
    seuls les scenarios etiquetes dans ce projet apparaissent. Par defaut "tous", meme quand
@@ -13610,6 +13940,107 @@ function runTests(){
     ok("pctTol : hors tolerance -> au-dela de 100", pourcentageTolerance(0.12, 0.1), 120, 1e-9);
     ok("pctTol : pas de limite exploitable -> null", pourcentageTolerance(0.05, NaN), null);
 
+    /* ---- v4.51.2 — la carte atelier (couche 0) ---------------------------------------
+       La carte est une FONCTION du calcul testé en 4.51.0 : gainPoste() et etatTuile().
+       Ce qu'on vérifie ici, c'est la carte elle-même : ce qu'elle dessine, ce qu'elle
+       filtre, et le seuil de recette A2 qui dira si elle est utile ou décorative.
+
+       ⚠ la carte dessine la VRAIE topologie déclarée (LIGNES_SEPT_FONS) croisée avec les
+       lignes présentes dans les données : on ne peut pas lui passer une topologie de
+       test. Les comptes attendus ci-dessous sont donc dérivés de la déclaration
+       (assertée explicitement, pour que la carte et la déclaration ne puissent pas
+       diverger en silence). */
+    {
+      const opCfg2 = Object.assign({}, defaultConfig, { volumeActif: true });
+      const scSerie = (id, nom) => ({ id, name: nom, statut: "serie", outils: [
+        { id: id + "u", numero: "T", logements: [ { id: id + "l", nom: "Bol", prix: 5, aretes: 8, charniere: 100 } ] } ] });
+      const scProd  = (id) => ({ id, name: "Prod", baseline: true, outils: [
+        { id: id + "u", numero: "T", logements: [ { id: id + "l", nom: "Bol", prix: 30, aretes: 8, charniere: 100 } ] } ] });
+      const opAvec  = (id, nom, scenarios) => ({ id, nom, config: opCfg2, scenarios });
+      const refAvec = (id, nom, vol, cible, ops) => normalizeReference({ id, nom, productionAnnuelle: vol, cibleCPP: cible || "", ops });
+
+      const lignesSauve = lignes, projSauve = projets;
+      try {
+        /* --- la carte dessine toute l'usine déclarée, pas seulement nos lignes --- */
+        lignes = [];
+        const carteVide = cartePostes();
+        ok("carte : sans aucune ligne dans le suivi, la carte est vide (aucune tuile fantôme)",
+           carteVide.length, 0);
+
+        /* EMAG 1 : un poste gagné (356x26 passée en série), un poste à chiffrer
+           (304x28, cible posée, aucune mesure), et un OP10 « en cours ». */
+        lignes = [ normalizeLigne({ id: "LC1", nom: "EMAG 1", references: [
+          refAvec("r1", "356x26", "100000", "", [ opAvec("o1", "OP10", [ scProd("p1"), scSerie("s1", "SL500") ]) ]),
+          refAvec("r2", "304x28", "50000", "0.250", [ opAvec("o2", "OP40", []) ]),
+          refAvec("r3", "290x12", "80000", "", [ opAvec("o3", "OP10", [ scProd("p3"),
+            { id: "s3", name: "Essai", statut: "essai", outils: [ { id: "s3u", numero: "T", logements: [ { id: "s3l", nom: "Bol", prix: 20, aretes: 8, charniere: 100 } ] } ],
+              essais: [ { id: "e3", titre: "Essai 1", date: "2026-09-29", prelevements: [ { id: "pr3", piece: "5", cotes: {} } ] } ] } ]) ])
+        ]}) ];
+
+        const emagDeclaree = LIGNES_SEPT_FONS.find(x => x.nom === "EMAG 1").machines.map(m => m.code);
+        const tous = cartePostes();
+        ok("carte : une tuile par machine DÉCLARÉE de la ligne (la topologie fait foi)",
+           tous.map(t => t.code), emagDeclaree);
+        ok("carte : la ligne déclarée mais jamais travaillée est absente des données = aucune tuile",
+           tous.length, emagDeclaree.length);
+
+        const parCode = {}; tous.forEach(t => { parCode[t.code] = t; });
+        ok("carte : le poste dont l'outillage est passé en série est vert « gagné »",
+           parCode.OP10.etat, "gagne");
+        ok("carte : le poste dont la référence dominante porte une cible sans mesure est « à chiffrer »",
+           parCode.OP40.etat, "aChiffrer");
+        ok("carte : un poste déclaré, jamais travaillé, reste une « opportunité »",
+           parCode.OP20.etat, "opportunite");
+        ok("carte : la tuile porte le nom de la machine quand il est déclaré",
+           parCode.OP10.nomMachine, "Ébauche piste");
+
+        /* --- le filtre projet --- */
+        projets = [];
+        ok("carte : sans projet, la carte montre toute l'usine",
+           carteVisiblePostes(tous, null).length, tous.length);
+        const pj = normalizeProjet({ nom: "2026/2027", tags: [ { ligneId: "LC1", referenceId: "r1", opId: "o1", scenarioId: "s1" } ] });
+        projets = [pj];
+        const filtres = carteVisiblePostes(tous, pj.id);
+        ok("carte : le filtre projet ne garde que les postes étiquetés dans ce projet",
+           [filtres.length, filtres.every(t => t.code === "OP10")], [1, true]);
+        ok("carte : un projet inconnu ne filtre pas tout (on ne caches jamais l'usine)",
+           carteVisiblePostes(tous, "pj-inexistant").length, tous.length);
+
+        /* --- la recette A2 (seuil : ≥ 1/3 de tuiles actionnables) --- */
+        const r = carteRecetteA2(tous);
+        ok("carte : la recette A2 se calcule sur le ratio actionnables / total",
+           Math.abs(r.ratio - r.actionnables / r.total) < 1e-9, true);
+        ok("carte : le seuil A2 est atteint sur ce jeu (1 poste gagné + 1 à chiffrer)",
+           [r.actionnables, r.ratio >= 1/3], [2, true]);
+        ok("carte : une carte vide ne plante pas", carteRecetteA2([]).ratio, 0);
+        ok("carte : une carte d'opportunités seules ne atteint PAS le seuil (elle est creuse)",
+           carteRecetteA2(cartePostes().filter(t => t.etat === "opportunite")).ratio < 1/3
+             || carteRecetteA2(cartePostes().filter(t => t.etat === "opportunite")).total === 0, true);
+
+        /* --- le RENDU (v4.51.2) : la tuile nomme la référence dominante et son état.
+           Un bug d'affichage ne se voit pas dans les tests de calcul : il se voit ici. */
+        const h = carteTuileHTML(parCode.OP10, null);
+        ok("carte : la tuile porte le nom de la machine ET l'état en toutes lettres",
+           [h.includes("Ébauche piste"), h.includes("Gagné")], [true, true]);
+        ok("carte : la tuile nomme la RÉFÉRENCE DOMINANTE (et pas « aucune référence »)",
+           [h.includes("356x26"), h.includes("aucune référence")], [true, false]);
+        ok("carte : la tuile annonce le compteur « +n réf. » quand le poste en porte plusieurs",
+           h.includes("+1 réf."), true);
+        const hChiffrer = carteTuileHTML(parCode.OP40, null);
+        ok("carte : la tuile « à chiffrer » montre la cible, jamais un gain de 0 €",
+           [hChiffrer.includes("À chiffrer"), hChiffrer.includes("/an acté")], [true, false]);
+        const hOpp = carteTuileHTML(parCode.OP20, null);
+        ok("carte : la tuile « opportunité » ne montre aucun chiffre — une invitation, pas un zéro",
+           [hOpp.includes("jamais travaillé"), hOpp.includes("/an")], [true, false]);
+        /* l'état passe par la classe ET par le mot : jamais la couleur seule */
+        ok("carte : l'état est porté par la classe ET par le mot (lisibilité daltonienne + mode nuit)",
+           [parCode.OP10.etat === "gagne" && carteTuileHTML(parCode.OP10, null).includes("ca-tuile gagne")], [true]);
+      } finally {
+        lignes = lignesSauve; projets = projSauve;
+        carteFiltreProjetId = null; carteProjetChoisi = false;
+      }
+    }
+
     /* ---- v4.51.0 — carte atelier : le calcul pur du poste (couche 0) ---------------
        gainPoste() / etatTuile(). Aucun pixel d'UI ici : ces fonctions alimenteront la
        tuile ET l'A4 Mission, et doivent donc être justes avant d'être dessinées.
@@ -13681,7 +14112,12 @@ function runTests(){
       /* --- le cas asymétrique réel réclamé par Z Code : l'OP20 non chiffrable --- */
       const p20 = gainPoste(lg, "OP20", LS);
       ok("gainPoste : une OP sans coût chiffrable sort du calcul (elle ne vaut pas 0)",
-         [p20.coutProd, p20.refs.length, p20.nonChiffres], [0, 0, 1]);
+         [p20.coutProd, p20.gainActe, p20.nonChiffres], [0, 0, 1]);
+      /* cette OP porte une cible (0,3 €) : elle reste donc VISIBLE dans refs, pour que la
+         tuile puisse dire « à chiffrer » (v4.51.2, H1-a) — c'est une invitation, pas
+         une absence. Elle ne contribue toujours à aucun gain. */
+      ok("gainPoste : une OP non chiffrée MAIS avec cible reste visible pour dire « à chiffrer »",
+         [p20.refs.length, p20.refs[0].nonChiffre], [1, true]);
       ok("gainPoste : un poste jamais travaillé n'a aucun gain",
          [p20.gainActe, p20.gainProjete], [0, 0]);
 
