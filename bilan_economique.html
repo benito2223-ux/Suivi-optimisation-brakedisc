@@ -2204,7 +2204,7 @@ body.atelier-on{overflow:hidden;}
 </style>
 
 <script>
-const TOOL_VERSION = "4.51.2";
+const TOOL_VERSION = "4.52.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -8958,7 +8958,7 @@ function renderDetail(){
   const sc = data.find(s => s.id === activeId) || data[0];
   const wrap = document.getElementById("scenarioDetail");
   if(!sc){ wrap.innerHTML = ""; return; }
-  wrap.innerHTML = `<div class="zone-band"><b>3 &middot; Traçabilité du scénario ouvert</b><span>outils, cycle, essais, rebut</span></div>` + scenarioBlockHTML(sc, true);
+  wrap.innerHTML = `<div class="zone-band"><b>3 &middot; Traçabilité du scénario ouvert</b><span>outils, cycle, essais, rebut</span><button class="ghost small" id="retourCarteBtn" title="Revenir à la carte atelier" style="margin-left:auto;">⇠ Carte atelier</button></div>` + scenarioBlockHTML(sc, true);
   attachDetailHandlers(sc);
   loadPhotoThumbnails();
 }
@@ -9798,6 +9798,9 @@ function render(){
 
 function attachDetailHandlers(sc){
   const root = document.getElementById("scenarioDetail");
+  /* v4.52 — retour carte atelier depuis la traçabilité (A1 : jamais de cul-de-sac) */
+  const retourCarte = root.querySelector("#retourCarteBtn");
+  if(retourCarte) retourCarte.addEventListener("click", () => { renderCarte(); ouvrirPanneau("cartePanel"); });
   root.querySelectorAll("details.config-block[data-config-id]").forEach(det => {
     det.addEventListener("toggle", () => {
       const id = det.getAttribute("data-config-id");
@@ -11131,6 +11134,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.52.0", date:"29/09/2026", points:[
+    "<b>L'A4 Mission — le livrable hiérarchie.</b> Un imprimable qui raconte la démarche : les gains ACTÉS en production, les gains EN COURS (validés ou en essai), la timeline des essais récents avec leur statut, et le plan poste par poste. Bouton « 🖨 A4 Mission » dans la carte atelier — même source de vérité que la carte (jamais de chiffre divergent)."
+  ]},
   { version:"4.51.2", date:"29/09/2026", points:[
     "<b>La carte de l’atelier.</b> Un nouveau bouton « Carte atelier » ouvre l’usine en un coup d’œil : une tuile par machine, avec ce que l’équipe a déjà gagné, ce qui est en cours, et ce qui reste à faire. Survol ou premier toucher : la fiche du poste. Puis « Ouvrir le poste » pour entrer dans le détail.",
     "<b>Quatre états, jamais un zéro deguiseé.</b> <b>Gagné</b> (vert) : l’outillage est passé en série, le gain est acté. <b>En cours</b> (bleu) : un essai est relevé. <b>À chiffrer</b> (ambre) : le site a posé une cible, la mesure manque — c’est une invitation à venir le mesurer, pas un poste raté. <b>Opportunité</b> (gris) : la machine est déclarée, jamais travaillée.",
@@ -11945,6 +11951,7 @@ function carteTuileHTML(t, pjId){
     ${chemin}
     ${t.etat === "opportunite" ? `<div class="ca-tentant">déclaré, jamais travaillé</div>` : ""}
     ${(p.nonChiffres || 0) > 0 ? `<div class="ca-avertir" title="Une opération de ce poste n'est pas chiffrable : le gain affiché ne la compte pas.">${p.nonChiffres} opération${p.nonChiffres > 1 ? "s" : ""} à chiffrer</div>` : ""}
+    ${t.etat !== "opportunite" ? `<div class="ca-actions"><button class="primary small ca-ouvrir" data-ligne="${escapeAttr(t.ligne.id)}" data-code="${escapeAttr(t.code)}" title="Naviguer vers ce poste : scénarios, essais, preuves (couche 2)">Ouvrir le poste →</button></div>` : ""}
   </div>`;
 }
 
@@ -12003,11 +12010,45 @@ function renderCarte(){
       ${recette.ratio >= 1/3 ? `<span class="ca-ok">carte utile</span>` : `<span class="ca-faible">carte creuse — filtrer par projet</span>`}
     </div>
     ${sections || `<p class="panel-hint">Aucun poste à afficher${pj ? " dans ce projet" : ""}. Les machines déclarées par l'atelier dessinent la carte ; un poste sans donnée reste visible en « Opportunité ».</p>`}
-    <div class="panel-actions"><button class="primary" id="carteClose">Fermer</button></div>
+    <div class="panel-actions"><button class="ghost" id="missionA4Btn">🖨 A4 Mission</button><button class="primary" id="carteClose">Fermer</button></div>
   `;
 
   const btn = document.getElementById("carteClose");
   if(btn) btn.addEventListener("click", fermerPanneaux);
+  /* v4.52 — couche 2 : « Ouvrir le poste → » positionne la navigation experte sur la
+     prod du poste (★ puis excel) et referme la carte ; le retour « ⇠ Carte atelier »
+     vit dans la zone Traçabilité (A1). */
+  wrap.querySelectorAll(".ca-ouvrir").forEach(b => {
+    b.addEventListener("click", () => {
+      const ligne = lignes.find(x => x.id === b.getAttribute("data-ligne"));
+      const code = b.getAttribute("data-code");
+      if(!ligne) return;
+      const bloc = scenariosPostes(ligne, code)[0];
+      if(!bloc) return;
+      const prodSc = (bloc.scs || []).find(x => x.baseline)
+                  || (bloc.scs || []).find(x => /base excel/i.test(x.name || ""))
+                  || (bloc.scs || [])[0];
+      if(!prodSc) return;
+      activeLigneId = ligne.id;
+      activeReferenceId = bloc.ref.id;
+      activeOpId = bloc.op.id;
+      activeId = prodSc.id;
+      fermerPanneaux();
+      render();
+    });
+  });
+  /* v4.52 — A4 Mission : impression dédiée (le conteneur est appendé au body pour que
+     la CSS d'impression n'affiche que lui). */
+  const mBtn = document.getElementById("missionA4Btn");
+  if(mBtn) mBtn.addEventListener("click", () => {
+    const el = document.getElementById("missionA4") || document.body.appendChild(Object.assign(document.createElement("div"), { id: "missionA4", hidden: true }));
+    el.innerHTML = missionA4HTML();
+    document.body.classList.add("print-mission");
+    const nettoie = () => { document.body.classList.remove("print-mission"); window.removeEventListener("afterprint", nettoie); };
+    window.addEventListener("afterprint", nettoie);
+    window.print();
+    setTimeout(nettoie, 2000);
+  });
   const sel = document.getElementById("caFiltreProjet");
   if(sel) sel.addEventListener("change", () => { carteFiltreProjetId = sel.value || null; carteProjetChoisi = true; renderCarte(); });
 }

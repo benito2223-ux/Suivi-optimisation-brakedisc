@@ -163,6 +163,31 @@ production : un push intégralement strippé atterrit avec les 6 cibles
 intactes. La donnée est défendue côté serveur, quelle que soit la version
 du client.
 
+## [4.52.0] — 2026-09-29
+
+Phase 1 de la carte atelier (spec croisée Hermes × Z Code, arbitrages
+Benjamin) — implémentée par Z Code après validation du socle 4.51.0/4.51.1
+d'Hermes.
+
+### Ajouté — couche 2 : « Ouvrir le poste → » et retour carte
+Chaque tuile actionnable de la carte porte **« Ouvrir le poste → »** :
+un clic positionne la navigation experte (ligne › référence › OP) sur la
+prod du poste (★ puis excel) et referme la carte. Depuis la zone
+Traçabilité, un bouton **« ⇠ Carte atelier »** permet de revenir — jamais
+de cul-de-sac entre les deux lectures (A1).
+
+### Ajouté — l'A4 Mission (livrable hiérarchie, imprimable)
+Bouton « 🖨 A4 Mission » dans la carte : un imprimable qui raconte la
+démarche de Matis — gains **ACTÉS** en production, gains **EN COURS**
+(validés ou en essai), timeline des essais récents avec prélèvements,
+plan poste par poste, le protocole 5× et le partenariat SPK by CeramTec.
+**Une seule source de vérité** : l'A4 consomme `gainPoste()` — la carte,
+le bandeau et l'A4 ne peuvent pas diverger (A3).
+
+### Ajouté — défense serveur (rappel du round)
+Trigger Postgres `preserve_cibles_cpp` : testé en production — un push
+intégralement strippé atterrit avec les 6 cibles réinjectées.
+
 ## [4.49.3] — 2026-09-29
 
 ### Ajouté — message de bienvenue à la première ouverture
