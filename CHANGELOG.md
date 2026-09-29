@@ -5,6 +5,30 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.51.1] — 2026-09-29
+
+Correctif issu de la **revue croisée Z Code** de la 4.51.0 (§2 : divergence
+sémantique sur `coutEnCours`).
+
+### Corrigé — un gain réalisé fait enfin bouger le chemin prod → cible
+- **Le fait** : `pieceCPPComplet()` (v4.49) crédite le meilleur scénario
+  *sans condition de statut* — `meilleur.cout < tBase ? meilleur.cout : tBase`.
+  Ma 4.51.0 ne créditait que le **projeté**. Conséquence : sur un poste dont le
+  nouveau outillage est passé en série, `coutEnCours` restait au coût de prod, le
+  chemin affichait **0 %**, et le gain réalisé ne vivait que dans `gainActe` —
+  donc **invisible dans le coût**, sur la barre que la hiérarchie regarde.
+- **La correction** : `coutEnCours` suit désormais la formule du module de
+  référence, mot pour mot. D3 (source unique) prime : deux modules ne doivent
+  jamais raconter deux histoires différentes sur le même poste.
+- **Décision d'usage** : « en cours » = ce que la pièce coûte **aujourd'hui**,
+  gains réalisés compris. C'est la lecture qui sert l'objectif « mettre en avant
+  les gains de Matis ».
+- **Verrouillé par deux tests** : un poste entièrement acté fait avancer le
+  chemin ; la formule est identique à celle de `pieceCPPComplet`. Le chemin se
+  plafonne à 100 % quand le gain dépasse la cible (pas de « 175 % atteint »).
+- 244 → **246** tests, tout vert. Aucun changement visible à l'écran (la carte
+  n'est pas encore dessinée) — c'est la 4.51.2 qui la rendra lisible.
+
 ## [4.51.0] — 2026-09-29
 
 Phase 1 de la carte atelier, **socle de calcul uniquement — aucun changement

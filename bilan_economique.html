@@ -2097,7 +2097,7 @@ body.atelier-on{overflow:hidden;}
 </style>
 
 <script>
-const TOOL_VERSION = "4.51.0";
+const TOOL_VERSION = "4.51.1";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -11016,6 +11016,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.51.1", date:"29/09/2026", points:[
+    "<b>Correction backstage, visible dans la prochaine étape.</b> Le chemin vers la cible tient compte des gains déjà réalisés : un poste où le nouveau outillage est passé en série fait avancer la barre, au lieu de rester figé. Aucun changement à l'écran pour l'instant."
+  ]},
   { version:"4.51.0", date:"29/09/2026", points:[
     "<b>Le calcul des gains par poste est prêt pour la carte de l'atelier.</b> L'outil sait désormais répondre, machine par machine : quel gain est déjà acté en série, quel gain est encore projeté, et où en est le poste par rapport à la cible du site.",
     "<b>Un gain n'apparaît que s'il est vérifiable.</b> Chaque chiffre est comparé sur le même périmètre que le bandeau d'un scénario — jamais un total comparé à un autre total. Un poste dont la production n'est pas chiffrable reste affiché comme tel au lieu de laisser croire à un gain de zéro.",
@@ -11630,7 +11633,15 @@ function gainPoste(ligne, opCode, lignesSeptFons){
       else      gainProjete += gain;
     }
     coutProd    += tBase;
-    coutEnCours += gain !== null && !serie ? meilleur.cout : tBase;
+    /* v4.51.1 — « en cours » = ce que la pièce coûte AUJOURD'HUI. On crédite le
+       meilleur scénario SANS condition de statut, exactement comme le fait
+       pieceCPPComplet() (v4.49) : `meilleur.cout < tBase ? meilleur.cout : tBase`.
+       Ma première version (4.51.0) ne créditait que le projeté, ce qui faisait
+       diverger la carte du bandeau sur un poste acté (Z Code, revue croisée du §2) :
+       un gain réalisé ne faisait plus bouger le chemin prod → cible, alors que c'est
+       justement le chiffre que la hiérarchie doit voir. D3 (source unique) prime :
+       deux modules ne doivent jamais raconter deux histoires différentes. */
+    coutEnCours += (meilleur && meilleur.cout < tBase) ? meilleur.cout : tBase;
 
     if((b.scs || []).some(x => (x.essais || []).length)) essaiOuvert = true;
 
@@ -13700,6 +13711,21 @@ function runTests(){
       /* --- la cible et le chemin viennent de la référence DOMINANTE (volume) --- */
       ok("gainPoste : la cible vient de la référence dominante (la plus grosse)",
          [p10.refDominante.nom, p10.cibleCPP], ["356x26", 0.3]);
+      /* v4.51.1 (revue croisée Z Code §2) : un poste ENTIÈREMENT ACTÉ doit voir son chemin
+         bouger. Si « en cours » ignorait le scénario passé en série, un gain réalisé ne
+         ferait avancer que gainActe et la barre prod → cible resterait figée — exactement
+         le chiffre que la hiérarchie doit voir. On verrouille la sémantique ici. */
+      const refActe = normalizeReference({ id: "rAc", nom: "356x26", productionAnnuelle: "100000", cibleCPP: "0.015", ops: [
+        { id: "oAc", nom: "OP10", config: opCfg(), scenarios: [
+          { id: "pAc", name: "Prod", baseline: true, outils: [ { id: "uAc1", numero: "T", logements: [ { id: "lAc1", nom: "Bol", prix: 30, aretes: 8, charniere: 100 } ] } ] },
+          { id: "eAc", name: "SL500", statut: "serie", outils: [ { id: "uAc2", numero: "T", logements: [ { id: "lAc2", nom: "Bol", prix: 5, aretes: 8, charniere: 100 } ] } ] } ] } ] });
+      const pAc = gainPoste(normalizeLigne({ id: "LAC", nom: "EMAG 1", references: [ refActe ] }), "OP10", LS);
+      ok("gainPoste : un poste entièrement acté TEINT le chemin prod → cible",
+         [pAc.coutEnCours < pAc.coutProd, pAc.chemin > 0, pAc.chemin <= 100], [true, true, true]);
+      /* ici le gain dépasse la cible (0,00625 < 0,015) : le chemin se PLAFONNE à 100 %,
+         c'est le comportement voulu — la carte ne montrera pas « 175 % atteint ». */
+      ok("gainPoste : même formule que pieceCPPComplet (4.49) — le meilleur crédite sans condition de statut",
+         [pAc.coutEnCours, pAc.chemin], [0.00625, 100]);
       /* le chemin n'existe que si la prod est AU-DESSUS de la cible. Ici 0,0375 €/pièce < 0,3 € :
          le poste est déjà sous la cible, il n'y a donc aucun « chemin » à afficher — c'est
          un résultat correct, pas un absent. Test explicite du cas « il y a un chemin ». */
