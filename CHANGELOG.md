@@ -5,6 +5,44 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.51.0] — 2026-09-29
+
+Phase 1 de la carte atelier, **socle de calcul uniquement — aucun changement
+visible à l'écran**. Ce que la carte consommera, et l'A4 Mission plus tard, est
+donc écrit, testé et juste avant d'être dessiné.
+
+### Ajouté — le calcul pur du poste (ligne x opCode)
+- `postesLigne()` : les tuiles suivent les machines **déclarées** par ligne
+  (`LIGNES_SEPT_FONS`, v4.50), jamais les scénarios rencontrés — une ligne non
+  déclarée ne dessine aucune tuile ;
+- `scenariosPostes()` : un poste se retrouve par **code** d'OP, pas par son nom
+  libre (« OP 30 Perçages » et « OP30 » sont le même poste) ;
+- `gainPoste()` : somme, référence par référence, des gains d'un poste servi par
+  plusieurs références (cas réel EMAG 1 : 356x26 + 304x28) ;
+- `etatTuile()` : les quatre états (gagné / en cours / à chiffrer / opportunité)
+  dans une **fonction unique** — jamais une cascade de `if` dans le HTML.
+
+### Décisions de calcul (à relire avant de dessiner)
+- **Rappel D3** : le gain passe par `bilanAnnuel()`, donc par
+  `perimetreCompare()` (v4.45) — jamais une soustraction de deux totaux bruts. La
+  tuile ne pourra donc jamais afficher un chiffre que le bandeau d'un scénario
+  n'afficherait pas ;
+- la prod d'une OP reste **★ d'abord, excel en repli** (v4.49.4) ;
+- une OP **non chiffrable sort du calcul** et est comptée dans `nonChiffres` :
+  elle ne se dégrade jamais en « gain de 0 € » ;
+- gain **acté** = scénario en série ; **projeté** = le reste. Les deux ne sont
+  jamais sommés ensemble ;
+- la cible et le chemin prod → cible viennent de la **référence dominante**
+  (le plus gros volume de série) : une tuile multi-références n'affiche qu'une
+  seule cible, sinon deux chiffres se contredisent ;
+- un poste déjà sous sa cible n'affiche **aucun chemin** (il n'y en a pas).
+
+### Tests
+224 → **244** (20 nouveaux) : topologie déclarée, appariement par code, gain
+acté calculé à l'euro près, multi-références, cas asymétrique réel (OP non
+chiffrable), les quatre états, référence dominante, bornes 0-100 du chemin.
+Tout est vert.
+
 ## [4.50.0] — 2026-09-29
 
 Début de la phase « carte atelier » (vue en tuiles machines, spec croisée

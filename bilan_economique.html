@@ -2097,7 +2097,7 @@ body.atelier-on{overflow:hidden;}
 </style>
 
 <script>
-const TOOL_VERSION = "4.50.0";
+const TOOL_VERSION = "4.51.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -11016,6 +11016,12 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.51.0", date:"29/09/2026", points:[
+    "<b>Le calcul des gains par poste est prêt pour la carte de l'atelier.</b> L'outil sait désormais répondre, machine par machine : quel gain est déjà acté en série, quel gain est encore projeté, et où en est le poste par rapport à la cible du site.",
+    "<b>Un gain n'apparaît que s'il est vérifiable.</b> Chaque chiffre est comparé sur le même périmètre que le bandeau d'un scénario — jamais un total comparé à un autre total. Un poste dont la production n'est pas chiffrable reste affiché comme tel au lieu de laisser croire à un gain de zéro.",
+    "<b>Quatre états de poste, une seule règle.</b> Vert : le gain est acté en série. Bleu : un essai est en cours. Ambre : une cible est posée, le poste reste à chiffrer. Gris : le poste est déclaré mais pas encore travaillé — une opportunité, pas un échec.",
+    "Aucun changement visible à l'écran pour l'instant : c'est le socle de calcul de la prochaine étape, la vue en tuiles de l'atelier."
+  ]},
   { version:"4.50.0", date:"29/09/2026", points:[
     "<b>Préparation de la carte atelier.</b> Chaque OP porte désormais un code (OP10, OP30…) dérivé de son nom, et la topologie machines de l'atelier est déclarée par ligne — le socle technique de la future vue en tuiles machines (travail engagé avec l'équipe). Aucun changement visible à l'écran."
   ]},
@@ -11536,6 +11542,136 @@ function dansContexteOp(op, fn){
   const cfgAvant = config, dataAvant = data;
   config = op.config; data = op.scenarios;
   try { return fn(); } finally { config = cfgAvant; data = dataAvant; }
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   v4.51.0 — Carte atelier, couche 0 : le calcul pur du poste (sans un pixel d'UI)
+
+   Deux fonctions PURES, testées, placées juste avant renderDashboard() (L11547) parce
+   que la carte atelier est une évolution du tableau de bord : même source, jamais un
+   second agrégat de gains. gainPoste() alimente la tuile et, plus tard, l'A4 Mission ;
+   etatTuile() donne l'état de la tuile (gagné / en cours / à chiffrer / opportunité)
+   sans jamais qu'une cascade de « if » dans le HTML décide de la couleur.
+
+   Rappel D3 : la tuile n'affiche JAMAIS un chiffre que le bandeau du scénario
+   n'afficherait pas. D'où le choix de bilanAnnuel() : c'est lui qui applique déjà
+   perimetreCompare() (v4.45) et qui signale perimetrePartiel. On ne recalcule rien.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Un poste = un couple (ligne x opCode). On ne dessine que les couples DÉCLARÉS :
+   les machines de la ligne viennent de LIGNES_SEPT_FONS (v4.50), et les OP sans
+   code exploitable (opCode "?", v4.50) ne dessinent aucune tuile — elles restent
+   atteignables par la navigation experte. */
+function postesLigne(ligne, lignesSeptFons){
+  const def = (lignesSeptFons || []).find(d => d.nom === (ligne && ligne.nom));
+  const machines = (def && def.machines) || [];
+  return machines.map(m => ({ code: m.code, nom: m.nom || "", ligne }));
+}
+
+/* Les scénarios d'une ligne qui portent l'OP demandée (par CODE, pas par nom :
+   « OP 30 Perçages » et « OP30 » sont le même poste). */
+function scenariosPostes(ligne, opCode){
+  const out = [];
+  (ligne && ligne.references ? ligne.references : []).forEach(ref => {
+    (ref.ops || []).forEach(op => {
+      if((op.opCode || "?") !== opCode) return;
+      out.push({ ref, op, scs: op.scenarios || [] });
+    });
+  });
+  return out;
+}
+
+/* ── Le cœur : le gain d'un poste, périmètre commun obligatoire ──────────────
+   Un poste peut être servi par plusieurs références (EMAG 1 : 356x26 + 304x28) :
+   on additionne référence par référence, chaque delta passant par bilanAnnuel() —
+   donc par perimetreCompare() (v4.45). Jamais une soustraction de deux totaux bruts.
+   Le cas asymétrique réel (une OP avec prod chiffrable, une sans) sort du calcul,
+   il ne devient pas 0 : il est compté dans nonChiffres.
+
+   Renvoie { ligne, opCode, nom, refs, gainActe, gainProjete, coutProd, coutEnCours,
+             cibleCPP, chemin, essaiOuvert, nonChiffres, refDominante } */
+function gainPoste(ligne, opCode, lignesSeptFons){
+  const poste = (postesLigne(ligne, lignesSeptFons) || []).find(p => p.code === opCode)
+              || { code: opCode, nom: "", ligne };
+  const blocs = scenariosPostes(ligne, opCode);
+  const refs = [];
+  let gainActe = 0, gainProjete = 0, coutProd = 0, coutEnCours = 0;
+  let essaiOuvert = false, nonChiffres = 0;
+
+  blocs.forEach(b => {
+    /* la prod d'une OP, c'est D'ABORD la prod réelle (★), l'excel en repli (v4.49.4) */
+    const excel = (b.scs || []).find(x => /base excel/i.test(x.name || ""));
+    const star  = (b.scs || []).find(x => x.baseline);
+    const prodSc = star || excel || null;
+    if(!prodSc){ nonChiffres++; return; }
+
+    const tBase = coutsDetail(prodSc, b.op.config, ligne).total;
+    if(tBase === null){ nonChiffres++; return; }
+
+    /* le meilleur scénario non-prod chiffrable : le gain ne peut se comparer que si
+       l'autre côté de la comparaison est chiffrable aussi (v4.45) */
+    let meilleur = null;
+    (b.scs || []).forEach(sc => {
+      if(prodSc.id === sc.id) return;
+      const t = coutsDetail(sc, b.op.config, ligne).total;
+      if(t === null) return;
+      if(!meilleur || t < meilleur.cout) meilleur = { sc, cout: t };
+    });
+
+    /* même formule, même périmètre que le bandeau : bilanAnnuel() applique déjà
+       perimetreCompare() et signale les postes exclus. On ne recalcule rien. */
+    const an = meilleur ? bilanAnnuel(meilleur.sc, b.op.config, ligne, b.ref, prodSc) : null;
+    let gain = null;
+    if(an && an.gainAnnuel !== undefined) gain = an.gainAnnuel;
+
+    const serie = !!(meilleur && meilleur.sc.statut === "serie");
+    if(gain !== null){
+      if(serie) gainActe += gain;
+      else      gainProjete += gain;
+    }
+    coutProd    += tBase;
+    coutEnCours += gain !== null && !serie ? meilleur.cout : tBase;
+
+    if((b.scs || []).some(x => (x.essais || []).length)) essaiOuvert = true;
+
+    refs.push({ ref: b.ref, prodSc, meilleur, tBase, gain, serie,
+                volume: volumeAnnuel(b.ref, b.op.config), essaiOuvert: (meilleur && (meilleur.sc.essais || []).length) || false });
+  });
+
+  /* la référence DOMINANTE = celle du plus gros volume de série : c'est elle qui
+     décide du chemin prod → cible affiché sur la tuile. Une tuile multi-références
+     n'affiche qu'une seule cible, sinon deux chiffres se contredisent. */
+  const dominante = refs.slice().sort((a, b) => (b.volume || 0) - (a.volume || 0))[0];
+  const refDominante = dominante ? dominante.ref : null;
+  const cible = refDominante ? cibleCPPDe(refDominante) : null;
+
+  let chemin = null;
+  if(cible !== null && cible > 0 && coutProd > cible && coutProd > 0){
+    chemin = Math.max(0, Math.min(100, ((coutProd - coutEnCours) / (coutProd - cible)) * 100));
+  }
+
+  return { ligne, opCode, nom: poste.nom, refs, gainActe, gainProjete, coutProd, coutEnCours,
+           cibleCPP: cible, chemin, essaiOuvert, nonChiffres, refDominante };
+}
+
+/* la cible CPP d'une référence, normalisée (nombre > 0, sinon « pas de cible ») */
+function cibleCPPDe(ref){
+  if(!ref || ref.cibleCPP === "" || ref.cibleCPP == null) return null;
+  const v = parseFloat(ref.cibleCPP);
+  return isNaN(v) || v <= 0 ? null : v;
+}
+
+/* ── L'état de la tuile : UNE fonction, jamais une cascade de if dans le HTML ──
+   a) gagne      : un gain déjà acté (scénario en série) ;
+   b) encours    : un essai existe sur ce poste sans gain acté ;
+   c) aChiffrer  : la référence dominante a une cible CPP, mais rien n'est chiffré ;
+   d) opportunite: rien de tout cela — le poste est déclaré mais pas travaillé. */
+function etatTuile(poste){
+  if(!poste) return "opportunite";
+  if(poste.gainActe > 0) return "gagne";
+  if(poste.essaiOuvert) return "encours";
+  if(poste.cibleCPP !== null && poste.cibleCPP > 0) return "aChiffrer";
+  return "opportunite";
 }
 
 /* Filtre du tableau de bord (v4.1) : null = tous les scenarios, sinon l'id d'un projet --
@@ -13462,6 +13598,124 @@ function runTests(){
        pourcentageTolerance(1.0, 1.6, 0.8), 25, 1e-9);
     ok("pctTol : hors tolerance -> au-dela de 100", pourcentageTolerance(0.12, 0.1), 120, 1e-9);
     ok("pctTol : pas de limite exploitable -> null", pourcentageTolerance(0.05, NaN), null);
+
+    /* ---- v4.51.0 — carte atelier : le calcul pur du poste (couche 0) ---------------
+       gainPoste() / etatTuile(). Aucun pixel d'UI ici : ces fonctions alimenteront la
+       tuile ET l'A4 Mission, et doivent donc être justes avant d'être dessinées.
+       Rappel D3 : le gain passe par bilanAnnuel() donc par perimetreCompare() (v4.45) —
+       jamais une soustraction de deux totaux bruts. */
+    {
+      /* ⚠ les modules de coût (dont volumeActif) se règlent PAR OP (op.config), pas dans
+         le config global : un test qui allume le module au mauvais endroit verrait un gain
+         nul sans que la fonction soit fausse. C'est ce que le harnais a révélé — on touche
+         donc chaque op.config explicitement. */
+      const opCfg = (extra) => Object.assign({}, defaultConfig, { volumeActif: true }, extra || {});
+      const lgA  = (l, refs) => normalizeLigne({ id: l, nom: "EMAG 1", coutHoraire: "", references: refs });
+
+      /* --- référence A : 356x26, OP10 chiffrable (prod ★ + essai passé en série),
+             et une OP20 déclarée mais NON chiffrable (prix/charnière vides) --- */
+      const refA = normalizeReference({ id: "rA", nom: "356x26", productionAnnuelle: "100000", cibleCPP: "0.300",
+        ops: [
+          { id: "oA10", nom: "OP10 Ebauche", config: opCfg(), scenarios: [
+            { id: "pA10", name: "Prod", baseline: true, outils: [
+              { id: "u1", numero: "T1", logements: [ { id: "l1", nom: "Bol", prix: 30, aretes: 8, charniere: 100 } ] } ] },
+            { id: "eA10", name: "Essai SL500", statut: "serie", outils: [
+              { id: "u2", numero: "T2", logements: [ { id: "l2", nom: "Bol", prix: 10, aretes: 8, charniere: 100 } ] } ] } ] },
+          { id: "oA20", nom: "OP20 Perçages", config: opCfg(), scenarios: [
+            { id: "pA20", name: "Prod", baseline: true, outils: [
+              { id: "u3", numero: "T3", logements: [ { id: "l3", nom: "Bol", prix: "", aretes: 8, charniere: "" } ] } ] } ] }
+        ] });
+      /* --- référence B : 304x28 sur le MÊME poste OP10 (le cas réel EMAG 1) --- */
+      const refB = normalizeReference({ id: "rB", nom: "304x28", productionAnnuelle: "50000", cibleCPP: "",
+        ops: [
+          { id: "oB10", nom: "OP10", config: opCfg(), scenarios: [
+            { id: "pB10", name: "Prod", baseline: true, outils: [
+              { id: "u4", numero: "T4", logements: [ { id: "l4", nom: "Bol", prix: 40, aretes: 8, charniere: 100 } ] } ] },
+            { id: "eB10", name: "Essai", statut: "essai", outils: [
+              { id: "u5", numero: "T5", logements: [ { id: "l5", nom: "Bol", prix: 40, aretes: 8, charniere: 100 } ] } ] } ] }
+        ] });
+      const lg = lgA("L1", [refA, refB]);
+      const LS = [{ nom: "EMAG 1", machines: [ { code: "OP10", nom: "Ébauche piste" }, { code: "OP20", nom: "Ébauche ext." },
+                                             { code: "OP30", nom: "Perçages" },       { code: "OP40", nom: "Finition" } ] }];
+
+      /* --- la topologie vient de la déclaration, jamais des scénarios --- */
+      ok("postesLigne : les tuiles suivent les machines déclarées, pas les scénarios",
+         postesLigne(lg, LS).map(p => p.code), ["OP10", "OP20", "OP30", "OP40"]);
+      ok("postesLigne : une ligne non déclarée ne dessine aucune tuile",
+         postesLigne(normalizeLigne({ id: "L9", nom: "Weisser 1" }), LS).length, 0);
+
+      /* --- un poste se retrouve par CODE, pas par le nom libre de l'OP --- */
+      ok("scenariosPostes : « OP20 Perçages » rejoint bien le poste OP20",
+         scenariosPostes(lg, "OP20").length, 1);
+      ok("scenariosPostes : « OP 30 Perçages » et « OP30 » sont le même poste",
+         scenariosPostes(normalizeLigne({ id: "LX", nom: "EMAG 1", references: [ normalizeReference({ id: "rZ", nom: "z", ops: [
+            { id: "oZ", nom: "OP 30 Perçages", scenarios: [] } ] }) ] }), "OP30").length, 1);
+      ok("scenariosPostes : un opCode inconnu ne trouve rien",
+         scenariosPostes(lg, "OP99").length, 0);
+
+      /* --- le cas de référence : gain acté sur le poste OP10 --- */
+      const p10 = gainPoste(lg, "OP10", LS);
+      /* refA : prod 30/(8x100) = 0,0375 €/pièce · essai 10/(8x100) = 0,0125
+                 gain = 0,025 x 100 000 = 2 500 €/an (périmètre commun = plaquettes seules)
+         refB : prod 0,05 · essai 0,05 -> gain 0 (aucun écart, donc rien à acter) */
+      ok("gainPoste : un scénario en série donne un gain ACTÉ, rien de projeté",
+         [p10.gainActe > 0, p10.gainProjete], [true, 0]);
+      ok("gainPoste : le gain acté = (prod - essai) x volume, périmètre commun",
+         p10.gainActe, 2500, 1e-6);
+      ok("gainPoste : deux références au même poste sont additionnées",
+         p10.refs.length, 2);
+      ok("gainPoste : le coût de prod cumule les deux références",
+         p10.coutProd, 0.0375 + 0.05, 1e-9);
+
+      /* --- le cas asymétrique réel réclamé par Z Code : l'OP20 non chiffrable --- */
+      const p20 = gainPoste(lg, "OP20", LS);
+      ok("gainPoste : une OP sans coût chiffrable sort du calcul (elle ne vaut pas 0)",
+         [p20.coutProd, p20.refs.length, p20.nonChiffres], [0, 0, 1]);
+      ok("gainPoste : un poste jamais travaillé n'a aucun gain",
+         [p20.gainActe, p20.gainProjete], [0, 0]);
+
+      /* --- un poste déclaré mais sans données ne plante pas --- */
+      const p30 = gainPoste(lg, "OP30", LS);
+      ok("gainPoste : OP30 (déclarée, aucune donnée) reste à zéro, sans erreur",
+         [p30.gainActe, p30.gainProjete, p30.coutProd], [0, 0, 0]);
+
+      /* --- l'état de la tuile : une fonction, quatre issues --- */
+      ok("etatTuile : un gain acté = tuile verte",
+         etatTuile(p10), "gagne");
+      /* « en cours » = le poste porte un ESSAI (un relevé réel), pas un statut de scénario.
+         C'est ce que veut dire « essai ouvert » : quelqu'un a mesuré sur ce poste. */
+      const refEnCours = normalizeReference({ id: "rE", nom: "304x28", productionAnnuelle: "50000", ops: [
+        { id: "oE", nom: "OP10", config: opCfg(), scenarios: [
+          { id: "pE", name: "Prod", baseline: true, outils: [ { id: "uE1", numero: "T", logements: [ { id: "lE1", nom: "Bol", prix: 40, aretes: 8, charniere: 100 } ] } ] },
+          { id: "eE", name: "Essai", statut: "essai", outils: [ { id: "uE2", numero: "T", logements: [ { id: "lE2", nom: "Bol", prix: 30, aretes: 8, charniere: 100 } ] } ],
+            essais: [ { id: "ess1", titre: "Essai 1", date: "2026-09-29", prelevements: [ { id: "p", piece: "10", cotes: {} } ] } ] } ] } ] });
+      const pEnCours = gainPoste(normalizeLigne({ id: "LE", nom: "EMAG 1", references: [ refEnCours ] }), "OP10", LS);
+      ok("etatTuile : un poste qui porte un essai = tuile bleue « en cours »",
+         [pEnCours.essaiOuvert, etatTuile(pEnCours)], [true, "encours"]);
+      ok("etatTuile : une cible CPP posée mais rien de chiffré = à chiffrer",
+         etatTuile({ gainActe: 0, gainProjete: 0, essaiOuvert: false, cibleCPP: 0.3 }), "aChiffrer");
+      ok("etatTuile : rien du tout = opportunité",
+         [etatTuile(p30), etatTuile(null)], ["opportunite", "opportunite"]);
+
+      /* --- la cible et le chemin viennent de la référence DOMINANTE (volume) --- */
+      ok("gainPoste : la cible vient de la référence dominante (la plus grosse)",
+         [p10.refDominante.nom, p10.cibleCPP], ["356x26", 0.3]);
+      /* le chemin n'existe que si la prod est AU-DESSUS de la cible. Ici 0,0375 €/pièce < 0,3 € :
+         le poste est déjà sous la cible, il n'y a donc aucun « chemin » à afficher — c'est
+         un résultat correct, pas un absent. Test explicite du cas « il y a un chemin ». */
+      ok("gainPoste : un poste déjà sous la cible n'affiche aucun chemin",
+         [p10.chemin, p10.coutProd < p10.cibleCPP], [null, true]);
+      const refGrosGain = normalizeReference({ id: "rG", nom: "gros gain", productionAnnuelle: "100000", cibleCPP: "0.010", ops: [
+        { id: "oG", nom: "OP10", config: opCfg(), scenarios: [
+          { id: "pG", name: "Prod", baseline: true, outils: [ { id: "uG1", numero: "T", logements: [ { id: "lG1", nom: "Bol", prix: 30, aretes: 8, charniere: 100 } ] } ] },
+          { id: "eG", name: "Essai", statut: "essai", outils: [ { id: "uG2", numero: "T", logements: [ { id: "lG2", nom: "Bol", prix: 5, aretes: 8, charniere: 100 } ] } ] } ] } ] });
+      const pG = gainPoste(normalizeLigne({ id: "LG", nom: "EMAG 1", references: [ refGrosGain ] }), "OP10", LS);
+      ok("gainPoste : un poste au-dessus de sa cible expose un chemin borné 0-100",
+         pG.chemin !== null && pG.chemin >= 0 && pG.chemin <= 100, true);
+      /* et borné aussi quand le gain projeté tire le cours EN DEÇÀ de la cible (plafond 100) */
+      ok("gainPoste : le chemin est plafonné à 100 % quand la cible est dépassée",
+         pG.chemin !== null && pG.chemin <= 100, true);
+    }
 
   } catch(err){
     T.push({ nom:"Exception pendant les tests : " + err.message, pass:false,
