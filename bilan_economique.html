@@ -2097,7 +2097,7 @@ body.atelier-on{overflow:hidden;}
 </style>
 
 <script>
-const TOOL_VERSION = "4.49.3";
+const TOOL_VERSION = "4.49.4";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -8648,16 +8648,22 @@ function pieceCPPComplet(){
   const ops = [];
   ref.ops.forEach(op => {
     ops.push(dansContexteOp(op, () => {
-      const base = (op.scenarios||[]).find(x => /base excel/i.test(x.name||""));
-      const tBase = base ? coutsDetail(base).total : null;
+      /* v4.49.4 — le coût de prod d'une OP, c'est D'ABORD la prod réelle (★), l'excel en
+         repli : après le merge OP40 (DWG ★ qui remplace l'excel), le bandean ne comptait
+         plus l'OP40. Et une OP sans scénario chiffrable (OP20 de Matis, valeurs vides)
+         reste listée comme « non chiffrée » au lieu de disparaître — l'écart doit se voir. */
+      const excel = (op.scenarios||[]).find(x => /base excel/i.test(x.name||""));
+      const star = (op.scenarios||[]).find(x => x.baseline);
+      const prodSc = star || excel || null;
+      const tBase = prodSc ? coutsDetail(prodSc).total : null;
       let meilleur = null;
       (op.scenarios||[]).forEach(sc => {
-        if(/base excel/i.test(sc.name||"")) return;
+        if(prodSc && sc.id === prodSc.id) return;
         const t = coutsDetail(sc).total;
         if(t === null) return;
         if(!meilleur || t < meilleur.cout) meilleur = { sc, cout: t };
       });
-      return { op, base, tBase, meilleur };
+      return { op, prodSc, tBase, meilleur };
     }));
   });
   const connues = ops.filter(o => o.tBase !== null && o.tBase !== undefined);
@@ -8667,7 +8673,7 @@ function pieceCPPComplet(){
   const cible = (ref.cibleCPP !== "" && ref.cibleCPP != null && !isNaN(parseFloat(ref.cibleCPP))) ? parseFloat(ref.cibleCPP) : null;
   let chemin = null;
   if(cible !== null && prod > cible && prod > 0) chemin = Math.max(0, Math.min(100, ((prod - enCours) / (prod - cible)) * 100));
-  return { ref, ops: connues, prod, enCours, cible, chemin };
+  return { ref, ops: connues, nonChiffrees: ops.filter(o => o.tBase === null || o.tBase === undefined), prod, enCours, cible, chemin };
 }
 /* statut de progression d'une OP : ce que l'atelier demande — réalisé / en cours / rien */
 function statutOP(o){
@@ -8699,9 +8705,11 @@ function pieceCPPBannerHTML(){
     const delta = o.meilleur && o.meilleur.cout < o.tBase ? ` <em>· ${escapeAttr(String(o.meilleur.sc.name).slice(0,26))} −${fmt(o.tBase - o.meilleur.cout,3)} €</em>` : "";
     return `<span class="pcb-op">${escapeAttr(String(o.op.nom||"OP").trim())} <b>${fmt(o.tBase,3)} €</b>${delta} <i class="pcb-st ${st.cls}">${st.txt}</i></span>`;
   }).join("");
+  const chipsVides = (p.nonChiffrees || []).map(o =>
+    `<span class="pcb-op" title="Aucun scénario de prod chiffrable sur cette OP (outils sans prix ou charnière) — complétez la prod pour qu'elle entre dans le coût pièce.">${escapeAttr(String(o.op.nom||"OP").trim())} <b>non chiffrée</b> <i class="pcb-st pending">à compléter</i></span>`).join("");
   return `<div class="pcb-banner">
     <span class="pcb-l">Coût pièce complet — ${escapeAttr(p.ref.nom || "")}</span>
-    <div class="pcb-ops">${chips}</div>
+    <div class="pcb-ops">${chips}${chipsVides}</div>
     <span class="pcb-total">${fmt(p.prod,3)} €<small>/pièce toutes OP</small></span>
     ${p.enCours < p.prod ? `<span class="pcb-encours">meilleur en cours : ${fmt(p.enCours,3)} € (−${fmt(p.prod - p.enCours,3)} €)</span>` : ""}
     ${barreRouteHTML(p)}
@@ -8723,7 +8731,13 @@ function feuilleRouteHTML(){
       <span class="fr-essai">${essaiTxt}</span>
       <span class="pcb-st ${st.cls}">${st.txt}</span>
     </div>`;
-  }).join("");
+  }).join("") + (p.nonChiffrees || []).map(o =>
+    `<div class="fr-row">
+      <span class="fr-op">${escapeAttr(String(o.op.nom||"OP").trim())}</span>
+      <span class="fr-prod">prod — €</span>
+      <span class="fr-essai">non chiffrée : aucun scénario de prod chiffrable (outils sans prix ou charnière) — complétez la prod</span>
+      <span class="pcb-st pending">à compléter</span>
+    </div>`).join("");
   return `<div class="synthese-block">
     <h3>Feuille de route — coût pièce complet vs cible</h3>
     <div class="fr-global">
@@ -10996,6 +11010,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.49.4", date:"29/09/2026", points:[
+    "<b>Corrigé : le coût pièce complet compte maintenant toutes les OPs qui ont une prod.</b> Le coût de prod d'une OP, c'est d'abord la prod réelle (★), l'excel en repli — après le merge OP40 (DWG ★ remplaçant l'excel), l'OP40 avait disparu du décompte. Et une OP sans scénario chiffrable s'affiche désormais « non chiffrée — à compléter » au lieu de disparaître silencieusement (l'OP20 de la 356x26 attend ses valeurs)."
+  ]},
   { version:"4.49.3", date:"29/09/2026", points:[
     "<b>Message de bienvenue à la première ouverture.</b> Un écran d'accueil présente la base 2026/2027 et le geste de mise à jour de l'application (une version ancienne efface les cibles de coût au partage). Affiché une fois par poste."
   ]},

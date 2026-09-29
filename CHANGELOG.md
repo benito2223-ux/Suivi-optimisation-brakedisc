@@ -5,6 +5,31 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.49.4] — 2026-09-29
+
+Retour Benjamin : sur EMAG 1 / DV 356x26, l'OP40 et l'OP20 manquaient au
+coût pièce complet.
+
+### Corrigé — toutes les OPs comptées, les absentes visibles
+- **Le coût de prod d'une OP = d'abord la prod réelle (★), l'excel en
+  repli.** Après le merge OP40 (DWG ★ remplaçant le scénario excel), le
+  bandeau ne cherchait que les « base excel » : l'OP40 avait disparu du
+  décompte. Vérifié : 356x26 = 0,763 € (OP10 0,174 + OP40 0,539 +
+  OP30 0,050), le meilleur essai par OP suit (SL500 −0,058 € sur l'OP40).
+- **Une OP sans scénario chiffrable s'affiche « non chiffrée — à
+  compléter »** au lieu de disparaître (l'OP20 de la 356x26 attend ses
+  valeurs : le « Process actuel » de Matis y a des outils sans
+  prix/charnière).
+
+### Sécurisé — défense serveur contre les clients périmés (3e strip à 05h42)
+Le client périmé poussait en boucle : chaque restauration était re-strippée
+en minutes. Un **trigger Postgres** (`preserve_cibles_cpp` sur la table
+`etat`) réinjecte désormais les `cibleCPP` connus dans toute écriture qui
+les efface, référence par référence (id, repli ligne+nom). Testé en
+production : un push intégralement strippé atterrit avec les 6 cibles
+intactes. La donnée est défendue côté serveur, quelle que soit la version
+du client.
+
 ## [4.49.3] — 2026-09-29
 
 ### Ajouté — message de bienvenue à la première ouverture
