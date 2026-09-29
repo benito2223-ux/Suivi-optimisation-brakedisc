@@ -2097,7 +2097,7 @@ body.atelier-on{overflow:hidden;}
 </style>
 
 <script>
-const TOOL_VERSION = "4.49.2";
+const TOOL_VERSION = "4.49.3";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -10996,6 +10996,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.49.3", date:"29/09/2026", points:[
+    "<b>Message de bienvenue à la première ouverture.</b> Un écran d'accueil présente la base 2026/2027 et le geste de mise à jour de l'application (une version ancienne efface les cibles de coût au partage). Affiché une fois par poste."
+  ]},
   { version:"4.49.2", date:"28/09/2026", points:[
     "<b>Corrigé : le graphe de tendance redevient lisible après complétion.</b> Son échelle horizontale était calée sur la plus grande charnière de TOUT l'outillage du scénario — depuis « Compléter depuis la prod », les outils longs de l'excel (300 à 4000 pièces) écrasaient les prélèvements réels sur une fine bande. L'échelle suit désormais les charnières des logements réellement suivis par les essais tracés."
   ]},
@@ -11944,6 +11947,25 @@ document.getElementById("footToolName").textContent = "Suivi_optimisation_SPK v"
 try{ renderPoidsFooter((localStorage.getItem(STORAGE_KEY) || "").length); installerClickPoids(); }catch(e){}
 // en dernier : l'ecran doit etre pret derriere la fenetre des nouveautes
 verifierNouveautes();
+/* v4.49.3 — message de première ouverture après la mise en place de la base 2026/2027.
+   Une fois par poste (drapeau local). Dit le geste critique : une version ancienne de
+   l'application efface les cibles de coût au partage — vérifier la version en bas. */
+(async function messagePremiereOuverture(){
+  const CLE = "spk_msg_base_2026";
+  let dejaVu = false;
+  try{ dejaVu = localStorage.getItem(CLE) === "1"; }catch(e){}
+  if(dejaVu) return;
+  const ok = await ouvrirDialogue({
+    titre: "Bienvenue dans la base 2026/2027",
+    html: dlgTexte(
+      "La base de départ est en place : les 6 références de l'atelier, avec leurs outils de prod complets (OP par OP), les références plaquettes ISO, les codes article MABEC et les cibles de coût pièce du site." +
+      "\n\nLes nouveaux écrans : le coût pièce complet et la feuille de route prod → cible (vue de synthèse), les scénarios d'essai complétés depuis la prod, les outils simultanés en ambre." +
+      "\n\nGeste important : regarde la version en bas de page — elle doit indiquer v" + TOOL_VERSION + ". Si une version plus ancienne s'affiche, ferme complètement l'application et rouvre-la connectée à Internet (elle se met à jour toute seule). Une version ancienne peut effacer les cibles de coût au moment du partage."),
+    sansAnnuler: true, okLabel: "Compris"
+  });
+  try{ localStorage.setItem(CLE, "1"); }catch(e){}
+})();
+
 </script>
 
 <script>

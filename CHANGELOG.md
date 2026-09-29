@@ -5,6 +5,18 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.49.3] — 2026-09-29
+
+### Ajouté — message de bienvenue à la première ouverture
+Après la mise en place de la base 2026/2027, un écran d'accueil s'affiche
+une fois par poste : ce que contient la base (6 références, outils de prod
+par OP, ISO/MABEC, cibles), les nouveaux écrans (feuille de route, coût
+pièce complet), et surtout le geste critique — vérifier la version en bas
+de page et rouvrir l'application connectée si elle est ancienne : une
+version d'avant la 4.46 efface les cibles de coût au partage (2e strip
+constaté ce matin à 5h26, cibles restaurées). Vocabulaire « l'application »
+(demande Benjamin, pour Matis).
+
 ## [4.49.2] — 2026-09-28
 
 ### Corrigé — le graphe de tendance redevient lisible après complétion
