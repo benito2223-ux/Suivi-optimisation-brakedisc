@@ -5,6 +5,24 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.50.0] — 2026-09-29
+
+Début de la phase « carte atelier » (vue en tuiles machines, spec croisée
+Hermes × Z Code arbitrée par Benjamin — décisions : topologie dérivée par
+opCode + déclaration des machines en constante, carte ouverte sur le
+projet avec l'usine entière à un clic, écran d'abord puis A4 Mission).
+
+### Ajouté — socle technique de la carte (aucun changement visible)
+- **`opCode` dérivé** à la normalisation de chaque OP (motif OP+digits,
+  insensible aux espaces et zéros de tête) : « OP 30 Perçages » et
+  « OP10 Ebauche piste Inter » tombent respectivement dans OP30 et OP10 ;
+  sans code exploitable, opCode vaut « ? » et la future carte ne dessine
+  pas de tuile fantôme.
+- **Topologie machines déclarée** dans `LIGNES_SEPT_FONS` (constante du
+  semis v4.27) : EMAG 1 OP10/20/30/40, EMAG 2 OP10/30/40, EMAG 3
+  OP10/40, HESSAPP OP10/15/20/40 — les lignes sans données connues
+  (Weisser, PCI) restent à compléter par l'atelier.
+
 ## [4.49.4] — 2026-09-29
 
 Retour Benjamin : sur EMAG 1 / DV 356x26, l'OP40 et l'OP20 manquaient au

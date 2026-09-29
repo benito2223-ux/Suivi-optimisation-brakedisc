@@ -2097,7 +2097,7 @@ body.atelier-on{overflow:hidden;}
 </style>
 
 <script>
-const TOOL_VERSION = "4.49.4";
+const TOOL_VERSION = "4.50.0";
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -2494,7 +2494,13 @@ function normalizeBacklogItem(b){
   return Object.assign({ id: b.id || ("b"+Math.random().toString(36).slice(2)), date:"", auteur:"", type:"amelioration", titre:"", description:"", statut:"nouveau", declencheur:"", image:"" }, b);
 }
 function normalizeOp(o){
-  return Object.assign({ id: o.id || ("o"+Math.random().toString(36).slice(2)), nom:"", ordre: 10, ficheOutil: null }, o, {
+  /* v4.50 — opCode dérivé du nom (arbitrage spec croisée Hermes/Z Code) : la carte atelier
+     regroupe les OP par code (« OP10 », « OP 30 Perçages » et « OP10 Ebauche » tombent dans
+     OP10). Sans code exploitable (nom « OP » seul), opCode vaut « ? » : la carte ne dessine
+     pas de tuile fantôme, l'OP reste atteignable en navigation experte. */
+  const mOpCode = String(o.nom || "").toUpperCase().match(/OP\s?0*(\d+)/);
+  return Object.assign({ id: o.id || ("o"+Math.random().toString(36).slice(2)), nom:"", ordre: 10, ficheOutil: null,
+    opCode: mOpCode ? "OP" + mOpCode[1] : "?" }, o, {
     config: Object.assign({}, defaultConfig, o.config || {}),
     scenarios: (o.scenarios || []).map(normalizeScenario)
   });
@@ -11010,6 +11016,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.50.0", date:"29/09/2026", points:[
+    "<b>Préparation de la carte atelier.</b> Chaque OP porte désormais un code (OP10, OP30…) dérivé de son nom, et la topologie machines de l'atelier est déclarée par ligne — le socle technique de la future vue en tuiles machines (travail engagé avec l'équipe). Aucun changement visible à l'écran."
+  ]},
   { version:"4.49.4", date:"29/09/2026", points:[
     "<b>Corrigé : le coût pièce complet compte maintenant toutes les OPs qui ont une prod.</b> Le coût de prod d'une OP, c'est d'abord la prod réelle (★), l'excel en repli — après le merge OP40 (DWG ★ remplaçant l'excel), l'OP40 avait disparu du décompte. Et une OP sans scénario chiffrable s'affiche désormais « non chiffrée — à compléter » au lieu de disparaître silencieusement (l'OP20 de la 356x26 attend ses valeurs)."
   ]},
@@ -11869,16 +11878,20 @@ document.getElementById("importInput").addEventListener("change", (e) => {
      d'œil sans lire le fil d'Ariane.
    ============================================================================ */
 const LIGNES_SEPT_FONS = [
-  { nom: "Weisser 1", famille: "weisser", code: "W1" },
-  { nom: "Weisser 2", famille: "weisser", code: "W2" },
-  { nom: "Weisser 3", famille: "weisser", code: "W3" },
-  { nom: "Weisser 4", famille: "weisser", code: "W4" },
-  { nom: "HESSAPP", famille: "hessapp", code: "HESSAPP" },
-  { nom: "EMAG 1", famille: "emag", code: "E1" },
-  { nom: "EMAG 2", famille: "emag", code: "E2" },
-  { nom: "EMAG 3", famille: "emag", code: "E3" },
-  { nom: "PCI 1", famille: "pci", code: "P1" },
-  { nom: "PCI 2", famille: "pci", code: "P2" }
+  { nom: "Weisser 1", famille: "weisser", code: "W1", machines: [] },
+  { nom: "Weisser 2", famille: "weisser", code: "W2", machines: [] },
+  { nom: "Weisser 3", famille: "weisser", code: "W3", machines: [] },
+  { nom: "Weisser 4", famille: "weisser", code: "W4", machines: [] },
+  { nom: "HESSAPP", famille: "hessapp", code: "HESSAPP",
+    machines: [{ code:"OP10", nom:"Ébauche" }, { code:"OP15", nom:"" }, { code:"OP20", nom:"" }, { code:"OP40", nom:"Finition" }] },
+  { nom: "EMAG 1", famille: "emag", code: "E1",
+    machines: [{ code:"OP10", nom:"Ébauche piste" }, { code:"OP20", nom:"Ébauche piste ext." }, { code:"OP30", nom:"Perçages" }, { code:"OP40", nom:"Finition pistes" }] },
+  { nom: "EMAG 2", famille: "emag", code: "E2",
+    machines: [{ code:"OP10", nom:"Ébauche" }, { code:"OP30", nom:"Perçages" }, { code:"OP40", nom:"Finition" }] },
+  { nom: "EMAG 3", famille: "emag", code: "E3",
+    machines: [{ code:"OP10", nom:"Ébauche" }, { code:"OP40", nom:"Finition" }] },
+  { nom: "PCI 1", famille: "pci", code: "P1", machines: [] },
+  { nom: "PCI 2", famille: "pci", code: "P2", machines: [] }
 ];
 const FAMILLES_LIGNE = {
   weisser: { encre: "#E2001A", alpha: 0.07 },
