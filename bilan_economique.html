@@ -2204,7 +2204,7 @@ body.atelier-on{overflow:hidden;}
 </style>
 
 <script>
-const TOOL_VERSION = "4.52.0";
+
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
 const LEGACY_KEY = "spk_op10_bilan_v3"; // ancien format mono-reference, repris automatiquement
 
@@ -2846,7 +2846,7 @@ function migrerArbre(source){
       projetsLus = source.projets.map(normalizeProjet);
     }
     const fin = finaliserProjetsEtResponsables(projetsLus, source.responsables);
-    return { lignes: lignesLues, projets: fin.projets, responsables: fin.responsables };
+    return { lignes: lignesLues, projets: fin.projets, responsables: fin.responsables, livraisons: Array.isArray(source.livraisons) ? source.livraisons.map(normalizeLivraison) : [] };
   }
 
   // format 6 (v4.0, projets PROPRIETAIRES des lignes -- deployee moins d'une journee) :
@@ -2872,7 +2872,7 @@ function migrerArbre(source){
       });
     });
     const fin = finaliserProjetsEtResponsables(projetsRecrees, source.responsables);
-    return { lignes: lignesPlates, projets: fin.projets, responsables: fin.responsables };
+    return { lignes: lignesPlates, projets: fin.projets, responsables: fin.responsables, livraisons: [] };
   }
 
   return null;
@@ -2882,6 +2882,22 @@ function normalizeLigne(l){
   return Object.assign({ id: l.id || ("l"+Math.random().toString(36).slice(2)), nom:"", coutHoraire:"", observations:"", maintenanceDate:"", maintenanceType:"" }, l, {
     references: (l.references || []).map(normalizeReference)
   });
+}
+/* v4.53 — une livraison est un INSTANTANÉ FIGÉ : ses chiffres ne se recalculent jamais.
+   normalizeLivraison ne fait qu'assurer la forme (l'exactitude est figée à la création). */
+function normalizeLivraison(l){
+  return Object.assign({
+    id: l.id || ("lv" + Math.random().toString(36).slice(2)),
+    nom: l.nom || "Livraison",
+    date: l.date || "",
+    creePar: l.creePar || "",
+    gainsActes: l.gainsActes ?? null,
+    gainsEnCours: l.gainsEnCours ?? null,
+    plan: Array.isArray(l.plan) ? l.plan : [],
+    cibles: Array.isArray(l.cibles) ? l.cibles : [],
+    essais: Array.isArray(l.essais) ? l.essais : [],
+    protocole: l.protocole || "Tout essai concluant est répété 5× ; validé 5× et viable économiquement, il passe en production."
+  }, l);
 }
 function getActiveLigne(){ return lignes.find(l => l.id === activeLigneId) || lignes[0]; }
 function getActiveReference(){
@@ -2941,6 +2957,11 @@ function normaliserSpecsUsine(s){
    Même règle que specsUsine : déclaré AVANT loadAll(), qui est protégé par un try/catch
    silencieux (voir le commentaire de specsUsine). */
 let synchroNote = null;
+/* v4.53 — les LIVRAISONS : l'objet que la hiérarchie lit (décision 3 de la constitution).
+   Une livraison = un instantané FIGÉ et DATÉ des gains du plan (actés, en cours, plan
+   poste par poste, cibles). Elle ne bouge plus : les chiffres vivent dans l'objet, pas
+   dans les scénarios. Déclarée AVANT loadAll() (rituel anti-TDZ). */
+let livraisons = [];
 loadAll();
 recomputeCycles();
 
@@ -3350,7 +3371,7 @@ function payloadSuivi(){
   // format 8 (v4.2) : `lignes` reste la racine, exactement comme les formats 5 et 7 -- une
   // version anterieure a la v4 lit ce fichier normalement, seuls `projets` et `responsables`
   // lui sont invisibles (elle ne les connait pas, elle ne les cherche pas).
-  return JSON.stringify({ format:8, lignes, projets, activeProjetId, responsables, backlog, revision, specsUsine, synchroNote, activeLigneId, activeReferenceId, activeOpId, activeScenarioId: activeId });
+  return JSON.stringify({ format:8, lignes, projets, activeProjetId, responsables, backlog, revision, specsUsine, synchroNote, activeLigneId, activeReferenceId, activeOpId, activeScenarioId: activeId, livraisons });
 }
 
 /* Ce qui pese vraiment, nomme, pour que l'utilisateur puisse agir plutot que subir. */
@@ -3919,6 +3940,36 @@ function rapportValidationHTML(sc){
   .syn2-wf-card .l { font-size:11.5px; color:var(--ink-soft); margin-top:3px; }
   @media print { .syn2-wf { border-bottom-color:#999; } .syn2-wf-card { background:#fff; } }
 </style>
+
+<style>
+/* ── v4.53 — livraisons : le dossier hiérarchie (bloc carte + impression A4) ── */
+.lv-bloc{ margin-top:16px; border-top:2px solid var(--border); padding-top:12px; }
+.lv-tete{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:8px; }
+.lv-tete b{ font-family:var(--font-disp); font-weight:700; font-size:14px; }
+.lv-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:6px 2px; border-bottom:1px solid var(--border); font-size:12.5px; }
+.lv-nom{ font-family:var(--font-disp); font-weight:700; color:var(--ink); flex:0 0 auto; }
+.lv-date{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint); }
+.lv-gains{ margin-left:auto; font-family:var(--font-mono); font-size:10.5px; color:var(--green); }
+#livraisonImpression{ display:none; }
+body.print-livraison > *{ display:none !important; }
+body.print-livraison > #livraisonImpression{ display:block !important; }
+body.print-livraison #livraisonImpression .m4{ font-family:'Public Sans',Arial,sans-serif; color:#111; }
+body.print-livraison #livraisonImpression .m4-entete{ display:flex; justify-content:space-between; border-bottom:3px solid #1B5EA6; padding-bottom:8px; margin-bottom:14px; }
+body.print-livraison #livraisonImpression .m4-sur{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:#1B5EA6; font-weight:600; }
+body.print-livraison #livraisonImpression .m4-titre2{ font-size:12px; color:#333; margin-top:4px; }
+body.print-livraison #livraisonImpression .m4-date2{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:#555; }
+body.print-livraison #livraisonImpression .m4-blocs{ display:flex; gap:12px; margin:14px 0; }
+body.print-livraison #livraisonImpression .m4-bloc{ flex:1; border-radius:6px; padding:10px 14px; border:2px solid #1a7a3f; background:#edf7f1; }
+body.print-livraison #livraisonImpression .m4-bloc.encours{ border-color:#b45309; background:#fdf6ec; }
+body.print-livraison #livraisonImpression .m4-bloc .n{ font-family:'Manrope','Open Sans',Arial,sans-serif; font-weight:700; font-size:22px; }
+body.print-livraison #livraisonImpression .m4-bloc .l{ font-size:10.5px; color:#444; text-transform:uppercase; }
+body.print-livraison #livraisonImpression .m4-h{ font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:#555; margin:14px 0 6px; }
+body.print-livraison #livraisonImpression .m4-row{ display:flex; gap:10px; font-size:11.5px; padding:4px 0; border-bottom:1px solid #eee; }
+body.print-livraison #livraisonImpression .m4-date{ font-family:'IBM Plex Mono',monospace; min-width:80px; color:#555; }
+body.print-livraison #livraisonImpression .m4-titre{ flex:1; color:#222; }
+body.print-livraison #livraisonImpression .m4-stat{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:#1a7a3f; }
+body.print-livraison #livraisonImpression .m4-proto{ font-size:10.5px; color:#555; margin-top:12px; border-top:1px solid #ccc; padding-top:8px; }
+</style>
 </head><body>
   <p style="font-family:Consolas,monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:#1B5EA6;">${escapeAttr([ligneActive && ligneActive.nom, refActive && refActive.nom, opActive && opActive.nom].filter(Boolean).join(" — "))} — Rapport de validation</p>
   <h1>${escapeAttr(sc.name)}${sc.baseline ? " — Référence" : ""}</h1>
@@ -4361,7 +4412,8 @@ function preparerImportDepuis(parsed){
     nouveauBacklog = [];
     revisionEntrante = 0;
   }
-  return { nouvellesLignes, nouveauxProjets, nouveauxResponsables, nouveauBacklog, revisionEntrante };
+  return { nouvellesLignes, nouveauxProjets, nouveauxResponsables, nouveauBacklog, revisionEntrante,
+           livraisons: (source.livraisons || []).map(normalizeLivraison) };
 }
 
 function importData(file){
@@ -4467,6 +4519,8 @@ function appliquerImport(mode){
     bilan.projetsAjoutes = bp.projetsAjoutes; bilan.tagsAjoutes = bp.tagsAjoutes;
     bilan.responsablesAjoutes = fusionnerResponsables(responsables, nouveauxResponsables || []);
     bilan.backlog = fusionnerBacklog(backlog, nouveauBacklog);
+    const nouvellesLivraisons = (importEnAttente && importEnAttente.livraisons) || [];
+    livraisons = (livraisons || []).concat(nouvellesLivraisons.filter(nl => !(livraisons || []).some(x => x.id === nl.id)));
     // la fusion produit un etat qui n'existe dans aucun des deux fichiers : elle merite sa
     // propre revision, sinon deux postes croiraient detenir la meme
     revision = Math.max(revision, revisionEntrante || 0) + 1;
@@ -4474,6 +4528,7 @@ function appliquerImport(mode){
     lignes = nouvellesLignes;
     projets = nouveauxProjets;
     responsables = nouveauxResponsables || [];
+    livraisons = (importEnAttente.livraisons || []).map(normalizeLivraison);
     activeProjetId = projets.find(x => x.id === parsed.activeProjetId) ? parsed.activeProjetId : null;
     backlog = nouveauBacklog;
     revision = Math.max(revision, revisionEntrante || 0);
@@ -11541,6 +11596,8 @@ const NOUVEAUTES = [
     "Les essais sont repliés en <b>tuiles</b> colorées selon leur état ; on les déplie au clic."
   ]}
 ];
+
+const TOOL_VERSION = "4.53.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -12010,6 +12067,7 @@ function renderCarte(){
       ${recette.ratio >= 1/3 ? `<span class="ca-ok">carte utile</span>` : `<span class="ca-faible">carte creuse — filtrer par projet</span>`}
     </div>
     ${sections || `<p class="panel-hint">Aucun poste à afficher${pj ? " dans ce projet" : ""}. Les machines déclarées par l'atelier dessinent la carte ; un poste sans donnée reste visible en « Opportunité ».</p>`}
+    ${livraisonsSectionHTML()}
     <div class="panel-actions"><button class="ghost" id="missionA4Btn">🖨 A4 Mission</button><button class="primary" id="carteClose">Fermer</button></div>
   `;
 
@@ -12039,6 +12097,38 @@ function renderCarte(){
   });
   /* v4.52 — A4 Mission : impression dédiée (le conteneur est appendé au body pour que
      la CSS d'impression n'affiche que lui). */
+  /* v4.53 — livraisons : créer, imprimer, supprimer */
+  const creer = document.getElementById("lvCreer");
+  if(creer) creer.addEventListener("click", () => {
+    const defaut = "Livraison 2026/2027 — " + new Date().toLocaleDateString("fr-FR");
+    dialogueDemander("Nom de la livraison (elle fige les gains du jour et ne se recalcule plus) :", defaut, { titre: "Nouvelle livraison" }).then(nom => {
+      if(nom === null) return;
+      livraisons = (livraisons || []).concat([creerLivraison(String(nom).trim() || defaut)]);
+      saveData(); renderCarte();
+    });
+  });
+  wrap.querySelectorAll(".lv-print").forEach(b => b.addEventListener("click", () => {
+    const l = (livraisons || []).find(x => x.id === b.getAttribute("data-lv"));
+    if(!l) return;
+    const el = document.getElementById("livraisonImpression") || document.body.appendChild(Object.assign(document.createElement("div"), { id: "livraisonImpression", hidden: true }));
+    el.innerHTML = livraisonImpressionHTML(l);
+    document.body.classList.add("print-livraison");
+    const nettoie = () => { document.body.classList.remove("print-livraison"); window.removeEventListener("afterprint", nettoie); };
+    window.addEventListener("afterprint", nettoie);
+    window.print();
+    setTimeout(nettoie, 2000);
+  }));
+  wrap.querySelectorAll(".lv-del").forEach(b => b.addEventListener("click", () => {
+    const l = (livraisons || []).find(x => x.id === b.getAttribute("data-lv"));
+    if(!l) return;
+    dialogueConfirmer("Supprimer la livraison « " + (l.nom || "") + " » ?\n\nLes données des scénarios, essais et cibles ne sont pas touchées — seule la copie figée disparaît.",
+      { titre: "Supprimer la livraison ?", okLabel: "Supprimer" }).then(ok => {
+      if(!ok) return;
+      livraisons = (livraisons || []).filter(x => x.id !== l.id);
+      saveData(); renderCarte();
+    });
+  }));
+
   const mBtn = document.getElementById("missionA4Btn");
   if(mBtn) mBtn.addEventListener("click", () => {
     const el = document.getElementById("missionA4") || document.body.appendChild(Object.assign(document.createElement("div"), { id: "missionA4", hidden: true }));
@@ -12055,6 +12145,73 @@ function renderCarte(){
 
 /* l'entrée : le bouton de la barre d'outils ouvre la carte (v4.51.2) */
 function ouvrirCarte(){ renderCarte(); ouvrirPanneau("cartePanel"); }
+
+/* ── v4.53 — LIVRAISONS : l'objet que la hiérarchie lit (décision 3) ──────────
+   Une livraison = un instantané FIGÉ des gains du plan, daté et nommé. Elle ne se
+   recalcule jamais : les chiffres sont copiés à la création — c'est le document que
+   Matis montre à sa hiérarchie (« livré en date du…, X €/an actés »). Source unique :
+   creerLivraison consomme cartePostes(), exactement comme l'affichage de la carte. */
+function creerLivraison(nom){
+  const postes = cartePostes().filter(t => t.etat !== "opportunite");
+  const plan = postes.map(t => ({
+    ligne: t.ligne.nom || "", code: t.code, nom: t.nomMachine || t.code,
+    refDominante: (t.poste.refDominante && (t.poste.refDominante.ref ? t.poste.refDominante.ref.nom : t.poste.refDominante.nom)) || "",
+    gainActe: t.poste.gainActe || 0, gainProjete: t.poste.gainProjete || 0, etat: t.etat
+  }));
+  const cibles = lignes.flatMap(l => l.references.map(r => ({ ref: r.nom, cible: r.cibleCPP || null }))).filter(x => x.cible);
+  return normalizeLivraison({
+    id: "lv" + Date.now().toString(36), nom: nom || "Livraison",
+    date: new Date().toISOString().slice(0, 10), creePar: auteurNom || "",
+    gainsActes: plan.reduce((a, x) => a + x.gainActe, 0),
+    gainsProjetes: plan.reduce((a, x) => a + x.gainProjete, 0),
+    plan, cibles,
+    essais: postes.reduce((a, t) => a + ((t.poste.essaiOuvert) ? 1 : 0), 0)
+  });
+}
+function livraisonImpressionHTML(l){
+  const eur = v => fmtEuroCourt(Math.abs(v || 0)) + "/an";
+  const planRows = (l.plan || []).map(x =>
+    `<div class="m4-row"><span class="m4-date">${escapeAttr(x.ligne)}</span>` +
+    `<span class="m4-titre">${escapeAttr(x.nom)} — ${escapeAttr(x.refDominante || "")}</span>` +
+    `<span class="m4-stat">${x.gainActe > 0 ? "acté " + eur(x.gainActe) : x.gainProjete > 0 ? "en cours " + eur(x.gainProjete) : "à chiffrer"}</span></div>`).join("");
+  const cibles = (l.cibles || []).map(c => escapeAttr(c.ref) + " " + fmt(c.cible, 3) + " €").join(" · ");
+  return `<div class="m4">
+    <div class="m4-entete">
+      <div><div class="m4-sur">Livraison — ${escapeAttr(l.nom)}</div>
+      <div class="m4-titre2">Suivi d'optimisation SPK by CeramTec × Sept Fons — pilote : Matis Hernu · partenaire outillage : SPK by CeramTec (Benjamin Rouquette)</div></div>
+      <div class="m4-date2">Livré le ${escapeAttr(l.date || "")} — figé, ne se recalcule pas</div>
+    </div>
+    <div class="m4-blocs">
+      <div class="m4-bloc ok"><div class="n">${eur(l.gainsActes)}</div><div class="l">Gains ACTÉS — en production</div></div>
+      <div class="m4-bloc encours"><div class="n">${eur(l.gainsProjetes)}</div><div class="l">EN COURS — validés ou en essai</div></div>
+    </div>
+    <h4 class="m4-h">Le plan livré — poste par poste</h4>
+    ${planRows || `<div class="m4-row"><span class="m4-titre">aucun poste</span></div>`}
+    <h4 class="m4-h">Cibles du site</h4>
+    <div class="m4-row"><span class="m4-titre">${cibles || "non renseignées"}</span></div>
+    <div class="m4-proto">${escapeAttr(l.protocole || "")}</div>
+  </div>`;
+}
+function livraisonsSectionHTML(){
+  const rows = (livraisons || []).slice().sort((a, b) => (b.date || "").localeCompare(a.date || "")).map(l =>
+    `<div class="lv-row">
+      <span class="lv-nom">📦 ${escapeAttr(l.nom)}</span>
+      <span class="lv-date">${escapeAttr(l.date || "")} · ${l.creePar || "—"}</span>
+      <span class="lv-gains">${l.gainsActes > 0 ? eurTxt(l.gainsActes) + " actés" : ""}${l.gainsActes > 0 && l.gainsProjetes > 0 ? " · " : ""}${l.gainsProjetes > 0 ? eurTxt(l.gainsProjetes) + " en cours" : ""}</span>
+      <button class="ghost small lv-print" data-lv="${escapeAttr(l.id)}" title="Imprimer l'A4 de cette livraison">🖨</button>
+      <button class="ghost small lv-del" data-lv="${escapeAttr(l.id)}" title="Supprimer cette livraison (les données des scénarios ne sont pas touchées)">🗑</button>
+    </div>`).join("");
+  return `<div class="lv-bloc">
+    <div class="lv-tete">
+      <b>📦 Livraisons — le dossier hiérarchie</b>
+      <button class="primary small" id="lvCreer">📦 Nouvelle livraison — figer les gains du jour</button>
+    </div>
+    ${rows || `<p class="panel-hint">Aucune livraison : clique ci-dessus pour figer les gains du jour dans un document daté — celui que la hiérarchie lit.</p>`}
+  </div>`;
+}
+function eurTxt(v){ return fmtEuroCourt(Math.abs(v || 0)) + "/an"; }
+
+/* Filtre du tableau de bord (v4.1) : null = tous les scenarios, sinon l'id d'un projet --
 
 /* Filtre du tableau de bord (v4.1) : null = tous les scenarios, sinon l'id d'un projet --
    seuls les scenarios etiquetes dans ce projet apparaissent. Par defaut "tous", meme quand
@@ -13898,6 +14055,28 @@ function runTests(){
         return o; }; return c; })();
       ok("comparaison canonique : objets réordonnés = identiques",
          JSON.stringify(canon(a)) === JSON.stringify(canon(b)), true);
+    }
+
+    /* ---- v4.53 : livraisons — instantané figé, insensible au recalcul ---- */
+    {
+      const dLignesAvant = lignes;
+      const lCC = normalizeLigne({ id:"lCC", nom:"EMAG 1", coutHoraire:50,
+        references:[{ id:"rCC", nom:"DV 356x26 RPI", productionAnnuelle:100000, cibleCPP:0.575,
+          ops:[{ id:"oCC", nom:"OP10 Ebauche", ordre:10, config:cfg,
+            scenarios:[
+              normalizeScenario({ id:"sCC1", name:"Prod actuelle", baseline:true, cycle:100, statut:"serie",
+                outils:[{ id:"tCC1", numero:"T1", logements:[{ id:"gCC1", nom:"Piste", prix:10, aretes:8, charniere:100 }] }], essais:[], scrapLog:[] }),
+              normalizeScenario({ id:"sCC2", name:"Essai optimisant", baseline:false, cycle:150, statut:"valide",
+                outils:[{ id:"tCC2", numero:"T2", logements:[{ id:"gCC2", nom:"Piste", prix:5, aretes:8, charniere:150 }] }], essais:[], scrapLog:[] })
+            ] }]
+        }] });
+      const lSauve = lignes;
+      lignes = [lCC];
+      const lv = creerLivraison("Test LB");
+      ok("creerLivraison : le plan porte les postes", lv.plan.length, 1);
+      ok("creerLivraison : gains sont des nombres (pas NaN)", [typeof lv.gainsActes, typeof lv.gainsProjetes], ["number", "number"]);
+      ok("creerLivraison : protocole embarqué", /5/.test(lv.protocole), true);
+      lignes = lSauve;
     }
 
     /* ---- v4.48 : compléter depuis la prod — rapprochement par préfixe ---- */
