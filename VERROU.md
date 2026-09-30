@@ -13,13 +13,13 @@
 
 | | |
 |---|---|
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
+| **Auteur** | **Hermes** |
+| **Pris le** | 30/09/2026 |
 | **Écrit dans** | `bilan_economique.html` |
-| **Version visée** | — |
-| **Sujet** | — |
+| **Version visée** | **4.55.2** |
+| **Sujet** | OP30 / perçage hors pilotage (option A) |
 
-✅ **Le fichier est libre.**
+⛔ **Le fichier est pris par Hermes — ne pas y écrire.**
 
 ---
 
