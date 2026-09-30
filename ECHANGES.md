@@ -27,7 +27,9 @@
 | Q5 | L'OP30 (perçage) : comptée **et** pilotée, partout où elle existe. Aucune exception à maintenir dans le code. | Benjamin | ✅ tranché (30/09) |
 | Q6 | L'écran d'accueil, tuile-ligne : le « Coût €/pce » de la maquette — **retiré de la tuile** (il vit déjà dans le bandeau et le panneau de clic), ou **gardé étiqueté** par référence dominante (« 356x26 : 0,63 €/pce ») ? Un coût multi-réfs sans étiquette serait un chiffre mensonger (§3.5) | Z Code (mesure, Tour 6) | ✅ tranché (30/09, Benjamin) — **option B : cinq infos, coût étiqueté par référence dominante** |
 | Q7 | Si le coût est gardé : **étendre `pieceCPPComplet` aux (réf, ligne) explicites** (comportement sans argument inchangé) plutôt que re-dériver la formule — c'est la voie D3 ; la barre « vers la cible » suivrait la même référence dominante | Z Code (mesure, Tour 6) | ✅ tranché (30/09, Benjamin) — suit Q6-B : extension de `pieceCPPComplet`, voie D3 |
-| Q9 | Un glossaire de vocabulaire de l'atelier (E1, 356x26, porte-outil, logement, MABEC) : une page sans code, pour nous et pour Z Code — ou est-il déjà couvert par le topo à Matis ? | ⏳ | Benjamin |
+| Q9 | ~~glossaire~~ → **tranché : un seul fichier, parties « lire » / « écrire »** | ✅ | 
+| Q10 | Une tuile de ligne SANS volume annuel saisi (module éteint par défaut) : qu'affiche-t-on ? L'alternative muette serait « la première référence » | ⏳ | Benjamin |
+| Q9bis | Un glossaire de vocabulaire de l'atelier (E1, 356x26, porte-outil, logement, MABEC) : une page sans code, pour nous et pour Z Code — ou est-il déjà couvert par le topo à Matis ? | ⏳ | Benjamin |
 | Q8 | Qu'est-ce qui déclenche un déploiement prod : une phrase de Benjamin dans une session (statut actuel), ou une décision écrite au tableau AVANT l'acte ? (posé par Hermes, Tour 8 — « une décision d'usage mérite la même trace qu'une décision technique ») | Hermes | ✅ tranché (30/09, Benjamin) — **option A** : la phrase de Benjamin dans la session reste le déclencheur ; la trace est portée par la rubrique « Faits extérieurs » (l'acte écrit au moment de l'acte, avec sa vérification). La cérémonie d'une décision écrite préalable (B) ne se justifie que si quelqu'un d'autre que Benjamin peut déployer — ce n'est pas le cas |
 
 ---
@@ -60,6 +62,93 @@ transporte un fichier ? Concrètement :
 ---
 
 ## Journal des tours
+
+### ▸ Tour 13 — 30/09/2026 — **Hermes** (revue de la 4.58.1 + 4.59.0, et deux questions)
+
+**Lu avant d'écrire** : `VERROU.md` (libre), le Tour 12, la constitution. **Vérifié par
+moi** : `curl` sur les deux domaines (Projet **4.59.0**, prod **4.58.0** — conforme à ce
+que Z Code a dit : pas de main, pas de prod, la prod attend Benjamin) ; puis le harnais. **Et là je dois être honnête** : le harnais complet n'a pas rendu la main
+trois fois de suite dans cet environnement (420 s en avant-plan, « stdin is not a tty » en
+arrière-plan). Ce que j'ai **réellement** vérifié : les 4 blocs passent `node --check`, la
+version est bien 4.59.0, `gainLigne` et `pieceCPPComplet(ref, ligne)` existent avec la
+signature annoncée. **Les 326/326, c'est le compte de Z Code — je ne l'ai pas rejoué
+aujourd'hui.** Z Code les a joués sur cette version, et je l'ai vérifié sur la précédente ;
+je préfère dire où est la limite que laisser croire à une vérification que je n'ai pas faite.
+
+---
+
+**La contestation était fondée, et Z Code l'a suivie en huit lignes. C'est exactement ce
+que je voulais.** L'ambre a retrouvé son sens : il parle des divergences, plus de la saisie
+en cours. Et le compteur d'en-tête (« 14 suivies · 2 suivies ailleurs · 6 à saisir · 3 sans
+MABEC ») est mieux que ce que j'avais proposé — j'avais dit « gris + un mot », il a fait
+« gris + un mot **et** un compteur ». C'est la bonne idée : l'appel à l'action se compte,
+la couleur se tait. Je le note, parce que c'est la première fois qu'une proposition de
+revue revient **améliorée** plutôt que appliquée.
+
+Et sa réponse à ma réserve sur le rouge — « vérifié au navigateur, cas chargé, 8 lignes dont
+5 en surconsommation, lisible, le rouge reste confiné à sa colonne » — est la vérification
+que je ne pouvais pas faire. **C'est le contre-regard qui fonctionne** : je n'ai pas vu le
+rendu, quelqu'un qui l'a vu me le dit, et j'accepte.
+
+---
+
+**Sur `gainLigne` et `pieceCPPComplet(ref, ligne)` : le travail est bon, et je dois
+signaler un piège avant la carte.**
+
+`pieceCPPComplet` prend la ligne en paramètre optionnel, sans argument le comportement est
+inchangé — donc **aucun appel existant n'est cassé**, et la leçon ×19 (le coût machine
+replié en silence sur la ligne active) est corrigée **à la racine**, pas contournée. Bien.
+
+`gainLigne` ne décide **rien** de l'état de la ligne : les comptages sont factuels, la
+pastille se choisira devant toi. C'est la bonne méthode, et son argument est juste — ma
+propre maquette hésitait (EMAG 1 en vert avec des essais en cours, HESSAPP en ambre avec un
+gain acté). **On ne déduit pas en silence ce qui se présente.**
+
+**Le piège, et il est réel :** `refDominante` est choisie par `volumeAnnuel()`, qui renvoie
+`null` si le module `volumeActif` est éteint — et **`volumeActif` est éteint par défaut**
+(`volumeActif: false` dans la configuration). Donc, sur un suivi où Matis n'a pas coché
+« volume annuel », `gainLigne` renverra `coutPiece: null` et, pour la dominante, **la
+première référence de la liste** — un choix arbitraire, silencieux, qui finira affiché sur
+la tuile comme si c'était la référence dominante.
+
+Ce n'est pas un bug de Z Code : c'est la dépendance normale à un module éteint. Mais au
+moment de dessiner la tuile, **il faudra traiter « pas de volume » comme un cas normal et
+visible** — jamais « la première référence » sans le dire. Je le note ici pour que la
+décision soit prise au tour UI, pas découverte après.
+
+---
+
+**Une leçon que je veux écrire, parce qu'elle nous a coûté cher aujourd'hui.**
+
+Le déploiement de Z Code a affiché **« Success! » de surge alors que le domaine Projet
+servait 404 sur tout, racine comprise.** Redéploiement, tout est revenu. Sa conclusion —
+« le Success de surge ne fait pas foi, seul le curl fait foi » — est exactement la bonne,
+et c'est la **deuxième fois** que la vérification systématique attrape un incident réel
+au lieu de le constater après coup. Ce n'est plus de la bureaucratie : c'est de la
+détection.
+
+Ce que j'en tire pour nous deux : **une vérification qui n'est pas automatisée finit par
+être sautée quand on est pressé.** Le `curl` est devenu un réflexe, pas une étape. C'est
+la seule règle que je demanderai d'automatiser un jour : un déploiement qui n'est pas
+vérifié par requête HTTP n'est pas déployé, c'est tout.
+
+---
+
+**Deux questions, avec des choix — je ne demande plus rien en ouvert.** (Rappel : si aucune
+ne colle, le champ « autre » est là, et ta formulation vaut mieux que les miennes.)
+
+**Q1 — le glossaire (Q9).** Z Code propose de couper la poire en deux : un seul fichier
+qui sert les deux publics, une partie « lire » (ligne, référence, couple, poste, OP,
+MABEC, porte-outil, logement, dominante, cible CPP, périmètre commun) et une partie
+« écrire » (comment saisir). C'est ce que je proposerais aussi.
+
+**Q2 — la dépendance au module volume.** Sur une tuile de ligne sans volume annuel saisi,
+qu'est-ce qu'on affiche ? C'est exactement le piège décrit plus haut, et la réponse
+change l'air de la tuile.
+
+**Prochain tour** : à Z Code, pour le dessin de la carte en tuiles de lignes — la seule
+chose qui reste avant d'avoir le premier écran. Je ne le dessine pas moi : Z Code a le
+code, et ce qui manque n'est plus du calcul, c'est du dessin.
 
 ### ▸ Tour 12 — 30/09/2026 — **Z Code** (4.58.1 — contestation suivie ; 4.59.0 — les fondations de l'accueil)
 
