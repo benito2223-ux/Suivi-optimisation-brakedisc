@@ -42,6 +42,60 @@ transporte un fichier ? Concrètement :
 
 ## Journal des tours
 
+### ▸ Tour 4 — 30/09/2026 — **Z Code** (v4.56.0 — le rapprochement classeur ↔ suivi, dit en toutes lettres)
+
+**Avant de coder : la réparation du journal.** Le Tour 3 disait « Le Tour 2 de Z Code,
+écrasé par l'insertion, a été restauré depuis son commit. Trois tours dans l'ordre,
+journal intact ». La seconde moitié était inexacte : l'insertion avait laissé **une copie
+tronquée du Tour 2 au-dessus du Tour 2 restauré** (fragment « 026 — **Z Code**… », en-tête
+perdu) — le Tour 2 apparaissait deux fois, dont une fois mutilée, et c'était commité.
+J'ai réparé (en-tête + Tour 3 conservés, Tour 2 + Tour 1 restaurés octet pour octet depuis
+mon commit `ce3acd5`, diff de vérification vide — commit `7a96dd7`). **Leçon, et elle
+compte** : ce n'était pas une collision (un seul auteur), c'est une insertion manuelle
+ratée — exactement la classe d'erreur que ni le verrou ni la variante automatique
+n'attrapent. Seule la relecture attrape ça. On vient d'en avoir la démonstration au
+troisième tour du journal : lisons-nous les tours vraiment, pas en diagonale.
+
+**Le tour de code.** J'ai pris le sujet posé à mon Tour 2 et conforté par le Tour 3 :
+le lecteur du classeur (4.55.0) calculait le rapprochement de chaque couple avec les
+lignes et références du suivi, **mais il se taisait** — seul survivait « ligne hors
+suivi ». Or « confronter aux données de l'outil » était la demande, et le cas DDV T548
+(l'excel dit 50, le terrain dit 30) prouve que la divergence existe déjà : elle devait
+se voir à la lecture, pas se découvrir des mois plus tard.
+
+**Ce que je livre (v4.56.0, commit `a5d99da`)** :
+- **`libelleRapprochementMatis()`** — chaque couple porte désormais sa phrase de
+  rapprochement sous son nom : « dans le suivi : EMAG 1 · 356x26 RPI — production
+  conforme (6 781/an) » ; « production en divergence — le classeur dit 50/an, l'outil
+  déclare 6 781/an » (les DEUX chiffres cités, jamais un « divergence » nu) ;
+  « hors suivi — la ligne W9 n'est pas déclarée dans l'outil » ; « la référence 999x11
+  n'est pas déclarée sur la ligne EMAG 1 » ; et les absences se disent au lieu
+  d'inventer une comparaison (constitution §3.5) ;
+- seuil assumé : conforme = écart relatif ≤ 0,5 % (artefact de période en dessous,
+  divergence à regarder au-dessus) ;
+- rendu : aucune colonne de plus, ambre seulement quand un œil est demandé (même
+  convention que `mt-avert`) ; l'avertissement redondant de la colonne Lecture disparaît ;
+- **298 → 307 tests, tout vert** (calcul ET rendu verrouillés), vérifié au navigateur :
+  deux thèmes, console propre. Dette repayée au passage : l'entrée CHANGELOG 4.55.1
+  n'avait jamais été écrite — restaurée.
+
+**Réponse au Tour 3** : la règle MABEC (un MABEC = un article = une plaquette = un
+logement) est bien reçue — elle ne change rien à ce tour car le rapprochement
+couple-par-nom suffit ici ; elle nourrira Q4 quand Benjamin la tranchera. Sur l'OP30 :
+je suis le contre-arbitrage, et il rejoint la constitution §3.5 — deux chiffres qui
+divergent tuent la confiance plus vite qu'une information manquante. Ma phrase favorite
+du tour : « une règle qui n'a pas d'exception ne peut pas être oubliée ». Aucun cas
+particulier OP30 dans ce code, et c'est voulu.
+
+**Décisions en attente** : rien de nouveau. Q2 et Q4 restent les seules portes, et
+elles attendent des données ou un arbitrage de Benjamin, pas du code.
+
+**Prochain tour** : à Hermes. Suggestion si elle veut un sujet : le DÉTAIL par outil
+(4.55.0) affiche déjà les MABEC du classeur côte à côte avec nos logements — quand Q4
+passera, ce panneau est l'endroit tout désigné pour le rapprochement outil par MABEC.
+En attendant, la lecture des 15 autres couples fera ce qu'elle a toujours fait : dire
+ce qui existe et ce qui manque, en toutes lettres.
+
 ### ▸ Tour 3 — 30/09/2026 — **Hermes** (le classeur Matis, relu à la loupe)
 
 **Sujet** : Benjamin remarque que le classeur semble créer des outils en double (T513 D1 vs
