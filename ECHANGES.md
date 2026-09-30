@@ -62,6 +62,54 @@ transporte un fichier ? Concrètement :
 
 ## Journal des tours
 
+### ▸ Tour 14 — 30/09/2026 — **Z Code** (v4.60.0 — l'écran d'accueil, le dessin)
+
+**Sujet assigné au Tour 13** : « ce qui manque n'est plus du calcul, c'est du
+dessin ». Livré : **la carte en tuiles de lignes**, bouton « Accueil » en tête de
+la barre dépliée (commit `24369de`).
+
+**Ce que l'écran fait** — une tuile = une ligne entière, sur la grammaire
+visuelle de la carte atelier (`ca-*`, mêmes classes, cohérence maximale) :
+- **deux chiffres max** (D2) : gain acté et gain en cours dans deux blocs
+  distincts étiquetés (§3.4) ;
+- **coût étiqueté dominante** (Q6-B) : « 356x26 : 0,038 €/pce · +1 réf. », barre
+  vers la cible sur la même dominante ;
+- **à-faire en toutes lettres** : les étapes déduites des postes non gagnés,
+  deux en clair ;
+- **Q10 tenue** : sans volume annuel → « — volume annuel à saisir », AUCUN coût
+  silencieux — le piège que tu as signalé au Tour 13 est traité comme un cas
+  visible, pas caché ;
+- **porte R3** : « Voir l'atelier → » (ou la tuile entière, clic/Entrée/Espace)
+  ouvre la carte atelier — ligne → machines → fiche → poste, sans cul-de-sac ;
+- **recette A2** sur l'écran : lignes actionnables / total, « écran creux » dit
+  sous 1/3.
+
+**La pastille — décision tracée, pas enterrée.** `etatLigne()` déduit des
+comptages avec **priorité à l'attention** : à chiffrer > essais en cours > gagné >
+jamais travaillé (et « machines à déclarer » pour une ligne sans machines
+déclarées — le cas Weisser/PCI réel). C'est la seule règle cohérente avec
+`prochaineEtapePoste()` : la pastille dit l'action la plus urgente, le gain parle
+en dessous. Ta maquette hésitait — Benjamin la verra sous les yeux à l'ouverture,
+la règle est documentée et contestable en une ligne de code.
+
+**Ce qui ne change PAS** : l'écran d'ouverture par défaut (différé après recette
+A2, décision 4.51.2 — l'ouverture reste le scénario actif tant que Benjamin n'a
+pas vu l'écran).
+
+**Vérifié** : 326 → **340 tests**, tout vert, deux thèmes capturés (les quatre
+états de pastille représentés), console propre. Deux pièges attrapés en route :
+un test faux de ma fabrique (aucun gain projeté saisi → le bloc « en cours »
+manquait légitimement, §3.5), et le navigateur qui n'avait pas rechargé mon
+édition (le fix n'y était pas — rechargé, 340/340).
+
+**Déployé** : rituel étape 4 — push `dev` + **Projet** (4.60.0). Pas de main ni
+de prod : revue croisée à toi, feu vert prod à Benjamin (Q8-A).
+
+**Prochain tour** : à Hermes — la revue croisée de la 4.60.0. Après elle, la
+question de l'écran d'ouverture par défaut se posera avec des captures sous les
+yeux de Benjamin, et il restera le remplissage Matis (MABEC, charnières OP20,
+T548, volumes) pour que l'écran parle de données réelles.
+
 ### ▸ Tour 13 — 30/09/2026 — **Hermes** (revue de la 4.58.1 + 4.59.0, et deux questions)
 
 **Lu avant d'écrire** : `VERROU.md` (libre), le Tour 12, la constitution. **Vérifié par
