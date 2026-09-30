@@ -30,7 +30,8 @@
 | Q9 | ~~glossaire~~ → **tranché (Benjamin) : PAS de glossaire. Le vocabulaire va dans le topo à Matis, une section. Z Code s'en passe.** | ✅ |
 | Q10 | ~~tuile sans volume~~ → **tranché (Benjamin) : la tuile affiche « — » et « volume annuel à saisir ». Ni coût pièce, ni référence dominante, tant que le volume manque. Jamais « la première référence »** | ✅ |
 | Q8 | Qu'est-ce qui déclenche un déploiement prod : une phrase de Benjamin dans une session (statut actuel), ou une décision écrite au tableau AVANT l'acte ? (posé par Hermes, Tour 8 — « une décision d'usage mérite la même trace qu'une décision technique ») | Hermes | ✅ tranché (30/09, Benjamin) — **option A** : la phrase de Benjamin dans la session reste le déclencheur ; la trace est portée par la rubrique « Faits extérieurs » (l'acte écrit au moment de l'acte, avec sa vérification). La cérémonie d'une décision écrite préalable (B) ne se justifie que si quelqu'un d'autre que Benjamin peut déployer — ce n'est pas le cas |
-| Q11 | Le réglage « écran d'ouverture » (Options, défaut inchangé) : préparer ou pas. **Classée derrière le remplissage Matis** — un réglage qui choisit entre deux écrans vides se regrette. | ⏳ | Benjamin |
+| Q11 | Le réglage « écran d'ouverture » (Options, défaut inchangé) : **classée derrière le remplissage Matis** | ⏳ | Benjamin |
+| Q12 | Les 6 lignes « hors périmètre » (Weisser 1-4, PCI 4-5) : une tuile regroupée qui les nomme, ou rien ? Décision de dessin — c'est le regard de Benjamin qui tranche | ⏳ | Benjamin |
 
 ---
 
@@ -62,6 +63,92 @@ transporte un fichier ? Concrètement :
 ---
 
 ## Journal des tours
+
+### ▸ Tour 19 — 30/09/2026 — **Hermes** (revue de la 4.60.1 : le piège de constitution, attrapé à temps)
+
+**Lu avant d'écrire** : `VERROU.md` (libre), le Tour 18. **Vérifié par moi** : 342/342 en
+0,4 s, puis **contre-regard** (deux pannes injectées, deux détectées, fichier restauré à
+l'octet près).
+
+---
+
+**Ce que Z Code a trouvé, et c'est le meilleur travail de la journée.**
+
+Il a fait ce que je proposais — ouvrir l'accueil sur les **données réelles** — et il a
+trouvé ce que je n'aurais pas vu : la tuile EMAG 1 affichait **« 0,763 €/pce »** sans dire
+que des opérations n'étaient pas chiffrées. Le lecteur croyait lire un coût complet. Il
+lisait le coût des seules OP chiffrées.
+
+**C'est la constitution §3.2 violée** : un poste non chiffrable se déclare, il ne devient
+pas un coût complet en silence. Et c'est le pire genre d'erreur possible dans cet outil,
+parce qu'elle ne se voit pas : **un chiffre faux qui a l'air juste**, devant une hiérarchie,
+c'est exactement ce qui détruit la confiance. Le « hors 1 opération non chiffrée » est
+maintenant là, discret, sous le coût — exactement à la bonne place.
+
+Le second correctif est plus fin et tout aussi juste : sur une ligne sans références,
+l'invitation « volume annuel à saisir » **se contredisait** — sans référence, il n'y a pas
+de volume à saisir. Une double invitation est deux fois moins lisible, pas plus. La
+suppression est le bon choix.
+
+**Mon contre-regard** (la règle que j'ai proposée au Tour 17, appliquée à sa livraison) :
+
+| Panne injectée | Vue par le harnais |
+|---|---|
+| la mention « hors n opérations non chiffrées » se tait | **342 / 1 échec** — attrapée |
+| la double invitation revient | **342 / 2 échecs** — attrapée |
+| restauration | **342 / 0**, fichier **identique à l'octet près** |
+
+**Les deux corrections sont protégées par un test qui sait les voir disparaître.** Ce n'est
+pas une vérification de façade : c'est la règle gravée dans le code.
+
+Et un mot sur la phrase de Z Code : « le contre-regard fonctionne dans les deux sens ». Il
+est vrai — le harnais a vu rouge **ses deux attendus faux** pendant qu'il écrivait ses
+tests. C'est exactement le rôle d'un testeur : dire non à celui qui le construit, pas
+approuver en souriant. **Les deux tours valent parce qu'on a pu se contredire.**
+
+---
+
+**Sur les 6 tuiles de silence — je n'ai pas de doute, et je ne veux pas le dissimuler.**
+
+6 tuiles sur 10 qui répètent « machines à déclarer / aucune référence / — », pendant que
+quatre lignes vivantes se battent pour être lues. **Ta maquette les regroupait en une tuile
+grise, et tu as validé le principe.** Z Code a eu raison de ne pas le coder sans ton regard :
+le regroupement est une décision de dessin, pas une correction.
+
+**Mais je veux dire pourquoi je suis sûr que le regroupement est la bonne réponse, parce
+qu'il y a une raison qu'aucun test ne verra.** Ces lignes ne sont pas « en attente » : elles
+sont **hors périmètre**. Weisser et PCI ne sont pas les lignes qu'on pilote. Les afficher
+une par une, avec le même poids visuel qu'EMAG 1, dit quelque chose de faux : qu'il y a
+six choses à faire. Il n'y en a pas. **Le regroupement ne cache rien : il dit la vérité, en
+une tuile qui porte leur nombre.**
+
+Et la formule que je proposerais, pour que tu n'aies rien à inventer : une tuile unique,
+grise, qui dit **le nombre et le nom** — « 6 lignes hors périmètre : Weisser 1–4, PCI 4–5 »
+— et qui propose, en une ligne, ce qu'il faut faire : **déclarer leurs machines, ou les
+sortir du périmètre**. Pas une invitation à la saisie impossible : un choix explicite.
+
+**La question à trancher est donc simple, et elle est à toi :** une tuile regroupée qui les
+nomme, ou rien du tout ?
+
+---
+
+**Les deux constats de données sont réels, et ils sont à toi — pas au code.**
+
+- **« PCI 4 » / « PCI 5 » dans le suivi, « PCI 1 » / « PCI 2 » dans la déclaration
+  d'usine.** C'est la cause exacte des « machines à déclarer » sur des lignes qui existent.
+  La correction est dans les données : renommer les lignes du suivi, ou étendre la
+  déclaration. **Ça se décide avec Matis, pas dans le code** — et c'est la preuve que le
+  problème que tu signalais (« la topologie est dans le code, Matis ne peut pas l'éditer »)
+  est toujours là, exactement où je l'avais dit ;
+- **« OP15 » sur HESSAPP, sans nom.** Une machine déclarée sans nom ne peut pas être
+  discutée. Ou elle a un nom, ou elle n'existe pas.
+
+**Les deux vont au topo à Matis.** Et tant qu'ils ne sont pas partis, l'écran d'accueil
+montre une erreur de données comme si c'était un état de l'outil.
+
+**Prochain tour** : à Z Code, pour la suite — et si tu veux, la 4.60.2 peut traiter le
+regroupement **dès que tu auras tranché**. Pas avant : c'est un dessin, et c'est ton
+regard qui le décide.
 
 ### ▸ Tour 18 — 30/09/2026 — **Z Code** (la revue demandée : l'accueil avec les données réelles, puis 4.60.1)
 

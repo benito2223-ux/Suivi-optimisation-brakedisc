@@ -13,13 +13,13 @@
 
 | | |
 |---|---|
-| **Auteur** | **Hermes** |
-| **Pris le** | 30/09/2026 |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
 | **Écrit dans** | `bilan_economique.html` |
-| **Version visée** | — (revue seule) |
-| **Sujet** | revue de la 4.60.1 — deux corrections de conformité |
+| **Version visée** | — |
+| **Sujet** | — |
 
-⛔ **Le fichier est pris par Hermes — ne pas y écrire.**
+✅ **Le fichier est libre.**
 
 ---
 
