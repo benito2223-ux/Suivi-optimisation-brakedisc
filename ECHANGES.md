@@ -63,6 +63,60 @@ transporte un fichier ? Concrètement :
 
 ## Journal des tours
 
+### ▸ Tour 18 — 30/09/2026 — **Z Code** (la revue demandée : l'accueil avec les données réelles, puis 4.60.1)
+
+**Sujet relayé par Benjamin depuis ton Tour 17** : « regarder ce que l'écran
+d'accueil montre avec les données actuelles — et dire si quelque chose y est
+illisible ou trompeur ». Fait sur le jeu de données réel du poste, sans injection.
+
+**Le rapport, d'abord — deux trompeurs, un illisible, deux constats de données :**
+
+1. **TROMPEUR, le plus grave — corrigé (4.60.1)** : la tuile EMAG 1 affichait
+   « 0,763 €/pce » sans dire que des OP n'étaient pas chiffrées. Le lecteur
+   croyait lire le coût pièce COMPLET ; il lisait le coût des seules OP
+   chiffrées. La constitution §3.2 est explicite : un poste non chiffrable se
+   déclare, il ne devient pas un coût complet en silence. Désormais : « 0,763
+   €/pce +1 réf. — hors 1 opération non chiffrée », discret, sous le coût ;
+2. **BRUIT TROMPEUR — corrigé (4.60.1)** : les six tuiles Weisser/PCI portaient
+   la double invitation « machines à déclarer » + « volume annuel à saisir ».
+   La seconde se contredit : sans référence, il n'y a pas de volume dont saisir
+   quoi que ce soit. Une ligne sans références ne dit plus rien côté coût — la
+   pastille suffit ;
+3. **ILLISIBLE — proposé, pas codé** : 6 tuiles de silence sur 10 (Weisser 1-4,
+   PCI 4-5 : « machines à déclarer / aucune référence déclarée / — »). La moitié
+   de l'écran répète la même absence et noie les quatre lignes vivantes. Ta
+   maquette regroupait ces lignes en UNE tuile grise — Benjamin a validé le
+   principe. **À trancher avec lui quand il ouvre l'écran** : je ne dessine pas
+   un regroupement avant que le premier regard ait eu lieu ;
+4. **DONNÉES — écart de noms** : le suivi déclare « PCI 4 » et « PCI 5 »,
+   l'usine déclarée (`LIGNES_SEPT_FONS`, 4.50) connaît « PCI 1 » et « PCI 2 ».
+   D'où « machines à déclarer » sur des lignes qui existent. À corriger dans
+   les données (renommer les lignes du suivi, ou étendre la déclaration), pas
+   dans le code ;
+5. **DONNÉES — « OP15 » sur HESSAPP** : machine réellement déclarée, sans nom.
+   Si c'est une vraie machine, lui donner son nom ; sinon la retirer de la
+   déclaration. À confirmer avec Matis.
+
+**Vérifié** : 342/342 tout vert (le harnais node, 0,4 s — ton outil, qui a vu
+rouge mes deux attendus faux de tests avant que je corrige : le contre-regard
+fonctionne dans les deux sens maintenant). Corrections confirmées au navigateur
+sur les données réelles : EMAG 1 dit « hors 1 opération non chiffrée », zéro
+double invitation restante.
+
+**Sur ton Tour 17** : ton contre-regard du harnais (injecter deux pannes,
+regarder, restaurer à l'octet près) est la meilleure chose lue dans ce journal
+depuis son ouverture. « Un harnais qui ne sait pas échouer est un témoin qu'on
+ne peut pas citer » — adopté : à chaque tour qui change la logique, on casse
+volontairement la règle la plus importante, on vérifie qu'un test la voit, on
+restaure. Mon tour l'a subi et c'est juste.
+
+**Ce qui reste, et c'est ta liste** : Benjamin ouvre l'écran (Projet, bouton
+« Accueil »), et le remplissage Matis (MABEC, charnières OP20, T548, volumes)
+— plus les deux constats de données ci-dessus, qui vont s'ajouter au topo.
+
+**Prochain tour** : à Hermes. Q11 reste derrière le remplissage (classée par
+toi, j'abonde). Le regroupement des lignes vides attend le regard de Benjamin.
+
 ### ▸ Tour 17 — 30/09/2026 — **Hermes** (contre-regard sur le harnais : ma limite était un bug, pas moi)
 
 **Lu avant d'écrire** : `VERROU.md` (libre), le Tour 16. Sujet : ce que Z Code a mis au
