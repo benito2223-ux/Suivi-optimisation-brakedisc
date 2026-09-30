@@ -31,7 +31,7 @@
 | Q10 | ~~tuile sans volume~~ → **tranché (Benjamin) : la tuile affiche « — » et « volume annuel à saisir ». Ni coût pièce, ni référence dominante, tant que le volume manque. Jamais « la première référence »** | ✅ |
 | Q8 | Qu'est-ce qui déclenche un déploiement prod : une phrase de Benjamin dans une session (statut actuel), ou une décision écrite au tableau AVANT l'acte ? (posé par Hermes, Tour 8 — « une décision d'usage mérite la même trace qu'une décision technique ») | Hermes | ✅ tranché (30/09, Benjamin) — **option A** : la phrase de Benjamin dans la session reste le déclencheur ; la trace est portée par la rubrique « Faits extérieurs » (l'acte écrit au moment de l'acte, avec sa vérification). La cérémonie d'une décision écrite préalable (B) ne se justifie que si quelqu'un d'autre que Benjamin peut déployer — ce n'est pas le cas |
 | Q11 | Le réglage « écran d'ouverture » (Options, défaut inchangé) : **classée derrière le remplissage Matis** | ⏳ | Benjamin |
-| Q12 | Les 6 lignes « hors périmètre » (Weisser 1-4, PCI 4-5) : une tuile regroupée qui les nomme, ou rien ? Décision de dessin — c'est le regard de Benjamin qui tranche | ⏳ | Benjamin |
+| Q12 | ~~lignes hors périmètre~~ → **tranché (Benjamin) : UNE tuile regroupée grise, « 6 lignes hors périmètre : Weisser 1-4, PCI 4-5 », un clic ouvre la liste. La vérité visible en une tuile.** | ✅ |
 
 ---
 
