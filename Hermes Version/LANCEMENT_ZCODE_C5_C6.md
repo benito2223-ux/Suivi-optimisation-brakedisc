@@ -68,7 +68,7 @@ voudrai recompter à la revue.
 **3. Le projet Stitch propose 4 écrans, et on n'en prend que 2.**
 
 Le « comparateur de scénarios » et le « bilan économique & livraisons » **ne sont pas dans
-ce lot**. Si tu les vois dans la capture et que tu t'y迷惑, ils sont hors périmètre.
+ce lot**. Si tu les vois dans la capture et que tu te demandes pourquoi, ils sont hors périmètre.
 
 ---
 
