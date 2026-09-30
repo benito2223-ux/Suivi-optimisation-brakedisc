@@ -13,13 +13,13 @@
 
 | | |
 |---|---|
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
+| **Auteur** | Z Code |
+| **Pris le** | 30/09/2026, tour 18 |
 | **Écrit dans** | `bilan_economique.html` |
-| **Version visée** | — |
-| **Sujet** | — |
+| **Version visée** | 4.60.1 |
+| **Sujet** | Revue de l'accueil sur données réelles : le coût partiel non dit (§3.2) et la double invitation sur lignes vides |
 
-✅ **Le fichier est libre.**
+🔒 **Le verrou est pris par Z Code.**
 
 ---
 
