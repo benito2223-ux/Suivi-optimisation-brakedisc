@@ -175,6 +175,19 @@ button.danger:hover{border-color:transparent; color:var(--red); background:var(-
 .icon{width:15px; height:15px; display:inline-block; vertical-align:-3px; margin-right:6px; fill:none; stroke:currentColor; stroke-width:1.6;}
 button.primary .icon, button.save .icon{stroke-width:1.8;}
 .toolbar-actions{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+/* v4.57 — les 4 écrans de consultation sont des boutons comme les autres : ni plus petits,
+   ni « secondaires ». C'est la seule façon qu'ils soient trouvables sans apprendre le menu. */
+.toolbar-ecrans{ display:flex; gap:8px; align-items:center; flex-wrap:wrap;
+  padding-right:10px; margin-right:2px; border-right:1px solid var(--border); }
+@media (max-width:1180px){
+  /* quatre boutons de plus ne tiennent plus sur une ligne : ils passent sur la ligne suivante
+     plutot que de rétrécir sous la cible tactile de 44 px. */
+  .toolbar-ecrans{ flex-basis:100%; padding-right:0; margin-right:0; border-right:none;
+    padding-bottom:2px; }
+}
+@media (pointer: coarse){
+  .toolbar-ecrans button{ min-height:44px; }
+}
 /* barre d'outils simplifiee : seules les actions les plus frequentes (Exporter, Importer,
    Ajouter un scenario) restent visibles en permanence ; tout le reste (CSV, synthese,
    suggestions, options, PDF, rapport, historique, dossier local, reinitialiser...) se range
@@ -1539,6 +1552,15 @@ body.atelier-on{overflow:hidden;}
       <button class="save" id="exportBtn" title="Enregistre un fichier .json à archiver ou à envoyer par e-mail"><svg class="icon" viewBox="0 0 18 18"><path d="M9 2v9M5.5 8 9 11.5 12.5 8M3 14.5h12" stroke-linecap="round" stroke-linejoin="round"/></svg>Exporter le suivi</button>
       <button class="ghost" id="importBtn" title="Recharge un fichier .json reçu ou archivé"><svg class="icon" viewBox="0 0 18 18"><path d="M2.5 5.5a1 1 0 0 1 1-1H7l1.5 1.8H14.5a1 1 0 0 1 1 1V13a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1V5.5Z" stroke-linejoin="round"/></svg>Importer</button>
       <input type="file" id="importInput" accept=".json,application/json" hidden>
+      <!-- v4.57 — les 4 écrans sortent du menu ••• (Benjamin : « il faut appuyer sur les 3 points
+           pour trouver l information »). Ils deviennent visibles, dans l'ordre où on les
+           consulte : l'atelier, le tableau de bord, la synthèse, le classeur de Matis. -->
+      <div class="toolbar-ecrans">
+        <button class="ghost" id="carteBtn" title="L’atelier en un coup d’œil : une tuile par machine, avec le gain déjà acté et ce qui reste à faire"><svg class="icon" viewBox="0 0 18 18"><rect x="2.5" y="3" width="5" height="5" rx="1"/><rect x="10.5" y="3" width="5" height="5" rx="1"/><rect x="2.5" y="10.5" width="5" height="4" rx="1"/><rect x="10.5" y="10.5" width="5" height="4" rx="1"/></svg>Carte atelier</button>
+        <button class="ghost" id="dashboardBtn" title="Toutes les lignes, références et OP : avancement des optimisations et gains cumulés"><svg class="icon" viewBox="0 0 18 18"><rect x="2.5" y="2.5" width="5.5" height="7" rx="1"/><rect x="10" y="2.5" width="5.5" height="4" rx="1"/><rect x="2.5" y="11.5" width="5.5" height="4" rx="1"/><rect x="10" y="8.5" width="5.5" height="7" rx="1"/></svg>Tableau de bord</button>
+        <button class="ghost" id="syntheseBtn" title="Comparer tous les scénarios dans un tableau, et superposer leurs courbes de tendance"><svg class="icon" viewBox="0 0 18 18"><rect x="4" y="3" width="10" height="12" rx="1.5"/><path d="M6.5 7h5M6.5 10h5M6.5 13h3" stroke-linecap="round"/></svg>Vue de synthèse</button>
+        <button class="ghost" id="matisBtn" title="Lire le classeur de consommations de Matis : production réelle, CPP réel, écart à la théorie (lu sur ce poste, rien n’est envoyé)"><svg class="icon" viewBox="0 0 18 18"><rect x="2.5" y="3" width="13" height="12" rx="1.5"/><path d="M2.5 8h13M7 8v7" stroke-linecap="round"/></svg>Classeur Matis</button>
+      </div>
       <button class="primary" id="addBtn">+ Ajouter un scénario</button>
       <button class="ghost" id="lockBtn" title="Passe l'outil en lecture seule — pour l'écran partagé d'atelier"><svg class="icon" viewBox="0 0 18 18"><rect x="4" y="8" width="10" height="7" rx="1.5"/><path d="M6.5 8V5.8a2.5 2.5 0 0 1 5 0V8"/></svg><span id="lockLabel">Verrouiller</span></button>
       <div class="toolbar-more-wrap">
@@ -1550,10 +1572,6 @@ body.atelier-on{overflow:hidden;}
         <div class="toolbar-more" id="toolbarMore" hidden>
           <div class="tb-grp">Consulter</div>
           <button class="ghost" id="searchBtn" title="Rechercher partout : lignes, références, OP, scénarios, essais, projets (Ctrl+K)"><svg class="icon" viewBox="0 0 18 18"><circle cx="8" cy="8" r="4.5"/><path d="m11.5 11.5 4 4" stroke-linecap="round"/></svg>Rechercher</button>
-          <button class="ghost" id="syntheseBtn" title="Comparer tous les scénarios dans un tableau, et superposer leurs courbes de tendance"><svg class="icon" viewBox="0 0 18 18"><rect x="4" y="3" width="10" height="12" rx="1.5"/><path d="M6.5 7h5M6.5 10h5M6.5 13h3" stroke-linecap="round"/></svg>Vue de synthèse</button>
-          <button class="ghost" id="dashboardBtn" title="Toutes les lignes, références et OP : avancement des optimisations et gains cumulés"><svg class="icon" viewBox="0 0 18 18"><rect x="2.5" y="2.5" width="5.5" height="7" rx="1"/><rect x="10" y="2.5" width="5.5" height="4" rx="1"/><rect x="2.5" y="11.5" width="5.5" height="4" rx="1"/><rect x="10" y="8.5" width="5.5" height="7" rx="1"/></svg>Tableau de bord</button>
-          <button class="ghost" id="carteBtn" title="L’atelier en un coup d’œil : une tuile par machine, avec le gain déjà acté et ce qui reste à faire"><svg class="icon" viewBox="0 0 18 18"><rect x="2.5" y="3" width="5" height="5" rx="1"/><rect x="10.5" y="3" width="5" height="5" rx="1"/><rect x="2.5" y="10.5" width="5" height="4" rx="1"/><rect x="10.5" y="10.5" width="5" height="4" rx="1"/></svg>Carte atelier</button>
-          <button class="ghost" id="matisBtn" title="Lire le classeur de consommations de Matis : production réelle, CPP réel, écart à la théorie (lu sur ce poste, rien n’est envoyé)"><svg class="icon" viewBox="0 0 18 18"><rect x="2.5" y="3" width="13" height="12" rx="1.5"/><path d="M2.5 8h13M7 8v7" stroke-linecap="round"/></svg>Classeur Matis</button>
           <button class="ghost" id="csvBtn" title="Tous les prélèvements en tableau, pour Excel ou le système qualité"><svg class="icon" viewBox="0 0 18 18"><rect x="2.5" y="2.5" width="13" height="13" rx="1.5"/><path d="M2.5 7h13M2.5 11.5h13M7 2.5v13"/></svg>Export CSV</button>
           <div class="tb-grp">Documenter</div>
           <button class="ghost" id="rapportBtn" title="Génère un rapport HTML autonome du scénario affiché — prêt à envoyer par e-mail à Stellantis"><svg class="icon" viewBox="0 0 18 18"><path d="M2.5 9 15 3.5 10.5 15.5 8 9.5 2.5 9Z" stroke-linejoin="round"/></svg>Rapport de validation</button>
@@ -11376,6 +11394,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.57.0", date:"30/09/2026", points:[
+    "<b>Les écrans sont à leur place.</b> Carte atelier, Tableau de bord, Vue de synthèse et Classeur Matis étaient planqués derrière le bouton « ••• » : il fallait déplier un menu pour les trouver. Ils sont désormais visibles dans la barre, à cäté de l’écran. Le menu ne garde plus que le rare : recherche, export CSV, rapports, options, historique."
+  ]},
   { version:"4.56.0", date:"30/09/2026", points:[
     "<b>Le classeur et le suivi se répondent.</b> Chaque couple machine × référence lu dans le classeur vous dit maintenant s’il existe aussi dans le suivi, en toutes lettres : « dans le suivi : EMAG 1 · 356x26 RPI — production conforme (6 781/an) ». Ce qui n’existe pas d’un côté se voit aussi : ligne non déclarée, référence absente, production non relevée.",
     "<b>Les divergences de production sautent aux yeux.</b> Quand le classeur et l’outil ne racontent pas la même production, la phrase passe en ambre et cite les deux chiffres : « le classeur dit 50/an, l’outil déclare 6 781/an ». Un écart pareil ne doit plus se découvrir des mois plus tard.",
@@ -11805,7 +11826,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.56.0";
+const TOOL_VERSION = "4.57.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 

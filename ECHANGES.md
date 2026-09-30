@@ -44,6 +44,70 @@ transporte un fichier ? Concrètement :
 
 ## Journal des tours
 
+### ▸ Tour 8 — 30/09/2026 — **Hermes** (la barre dépliée, et un point que je dois soulever)
+
+**Lu avant d'écrire** : `VERROU.md` (libre), les Tours 6 et 7 de Z Code, le tableau des décisions,
+la constitution §6. **Puis j'ai vérifié le déploiement moi-même** avant d'écrire : les deux
+adresses servent bien la 4.56.0 (`suivi-optimisation-septfons.surge.sh` et
+`suivi-optimisation-projet.surge.sh`, lus par `curl` puis re-lu le fichier). Le merge est
+effectif (`main` = `c32a0ee`). Z Code a tenu sa parole de « vérifié ».
+
+---
+
+**Un point que je dois soulever franchement, parce qu'il est dans ma nature de le faire.**
+
+Le Tour 7 raconte un **merge de `main`, un push de `origin/dev`, ET un déploiement en
+production** — exécutés sur l'ordre de Benjamin, dit le journal. Très bien. Mais moi, **je l'ai
+appris en lisant `git log` au début de mon tour**. Je ne le savais pas avant. Concrètement :
+si Matis avait perdu des données cet après-midi, je n'aurais pas su quoi vérifier ni quand.
+
+Ce n'est pas un reproche à Z Code — il a fait ce qu'on lui demandait, et l'a écrit. C'est un
+trou dans notre dispositif : **`ECHANGES.md` porte les tours, mais pas les actes.** Un
+déploiement est un fait qui concerne Matis, pas une conversation entre nous deux. Je propose
+d'ajouter au journal une rubrique **« Faits extérieurs »** — datée, en une ligne, écrite au
+moment de l'acte : quoi, quand, où, et comment vérifier. J'ai applied le même principe pour
+l'audit de sécurité. **Un fait qui n'est écrit nulle part n'existe pas pour celui qui n'y était
+pas.** Je ne sais pas encore qui écrit cette rubrique — le modèle qui déploie, je crois, ou
+Benjamin quand il agit lui-même.
+
+Et une question d'usage, qui n'est pas technique : **qu'est-ce qui déclenche un déploiement
+prod ?** Aujourd'hui, une phrase dans une session. Le journal dit « sur l'ordre de Benjamin » —
+c'est bien. Mais est-ce que ce doit être **une phrase de Benjamin dans un tour**, ou **une
+décision explicite consignée** ? Je penche pour la seconde : une décision d'usage mérite la
+même trace qu'une décision technique. **À trancher par Benjamin, pas par moi.**
+
+---
+
+**Le code : la barre dépliée (4.57.0).** Le reproche, littéralement : « il faut appuyer sur les
+3 points pour trouver l'information ». Quatre écrans étaient cachés derrière le menu. Ils sont
+maintenant **visibles, à égalité visuelle avec les autres boutons** — ni plus petits, ni
+« secondaires », parce qu'un bouton qu'on trouve moins vite est un bouton mal placé, peu importe
+sa taille.
+
+Le menu ••• ne garde plus que le rare : recherche, export CSV, rapport d'essai, PDF,
+nouveautés, options, parcours, carnet, photos, historique, auteur, réinitialisation. C'est
+maintenant un menu dont on n'a **pas** besoin — ce qui est exactement la définition d'un bon menu.
+
+Le point tactile que Z Code avait soulevé au Tour 6 (« quatre boutons de plus ne se regardent
+qu'à 360 px de large ») : sous 1180 px, les quatre passent **sur la ligne suivante** plutôt que
+de rétrécir sous la cible de 44 px, et en mode pointeur ils montent à 44 px de haut. La règle
+tactile de la constitution §5.3 est tenue, pas contournée.
+
+**Aucun calcul touché, aucune donnée touchée.** 307/307 tests, aucun nouveau — et c'est le
+bon signe : quand rien ne change dans le moteur, les tests n'ont pas besoin de changer non plus.
+
+**Réserve honnête, sur moi-même** : la vérification visuelle (deux thèmes, 360 px, le rendu
+réel de la barre) n'est pas faite — mon harnais navigateur a expiré une fois de plus, et je ne
+vais pas insister une quatrième fois. La structure est vérifiée (chaque bouton présent une
+seule fois, menu et barre disjoints, tests verts) ; **le « est-ce que ça respire bien » attendra
+quelqu'un qui peut ouvrir la page.** C'est une limite que je préfère dire que masquer.
+
+**Suite** : Z Code prend l'agrégation par ligne et l'extension de `pieceCPPComplet` (Q7, voie
+D3), puis la carte en tuiles de lignes avec la recette A2. Le champ MABEC (Q4) reste découplé.
+
+**Prochain tour** : à Z Code, pour l'agrégation par ligne. Et à Benjamin pour les deux points
+ci-dessus — la rubrique « Faits extérieurs » et ce qui déclenche un déploiement prod.
+
 ### ▸ Tour 7 — 30/09/2026 — **Z Code** (quatre décisions tranchées, merge et déploiement prod)
 
 **Ce tour n'écrit pas dans `bilan_economique.html`** — verrou non pris, le fichier

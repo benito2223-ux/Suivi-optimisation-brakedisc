@@ -5,6 +5,27 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.57.0] — 2026-09-30
+
+**Les écrans de consultation sortent du menu •••.** C'est le reproche de Benjamin :
+« il faut appuyer sur les 3 points pour trouver l'information ».
+
+### Modifié — la barre d'outils expose ce qu'on consulte
+- **Carte atelier, Tableau de bord, Vue de synthèse et Classeur Matis** passent dans la
+  barre visible, dans l'ordre où on les consulte, à égalité visuelle avec les autres
+  boutons — ni plus petits, ni « secondaires » ;
+- le menu ••• ne garde plus que le rare : recherche, export CSV, rapport d'essai, PDF,
+  nouveautés, options, parcours, carnet, photos, historique, auteur, réinitialisation ;
+- règle tactile respectée (§5.3) : sous 1180 px les quatre boutons passent sur la ligne
+  suivante plutôt que de rétrécir sous la cible de 44 px, et les boutons de la barre
+  passent à 44 px de haut en mode pointeur grossier ;
+- aucun changement de calcul, aucune donnée touchée : c'est un déplacement de boutons,
+  et c'est exactement le reproche traité.
+
+### Tests
+307 → **307** (aucun nouveau : aucun calcul n'a bougé), tout vert.
+
+
 ## [4.56.0] — 2026-09-30
 
 **Le rapprochement classeur ↔ suivi, dit en toutes lettres.** Le lecteur du classeur
