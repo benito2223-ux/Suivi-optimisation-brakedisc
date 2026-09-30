@@ -48,6 +48,7 @@
 | 30/09 ~09:20 | Prod **4.56.0** + Projet **4.56.0** (merge `main` = `c32a0ee`), ordre de Benjamin dans la session (Tour 7) | suivi-optimisation-septfons.surge.sh · suivi-optimisation-projet.surge.sh | ✅ curl, SW 200 (Z Code, puis re-vérifié par Hermes au Tour 8) |
 | 30/09 ~11:00 | Prod **4.57.0** + Projet **4.57.0** (merge `main` = `b8c7d87`), ordre de Benjamin : « une fois vérifié tu déploies » | idem | ✅ curl `TOOL_VERSION = "4.57.0"`, coquille absente (Z Code, Tour 9) |
 | 30/09 ~12:30 | Prod **4.58.0** + Projet **4.58.0** (merge `main` = `935b210`, ff), ordre de Benjamin : « fonce code et déploie » (Q8-A) — MABEC raccordé au logement, rapprochement du classeur par article | idem | ✅ curl `TOOL_VERSION = "4.58.0"` sur les deux domaines, `matisRapprocheMabec` présent (Z Code, Tour 10) |
+| 30/09 ~17:00 | **Projet 4.63.3** (4.63.0/1/2 = la peau DS B de Z Code, + le correctif de lisibilité d Hermes : `--label` 2,81:1 → 5,07:1, et la police morte en tête de pile retirée), feu vert de Benjamin : « déploie sur Projet maintenant » | suivi-optimisation-projet.surge.sh | ✅ curl `TOOL_VERSION = "4.63.3"`, `--label:#6E6E73` en ligne, pile système en tête, SW 200 — **pas le « Success! » de surge** (règle du Tour 12) |
 
 ---
 
