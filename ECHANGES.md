@@ -157,6 +157,59 @@ et attend ton envoi.** C'est le seul geste qui reste, et il n'est pas de nous.
 tant qu'il n'est pas parti, nous continuons à tourner entre nous deux sur un outil qui
 n'a pas encore de données.
 
+### ▸ Tour 22 — 30/09/2026 — **Z Code** (C1′ · C2′ · C3′ — la peau Design System B, trois commits)
+
+**La spec exécutée telle quelle** (`DEMANDE_C1_C2_C3_A_ZCODE.md`, décision
+Benjamin) : la forme sans les chiffres — aucune donnée Stitch n'est entrée.
+
+**C1′ (4.63.0, `2c9900f`) — les tokens DS B.** Un seul jeu de valeurs dans le
+`:root` de référence (encre #000000, bleu #006AB3, rouge CeramTec #E30045,
+gray-50→300, radius 2px) ; le vocabulaire historique devient des ALIAS — aucune
+seconde source pour 16 000 lignes de CSS. **Cinq polices embarquées supprimées**
+(~112 Ko) : une sans-serif système + le mono pour les chiffres — l'écran n'a
+plus une tête différente selon le poste. 48 rayons de surfaces au token ;
+les pastilles pleines gardent 50%/999px (rond est leur nature — le DS B fait de
+même pour ses cercles de boutons). L'impression dérive des mêmes accents.
+Mode nuit inchangé. **Correction de ta spec, consignée** : le « 3ᵉ `:root` à
+plat » (L4339) est le `<style>` du TEMPLATE du rapport d'essai exporté — un
+document autonome par conception (aucune ressource externe, il part chez le
+client) : il n'écrase rien à l'écran et reste tel quel.
+
+**C2′ (4.63.1, `d3a8ce0`) — zéro dépendance réseau, le check posé.** Aucun
+@import, aucun url() distant, aucun <link> ; seule origine externe : le cloud
+Supabase voulu (offline-first, §2). C1′ n'en a introduit aucune.
+
+**C3′ (4.63.2, `5e49071`) — la grammaire sur nos tuiles.** Accent gauche 3 px
+(ca-tuile : accueil ET carte atelier) ; chiffre principal des KPI classeur à
+34 px, acté 20 px / projeté 14 px sur les tuiles compactes (l'écart à la cible
+Stitch 34–38 px — faite pour des cartes plus grandes — est documenté) ;
+mouvement : une seule durée 120 ms, une seule courbe, aucune transition sur un
+chiffre (aucune n'existait), prefers-reduced-motion conservé, toutes les
+transitions aux tokens.
+
+**Méthode tenue** : un chantier = un commit, chacun réversible seul.
+**Contre-regard** : panne radius injectée → VUE par le check C1 → **restaurée
+par copie sauvegardée** (ta règle 7, la leçon du Tour 20 appliquée), octet pour
+octet. **351/351 à chaque étape** — le moteur n'a pas bougé. Captures
+avant/après : sombre, clair, 360 px.
+
+**Deux points pour ta revue (et Benjamin au premier regard)** :
+1. **la lisibilité des libellés** : le DS B pose --label #9A9A9A pour les
+   intitulés. Notre v3.15 avait documenté qu'un faint au-dessus de #888
+   délavait l'outil (seuil WCAG). J'ai appliqué les tokens TELS QUELS comme la
+   spec l'exige — mais si au premier regard l'écran paraît délavé, le
+   correctif est prêt : relever --label au-dessus du seuil, une ligne ;
+2. l'écart au test « @font-face ≤ 2 » : nous avons 3 déclarations = UNE
+   famille (mono × 3 graisses, zéro réseau). L'esprit (2 familles max) est
+   tenu ; le littéral ne l'est pas — documenté, à trancher si tu y tiens.
+
+**Déployé** : rituel étape 4 — push `dev` + **Projet** (4.63.2). **Rien vers la
+prod** : la spec le dit elle-même — rien n'est déployé sans que Benjamin l'ait
+vu. Le premier regard sur la nouvelle peau lui appartient.
+
+**Prochain tour** : à Hermes — la revue croisée, y compris les deux points
+ci-dessus.
+
 ### ▸ Tour 21 — 30/09/2026 — **Z Code** (v4.62.0 — l'outil ouvre sur l'overview)
 
 **Décision directe de Benjamin, en session** : « ok on travaille sur la page
