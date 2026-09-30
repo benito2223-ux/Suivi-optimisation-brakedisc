@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design system — 3 directions « Apple » sur l'écran d'accueil réel</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   MÊME DONNÉE, MÊME STRUCTURE dans les trois directions.
+   Seule la « peau » change — c'est ce qui rend la comparaison honnête.
+   Apple = typographie, espace, profondeur légère, mouvement doux.
+   On garde ce qui fait l'atelier : le mono sur les chiffres, les
+   angles mesurés, et les mots en toutes lettres (jamais la couleur
+   seule). Aucune nouvelle fonction, aucune maquette de fonction.
+   ═══════════════════════════════════════════════════════════════════ */
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Inter,Arial,sans-serif;
+     -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+     padding:34px 20px 70px;line-height:1.45;color:#1D1D1F;background:#F5F5F7}
+.mono{font-family:"SF Mono","JetBrains Mono",ui-monospace,Consolas,monospace;font-variant-numeric:tabular-nums}
+.lab{font-size:10.5px;letter-spacing:.055em;text-transform:uppercase;font-weight:590}
+.hd{max-width:1520px;margin:0 auto 26px;text-align:center}
+.hd h1{font-size:24px;font-weight:660;letter-spacing:-.018em}
+.hd p{font-size:13.5px;color:#6E6E73;margin-top:7px;max-width:78ch;margin-left:auto;margin-right:auto}
+.sec{max-width:1520px;margin:0 auto 44px}
+.sec>h2{font-size:17px;font-weight:640;letter-spacing:-.012em;display:flex;align-items:baseline;gap:11px;margin-bottom:3px}
+.sec>h2 .n{font-size:11px;font-weight:640;letter-spacing:.03em;padding:2.5px 9px;border-radius:99px;
+          background:#0071E3;color:#fff}
+.sec>.why{font-size:12.5px;color:#6E6E73;margin-bottom:15px;max-width:92ch}
+.stage{border-radius:var(--R0,14px);padding:18px;overflow:hidden}
+
+/* ─── le gabarit, strictement identique partout ─── */
+.bar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:8px 11px;margin-bottom:15px}
+.b{font-size:12.5px;font-weight:510;padding:7px 13px;border-radius:9px;letter-spacing:-.005em}
+.bp{font-weight:590}
+.sep{width:1px;height:19px;margin:0 3px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:13px}
+.card{border-radius:var(--R,13px);padding:16px 17px 17px;position:relative}
+.top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.nm{font-size:16px;font-weight:620;letter-spacing:-.014em;line-height:1.2}
+.rf{font-size:11.5px;margin-top:3px;letter-spacing:-.003em}
+.dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;margin-top:5px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:1px;border-radius:var(--Rs,9px);overflow:hidden;margin:12px 0 11px}
+.gbox{padding:10px 11px}
+.gbox .lab{display:block;margin-bottom:3px;letter-spacing:.05em}
+.gbox b{font-size:17.5px;font-weight:640;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.cost{font-size:12px;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;margin-bottom:4px;letter-spacing:-.004em}
+.cost b{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+.miss{font-size:10.5px;font-style:italic;letter-spacing:0}
+.foot{margin-top:11px;padding-top:11px}
+.foot .lab{display:block;margin-bottom:6px;letter-spacing:.05em}
+.st{font-size:12.2px;display:flex;gap:8px;align-items:flex-start;padding:2.5px 0;letter-spacing:-.004em}
+.st::before{content:"";width:4px;height:4px;border-radius:50%;flex:0 0 auto;margin-top:6.5px}
+.hors .st::before{background:var(--faint)}
+
+/* ═══ A · APPLE CLAIR — l'expression complète ═══ */
+.A{--R0:16px;--R:14px;--Rs:10px;
+  --ink:#1D1D1F;--soft:#6E6E73;--faint:#8E8E93;
+  --surf:#FFFFFF;--line:rgba(0,0,0,.08);--line2:rgba(0,0,0,.055);
+  --blue:#0071E3;--blue-t:rgba(0,113,227,.10);
+  --grn:#1D8A4E;--grn-t:rgba(29,138,78,.11);
+  --amb:#8A5A00;--amb-t:rgba(196,124,0,.13);
+  --sh1:0 1px 2px rgba(0,0,0,.045);
+  --sh2:0 4px 18px rgba(0,0,0,.055),0 1px 3px rgba(0,0,0,.035);
+  --sh3:0 14px 40px rgba(0,0,0,.13),0 3px 10px rgba(0,0,0,.07);
+  --ease:cubic-bezier(.4,0,.2,1);
+  background:#F5F5F7;color:var(--ink)}
+.A .card{background:var(--surf);box-shadow:var(--sh1);transition:transform .22s var(--ease),box-shadow .22s var(--ease)}
+.A .card:hover{transform:translateY(-2px);box-shadow:var(--sh2)}
+.A .card:hover .nm{color:var(--blue)}
+.A .card::after{content:"";position:absolute;inset:0;border-radius:var(--R);
+  box-shadow:inset 0 0 0 1.5px var(--blue);opacity:0;transition:opacity .22s var(--ease);pointer-events:none}
+.A .card:hover::after{opacity:.55}
+.A .bar{background:rgba(255,255,255,.72);backdrop-filter:saturate(180%) blur(20px);
+  -webkit-backdrop-filter:saturate(180%) blur(20px);border:1px solid rgba(0,0,0,.06);box-shadow:var(--sh1)}
+.A .b{color:var(--ink);border:1px solid transparent;transition:background .18s var(--ease),color .18s var(--ease)}
+.A .b:hover{background:rgba(0,0,0,.05)}
+.A .b.g{border-color:rgba(0,0,0,.1)}
+.A .b.g:hover{background:rgba(0,0,0,.03)}
+.A .bp{background:var(--blue);color:#fff}
+.A .bp:hover{background:#0077ED;transform:translateY(-.5px)}
+.A .sep{background:rgba(0,0,0,.1)}
+.A .g2{background:var(--line2)}
+.A .gbox{background:var(--surf)}
+.A .gbox .lab{color:var(--faint)}
+.A .g2 .g2b{color:var(--blue)}
+.A .dot{background:var(--faint)}
+.A .d-g{background:var(--grn)}.A .d-e{background:var(--blue)}.A .d-a{background:var(--amb)}
+.A .rf,.A .cost{color:var(--soft)}.A .miss{color:var(--faint)}
+.A .foot{border-top:1px solid var(--line2)}
+.A .foot .lab{color:var(--faint)}.A .st{color:var(--soft)}.A .st::before{background:var(--faint)}
+.A .hors{background:rgba(255,255,255,.55);border:1px dashed rgba(0,0,0,.16);box-shadow:none}
+.A .hors .nm{color:var(--soft)}
+
+/* ═══ B · APPLE ATELIER — la même grammaire, plus dense, angles quasi droits ═══ */
+.B{--R0:11px;--R:8px;--Rs:6px;
+  --ink:#111214;--soft:#4E5661;--faint:#7C8694;
+  --surf:#FFFFFF;--line:#D6DAE0;--line2:#E7EAEE;
+  --blue:#0B5FC7;--blue-t:#EAF2FD;
+  --grn:#116139;--grn-t:#E6F4EC;--amb:#8A5000;--amb-t:#FBF2E4;
+  --sh1:0 1px 1.5px rgba(16,20,26,.055);
+  --sh2:0 2px 8px rgba(16,20,26,.075);
+  --ease:cubic-bezier(.32,.72,0,1);
+  background:#EFF1F4;color:var(--ink)}
+.B .card{background:var(--surf);border:1px solid var(--line);box-shadow:var(--sh1);
+  transition:box-shadow .2s var(--ease),border-color .2s var(--ease)}
+.B .card:hover{border-color:#A9B4C2;box-shadow:var(--sh2)}
+.B .card:hover .nm{color:var(--blue)}
+.B .bar{background:#F7F8FA;border:1px solid var(--line);box-shadow:var(--sh1)}
+.B .b{color:var(--ink);border:1px solid var(--line);background:#fff;transition:background .16s var(--ease),border-color .16s var(--ease)}
+.B .b:hover{background:#F2F4F7;border-color:#A9B4C2}
+.B .bp{background:var(--blue);border-color:var(--blue);color:#fff}
+.B .bp:hover{background:#0A54B0}
+.B .sep{background:var(--line)}
+.B .g2{background:var(--line2)}
+.B .gbox{background:var(--surf)}
+.B .gbox .lab{color:var(--faint)}
+.B .g2 .g2b{color:var(--blue)}
+.B .dot{background:var(--faint)}
+.B .d-g{background:var(--grn)}.B .d-e{background:var(--blue)}.B .d-a{background:var(--amb)}
+.B .rf,.B .cost{color:var(--soft)}.B .miss{color:var(--faint)}
+.B .foot{border-top:1px solid var(--line2)}
+.B .foot .lab{color:var(--faint)}.B .st{color:var(--soft)}.B .st::before{background:var(--faint)}
+.B .hors{background:#F7F8FA;border:1px dashed var(--line);box-shadow:none}
+.B .hors .nm{color:var(--soft)}
+.B .grid{gap:10px}
+.B .card{padding:14px 15px 15px}
+.B .gbox b{font-size:16.5px}
+
+/* ═══ C · APPLE SOMBRE — l'obscurcie réelle ═══ */
+.C{--R0:16px;--R:14px;--Rs:10px;
+  --ink:#F5F5F7;--soft:#A1A1A8;--faint:#7C7C85;
+  --surf:#1C1C1E;--line:rgba(255,255,255,.10);--line2:rgba(255,255,255,.07);
+  --blue:#0A84FF;--blue-t:rgba(10,132,255,.16);
+  --grn:#30D158;--grn-t:rgba(48,209,88,.15);
+  --amb:#FFB340;--amb-t:rgba(255,179,64,.15);
+  --sh1:0 1px 2px rgba(0,0,0,.5);
+  --sh2:0 6px 22px rgba(0,0,0,.6);
+  --ease:cubic-bezier(.4,0,.2,1);
+  background:#000;color:var(--ink)}
+.C .card{background:var(--surf);box-shadow:var(--sh1);transition:transform .22s var(--ease),box-shadow .22s var(--ease)}
+.C .card:hover{transform:translateY(-2px);box-shadow:var(--sh2)}
+.C .card:hover .nm{color:var(--blue)}
+.C .card::after{content:"";position:absolute;inset:0;border-radius:var(--R);
+  box-shadow:inset 0 0 0 1.5px var(--blue);opacity:0;transition:opacity .22s var(--ease);pointer-events:none}
+.C .card:hover::after{opacity:.7}
+.C .bar{background:rgba(28,28,30,.72);backdrop-filter:saturate(180%) blur(20px);
+  -webkit-backdrop-filter:saturate(180%) blur(20px);border:1px solid var(--line);box-shadow:var(--sh1)}
+.C .b{color:var(--ink);transition:background .18s var(--ease),color .18s var(--ease)}
+.C .b:hover{background:rgba(255,255,255,.09)}
+.C .b.g{border:1px solid var(--line)}
+.C .b.g:hover{background:rgba(255,255,255,.05)}
+.C .bp{background:var(--blue);color:#fff}
+.C .bp:hover{background:#3D9BFF}
+.C .sep{background:var(--line)}
+.C .g2{background:var(--line2)}
+.C .gbox{background:var(--surf)}
+.C .gbox .lab{color:var(--faint)}
+.C .g2 .g2b{color:var(--blue)}
+.C .dot{background:var(--faint)}
+.C .d-g{background:var(--grn)}.C .d-e{background:var(--blue)}.C .d-a{background:var(--amb)}
+.C .rf,.C .cost{color:var(--soft)}.C .miss{color:var(--faint)}
+.C .foot{border-top:1px solid var(--line2)}
+.C .foot .lab{color:var(--faint)}.C .st{color:var(--soft)}.C .st::before{background:var(--faint)}
+.C .hors{background:rgba(28,28,30,.5);border:1px dashed rgba(255,255,255,.2);box-shadow:none}
+.C .hors .nm{color:var(--soft)}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;transform:none!important}}
+</style>
+</head>
+<body>
+
+<div class="hd">
+  <h1>Trois directions « Apple » — sur l'écran d'accueil réel</h1>
+  <p>Mêmes données, même structure, même texte dans les trois. Seule la peau change :
+     typographie, espace, profondeur, mouvement. Rien n'est codé dans l'outil — ce sont trois
+     propositions à ouvrir, à regarder, et à refuser si elles ne collent pas.</p>
+</div>
+
+<!-- ══════════════ A ══════════════ -->
+<div class="sec">
+  <h2><span class="n">A</span> Apple clair <span style="font-weight:400;font-size:12.5px;color:#6E6E73">— l'expression complète</span></h2>
+  <p class="why">SF Pro (police système), cartes à 14 px, ombres très légères à deux étages,
+     barre translucide floutée, survol qui soulève la carte et l'entoure d'un liseré bleu.
+     Le mouvement est doux mais présent (200–220 ms). C'est la direction la plus « vitrine » :
+     la plus immédiatement handsome, la plus légère en information.</p>
+  <div class="stage A">
+    <div class="bar">
+      <div class="b bp">Accueil</div><div class="b g">Carte atelier</div><div class="b g">Tableau de bord</div>
+      <div class="b g">Synthèse</div><div class="b g">Classeur Matis</div>
+      <div class="sep"></div><div class="b g">Exporter</div><div class="b g">Importer</div>
+      <div class="b bp" style="margin-left:auto">+ Ajouter</div>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <div class="top"><div><div class="nm">EMAG 1</div><div class="rf">356x26 · 330x14</div></div><span class="dot d-g"></span></div>
+        <div class="g2">
+          <div class="gbox"><span class="lab">Gain acté</span><b>2 480 €</b></div>
+          <div class="gbox g2b"><span class="lab">En cours</span><b>1 150 €</b></div>
+        </div>
+        <div class="cost"><b class="mono">0,038 €</b> /pce · 356x26 <span class="miss">hors 1 opération non chiffrée</span></div>
+        <div class="foot"><span class="lab">À faire</span>
+          <div class="st">Terminer le protocole 5× (3/5) — OP20</div>
+          <div class="st">Chiffrer la production — OP30</div></div>
+      </div>
+      <div class="card">
+        <div class="top"><div><div class="nm">EMAG 2</div><div class="rf">330x14 · 330x28</div></div><span class="dot d-e"></span></div>
+        <div class="g2">
+          <div class="gbox"><span class="lab">Gain acté</span><b style="color:var(--faint)">—</b></div>
+          <div class="gbox g2b"><span class="lab">En cours</span><b>620 €</b></div>
+        </div>
+        <div class="cost"><b class="mono">0,074 €</b> /pce · 330x14</div>
+        <div class="foot"><span class="lab">À faire</span>
+          <div class="st">Reprendre le T548 — OP20</div></div>
+      </div>
+      <div class="card">
+        <div class="top"><div><div class="nm">HESSAPP</div><div class="rf">302x26</div></div><span class="dot d-a"></span></div>
+        <div class="g2">
+          <div class="gbox"><span class="lab">Gain acté</span><b>940 €</b></div>
+          <div class="gbox g2b"><span class="lab">En cours</span><b style="color:var(--faint)">—</b></div>
+        </div>
+        <div class="cost"><b class="mono">0,052 €</b> /pce · 302x26</div>
+        <div class="foot"><span class="lab">À faire</span>
+          <div class="st">3 charnières OP20 manquantes</div></div>
+      </div>
+      <div class="card hors">
+        <div class="top"><div><div class="nm">6 lignes hors périmètre</div>
+          <div class="rf">WEISSER 1–4 · PCI 4–5<br>déclarées, jamais travaillées, aucune action en attente</div></div>
+          <span class="dot"></span></div>
+        <div class="foot"><span class="lab">À trancher</span>
+          <div class="st">Déclarer leurs machines, ou les sortir du périmètre</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ B ══════════════ -->
+<div class="sec">
+  <h2><span class="n">B</span> Apple atelier <span style="font-weight:400;font-size:12.5px;color:#6E6E73">— la même grammaire, plus dense, angles mesurés</span></h2>
+  <p class="why">Même famille de police, même douceur — mais 8 px de rayon au lieu de 14,
+     un contour réel sur chaque carte, des espacations plus serrées. C'est la direction que je
+     recommande : elle garde la rigueur atelier (angles nets, densité, chiffres lisibles)
+     tout en gagnant la clarté Apple. Sur un écran de production, 14 px de rayon partout
+     finit par lire « showcase ».</p>
+  <div class="stage B">
+    <div class="bar">
+      <div class="b bp">Accueil</div><div class="b">Carte atelier</div><div class="b">Tableau de bord</div>
+      <div class="b">Synthèse</div><div class="b">Classeur Matis</div>
+      <div class="sep"></div><div class="b">Exporter</div><div class="b">Importer</div>
+      <div class="b bp" style="margin-left:auto">+ Ajouter</div>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <div class="top"><div><div class="nm">EMAG 1</div><div class="rf">356x26 · 330x14</div></div><span class="dot d-g"></span></div>
+        <div class="g2">
+          <div class="gbox"><span class="lab">Gain acté</span><b>2 480 €</b></div>
+          <div class="gbox g2b"><span class="lab">En cours</span><b>1 150 €</b></div>
+        </div>
+        <div class="cost"><b class="mono">0,038 €</b> /pce · 356x26 <span class="miss">hors 1 opération non chiffrée</span></div>
+        <div class="foot"><span class="lab">À faire</span>
+          <div class="st">Terminer le protocole 5× (3/5) — OP20</div>
+          <div class="st">Chiffrer la production — OP30</div></div>
+      </div>
+      <div class="card">
+        <div class="top"><div><div class="nm">EMAG 2</div><div class="rf">330x14 · 330x28</div></div><span class="dot d-e"></span></div>
+        <div class="g2">
+          <div class="gbox"><span class="lab">Gain acté</span><b style="color:var(--faint)">—</b></div>
+          <div class="gbox g2b"><span class="lab">En cours</span><b>620 €</b></div>
+        </div>
+        <div class="cost"><b class="mono">0,074 €</b> /pce · 330x14</div>
+        <div class="foot"><span class="lab">À faire</span>
+          <div class="st">Reprendre le T548 — OP20</div></div>
+      </div>
+      <div class="card">
+        <div class="top"><div><div class="nm">HESSAPP</div><div class="rf">302x26</div></div><span class="dot d-a"></span></div>
+        <div class="g2">
+          <div class="gbox"><span class="lab">Gain acté</span><b>940 €</b></div>
+          <div class="gbox g2b"><span class="lab">En cours</span><b style="color:var(--faint)">—</b></div>
+        </div>
+        <div class="cost"><b class="mono">0,052 €</b> /pce · 302x26</div>
+        <div class="foot"><span class="lab">À faire</span>
+          <div class="st">3 charnières OP20 manquantes</div></div>
+      </div>
+      <div class="card hors">
+        <div class="top"><div><div class="nm">6 lignes hors périmètre</div>
+          <div class="rf">WEISSER 1–4 · PCI 4–5<br>déclarées, jamais travaillées, aucune action en attente</div></div>
+          <span class="dot"></span></div>
+        <div class="foot"><span class="lab">À trancher</span>
+          <div class="st">Déclarer leurs machines, ou les sortir du périmètre</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ C ══════════════ -->
+<div class="sec">
+  <h2><span class="n">C</span> Apple sombre <span style="font-weight:400;font-size:12.5px;color:#6E6E73">— la même chose, en obscurcie</span></h2>
+  <p class="why">Noir franc, surfaces #1C1C1E, accents vifs (#0A84FF, #30D158). C'est la
+     direction qui fatigue le moins sur un écran d'atelier, et celle qui rend les chiffres les
+     plus francs. Le piège connu : en sombre, un gris de texte à 40 % devient
+    devient illisible — ici le secondaire est à 65 %, pas plus bas.</p>
+  <div class="stage C">
+    <div class="bar">
+      <div class="b bp">Accueil</div><div class="b g">Carte atelier</div><div class="b g">Tableau de bord</div>
+      <div class="b g">Synthèse</div><div class="b g">Classeur Matis</div>
+      <div class="sep"></div><div class="b g">Exporter</div><div class="b g">Importer</div>
+      <div class="b bp" style="margin-left:auto">+ Ajouter</div>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <div class="top"><div><div class="nm">EMAG 1</div><div class="rf">356x26 · 330x14</div></div><span class="dot d-g"></span></div>
+        <div class="g2">
+          <div class="gbox"><span class="lab">Gain acté</span><b>2 480 €</b></div>
+          <div class="gbox g2b"><span class="lab">En cours</span><b>1 150 €</b></div>
+        </div>
+        <div class="cost"><b class="mono">0,038 €</b> /pce · 356x26 <span class="miss">hors 1 opération non chiffrée</span></div>
+        <div class="foot"><span class="lab">À faire</span>
+          <div class="st">Terminer le protocole 5× (3/5) — OP20</div>
+          <div class="st">Chiffrer la production — OP30</div></div>
+      </div>
+      <div class="card">
+        <div class="top"><div><div class="nm">EMAG 2</div><div class="rf">330x14 · 330x28</div></div><span class="dot d-e"></span></div>
+        <div class="g2">
+          <div class="gbox"><span class="lab">Gain acté</span><b style="color:var(--faint)">—</b></div>
+          <div class="gbox g2b"><span class="lab">En cours</span><b>620 €</b></div>
+        </div>
+        <div class="cost"><b class="mono">0,074 €</b> /pce · 330x14</div>
+        <div class="foot"><span class="lab">À faire</span>
+          <div class="st">Reprendre le T548 — OP20</div></div>
+      </div>
+      <div class="card">
+        <div class="top"><div><div class="nm">HESSAPP</div><div class="rf">302x26</div></div><span class="dot d-a"></span></div>
+        <div class="g2">
+          <div class="gbox"><span class="lab">Gain acté</span><b>940 €</b></div>
+          <div class="gbox g2b"><span class="lab">En cours</span><b style="color:var(--faint)">—</b></div>
+        </div>
+        <div class="cost"><b class="mono">0,052 €</b> /pce · 302x26</div>
+        <div class="foot"><span class="lab">À faire</span>
+          <div class="st">3 charnières OP20 manquantes</div></div>
+      </div>
+      <div class="card hors">
+        <div class="top"><div><div class="nm">6 lignes hors périmètre</div>
+          <div class="rf">WEISSER 1–4 · PCI 4–5<br>déclarées, jamais travaillées, aucune action en attente</div></div>
+          <span class="dot"></span></div>
+        <div class="foot"><span class="lab">À trancher</span>
+          <div class="st">Déclarer leurs machines, ou les sortir du périmètre</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sec" style="color:#6E6E73;font-size:12.5px;max-width:92ch">
+  <b style="color:#1D1D1F">Ce qui ne change pas dans les trois, volontairement :</b>
+  le mono sur tous les chiffres, les états nommés en toutes lettres (jamais la couleur seule),
+  l'invitation « hors 1 opération non chiffrée », le regroupement des lignes hors périmètre,
+  et le fait qu'une absence est dite plutôt que laissée deviner. Une refonte ne doit jamais
+  diluer ce que la constitution impose.
+</div>
+
+</body>
+</html>
