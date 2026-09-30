@@ -64,6 +64,99 @@ transporte un fichier ? Concrètement :
 
 ## Journal des tours
 
+### ▸ Tour 22 — 30/09/2026 — **Hermes** (revue de la 4.61.0 + 4.62.0, et une leçon qui vaut pour moi)
+
+**Lu avant d'écrire** : `VERROU.md` (libre), les Tours 20 et 21. **Vérifié par moi** :
+351/351 en 0,4 s ; `curl` sur les deux domaines (Projet **4.62.0**, prod **4.58.0** — la prod
+attend toujours Benjamin) ; **contre-regard** (deux pannes, deux détectées, fichier restauré
+à l'octet près, restauration par copie sauvegardée — j'applique la leçon du Tour 20).
+
+---
+
+**La 4.61.0 applique ma formule du Tour 19, et le résultat est meilleur que ce que j'avais
+proposé.** J'avais écrit : « une tuile unique, grise, qui dit le nombre et le nom — 6 lignes
+hors périmètre : Weisser 1–4, PCI 4–5 — et qui propose en une ligne le choix explicite :
+déclarer leurs machines, ou les sortir du périmètre. » Z Code l'a fait, et il a ajouté ce que
+je n'avais pas vu : **« déclarées, jamais travaillées — aucune action en attente »**. C'est la
+phrase qui manquait. Sans elle, la tuile dit « 6 lignes à traiter ». Avec elle, elle dit la
+vérité : **rien à faire, et c'est assumé.**
+
+Et le critère est précis : une ligne est hors périmètre quand elle ne porte **ni référence ni
+machine** — donc une ligne sans machines mais **avec** ses références reste vivante. Ce n'est
+pas mon « machines à déclarer » maladroit, c'est la bonne frontière.
+
+**Sur l'écran réel** : 5 tuiles au lieu de 10, et surtout **les quatre lignes vivantes sont
+enfin lisibles**. La recette dit « 4 lignes actionnables sur 4 dans le périmètre · 6 hors
+périmètre » — les lignes hors périmètre ne diluent plus le ratio, ce qui est plus honnête que
+de faire baisser le score de l'écran pour des lignes qu'on ne pilote pas.
+
+**Mon contre-regard** :
+
+| Panne injectée | Vue par le harnais |
+|---|---|
+| le critère s'élargit (ligne sans machines mais avec références → vivante) | **351 / 1 échec** — attrapée |
+| la tuile groupée redevient des tuiles vivantes | **351 / 5 échecs** — attrapée |
+| restauration (copie sauvegardée) | **351 / 0**, fichier **identique à l'octet près** |
+
+---
+
+**La 4.62.0 : la décision que tu as prise, appliquée.**
+
+Tu as dit : « j'aimerais que l'outil ouvre sur une page overview ». **Q11 tombe sans avoir
+existé** — pas de réglage, l'accueil EST l'ouverture. C'est la bonne décision, et je veux
+noter pourquoi elle est meilleure que ma réserve du Tour 17 : je proposais un réglage pour
+que tu puisses **essayer**. Mais un réglage n'a de sens que si les deux options sont dignes
+d'être choisies. Elles ne l'étaient pas : l'autre option était « voir l'atelier d'abord ». Ce
+ce n'était pas un choix, c'était une question sans réponse.
+
+Et le détail technique est propre : **les hash de service restent respectés** —
+`if(!location.hash || location.hash === "#accueil") ouvrirAccueil()`. Donc `#tests` et les
+ancres de diagnostic ouvrent encore l'outil, et le harnais n'ouvre pas l'accueil. C'est le
+genre de détail qui n'a l'air de rien et qui casse tout le reste le jour où on l'oublie.
+
+**Z Code a noté une limite lui-même, et c'est bien** : le boot n'est pas couvert par le
+harnais node (le `render()` y est neutralisé), donc c'est le navigateur qui tranche. C'est
+vrai, et je ne vais pas prétendre l'avoir vérifié autrement. **Ce que j'ai vérifié, c'est que
+la condition qui décide est bien celle-là** — et qu'elle protège les hash de service.
+
+---
+
+**La leçon du Tour 20 doit être écrite dans la constitution, parce qu'elle m'échouerait
+aussi.**
+
+Z Code a perdu son travail non commité en restaurant par `git checkout` — qui rétablit le
+dernier commit, pas l'état d'avant injection. Sa leçon : **une injection se restaure par
+copie sauvegardée, jamais par `git checkout`.**
+
+C'est vrai, et j'aurais fait la même erreur. J'ai fait mes contre-regards par `git checkout`
+ou par copie — et le jour où mon contre-regard aurait eu la main sur un travail non commité,
+j'aurais perdu une version entière sans m'en apercevoir. **La règle est dans la
+constitution, pas dans un tour de journal** : un tour de journal, on le relit parfois ; une
+constitution, on la relit à chaque livraison. C'est la différence entre l'écrire et qu'elle
+serve.
+
+**Ce que j'ai aussi retenu de ses deux tours** : les tests ont vu rouge **ses propres
+attendus faux**, deux fois, et il a suivi le harnais plutôt que sa conviction. C'est
+maintenant la norme entre nous deux, et elle a payé : la 4.60.1 avait un coût partiel lu
+comme complet, et c'est en relisant la vraie sortie qu'on l'a vu.
+
+---
+
+**Où en est le projet, franchement.**
+
+La navigation est faite : l'outil ouvre sur l'atelier, chaque tuile mène à sa ligne, la barre
+expose les écrans, les 6 lignes hors périmètre ne noient plus rien. **Le cadre est là, et il
+est bon.**
+
+**Ce qui manque n'est plus du code — c'est la donnée.** Tant que Matis n'a pas saisi ses
+volumes, ses MABEC et ses charnières, l'écran d'accueil est un cadre vide : « volume annuel
+à saisir », « machines à déclarer », des gains à zéro. **Le message aux 7 demandes est écrit
+et attend ton envoi.** C'est le seul geste qui reste, et il n'est pas de nous.
+
+**Prochain tour** : à Z Code, librement. Et à Benjamin : **envoyer le message à Matis** —
+tant qu'il n'est pas parti, nous continuons à tourner entre nous deux sur un outil qui
+n'a pas encore de données.
+
 ### ▸ Tour 21 — 30/09/2026 — **Z Code** (v4.62.0 — l'outil ouvre sur l'overview)
 
 **Décision directe de Benjamin, en session** : « ok on travaille sur la page

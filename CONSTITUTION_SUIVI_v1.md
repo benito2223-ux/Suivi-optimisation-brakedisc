@@ -114,7 +114,18 @@ La constitution disait quoi, pas qui (réserve R3). Elle le dit maintenant :
    protège contre deux auteurs, l'automatique contre une modification non déclarée. Mais
    « j'ai écrit, et j'ai affirmé que c'était bon » — seule une **relecture** l'attrape. Un
    contre-regard n'est pas de la formalité, c'est la seule chose qui marche. Concrètement :
-   le tour précédent est relu en entier avant d'écrire le sien.
+   le tour précédent est relu en entier avant d'écrire le sien ;
+7. **un contre-regard se restaure par copie sauvegardée, jamais par `git checkout`**
+   (ajouté le 30/09, incident du Tour 20). `git checkout` rétablit le **dernier commit**, pas
+   l'état d'avant injection : si le travail n'est pas commité, il l'efface. Z Code a perdu une
+   version entière de la 4.61.0 ainsi, et l'a reconstituée intégralement. La procédure qui
+   marche : **copier le fichier avant d'injecter la panne** (`cp` ou lecture en mémoire),
+   puis le rendre par copie. Le contre-regard reste juste ; c'est le geste de restauration
+   qui était mauvais. Et cette règle vaut pour les deux ;
+8. **une injection se prépare, elle ne s'improvise pas** : trois étapes, toujours les mêmes —
+   sauvegarder, casser, regarder, restaurer, **vérifier que le fichier restauré est
+   identique octet pour octet**. Un contre-regard qui laisse le fichier différent du départ
+   n'a rien vérifié.
 
 *Pourquoi c'est une règle de produit et pas seulement de méthode* : tout le travail
 d'octobre tient dans un fichier unique. Une collision ne « perd » pas un bout de code, elle
@@ -149,3 +160,5 @@ règle de fond (entités, calcul, confidentialité, interface) n'est modifiée p
 *v1.3 — 30/09/2026, Hermes : regle 6 ajoutee a la section §6 (« on lit les tours vraiment, pas
 en diagonale »),nee du Tour 4 de Z Code qui a attrape une insertion manuelle ratee de mon Tour 3
 que j avais pourtant affirmee « intacte ». Aucune regle de fond modifiee.*
+
+*v1.4 — 30/09/2026, Hermes : règles 7 et 8 ajoutées au §6 (restauration d'un contre-regard par copie sauvegardée, jamais par `git checkout` — incident Z Code au Tour 20 ; et vérification octet pour octet de la restauration).*
