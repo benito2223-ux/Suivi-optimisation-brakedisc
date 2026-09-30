@@ -34,6 +34,7 @@
 | Q15 | ~~l'accueil~~ → **tranché (Benjamin) : on adopte la STRUCTURE de la capture (bandeau de 4 chiffres alignés, tuiles de ligne enrichies, matrice des opérations, pied avec les personnes et 3 actions) — avec nos vraies données. Les photos : on les demande à Matis et on attend.** | ✅ | 
 | Q14 | ~~l'écran de saisie~~ → **tranché (Benjamin) : sur l'écran de saisie, 3 blocs sur 4 : (a) barre de contexte 4 etapes, (b) conditions de coupe en cartes par poste, (c) historique des essais en tableau. La métrologie en cartes reste à trancher. VOCABULAIRE : la constitution dit « DTV, Ra, voile » — Benjamin : « battement, Ra, épaisseur piste » + ajouter convexité, face, appui** | ✅ | 
 | Q13 | ~~la taille des chiffres sur tuile~~ → **tranché (Benjamin) : on garde les DEUX chiffres par tuile (règle §3.4), mais on les grossit — gain acté 28-32 pt, en cours 20-22 pt. C'est C4′.** | ✅ | 
+| Q13 | Les sélecteurs de la barre de l'accueil (spec C5 §1.2) : le champ « campagne / période » n'existe pas dans le modèle. Options : (a) le champ disparaît, (b) remplacé par un filtre existant (projet ou statut). La spec §4 renvoie la décision à Benjamin — construire les sélecteurs sans elle eût été une porte morte | Z Code (4.65.0) | ⏳ à trancher |
 | Q12 | ~~lignes hors périmètre~~ → **tranché (Benjamin) : UNE tuile regroupée grise, « 6 lignes hors périmètre : Weisser 1-4, PCI 4-5 », un clic ouvre la liste. La vérité visible en une tuile.** | ✅ |
 
 ---
@@ -258,6 +259,57 @@ ouvrant l'écran le matin.
 
 **Prochain tour** : à Z Code, pour ce chantier — mais **je veux ta réponse avant**, parce
 qu'elle dépend de ce que tu cherches, pas de ce qui est joli.
+
+### ▸ Tour 24 — 30/09/2026 — **Z Code** (C6′-a + C5′ en entier : l'accueil est devenu un tableau de bord)
+
+**Les specs exécutées** (`LANCEMENT_ZCODE_C5_C6.md` + C5 + C6, décision
+Benjamin) : l'ordre recommandé suivi (C6′-a d'abord, puis C5′ en trois
+commits). **Cinq versions, cinq commits, chacun réversible seul :**
+
+- **4.64.0 · C6′-a** — la barre de contexte en 4 étapes (ligne · référence ·
+  opération · scénario), numéros + capitales, le scénario en bleu ou son
+  absence dite, le menu des scénarios RÉELS (★/· série), le cadenas avec le
+  mot. La réponse au reproche de septembre ;
+- **4.65.0 · C5′ bloc 1** — l'en-tête (périmètre SOURCÉ des familles
+  vivantes, index « conforme/à surveiller » en toutes lettres) et le BANDEAU :
+  économie validée avec périmètre écrit, ralliement cible CALCULÉ, **cadence
+  « — non mesurée » jamais estimée**, lignes en engagement avec les noms. Les
+  sélecteurs §1.2 ne sont pas construits : « campagne » n'existe pas et la
+  spec §4 renvoie à Benjamin → **Q13 posée** ;
+- **4.65.1 · C5′ bloc 2** — les tuiles enrichies : taux horaire sourcé, Δ
+  unitaire à côté de l'annuel, contexte italique VÉRIFIABLE, emplacement
+  photo vide qui dit ce qu'il attend ;
+- **4.65.2 · C5′ bloc 3** — la matrice (toutes les lignes × opérations,
+  ±0,000 écrit §3.5, acté/projeté étiquetés §3.4, mots, portes) et le pied
+  (l'équipe réelle sans rôle inventé, les trois actions existantes).
+
+**Contre-regards, dont un qui compte double** : celui du bandeau — le chiffre
+inventé de la capture Stitch (92 pcs/h) injecté → **vu par 2 tests** ; et
+celui du bloc 3 — la panne (±0,000 annuel supprimé) fut d'abord **invisible :
+MON TEST ÉTAIT AVEUGLE** (il vérifiait le ±0,000 unitaire). Test corrigé pour
+vérifier les DEUX, panne re-injectée → vue. **Le contre-regard attrape aussi
+les tests de celui qui l'écrit** — c'est ta règle du Tour 17 qui a travaillé,
+dans les deux sens. (Et un incident de méthode corrigé en route : un
+contre-regard au message mensonge — injection ratée sur ancre fausse, commit
+parti — refait correctement puis **amendé** avant tout push.)
+
+**Vérifié** : 351 → **377 tests**, tout vert à chaque commit ; captures
+sombre/clair/360px sur les étapes clés ; l'accueil complet capturé (bandeau +
+tuiles + matrice + pied).
+
+**Déployé** : push `dev` + **Projet** (4.65.2). Rien vers la prod — le feu
+vert reste à Benjamin, et son premier regard sur le tableau de bord est la
+seule mesure qui compte (le test de réussite de la spec : *ouvrir l'accueil et
+répondre en dix secondes à « où en est l'atelier, et qu'est-ce qui reste à
+faire ? »*).
+
+**Reste de C6′** : les blocs b (cartes de conditions de coupe) et c
+(historique en tableau) — b attend ta correction de vocabulaire dans la
+constitution (« face appui » : une ou deux mesures ? Ne pas figer un mot qui
+n'est pas tranché).
+
+**Prochain tour** : à Hermes — la revue croisée. À Benjamin : ouvrir
+l'accueil, et Q13.
 
 ### ▸ Tour 23 — 30/09/2026 — **Z Code** (C1′ · C2′ · C3′ — la peau Design System B, trois commits)
 

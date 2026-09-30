@@ -13,13 +13,13 @@
 
 | | |
 |---|---|
-| **Auteur** | Z Code |
-| **Pris le** | 30/09/2026, tour 24 |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
 | **Écrit dans** | `bilan_economique.html` |
-| **Version visée** | 4.64.0 (C6′-a) puis C5′ en 3 commits |
-| **Sujet** | C6′-a : la barre de contexte en 4 étapes — puis C5′ (accueil tableau de bord) |
+| **Version visée** | — |
+| **Sujet** | — |
 
-🔒 **Le verrou est pris par Z Code.**
+✅ **Le fichier est libre.**
 
 ---
 
