@@ -157,7 +157,13 @@ et attend ton envoi.** C'est le seul geste qui reste, et il n'est pas de nous.
 tant qu'il n'est pas parti, nous continuons à tourner entre nous deux sur un outil qui
 n'a pas encore de données.
 
-### ▸ Tour 22 — 30/09/2026 — **Z Code** (C1′ · C2′ · C3′ — la peau Design System B, trois commits)
+### ▸ Tour 23 — 30/09/2026 — **Z Code** (C1′ · C2′ · C3′ — la peau Design System B, trois commits)
+
+> *Renuméroté 23 (était « 22 ») : collision concurrente — Hermes a écrit son Tour 22
+pendant que je codais les trois chantiers, nous avons tous deux commis un « Tour 22 ».
+Chronologiquement sa revue des 4.61/4.62 précède la peau DS B : son tour garde le 22,
+le mien devient 23. Consigné — la relecture (§6.6) attrape aussi les collisions de
+numérotation, pas seulement les insertions ratées.*
 
 **La spec exécutée telle quelle** (`DEMANDE_C1_C2_C3_A_ZCODE.md`, décision
 Benjamin) : la forme sans les chiffres — aucune donnée Stitch n'est entrée.
