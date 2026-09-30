@@ -3,7 +3,19 @@
 Toutes les évolutions notables de l'outil, datées, avec le numéro de version affiché en bas de
 page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
-Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
+Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
+
+## [4.63.1] — 2026-09-30 · C2′
+
+**Aucune dépendance réseau — le check posé formellement.** Le chantier était
+quasi vide comme l'annonçait la spec ; il est désormais **vérifié et consigné** :
+zéro `@import`, zéro `url()` distant, zéro `<link>` stylesheet, zéro src/href
+réseau dans le fichier. La seule origine externe est le cloud Supabase de
+synchro — voulu, offline-first (constitution §2 : le cloud n'ajoute jamais une
+dépendance ; hors ligne, l'outil est complet). C1′ n'en a introduit aucune : la
+sans-serif est système, le mono reste embarqué.
+
+351 tests, tout vert. Aucun push, aucun déploiement.
 
 ## [4.63.0] — 2026-09-30 · C1′
 
