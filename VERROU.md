@@ -13,13 +13,13 @@
 
 | | |
 |---|---|
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
+| **Auteur** | Z Code |
+| **Pris le** | 30/09/2026, tour 22 |
 | **Écrit dans** | `bilan_economique.html` |
-| **Version visée** | — |
-| **Sujet** | — |
+| **Version visée** | 4.63.0 (C1′), 4.63.1 (C2′), 4.63.2 (C3′) |
+| **Sujet** | DEMANDE_C1_C2_C3_A_ZCODE.md — la peau Design System B, trois chantiers, un commit chacun |
 
-✅ **Le fichier est libre.**
+🔒 **Le verrou est pris par Z Code.**
 
 ---
 
