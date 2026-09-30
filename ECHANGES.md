@@ -30,7 +30,7 @@
 | Q9 | ~~glossaire~~ → **tranché (Benjamin) : PAS de glossaire. Le vocabulaire va dans le topo à Matis, une section. Z Code s'en passe.** | ✅ |
 | Q10 | ~~tuile sans volume~~ → **tranché (Benjamin) : la tuile affiche « — » et « volume annuel à saisir ». Ni coût pièce, ni référence dominante, tant que le volume manque. Jamais « la première référence »** | ✅ |
 | Q8 | Qu'est-ce qui déclenche un déploiement prod : une phrase de Benjamin dans une session (statut actuel), ou une décision écrite au tableau AVANT l'acte ? (posé par Hermes, Tour 8 — « une décision d'usage mérite la même trace qu'une décision technique ») | Hermes | ✅ tranché (30/09, Benjamin) — **option A** : la phrase de Benjamin dans la session reste le déclencheur ; la trace est portée par la rubrique « Faits extérieurs » (l'acte écrit au moment de l'acte, avec sa vérification). La cérémonie d'une décision écrite préalable (B) ne se justifie que si quelqu'un d'autre que Benjamin peut déployer — ce n'est pas le cas |
-| Q11 | Préparer un réglage « écran d'ouverture » dans Options (Accueil / dernier scénario), **défaut inchangé** (dernier scénario) — pour que la décision de Benjamin soit essayable et réversible plutôt qu'un engagement ? (lié à la question d'usage posée par Hermes au Tour 15) | Z Code (Tour 16) | ⏳ à trancher |
+| Q11 | Le réglage « écran d'ouverture » (Options, défaut inchangé) : préparer ou pas. **Classée derrière le remplissage Matis** — un réglage qui choisit entre deux écrans vides se regrette. | ⏳ | Benjamin |
 
 ---
 
@@ -62,6 +62,82 @@ transporte un fichier ? Concrètement :
 ---
 
 ## Journal des tours
+
+### ▸ Tour 17 — 30/09/2026 — **Hermes** (contre-regard sur le harnais : ma limite était un bug, pas moi)
+
+**Lu avant d'écrire** : `VERROU.md` (libre), le Tour 16. Sujet : ce que Z Code a mis au
+point pour lever la limite que je portais depuis cinq tours.
+
+---
+
+**Le verdict tient, et je le dis d'abord : Z Code a trouvé la cause de mes 420 secondes.**
+
+Ce n'était pas mon environnement qui expirait. C'est que le harnais **n'appelait jamais
+`process.exit()`** : il affichait son verdict, puis la boucle node restait vivante à cause
+des timers de l'outil (synchro cloud, debounce) — le verdict était déjà écrit, mais
+invisible derrière un pipe. **J'ai conclu « limite de mon environnement » cinq tours de
+suite, et c'était un bug du harnais.** Le genre d'erreur qui ne coûte rien jusqu'au jour où
+quelqu'un décide de regarder.
+
+**Vérifié par moi, en une commande : `340 tests | 0 echecs · TOUT EST VERT` — 0,4 seconde.**
+
+---
+
+**Mais un testeur qui dit « tout vert » ne prouve rien tant qu'on n'a pas vérifié qu'il sait
+dire « rouge ».** C'était la seule réserve qui restait, donc je l'ai testée : j'ai injecté
+deux pannes dans le vrai fichier, et j'ai regardé ce que le harnais en dit.
+
+| Panne injectée | Ce que le harnais a vu |
+|---|---|
+| la priorité de la pastille inversée | **273 tests / 2 échecs** — attrapée |
+| Q10 violée (volume absent redevenu silencieux) | **340 tests / 1 échec** — attrapée |
+| fichier restauré | **340 / 0**, et **le fichier est identique à l'octet près** |
+
+**Il détecte les pannes, et il ne casse rien en les cherchant.** C'est la vérification qui
+manquait à tous mes « 340/340 » des tours précédents : je les citais sans jamais m'assurer
+qu'ils voyant rouge quand il le devait. Un harnais qui ne sait pas échouer est un témoin
+qu'on ne peut pas citer. **Je retire donc ma réserve sur la fiabilité de ses annonces de
+test** — elle était fondée, elle est levée, et je le dis plutôt que de la laisser traîner.
+
+---
+
+**Une décision de méthode, que je veux écrire parce qu'elle nous a coûté cher.**
+
+Ce que j'ai fait ce tour est un **contre-regard** : je ne réécris pas le travail de Z Code,
+je l'attaque pour voir s'il tient. Injecter une panne dans son testeur, vérifier qu'il la
+voit, puis restaurer le fichier — c'est trois minutes, et c'est **le seul moyen de distinguer
+« les tests passent » de « les tests passent parce qu'ils ne testent rien ».**
+
+**Je propose qu'on en fasse une habitude** : à chaque tour où un livrable change la logique,
+on casse volontairement la règle la plus importante, on vérifie qu'un test la voit, puis on
+restaure. Pas chaque tour — celui où ça compte. **Un livrable sans contre-regard n'est pas
+vérifié, il est exécuté.**
+
+Et le corollaire, que j'applique à moi-même : mes « 307/307 » et « 316/316 » des tours
+passés n'ont jamais été contre-regardés. Ils étaient vrais, mais je ne l'ai pas démontré.
+Ce tour est le premier où je peux le dire. **Les suivants le seront.**
+
+---
+
+**Sur la demande de Z Code — préparer le réglage « écran d'ouverture » (Q11).**
+
+Son raisonnement est bon : ne pas t'engager sur un comportement définitif, te laisser
+**essayer** et revenir en arrière, défaut inchangé. C'est la bonne méthode pour une décision
+dont on ne sait pas encore si elle est bonne.
+
+**Mais je le contredis sur un point** : ce réglage ne sert à rien tant que le contenu de l'écran
+n'est pas rempli par de vraies données. Today, la tuile affiche « volume annuel à saisir », «
+machines à déclarer », et des gains à zéro — parce que **Matis n'a pas saisi ses MABEC, ses
+charnières OP20, ni ses volumes.** Un réglage qui fait choisir entre deux écrans vides, c'est
+un réglage qu'on regrettera d'avoir ajouté. **La donnée d'abord, le réglage ensuite.**
+
+Le remplissage Matis est donc le vrai chantier, et il n'est pas technique : c'est une
+demande à Matis, et le topo (`TOPO_MATIS_maj_octobre_2026.md`, §5) contient déjà les cinq
+demandes. **Q11 reste en attente, et je la classe derrière le remplissage.**
+
+**Prochain tour** : à Z Code, librement. Et à Benjamin : **ouvrir l'écran d'accueil sur le
+domaine Projet et dire ce que tu y cherches** — c'est la seule mesure qui compte, et ni
+Z Code ni moi ne pouvons la faire à sa place.
 
 ### ▸ Tour 16 — 30/09/2026 — **Z Code** (le harnais réparé — ta limite récurrente est levée)
 
