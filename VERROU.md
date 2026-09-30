@@ -13,13 +13,13 @@
 
 | | |
 |---|---|
-| **Auteur** | **Hermes** |
-| **Pris le** | 30/09/2026 |
-| **Écrit dans** |  |
-| **Version visée** | **4.63.3** |
-| **Sujet** | releve de --label (2,81:1, sous le seuil) — correction de lisibilite |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | `bilan_economique.html` |
+| **Version visée** | — |
+| **Sujet** | — |
 
-⛔ **Le fichier est pris par Hermes — ne pas y écrire.**
+✅ **Le fichier est libre.**
 
 ---
 

@@ -50,7 +50,7 @@
      dérive ses valeurs papier des mêmes accents. ═══ */
   --ink:#000000;   /* H1/H2, grands montants, typographie dominante */
   --body:#5C5D62;  /* paragraphes, descriptions, légendes */
-  --label:#9A9A9A; /* intitulés de champs, colonnes, métadonnées */
+  --label:#6E6E73; /* intitulés de champs, colonnes, métadonnées */
   --line:#535357;  /* soulignement des champs de saisie */
   --red:#E30045; --red-dark:#B8003A;
   --blue:#006AB3; --blue-light:#EAF4FB;
@@ -85,8 +85,8 @@
   /* une seule famille sans-serif (DS B) + le mono pour TOUS les chiffres.
      Les 5 @font-face embarquées historiques (Archivo, Manrope, Open Sans ×2,
      Public Sans) partent : la sans-serif est système, le mono reste embarqué. */
-  --font-disp:'Roboto',-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
-  --font-body:'Roboto',-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
+  --font-disp:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  --font-body:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
   --font-mono:'IBM Plex Mono','Courier New',Consolas,monospace;
   /* une seule famille de formes : quasi-plate (DS B, 2px). Les pastilles PLEINES
      (dots ronds, pills de statut) gardent 50%/999px : rond est leur nature — le
@@ -11452,6 +11452,9 @@ const NOUVEAUTES = [
   { version:"4.63.0", date:"30/09/2026", points:[
     "<b>Le Design System B entre dans l'outil.</b> Une seule palette de valeurs (encre noire, bleu #006AB3, rouge CeramTec #E30045, gris de la gamme industrielle), une seule famille de formes quasi-plate (2 px), une seule police sans-serif système plus le mono pour tous les chiffres. Cinq polices embarquées partent (112 Ko de moins), l'impression dérive des mêmes accents, le mode nuit et les rapports clients restent eux-mêmes."
   ]},
+  { version:"4.63.3", date:"30/09/2026", points:[
+    "<b>Les libelles sont enfin lisibles.</b> Le gris des intitules etait a 2,81:1 sur une carte blanche, sous le seuil, et sur du texte de 10 px on ne voit pas la difference : l ecran semblait inchange. Il est desormais a 5,07:1. Et la police : un nom qui n existe pas etait en tete de pile, donc l ecran avait une tete differente selon le poste. Les deux sont corriges."
+  ]},
   { version:"4.62.0", date:"30/09/2026", points:[
     "<b>L’outil s’ouvre sur l’overview.</b> Au lancement, c’est l’écran d’accueil qui apparaît — l’usine par lignes, la vue d’ensemble avant le détail. La fenêtre des nouveautés passe devant au premier lancement ; fermez-la, l’usine est là. Le détail du scénario reste accessible en un clic, comme toujours."
   ]},
@@ -11911,7 +11914,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.63.2";
+const TOOL_VERSION = "4.63.3";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 

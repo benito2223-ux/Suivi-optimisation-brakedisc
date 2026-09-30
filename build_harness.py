@@ -83,6 +83,79 @@ try {
   console.log('RESULTAT:', r.total, 'tests |', r.echecs, 'echecs');
   (r.details||[]).filter(d=>!d.pass).forEach(d=>console.log('  ECHEC:', d.nom, '| recu=', JSON.stringify(d.recu), '| attendu=', JSON.stringify(d.attendu)));
   if(!r.echecs) console.log('TOUT EST VERT');
+
+  /* ── v4.63.3 — CONTRASTE DES TOKENS DE SURFACE ──────────────────────────
+     Une suite de fonctions pures ne voit pas une couleur : c'est une mesure,
+     pas une logique. Le trou a été trouvé par contre-regard le 30/09 — remettre
+     --label à 2,81:1 n'a déclenché AUCUN échec, et c'est exactement pour ça
+     que personne ne l'avait vu. Ce bloc ferme la porte (constitution §5.6 :
+     « un chiffre qu'on ne peut pas justifier n'est pas affiché » — et de même
+     une couleur qu'on ne peut pas lire ne s'affiche pas).
+     On lit le CSS réel du fichier, pas une constante du test. */
+  (function contrasteTokens(){
+    const fs = require('fs');
+    const html = fs.readFileSync('bilan_economique.html', 'utf8');
+    /* On cherche le BLOC :root de référence, pas la première accolade : il
+       commence par un commentaire, donc un regex non gore s'arreterait la
+       premiere fois et ne verrait aucun token. On prend le premier :root dont
+       le corps contient --ink (les autres sont le @media print et le template
+       du rapport, autonomes par construction). */
+    let corps = null;
+    for (const m of html.matchAll(/:root\s*\{/g)) {
+      const debut = m.index + m[0].length;
+      let prof = 1, i = debut;
+      while (i < html.length && prof > 0) {
+        const c = html[i];
+        if (c === '{') prof++;
+        else if (c === '}') prof--;
+        i++;
+      }
+      const bloc = html.slice(debut, i);
+      if (/--ink\s*:/.test(bloc)) { corps = bloc; break; }
+    }
+    if (!corps) { console.log('  CONTRASTE : bloc :root de reference non trouve — test non joue'); process.exitCode = 2; return; }
+    const tokens = {};
+    for (const m of corps.matchAll(/(--[a-z0-9-]+)\s*:\s*(#[0-9a-fA-F]{3,8})\s*[;,]/g)) {
+      tokens[m[1]] = m[2];
+    }
+    if (!tokens['--ink'] || !tokens['--label']) {
+      console.log('  CONTRASTE : tokens de surface absents du bloc lu — test non joue');
+      process.exitCode = 2; return;
+    }
+    function lum(h){
+      h = h.trim().replace('#','');
+      if (h.length === 3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+      if (h.length > 6) h = h.substr(0,6);
+      const r = parseInt(h.substr(0,2),16)/255, g = parseInt(h.substr(2,2),16)/255, b = parseInt(h.substr(4,2),16)/255;
+      const f = c => c <= 0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4);
+      return 0.2126*f(r) + 0.7152*f(g) + 0.0722*f(b);
+    }
+    function cr(a,b){ const la = lum(a), lb = lum(b); return (Math.max(la,lb)+0.05)/(Math.min(la,lb)+0.05); }
+    /* seuil AA sur texte normal : 4,5:1. Le texte de l'outil est petit
+       (libelles 10-11 px), donc on ne negotiate pas a 3:1. */
+    const paires = [
+      ['--label','--white',    'les intitulés sur une carte'],
+      ['--body','--white',     'les paragraphes sur une carte'],
+      ['--ink','--gray-100',   'le texte principal sur le fond de page'],
+      ['--body','--gray-100',  'les descriptions sur le fond de page'],
+      ['--blue','--white',     "le bleu d'action sur une carte"],
+      ['--red','--white',      'le rouge CeramTec sur une carte']
+    ];
+    let joues = 0, echecs = 0;
+    for (const [fg, bg, pourquoi] of paires) {
+      if (!tokens[fg] || !tokens[bg]) { console.log('  CONTRASTE : token absent --'+fg+' ou --'+bg+' — non teste'); continue; }
+      const v = cr(tokens[fg], tokens[bg]);
+      joues++;
+      const okc = v >= 4.5;
+      if (!okc) echecs++;
+      console.log((okc?'  ok  ':'  ECHEC ')+'contraste : '+pourquoi+' — '+fg+' '+tokens[fg]+' sur '+bg+' '+tokens[bg]+' = '+v.toFixed(2)+':1 (seuil 4,5:1)');
+    }
+    if (joues) console.log('  CONTRASTE : '+joues+' paires verifiees sur le CSS reel du fichier, '+echecs+' sous le seuil');
+    /* Le contraste compte comme un echec de la suite : on l'ajoute au total
+       plutot que de fixer process.exitCode, que le exit() du harnais ecraserait
+       (constat du 30/09 — deux lignes plus bas). */
+    r.echecs += echecs;
+  })();
   if (typeof __DIAG__ !== 'undefined') __DIAG__(A);
   /* v4.60 (tour 16) : le code de l'outil installe des setInterval (synchro cloud,
      debounce) qui gardent la boucle d'événements de node vivante -- sans exit

@@ -5,6 +5,52 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.63.3] — 2026-09-30
+
+**Le retour de Benjamin : « le design system et l'outil sont identiques, juste une police
+qui a bougé, et elle est moche. »** Il avait raison, et la cause était mesurable — pas une
+impression.
+
+### Corrigé — deux défauts que les 351 tests ne voyaient pas
+
+1. **Les libellés étaient délavés** : le Design System B pose `--label: #9A9A9A` pour les
+   intitulés, soit **2,81:1** sur une carte blanche — très en dessous du seuil AA (4,5:1),
+   et nos libellés font 10-11 px. Un gris à 2,8:1 ne se voit pas : l'œil ne perçoit pas la
+   différence, donc **l'écran paraissait inchangé** alors que la couleur avait changé.
+   → relevé à `#6E6E73` (le gris système d'Apple) : **5,07:1** sur blanc, **4,61:1** sur
+   le fond de carte réel. L'intention du DS B est conservée — un gris froid pour les
+   intitulés — sans descendre sous le seuil ;
+2. **Une police morte en tête de pile** : Z Code avait supprimé les cinq polices
+   embarquées (~112 Ko) et laissé `--font: 'Roboto', -apple-system, ...`. Or `Roboto` n'est
+   **pas embarquée** : personne ne l'a. L'écran retombait donc sur `-apple-system` (Mac) ou
+   `Segoe UI` (Windows) — **une tête différente selon le poste**, exactement le défaut que
+   C1′ supprimait. → le nom mort est retiré et passe en 5ᵉ position : la pile système d'abord,
+   donc identique sur Mac, Windows et Linux.
+
+**Le mode nuit n'est pas touché** : il a ses propres valeurs (`#a3aeb9` sur `#0f1317`,
+8,27:1).
+
+### Ajouté — le test de contraste, qui manquait
+
+Le trou a été trouvé par contre-regard : **remettre `--label` à 2,81:1 ne déclenchait aucun
+échec sur 351 tests.** Une suite de fonctions pures ne voit pas une couleur — c'est une
+mesure, pas une logique.
+
+`build_harness.py` mesure désormais le contraste sur le **CSS réel du fichier** (le bloc
+`:root` de référence, pas une constante du test) : 6 paires, seuil AA 4,5:1, et un token
+manquant est signalé comme *non testé* plutôt que compté comme passé.
+
+**Vérifié dans les deux sens** : fichier sain → 0 échec ; `--label` remis à 2,81:1 → 1 échec ;
+encre blanche sur fond clair → 1 échec ; restauration → 0, fichier identique à l'octet près.
+
+### Tests
+351 → **351**, plus **6 mesures de contraste** comptées comme des échecs à part entière.
+
+### La règle, pour la suite
+Un token de surface n'est plus accepté parce qu'il vient d'une proposition : il est
+**mesuré**. Constitution §5.6 — de même qu'un chiffre, une couleur qu'on ne peut pas lire
+ne s'affiche pas.
+
 ## [4.63.2] — 2026-09-30 · C3′
 
 **La grammaire visuelle de la proposition, sur nos tuiles existantes.** On

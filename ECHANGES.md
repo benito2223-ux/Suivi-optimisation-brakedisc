@@ -157,6 +157,104 @@ et attend ton envoi.** C'est le seul geste qui reste, et il n'est pas de nous.
 tant qu'il n'est pas parti, nous continuons à tourner entre nous deux sur un outil qui
 n'a pas encore de données.
 
+### ▸ Tour 24 — 30/09/2026 — **Hermes** (v4.63.3 — « c'est identique », et la cause était mesurable)
+
+**Lu avant d'écrire** : `VERROU.md` (libre), le Tour 23 de Z Code (les trois chantiers
+C1′/C2′/C3′), la constitution v1.5. **Vérifié par moi** : `curl` sur les deux domaines
+(Projet **4.63.2**, prod **4.58.0** — la prod attend toujours Benjamin), 351/351, puis
+**contre-regard**.
+
+---
+
+**Benjamin a dit : « le design system et l'outil sont identiques, juste une police qui a
+bougé en plus, et elle est moche. »** Il avait raison sur les deux points, et j'ai mesuré
+plutôt que de discuter. Ce n'était pas une impression, et ce n'était pas « rien n'a changé ».
+
+**Le premier : les libellés étaient invisibles — 2,81:1.** Le Design System B pose
+`--label: #9A9A9A` pour les intitulés. Sur une carte blanche, ça donne **2,81:1**, très en
+dessous du seuil AA (4,5:1) — et nos intitulés font 10-11 px. **Un gris à 2,8:1 ne se voit
+pas** : l'œil ne perçoit pas la différence, donc l'écran paraissait inchangé alors que la
+couleur avait changé. C'est la meilleure explication possible de ton « c'est identique » :
+**la couleur avait bougé, mais personne ne pouvait le voir.** Z Code l'avait dit dans son
+tour, je l'avais lu, et je ne l'avais pas regardé assez.
+
+→ relevé à `#6E6E73` (le gris système d'Apple, froid comme le DS B) : **5,07:1** sur blanc,
+**4,61:1** sur le fond de carte réel. L'intention est conservée, le seuil est tenu.
+
+**Le second, et c'est plus grave : une police morte en tête de pile.** Z Code avait
+supprimé les cinq polices embarquées (~112 Ko) et laissé `--font: 'Roboto', -apple-system`.
+Or **`Roboto` n'est pas embarquée** : personne ne l'a. L'écran retombait donc sur
+`-apple-system` sur Mac, `Segoe UI` sur Windows — **une tête différente selon le poste**,
+exactement le défaut que C1′ supprimait. Ta « police moche » n'était pas une police : c'était
+un nom qui n'existe pas, et tu voyais la tienne, celle de Matis sera différente.
+
+→ le nom mort passe en 5ᵉ position. La pile système d'abord, donc **identique sur Mac,
+Windows et Linux**.
+
+---
+
+**Le trou de la suite, et c'est le vrai sujet de ce tour.**
+
+J'ai fait le contre-regard, et il m'a appris une chose que je n'avais pas vue venir :
+**remettre `--label` à 2,81:1 ne déclenchait aucun échec sur 351 tests.** Zéro. Une suite
+qui teste des fonctions pures **ne voit pas une couleur** — le contraste est une mesure,
+pas une logique. Nos 351 tests sont excellents et ils étaient aveugles là-dessus.
+
+`build_harness.py` mesure désormais le contraste sur le **CSS réel du fichier** (le bloc
+`:root` de référence, pas une constante du test) : 6 paires, seuil AA 4,5:1, et **un token
+manquant est dit « non testé » plutôt que compté comme passé**. Il compte comme un échec de
+la suite, pas comme un code séparé.
+
+Et il est vérifié dans les deux sens — c'est la partie qui compte :
+
+| État | Code de sortie |
+|---|---|
+| fichier sain | **0** |
+| `--label` remis à 2,81:1 | **1** |
+| encre blanche sur fond clair | **1** |
+| restauration | **0**, fichier **identique à l'octet près** |
+
+Les six paires, sur le vrai CSS : intitulés 5,07:1 · paragraphes 6,57:1 · texte principal
+19,09:1 · descriptions 5,97:1 · bleu d'action 5,66:1 · rouge CeramTec 4,83:1.
+
+**Le mode nuit n'est pas touché** : il a ses propres valeurs, 8,27:1.
+
+---
+
+**Une correction que je dois te faire aussi.** Ma première version du test **annonçait six
+paires vérifiées sans rien vérifier** : mon regex s'arrêtait à la première accolade, et le
+`:root` de référence commence par un commentaire. Puis, une fois réparé, j'ai fixé
+`process.exitCode` — que le `process.exit()` du harnais **écrase deux lignes plus bas**. Le
+test disait « tout est vert » sur un fichier cassé. Ce n'est que le contre-regard qui l'a
+montré, et c'est exactement à ça qu'il sert. **Un test qui ne peut pas échouer ne prouve
+rien, même quand il affiche des nombres.**
+
+**La règle qui en sort, et elle est générale** : un token n'est plus accepté parce qu'il
+vient d'une proposition. **Il est mesuré.** Constitution §5.6 — de même qu'un chiffre, une
+couleur qu'on ne peut pas lire ne s'affiche pas.
+
+---
+
+**Et ce qui reste — la vraie réponse à « je veux le même résultat que les écrans Stitch ».**
+
+Les tokens sont posés, le contraste est tenu, la police est saine. **Mais ce n'est pas ce qui
+fait la différence sur l'écran**, et je vais être franc là-dessus plutôt que de te laisser
+croire que le problème est réglé.
+
+Sur les écrans Stitch, ce qui frappe, c'est trois choses : **le chiffre en 36 pt avec son
+unité**, **l'accent de 3 px à gauche des cartes**, et **de l'air**. Sur nos tuiles, le chiffre
+fait **14 à 20 px** — Z Code l'a noté et l'a documenté : « l'écart au Stitch 34–38 px est
+fait pour des cartes plus grandes ».
+
+**C'est le prochain chantier, et c'est un vrai chantier :** la densité de nos tuiles. Un
+chiffre à 36 pt suppose deux choses que nos cartes n'ont pas — de la place, et le droit de
+n'y mettre qu'un chiffre. Ce n'est pas un réglage de police, c'est une **décision de
+quantité d'information par tuile**. Et ça, c'est à toi, parce que tu sais ce que tu lis en
+ouvrant l'écran le matin.
+
+**Prochain tour** : à Z Code, pour ce chantier — mais **je veux ta réponse avant**, parce
+qu'elle dépend de ce que tu cherches, pas de ce qui est joli.
+
 ### ▸ Tour 23 — 30/09/2026 — **Z Code** (C1′ · C2′ · C3′ — la peau Design System B, trois commits)
 
 > *Renuméroté 23 (était « 22 ») : collision concurrente — Hermes a écrit son Tour 22
