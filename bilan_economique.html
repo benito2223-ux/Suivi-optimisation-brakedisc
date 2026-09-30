@@ -637,6 +637,24 @@ input.cell.sub{font-size:10.5px; color:var(--ink-faint);}
    maillon est cliquable et ouvre son propre sélecteur, où vivent aussi les créations. */
 .ctx-rail{position:relative; margin-bottom:14px; max-width:100%;}
 .fil-ariane{display:flex; align-items:center; flex-wrap:wrap; gap:1px; font-family:var(--font-body); font-size:14px; min-width:0;}
+/* v4.64 (C6′-a) — la barre de contexte en 4 étapes : numéro, libellé en petites
+   capitales AU-DESSUS, valeur dessous, ▾ pour dire qu'on choisit. Le 4ᵉ niveau
+   (scénario) porte le bleu : c'est lui qu'on vient saisir. */
+.fil-seg{display:flex; flex-direction:column; align-items:flex-start; gap:1px;
+  border:none; background:transparent; font:inherit; color:var(--ink-faint);
+  padding:6px 9px; border-radius:var(--radius-sm); cursor:pointer; white-space:nowrap; max-width:340px;}
+.fil-seg:hover, .fil-seg:focus-visible{ background:var(--surface-alt); }
+.fil-num{ font-family:var(--font-mono); font-size:8.5px; font-weight:600; letter-spacing:.1em; color:var(--label); }
+.fil-lib{ font-family:var(--font-mono); font-size:8.5px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--label); }
+.fil-meta{ display:flex; align-items:baseline; }
+.fil-seg .fil-num::after{ content:" · "; color:var(--label); }
+.fil-val{ font-size:13.5px; font-weight:600; color:var(--ink-soft); max-width:320px; overflow:hidden; text-overflow:ellipsis; }
+.fil-mod{ font-size:9px; color:var(--label); margin-left:2px; }
+.fil-seg-bleu .fil-val{ color:var(--blue); }
+.fil-lock{ display:inline-flex; align-items:center; gap:4px; font-family:var(--font-mono); font-size:10px;
+  font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--amber);
+  padding:4px 8px; border:1px solid var(--amber); border-radius:999px; margin-left:4px; white-space:nowrap; }
+.fil-vide-note{ font-size:11.5px; color:var(--ink-soft); padding:6px 8px; max-width:240px; line-height:1.4; }
 .fil-seg{border:none; background:transparent; font:inherit; font-weight:500; color:var(--ink-faint); padding:6px 8px; border-radius:var(--radius-sm); cursor:pointer; white-space:nowrap; max-width:340px; overflow:hidden; text-overflow:ellipsis;}
 .fil-seg:hover{color:var(--ink); background:var(--surface-alt);}
 .fil-sep{color:var(--ink-faint); user-select:none; padding:0 2px;}
@@ -9586,18 +9604,43 @@ function supprimerProjetActif(){
    Chaque maillon est cliquable et ouvre son propre sélecteur — créations, renommages et
    suppressions vivent DEDANS, la rangée reste propre. Le ⚙ (infos ligne) reste visible
    à côté du premier maillon : une action invisible n'est pas une action (leçon v4.2). */
-function renderFilAriane(){
-  const el = document.getElementById("filAriane");
+/* v4.64 (C6′-a) — le cadenas de la barre de contexte : l'icône ET le mot */
+function filLockHTML(locked){
+  return locked ? `<span class="fil-lock" title="Consultation : la saisie est verrouillée. Ouvrir le cadenas de la barre d'outils pour modifier.">🔒 verrouillé</span>` : "";
+}
+
+function renderFilAriane(){  const el = document.getElementById("filAriane");
   if(!el) return;
   const l = getActiveLigne(), r = getActiveReference(), op = getActiveOp();
-  const seg = (cle, nom) => `<button class="fil-seg" data-fil="${cle}" title="Cliquer pour choisir">${escapeAttr(nom || "—")}</button>`;
+  /* v4.64 (C6′-a) — la barre de contexte en 4 ÉTAPES, la réponse au reproche de
+     septembre (« quand tu veux une information, tu dois réfléchir ») : avant de
+     saisir, on sait où l'on est. Chaque segment porte son numéro, son libellé en
+     petites capitales, sa valeur — et ▾ pour dire qu'on peut choisir. Des liens,
+     jamais du texte : le clic ouvre la liste des valeurs réelles de ce niveau. */
+  const sc = (op && (op.scenarios || []).find(x => x.id === activeId))
+           || ((r && r.ops || []).flatMap(o => o.scenarios || []).find(x => x.id === activeId))
+           || null;
+  const seg = (num, cle, libelle, val, opts) => {
+    opts = opts || {};
+    return `<button class="fil-seg${opts.bleu ? " fil-seg-bleu" : ""}" data-fil="${cle}" title="${escapeAttr(libelle)} — cliquer pour choisir">
+      <span class="fil-meta"><span class="fil-num">${num}</span><span class="fil-lib">${escapeAttr(libelle)}</span></span>
+      <span class="fil-val">${escapeAttr(val)}</span><span class="fil-mod" aria-hidden="true">▾</span>
+    </button>`;
+  };
+  /* le cadenas porte l'icône ET le mot (§5.2) : le verrou de consultation est
+     l'état réel de l'outil (body.locked) — on ne l'invente pas par scénario.
+     Fonction pure : testable au harnais, où body.classList est un stub muet. */
+  const lock = filLockHTML(document.body.classList.contains("locked"));
   el.innerHTML = `
-    ${seg("ligne", l ? l.nom : "—")}
+    ${seg("01", "ligne", "Ligne machine", l ? l.nom : "aucune ligne")}
     ${l ? `<button class="fil-ico" data-cfg-ligne="${l.id}" title="Coût horaire, observations, maintenance">⚙</button>` : ""}
     <span class="fil-sep">›</span>
-    ${seg("ref", r ? r.nom : "—")}
+    ${seg("02", "ref", "Référence pièce", r ? r.nom : "aucune référence")}
     <span class="fil-sep">›</span>
-    ${seg("op", op ? op.nom : "—")}
+    ${seg("03", "op", "Opération", op ? op.nom : "aucune OP")}
+    <span class="fil-sep">›</span>
+    ${seg("04", "sc", "Scénario", sc ? sc.name : "aucun scénario", { bleu: !!sc })}
+    ${lock}
     <span class="fil-menu" id="filMenu" hidden></span>`;
 }
 
@@ -9629,7 +9672,19 @@ function ouvrirFilMenu(cle, ancre, menu){
       + `<div class="toolbar-more-sep"></div>`
       + (lecture ? "" : filItem("add-op", "", "+ Nouvelle OP…")
         + (op ? filItem("ren-op", op.id, "Renommer l'OP…") : "")
-        + (op && r.ops.length > 1 ? filItem("del-op", op.id, "Supprimer l'OP…", { cls: "danger" }) : ""));
+        + (r.ops.length > 1 && op ? filItem("del-op", op.id, "Supprimer l'OP…", { cls: "danger" }) : ""));
+  } else if(cle === "sc"){
+    /* v4.64 (C6′-a) — le 4ᵉ niveau : les scénarios de l'OP ouverte, avec le
+       marque réel de chaque statut (★ prod, ● série) — jamais une liste libre.
+       La création passe par le « + Ajouter » existant : le menu navigue, il ne
+       saisit pas (le fil est un repère, pas un formulaire). */
+    if(!op || !(op.scenarios || []).length){
+      items = `<div class="fil-vide-note">Aucun scénario sur cette OP — « + Ajouter » dans la barre d'outils en crée un.</div>`;
+    } else {
+      items = op.scenarios.map(x => filItem("go-sc", x.id,
+        (x.baseline ? "★ " : "") + (x.name || "Sans nom") + (x.statut === "serie" ? " · série" : ""),
+        { cur: x.id === activeId })).join("");
+    }
   } else return;
   menu.innerHTML = items;
   menu.style.left = Math.max(0, ancre.offsetLeft) + "px";
@@ -9649,6 +9704,10 @@ function traiterFilItem(item, menu){
     switchReference(activeLigneId, id);
   } else if(action === "go-op"){
     switchOp(activeLigneId, activeReferenceId, id);
+  } else if(action === "go-sc"){
+    /* v4.64 (C6′-a) — naviguer vers le scénario choisi depuis la barre de contexte */
+    const cible = (r && r.ops || []).flatMap(o => o.scenarios || []).find(x => x.id === id);
+    if(cible){ activeId = cible.id; saveData(); render(); }
   } else if(action === "add-ligne"){
     dialogueDemander("Nom de la nouvelle ligne de production (ex. EMAG 1, EMAG 2, WEISSER 1, WEISSER 2, HESSAP...) :", "", { titre: "Nouvelle ligne de production" }).then(nom => {
       if(!nom || !nom.trim()) return;
@@ -11449,6 +11508,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.64.0", date:"30/09/2026", points:[
+    "<b>On sait où l'on est, avant de saisir.</b> La barre de contexte affiche les 4 étapes numérotées — ligne machine, référence pièce, opération, scénario — chacune cliquable (elle ouvre la liste réelle de son niveau, jamais une saisie libre). Le scénario ouvert porte le bleu ; sans scénario, la barre le dit. Et quand l'outil est verrouillé en consultation, le cadenas s'affiche <b>avec le mot</b> « verrouillé »."
+  ]},
   { version:"4.63.0", date:"30/09/2026", points:[
     "<b>Le Design System B entre dans l'outil.</b> Une seule palette de valeurs (encre noire, bleu #006AB3, rouge CeramTec #E30045, gris de la gamme industrielle), une seule famille de formes quasi-plate (2 px), une seule police sans-serif système plus le mono pour tous les chiffres. Cinq polices embarquées partent (112 Ko de moins), l'impression dérive des mêmes accents, le mode nuit et les rapports clients restent eux-mêmes."
   ]},
@@ -11914,7 +11976,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.63.3";
+const TOOL_VERSION = "4.64.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -15810,6 +15872,61 @@ function runTests(){
            [true, true, true]);
         accueilHorsDeplie = false;
       } finally { lignes = lignesB; accueilHorsDeplie = etatDeplie; }
+    }
+
+    /* ---- v4.64.0 — C6′-a : la barre de contexte en 4 étapes ---------------------
+       Le reproche de septembre (« quand tu veux une information, tu dois réfléchir »)
+       a sa réponse : avant de saisir, on sait où l'on est — ligne, référence, OP,
+       scénario — chaque segment est un LIEN vers la liste réelle de son niveau,
+       et le verrou porte l'icône ET le mot. */
+    {
+      const lAv = lignes, alAv = activeLigneId, arAv = activeReferenceId, aoAv = activeOpId, aAv = activeId, dAv = data;
+      const opCfgF = Object.assign({}, defaultConfig, { volumeActif: true });
+      const scP = { id: "sF1", name: "Prod star", baseline: true, outils: [] };
+      const scE = { id: "sF2", name: "Essai SL500", outils: [] };
+      const refF = normalizeReference({ id: "rF", nom: "356x26", ops: [
+        { id: "oF", nom: "OP10", config: opCfgF, scenarios: [ scP, scE ] } ] });
+      const lF = normalizeLigne({ id: "lF", nom: "EMAG 1", references: [ refF ] });
+      lignes = [ lF ]; activeLigneId = "lF"; activeReferenceId = "rF"; activeOpId = "oF"; activeId = "sF2"; data = [ scP, scE ];
+      try {
+        renderFilAriane();
+        const h = document.getElementById("filAriane").innerHTML;
+        ok("contexte : la barre porte les 4 étapes numérotées, libellées en toutes lettres",
+           [h.includes("01"), h.includes("Ligne machine"), h.includes("Référence pièce"),
+            h.includes("Opération"), h.includes("Scénario"), h.includes("▾")],
+           [true, true, true, true, true, true]);
+        ok("contexte : le 4ᵉ niveau est le scénario OUVERT, en bleu quand il existe",
+           [h.includes("Essai SL500"), h.includes("fil-seg-bleu")], [true, true]);
+
+        /* sans scénario ouvert : l'absence est DITE, jamais supposée */
+        activeId = "inexistant";
+        renderFilAriane();
+        const h2 = document.getElementById("filAriane").innerHTML;
+        ok("contexte : sans scénario, la barre dit « aucun scénario » — et ne se teint pas en bleu",
+           [h2.includes("aucun scénario"), h2.includes("fil-seg-bleu")], [true, false]);
+        activeId = "sF2";
+
+        /* le verrou porte l'icône ET le mot (§5.2) — fonction pure, testable au harnais
+           où body.classList est un stub muet */
+        const h3 = filLockHTML(true);
+        ok("contexte : l'outil verrouillé affiche le cadenas ET le mot « verrouillé »",
+           [h3.includes("🔒"), h3.includes("verrouillé")], [true, true]);
+
+        /* le menu du 4ᵉ niveau : les scénarios RÉELS de l'OP, avec leurs marques */
+        const menu = document.getElementById("filMenu");
+        ouvrirFilMenu("sc", { offsetLeft: 0 }, menu);
+        ok("contexte : le menu scénario liste les scénarios réels de l'OP avec leurs marques (★ prod, · série)",
+           [menu.innerHTML.includes("Prod star"), menu.innerHTML.includes("Essai SL500"),
+            menu.innerHTML.includes("go-sc"), menu.innerHTML.includes("★")],
+           [true, true, true, true]);
+
+        /* la navigation go-sc change le scénario ouvert */
+        traiterFilItem({ getAttribute: k => k === "data-fil-item" ? "go-sc" : "sF1" }, { hidden: false });
+        ok("contexte : go-sc ouvre le scénario choisi", activeId, "sF1");
+      } finally {
+        lignes = lAv; activeLigneId = alAv; activeReferenceId = arAv; activeOpId = aoAv; activeId = aAv; data = dAv;
+        document.body.classList.remove("locked");
+      }
     }
 
     /* ---- v4.55.1 — le rattachement d'un scénario à un projet d'une autre ligne ----

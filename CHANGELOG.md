@@ -5,7 +5,35 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
-## [4.63.3] — 2026-09-30
+## [4.64.0] — 2026-09-30 · C6′-a
+
+**La barre de contexte en 4 étapes** (spec `DEMANDE_C6_ECRAN_SAISIE_A_ZCODE.md` §2,
+décision Benjamin). La réponse au reproche de septembre — *« quand tu veux une
+information, tu dois réfléchir »* — : avant de saisir, on sait où l'on est.
+
+### Ajouté
+- le fil d'Ariane devient **barre de contexte** : 4 segments numérotés
+  (01 ligne machine · 02 référence pièce · 03 opération · 04 scénario), chacun
+  avec son libellé en petites capitales AU-DESSUS de sa valeur, et ▾ pour dire
+  qu'on choisit ;
+- **le 4ᵉ niveau existe enfin** : le scénario ouvert, **en bleu** s'il existe,
+  « aucun scénario » dit sinon ; son clic ouvre le menu des scénarios **réels**
+  de l'OP (marques ★ prod et · série) — navigation `go-sc`, jamais une saisie
+  libre (§5.2) ;
+- **le cadenas porte l'icône ET le mot** « verrouillé » quand l'outil est en
+  consultation (`filLockHTML`, fonction pure) ;
+- les segments restent des **liens vers les listes réelles** (mécanisme des
+  menus existant, inchangé).
+
+### Vérification
+- 351 → **357 tests**, tout vert ;
+- contre-regard : panne injectée (bleu du 4ᵉ niveau retiré) → **vue** (357/1) →
+  restaurée **par copie sauvegardée** (§6.7), harnais 357/0, marqueur
+  restauré vérifié — la comparaison d'octets se fait contre la SAUVEGARDE,
+  jamais contre HEAD (le code fraîchement écrit n'y est pas encore : leçon
+  consignée).
+
+## [4.63.3]## [4.63.3] — 2026-09-30
 
 **Le retour de Benjamin : « le design system et l'outil sont identiques, juste une police
 qui a bougé, et elle est moche. »** Il avait raison, et la cause était mesurable — pas une
