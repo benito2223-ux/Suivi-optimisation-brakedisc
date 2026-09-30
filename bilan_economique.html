@@ -2211,6 +2211,15 @@ body.atelier-on{overflow:hidden;}
 /* la recette A2 de l'écran : il dit s'il sert */
 .al-recette{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint); margin-top:10px; }
 .al-recette-creuse{ color:var(--amber); font-weight:600; }
+/* 4.61 — la tuile groupée des lignes hors périmètre (Q12) : grise, factuelle,
+   son clic déplie la liste — jamais le même poids visuel qu'une ligne vivante */
+.al-hors{ border-left-color:var(--border); }
+.al-hors .ca-titre{ color:var(--ink-soft); }
+.al-hors-liste{ display:flex; flex-wrap:wrap; gap:3px 10px; padding:7px 8px;
+  background:var(--surface-alt); border:1px solid var(--border); border-radius:var(--radius);
+  font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); }
+.al-hors-choix{ flex-basis:100%; font-family:var(--font-body); font-style:italic;
+  font-size:10.5px; color:var(--ink-faint); line-height:1.35; }
 
 /* la barre prod → cible : le chiffre que la hiérarchie regarde */
 .ca-chemin{ display:flex; align-items:center; gap:6px; margin-top:3px; }
@@ -11431,6 +11440,10 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.61.0", date:"30/09/2026", points:[
+    "<b>Les lignes hors périmètre ne se comptent plus une par une.</b> Weisser et PCI — déclarées, jamais travaillées, rien à piloter — vivent désormais ensemble dans <b>une seule tuile grise</b> : « 6 lignes hors périmètre : WEISSER 1–4 · PCI 4–5 ». Un clic ouvre la liste des noms et le choix explicite : déclarer leurs machines quand elles entrent dans le suivi, ou les retirer. La grille ne dit plus « six choses à faire » — il n’y en a pas.",
+    "La recette de l’écran compte désormais le périmètre : « 4 lignes actionnables sur 4 dans le périmètre · 6 lignes hors périmètre »."
+  ]},
   { version:"4.60.1", date:"30/09/2026", points:[
     "<b>Deux corrections après relecture de l’écran d’accueil avec vos données réelles.</b> Un coût qui ne couvre pas toutes les opérations le dit désormais : « hors 1 opération non chiffrée » — il ne passe plus pour complet. Et une ligne sans références n’affiche plus « volume annuel à saisir » : sa pastille dit déjà « machines à déclarer », une seule invitation à la fois."
   ]},
@@ -11883,7 +11896,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.60.1";
+const TOOL_VERSION = "4.61.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -13247,18 +13260,26 @@ function renderAccueil(){
   const wrap = document.getElementById("accueilPanel");
   if(!wrap) return;
   const gls = lignes.map(l => gainLigne(l, LIGNES_SEPT_FONS));
-  const tuiles = gls.map(accueilTuileHTML).join("");
+  /* v4.61 — Q12 : les lignes hors périmètre quittent la grille au rang d'une
+     ligne vivante : elles vivent ensemble dans UNE tuile groupée, à la fin.
+     La grille ne dit plus « six choses à faire » — la tuile dit leur nombre. */
+  const vivantes = gls.filter(gl => !ligneHorsPerimetre(gl));
+  const hors = gls.filter(ligneHorsPerimetre);
+  const tuiles = vivantes.map(accueilTuileHTML).join("")
+    + (hors.length ? accueilHorsTuileHTML(hors) : "");
 
   /* la recette A2 : l'écran dit s'il sert — actionnable = la pastille n'est pas
-     « ouvert ». Sous 1/3, il se déclare creux au lieu de se taire. */
-  const total = gls.length;
-  const actionnables = gls.filter(gl => etatLigne(gl).etat !== "opportunite").length;
+     « ouvert ». Le périmètre compte les lignes VIVANTES ; les hors périmètre
+     sont dites à part, elles ne diluent pas le ratio. Sous 1/3 : creux, dit. */
+  const total = vivantes.length;
+  const actionnables = vivantes.filter(gl => etatLigne(gl).etat !== "opportunite").length;
   const ratio = total ? actionnables / total : 0;
-  const recette = total
-    ? `<div class="al-recette ${ratio < 1/3 ? "al-recette-creuse" : ""}">`
-      + (ratio < 1/3 ? `Écran creux : ` : ``)
-      + `${actionnables} ligne${actionnables > 1 ? "s" : ""} actionnable${actionnables > 1 ? "s" : ""} sur ${total}`
-      + (ratio < 1/3 ? ` — moins d'un tiers : cet écran n'éclaire pas encore l'usine` : ``)
+  const recette = (total || hors.length)
+    ? `<div class="al-recette ${total && ratio < 1/3 ? "al-recette-creuse" : ""}">`
+      + (total && ratio < 1/3 ? `Écran creux : ` : ``)
+      + `${actionnables} ligne${actionnables > 1 ? "s" : ""} actionnable${actionnables > 1 ? "s" : ""} sur ${total || 0} dans le périmètre`
+      + (total && ratio < 1/3 ? ` — moins d'un tiers : cet écran n'éclaire pas encore l'usine` : ``)
+      + (hors.length ? ` · ${hors.length} ligne${hors.length > 1 ? "s" : ""} hors périmètre` : ``)
       + `</div>`
     : "";
 
@@ -13275,13 +13296,84 @@ function renderAccueil(){
   if(fermer) fermer.addEventListener("click", fermerPanneaux);
   wrap.querySelectorAll(".al-ouvrir").forEach(btn =>
     btn.addEventListener("click", ev => { ev.stopPropagation(); ouvrirCarte(); }));
-  wrap.querySelectorAll(".al-tuile").forEach(t => {
+  wrap.querySelectorAll(".al-tuile:not(.al-hors)").forEach(t => {
     t.addEventListener("click", () => ouvrirCarte());
     t.addEventListener("keydown", ev => { if(ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); ouvrirCarte(); } });
   });
+  /* la tuile hors périmètre déplie sa liste — le geste de Q12, pas la porte carte */
+  const thors = wrap.querySelector(".al-hors");
+  if(thors){
+    const toggle = () => { accueilHorsDeplie = !accueilHorsDeplie; renderAccueil(); };
+    thors.addEventListener("click", toggle);
+    thors.addEventListener("keydown", ev => { if(ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); toggle(); } });
+  }
 }
 
 function ouvrirAccueil(){ renderAccueil(); ouvrirPanneau("accueilPanel"); }
+
+/* ═══ v4.61.0 — Q12 (Benjamin) : la tuile regroupée des lignes HORS PÉRIMÈTRE ════
+   Décision tranchée le 30/09 : une seule tuile grise pour les lignes déclarées
+   sans références NI machines — « 6 lignes hors périmètre : Weisser 1–4, PCI 4–5 » —
+   et un clic ouvre la liste. Le fond (Tour 19 d'Hermes) : les afficher une par une,
+   au même poids visuel qu'EMAG 1, dirait qu'il y a six choses à faire — il n'y en a
+   pas ; le regroupement ne cache rien, il dit la vérité en une tuile qui porte leur
+   nombre. La ligne de choix explicite : déclarer leurs machines, ou les sortir du
+   périmètre — jamais une invitation à la saisie impossible. */
+
+/* les noms des lignes hors périmètre, compactés par famille :
+   « WEISSER 1 » ×4 + « PCI 4 » + « PCI 5 » → « WEISSER 1–4 · PCI 4–5 » */
+function plagesLignes(noms){
+  const familles = {}, ordre = [];
+  noms.forEach(n => {
+    const m = String(n).trim().match(/^(\D+)\s*(\d+)?$/);
+    if(!m){ if(!(n in familles)){ familles[n] = []; ordre.push(n); } familles[n].push(null); return; }
+    const cle = m[1].trim().toUpperCase();
+    if(!(cle in familles)){ familles[cle] = []; ordre.push(cle); }
+    familles[cle].push(m[2] ? parseInt(m[2], 10) : null);
+  });
+  /* l'ordre des familles suit leur première apparition (l'ordre des lignes du
+     suivi), pas l'alphabet : « WEISSER 1–4 · PCI 4–5 » comme dans la décision */
+  return ordre.map(f => {
+    const numeros = familles[f].filter(x => x !== null).sort((a, b) => a - b);
+    const alias = familles[f].includes(null) ? [f] : [];
+    if(!numeros.length) return alias.join(" ");
+    /* plages consécutives : 1,2,3,4 → « 1–4 » ; 4,5 → « 4–5 » */
+    const plages = [];
+    let deb = numeros[0], fin = numeros[0];
+    for(let i = 1; i <= numeros.length; i++){
+      if(numeros[i] === fin + 1){ fin = numeros[i]; continue; }
+      plages.push(deb === fin ? String(deb) : deb + "–" + fin);
+      deb = fin = numeros[i];
+    }
+    return f + " " + plages.join(", ") + (alias.length ? " · " + alias.join(" ") : "");
+  }).join(" · ");
+}
+
+/* une ligne est hors périmètre quand elle ne porte NI référence NI machine :
+   rien à piloter, rien à lire — sa place est dans la tuile groupée, pas dans
+   la grille au même rang qu'une ligne vivante */
+function ligneHorsPerimetre(gl){
+  return (gl.ligne.references || []).length === 0 && (gl.postes || []).length === 0;
+}
+
+/* l'état de dépliage de la liste : mémoire du panneau */
+let accueilHorsDeplie = false;
+
+function accueilHorsTuileHTML(gls){
+  const noms = gls.map(gl => gl.ligne.nom || "?");
+  const liste = accueilHorsDeplie
+    ? `<div class="al-hors-liste">${noms.map(n => `<span>${escapeAttr(n)}</span>`).join("")}
+        <span class="al-hors-choix">Pour chacune : déclarer ses machines quand elle entre dans le suivi, ou la retirer de la liste des lignes (Options) — mais jamais la laisser dire qu'il y a quelque chose à faire.</span></div>`
+    : "";
+  return `<div class="ca-tuile opportunite al-tuile al-hors" tabindex="0" role="button"
+      title="Ces lignes sont déclarées sans machines ni références — hors périmètre de pilotage">
+    <div class="ca-tete"><span class="ca-titre">${gls.length} lignes hors périmètre</span>
+      <span class="ca-etat">${accueilHorsDeplie ? "replier" : "voir la liste"}</span></div>
+    <div class="ca-ref-ligne">${escapeAttr(plagesLignes(noms))}</div>
+    <div class="ca-tentant">déclarées, jamais travaillées — aucune action en attente</div>
+    ${liste}
+  </div>`;
+}
 
 /* ── v4.53 — LIVRAISONS : l'objet que la hiérarchie lit (décision 3) ──────────
    Une livraison = un instantané FIGÉ des gains du plan, daté et nommé. Elle ne se
@@ -15615,20 +15707,86 @@ function runTests(){
       ok("accueil : un coût partiel dit « hors n opération non chiffrée », il ne passe pas pour complet",
          [hM.includes("hors 1 opération non chiffrée")], [true]);
 
-      /* la recette A2 : l'écran dit s'il sert */
+      /* la recette A2 : l'écran dit s'il sert. Depuis la 4.61, une ligne SANS
+         références vit dans la tuile hors périmètre — le « creux » se teste
+         avec une ligne VIVANTE mais non actionnable (des références, aucune
+         cible, aucun essai). */
       const lignesA = lignes;
       try {
-        lignes = [ normalizeLigne({ id: "lX9", nom: "Ligne test isolement", references: [] }) ];
+        const refCreuse = normalizeReference({ id: "rc", nom: "290x12", productionAnnuelle: "10000", cibleCPP: "", ops: [
+          { id: "oc", nom: "OP10", config: opCfg(), scenarios: [
+            { id: "pc", name: "Prod", baseline: true, outils: [ { id: "uc", numero: "T", logements: [ { id: "lc", nom: "Bol", prix: 20, aretes: 8, charniere: 100 } ] } ] } ] } ] });
+        lignes = [ normalizeLigne({ id: "lX9", nom: "EMAG 1", references: [ refCreuse ] }) ];
         renderAccueil();
         const creux = document.getElementById("accueilPanel").innerHTML;
         ok("accueil : la recette A2 se déclare creuse quand rien n'est actionnable",
-           [creux.includes("Écran creux"), creux.includes("0 ligne actionnable")], [true, true]);
+           [creux.includes("Écran creux"), creux.includes("0 ligne actionnable sur 1 dans le périmètre")], [true, true]);
         lignes = [ lM ];
         renderAccueil();
         const plein = document.getElementById("accueilPanel").innerHTML;
         ok("accueil : une ligne avec du travail n'est pas creuse, la grille porte les tuiles",
            [plein.includes("Écran creux"), plein.includes("al-tuile"), plein.includes("Voir l'atelier")], [false, true, true]);
       } finally { lignes = lignesA; }
+    }
+
+    /* ---- v4.61.0 — Q12 : la tuile regroupée des lignes HORS PÉRIMÈTRE ------------
+       Décision Benjamin : une seule tuile grise — « 6 lignes hors périmètre :
+       Weisser 1–4, PCI 4–5 » — un clic ouvre la liste. Le fond (Tour 19) : les
+       afficher une par une dirait qu'il y a six choses à faire ; il n'y en a pas. */
+    {
+      ok("accueil : les plages compactent les familles — Weisser 1×4 + PCI 4,5 → « WEISSER 1–4 · PCI 4–5 »",
+         plagesLignes(["WEISSER 1", "WEISSER 2", "WEISSER 3", "WEISSER 4", "PCI 4", "PCI 5"]),
+         "WEISSER 1–4 · PCI 4–5");
+      ok("accueil : les numéros non consécutifs restent lisibles, sans fausse plage",
+         plagesLignes(["EMAG 2", "EMAG 7"]), "EMAG 2, 7");
+      ok("accueil : un nom sans numéro passe tel quel",
+         plagesLignes(["HESSAPP"]), "HESSAPP");
+
+      /* le critère : NI référence NI machine — rien à piloter */
+      const lHP = normalizeLigne({ id: "lhp", nom: "Weisser 1", references: [] });
+      ok("accueil : une ligne sans références ni machines est hors périmètre",
+         ligneHorsPerimetre(gainLigne(lHP, [ { nom: "Weisser 1", machines: [] } ])), true);
+      const opCfgQ = Object.assign({}, defaultConfig, { volumeActif: true });
+      const refQ = normalizeReference({ id: "rq", nom: "356x26", productionAnnuelle: "100000", cibleCPP: "0.3", ops: [
+        { id: "oq10", nom: "OP10", config: opCfgQ, scenarios: [
+          { id: "pq10", name: "Prod", baseline: true, outils: [ { id: "uq1", numero: "T", logements: [ { id: "lq1", nom: "Bol", prix: 30, aretes: 8, charniere: 100 } ] } ] } ] } ] });
+      ok("accueil : une ligne avec références reste dans la grille, fût-elle vide de machines",
+         ligneHorsPerimetre(gainLigne(normalizeLigne({ id: "lhp2", nom: "Weisser 2", references: [ refQ ] }),
+                                      [ { nom: "Weisser 2", machines: [] } ])), false);
+
+      /* le rendu : UNE tuile groupée, les vivantes au premier rang, la recette séparée.
+         Les assertions lisent innerHTML (compatibles navigateur ET harnais node —
+         le stub ne sait pas répondre aux querySelector, mais il rend le HTML écrit). */
+      const lV1 = normalizeLigne({ id: "lv1", nom: "EMAG 1", coutHoraire: "", references: [ refQ ] });
+      const lH1 = normalizeLigne({ id: "lh1", nom: "Weisser 1", references: [] });
+      const lH2 = normalizeLigne({ id: "lh2", nom: "Weisser 2", references: [] });
+      const lignesB = lignes; const etatDeplie = accueilHorsDeplie;
+      try {
+        accueilHorsDeplie = false;
+        lignes = [ lV1, lH1, lH2 ];
+        renderAccueil();
+        const htmlA = document.getElementById("accueilPanel").innerHTML;
+        ok("accueil : 3 lignes dont 2 hors périmètre = 1 tuile vivante + 1 tuile groupée, jamais 3 tuiles",
+           [(htmlA.match(/class="ca-tuile /g) || []).length, htmlA.includes("2 lignes hors périmètre")],
+           [2, true]);
+        ok("accueil : la tuile groupée porte les plages compactées, jamais le rang d'une ligne vivante",
+           [htmlA.includes("WEISSER 1–2"), htmlA.includes("aucune action en attente")], [true, true]);
+        ok("accueil : la liste est repliée par défaut, la recette compte le périmètre et dit les hors",
+           [!htmlA.includes("al-hors-liste"),
+            htmlA.includes("1 ligne actionnable sur 1 dans le périmètre"),
+            htmlA.includes("2 lignes hors périmètre")],
+           [true, true, true]);
+
+        /* le geste Q12 : dépliée, la liste montre les noms et le choix explicite
+           (l'état est posé directement : le vrai clic se vérifie au navigateur) */
+        accueilHorsDeplie = true;
+        renderAccueil();
+        const htmlB = document.getElementById("accueilPanel").innerHTML;
+        ok("accueil : dépliée, la liste des noms et le choix explicite apparaissent",
+           [htmlB.includes("al-hors-liste"), htmlB.includes("Weisser 1"), htmlB.includes("déclarer ses machines")],
+           [true, true, true]);
+        accueilHorsDeplie = false;
+      } finally { lignes = lignesB; accueilHorsDeplie = etatDeplie; }
     }
 
     /* ---- v4.55.1 — le rattachement d'un scénario à un projet d'une autre ligne ----
