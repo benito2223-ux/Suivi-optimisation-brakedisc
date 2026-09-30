@@ -5,7 +5,35 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
-## [4.64.0] — 2026-09-30 · C6′-a
+## [4.65.0] — 2026-09-30 · C5′ bloc 1
+
+**L'en-tête et le BANDEAU de l'accueil** (spec C5 §1.1 + §1.3). Le bandeau est
+le cœur du chantier et l'endroit de la plus grande tentation d'inventer.
+
+### Ajouté
+- **en-tête de page** : fil discret, titre, **périmètre réel** sourcé (les
+  familles des lignes vivantes — jamais un mensonyme de capture), sous-titre,
+  et l'index de qualité à droite (« conforme / à surveiller », le mot en toutes
+  lettres) ;
+- **`accueilBandeauHTML(gls)`** — les 4 blocs, 29 px mono :
+  01 Économie validée (Σ gainActe, **périmètre écrit** : « sur n lignes
+  qualifiées série ») ; 02 Ralliement cible CPP (**le reste à capter calculé**
+  par ligne : (coût dominante − cible) × volume ; les cibles sans volume se
+  disent, elles ne s'inventent pas) ; 03 Cadence : **« — non mesurée — à
+  relever avec Matis »**, jamais estimée ; 04 Lignes en engagement : un compte
+  avec les noms ;
+- **les sélecteurs de la spec §1.2 ne sont pas construits** : le champ
+  « campagne » n'existe pas dans le modèle et la spec §4 renvoie la décision à
+  Benjamin — Q13 posée au tableau (disparaître, ou filtre projet/statut). Une
+  porte morte eût été pire que pas de porte.
+
+### Vérification
+- 357 → **364 tests**, tout vert ;
+- contre-regard, celui qu'Hermes recomptera : **le chiffre inventé de la
+  capture Stitch (92 pcs/h) injecté dans le bloc cadence → VU par 2 tests**,
+  restauré par copie sauvegardée, 364/0.
+
+## [4.64.0]## [4.64.0] — 2026-09-30 · C6′-a
 
 **La barre de contexte en 4 étapes** (spec `DEMANDE_C6_ECRAN_SAISIE_A_ZCODE.md` §2,
 décision Benjamin). La réponse au reproche de septembre — *« quand tu veux une

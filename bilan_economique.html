@@ -2240,8 +2240,28 @@ body.atelier-on{overflow:hidden;}
 .al-recette-creuse{ color:var(--amber); font-weight:600; }
 /* 4.61 — la tuile groupée des lignes hors périmètre (Q12) : grise, factuelle,
    son clic déplie la liste — jamais le même poids visuel qu'une ligne vivante */
-.al-hors{ border-left-color:var(--border); }
-.al-hors .ca-titre{ color:var(--ink-soft); }
+.al-hors{ border-left-color:var(--border); }.al-hors .ca-titre{ color:var(--ink-soft); }
+/* ── 4.65 (C5′ bloc 1) — l'en-tête et le BANDEAU de l'accueil ── */
+.bd-entete{ margin-bottom:12px; }
+.bd-ariane{ font-family:var(--font-mono); font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--label); }
+.bd-titre-ligne{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin:2px 0 1px; }
+.bd-titre{ font-family:var(--font-disp); font-size:21px; font-weight:800; letter-spacing:-.01em; margin:0; color:var(--ink); }
+.bd-perimetre{ font-family:var(--font-mono); font-size:11px; font-weight:700; letter-spacing:.08em; color:var(--blue); }
+.bd-index{ margin-left:auto; font-family:var(--font-mono); font-size:10px; font-weight:600;
+  letter-spacing:.06em; text-transform:uppercase; color:var(--green); border:1px solid var(--green);
+  border-radius:999px; padding:3px 10px; white-space:nowrap; }
+.bd-index-surveiller{ color:var(--amber); border-color:var(--amber); }
+.bd-sous{ font-size:12.5px; color:var(--body); margin:2px 0 0; max-width:720px; }
+.bd-bandeau{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:1px;
+  background:var(--border); border:1px solid var(--border); border-radius:var(--radius); margin:0 0 14px; }
+.bd-bloc{ background:var(--surface); padding:10px 13px 11px; min-width:0; }
+.bd-lib{ font-family:var(--font-mono); font-size:8.5px; font-weight:600; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--label); margin-bottom:5px; }
+.bd-v{ font-family:var(--font-mono); font-size:29px; font-weight:700; color:var(--ink);
+  line-height:1.05; font-variant-numeric:tabular-nums; }
+.bd-v small{ font-size:10px; font-weight:500; color:var(--label); margin-left:4px; letter-spacing:.02em; }
+.bd-sub{ font-family:var(--font-body); font-size:10.5px; color:var(--body); margin-top:4px; line-height:1.35; }
+@media (max-width:760px){ .bd-bandeau{ grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); } .bd-v{ font-size:26px; } }
 .al-hors-liste{ display:flex; flex-wrap:wrap; gap:3px 10px; padding:7px 8px;
   background:var(--surface-alt); border:1px solid var(--border); border-radius:var(--radius);
   font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); }
@@ -11508,6 +11528,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.65.0", date:"30/09/2026", points:[
+    "<b>L'accueil ouvre sur le tableau de bord.</b> L'en-tête porte le titre, le périmètre réel des lignes vivantes et l'index de l'écran — et le bandeau des quatre chiffres arrive : économie validée (avec son périmètre écrit), ralliement à la cible CPP (le reste à capter, calculé), cadence (<b>— non mesurée</b>, jamais estimée) et lignes en engagement (un compte, avec les noms). Chaque chiffre remonte à sa source ; chaque absence dit ce qui manque."
+  ]},
   { version:"4.64.0", date:"30/09/2026", points:[
     "<b>On sait où l'on est, avant de saisir.</b> La barre de contexte affiche les 4 étapes numérotées — ligne machine, référence pièce, opération, scénario — chacune cliquable (elle ouvre la liste réelle de son niveau, jamais une saisie libre). Le scénario ouvert porte le bleu ; sans scénario, la barre le dit. Et quand l'outil est verrouillé en consultation, le cadenas s'affiche <b>avec le mot</b> « verrouillé »."
   ]},
@@ -11976,7 +11999,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.64.0";
+const TOOL_VERSION = "4.65.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -13364,10 +13387,20 @@ function renderAccueil(){
     : "";
 
   wrap.innerHTML = `
-    <h3>Accueil — l'usine par lignes</h3>
-    <p class="panel-hint">Une tuile = une ligne entière, avec ses références et ses postes. Le gain déjà
-      acté et celui en cours vivent dans deux blocs séparés ; le coût pièce est celui de la référence
-      dominante, étiquetée. « Voir l'atelier → » descend vers les machines de la ligne.</p>
+    <div class="bd-entete">
+      <div class="bd-ariane">parc usinage sept-fons · lignes haute cadence</div>
+      <div class="bd-titre-ligne">
+        <h3 class="bd-titre">Tableau de bord des lignes d'usinage</h3>
+        <span class="bd-perimetre">${escapeAttr(accueilPerimetreHTML(vivantes) || "usine")}</span>
+        <div class="bd-index ${total && ratio < 1/3 ? "bd-index-surveiller" : ""}" title="La recette de l'écran : les lignes qu'il éclaire vraiment">
+          ${total && ratio < 1/3 ? "à surveiller" : "conforme"} · ${actionnables}/${total || 0} actives${hors.length ? ` · ${hors.length} hors périmètre` : ""}
+        </div>
+      </div>
+      <p class="bd-sous">L'usine par lignes : gains actés et en cours dans deux blocs séparés, coût pièce
+        étiqueté vers la cible du site, et la prochaine étape de chaque machine — chaque chiffre
+        remonte à sa source, chaque absence dit ce qui manque.</p>
+    </div>
+    ${accueilBandeauHTML(gls)}
     <div class="ca-grille al-grille">${tuiles}</div>
     ${recette}
     <div class="panel-actions"><button class="primary" id="alClose">Fermer</button></div>`;
@@ -13390,6 +13423,84 @@ function renderAccueil(){
 }
 
 function ouvrirAccueil(){ renderAccueil(); ouvrirPanneau("accueilPanel"); }
+
+/* ═══ v4.65.0 — C5′ bloc 1 : l'en-tête et le BANDEAU de l'accueil ═══════════════
+   (spec DEMANDE_C5_ACCUEIL_TABLEAU_DE_BORD_A_ZCODE.md §1.1 + §1.3, décision
+   Benjamin). Le bandeau est le cœur du chantier et l'endroit de la plus grande
+   tentation d'inventer : les 4 chiffres de la capture Stitch sont TOUS faux
+   (le classeur de Matis dit 6 781 pièces, facteur 18). Règle absolue (§5.6) :
+   un bloc sans donnée affiche « — » ET CE QUI MANQUE. Un bandeau avec deux
+   chiffres et deux tirets est correct ; quatre chiffres dont deux inventés
+   sont un accident. Chaque chiffre se remonte à sa source (gainLigne,
+   pieceCPPComplet, etatLigne) — jamais écrit en dur. */
+
+/* les familles réellement présentes dans le périmètre vivant, sourcées :
+   « EMAG & HESSAPP » sur la capture devenait un mensonyme chez nous — on
+   écrit ce que les données disent */
+function accueilPerimetreHTML(vivantes){
+  const fams = [];
+  vivantes.forEach(gl => {
+    const f = familleDeLigne(gl.ligne.nom || "");
+    if(f && !fams.includes(f)) fams.push(f);
+  });
+  const noms = fams.map(f => ({ weisser: "WEISSER", hessapp: "HESSAPP", emag: "EMAG", pci: "PCI" }[f] || f.toUpperCase()));
+  return noms.join(" & ");
+}
+
+function accueilBandeauHTML(gls){
+  const vivantes = gls.filter(gl => !ligneHorsPerimetre(gl));
+
+  /* 1. Économie validée : Σ gainActe, périmètre ÉCRIT — jamais « 100 % audité » */
+  const acte = vivantes.reduce((a, gl) => a + (gl.gainActe || 0), 0);
+  const nbActe = vivantes.filter(gl => (gl.gainActe || 0) > 0).length;
+  const bloc1 = nbActe
+    ? { v: `+${fmtEuroCourt(Math.round(acte))}`, u: "/an",
+        sub: `sur ${nbActe} ligne${nbActe > 1 ? "s" : ""} qualifiée${nbActe > 1 ? "s" : ""} série` }
+    : { v: "—", u: "", sub: "aucun gain acté — premiers passages en série en attente" };
+
+  /* 2. Ralliement cible CPP : le reste à capter, CALCULÉ par ligne chiffrable
+     (coût prod de la dominante − sa cible) × son volume. Les lignes à cible
+     sans volume se comptent à part : leur absence se dit, elle ne s'invente pas. */
+  let reste = 0, nbCible = 0, nbCibleSansVol = 0;
+  vivantes.forEach(gl => {
+    const cp = gl.coutPiece;
+    if(!cp || cp.cible === null) return;
+    if(!gl.volumeDominante){ nbCibleSansVol++; return; }
+    if(cp.prod > cp.cible){ reste += (cp.prod - cp.cible) * gl.volumeDominante; nbCible++; }
+  });
+  const bloc2 = nbCible
+    ? { v: `${fmtEuroCourt(Math.round(reste))}`, u: "€/an restants",
+        sub: `cible du site · ${nbCible} ligne${nbCible > 1 ? "s" : ""} chiffrée${nbCible > 1 ? "s" : ""}`
+            + (nbCibleSansVol ? ` · ${nbCibleSansVol} cible sans volume` : "") }
+    : nbCibleSansVol
+      ? { v: "—", u: "", sub: `cible posée sur ${nbCibleSansVol} ligne${nbCibleSansVol > 1 ? "s" : ""} — volume annuel à saisir` }
+      : { v: "—", u: "", sub: "aucune cible CPP posée" };
+
+  /* 3. Cadence : on n'a PAS de cadence mesurée par ligne — on ne l'estime
+     jamais (volume ÷ heures serait une invention). Le tiret dit ce qui manque. */
+  const bloc3 = { v: "—", u: "", sub: "cadence non mesurée — à relever avec Matis" };
+
+  /* 4. Lignes en engagement : un COMPTE de chez nous, avec les noms */
+  const engagees = vivantes.filter(gl => etatLigne(gl).etat !== "opportunite");
+  const noms = engagees.map(gl => gl.ligne.nom);
+  const bloc4 = engagees.length
+    ? { v: String(engagees.length), u: `/ ${vivantes.length} lignes`,
+        sub: noms.slice(0, 3).join(" · ") + (noms.length > 3 ? ` +${noms.length - 3}` : "") }
+    : { v: "0", u: `/ ${vivantes.length} lignes`, sub: "aucune ligne en travail" };
+
+  const bloc = (num, lib, b) => `
+    <div class="bd-bloc" role="listitem">
+      <div class="bd-lib">${num} · ${lib}</div>
+      <div class="bd-v">${b.v}<small>${b.u}</small></div>
+      <div class="bd-sub">${escapeAttr(b.sub)}</div>
+    </div>`;
+  return `<div class="bd-bandeau" aria-label="Les quatre chiffres de l'atelier">
+    ${bloc("01", "Économie validée", bloc1)}
+    ${bloc("02", "Ralliement cible CPP", bloc2)}
+    ${bloc("03", "Cadence", bloc3)}
+    ${bloc("04", "Lignes en engagement", bloc4)}
+  </div>`;
+}
 
 /* ═══ v4.61.0 — Q12 (Benjamin) : la tuile regroupée des lignes HORS PÉRIMÈTRE ════
    Décision tranchée le 30/09 : une seule tuile grise pour les lignes déclarées
@@ -15927,6 +16038,53 @@ function runTests(){
         lignes = lAv; activeLigneId = alAv; activeReferenceId = arAv; activeOpId = aoAv; activeId = aAv; data = dAv;
         document.body.classList.remove("locked");
       }
+    }
+
+    /* ---- v4.65.0 — C5′ bloc 1 : le BANDEAU de l'accueil -------------------------
+       Le point qu'Hermes recomptera à la revue : chaque bloc sans donnée affiche
+       « — » ET CE QUI MANQUE. Un bandeau avec deux chiffres et deux tirets est
+       correct ; quatre chiffres dont deux inventés sont un accident (§5.6). */
+    {
+      const opCfgB = Object.assign({}, defaultConfig, { volumeActif: true });
+      const mkGl = (nom, refNom, vol, cible, prixProd, prixEssai) => {
+        const scs = [ { id: "p"+nom, name: "Prod", baseline: true, outils: [ { id: "u"+nom, numero: "T", logements: [ { id: "l"+nom, nom: "Bol", prix: prixProd, aretes: 8, charniere: 100 } ] } ] } ];
+        if(prixEssai !== undefined) scs.push({ id: "e"+nom, name: "Essai", statut: "serie", outils: [ { id: "ue"+nom, numero: "T", logements: [ { id: "le"+nom, nom: "Bol", prix: prixEssai, aretes: 8, charniere: 100 } ] } ] });
+        const ref = normalizeReference({ id: "r"+nom, nom: refNom, productionAnnuelle: vol, cibleCPP: cible,
+          ops: [ { id: "o"+nom, nom: "OP10", config: opCfgB, scenarios: scs } ] });
+        return gainLigne(normalizeLigne({ id: "l"+nom, nom, coutHoraire: "", references: [ ref ] }),
+                         [ { nom: "EMAG 1", machines: [ { code: "OP10", nom: "Ébauche" } ] } ]);
+      };
+
+      /* cas complet : un gain acté, une cible chiffrable → deux chiffres + le
+         tiret de cadence (jamais estimée) + le compte d'engagement */
+      const glB1 = mkGl("EMAG 1", "356x26", "100000", "0.030", 30, 10);
+      const hB = accueilBandeauHTML([ glB1 ]);
+      ok("bandeau : l'économie validée affiche le gain acté AVEC son périmètre écrit",
+         [hB.includes("/an"), hB.includes("sur 1 ligne qualifiée série")], [true, true]);
+      /* reste à capter = (0,0375 − 0,030) × 100 000 = 750 € */
+      ok("bandeau : le ralliement cible CALCULE le reste à capter, il ne l'écrit pas en dur",
+         [hB.includes("750"), hB.includes("cible du site")], [true, true]);
+      ok("bandeau : la cadence sans mesure dit « — » et ce qui manque — jamais estimée",
+         [hB.includes("cadence non mesurée"), hB.includes("Matis")], [true, true]);
+      ok("bandeau : les lignes en engagement sont un compte de chez nous, avec les noms",
+         [hB.includes("1"), hB.includes("/ 1 lignes"), hB.includes("EMAG 1")], [true, true, true]);
+
+      /* cas vide : AUCUN chiffre inventé — que des tirets et des manques dits */
+      const glVide = mkGl("Weisser 9", "000x00", "", "", 25);
+      const hV = accueilBandeauHTML([ glVide ]);
+      ok("bandeau : sans gain ni cible ni volume, le bandeau ne montre AUCUN chiffre inventé",
+         [hV.includes("aucun gain acté"), hV.includes("aucune cible CPP posée"),
+          hV.includes("cadence non mesurée")], [true, true, true]);
+
+      /* périmètre : les familles réelles, sourcées */
+      ok("bandeau : le périmètre de l'en-tête liste les familles RÉELLES des lignes vivantes",
+         accueilPerimetreHTML([ glB1 ]), "EMAG");
+
+      /* cible posée mais volume absent : l'absence se dit, elle ne devient pas 0 */
+      const glCV = mkGl("EMAG 2", "290x12", "", "0.300", 25);
+      const hCV = accueilBandeauHTML([ glCV ]);
+      ok("bandeau : une cible posée sans volume dit « volume annuel à saisir », pas un reste inventé",
+         [hCV.includes("cible posée sur 1 ligne"), hCV.includes("volume annuel à saisir")], [true, true]);
     }
 
     /* ---- v4.55.1 — le rattachement d'un scénario à un projet d'une autre ligne ----
