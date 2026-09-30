@@ -5,7 +5,35 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
-## [4.65.1] — 2026-09-30 · C5′ bloc 2
+## [4.65.2] — 2026-09-30 · C5′ bloc 3
+
+**La matrice des opérations et le pied** (spec C5 §1.5 + §1.6) — l'écran que la
+hiérarchie regarde : une seule table, toutes les lignes vivantes, tous les
+statuts.
+
+### Ajouté
+- **`accueilMatriceHTML(gls)`** — flatMap des postes déclarés (sources :
+  `gainPoste` ; pas de nouveau modèle). Colonnes : ligne · opération (+ nom de
+  machine) · référence dominante · **gain unitaire sourcé** (coutProd −
+  coutEnCours du poste) · gain annuel **acté/projeté étiquetés, jamais mélangés**
+  (§3.4) · statut en MOTS · porte « Ouvrir → » (même mécanique que la carte,
+  jamais sur une opportunité) ;
+- **§3.5 tenue et testée** : un poste non impacté reste affiché à ±0,000 €
+  (annuel ET unitaire) ;
+- **le pied** : l'équipe du suivi (responsables réels, sans rôle inventé — le
+  modèle n'en a pas ; invitation affichée si aucun) et les trois actions
+  EXISTANTES exposées (bilan atelier, exporter, historique — les boutons de la
+  barre, pas une seconde implémentation).
+
+### Vérification
+- 368 → **377 tests**, tout vert ;
+- contre-regard en deux actes : panne (±0,000 annuel supprimé) d'abord invisible
+  — **le test était aveugle** (il vérifiait le ±0,000 unitaire) ; test corrigé
+  pour vérifier les DEUX, panne re-injectée → **vue** (377/1), restaurée par
+  copie sauvegardée, 377/0. Le contre-regard attrape aussi les tests de celui
+  qui l'écrit.
+
+## [4.65.1]## [4.65.1] — 2026-09-30 · C5′ bloc 2
 
 **Les tuiles de ligne enrichies** (spec C5 §1.4) — remplies comme sur la
 capture, avec nos sources.

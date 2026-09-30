@@ -2271,6 +2271,29 @@ body.atelier-on{overflow:hidden;}
   color:var(--label); line-height:1.5; padding:2px; }
 .al-flux{ flex:1; min-width:0; }
 .al-delta{ font-family:var(--font-mono); font-size:11px; font-weight:600; color:var(--green); margin-left:8px; white-space:nowrap; }
+/* 4.65.2 (C5' bloc 3) — la matrice des opérations et le pied */
+.mx-titre{ font-family:var(--font-mono); font-size:10px; font-weight:600; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--label); margin:16px 0 6px; }
+.mx-tbl td{ font-size:11.5px; padding:5px 8px; }
+.mx-ligne{ font-weight:600; white-space:nowrap; }
+.mx-op{ font-family:var(--font-mono); font-size:10.5px; font-weight:600; color:var(--ink); white-space:nowrap; }
+.mx-op .mx-nom{ display:block; font-family:var(--font-body); font-size:10px; font-weight:400; color:var(--label); }
+.mx-ref{ font-size:11px; color:var(--body); white-space:nowrap; }
+.mx-statut{ font-size:11px; color:var(--body); white-space:nowrap; }
+tr.mx-gagne .mx-statut{ color:var(--green); font-weight:600; }
+tr.mx-encours .mx-statut{ color:var(--blue); font-weight:600; }
+tr.mx-aChiffrer .mx-statut{ color:var(--amber); font-weight:600; }
+tr.mx-opportunite td{ color:var(--label); }
+.mx-etq{ font-family:var(--font-mono); font-size:8.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--label); }
+.mx-zero{ color:var(--label); }
+.pf-pied{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-top:14px;
+  padding-top:10px; border-top:1px solid var(--border); }
+.pf-gens{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-width:0; }
+.pf-lib{ font-family:var(--font-mono); font-size:8.5px; font-weight:600; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--label); margin-right:2px; }
+.pf-nom{ font-size:12px; font-weight:600; color:var(--ink); padding:2px 9px; border-radius:999px;
+  border:1px solid var(--c); white-space:nowrap; }
+.pf-actions{ margin-left:auto; display:flex; gap:7px; }
 .al-contexte{ font-style:italic; font-size:11px; color:var(--body); line-height:1.35;
   padding:5px 8px; background:var(--surface-alt); border-radius:var(--radius); }
 .al-hors-liste{ display:flex; flex-wrap:wrap; gap:3px 10px; padding:7px 8px;
@@ -11539,6 +11562,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.65.2", date:"30/09/2026", points:[
+    "<b>La table que la hiérarchie lit.</b> Sous les tuiles, toutes les opérations de toutes les lignes vivantes : ligne, opération, référence, gain unitaire, gain annuel (acté et projeté jamais mélangés), statut en toutes lettres — et un poste non impacté reste affiché à ±0,000 €, il ne disparaît pas. Chaque ligne porte sa porte « Ouvrir → ». En pied : l'équipe du suivi et les trois actions existantes (bilan atelier, exporter, historique)."
+  ]},
   { version:"4.65.0", date:"30/09/2026", points:[
     "<b>L'accueil ouvre sur le tableau de bord.</b> L'en-tête porte le titre, le périmètre réel des lignes vivantes et l'index de l'écran — et le bandeau des quatre chiffres arrive : économie validée (avec son périmètre écrit), ralliement à la cible CPP (le reste à capter, calculé), cadence (<b>— non mesurée</b>, jamais estimée) et lignes en engagement (un compte, avec les noms). Chaque chiffre remonte à sa source ; chaque absence dit ce qui manque."
   ]},
@@ -12010,7 +12036,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.65.1";
+const TOOL_VERSION = "4.65.2";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -13402,6 +13428,69 @@ function accueilTuileHTML(gl){
   </div>`;
 }
 
+/* ═══ v4.65.2 — C5′ bloc 3 : la MATRICE des opérations et le PIED ═══════════════
+   (spec C5 §1.5 + §1.6). L'écran que la hiérarchie regarde : une seule table,
+   toutes les lignes, tous les statuts — un flatMap sur les postes déclarés,
+   chaque chiffre sourcé gainPoste(). §3.5 : un poste non impacté reste affiché
+   avec ±0,000 € ; §3.4 : le gain de l'OP, jamais un cumul de projetés ; les
+   statuts sont des mots ; tri stable par ligne puis par OP. */
+function accueilMatriceHTML(gls){
+  const MOTS = { gagne: "gagné", encours: "essais en cours", aChiffrer: "à chiffrer", opportunite: "jamais travaillé" };
+  const vivantes = gls.filter(gl => !ligneHorsPerimetre(gl));
+  const lignes_rows = vivantes.flatMap(gl =>
+    gl.postes.map(t => {
+      const p = t.poste;
+      /* le gain unitaire SOURCÉ du poste : coutProd − coutEnCours (les deux
+         rendus par gainPoste, €/pce). Nul ou non chiffré : ±0,000 € ÉCRIT,
+         le poste ne disparaît pas (§3.5). */
+      let delta = null;
+      if(p.coutProd > 0 && p.coutEnCours !== undefined && p.coutEnCours < p.coutProd) delta = p.coutProd - p.coutEnCours;
+      /* le gain annuel : acté OU projeté, ÉTIQUETÉ — jamais sommés (§3.4) */
+      let annuel = "";
+      if(p.gainActe > 0) annuel = `+${fmtEuroCourt(Math.round(p.gainActe))} /an <span class="mx-etq">acté</span>`;
+      else if(p.gainProjete > 0) annuel = `+${fmtEuroCourt(Math.round(p.gainProjete))} /an <span class="mx-etq">projeté</span>`;
+      else annuel = `<span class="mx-zero">±0,000 €</span>`;
+      const ref = p.refDominante ? p.refDominante.nom : "—";
+      const nomMachine = t.poste.nom ? ` · ${t.poste.nom}` : "";
+      return `<tr class="mx-${t.etat}">
+        <td class="mx-ligne">${escapeAttr(gl.ligne.nom)}</td>
+        <td class="mx-op">${escapeAttr(p.opCode)}${nomMachine ? `<span class="mx-nom">${escapeAttr(t.poste.nom)}</span>` : ""}</td>
+        <td class="mx-ref">${escapeAttr(ref)}</td>
+        <td class="num">${delta !== null ? fmt(delta, 4) + " €/pce" : `<span class="mx-zero">±0,000 €/pce</span>`}</td>
+        <td class="num">${annuel}</td>
+        <td class="mx-statut">${MOTS[t.etat] || t.etat}</td>
+        <td class="mx-porte">${t.etat !== "opportunite" ? `<button class="ghost small mx-ouvrir" data-ligne="${escapeAttr(gl.ligne.id)}" data-code="${escapeAttr(p.opCode)}">Ouvrir →</button>` : `<span class="mx-zero">—</span>`}</td>
+      </tr>`;
+    }));
+  if(!lignes_rows.length) return "";
+  return `<h4 class="mx-titre">Toutes les opérations — la table que la hiérarchie lit</h4>
+    <div class="tbl-wrap"><table class="mt-tbl mx-tbl">
+      <thead><tr><th>Ligne</th><th>Opération</th><th>Référence</th><th class="num">Gain unitaire</th><th class="num">Gain annuel</th><th>Statut</th><th></th></tr></thead>
+      <tbody>${lignes_rows.join("")}</tbody>
+    </table></div>
+    <p class="panel-hint" style="margin-top:6px;">Un poste non impacté reste affiché à ±0,000 € (§3.5) ; les gains actés et projetés
+      ne se mélangent jamais (§3.4) ; le gain unitaire est l'écart de coût pièce du poste, sourcé.</p>`;
+}
+
+/* le pied : les PERSONNES qui portent le suivi (responsables réels, sans rôle
+   inventé — le modèle n'en a pas), et les trois actions EXISTANTES exposées :
+   on ne crée rien, on montre (spec C5 §1.6). */
+function accueilPiedHTML(){
+  const gens = (responsables || []).filter(r => r.nom);
+  const gensTxt = gens.length
+    ? `<div class="pf-gens"><span class="pf-lib">L'équipe du suivi</span>${gens.map(r =>
+        `<span class="pf-nom" style="--c:${escapeAttr(r.couleur || "var(--blue)")}">${escapeAttr(r.nom)}</span>`).join("")}</div>`
+    : `<div class="pf-gens"><span class="pf-lib">L'équipe du suivi</span><span class="mx-zero">aucun responsable déclaré — Options → Responsables</span></div>`;
+  return `<div class="pf-pied">
+    ${gensTxt}
+    <div class="pf-actions">
+      <button class="ghost small" id="pfCarte" title="La carte atelier : chaque machine, son état, sa fiche">Bilan atelier</button>
+      <button class="ghost small" id="pfExport" title="Enregistre un fichier .json à archiver ou à envoyer">Exporter</button>
+      <button class="ghost small" id="pfHisto" title="Les sauvegardes automatiques précédentes">Historique</button>
+    </div>
+  </div>`;
+}
+
 function renderAccueil(){
   const wrap = document.getElementById("accueilPanel");
   if(!wrap) return;
@@ -13446,6 +13535,8 @@ function renderAccueil(){
     ${accueilBandeauHTML(gls)}
     <div class="ca-grille al-grille">${tuiles}</div>
     ${recette}
+    ${accueilMatriceHTML(gls)}
+    ${accueilPiedHTML()}
     <div class="panel-actions"><button class="primary" id="alClose">Fermer</button></div>`;
 
   const fermer = document.getElementById("alClose");
@@ -13456,6 +13547,31 @@ function renderAccueil(){
     t.addEventListener("click", () => ouvrirCarte());
     t.addEventListener("keydown", ev => { if(ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); ouvrirCarte(); } });
   });
+  /* v4.65.2 — la porte de la matrice : même mécanique que la carte (couche 2) */
+  wrap.querySelectorAll(".mx-ouvrir").forEach(b => {
+    b.addEventListener("click", ev => {
+      ev.stopPropagation();
+      const ligne = lignes.find(x => x.id === b.getAttribute("data-ligne"));
+      const code = b.getAttribute("data-code");
+      if(!ligne) return;
+      const bloc = scenariosPostes(ligne, code)[0];
+      if(!bloc) return;
+      const prodSc = (bloc.scs || []).find(x => x.baseline)
+                  || (bloc.scs || []).find(x => /base excel/i.test(x.name || ""))
+                  || (bloc.scs || [])[0];
+      if(!prodSc) return;
+      activeLigneId = ligne.id; activeReferenceId = bloc.ref.id; activeOpId = bloc.op.id; activeId = prodSc.id;
+      fermerPanneaux(); render();
+    });
+  });
+  /* les trois actions du pied : les boutons EXISTANTS de la barre, exposés —
+     on ne crée pas de seconde implémentation */
+  const cCarte = document.getElementById("pfCarte");
+  if(cCarte) cCarte.addEventListener("click", ouvrirCarte);
+  const cExport = document.getElementById("pfExport");
+  if(cExport) cExport.addEventListener("click", () => { const b = document.getElementById("exportBtn"); if(b) b.click(); });
+  const cHisto = document.getElementById("pfHisto");
+  if(cHisto) cHisto.addEventListener("click", () => { const b = document.getElementById("historyBtn"); if(b) b.click(); });
   /* la tuile hors périmètre déplie sa liste — le geste de Q12, pas la porte carte */
   const thors = wrap.querySelector(".al-hors");
   if(thors){
@@ -16089,13 +16205,14 @@ function runTests(){
        correct ; quatre chiffres dont deux inventés sont un accident (§5.6). */
     {
       const opCfgB = Object.assign({}, defaultConfig, { volumeActif: true });
-      const mkGl = (nom, refNom, vol, cible, prixProd, prixEssai) => {
+      const mkGl = (nom, refNom, vol, cible, prixProd, prixEssai) => mkGlL(nom, refNom, vol, cible, prixProd, prixEssai, nom);
+      const mkGlL = (nom, refNom, vol, cible, prixProd, prixEssai, lsfNom) => {
         const scs = [ { id: "p"+nom, name: "Prod", baseline: true, outils: [ { id: "u"+nom, numero: "T", logements: [ { id: "l"+nom, nom: "Bol", prix: prixProd, aretes: 8, charniere: 100 } ] } ] } ];
         if(prixEssai !== undefined) scs.push({ id: "e"+nom, name: "Essai", statut: "serie", outils: [ { id: "ue"+nom, numero: "T", logements: [ { id: "le"+nom, nom: "Bol", prix: prixEssai, aretes: 8, charniere: 100 } ] } ] });
         const ref = normalizeReference({ id: "r"+nom, nom: refNom, productionAnnuelle: vol, cibleCPP: cible,
           ops: [ { id: "o"+nom, nom: "OP10", config: opCfgB, scenarios: scs } ] });
         return gainLigne(normalizeLigne({ id: "l"+nom, nom, coutHoraire: "", references: [ ref ] }),
-                         [ { nom: "EMAG 1", machines: [ { code: "OP10", nom: "Ébauche" } ] } ]);
+                         [ { nom: lsfNom, machines: [ { code: "OP10", nom: "Ébauche" } ] } ]);
       };
 
       /* cas complet : un gain acté, une cible chiffrable → deux chiffres + le
@@ -16145,6 +16262,38 @@ function runTests(){
         [ { nom: "EMAG 3", machines: [ { code: "OP10", nom: "Ébauche" } ] } ]);
       ok("tuile enrichie : le taux horaire SOURCÉ s'affiche quand il existe, jamais de « — » décoratif",
          accueilTuileHTML(glT2).includes("50 €/h"), true);
+
+      /* v4.65.2 (C5′ bloc 3) — la matrice : ±0,000 écrit (§3.5), acté/projeté
+         étiquetés (§3.4), mots de statut, porte, tri stable, hors périmètre exclus */
+      const glM1 = mkGl("EMAG 1", "356x26", "100000", "0.030", 30, 10);  /* OP10 gagné */
+      const glM2 = mkGl("EMAG 2", "290x12", "50000", "", 25);            /* OP10 jamais travaillé */
+      const hM = accueilMatriceHTML([ glM1, glM2 ]);
+      ok("matrice : toutes les lignes vivantes × leurs opérations, une ligne par poste",
+         [hM.includes("EMAG 1"), hM.includes("EMAG 2"), (hM.match(/<tr class="mx-/g) || []).length], [true, true, 2]);
+      ok("matrice : le poste non impacté reste affiché à ±0,000 € ANNUEL et ±0,000 €/pce UNITAIRE — il ne disparaît pas (§3.5)",
+         [hM.includes('±0,000 €<'), hM.includes("±0,000 €/pce")], [true, true]);
+      ok("matrice : gain acté étiqueté ACTÉ, jamais mélangé au projeté (§3.4)",
+         [hM.includes('mx-etq">acté'), !hM.includes('mx-etq">projeté')], [true, true]);
+      ok("matrice : les statuts sont des MOTS — gagné, jamais travaillé…",
+         [hM.includes(">gagné<"), hM.includes(">jamais travaillé<")], [true, true]);
+      ok("matrice : la porte existe sur les postes travaillés, jamais sur une opportunité (pas de porte morte)",
+         [(hM.match(/mx-ouvrir/g) || []).length], [1]);
+      ok("matrice : le gain unitaire est l'écart SOURCÉ du poste (coutProd − coutEnCours), en €/pce",
+         hM.includes("€/pce"), true);
+
+      /* le pied : les personnes réelles ou l'invitation, les trois actions existantes */
+      const respAv = responsables;
+      try {
+        responsables = [ normalizeResponsable({ nom: "Matis Hernu", couleur: "#1A7A3F" }) ];
+        const hP = accueilPiedHTML();
+        ok("pied : l'équipe du suivi affiche les personnes RÉELLES, sans rôle inventé",
+           [hP.includes("Matis Hernu"), hP.includes("L'équipe du suivi"), !hP.includes("pilote")], [true, true, true]);
+        ok("pied : les trois actions existantes sont exposées (bilan atelier, exporter, historique)",
+           [hP.includes('id="pfCarte"'), hP.includes('id="pfExport"'), hP.includes('id="pfHisto"')], [true, true, true]);
+        responsables = [];
+        ok("pied : sans responsable déclaré, l'invitation s'affiche — pas un blanc muet",
+           accueilPiedHTML().includes("aucun responsable déclaré"), true);
+      } finally { responsables = respAv; }
     }
 
     /* ---- v4.55.1 — le rattachement d'un scénario à un projet d'une autre ligne ----
