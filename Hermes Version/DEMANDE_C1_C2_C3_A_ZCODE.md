@@ -89,7 +89,7 @@ gauche, à gauche de son contenu. C'est le détail qui fait « fait pour ça » 
 - **le chiffre principal en gros** (34–38 px), son unité avec lui ;
 - **le mono sur tous les chiffres**, aligné à droite dans les tableaux (`tabular-nums`) ;
 - le libellé **au-dessus**, en petit, en capitales espacées — jamais à côté du chiffre en
- 同等 poids.
+ meme poids.
 
 ### 3.3 Le mouvement, court et utile
 
