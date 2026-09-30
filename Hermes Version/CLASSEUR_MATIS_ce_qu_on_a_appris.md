@@ -44,9 +44,14 @@ faux, et c'est mieux ainsi.** Mesure sur le classeur :
 | E3 330x14 | oui | 0 | — |
 | 302x26, 304x28, 290x12, 330x28 K0 | **non** | — | — |
 
-**Décision : on garde les OP30 là où elles sont.** Raison : le **coût pièce doit rester cohérent
-avec celui de Matis**. Si l'outil ignorait le perçage, son coût sur la 330x14 serait faux de 0,13 €
-(28 %) par rapport au classeur — et les deux chiffres se contrediraient devant la hiérarchie.
+**Décision (Benjamin, 30/09) : on garde les OP30 là où elles sont, et elles sont **comptées ET
+pilotées** comme les autres opérations.** Raison : le **coût pièce doit rester cohérent avec celui
+de Matis**. Si l'outil ignorait le perçage, son coût sur la 330x14 serait faux de 0,13 € (28 %)
+par rapport au classeur — et les deux chiffres se contrediraient devant la hiérarchie.
+
+**Conséquence : aucun cas particulier.** Le traitement est uniforme, donc il n'y a rien à
+maintenir dans le code et rien qui puisse être oublié. Une règle sans exception est une règle qui
+tient.
 
 **Aucun changement de code.** Le tour a été annulé proprement (verrou pris puis libéré).
 

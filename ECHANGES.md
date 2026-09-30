@@ -24,7 +24,7 @@
 | Q2 | Décision 2 version : la production réelle devient-elle une entité ? On a la première mesure (écart +57 %) mais **un seul point de mesure** — il faut 2-3 mois de classeur pour trancher | Hermes | ⏸ en attente de données |
 | Q3 | Le projet « Coût et qualité EMAG 1 » : peut-il accueillir une 2ᵉ ligne, ou reste-t-il mono-ligne ? | Benjamin | ✅ tranché — mono-ligne, blocage (4.55.1) |
 | Q4 | Le MABEC devient-il un champ sur le logement ? (nécessaire au rapprochement classeur Matis → outil) | Hermes | ⏳ à trancher avec la décision 2 version |
-| Q5 | L'OP30 (perçage) reste partout — mais **est-elle pilotable** (suivie comme les autres) ou seulement comptée dans les coûts ? | Benjamin | ✅ tranché sur les coûts ; **le pilotage reste à dire** |
+| Q5 | L'OP30 (perçage) : comptée **et** pilotée, partout où elle existe. Aucune exception à maintenir dans le code. | Benjamin | ✅ tranché (30/09) |
 
 ---
 
@@ -69,9 +69,11 @@ cohérent avec le classeur.** Aucun changement de code — le tour a été annul
 - l'OP30 : **on ne la retire pas**, parce que deux chiffres qui divergent tuent la confiance plus
   vite qu'une information manquante. C'est la règle générale : la cohérence prime sur la pureté.
 
-**Ce qui reste ouvert pour Benjamin** : l'OP30 est-elle *comptée* (oui, décision ci-dessus) mais
-aussi *pilotée* — suivie comme une opération normale, ou laissée de côté côté optimisation ?
-C'est la seule question que je ne peux pas trancher.
+**Ce qui reste ouvert pour Benjamin** : rien sur l'OP30. Benjamin a tranché le 30/09 : elle est
+**comptée ET pilotée**, partout où elle existe. Conséquence pratique : **aucun cas particulier,
+aucune exception dans le code** — le traitement est uniforme, ce qui est le meilleur résultat
+possible (une règle qui n'a pas d'exception ne peut pas être oubliée). La décision 2 version
+(données nécessaires) reste la seule chose en attente.
 
 **Prochain tour** : à Z Code, ou à Benjamin sur la question ci-dessus.
 
