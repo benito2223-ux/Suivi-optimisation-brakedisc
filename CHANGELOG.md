@@ -5,6 +5,38 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.58.0] — 2026-09-30
+
+**Q4 : le MABEC raccordé au logement, et le classeur rapproché plaquette par
+plaquette.** Le champ « code article » du logement devient explicitement le MABEC — le
+numéro d'article du classeur de Matis. Aucun champ doublé : le MABEC EST le code
+article (D3, deux champs pour la même donnée raconteraient deux histoires).
+
+### Ajouté
+- **`matisPorteOutilPosition(numero)`** — lit le vocabulaire du classeur : « T517 D2 »
+  = porte-outil T517, position D2 ; « T533 » = porte-outil seul. Fonction pure ;
+- **`matisRapprocheMabec(outilClasseur, ligne)`** — le rapprochement par MABEC +
+  contexte porte-outil (décision Q4 de Benjamin : **jamais le MABEC seul**, une même
+  plaquette se réutilise sur plusieurs porte-outils). Rend un état ET sa phrase :
+  « suivi : T517 · D1 (OP10) » (match) / « suivi ailleurs : T519 (même plaquette,
+  autre porte-outil) » (réutilisation normale, information pas erreur) /
+  « pas encore saisi dans le suivi » (l'invitation) / « — » (ligne sans MABEC).
+  Le contexte rattrape aussi la saisie plate « T517 D1 » en numéro d'outil et la
+  casse libre du MABEC. La lecture reste un CONSTAT : rien n'est écrit ;
+- **détail par outil** : colonne « Dans le suivi » avec la phrase de rapprochement,
+  ambre sur « pas encore saisi » ;
+- **convention d'outillage documentée dans la fiche outil** (au survol des champs) :
+  n° outil = le PORTE-OUTIL (T517), positions D1/D2 = un logement chacune, champ
+  correcteur réservé aux outils mono-position ; le libellé MABEC remplace
+  « Code article Stellantis » (saisie et impression).
+
+### Toujours vrai
+- aucun changement de format de données (champ existant raccordé, vide par défaut) ;
+- aucun changement de calcul — le coût somme les plaquettes quel que soit le
+  regroupement en porte-outils.
+
+307 → 316 tests, tout vert. Aucun push, aucun déploiement.
+
 ## [4.57.0] — 2026-09-30
 
 **Les écrans de consultation sortent du menu •••.** C'est le reproche de Benjamin :

@@ -2353,6 +2353,10 @@ body.atelier-on{overflow:hidden;}
 
 .mt-detail td{ font-size:11.5px; }
 .mt-detail .mt-op{ font-family:var(--font-mono); font-size:10px; color:var(--ink-faint); }
+/* 4.58 — le rapprochement MABEC du détail par outil : une phrase discrète, ambre
+   seulement sur « pas encore saisi » (l'invitation à compléter la fiche outil). */
+.mt-suivi{ font-family:var(--font-body); font-size:10.5px; color:var(--ink-soft); }
+.mt-suivi-absent{ color:var(--amber); font-weight:600; }
 .mt-raz{ margin:0 0 12px; padding:10px 13px; background:var(--blue-bg); border:1px solid var(--blue);
   border-radius:var(--radius); font-family:var(--font-body); font-size:12.5px; line-height:1.5; color:var(--ink); }
 .mt-raz b{ color:var(--blue-dark); }
@@ -8690,9 +8694,9 @@ function logementBlocHTML(sc, o, l, showFrFa, showCycleDetail){
   return `
     <div class="logement-bloc">
       <div class="lb-tete">
-        ${champHTML("Logement", `<input class="cell ref" ${base("nom")} value="${escapeAttr(l.nom)}" placeholder="Bol, Piste, Chanfrein...">`, "oc-moyen")}
+        ${champHTML("Logement", `<input class="cell ref" ${base("nom")} value="${escapeAttr(l.nom)}" placeholder="D1, D2, Bol, Piste…" title="La position de la plaquette sur le porte-outil : D1, D2… (le vocabulaire du classeur de Matis), ou un nom fonctionnel (Bol, Piste).">`, "oc-moyen")}
         ${champHTML("Référence plaquette", `<input class="cell ref" ${base("ref")} value="${escapeAttr(l.ref)}" placeholder="CNGX 120716 T02020 LKT640">`, "oc-large")}
-        ${champHTML("Code article Stellantis", `<input class="cell ref" ${base("codeArticle")} value="${escapeAttr(l.codeArticle)}" placeholder="—">`, "oc-moyen")}
+        ${champHTML("MABEC <span>code article</span>", `<input class="cell ref" ${base("codeArticle")} value="${escapeAttr(l.codeArticle)}" placeholder="ex. IM02 209 560" title="Le numéro d'article du classeur de Matis (colonne MABEC). C'est lui qui relie le suivi au classeur : saisis-le tel quel.">`, "oc-moyen")}
         <label class="lb-tol" title="Décoché, ce logement ne suit que la charnière : ses mesures ne font jamais échouer un essai sur la tolérance.">
           <input type="checkbox" data-outil="${o.id}" data-logement="${l.id}" data-field="suiviTolerance" ${l.suiviTolerance !== false ? "checked" : ""}>
           <span>Suivi en tolérance</span>
@@ -9172,8 +9176,8 @@ function outilCarteHTML(sc, o, oi, showFrFa, showCycleDetail){
           ⇉ Tourne en simultané avec l'outil précédent (${escapeAttr((sc.outils[oi-1]||{}).numero || "sans n°")})
         </label>` : ""}
         <div class="outil-tete">
-          ${champHTML("N° outil", `<input class="cell ref" ${base("numero")} value="${escapeAttr(o.numero)}" placeholder="T513.1">`, "oc-moyen")}
-          ${champHTML("Correcteur", `<input class="cell ref" ${base("correcteur")} value="${escapeAttr(o.correcteur)}" placeholder="—">`, "oc-court")}
+          ${champHTML("N° outil", `<input class="cell ref" ${base("numero")} value="${escapeAttr(o.numero)}" placeholder="T517" title="Le numéro du PORTE-OUTIL (T517), pas d'une position : les positions D1/D2 se saisissent comme logements dessous.">`, "oc-moyen")}
+          ${champHTML("Correcteur", `<input class="cell ref" ${base("correcteur")} value="${escapeAttr(o.correcteur)}" placeholder="—" title="Correcteur de CET outil quand il n'en a qu'un (foret, mono-position). Pour un porte-outil à plusieurs positions (T517 D1/D2), saisis plutôt un logement par position : D1, D2…">`, "oc-court")}
           ${champHTML("Type d'outil", `<input class="cell ref" ${base("description")} value="${escapeAttr(o.description)}" placeholder="ex. foret carbure monobloc à goujure droite">`, "oc-large")}
         </div>
         ${planOutilHTML(sc, o)}
@@ -9193,7 +9197,7 @@ function logementRowHTML(sc, o, l, couleur, showFrFa, showCycleDetail){
     <tr class="pos-row" style="border-left:4px solid ${couleur};">
       <td>${escapeAttr(o.numero)}${o.correcteur ? `<br><span class="ref-sub-print">Correcteur : ${escapeAttr(o.correcteur)}</span>` : ""}${o.description ? `<br><span class="ref-sub-print">${escapeAttr(o.description)}</span>` : ""}</td>
       <td>${escapeAttr(l.nom)}</td>
-      <td>${escapeAttr(l.ref)}${l.codeArticle ? `<br><span class="ref-sub-print">Art. Stellantis : ${escapeAttr(l.codeArticle)}</span>` : ""}</td>
+      <td>${escapeAttr(l.ref)}${l.codeArticle ? `<br><span class="ref-sub-print">MABEC : ${escapeAttr(l.codeArticle)}</span>` : ""}</td>
       <td class="num">${l.prix === "" ? "—" : l.prix ?? "—"}</td>
       <td class="num">${l.aretes === "" ? "—" : l.aretes ?? "—"}</td>
       <td class="num">${l.charniere === "" ? "—" : l.charniere ?? "—"}${charniereSubHTML(sc, l)}</td>
@@ -11394,6 +11398,11 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.58.0", date:"30/09/2026", points:[
+    "<b>Le MABEC trouve sa place dans la fiche outil.</b> Le champ « code article » du logement devient explicitement <b>MABEC (code article)</b> — saisissez le numéro d’article du classeur tel quel (ex. IM02 209 560) : c’est lui qui relie le suivi au classeur de consommations.",
+    "<b>Et la convention d’outillage est écrite noir sur blanc.</b> N° outil = le porte-outil (T517) ; les positions D1, D2 = un logement chacune ; le correcteur d’outil reste pour les mono-positions. Chaque champ le rappelle au survol.",
+    "<b>Le classeur se rapproche plaquette par plaquette.</b> Dans « Classeur Matis → Détail par outil », la colonne « Dans le suivi » dit où vit chaque plaquette : « suivi : T517 · D1 (OP10) », « suivi ailleurs » (même plaquette sur un autre porte-outil — c’est normal), ou « pas encore saisi » en ambre : l’invitation à compléter la fiche."
+  ]},
   { version:"4.57.0", date:"30/09/2026", points:[
     "<b>Les écrans sont à leur place.</b> Carte atelier, Tableau de bord, Vue de synthèse et Classeur Matis étaient planqués derrière le bouton « ••• » : il fallait déplier un menu pour les trouver. Ils sont désormais visibles dans la barre, à côté de l’écran de travail. Le menu ne garde plus que le rare : recherche, export CSV, rapports, options, historique."
   ]},
@@ -11826,7 +11835,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.57.0";
+const TOOL_VERSION = "4.58.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -12339,7 +12348,58 @@ function matisRapproche(c){
   const nomLigne = MATIS_LIGNE_OUTIL[c.codeLigne] || c.codeLigne;
   const lg = lignes.find(l => (l.nom || "").toUpperCase() === nomLigne.toUpperCase());
   const ref = lg ? lg.references.find(r => (r.nom || "").toUpperCase().includes(String(c.ref).split(" ")[0].toUpperCase())) : null;
-  return { nomLigne, ligneId: lg ? lg.id : null, referenceId: ref ? ref.id : null, ref };
+  return { nomLigne, ligneId: lg ? lg.id : null, referenceId: ref ? ref.id : null, ref, ligne: lg || null };
+}
+
+/* v4.58 — le porte-outil et sa position, lus du numéro du classeur (Q4).
+   « T517 D2 » = le porte-outil T517, position D2 ; « T533 » = porte-outil seul,
+   position inconnue. Fonction pure au service du rapprochement par article. */
+function matisPorteOutilPosition(numero){
+  const s = String(numero || "").trim().replace(/\s+/g, " ");
+  const m = s.match(/^(.*?)\s*([Dd]\d+)$/);
+  return m ? { porte: m[1].trim(), position: m[2].toUpperCase() } : { porte: s, position: null };
+}
+
+/* v4.58 — le rapprochement par MABEC + contexte porte-outil (décision Q4 de Benjamin :
+   JAMAIS le MABEC seul — une même plaquette se réutilise sur plusieurs porte-outils,
+   c'est normal, et ça doit se lire comme une information, pas comme une erreur).
+   Le MABEC vit sur le logement dans le champ code article (champ existant raccordé,
+   pas un doublon : D3, deux champs pour la même donnée raconteraient deux histoires).
+   Rend un état ET sa phrase (constitution §3.5) :
+   · "match"   : ce MABEC est suivi sur CE porte-outil → le logement et son OP ;
+   · "ailleurs": MABEC suivi sur un autre porte-outil — réutilisation normale ;
+   · "absent"  : personne ne porte ce MABEC → l'invitation à le saisir ;
+   · "sans"    : la ligne du classeur n'a pas de MABEC, rien à rapprocher.
+   La lecture reste un CONSTAT : cette fonction ne touche à aucune donnée. */
+function matisRapprocheMabec(oc, ligne){
+  const mabec = String((oc && oc.mabec) || "").trim();
+  if(!mabec) return { statut: "sans", texte: "—" };
+  const { porte } = matisPorteOutilPosition(oc.numero);
+  const norm = s => String(s || "").trim().toUpperCase().replace(/\s+/g, " ");
+  let ailleurs = null;
+  const matchs = [];
+  ((ligne && ligne.references) || []).forEach(ref =>
+    (ref.ops || []).forEach(op =>
+      (op.scenarios || []).forEach(sc =>
+        (sc.outils || []).forEach(ou => {
+          const outNum = String(ou.numero || "").trim();
+          /* le contexte porte-outil rattrape aussi la saisie plate « T517 D1 » en
+             numéro d'outil : le porte T517 du classeur doit la reconnaître */
+          const surPorte = porte && (outNum.toUpperCase() === porte.toUpperCase()
+                          || outNum.toUpperCase().startsWith(porte.toUpperCase() + " "));
+          (ou.logements || []).forEach(l => {
+            if(norm(l.codeArticle) !== norm(mabec)) return;
+            if(surPorte) matchs.push({ logement: l, outNum, opCode: op.opCode || op.nom || "" });
+            else if(!ailleurs) ailleurs = { outNum: outNum || "sans n°" };
+          });
+        }))));
+  if(matchs.length){
+    const m = matchs[0];
+    return { statut: "match",
+             texte: `suivi : ${m.outNum} · ${m.logement.nom || "logement"}${m.opCode ? " (" + m.opCode + ")" : ""}` };
+  }
+  if(ailleurs) return { statut: "ailleurs", texte: `MABEC suivi ailleurs : ${ailleurs.outNum} (même plaquette, autre porte-outil)` };
+  return { statut: "absent", texte: "pas encore saisi dans le suivi" };
 }
 
 /* le rapprochement, dit en atelier (4.56.0) : le classeur parle « E1 · 356x26 »,
@@ -12446,13 +12506,17 @@ function matisVueHTML(){
 function matisDetailHTML(){
   if(!matisLecture) return "";
   const couples = (matisLecture.couples || []).filter(c => c.aProduction);
-  const blocs = couples.map(c => `
+  const blocs = couples.map(c => {
+    const r = matisRapproche(c);
+    return `
     <div class="mt-detail" style="margin-bottom:14px;">
       <h4 style="font-family:var(--font-disp);font-size:15px;margin:0 0 6px;">${escapeAttr(c.codeLigne)} · ${escapeAttr(c.ref)}</h4>
       <div class="tbl-wrap">
         <table class="mt-tbl">
-          <thead><tr><th>Outil</th><th>OP</th><th>Article</th><th>MABEC</th><th class="num">CPP théo.</th><th class="num">CPP réel</th><th class="num">Qté réelle</th></tr></thead>
-          <tbody>${c.outils.map(o => `<tr>
+          <thead><tr><th>Outil</th><th>OP</th><th>Article</th><th>MABEC</th><th class="num">CPP théo.</th><th class="num">CPP réel</th><th class="num">Qté réelle</th><th>Dans le suivi</th></tr></thead>
+          <tbody>${c.outils.map(o => {
+            const rap = matisRapprocheMabec(o, r.ligne);
+            return `<tr>
             <td class="mt-lign">${escapeAttr(o.numero)}</td>
             <td class="mt-op">${escapeAttr(o.opCode)}</td>
             <td class="mt-op">${escapeAttr(o.article || "—")}</td>
@@ -12460,14 +12524,19 @@ function matisDetailHTML(){
             <td class="num">${o.cppTheorique ? fmt(o.cppTheorique, 5) : "—"}</td>
             <td class="num">${o.cppReel ? fmt(o.cppReel, 5) : "—"}</td>
             <td class="num">${o.qteReelle === null ? "—" : fmt(o.qteReelle, 0)}</td>
-          </tr>`).join("")}</tbody>
+            <td class="mt-suivi${rap.statut === "absent" ? " mt-suivi-absent" : ""}">${escapeAttr(rap.texte)}</td>
+          </tr>`; }).join("")}</tbody>
         </table>
       </div>
-    </div>`).join("");
+    </div>`;
+  }).join("");
   return `<h3>Classeur Matis — détail par outil</h3>
-    <p class="panel-hint">Les numéros d'outil et les articles MABEC sont ceux que Matis utilise au
-      quotidien. Les comparer à l'outillage saisi dans le suivi est le premier pas d'un éventuel
-      enrichissement du modèle.</p>
+    <p class="panel-hint">Chaque ligne du classeur est une plaquette : le porte-outil et sa
+      position (« T517 D2 » = porte-outil T517, position D2), son article, son MABEC. La
+      colonne « Dans le suivi » dit si cette plaquette est suivie chez nous : <b>« suivi :
+      T517 · D1 (OP10) »</b> = le logement existe ; <b>« suivi ailleurs »</b> = la même
+      plaquette sert sur un autre porte-outil, c'est normal ; <b>« pas encore saisi »</b> =
+      à compléter dans la fiche outil, champ MABEC du logement.</p>
     ${blocs || `<p class="panel-hint">Aucun couple avec production relevée.</p>`}
     <div class="panel-actions"><button class="primary" id="mtDetailClose">Fermer</button></div>`;
 }
@@ -15077,6 +15146,71 @@ function runTests(){
         ok("matis : le rendu passe en ambre sur la divergence et l'ancien avertissement redondant a disparu",
            [htmlMatis.includes("mt-rap-attention"), htmlMatis.includes("(ligne hors suivi :")], [true, false]);
       } finally { lignes = lignesB; matisLecture = lectureB; }
+    }
+
+    /* ---- v4.58.0 — le MABEC raccordé au logement, et le rapprochement par article ----
+       Décision Q4 de Benjamin : le MABEC vit sur le logement, dans le champ code article
+       existant (raccordé, pas doublé : D3). Et un même MABEC peut servir sur plusieurs
+       porte-outils — c'est la réutilisation normale d'une même plaquette, donc le
+       rapprochement se fait par MABEC + contexte porte-outil, JAMAIS par MABEC seul. */
+    {
+      ok("matis : « T517 D2 » = porte-outil T517, position D2 (le vocabulaire du classeur)",
+         matisPorteOutilPosition("T517 D2"), { porte: "T517", position: "D2" });
+      ok("matis : « T533 » sans suffixe = porte-outil seul, position inconnue",
+         matisPorteOutilPosition("T533"), { porte: "T533", position: null });
+
+      const lE1b = normalizeLigne({ id:"l-e1b", nom:"EMAG 1" });
+      const scB = normalizeScenario({ id:"sc-b", name:"Prod", baseline:true, outils:[
+        { id:"t-b1", numero:"T517", logements:[
+          { id:"g-b1", nom:"D1", codeArticle:"IM02 198 054", prix:20, aretes:4, charniere:100 },
+          { id:"g-b2", nom:"D2", codeArticle:"IM02 209 560", prix:23, aretes:4, charniere:100 } ] },
+        { id:"t-b2", numero:"T519", logements:[
+          { id:"g-b3", nom:"D2", codeArticle:"IM02 209 560", prix:23, aretes:4, charniere:100 } ] } ] });
+      lE1b.references.push(normalizeReference({ id:"r-b", nom:"356x26 RPI", ops:[
+        { id:"o-b", nom:"OP10", scenarios:[ scB ] } ] }));
+      const lignesC = lignes, lectureC = matisLecture;
+      lignes = [lE1b];
+      try {
+        /* le match : le MABEC suivi sur le porte-outil lu du classeur, avec l'OP */
+        ok("matis : MABEC suivi sur le bon porte-outil -> « suivi : T517 · D1 (OP10) »",
+           matisRapprocheMabec({ numero:"T517 D1", mabec:"IM02 198 054" }, lE1b),
+           { statut: "match", texte: "suivi : T517 · D1 (OP10)" });
+
+        /* la réutilisation normale : même plaquette, autre porte-outil (précision Benjamin) */
+        ok("matis : même MABEC sur un autre porte-outil -> réutilisation dite comme telle, pas une erreur",
+           matisRapprocheMabec({ numero:"T533", mabec:"IM02 209 560" }, lE1b).statut, "ailleurs");
+
+        /* la saisie plate « T517 D1 » en numéro d'outil reste rattrapée par le contexte */
+        const lPlat = normalizeLigne({ id:"l-plat", nom:"EMAG 1" });
+        const scP = normalizeScenario({ id:"sc-p", name:"Prod", baseline:true, outils:[
+          { id:"t-p1", numero:"T517 D1", logements:[
+            { id:"g-p1", nom:"Plaquette", codeArticle:"im02 198 054", prix:20, aretes:4, charniere:100 } ] } ] });
+        lPlat.references.push(normalizeReference({ id:"r-p", nom:"356x26 RPI", ops:[
+          { id:"o-p", nom:"OP10", scenarios:[ scP ] } ] }));
+        ok("matis : la saisie plate « T517 D1 » en n° d'outil et le MABEC en casse libre restent rattrapés",
+           matisRapprocheMabec({ numero:"T517 D1", mabec:"IM02 198 054" }, lPlat).statut, "match");
+
+        /* l'absence : l'invitation, jamais un blanc muet */
+        ok("matis : MABEC inconnu du suivi -> « pas encore saisi », l'invitation",
+           matisRapprocheMabec({ numero:"T546 D1", mabec:"IM02 000 000" }, lE1b),
+           { statut: "absent", texte: "pas encore saisi dans le suivi" });
+
+        /* ligne du classeur sans MABEC : rien à rapprocher, dit « — » */
+        ok("matis : ligne du classeur sans MABEC -> rien à rapprocher",
+           matisRapprocheMabec({ numero:"T549 D1", mabec:"" }, lE1b), { statut: "sans", texte: "—" });
+
+        /* le RENDU : la colonne vit dans le détail par outil, l'invitation en ambre (leçon 4.51.2) */
+        matisLecture = { fichier:"t.xlsx", luLe:"2026-09-30", feuilles:[], couples:[
+          { key:"E1·356x26 RPI", codeLigne:"E1", ref:"356x26 RPI", production:6781, aProduction:true,
+            cppTheorique:0.04, cppReel:0.05, ecart:0.01, outils:[
+              { numero:"T517 D1", opCode:"OP10", article:"SNGX", mabec:"IM02 198 054", cppTheorique:0.02, cppReel:0.02, qteReelle:3 },
+              { numero:"T546 D1", opCode:"OP20", article:"—", mabec:"IM02 000 000", cppTheorique:0.01, cppReel:0.01, qteReelle:1 } ] } ] };
+        const htmlDet = matisDetailHTML();
+        ok("matis : le détail par outil porte la colonne « Dans le suivi » et la phrase de rapprochement",
+           [htmlDet.includes("Dans le suivi"), htmlDet.includes("suivi : T517 · D1 (OP10)")], [true, true]);
+        ok("matis : l'invitation ambre apparaît sur un MABEC non saisi",
+           [htmlDet.includes("mt-suivi-absent"), htmlDet.includes("pas encore saisi")], [true, true]);
+      } finally { lignes = lignesC; matisLecture = lectureC; }
     }
 
     /* ---- v4.55.1 — le rattachement d'un scénario à un projet d'une autre ligne ----
