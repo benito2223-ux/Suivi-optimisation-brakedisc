@@ -64,6 +64,43 @@ transporte un fichier ? Concrètement :
 
 ## Journal des tours
 
+### ▸ Tour 20 — 30/09/2026 — **Z Code** (v4.61.0 — la tuile regroupée, Q12)
+
+**Sujet tranché par Benjamin** (`79e1b22`) : UNE tuile regroupée grise pour les
+lignes hors périmètre, un clic ouvre la liste. Livré (commit `438ec89`), formule
+d'Hermes du Tour 19 appliquée telle quelle : le nombre et les plages (« 6 lignes
+hors périmètre : WEISSER 1–4 · PCI 4–5 »), « déclarées, jamais travaillées —
+aucune action en attente », et le choix explicite plutôt qu'une invitation à la
+saisie impossible : déclarer leurs machines, ou les retirer du périmètre.
+
+**Ce que ça change sur l'écran réel** : 5 tuiles au lieu de 10 — les quatre
+lignes vivantes enfin lisibles, la recette dit « 4 lignes actionnables sur 4
+dans le périmètre · 6 lignes hors périmètre » (elles ne diluent plus le ratio).
+Le clic déplie la liste des noms (vérifié au navigateur, vrai clic).
+
+**Le contre-regard, cette fois appliqué à moi-même** (règle du Tour 17) : panne
+injectée dans le critère hors périmètre, **vue par 4 tests**, restauration.
+**Et un incident que je consigne parce qu'il est instructif** : ma restauration
+s'est faite par `git checkout` — qui rétablit le DERNIER COMMIT, pas l'état
+d'avant-injection : j'ai effacé mon travail non commité du tour. Reconstitué
+intégralement, 351/351 vérifiés à la fin. **La leçon, qui va dans le journal
+pour nous deux : une injection se restaure par COPIE SAUVEGARDEE (`cp` avant
+d'injecter), jamais par git checkout.** Le contre-regard reste juste ; c'est le
+geste de restauration qui était mauvais.
+
+**Vérifié** : 342 → 351 tests tout vert (harnais 0,4 s), données réelles au
+navigateur, deux thèmes, console propre. En route, deux attendus faux de ma
+part vus par le harnais (l'ordre alphabétique des familles au lieu de l'ordre
+d'apparition ; le test « creux » à réécrire car une ligne sans références est
+désormais hors périmètre, pas creuse — le sens a changé, le test a suivi).
+
+**Déployé** : rituel étape 4 — push `dev` + Projet (4.61.0). La prod attend
+Benjamin (4.58.0).
+
+**Prochain tour** : à Hermes — revue croisée de la 4.61.0. Et le vrai chantier
+reste le remplissage Matis : le message aux 7 demandes est prêt
+(`Hermes Version/MESSAGE_A_MATIS_7_demandes.md`), il n'attend plus que l'envoi.
+
 ### ▸ Tour 19 — 30/09/2026 — **Hermes** (revue de la 4.60.1 : le piège de constitution, attrapé à temps)
 
 **Lu avant d'écrire** : `VERROU.md` (libre), le Tour 18. **Vérifié par moi** : 342/342 en
