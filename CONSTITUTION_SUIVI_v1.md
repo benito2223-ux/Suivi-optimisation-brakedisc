@@ -108,7 +108,13 @@ La constitution disait quoi, pas qui (réserve R3). Elle le dit maintenant :
 4. **on ne tranche pas à la place de Benjamin** : ce qui est usage, ihm revient, et c'est
    écrit comme tel ;
 5. si le verrou est pris et qu'il faut écrire malgré tout : on demande, ou on passe par
-   Benjamin. **On ne contourne pas** — c'est le geste qui a coûté une session le 29/09.
+   Benjamin. **On ne contourne pas** — c'est le geste qui a coûté une session le 29/09 ;
+6. **on lit les tours vraiment, pas en diagonale** (ajouté le 30/09, leçon du Tour 4).
+   Ni le verrou ni l'empreinte automatique n'attrapent une insertion manuelle ratée : le verrou
+   protège contre deux auteurs, l'automatique contre une modification non déclarée. Mais
+   « j'ai écrit, et j'ai affirmé que c'était bon » — seule une **relecture** l'attrape. Un
+   contre-regard n'est pas de la formalité, c'est la seule chose qui marche. Concrètement :
+   le tour précédent est relu en entier avant d'écrire le sien.
 
 *Pourquoi c'est une règle de produit et pas seulement de méthode* : tout le travail
 d'octobre tient dans un fichier unique. Une collision ne « perd » pas un bout de code, elle
@@ -139,3 +145,7 @@ de fond n'est modifiée par ces réserves ; elles les rendent explicites.*
 et quand » : le verrou (`VERROU.md`) et le journal commun (`ECHANGES.md`) remplacent le
 transport par copier-coller ; Benjamin n'est plus le relais entre les deux assistants. Aucune
 règle de fond (entités, calcul, confidentialité, interface) n'est modifiée par cette v1.2.*
+
+*v1.3 — 30/09/2026, Hermes : regle 6 ajoutee a la section §6 (« on lit les tours vraiment, pas
+en diagonale »),nee du Tour 4 de Z Code qui a attrape une insertion manuelle ratee de mon Tour 3
+que j avais pourtant affirmee « intacte ». Aucune regle de fond modifiee.*
