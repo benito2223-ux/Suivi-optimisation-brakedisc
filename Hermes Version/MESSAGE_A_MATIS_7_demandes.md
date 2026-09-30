@@ -1,6 +1,6 @@
-# Message prêt à envoyer à Matis
+# Message prêt à envoyer à Matis — 8 demandes
 
-> **Objet** : 7 points pour que ton outil affiche enfin quelque chose
+> **Objet** : 8 points pour que ton outil affiche enfin quelque chose
 >
 > Bonjour Matis,
 >
@@ -10,7 +10,7 @@
 > Une vieille version restée ouverte peut effacer tes cibles en se connectant au
 > partage. La base est protégée, mais autant fermer la porte.
 >
-> Ensuite, sept choses. **Rien n'est urgent, rien n'est une faute** — ce sont les trous
+> Ensuite, huit choses. **Rien n'est urgent, rien n'est une faute** — ce sont les trous
 > que l'outil affiche et qu'il ne peut pas remplir tout seul. Tant qu'ils sont là,
 > l'écran d'accueil reste à moitié vide.
 >
@@ -39,6 +39,11 @@
 > 7. **Weisser et PCI** : 6 lignes n'ont aucune machine déclarée. Soit on y déclare les
 >    machines, soit on les sort du périmètre de l'outil. Dis-nous ce que tu préfères —
 >    l'écran d'accueil les regroupe déjà en une tuile « hors périmètre ».
+> 8. **Une photo par machine** (EMAG 1, EMAG 2, HESSAPP) — avec ton téléphone, en
+>    lumière normale, la machine entière dans le cadre. C'est la seule chose qu'on ne peut
+>    pas inventer ni faire à ta place : l'écran d'accueil les affiche, et une photo de ta
+>    vraie machine vaut plus que tout l'habillage qu'on peut mettre autour. Si tu n'en as
+>    pas, on avance sans, l'emplacement sera prêt.
 >
 > ---
 >
