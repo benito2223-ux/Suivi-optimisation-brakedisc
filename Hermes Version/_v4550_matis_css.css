@@ -1,0 +1,51 @@
+/* ═══ v4.55.0 — l'écran « Réel / Théorique » (option C) ═══════════════════
+   Le premier écran qui montre l'écart entre ce que l'outil budgète et ce que
+   l'atelier consomme réellement. Il ne corrige rien, il ne décide rien : il
+   MESURE. C'est la mesure qui dira, plus tard, si la production doit devenir
+   une entité de premier niveau (décision 2 version) ou si le scénario-★ suffit.
+
+   Rappel du principe qui rend cet écran possible : le classeur de Matis donne
+   la production RÉELLE par couple ligne × référence, avec le CPP réellement
+   consommé. Notre outil, lui, budgète un CPP à partir des prix et des durées de
+   vie. Les deux ensemble disent si le budget-outillage tient. */
+.mt-recap{ display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; margin:0 0 14px; }
+.mt-fichier{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint); }
+
+.mt-bilan{ display:grid; grid-template-columns:repeat(auto-fit,minmax(168px,1fr)); gap:9px; margin:0 0 16px; }
+.mt-tuile{ background:var(--surface); border:1px solid var(--border); border-left:4px solid var(--border);
+  border-radius:var(--radius); padding:11px 13px 12px; }
+.mt-tuile.alerte{ border-left-color:var(--amber); }
+.mt-tuile.ok{ border-left-color:var(--green); }
+.mt-l{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--ink-faint); font-weight:600; }
+.mt-v{ font-family:var(--font-disp); font-size:23px; font-weight:800; color:var(--ink); line-height:1.1;
+  font-variant-numeric:tabular-nums; }
+.mt-v small{ font-size:11px; font-weight:500; color:var(--ink-soft); letter-spacing:0; }
+.mt-sub{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-soft); margin-top:2px; }
+
+.mt-tbl{ width:100%; border-collapse:collapse; font-size:12px; }
+.mt-tbl th{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.07em; text-transform:uppercase;
+  text-align:left; color:var(--ink-faint); padding:6px 8px; border-bottom:1px solid var(--border); position:static; }
+.mt-tbl td{ padding:6px 8px; border-bottom:1px solid var(--border); }
+.mt-tbl td.num{ text-align:right; font-family:var(--font-mono); font-variant-numeric:tabular-nums; }
+.mt-tbl .mt-lign{ font-weight:600; }
+.mt-ecart-pos{ color:var(--red); font-weight:600; }
+.mt-ecart-neg{ color:var(--green); font-weight:600; }
+.mt-raison{ font-family:var(--font-body); font-size:11.5px; color:var(--ink-soft); }
+.mt-avert{ font-family:var(--font-mono); font-size:10.5px; color:var(--amber); font-weight:600; }
+
+.mt-detail td{ font-size:11.5px; }
+.mt-detail .mt-op{ font-family:var(--font-mono); font-size:10px; color:var(--ink-faint); }
+.mt-raz{ margin:0 0 12px; padding:10px 13px; background:var(--blue-bg); border:1px solid var(--blue);
+  border-radius:var(--radius); font-family:var(--font-body); font-size:12.5px; line-height:1.5; color:var(--ink); }
+.mt-raz b{ color:var(--blue-dark); }
+
+@media (pointer: coarse){
+  .mt-v{ font-size:25px; }
+  .mt-tbl th, .mt-tbl td{ padding:9px 8px; }
+}
+@media print{
+  .mt-recette, .mt-fichier{ display:none !important; }
+  .mt-tbl th, .mt-tbl td{ padding:4px 6px; font-size:9.5px; }
+  .mt-tuile{ break-inside:avoid; }
+}

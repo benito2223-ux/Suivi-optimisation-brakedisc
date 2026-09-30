@@ -1,0 +1,79 @@
+/* ═══ v4.54.0 — fiche poste (couche 1) ═══════════════════════════════════════
+   La fiche est l'écran « qu'est-ce qui se passe sur CETTE machine ». Elle doit se
+   lire en trois secondes debout, au doigt, avec des gants : donc le titre et le
+   gain d'abord, la prochaine étape en clair, et le bouton d'entrée assez gros pour
+   être touché sans viser. */
+
+.carte-fiche-zone{ margin:0 0 16px; }
+.carte-fiche-zone[hidden]{ display:none !important; }   /* un display:flex écraserait hidden */
+
+.fp-fiche{ border:1px solid var(--border); border-left:4px solid var(--blue);
+  border-radius:var(--radius); background:var(--surface); padding:13px 15px 14px; }
+.fp-fiche.gagne{ border-left-color:var(--green); }
+.fp-fiche.encours{ border-left-color:var(--blue); }
+.fp-fiche.achiffrer{ border-left-color:var(--amber); }
+.fp-fiche.opportunite{ border-left-color:var(--border); }
+
+.fp-tete{ display:flex; align-items:flex-start; gap:11px; margin-bottom:7px; }
+.fp-titre-bloc{ flex:1; min-width:0; }
+.fp-eyebrow{ margin:0 0 2px; font-family:var(--font-mono); font-size:9.5px; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--ink-faint); font-weight:600; }
+.fp-titre{ margin:0; font-family:var(--font-disp); font-size:20px; font-weight:800; color:var(--ink); letter-spacing:-.015em; }
+.fp-fermer{ font-size:14px; padding:5px 9px; line-height:1; }
+
+.fp-ref-dominante{ margin:0 0 8px; font-family:var(--font-body); font-size:12.5px; color:var(--ink-soft); }
+.fp-ref-dominante b{ color:var(--ink); }
+
+.fp-pouls{ margin:0 0 9px; }
+.fp-acte, .fp-projete{ display:flex; align-items:baseline; gap:5px; font-family:var(--font-mono);
+  font-weight:600; font-variant-numeric:tabular-nums; line-height:1.15; }
+.fp-acte{ font-size:20px; color:var(--green); }
+.fp-projete{ font-size:14px; color:var(--ink-soft); }
+.fp-acte small, .fp-projete small, .fp-invite small{ font-size:10px; font-weight:500; letter-spacing:.04em; color:var(--ink-faint); }
+.fp-invite{ font-family:var(--font-mono); font-size:15px; font-weight:600; color:var(--amber); }
+.fp-vide{ font-family:var(--font-mono); font-size:12.5px; color:var(--ink-faint); font-style:italic; }
+
+.fp-chemin{ display:flex; align-items:center; gap:7px; margin:0 0 11px; }
+.fp-chemin-l{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--ink-faint); font-weight:600; white-space:nowrap; }
+
+/* le travail réel : quelles références, quel statut, combien d'essais */
+.fp-refs{ margin:0 0 10px; padding-top:9px; border-top:1px solid var(--border); }
+.fp-refs h5{ margin:0 0 6px; font-family:var(--font-mono); font-size:9.5px; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--ink-faint); font-weight:600; }
+.fp-ref{ display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; padding:4px 0;
+  border-bottom:1px dotted var(--border); }
+.fp-ref:last-child{ border-bottom:none; }
+.fp-ref-nom{ font-family:var(--font-body); font-size:13px; font-weight:600; color:var(--ink); }
+.fp-ref-gain{ font-family:var(--font-mono); font-size:11.5px; font-weight:600; color:var(--green);
+  font-variant-numeric:tabular-nums; }
+.fp-ref-prog{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint); }
+.fp-note{ margin:0; font-family:var(--font-body); font-size:12.5px; color:var(--ink-faint); font-style:italic; }
+
+/* la prochaine étape : l'information qui manquait le plus. Elle est en clair,
+   en toutes lettres, parce qu'en atelier on n'a pas le temps de l'interpréter. */
+.fp-etape{ margin:0 0 9px; padding:8px 11px; background:var(--surface-alt);
+  border:1px solid var(--border); border-radius:var(--radius);
+  font-family:var(--font-body); font-size:12.5px; line-height:1.45; color:var(--ink); }
+.fp-etape b{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--ink-faint); display:block; margin-bottom:2px; font-weight:600; }
+
+.fp-avertir{ margin:0 0 9px; font-family:var(--font-mono); font-size:10.5px; color:var(--amber); font-weight:600; }
+
+/* la porte : assez grande pour être touchée sans viser (R3) */
+.fp-actions{ display:flex; justify-content:flex-end; }
+.fp-ouvrir{ font-size:13px; padding:9px 15px; min-height:38px; }
+
+@media (pointer: coarse){
+  .fp-fiche{ padding:15px 16px 16px; }
+  .fp-titre{ font-size:22px; }
+  .fp-acte{ font-size:22px; }
+  .fp-ouvrir{ min-height:48px; font-size:14px; padding:12px 18px; }
+  .fp-fermer{ min-height:40px; min-width:40px; }
+}
+
+@media print{
+  .fp-fermer, .fp-actions{ display:none !important; }
+  .fp-fiche{ break-inside:avoid; }
+  .fp-etape{ background:#fff; }
+}

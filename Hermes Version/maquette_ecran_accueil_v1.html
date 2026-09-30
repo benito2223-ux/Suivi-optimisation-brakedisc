@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Suivi — proposition d'écran d'accueil (discussion, rien n'est codé)</title>
+<style>
+/* Jetable : sert à montrer une direction, pas à être livré.
+   Les tokens sont ceux de l'outil (v4.55) pour que la comparaison soit honnête. */
+:root{
+  --bg:#e8eaed; --surface:#fff; --surface-alt:#f4f4f4; --border:#e5e5e5;
+  --ink:#1a1a1a; --ink-soft:#4a5560; --ink-faint:#5a6470;
+  --blue:#1B5EA6; --blue-dark:#154d8a; --blue-bg:#e8f0fb;
+  --green:#1a7a3f; --green-bg:#edf7f1; --amber:#b45309; --amber-bg:#fff8ed;
+  --red:#E2001A; --red-bg:#fce8ea;
+  --font-disp:'Open Sans Condensed','Arial',sans-serif;
+  --font-body:'Open Sans',Arial,sans-serif;
+  --font-mono:'IBM Plex Mono','Courier New',Consolas,monospace;
+  --r:3px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5}
+.entete{max-width:1180px;margin:0 auto;padding:22px 20px 0}
+.kicker{font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);font-weight:700}
+h1{font-family:var(--font-disp);font-size:30px;font-weight:800;margin:4px 0 4px;letter-spacing:-.01em}
+.sous{color:var(--ink-soft);font-size:14px;max-width:760px}
+.note{margin-top:12px;padding:9px 12px;background:var(--amber-bg);border:1px solid var(--amber);border-radius:var(--r);
+  font-size:13px;color:var(--ink)}
+.entete-actions{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 6px;align-items:center}
+.btn{font-family:var(--font-body);font-size:13.5px;font-weight:600;padding:10px 15px;border-radius:var(--r);
+  border:1px solid var(--border);background:var(--surface);color:var(--ink);cursor:pointer;white-space:nowrap}
+.btn:hover{background:var(--surface-alt)}
+.btn.fort{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn.fort:hover{background:var(--blue-dark)}
+.sep{width:1px;height:26px;background:var(--border);margin:0 4px}
+
+/* ── la barre actuelle, telle qu'elle est : on compare sur piece ── */
+.aujourdhui{border:1px dashed var(--ink-faint);border-radius:var(--r);padding:12px 14px;background:var(--surface);margin-top:8px}
+.aujourdhui .lbl{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-faint);font-weight:700;margin-bottom:8px}
+.aujourdhui .barre{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.aujourdhui .btn small{display:block;font-weight:400;font-size:10.5px;color:var(--ink-faint)}
+.aujourdhui .cache{font-family:var(--font-mono);font-size:11px;color:var(--ink-faint);background:var(--surface-alt);
+  border:1px solid var(--border);border-radius:999px;padding:7px 13px}
+.aujourdhui .cache b{color:var(--amber);font-weight:700}
+
+/* ── la proposition ── */
+.propose{max-width:1180px;margin:18px auto 0;padding:0 20px}
+.grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:12px;margin-top:14px}
+.tuile{background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--ink-faint);
+  border-radius:var(--r);padding:14px 16px 15px;cursor:pointer;transition:border-color .12s,box-shadow .12s}
+.tuile:hover{box-shadow:0 2px 8px rgba(18,22,27,.10)}
+.tuile.gagne{border-left-color:var(--green)}
+.tuile.encours{border-left-color:var(--blue)}
+.tuile.attention{border-left-color:var(--amber)}
+.tuile h3{margin:0 0 1px;font-family:var(--font-disp);font-size:21px;font-weight:800;letter-spacing:-.01em}
+.tuile .ref{font-family:var(--font-body);font-size:12.5px;color:var(--ink-soft);margin-bottom:9px}
+.etat{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-mono);font-size:9.5px;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:999px;margin-bottom:9px;
+  background:var(--surface-alt);color:var(--ink-faint);border:1px solid var(--border)}
+.gagne .etat{background:var(--green-bg);color:var(--green);border-color:transparent}
+.encours .etat{background:var(--blue-bg);color:var(--blue);border-color:transparent}
+.attention .etat{background:var(--amber-bg);color:var(--amber);border-color:transparent}
+.chiffres{display:flex;gap:16px;flex-wrap:wrap;align-items:baseline}
+.kpi .l{font-family:var(--font-mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint);font-weight:600}
+.kpi .v{font-family:var(--font-mono);font-size:19px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink);line-height:1.15}
+.kpi .v small{font-size:10px;font-weight:500;color:var(--ink-faint)}
+.kpi.acte .v{color:var(--green)}
+.kpi.proj .v{color:var(--ink-soft)}
+.ligne-cible{margin-top:10px}
+.cible-l{font-family:var(--font-mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint);font-weight:600}
+.piste{height:5px;background:var(--surface-alt);border:1px solid var(--border);border-radius:3px;overflow:hidden;margin-top:3px}
+.remplissage{height:100%;background:var(--blue)}
+.pct{font-family:var(--font-mono);font-size:9.5px;color:var(--ink-faint);font-weight:600}
+.a-faire{margin-top:10px;padding:8px 10px;background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--r);
+  font-size:12.5px;color:var(--ink);line-height:1.4}
+.a-faire b{font-family:var(--font-mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint);display:block;margin-bottom:1px}
+.pied{font-family:var(--font-mono);font-size:10.5px;color:var(--ink-faint);margin-top:6px}
+
+/* ── la colonne de travail, quand on entre dans la ligne ── */
+.deux-col{display:grid;grid-template-columns:1fr 330px;gap:14px;margin-top:14px}
+.panneau{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px 15px}
+.panneau h4{margin:0 0 3px;font-family:var(--font-disp);font-size:16px;font-weight:800}
+.panneau .legende{font-family:var(--font-mono);font-size:10px;color:var(--ink-faint);letter-spacing:.06em;margin-bottom:10px}
+.ligne-op{display:flex;align-items:baseline;gap:9px;padding:7px 0;border-bottom:1px dotted var(--border);font-size:13px}
+.ligne-op:last-child{border-bottom:none}
+.ligne-op .code{font-family:var(--font-mono);font-size:11px;font-weight:700;width:46px;flex-shrink:0}
+.ligne-op .nom{flex:1;color:var(--ink)}
+.ligne-op .val{font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;font-weight:600}
+.tache{display:flex;gap:8px;align-items:flex-start;padding:7px 0;border-bottom:1px dotted var(--border);font-size:12.5px;line-height:1.4}
+.tache:last-child{border-bottom:none}
+.pastille{width:7px;height:7px;border-radius:50%;background:var(--ink-faint);margin-top:6px;flex-shrink:0}
+.pastille.b{background:var(--blue)} .pastille.g{background:var(--green)} .pastille.a{background:var(--amber)}
+.tache .qui{font-family:var(--font-mono);font-size:9.5px;color:var(--ink-faint);display:block}
+</style>
+</head>
+<body>
+
+<div class="entete">
+  <div class="kicker">Proposition · discussion · rien n'est codé</div>
+  <h1>Un premier écran qui ne demande rien</h1>
+  <p class="sous">Une tuile = <b>une ligne entière</b> (EMAG 1 avec ses 4 OP's et ses deux références),
+  pas une machine. Cinq informations, pas une de plus. Puis on descend dans ce qui existe déjà.</p>
+  <div class="note"><b>Le principe :</b> la barre actuelle cache Tableau de bord, Carte atelier,
+  Classeur Matis et Synthèse derrière « ••• ». Ci-dessous, la même chose <b>dépliée et visible</b>.
+  Rien d'autre ne change — on ne touche pas aux écrans de travail.</div>
+</div>
+
+<!-- L'AUJOURD'HUI : mesuré sur le fichier, c'est literally ce qu'il y a -->
+<div class="aujourdhui" style="max-width:1180px;margin:14px auto 0;padding:12px 20px 0;border:none;background:none">
+  <div class="lbl">La barre d'outils aujourd'hui — ce que l'agent voit sans cliquer</div>
+  <div class="barre">
+    <button class="btn">💾 Exporter</button>
+    <button class="btn">📂 Importer</button>
+    <button class="btn">+ Ajouter</button>
+    <button class="btn">🔒 Verrouiller</button>
+    <span class="sep"></span>
+    <span class="cache">••• <b>4 écrans cachés</b> : Tableau de bord · Carte atelier · Classeur Matis · Synthèse</span>
+  </div>
+</div>
+
+<div class="propose">
+
+  <div class="entete-actions">
+    <button class="btn fort">🏭 Carte atelier</button>
+    <button class="btn">📊 Tableau de bord</button>
+    <button class="btn">📈 Vue de synthèse</button>
+    <button class="btn">📗 Classeur Matis</button>
+    <span class="sep"></span>
+    <button class="btn">💾 Exporter</button>
+    <button class="btn">📂 Importer</button>
+    <button class="btn">+ Ajouter</button>
+    <button class="btn">••• moins souvent</button>
+  </div>
+
+  <div class="grille">
+
+    <div class="tuile gagne">
+      <h3>EMAG 1</h3>
+      <div class="ref">356x26 RPI · 304x28 RPE · OP10-20-30-40</div>
+      <span class="etat">2 postes gagnés</span>
+      <div class="chiffres">
+        <div class="kpi acte"><div class="l">Gain acté</div><div class="v">+12,4 k€<small>/an</small></div></div>
+        <div class="kpi proj"><div class="l">En cours</div><div class="v">+3,1 k€<small>/an</small></div></div>
+        <div class="kpi"><div class="l">Coût</div><div class="v">0,63<small>€/pce</small></div></div>
+      </div>
+      <div class="ligne-cible">
+        <div class="cible-l">Vers la cible du site</div>
+        <div class="piste"><div class="remplissage" style="width:46%"></div></div>
+        <div class="pct">46 % · cible 0,42 €</div>
+      </div>
+      <div class="a-faire"><b>À faire</b>2 essais à finir · 1 protocole 5× à boucler</div>
+    </div>
+
+    <div class="tuile encours">
+      <h3>EMAG 2</h3>
+      <div class="ref">290x12 · 304x28 RPE · 330x14</div>
+      <span class="etat">Essais en cours</span>
+      <div class="chiffres">
+        <div class="kpi acte"><div class="l">Gain acté</div><div class="v">+4,9 k€<small>/an</small></div></div>
+        <div class="kpi proj"><div class="l">En cours</div><div class="v">+8,6 k€<small>/an</small></div></div>
+        <div class="kpi"><div class="l">Coût</div><div class="v">0,74<small>€/pce</small></div></div>
+      </div>
+      <div class="ligne-cible">
+        <div class="cible-l">Vers la cible du site</div>
+        <div class="piste"><div class="remplissage" style="width:22%"></div></div>
+        <div class="pct">22 % · cible 0,31 €</div>
+      </div>
+      <div class="a-faire"><b>À faire</b>SL500 OP40 : protocole 5× en cours (3/5)</div>
+    </div>
+
+    <div class="tuile encours">
+      <h3>EMAG 3</h3>
+      <div class="ref">290x12 · 302x26 RPI · 330x28 RPE K0</div>
+      <span class="etat">Essais en cours</span>
+      <div class="chiffres">
+        <div class="kpi acte"><div class="l">Gain acté</div><div class="v">+1,2 k€<small>/an</small></div></div>
+        <div class="kpi proj"><div class="l">En cours</div><div class="v">+2,7 k€<small>/an</small></div></div>
+        <div class="kpi"><div class="l">Coût</div><div class="v">0,41<small>€/pce</small></div></div>
+      </div>
+      <div class="ligne-cible">
+        <div class="cible-l">Vers la cible du site</div>
+        <div class="piste"><div class="remplissage" style="width:31%"></div></div>
+        <div class="pct">31 % · cible 0,29 €</div>
+      </div>
+      <div class="a-faire"><b>À faire</b>OP20 non chiffrée : relever la prod</div>
+    </div>
+
+    <div class="tuile attention">
+      <h3>HESSAPP</h3>
+      <div class="ref">266x13 · 266x22 RPI · 302x26 RPI</div>
+      <span class="etat">1 poste à chiffrer</span>
+      <div class="chiffres">
+        <div class="kpi acte"><div class="l">Gain acté</div><div class="v">+2,0 k€<small>/an</small></div></div>
+        <div class="kpi proj"><div class="l">En cours</div><div class="v">—</div></div>
+        <div class="kpi"><div class="l">Coût</div><div class="v">0,52<small>€/pce</small></div></div>
+      </div>
+      <div class="ligne-cible">
+        <div class="cible-l">Vers la cible du site</div>
+        <div class="piste"><div class="remplissage" style="width:0%"></div></div>
+        <div class="pct">cible 0,28 € · rien de mesuré</div>
+      </div>
+      <div class="a-faire"><b>À faire</b>OP20 : la cible est posée, la mesure manque</div>
+    </div>
+
+    <div class="tuile" style="border-left-color:var(--border)">
+      <h3 style="color:var(--ink-soft)">Weisser 1–4 · PCI 1–2</h3>
+      <div class="ref">déclarées, jamais travaillées</div>
+      <span class="etat">6 postes ouverts</span>
+      <div class="chiffres">
+        <div class="kpi"><div class="l">Gain acté</div><div class="v" style="color:var(--ink-faint)">—</div></div>
+        <div class="kpi"><div class="l">En cours</div><div class="v" style="color:var(--ink-faint)">—</div></div>
+      </div>
+      <div class="pied">Aucune donnée : on ne montre pas de 0, on montre « rien ».</div>
+    </div>
+
+  </div>
+
+  <!-- LE CLIC : on entre dans la ligne, et là un panneau dit quoi faire -->
+  <div class="deux-col" style="margin-top:22px">
+    <div class="panneau">
+      <h4>EMAG 1 — 356x26 RPI</h4>
+      <div class="legende">coût par opération · la pièce se décompose ici</div>
+      <div class="ligne-op"><span class="code">OP10</span><span class="nom">Ébauche piste</span><span class="val">0,183 €</span></div>
+      <div class="ligne-op"><span class="code">OP20</span><span class="nom">Perçages</span><span class="val">0,151 €</span></div>
+      <div class="ligne-op"><span class="code">OP30</span><span class="nom">Fraisurage</span><span class="val">0,089 €</span></div>
+      <div class="ligne-op"><span class="code">OP40</span><span class="nom">Finition piste</span><span class="val">0,207 €</span></div>
+      <div class="ligne-op" style="border-top:1px solid var(--border);margin-top:4px;padding-top:9px">
+        <span class="code"></span><span class="nom"><b>Total pièce</b></span><span class="val" style="font-size:14px">0,630 €</span>
+      </div>
+      <div class="pied" style="margin-top:9px">Un clic ici ouvre l'outillage, les essais et les prélèvements — l'écran actuel, intact.</div>
+    </div>
+
+    <div class="panneau" style="border-left:4px solid var(--blue)">
+      <h4>À faire sur EMAG 1</h4>
+      <div class="legende">ce que l'outil sait qu'il reste à faire</div>
+      <div class="tache"><span class="pastille b"></span><span>Terminer le protocole 5× — SL500 OP40<b class="qui">3/5 essais conformes</b></span></div>
+      <div class="tache"><span class="pastille a"></span><span>Chiffrer la prod OP20 — valeurs manquantes<b class="qui">empêche le coût pièce complet</b></span></div>
+      <div class="tache"><span class="pastille g"></span><span>Maintenir SL500 OP10 en série<b class="qui">contrôle au prochain rééquilibrage</b></span></div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
