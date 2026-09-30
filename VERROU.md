@@ -13,13 +13,13 @@
 
 | | |
 |---|---|
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
+| **Auteur** | **Hermes** |
+| **Pris le** | 30/09/2026 |
 | **Écrit dans** | `bilan_economique.html` |
-| **Version visée** | — |
-| **Sujet** | — |
+| **Version visée** | **4.57.0** |
+| **Sujet** | barre d’outils dépliée (les 4 écrans sortent du menu •••) |
 
-✅ **Le fichier est libre.**
+⛔ **Le fichier est pris par Hermes — ne pas y écrire.**
 
 ---
 
