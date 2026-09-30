@@ -21,12 +21,12 @@
 | # | Question | Proposée par | Statut |
 |---|---|---|---|
 | Q1 | Z Code peut-il écrire et commiter directement dans ce dépôt ? (voir question ci-dessous) | Hermes | ✅ tranché — oui (Tour 2, 30/09) |
-| Q2 | Décision 2 version : la production réelle devient-elle une entité ? On a la première mesure (écart +57 %) mais **un seul point de mesure** — il faut 2-3 mois de classeur pour trancher | Hermes | ⏸ en attente de données |
+| Q2 | Décision 2 version : la production réelle devient-elle une entité ? On a la première mesure (écart +57 %) mais **un seul point de mesure** — il faut 2-3 mois de classeur pour trancher | Hermes | ✅ tranché (30/09, Benjamin) — reste un **constat lu à la demande** (écran Réel / Théorique), pas une entité ; les relevés continuent d'accumuler la mesure |
 | Q3 | Le projet « Coût et qualité EMAG 1 » : peut-il accueillir une 2ᵉ ligne, ou reste-t-il mono-ligne ? | Benjamin | ✅ tranché — mono-ligne, blocage (4.55.1) |
-| Q4 | Le MABEC devient-il un champ sur le logement ? (nécessaire au rapprochement classeur Matis → outil) | Hermes | ⏳ à trancher avec la décision 2 version |
+| Q4 | Le MABEC devient-il un champ sur le logement ? (nécessaire au rapprochement classeur Matis → outil) | Hermes | ✅ tranché (30/09, Benjamin) — **oui**, champ sur le logement. ⚠️ précision de Benjamin : un même MABEC se retrouve sur **plusieurs outils, OP ou lignes** — c'est normal (même plaquette réutilisée). **Le MABEC n'est PAS une clé unique** ; le rapprochement par article se fait par MABEC + contexte (outil/OP), jamais par MABEC seul |
 | Q5 | L'OP30 (perçage) : comptée **et** pilotée, partout où elle existe. Aucune exception à maintenir dans le code. | Benjamin | ✅ tranché (30/09) |
-| Q6 | L'écran d'accueil, tuile-ligne : le « Coût €/pce » de la maquette — **retiré de la tuile** (il vit déjà dans le bandeau et le panneau de clic), ou **gardé étiqueté** par référence dominante (« 356x26 : 0,63 €/pce ») ? Un coût multi-réfs sans étiquette serait un chiffre mensonger (§3.5) | Z Code (mesure, Tour 6) | ⏳ à trancher avec la liste des cinq |
-| Q7 | Si le coût est gardé : **étendre `pieceCPPComplet` aux (réf, ligne) explicites** (comportement sans argument inchangé) plutôt que re-dériver la formule — c'est la voie D3 ; la barre « vers la cible » suivrait la même référence dominante | Z Code (mesure, Tour 6) | ⏳ dépend de Q6 |
+| Q6 | L'écran d'accueil, tuile-ligne : le « Coût €/pce » de la maquette — **retiré de la tuile** (il vit déjà dans le bandeau et le panneau de clic), ou **gardé étiqueté** par référence dominante (« 356x26 : 0,63 €/pce ») ? Un coût multi-réfs sans étiquette serait un chiffre mensonger (§3.5) | Z Code (mesure, Tour 6) | ✅ tranché (30/09, Benjamin) — **option B : cinq infos, coût étiqueté par référence dominante** |
+| Q7 | Si le coût est gardé : **étendre `pieceCPPComplet` aux (réf, ligne) explicites** (comportement sans argument inchangé) plutôt que re-dériver la formule — c'est la voie D3 ; la barre « vers la cible » suivrait la même référence dominante | Z Code (mesure, Tour 6) | ✅ tranché (30/09, Benjamin) — suit Q6-B : extension de `pieceCPPComplet`, voie D3 |
 
 ---
 
@@ -43,6 +43,59 @@ transporte un fichier ? Concrètement :
 ---
 
 ## Journal des tours
+
+### ▸ Tour 7 — 30/09/2026 — **Z Code** (quatre décisions tranchées, merge et déploiement prod)
+
+**Ce tour n'écrit pas dans `bilan_economique.html`** — verrou non pris, le fichier
+n'a pas bougé. C'est un tour de gouvernance et de livraison.
+
+**Benjamin a tranché les quatre sujets ouverts** (tableau mis à jour) :
+- **Q6 → option B** : l'écran d'accueil garde cinq informations, coût **étiqueté par
+  référence dominante** (« 356x26 : 0,63 €/pce · +1 réf. »), barre de cible sur la
+  même dominante ;
+- **Q7 → suit B** : extension de `pieceCPPComplet` aux (réf, ligne) explicites,
+  comportement sans argument inchangé — la voie D3 ;
+- **Q2 → constat** : la production réelle reste un constat lu à la demande, pas une
+  entité. L'écran Réel / Théorique continue d'accumuler la mesure ; noter que le
+  critère de sortie proposé au Tour précédent n'a pas été posé — si l'écart +57 %
+  persiste dans les relevés, la question pourra être reposée avec les données, mais
+  rien ne la fera remonter d'office. C'est assumé ;
+- **Q4 → oui**, avec la précision métier de Benjamin, à retenir MOT POUR MOT car elle
+  interdit un futur bug : **un même MABEC se retrouve sur plusieurs outils, OP ou
+  lignes — c'est normal, on réutilise la même plaquette à des endroits différents.**
+  Donc : un MABEC par logement, mais le MABEC n'est **PAS une clé unique** — aucun
+  dédoublonnage, aucune unicité contrainte ; le rapprochement classeur → outil se
+  fera par MABEC **+ contexte (outil/OP)**, jamais par MABEC seul. Ça confirme le
+  modèle du Tour 3 d'Hermes (un MABEC = un article = une plaquette = un logement)
+  et ça le complète par la réciproque (plusieurs logements peuvent porter le même
+  article).
+
+**Le plan de travail qui en découle** (ordre inchangé du Tour 5 d'Hermes) :
+1. Hermes code la **barre dépliée** (vingt minutes, aucune donnée) ;
+2. Z Code code l'**agrégation par ligne** (`gainLigne`, rollup des postes) et
+   l'extension de `pieceCPPComplet` (Q7) — les deux fonctions pures d'abord, testées ;
+3. puis la carte en tuiles de lignes, une information à la fois, recette A2 ;
+4. le champ MABEC sur le logement (Q4) est découplé : tranchable dans n'importe quel
+   tour de code, migration douce (champ vide par défaut).
+
+**Le merge et les déploiements — exécutés sur l'ordre explicite de Benjamin** :
+- `.surgeignore` vérifié AVANT tout (liste blanche : HTML, index, PWA — les données
+  réelles ne partent jamais) ;
+- `dev` poussé vers `origin/dev` (`a28729c..c32a0ee`, 8 commits : 4.54.0 → Tour 6) ;
+- `main` fast-forward `665c9f3..c32a0ee` et poussé — **la constitution, le journal,
+  le verrou et les dossiers de spec entrent dans main pour la première fois** ;
+- **Projet** déployé : https://suivi-optimisation-projet.surge.sh — vérifié 4.56.0 ;
+- **Prod** déployée : https://suivi-optimisation-septfons.surge.sh — vérifié 4.56.0,
+  service worker servi (200) sur les deux domaines. Matis et Benoît passeront en
+  4.56.0 au prochain chargement (service worker réseau-d'abord).
+
+**Ce qui reste à Benjamin, côté humain** : la mise à jour effective chez Matis
+(fermer les onglets périmés — la défense serveur tient, mais autant fermer la porte),
+les charnières OP20, l'outil vide HESSAPP, le DDV T548 (l'écran 4.56.0 l'affiche
+maintenant en ambre à la lecture du classeur) et les volumes annuels.
+
+**Prochain tour** : à Hermes, la barre dépliée (point 1). Les décisions sont toutes
+tranchées — il ne reste que du code, dans l'ordre ci-dessus.
 
 ### ▸ Tour 6 — 30/09/2026 — **Z Code** (la mesure demandée : maquette d'accueil ↔ code réel)
 
