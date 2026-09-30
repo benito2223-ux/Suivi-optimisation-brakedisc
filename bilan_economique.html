@@ -11440,6 +11440,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.62.0", date:"30/09/2026", points:[
+    "<b>L’outil s’ouvre sur l’overview.</b> Au lancement, c’est l’écran d’accueil qui apparaît — l’usine par lignes, la vue d’ensemble avant le détail. La fenêtre des nouveautés passe devant au premier lancement ; fermez-la, l’usine est là. Le détail du scénario reste accessible en un clic, comme toujours."
+  ]},
   { version:"4.61.0", date:"30/09/2026", points:[
     "<b>Les lignes hors périmètre ne se comptent plus une par une.</b> Weisser et PCI — déclarées, jamais travaillées, rien à piloter — vivent désormais ensemble dans <b>une seule tuile grise</b> : « 6 lignes hors périmètre : WEISSER 1–4 · PCI 4–5 ». Un clic ouvre la liste des noms et le choix explicite : déclarer leurs machines quand elles entrent dans le suivi, ou les retirer. La grille ne dit plus « six choses à faire » — il n’y en a pas.",
     "La recette de l’écran compte désormais le périmètre : « 4 lignes actionnables sur 4 dans le périmètre · 6 lignes hors périmètre »."
@@ -11896,7 +11899,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.61.0";
+const TOOL_VERSION = "4.62.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -13879,6 +13882,11 @@ updateRevisionUI();
 document.getElementById("footToolName").textContent = "Suivi_optimisation_SPK v" + TOOL_VERSION + " — SPK by CeramTec";
 // pastille poids : rendue des le chargement (le suivi vient d'etre lu, on connait sa taille)
 try{ renderPoidsFooter((localStorage.getItem(STORAGE_KEY) || "").length); installerClickPoids(); }catch(e){}
+/* v4.62 — Benjamin, 30/09 : « j'aimerais que l'outil ouvre sur une page overview ».
+   L'écran d'accueil devient l'OUVERTURE, derrière la fenêtre des nouveautés —
+   la décision différée depuis la 4.51.2 est prise. Sauf hash de service (#tests) :
+   le harnais et les ancres de diagnostic gardent leur comportement. */
+if(!location.hash || location.hash === "#accueil") ouvrirAccueil();
 // en dernier : l'ecran doit etre pret derriere la fenetre des nouveautes
 verifierNouveautes();
 /* v4.49.3 — message de première ouverture après la mise en place de la base 2026/2027.

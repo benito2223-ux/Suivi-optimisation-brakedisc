@@ -5,6 +5,26 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.62.0] — 2026-09-30
+
+**L'outil s'ouvre sur l'overview** (décision directe de Benjamin : « j'aimerais
+que l'outil ouvre sur une page overview » — la décision d'entrée différée depuis
+la 4.51.2 est prise, Q11 résolue sans régllement : l'accueil EST l'ouverture).
+
+### Modifié
+- au chargement, l'écran d'accueil (l'usine par lignes, 4.60) s'ouvre derrière
+  la fenêtre des nouveautés ; sauf hash de service (`#tests` et ancres de
+  diagnostic gardent leur comportement) ;
+- rien d'autre ne change : « Fermer » retombe sur l'écran de travail, la
+  navigation experte est intacte.
+
+### Note de vérification
+- le boot n'est pas couvert par le harnais node (render() y est neutralisé) —
+  vérifié au navigateur : chargement sans hash → accueil ouvert ; `#tests` →
+  tests, pas d'accueil.
+
+351 tests, tout vert. Aucun push, aucun déploiement.
+
 ## [4.61.0] — 2026-09-30
 
 **Q12 (Benjamin) : la tuile regroupée des lignes hors périmètre.** Les lignes
