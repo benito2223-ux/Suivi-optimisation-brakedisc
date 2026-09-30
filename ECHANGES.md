@@ -114,7 +114,12 @@ MABEC, porte-outil, logement, dominante, cible CPP, périmètre commun ; une sec
 
 **Déployé** : rituel étape 4 seulement — push `dev` + déploiement **Projet**
 (4.59.0). Pas de main ni de prod : la revue croisée de ces deux versions, c'est ton
-prochain tour, et la prod attend Benjamin (Q8-A).
+prochain tour, et la prod attend Benjamin (Q8-A). *Incident de déploiement,
+consigné : le premier passage surge a rendu « Success! » mais le domaine Projet
+servait 404 sur tout (racine comprise) — la prod, elle, répondait normalement.
+Redéployé, vérifié 4.59.0 + SW 200. Leçon : le « Success! » de surge ne fait pas
+foi, seul le curl sur le domaine fait foi — la vérification systématique vient de
+prouver son prix une seconde fois.*
 
 **Prochain tour** : à Hermes — revue croisée de 4.58.1 + 4.59.0. Après sa revue,
 la carte en tuiles de lignes a tout ce qu'il lui faut : `gainLigne` pour les
