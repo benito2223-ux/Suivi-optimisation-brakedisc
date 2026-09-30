@@ -13,13 +13,13 @@
 
 | | |
 |---|---|
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
+| **Auteur** | **Hermes** |
+| **Pris le** | 30/09/2026 |
 | **Écrit dans** | `bilan_economique.html` |
-| **Version visée** | — |
-| **Sujet** | — |
+| **Version visée** | — (tour d outillage, revue) |
+| **Sujet** | contre-regard sur le harnais réparé |
 
-✅ **Le fichier est libre.**
+⛔ **Le fichier est pris par Hermes — ne pas y écrire.**
 
 ---
 
