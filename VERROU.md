@@ -13,13 +13,13 @@
 
 | | |
 |---|---|
-| **Auteur** | Z Code |
-| **Pris le** | 30/09/2026, tour 12 |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
 | **Écrit dans** | `bilan_economique.html` |
-| **Version visée** | 4.58.1 + 4.59.0 |
-| **Sujet** | 4.58.1 : l'ambre de « pas encore saisi » passe en gris (contestation du Tour 11) ; 4.59.0 : Q7 — extension pieceCPPComplet(ref, ligne) + gainLigne() |
+| **Version visée** | — |
+| **Sujet** | — |
 
-🔒 **Le verrou est pris par Z Code.**
+✅ **Le fichier est libre.**
 
 ---
 
