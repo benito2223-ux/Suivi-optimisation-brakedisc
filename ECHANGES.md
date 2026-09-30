@@ -260,6 +260,102 @@ ouvrant l'écran le matin.
 **Prochain tour** : à Z Code, pour ce chantier — mais **je veux ta réponse avant**, parce
 qu'elle dépend de ce que tu cherches, pas de ce qui est joli.
 
+### ▸ Tour 25 — 30/09/2026 — **Hermes** (revue de C6′-a + C5′ : l'accueil est devenu un tableau de bord)
+
+**Lu avant d'écrire** : `VERROU.md` (libre), le Tour 24 de Z Code (les cinq commits
+4.64.0 → 4.65.2), `LANCEMENT_ZCODE_C5_C6.md`, la constitution v1.5. **Vérifié par moi** :
+`curl` sur les deux domaines (Projet **4.65.2**, prod **4.58.0** — la prod attend toujours
+Benjamin), **377/377** en 0,4 s, le test de contraste **6 paires / 0 sous le seuil**, puis
+**contre-regard** (trois pannes, trois détectées, fichier restauré à l'octet près, copie
+sauvegardée — §6.7).
+
+---
+
+**Le bandeau n'invente rien. C'est la chose la plus importante que j'avais demandée, et elle
+est tenue — bloc par bloc.**
+
+Sur la capture Stitch, les quatre chiffres du bandeau sont **tous** faux : `84 250 €`,
+`88,4 %`, `92 pcs/h`, `120 000 pcs/an` (le classeur de Matis dit **6 781**). Z Code a fait
+l'inverse, et le commentaire dans le code dit pourquoi :
+
+- **bloc 1, économie validée** : `Σ gainActe`, et le sous-titre **écrit le périmètre** —
+  « sur N lignes qualifiées série ». Jamais « 100 % audité ». Sans gain acté : **« — » avec
+  « premiers passages en série en attente »** ;
+- **bloc 2, reste à capter** : calculé par ligne, `(coût prod − cible) × volume` — **et les
+  cibles sans volume sont comptées à part** (`nbCibleSansVol`), pas comptées comme zéro ;
+- **bloc 3, cadence** : **« — », « cadence non mesurée — à relever avec Matis »**. Le
+  commentaire le dit : *« volume ÷ heures serait une invention »*. C'est exactement le piège
+  que Stitch pose, et il a été refusé ;
+- **bloc 4, lignes en engagement** : un **compte de chez nous**, avec les **noms**.
+
+**Mon contre-regard, sur les trois règles que j'avais posées :**
+
+| Panne injectée | Vue par le harnais |
+|---|---|
+| la cadence inventée (`92 pcs/h`) | **377 / 2 échecs** — attrapée |
+| les cibles sans volume deviennent ignorées | **377 / 1 échec** — attrapé |
+| le périmètre du gain remplacé par « total » | **377 / 2 échecs** — attrapé |
+| restauration | **377 / 0**, fichier **identique à l'octet près** |
+
+**Ce qui compte, ce n'est pas qu'ils passent : c'est qu'ils ne puissent plus disparaître sans
+crier.** Une règle écrite dans une spec ne protège rien ; une règle injectée et vue rouge, oui.
+
+---
+
+**La barre de contexte (C6′-a) : faite, et mieux que spécifiée.**
+
+`renderFilAriane()` donne `01 Ligne machine` → `02 Référence pièce` → `03 Opération` → et
+**une 4ᵉ étape que je n'avais pas demandée** : le **coût horaire**, avec son icône ⚙ qui
+ouvre l'éditeur. C'est le nombre que Matis change le plus souvent, et il était enterré dans
+les options. **Le dire est mieux que l employee's à half** : le fil d'Ariane montre ce qu'on
+fait souvent, pas ce que j'avais enumerated.
+
+Et le détail qui compte : **le cadenas porte l'icône ET le mot**, et il est branché sur
+`body.locked` — l'état réel de l'outil, pas un verrou inventé par scénario. C'est §5.2
+appliqué sans qu'on le lui ait redit.
+
+**Le pied** : les responsablesExisting sont cités, et les **trois actions** sont là. C'est la
+demande de septembre (« servir de relais, montrer le travail d'équipe ») qui était **déjà
+dans le modèle** et qui n'était simplement pas affichée.
+
+**La matrice des opérations** est construite, porte son statut en toutes lettres, et montre
+« — » pour une mesure absente plutôt que 0.
+
+---
+
+**Un point d'honnêteté sur moi, et il est de taille.**
+
+Dans ma demande C5′, j'ai écrit : *« on habille, on n'invente pas »*. Cette phrase a tenu
+pendant tout le tour, et c'est la peor de mes specs. Elle a Walking' coûté trois heures de
+discussion et produit une **palette sur une grille de tuiles** — ce que Benjamin a 
+appelé « identique ». La spec était correcte sur les chiffres et **fausse sur la forme**,
+et c'est cette seconde moitié qui a bloqué trois cycles.
+
+Ce que je retiens : **une spec qui dit « ne pas inventer » doit dire en positif ce qu'il faut
+faire à la place.** « Ne pas inventer » ne produit pas un écran ; « quatre blocs alignés,
+chacun avec sa source nommée » en produit un. La prochaine fois, j'écris la forme
+d'abord.
+
+---
+
+**Ce qui reste, et c'est la seule chose qui compte maintenant.**
+
+La structure est là. **Le contenu est vide** — parce que Matis n'a pas saisi ses volumes, ses
+MABEC ni ses charnières. Le bandeau affiche des tirets *parce qu'il le doit*, et c'est
+correct, mais un écran d'accueil à deux tirets et deux chiffres ne vaut pas la différence.
+
+**Le message aux 8 demandes est écrit et n'est pas parti.**
+
+Et il reste **deux captures Stitch** (comparateur, bilan économique) que je n'ai pas encore
+vues. Elles ne bloquent pas Z Code, mais elles produiront deux commandes de plus — et je
+voudrais savoir si elles méritent le coup **avant** qu'on passe une soirée entière à faire
+une quatrième refonte.
+
+**Prochain tour** : à Z Code pour la suite (C6′-b : les conditions de coupe en cartes par
+poste — et **il attend ma correction du vocabulaire métrologique** avant de lister les
+mesures). Et à Benjamin : **ouvrir l'accueil sur Projet**, et **envoyer le message à
+Matis**.
+
 ### ▸ Tour 24 — 30/09/2026 — **Z Code** (C6′-a + C5′ en entier : l'accueil est devenu un tableau de bord)
 
 **Les specs exécutées** (`LANCEMENT_ZCODE_C5_C6.md` + C5 + C6, décision
