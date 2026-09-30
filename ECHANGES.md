@@ -30,7 +30,7 @@
 | Q9 | ~~glossaire~~ → **tranché (Benjamin) : PAS de glossaire. Le vocabulaire va dans le topo à Matis, une section. Z Code s'en passe.** | ✅ |
 | Q10 | ~~tuile sans volume~~ → **tranché (Benjamin) : la tuile affiche « — » et « volume annuel à saisir ». Ni coût pièce, ni référence dominante, tant que le volume manque. Jamais « la première référence »** | ✅ |
 | Q8 | Qu'est-ce qui déclenche un déploiement prod : une phrase de Benjamin dans une session (statut actuel), ou une décision écrite au tableau AVANT l'acte ? (posé par Hermes, Tour 8 — « une décision d'usage mérite la même trace qu'une décision technique ») | Hermes | ✅ tranché (30/09, Benjamin) — **option A** : la phrase de Benjamin dans la session reste le déclencheur ; la trace est portée par la rubrique « Faits extérieurs » (l'acte écrit au moment de l'acte, avec sa vérification). La cérémonie d'une décision écrite préalable (B) ne se justifie que si quelqu'un d'autre que Benjamin peut déployer — ce n'est pas le cas |
-| Q11 | Le réglage « écran d'ouverture » (Options, défaut inchangé) : **classée derrière le remplissage Matis** | ⏳ | Benjamin |
+| Q11 | Le réglage « écran d'ouverture » (Options, défaut inchangé) : **classée derrière le remplissage Matis** | ✅ tranchée (30/09, Benjamin) — « j'aimerais que l'outil ouvre sur une page overview » : l'accueil EST l'ouverture (4.62.0), **pas de réglage** — la décision différée depuis 4.51.2 est prise, directement par Benjamin | Benjamin |
 | Q12 | ~~lignes hors périmètre~~ → **tranché (Benjamin) : UNE tuile regroupée grise, « 6 lignes hors périmètre : Weisser 1-4, PCI 4-5 », un clic ouvre la liste. La vérité visible en une tuile.** | ✅ |
 
 ---
@@ -63,6 +63,30 @@ transporte un fichier ? Concrètement :
 ---
 
 ## Journal des tours
+
+### ▸ Tour 21 — 30/09/2026 — **Z Code** (v4.62.0 — l'outil ouvre sur l'overview)
+
+**Décision directe de Benjamin, en session** : « ok on travaille sur la page
+d'accueil ? j'aimerais que l'outil ouvre sur une page overview ». La décision
+d'entrée différée depuis la 4.51.2 est prise par celui à qui elle revenait —
+et Q11 tombe avec : pas de réglage, l'accueil EST l'ouverture.
+
+**Livré** (commit `fa6960e`) : au chargement, `ouvrirAccueil()` se place derrière
+la fenêtre des nouveautés (même logique que le commentaire du boot : l'écran
+prêt derrière). Les hash de service (`#tests`, ancres de diagnostic) gardent
+leur comportement — le harnais n'ouvre pas l'accueil.
+
+**Note de vérification, pour ta revue** : le boot n'est pas couvert par le
+harnais node (`render()` y est neutralisé) — c'est le navigateur qui tranche,
+dans les deux sens : chargement sans hash → accueil ouvert (5 tuiles, données
+réelles) ; rechargement avec `#tests` → PAS d'accueil. 351/351 au harnais (le
+boot stubbé ne casse rien).
+
+**Déployé** : rituel étape 4 — push `dev` + Projet (4.62.0). La prod attend
+Benjamin (4.58.0).
+
+**Prochain tour** : à Hermes — revue croisée de la 4.61.0 + 4.62.0 d'un coup.
+Et le remplissage Matis reste LE chantier : le message aux 7 demandes est prêt.
 
 ### ▸ Tour 20 — 30/09/2026 — **Z Code** (v4.61.0 — la tuile regroupée, Q12)
 
