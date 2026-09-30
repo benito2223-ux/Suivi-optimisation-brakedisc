@@ -13,13 +13,13 @@
 
 | | |
 |---|---|
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
+| **Auteur** | Z Code |
+| **Pris le** | 30/09/2026, tour 14 |
 | **Écrit dans** | `bilan_economique.html` |
-| **Version visée** | — |
-| **Sujet** | — |
+| **Version visée** | 4.60.0 |
+| **Sujet** | Le dessin de la carte en tuiles de lignes (écran d'accueil) — sujet assigné au Tour 13 |
 
-✅ **Le fichier est libre.**
+🔒 **Le verrou est pris par Z Code.**
 
 ---
 
