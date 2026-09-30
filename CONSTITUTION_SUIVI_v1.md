@@ -90,8 +90,21 @@ processus, pas de produit — mais c'est elle qui protège tout le reste.
 2. **La raison d'un état est à côté de l'état** — jamais un chiffre seul ;
 3. **Deux thèmes, impression A4 propre, tactile** : toute nouvelle UI se vérifie dans
    les deux thèmes, à l'impression, et au doigt ;
-4. **Le design system tient** : Manrope/Public Sans/Plex, couleurs SPK, ambre =
-   simultanéité, pas de couleurs hors tokens sans décision.
+4. **Le design system tient** — **un seul jeu de tokens**, couleurs et formes nommées, pas
+   de couleurs hors tokens sans décision *(v1.5, 30/09 : les tokens sont ceux du Design
+   System B — `--radius: 2px`, `--red: #E30045`, `--blue: #006AB3`, quatre gris, une seule
+   famille sans-serif + le mono pour les chiffres)* ;
+5. **aucune dépendance réseau** *(v1.5, 30/09)* — ni CSS distant, ni police distante, ni
+   image distante. L'outil doit s'afficher **complet avec le réseau coupé**, parce qu'il
+   tourne sur le poste de Matis, en atelier. **Test d'acceptation : ouvrir le fichier hors
+   ligne.** Une dépendance distante n'est pas une dégradation, c'est un écran blanc ;
+6. **un chiffre qu'on ne peut pas justifier n'est pas affiché** *(v1.5, 30/09, arbitrage de
+   Benjamin après la proposition Google Stitch)*. Un chiffre écrit gros et propre n'est pas
+   plus vrai qu'un autre. Concrètement : si on ne peut pas remonter à sa source, il n'a pas
+   le droit d'apparaître — **ni dans une maquette, ni dans un écran, ni dans un rapport**.
+   *Cette règle vaut pour nous deux autant que pour une proposition externe.* Un agrégat
+   calculé sur un périmètre partiel porte la taille de ce périmètre avec lui (§4.60.1 :
+   « hors 1 opération non chiffrée »), jamais un total silencieux.
 
 ## 6. Qui écrit, et quand — la gouvernance (ajouté le 29/09/2026)
 
