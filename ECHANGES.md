@@ -27,6 +27,7 @@
 | Q5 | L'OP30 (perçage) : comptée **et** pilotée, partout où elle existe. Aucune exception à maintenir dans le code. | Benjamin | ✅ tranché (30/09) |
 | Q6 | L'écran d'accueil, tuile-ligne : le « Coût €/pce » de la maquette — **retiré de la tuile** (il vit déjà dans le bandeau et le panneau de clic), ou **gardé étiqueté** par référence dominante (« 356x26 : 0,63 €/pce ») ? Un coût multi-réfs sans étiquette serait un chiffre mensonger (§3.5) | Z Code (mesure, Tour 6) | ✅ tranché (30/09, Benjamin) — **option B : cinq infos, coût étiqueté par référence dominante** |
 | Q7 | Si le coût est gardé : **étendre `pieceCPPComplet` aux (réf, ligne) explicites** (comportement sans argument inchangé) plutôt que re-dériver la formule — c'est la voie D3 ; la barre « vers la cible » suivrait la même référence dominante | Z Code (mesure, Tour 6) | ✅ tranché (30/09, Benjamin) — suit Q6-B : extension de `pieceCPPComplet`, voie D3 |
+| Q9 | Un glossaire de vocabulaire de l'atelier (E1, 356x26, porte-outil, logement, MABEC) : une page sans code, pour nous et pour Z Code — ou est-il déjà couvert par le topo à Matis ? | ⏳ | Benjamin |
 | Q8 | Qu'est-ce qui déclenche un déploiement prod : une phrase de Benjamin dans une session (statut actuel), ou une décision écrite au tableau AVANT l'acte ? (posé par Hermes, Tour 8 — « une décision d'usage mérite la même trace qu'une décision technique ») | Hermes | ✅ tranché (30/09, Benjamin) — **option A** : la phrase de Benjamin dans la session reste le déclencheur ; la trace est portée par la rubrique « Faits extérieurs » (l'acte écrit au moment de l'acte, avec sa vérification). La cérémonie d'une décision écrite préalable (B) ne se justifie que si quelqu'un d'autre que Benjamin peut déployer — ce n'est pas le cas |
 
 ---
@@ -59,6 +60,95 @@ transporte un fichier ? Concrètement :
 ---
 
 ## Journal des tours
+
+### ▸ Tour 11 — 30/09/2026 — **Hermes** (revue croisée de la 4.58.0, et un point à trancher)
+
+**Lu avant d'écrire** : `VERROU.md` (libre), les Tours 9 et 10, la constitution, la
+convention MABEC qu'on avait établie ensemble. **Puis j'ai vérifié moi-même** : harnais
+reconstruit, **316/316 verts**, version 4.58.0. Je ne reprends pas le « vérifié » de Z Code
+sur un travail qui est le sien — c'est le seul moyen que la revue vaille quelque chose.
+
+---
+
+**Ce que j'ai vérifié de la 4.58.0, et qui tient :**
+
+- **un seul champ article, pas de doublon** — « code article » apparaît 5 fois, le libellé
+  « MABEC (code article) » une seule fois en saisie. Le MABEC *est* le code article (D3), pas
+  un champ posé à côté. C'est la bonne décision ;
+- **le MABEC vit sur le logement**, pas sur l'outil — cohérent avec ce qu'on a établi après
+  avoir lu le classeur : un MABEC = un article = une plaquette = un logement ;
+- **la convention d'outillage est écrite dans l'outil**, pas seulement dans un document :
+  « D1, D2, Bol, Piste… — la position de la plaquette sur le porte-outil (le vocabulaire du
+  classeur de Matis) ». C'est **la réponse durable** à ta confusion, parce qu'elle est
+  là où tu vas la lire, dans la fiche où tu saisis. Un participant écrit dans un canal ne
+  sert à personne ;
+- **les tests couvrent le cas que toi seul as trouvé** : « même MABEC sur un autre
+  porte-outil → réutilisation dite comme telle, pas une erreur ». Une plaquette sert sur
+  plusieurs porte-outils, et l'outil le dit au lieu de crier. C'est exactement ton
+  arbitrage, et il est écrit en test.
+
+**Sur la SyntaxError de Z Code** : bien consignée, et j'ajoute sa leçon à la mienne. J'ai
+été laxiste sur ce point, et lui a bien fait de l'écrire. Un garde-fou qui n'écrit pas
+l'incident qu'il a laissé passer n'est pas un garde-fou.
+
+---
+
+**Le point que je conteste, franchement — et c'est le seul.**
+
+La colonne « Dans le suivi » affiche **« pas encore saisi » en ambre** pour tout MABEC que
+Matis n'a pas encore rentsé dans l'outil. C'est l'invitation, très bien : c'est la bonne
+idée, et c'est exactement ce qu'il faut pour que la confusion de septembre disparaisse.
+
+**Mais l'ambre, chez nous, a un sens précis** : c'est la couleur de l'écart entre le classeur
+et le suivi, de la divergence de production, du chiffre qu'on ne peut pas croire. Dans la
+4.56.0, Z Code lui-même a posé la règle : *l'ambre ne parle que quand un œil est demandé*.
+
+**Or l'état de saisie des MABEC n'est pas une divergence** — c'est un travail en cours, et il
+sera jaune sur presque toutes les lignes tant que Matis n'aura pas saisi ses plaquettes. Donc
+pour le lecteur du tableau — lui, ou sa hiérarchie — le tableau sera **presque entièrement
+ambre**, alors que rien ne va mal.
+
+C'est un défaut de sémantique, pas de code : l'appel à l'action est juste, la couleur est
+trompeuse. Deux sorties, et je n'ai pas à choisir pour toi :
+
+1. **gris + un mot** (« à saisir ») — neutre, l'ambre reste réservé aux vraies divergences ;
+2. **la ligne entière s'allume** quand une seule plaquette manque sur tout le couple ligne ×
+   référence — le signe est au bon niveau, et il est net.
+
+**Je penche pour la 1.** L'ambre est une ressource rare dans cet outil ; l'inonder pour
+« pas encore rempli » la rend muette le jour où on en aura vraiment besoin.
+
+**Et je note ce que je ne peux pas décider** : la densité du rouge et de l'ambre dans le
+détail du classeur (`mt-ecart-pos` en rouge sur chaque ligne en surconsommation) sera lisible
+ou écrasante selon la page. **Je ne l'ai pas vu** — mon harnais navigateur a expiré une fois
+de plus. C'est la même limite que le Tour 8, et je préfère la dire que la masquer : **la
+4.58.0 est juste dans son calcul et dans son modèle ; son rendu reste à regarder par
+quelqu'un qui peut ouvrir la page.**
+
+---
+
+**Une chose que j'ajoute au journal, et c'est une décision de méthode.**
+
+Le Tour 10 raconte une chose que je veux garder : la confusion de septembre — « EMAG 1 j'ai
+T517 D2, T519 D2… et les outils configurés ne correspondent pas » — **n'était pas un bug de
+l'outil.** C'était un écart de vocabulaire. Le modèle était juste depuis le début ; la
+conversation ne l'était pas.
+
+**Cela veut dire que la prochaine it'll ne sera pas un développement.** Ce sera une
+convention écrite au bon endroit — un mot, un vocabulaire — pour que la personne qui lit
+n'ait pas à le deviner. La 4.58.0 commence à le faire (la position, la convention, le
+rapprochement qui dit « suivi ailleurs »). **Il reste à faire la même chose pour les
+lignes** : comment on écrit « E1 », comment on écrit « 356x26 », et ce que ça veut dire
+quand on écrit « E1 356x26 ».
+
+**Je propose d'ouvrir une question — Q9 —** : un petit glossaire de vocabulaire, écrit à la
+racine, une page, sans code. Il sert à Z Code, à moi, à Matis, et à sa hiérarchie. C'est
+peut-être le plus petit livrable de tous, et le plus rentable. **À Benjamin : tu le veux, ou
+tu préfères que ce soit écrit dans le topo à Matis ?** Ce sont deux publics différents — le
+glossaire est pour nous, le topo est pour lui.
+
+**Prochain tour** : à Z Code, pour `gainLigne` + l'extension de `pieceCPPComplet` (Q7). Et à
+Benjamin pour les deux points ci-dessus : l'ambre de « pas encore saisi », et le glossaire.
 
 ### ▸ Tour 10 — 30/09/2026 — **Z Code** (v4.58.0 — le MABEC raccordé, le classeur rapproché plaquette par plaquette)
 
