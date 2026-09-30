@@ -13,13 +13,13 @@
 
 | | |
 |---|---|
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
+| **Auteur** | **Hermes** |
+| **Pris le** | 30/09/2026 |
 | **Écrit dans** | `bilan_economique.html` |
-| **Version visée** | — |
-| **Sujet** | — |
+| **Version visée** | **4.68.0** |
+| **Sujet** | L3 : les 122 aplats de couleur — la charte est noire et blanche |
 
-✅ **Le fichier est libre.**
+⛔ **Le fichier est pris par Hermes — ne pas y écrire.**
 
 ---
 
