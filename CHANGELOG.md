@@ -5,6 +5,48 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.63.0] — 2026-09-30 · C1′
+
+**Les tokens du Design System B (spec `DEMANDE_C1_C2_C3_A_ZCODE.md`, décision
+Benjamin).** La forme, pas les chiffres : aucune donnée Stitch n'entre dans
+l'outil.
+
+### Modifié
+- **un seul jeu de valeurs** dans le `:root` de référence : les tokens DS B
+  (encre #000000, body #5C5D62, label #9A9A9A, bleu #006AB3, rouge CeramTec
+  #E30045, gamme gray-50→300, vert/ambre, radius 2px). Le vocabulaire historique
+  de l'outil (surface, ink-soft, border…) devient des **alias** de ces tokens —
+  aucune seconde source pour 16 000 lignes de CSS ;
+- **cinq polices embarquées supprimées** (Archivo, Manrope, Open Sans ×2,
+  Public Sans — ~112 Ko) : une seule sans-serif système
+  (Roboto/-apple-system/BlinkMacSystemFont/Arial) + IBM Plex Mono embarquée pour
+  tous les chiffres. L'écran n'a plus une tête différente selon le poste ;
+- **une seule famille de formes** : 48 `border-radius` de surfaces passés au
+  token (2px, quasi-plate) ; les pastilles pleines (dots ronds, pills de statut)
+  gardent 50%/999px — rond est leur nature, le DS B fait de même pour ses
+  cercles de boutons ;
+- **l'impression dérive des mêmes accents** (bleu #005C99, rouge #B8003A =
+  versions DS B assombries pour le papier) ;
+- le **mode nuit reste lui-même** (blocs `prefers-color-scheme`/`data-theme`
+  inchangés) ; les **rapports clients exportés** restent des documents
+  autonomes avec leurs propres `:root` — par conception (aucune ressource
+  externe, ils partent chez le client).
+
+### Correction de la spec (signalée au journal)
+- le « 3ᵉ `:root` à plat qui écrase 14 variables » (L4339) est en réalité le
+  `<style>` du **template du rapport d'essai exporté** — un document autonome
+  généré par JS, qui n'écrase rien à l'écran. Il reste tel quel.
+
+### Vérification
+- check C1 (script, commentaires exclus) : 1 déclaration `--blue` écran +
+  2 mode nuit + 1 print ; **3** `@font-face` réels (1 famille mono × 3 graisses
+  — l'écart au « ≤2 » littéral de la spec est documenté : 2 FAMILLES, zéro
+  réseau) ; **0** `border-radius` de surface en dur ;
+- **contre-regard** : panne injectée (radius 10px en dur) → le check la voit
+  (0→1) → restauré **par copie sauvegardée** (leçon du Tour 20), octet pour
+  octet ;
+- 351/351 tests, tout vert — le moteur n'a pas bougé.
+
 ## [4.62.0] — 2026-09-30
 
 **L'outil s'ouvre sur l'overview** (décision directe de Benjamin : « j'aimerais
