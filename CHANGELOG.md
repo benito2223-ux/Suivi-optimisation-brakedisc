@@ -5,6 +5,42 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.60.0] — 2026-09-30
+
+**L'écran d'accueil : la carte en tuiles de LIGNES** (sujet assigné par Hermes au
+Tour 13 : « ce qui manque n'est plus du calcul, c'est du dessin »). Une tuile = une
+ligne entière (EMAG 1 avec ses postes et ses références), sur la grammaire visuelle
+de la carte atelier (`ca-*`). La tuile lit tout dans `gainLigne()` (4.59) : elle ne
+recalcule rien.
+
+### Ajouté
+- **bouton « Accueil »** en tête de la barre dépliée ; panneau `accueilPanel` ;
+- **`etatLigne(gainLigne)`** — la pastille déduite des comptages, **priorité à
+  l'attention** : à chiffrer (l'invitation ouverte H1-a) > essais en cours > gagné
+  (« n postes gagnés — en production ») > jamais travaillé. Mot + couleur, jamais
+  la couleur seule. La maquette hésitait (EMAG 1 vert avec des essais en cours) :
+  cette règle est la seule cohérente avec `prochaineEtapePoste()` ;
+- **`accueilTuileHTML(gainLigne)`** — deux chiffres max (D2) en deux blocs
+  distincts étiquetés (§3.4) ; coût **étiqueté dominante** (Q6-B) avec `+n réf.` ;
+  barre vers la cible sur la même dominante ; à-faire = les étapes déduites des
+  postes non gagnés, deux en clair ; **Q10** : sans volume annuel → « — volume
+  annuel à saisir », aucun coût silencieux ; ligne jamais travaillée → aucun
+  chiffre, l'invitation seulement ;
+- **porte R3** : « Voir l'atelier → » (et la tuile entière, clic/Entree/Espace)
+  ouvre la carte atelier — la descente ligne → machines → fiche → poste ;
+- **recette A2** sur l'écran : lignes actionnables / total, déclaration « écran
+  creux » sous 1/3 ;
+- `gainLigne` rend `volumeDominante` (la tuile ne recalcule pas, D3).
+
+### Décisions tracées
+- la pastille ligne n'est pas une décision figée au code : la règle est écrite
+  dans `etatLigne()` et documentée — contestable devant Benjamin avec l'écran
+  sous les yeux ;
+- l'écran d'OUVERTURE par défaut reste inchangé (différé après recette A2,
+  décision 4.51.2).
+
+326 → 340 tests, tout vert. Aucun push, aucun déploiement.
+
 ## [4.59.0] — 2026-09-30
 
 **Les fondations de l'écran d'accueil : `gainLigne()` et l'extension de

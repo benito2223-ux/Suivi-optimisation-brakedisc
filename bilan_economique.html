@@ -1556,6 +1556,7 @@ body.atelier-on{overflow:hidden;}
            pour trouver l information »). Ils deviennent visibles, dans l'ordre où on les
            consulte : l'atelier, le tableau de bord, la synthèse, le classeur de Matis. -->
       <div class="toolbar-ecrans">
+        <button class="ghost" id="accueilBtn" title="L’usine en tuiles de lignes : une ligne = une tuile, avec ses gains, son coût pièce et ce qui reste à faire"><svg class="icon" viewBox="0 0 18 18"><rect x="2.5" y="2.5" width="6" height="6" rx="1"/><rect x="9.5" y="2.5" width="6" height="6" rx="1"/><rect x="2.5" y="9.5" width="6" height="6" rx="1"/><rect x="9.5" y="9.5" width="6" height="6" rx="1"/></svg>Accueil</button>
         <button class="ghost" id="carteBtn" title="L’atelier en un coup d’œil : une tuile par machine, avec le gain déjà acté et ce qui reste à faire"><svg class="icon" viewBox="0 0 18 18"><rect x="2.5" y="3" width="5" height="5" rx="1"/><rect x="10.5" y="3" width="5" height="5" rx="1"/><rect x="2.5" y="10.5" width="5" height="4" rx="1"/><rect x="10.5" y="10.5" width="5" height="4" rx="1"/></svg>Carte atelier</button>
         <button class="ghost" id="dashboardBtn" title="Toutes les lignes, références et OP : avancement des optimisations et gains cumulés"><svg class="icon" viewBox="0 0 18 18"><rect x="2.5" y="2.5" width="5.5" height="7" rx="1"/><rect x="10" y="2.5" width="5.5" height="4" rx="1"/><rect x="2.5" y="11.5" width="5.5" height="4" rx="1"/><rect x="10" y="8.5" width="5.5" height="7" rx="1"/></svg>Tableau de bord</button>
         <button class="ghost" id="syntheseBtn" title="Comparer tous les scénarios dans un tableau, et superposer leurs courbes de tendance"><svg class="icon" viewBox="0 0 18 18"><rect x="4" y="3" width="10" height="12" rx="1.5"/><path d="M6.5 7h5M6.5 10h5M6.5 13h3" stroke-linecap="round"/></svg>Vue de synthèse</button>
@@ -1925,6 +1926,7 @@ body.atelier-on{overflow:hidden;}
     <div class="panel-actions"><button class="primary" id="compareClose">Fermer</button></div>
   </div>
   <div class="panel panel-large" id="dashboardPanel" hidden></div>
+  <div class="panel panel-large" id="accueilPanel" hidden></div>
   <div class="panel panel-large" id="cartePanel" hidden></div>
   <div class="panel panel-large" id="matisPanel" hidden></div>
   <div class="panel panel-large" id="matisDetailPanel" hidden></div>
@@ -2191,6 +2193,24 @@ body.atelier-on{overflow:hidden;}
 .ca-acte small, .ca-projete small, .ca-invite small{ font-size:9.5px; font-weight:500; letter-spacing:.04em; color:var(--ink-faint); }
 .ca-invite{ font-family:var(--font-mono); font-size:13px; font-weight:600; color:var(--amber); line-height:1.15; }
 .ca-vide{ font-family:var(--font-mono); font-size:13px; color:var(--ink-faint); }
+
+/* ── v4.60 — l'écran d'accueil : tuiles de LIGNES sur la grammaire de la carte ── */
+.al-grille{ grid-template-columns:repeat(auto-fill,minmax(252px,1fr)); }
+/* le coût étiqueté dominante (Q6-B) : le chiffre et son étiquette vont ensemble */
+.al-cout{ font-family:var(--font-body); font-size:12px; color:var(--ink-soft); line-height:1.3; }
+.al-cout b{ font-family:var(--font-mono); font-size:13.5px; color:var(--ink); font-variant-numeric:tabular-nums; }
+.al-manque{ font-family:var(--font-mono); font-size:11px; color:var(--ink-faint); }
+.al-manque span{ font-family:var(--font-body); font-style:italic; }
+/* le à-faire : deux étapes max en clair, déduites de l'état (jamais stockées) */
+.al-afaire{ display:flex; flex-direction:column; gap:1px; margin-top:3px; padding:6px 8px;
+  background:var(--surface-alt); border:1px solid var(--border); border-radius:var(--radius);
+  font-size:11px; color:var(--ink); line-height:1.35; }
+.al-afaire-l{ font-family:var(--font-mono); font-size:9px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--ink-faint); font-weight:600; margin-bottom:1px; }
+.al-afaire-plus{ color:var(--ink-faint); font-style:italic; }
+/* la recette A2 de l'écran : il dit s'il sert */
+.al-recette{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint); margin-top:10px; }
+.al-recette-creuse{ color:var(--amber); font-weight:600; }
 
 /* la barre prod → cible : le chiffre que la hiérarchie regarde */
 .ca-chemin{ display:flex; align-items:center; gap:6px; margin-top:3px; }
@@ -11037,6 +11057,7 @@ document.getElementById("dashboardBtn").addEventListener("click", () => {
 });
 /* v4.51.2 — la carte atelier s’ouvre sur le projet actif (H1-b) ; son filtre lui est propre. */
 document.getElementById("carteBtn").addEventListener("click", ouvrirCarte);
+document.getElementById("accueilBtn").addEventListener("click", ouvrirAccueil);
 /* v4.55.0 — lecture du classeur Matis : constat, jamais un import (option C). */
 document.getElementById("matisBtn").addEventListener("click", ouvrirMatis);
 /* v4.14 — palette de recherche : bouton du menu, frappe directe au clavier (Ctrl+K),
@@ -11410,6 +11431,12 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.60.0", date:"30/09/2026", points:[
+    "<b>Le premier écran est là : « Accueil », l’usine par lignes.</b> Un bouton « Accueil » ouvre la grille : une tuile = une ligne entière (EMAG 1 avec ses références et ses postes), avec le gain déjà acté et celui en cours dans deux blocs séparés, le coût pièce <b>étiqueté par la référence dominante</b> (« 356x26 : 0,038 €/pce · +1 réf. »), le chemin vers la cible, et <b>le à-faire en toutes lettres</b> (« OP20 — Cible du site posée, aucune mesure »).",
+    "<b>La pastille dit l’action la plus urgente.</b> Un poste à chiffrer passe avant tout ; sinon les essais en cours ; sinon la production gagnée ; sinon l’attente. Toujours le mot avec la couleur.",
+    "<b>Sans volume annuel, la tuile le dit</b> : « — volume annuel à saisir », jamais un coût choisi en silence. Et une ligne jamais travaillée ne montre aucun chiffre — son invitation seulement.",
+    "« Voir l’atelier → » descend vers la carte des machines : ligne → machines → fiche → poste, sans cul-de-sac. L’écran affiche sa propre recette (lignes actionnables / total) et se déclare creux sous un tiers — il dit s’il sert."
+  ]},
   { version:"4.59.0", date:"30/09/2026", points:[
     "<b>Les fondations de l’écran d’accueil sont posées.</b> Une nouvelle fonction <b>gainLigne</b> résume une ligne entière — EMAG 1 avec ses quatre postes — en un seul objet : gains acté et en cours, états comptés, coût pièce <b>étiqueté par la référence dominante</b>, et la prochaine étape de chaque poste. Aucun écran nouveau pour l’instant : c’est le calcul, testé, qui alimentera les tuiles."
   ]},
@@ -11853,7 +11880,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.59.0";
+const TOOL_VERSION = "4.60.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -12178,9 +12205,14 @@ function gainLigne(ligne, lignesSeptFons){
   const refDominante = (ligne.references || []).slice()
     .sort((a, b) => (volumeAnnuel(b, (b.ops || [])[0] && b.ops[0].config) || 0)
                   - (volumeAnnuel(a, (a.ops || [])[0] && a.ops[0].config) || 0))[0] || null;
+  /* v4.60 — le volume de la dominante, rendu avec elle : la tuile n'a pas à
+     recalculer (D3), et « pas de volume » devient un cas LISIBLE (Q10) au lieu
+     du choix arbitraire silencieux signalé par Hermes au Tour 13. */
+  const volumeDominante = refDominante
+    ? volumeAnnuel(refDominante, (refDominante.ops || [])[0] && refDominante.ops[0].config) : null;
   const coutPiece = refDominante ? pieceCPPComplet(refDominante, ligne) : null;
   const etapes = postes.map(t => ({ opCode: t.poste.opCode, etat: t.etat, texte: t.etape }));
-  return { ligne, postes, gainActe, gainProjete, etats, nonChiffres, refDominante, coutPiece, etapes };
+  return { ligne, postes, gainActe, gainProjete, etats, nonChiffres, refDominante, volumeDominante, coutPiece, etapes };
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
@@ -13099,6 +13131,140 @@ function renderCarte(){
 
 /* l'entrée : le bouton de la barre d'outils ouvre la carte (v4.51.2) */
 function ouvrirCarte(){ renderCarte(); ouvrirPanneau("cartePanel"); }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   v4.60.0 — L'ÉCRAN D'ACCUEIL : la carte en tuiles de LIGNES (le « premier écran »)
+
+   Une tuile = une ligne entière (EMAG 1 avec ses postes et ses références), pas
+   une machine — la machine, c'est la carte atelier (couche 0, 4.51.2). La tuile
+   lit TOUT dans gainLigne() (4.59) : elle ne recalcule rien (D3, un niveau
+   au-dessus). La porte de sortie : « Voir l'atelier → » ouvre la carte atelier —
+   la descente naturelle ligne → machines → fiche → poste, jamais de porte morte.
+
+   Trois décisions tracées :
+   · la PASTILLE de la ligne se déduit des comptages, PRIORITÉ À L'ATTENTION :
+     à chiffrer (la cible est posée, la mesure manque — l'invitation ouverte
+     H1-a) > essais en cours > gagné > jamais travaillé. La maquette hésitait
+     (EMAG 1 vert avec des essais en cours) ; cette règle est la seule qui soit
+     cohérente avec prochaineEtapePoste() : la pastille dit l'action la plus
+     urgente, le gain parle en dessous. MOT + couleur, jamais la couleur seule ;
+   · le COÛT est étiqueté par la référence dominante (Q6-B, Benjamin) :
+     « 356x26 : 0,63 €/pce · +1 réf. » — jamais un coût multi-références nu ;
+   · sans VOLUME ANNUEL : « — » + « volume annuel à saisir » (Q10, Benjamin).
+     C'est le piège signalé par Hermes au Tour 13 : sans volume, la dominante
+     serait un choix arbitraire silencieux — l'écran le dit au lieu de le cacher.
+   La RECETTE A2 vit sur l'écran : tuiles actionnables / total, alerte creuse
+   sous 1/3 — un écran qui ne sert pas doit le dire (leçon 4.51.2). */
+
+/* la pastille de la ligne : un état ET son libellé, déduits des comptages */
+function etatLigne(gl){
+  const n = gl.etats;
+  if(n.aChiffrer > 0) return { etat: "aChiffrer", label: `${n.aChiffrer} poste${n.aChiffrer > 1 ? "s" : ""} à chiffrer` };
+  if(n.encours > 0)   return { etat: "encours",   label: `Essais en cours` };
+  if(n.gagne > 0)     return { etat: "gagne",     label: `${n.gagne} poste${n.gagne > 1 ? "s" : ""} gagné${n.gagne > 1 ? "s" : ""} — en production` };
+  /* une ligne déclarée SANS machines (cas réel : Weisser/PCI hors périmètre) ne
+     dit pas « 0 poste ouvert » — elle dit ce qui manque : les machines */
+  if((gl.postes || []).length === 0) return { etat: "opportunite", label: `machines à déclarer` };
+  return { etat: "opportunite", label: `${n.opportunite} poste${n.opportunite > 1 ? "s" : ""} ouvert${n.opportunite > 1 ? "s" : ""}` };
+}
+
+function accueilTuileHTML(gl){
+  const e = CARTE_ETATS[etatLigne(gl).etat];
+  const badge = etatLigne(gl).label;
+  const l = gl.ligne;
+
+  /* le sous-titre : les références de la ligne (3 max, +n au-delà), puis les OP
+     déclarées — la ligne se présente comme Matis la pense. */
+  const refsNoms = (l.references || []).map(r => r.nom).filter(Boolean);
+  const refsTxt = refsNoms.length
+    ? refsNoms.slice(0, 3).join(" · ") + (refsNoms.length > 3 ? ` +${refsNoms.length - 3} réf.` : "")
+    : "aucune référence déclarée";
+
+  /* le pouls : deux chiffres, jamais plus (D2). Deux blocs DISTINCTS et
+     étiquetés — acté et en cours ne se mélangent pas (§3.4). Un gain nul ne
+     s'affiche pas : « 0 € » voudrait dire « rien à gagner » (§3.5). */
+  let pouls = "";
+  if(gl.gainActe > 0) pouls += `<span class="ca-acte">+${fmtEuroCourt(gl.gainActe)}<small>/an acté</small></span>`;
+  if(gl.gainProjete > 0) pouls += `<span class="ca-projete">+${fmtEuroCourt(gl.gainProjete)}<small>/an en cours</small></span>`;
+
+  /* le coût étiqueté dominante (Q6-B) — ou son absence DITE (Q10) */
+  let cout = "";
+  if(!gl.volumeDominante){
+    cout = `<div class="al-cout al-manque">— <span>volume annuel à saisir</span></div>`;
+  } else if(!gl.coutPiece){
+    cout = `<div class="al-cout al-manque">— <span>aucune opération chiffrée</span></div>`;
+  } else {
+    const autres = Math.max(0, (l.references || []).length - 1);
+    cout = `<div class="al-cout">${escapeAttr(gl.refDominante.nom)} : <b>${fmt(gl.coutPiece.prod, 3)} €/pce</b>`
+         + (autres > 0 ? ` <span class="ca-refs" title="${autres} autre(s) référence(s) sur cette ligne">+${autres} réf.</span>` : "")
+         + `</div>`;
+    if(gl.coutPiece.chemin !== null){
+      cout += `<div class="ca-chemin" title="Part du chemin vers la cible du site déjà parcourue sur la référence dominante">
+        <div class="ca-track"><div class="ca-fill" style="width:${Math.round(gl.coutPiece.chemin)}%"></div></div>
+        <span class="ca-pct">${Math.round(gl.coutPiece.chemin)} % · cible ${fmt(gl.coutPiece.cible, 3)} €</span></div>`;
+    }
+  }
+
+  /* le à-faire : les étapes des postes NON gagnés, deux max en clair — la
+     suite de prochaineEtapePoste() (4.54), déduite, jamais stockée. */
+  const aFaire = gl.etapes.filter(x => x.etat !== "gagne" && x.etat !== "opportunite");
+  const afTxt = aFaire.length
+    ? `<div class="al-afaire"><span class="al-afaire-l">À faire</span>${aFaire.slice(0, 2).map(x =>
+        `<span>${escapeAttr(x.opCode)} — ${escapeAttr(x.texte)}</span>`).join("")}`
+      + (aFaire.length > 2 ? `<span class="al-afaire-plus">+${aFaire.length - 2} autre${aFaire.length > 3 ? "s" : ""}</span>` : "")
+      + `</div>`
+    : "";
+
+  return `<div class="ca-tuile ${e.classe} al-tuile" data-ligne="${escapeAttr(l.id)}" tabindex="0" role="button" title="Voir cette ligne sur la carte atelier">
+    <div class="ca-tete"><span class="ca-titre">${escapeAttr(l.nom || "Ligne sans nom")}</span><span class="ca-etat">${escapeAttr(badge)}</span></div>
+    <div class="ca-ref-ligne">${escapeAttr(refsTxt)}</div>
+    <div class="ca-pouls">${pouls || '<span class="ca-vide">—</span>'}</div>
+    ${cout}
+    ${gl.etats.opportunite === (gl.postes || []).length && (gl.postes || []).length > 0 ? `<div class="ca-tentant">déclarée, jamais travaillée</div>` : ""}
+    ${afTxt}
+    <div class="ca-actions"><button class="primary small al-ouvrir" data-ligne="${escapeAttr(l.id)}">Voir l'atelier →</button></div>
+  </div>`;
+}
+
+function renderAccueil(){
+  const wrap = document.getElementById("accueilPanel");
+  if(!wrap) return;
+  const gls = lignes.map(l => gainLigne(l, LIGNES_SEPT_FONS));
+  const tuiles = gls.map(accueilTuileHTML).join("");
+
+  /* la recette A2 : l'écran dit s'il sert — actionnable = la pastille n'est pas
+     « ouvert ». Sous 1/3, il se déclare creux au lieu de se taire. */
+  const total = gls.length;
+  const actionnables = gls.filter(gl => etatLigne(gl).etat !== "opportunite").length;
+  const ratio = total ? actionnables / total : 0;
+  const recette = total
+    ? `<div class="al-recette ${ratio < 1/3 ? "al-recette-creuse" : ""}">`
+      + (ratio < 1/3 ? `Écran creux : ` : ``)
+      + `${actionnables} ligne${actionnables > 1 ? "s" : ""} actionnable${actionnables > 1 ? "s" : ""} sur ${total}`
+      + (ratio < 1/3 ? ` — moins d'un tiers : cet écran n'éclaire pas encore l'usine` : ``)
+      + `</div>`
+    : "";
+
+  wrap.innerHTML = `
+    <h3>Accueil — l'usine par lignes</h3>
+    <p class="panel-hint">Une tuile = une ligne entière, avec ses références et ses postes. Le gain déjà
+      acté et celui en cours vivent dans deux blocs séparés ; le coût pièce est celui de la référence
+      dominante, étiquetée. « Voir l'atelier → » descend vers les machines de la ligne.</p>
+    <div class="ca-grille al-grille">${tuiles}</div>
+    ${recette}
+    <div class="panel-actions"><button class="primary" id="alClose">Fermer</button></div>`;
+
+  const fermer = document.getElementById("alClose");
+  if(fermer) fermer.addEventListener("click", fermerPanneaux);
+  wrap.querySelectorAll(".al-ouvrir").forEach(btn =>
+    btn.addEventListener("click", ev => { ev.stopPropagation(); ouvrirCarte(); }));
+  wrap.querySelectorAll(".al-tuile").forEach(t => {
+    t.addEventListener("click", () => ouvrirCarte());
+    t.addEventListener("keydown", ev => { if(ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); ouvrirCarte(); } });
+  });
+}
+
+function ouvrirAccueil(){ renderAccueil(); ouvrirPanneau("accueilPanel"); }
 
 /* ── v4.53 — LIVRAISONS : l'objet que la hiérarchie lit (décision 3) ──────────
    Une livraison = un instantané FIGÉ des gains du plan, daté et nommé. Elle ne se
@@ -15352,6 +15518,89 @@ function runTests(){
       const glVide = gainLigne(lVide, [ { nom: "Weisser 1", machines: [ { code: "OP10", nom: "" } ] } ]);
       ok("gainLigne : une ligne déclarée jamais travaillée = opportunité, coût null (pas 0), aucune étape calculée en vain",
          [glVide.etats.opportunite, glVide.gainActe, glVide.coutPiece], [1, 0, null]);
+    }
+
+    /* ---- v4.60.0 — l'écran d'accueil : la carte en tuiles de LIGNES --------------
+       La tuile lit tout dans gainLigne() : elle ne recalcule rien (D3). La pastille
+       se déduit des comptages, PRIORITÉ À L'ATTENTION : à chiffrer > en cours >
+       gagné > jamais travaillé — cohérent avec prochaineEtapePoste(). Le coût est
+       étiqueté dominante (Q6-B) ; sans volume, l'absence est DITE (Q10) — le piège
+       du choix arbitraire silencieux signalé par Hermes au Tour 13. */
+    {
+      const opCfg = (extra) => Object.assign({}, defaultConfig, { volumeActif: true }, extra || {});
+      const LS3 = [ { nom: "EMAG 1", machines: [ { code: "OP10", nom: "Ébauche" }, { code: "OP20", nom: "Perçages" } ] } ];
+      const refM = normalizeReference({ id: "rM", nom: "356x26", productionAnnuelle: "100000", cibleCPP: "0.300", ops: [
+        { id: "oM10", nom: "OP10", config: opCfg(), scenarios: [
+          { id: "pM10", name: "Prod", baseline: true, outils: [ { id: "uM1", numero: "T1", logements: [ { id: "lM1", nom: "Bol", prix: 30, aretes: 8, charniere: 100 } ] } ] },
+          { id: "eM10", name: "Essai SL500", statut: "serie", outils: [ { id: "uM2", numero: "T2", logements: [ { id: "lM2", nom: "Bol", prix: 10, aretes: 8, charniere: 100 } ] } ] } ] },
+        { id: "oM20", nom: "OP20 Perçages", config: opCfg(), scenarios: [
+          { id: "pM20", name: "Prod", baseline: true, outils: [ { id: "uM3", numero: "T3", logements: [ { id: "lM3", nom: "Bol", prix: "", aretes: 8, charniere: "" } ] } ] } ] } ] });
+      const refN = normalizeReference({ id: "rN", nom: "304x28", productionAnnuelle: "50000", cibleCPP: "", ops: [
+        { id: "oN10", nom: "OP10", config: opCfg(), scenarios: [
+          { id: "pN10", name: "Prod", baseline: true, outils: [ { id: "uN1", numero: "T1", logements: [ { id: "lN1", nom: "Bol", prix: 40, aretes: 8, charniere: 100 } ] } ] },
+          { id: "eN10", name: "Essai SL506", outils: [ { id: "uN2", numero: "T2", logements: [ { id: "lN2", nom: "Bol", prix: 35, aretes: 8, charniere: 100 } ] } ] } ] } ] });
+      const lM = normalizeLigne({ id: "lM", nom: "EMAG 1", coutHoraire: "", references: [ refM, refN ] });
+
+      /* la pastille : priorité à l'attention */
+      const glM = gainLigne(lM, LS3);
+      ok("accueil : la pastille priorise l'attention — un poste à chiffrer passe avant le poste gagné",
+         [etatLigne(glM).etat, etatLigne(glM).label], ["aChiffrer", "1 poste à chiffrer"]);
+      ok("accueil : sans aChiffrer, la ligne en travail est « Essais en cours »",
+         etatLigne({ etats: { gagne: 1, encours: 2, aChiffrer: 0, opportunite: 0 } }).etat, "encours");
+      ok("accueil : tout gagné, plus rien en attente = « en production »",
+         etatLigne({ etats: { gagne: 3, encours: 0, aChiffrer: 0, opportunite: 0 } }).label, "3 postes gagnés — en production");
+      ok("accueil : rien que des postes ouverts = la ligne attend",
+         etatLigne({ etats: { gagne: 0, encours: 0, aChiffrer: 0, opportunite: 4 }, postes: [1,2,3,4] }).etat, "opportunite");
+      ok("accueil : une ligne déclarée sans machines dit « machines à déclarer », pas « 0 poste ouvert »",
+         etatLigne({ etats: { gagne: 0, encours: 0, aChiffrer: 0, opportunite: 0 }, postes: [] }).label, "machines à déclarer");
+
+      /* le volume de la dominante est rendu par gainLigne (D3 : la tuile ne recalcule pas) */
+      ok("accueil : gainLigne rend le volume de la dominante",
+         glM.volumeDominante, 100000);
+
+      /* le rendu de la tuile : tout y est, étiqueté */
+      const hM = accueilTuileHTML(glM);
+      ok("accueil : la tuile porte le badge MOT + classe (jamais la couleur seule)",
+         [hM.includes("ca-tuile achiffrer"), hM.includes("1 poste à chiffrer")], [true, true]);
+      ok("accueil : le coût est étiqueté dominante (Q6-B) avec son +n réf.",
+         [hM.includes("356x26 :"), hM.includes("€/pce"), hM.includes("+1 réf.")], [true, true, true]);
+      ok("accueil : les gains acté et en cours vivent dans deux blocs étiquetés (§3.4)",
+         [hM.includes("/an acté"), hM.includes("/an en cours")], [true, true]);
+      ok("accueil : le à-faire cite l'OP et l'étape déduite (4.54)",
+         [hM.includes("À faire"), hM.includes("OP20")], [true, true]);
+
+      /* Q10 : pas de volume = l'absence DITE, jamais un coût silencieux */
+      const refV = normalizeReference({ id: "rV", nom: "290x12", productionAnnuelle: "", cibleCPP: "", ops: [
+        { id: "oV10", nom: "OP10", config: opCfg(), scenarios: [
+          { id: "pV10", name: "Prod", baseline: true, outils: [ { id: "uV1", numero: "T1", logements: [ { id: "lV1", nom: "Bol", prix: 25, aretes: 8, charniere: 100 } ] } ] } ] } ] });
+      const lV2 = normalizeLigne({ id: "lV2", nom: "EMAG 1", coutHoraire: "", references: [ refV ] });
+      const glV2 = gainLigne(lV2, LS3);
+      const hV2 = accueilTuileHTML(glV2);
+      ok("accueil : sans volume annuel (Q10), la tuile dit « volume annuel à saisir » et ne montre AUCUN coût",
+         [glV2.volumeDominante, hV2.includes("volume annuel à saisir"), hV2.includes("€/pce")],
+         [null, true, false]);
+
+      /* l'opportunité pure : aucune chiffre, l'invitation */
+      const lO = normalizeLigne({ id: "lO", nom: "EMAG 1", references: [] });
+      const glO = gainLigne(lO, LS3);
+      const hO = accueilTuileHTML(glO);
+      ok("accueil : une ligne jamais travaillée ne montre aucun chiffre — son invitation seulement",
+         [hO.includes("déclarée, jamais travaillée"), hO.includes("/an"), hO.includes("€/pce")], [true, false, false]);
+
+      /* la recette A2 : l'écran dit s'il sert */
+      const lignesA = lignes;
+      try {
+        lignes = [ normalizeLigne({ id: "lX9", nom: "Ligne test isolement", references: [] }) ];
+        renderAccueil();
+        const creux = document.getElementById("accueilPanel").innerHTML;
+        ok("accueil : la recette A2 se déclare creuse quand rien n'est actionnable",
+           [creux.includes("Écran creux"), creux.includes("0 ligne actionnable")], [true, true]);
+        lignes = [ lM ];
+        renderAccueil();
+        const plein = document.getElementById("accueilPanel").innerHTML;
+        ok("accueil : une ligne avec du travail n'est pas creuse, la grille porte les tuiles",
+           [plein.includes("Écran creux"), plein.includes("al-tuile"), plein.includes("Voir l'atelier")], [false, true, true]);
+      } finally { lignes = lignesA; }
     }
 
     /* ---- v4.55.1 — le rattachement d'un scénario à un projet d'une autre ligne ----
