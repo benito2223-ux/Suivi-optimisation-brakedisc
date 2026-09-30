@@ -5,6 +5,47 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.59.0] — 2026-09-30
+
+**Les fondations de l'écran d'accueil : `gainLigne()` et l'extension de
+`pieceCPPComplet` (Q7).** Aucun écran nouveau — les deux fonctions pures testées qui
+alimenteront la carte en tuiles de lignes (maquette Hermes, Benjamin : option B).
+
+### Ajouté
+- **`gainLigne(ligne, lignesSeptFons)`** — le rollup de la ligne entière, D3 au
+  niveau au-dessus : consomme `gainPoste`/`etatTuile`/`prochaineEtapePoste`/
+  `pieceCPPComplet`, n'invente aucun second agrégat. Rend : les postes enrichis
+  (état + étape), `gainActe`/`gainProjete` sommés (blocs distincts, §3.4), le
+  comptage des états, `nonChiffres`, la **référence dominante** (plus gros volume
+  annuel), le **coût pièce étiqueté dominante** (Q6-B — jamais un coût multi-réfs
+  nu, §3.5), et les étapes en toutes lettres. L'état-LIGNE n'est pas décidé dans la
+  fonction : les comptages sont factuels, la pastille se choisira au tour UI devant
+  Benjamin ;
+- **`pieceCPPComplet(ref, ligne)`** — Q7 : la référence ET la ligne deviennent des
+  paramètres explicites, optionnels ; sans argument, comportement strictement
+  inchangé (référence ouverte, ligne active). La ligne est passée à `coutsDetail`
+  partout : le coût machine est celui du poste lu, plus jamais un repli silencieux
+  sur la ligne active (leçon de l'écart ×19, 4.51.1).
+
+316 → 326 tests, tout vert. Aucun push, aucun déploiement.
+
+## [4.58.1] — 2026-09-30
+
+**L'ambre de « pas encore saisi » passe en gris discret** (contestation d'Hermes,
+revue croisée du Tour 11 — suivie par Z Code : la règle « l'ambre ne parle que quand
+un œil est demandé » vient du Tour 4 lui-même). L'état de saisie des MABEC est un
+travail en cours, pas une divergence : sur un suivi où rien n'est encore saisi,
+l'ambre par ligne noierait le signal.
+
+### Modifié
+- « pas encore saisi dans le suivi » : gris italique discret (`--ink-faint`) au
+  lieu d'ambre ; l'invitation reste par le mot ;
+- **compteur agrégé dans l'en-tête du panneau** : « Rapprochement : 14 suivies ·
+  2 suivies ailleurs · 6 à saisir · 3 sans MABEC dans le classeur » — l'invitation
+  vit au niveau du panneau, où elle compte, pas dans un ambre par ligne.
+
+316 tests (le test rendu verrouille gris + compteur). Aucun push, aucun déploiement.
+
 ## [4.58.0] — 2026-09-30
 
 **Q4 : le MABEC raccordé au logement, et le classeur rapproché plaquette par

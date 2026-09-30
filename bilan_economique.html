@@ -2353,10 +2353,15 @@ body.atelier-on{overflow:hidden;}
 
 .mt-detail td{ font-size:11.5px; }
 .mt-detail .mt-op{ font-family:var(--font-mono); font-size:10px; color:var(--ink-faint); }
-/* 4.58 — le rapprochement MABEC du détail par outil : une phrase discrète, ambre
-   seulement sur « pas encore saisi » (l'invitation à compléter la fiche outil). */
+/* 4.58 — le rapprochement MABEC du détail par outil : une phrase discrète.
+   4.58.1 (contestation Hermes, Tour 11 — je la suis) : « pas encore saisi » passe en
+   gris discret, PAS en ambre. L'ambre est réservé aux vraies divergences (écart
+   classeur/suivi, production divergente) ; l'état de saisie des MABEC est un travail
+   en cours — sur un suivi où rien n'est encore saisi, l'ambre noierait le signal le
+   jour où on en aurait vraiment besoin. L'invitation reste : le mot, et le compteur
+   agrégé dans l'en-tête du panneau. */
 .mt-suivi{ font-family:var(--font-body); font-size:10.5px; color:var(--ink-soft); }
-.mt-suivi-absent{ color:var(--amber); font-weight:600; }
+.mt-suivi-absent{ color:var(--ink-faint); font-style:italic; }
 .mt-raz{ margin:0 0 12px; padding:10px 13px; background:var(--blue-bg); border:1px solid var(--blue);
   border-radius:var(--radius); font-family:var(--font-body); font-size:12.5px; line-height:1.5; color:var(--ink); }
 .mt-raz b{ color:var(--blue-dark); }
@@ -9023,8 +9028,15 @@ function outilsManquants(sc){
    horaire, l’écart entre les deux appels mesuré vaut x19 (0,7042 €/pièce contre 0,0375).
    Donc : pieceCPPComplet() ne s’appelle qu’en contexte référence ouverte ; la carte et
    l’A4 Mission consomment gainPoste(), qui passe la ligne explicitement. */
-function pieceCPPComplet(){
-  const ref = getActiveReference();
+function pieceCPPComplet(ref, ligne){
+  /* v4.59 (Q7) — la référence ET la ligne deviennent des paramètres explicites,
+     optionnels : sans argument, comportement strictement inchangé (référence ouverte,
+     ligne active). C'est la fin de la dépendance à l'état global pour les appelants
+     qui savent ce qu'ils lisent — la leçon de l'écart ×19 (4.51.1) : un coût lu dans
+     le mauvais contexte ne doit plus être possible. La ligne est passée à
+     coutsDetail partout : le coût machine est celui du poste, jamais un repli
+     silencieux sur la ligne active. */
+  ref = ref || getActiveReference();
   if(!ref) return null;
   const ops = [];
   ref.ops.forEach(op => {
@@ -9036,11 +9048,11 @@ function pieceCPPComplet(){
       const excel = (op.scenarios||[]).find(x => /base excel/i.test(x.name||""));
       const star = (op.scenarios||[]).find(x => x.baseline);
       const prodSc = star || excel || null;
-      const tBase = prodSc ? coutsDetail(prodSc).total : null;
+      const tBase = prodSc ? coutsDetail(prodSc, undefined, ligne).total : null;
       let meilleur = null;
       (op.scenarios||[]).forEach(sc => {
         if(prodSc && sc.id === prodSc.id) return;
-        const t = coutsDetail(sc).total;
+        const t = coutsDetail(sc, undefined, ligne).total;
         if(t === null) return;
         if(!meilleur || t < meilleur.cout) meilleur = { sc, cout: t };
       });
@@ -11398,6 +11410,12 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.59.0", date:"30/09/2026", points:[
+    "<b>Les fondations de l’écran d’accueil sont posées.</b> Une nouvelle fonction <b>gainLigne</b> résume une ligne entière — EMAG 1 avec ses quatre postes — en un seul objet : gains acté et en cours, états comptés, coût pièce <b>étiqueté par la référence dominante</b>, et la prochaine étape de chaque poste. Aucun écran nouveau pour l’instant : c’est le calcul, testé, qui alimentera les tuiles."
+  ]},
+  { version:"4.58.1", date:"30/09/2026", points:[
+    "<b>Une couleur qui ne crie plus.</b> Dans le détail du classeur, « pas encore saisi » s’affiche désormais en gris discret, et l’en-tête du panneau résume le rapprochement : « 14 suivies · 6 à saisir ». L’ambre reste réservé aux vraies divergences — écart classeur/suivi, production divergente — pour qu’il garde son poids le jour où il parlera."
+  ]},
   { version:"4.58.0", date:"30/09/2026", points:[
     "<b>Le MABEC trouve sa place dans la fiche outil.</b> Le champ « code article » du logement devient explicitement <b>MABEC (code article)</b> — saisissez le numéro d’article du classeur tel quel (ex. IM02 209 560) : c’est lui qui relie le suivi au classeur de consommations.",
     "<b>Et la convention d’outillage est écrite noir sur blanc.</b> N° outil = le porte-outil (T517) ; les positions D1, D2 = un logement chacune ; le correcteur d’outil reste pour les mono-positions. Chaque champ le rappelle au survol.",
@@ -11835,7 +11853,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.58.0";
+const TOOL_VERSION = "4.59.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -12123,6 +12141,46 @@ function etatTuile(poste){
   if(poste.essaiOuvert) return "encours";
   if(poste.cibleCPP !== null && poste.cibleCPP > 0) return "aChiffrer";
   return "opportunite";
+}
+
+/* ═══ v4.59.0 — gainLigne : la ligne ENTIÈRE, rollup de ses postes (Q6-B) ══════════
+   La tuile-ligne de l'écran d'accueil (maquette Hermes, Benjamin : option B) lit
+   TOUT ici — elle ne recalcule rien. La règle D3 s'applique au niveau au-dessus :
+   ce rollup consomme gainPoste()/etatTuile()/prochaineEtapePoste()/pieceCPPComplet(),
+   les sources déjà testées, et n'invente aucun second agrégat.
+
+   Le coût pièce est ÉTIQUETÉ (décision Benjamin, Q6-B) : c'est celui de la référence
+   DOMINANTE de la ligne — la plus gros volume. Un coût multi-références sans étiquette
+   serait un chiffre mensonger (§3.5). L'état de la ligne n'est PAS décidé ici : la
+   fonction rend les comptages factuels, la pastille se choisira au tour UI de la
+   carte, devant Benjamin, avec des captures — on ne déduit pas en silence ce qui
+   se présente.
+
+   Rend { ligne, postes[t], gainActe, gainProjete, etats{gagne,encours,aChiffrer,
+   opportunite}, nonChiffres, refDominante, coutPiece, etapes[{opCode,etat,texte}] } */
+function gainLigne(ligne, lignesSeptFons){
+  const postes = (postesLigne(ligne, lignesSeptFons) || []).map(p => {
+    const poste = gainPoste(ligne, p.code, lignesSeptFons);
+    const etat = etatTuile(poste);
+    return { poste, etat, refs: poste.refs || [],
+             etape: prochaineEtapePoste({ poste, etat, refs: poste.refs || [] }) };
+  });
+  const etats = { gagne: 0, encours: 0, aChiffrer: 0, opportunite: 0 };
+  let gainActe = 0, gainProjete = 0, nonChiffres = 0;
+  postes.forEach(t => {
+    etats[t.etat]++;
+    gainActe += t.poste.gainActe || 0;
+    gainProjete += t.poste.gainProjete || 0;
+    nonChiffres += t.poste.nonChiffres || 0;
+  });
+  /* la dominante de la ligne : le plus gros volume ANNUEL — même critère que la
+     carte pour la dominante d'un poste (4.51.2), un niveau au-dessus */
+  const refDominante = (ligne.references || []).slice()
+    .sort((a, b) => (volumeAnnuel(b, (b.ops || [])[0] && b.ops[0].config) || 0)
+                  - (volumeAnnuel(a, (a.ops || [])[0] && a.ops[0].config) || 0))[0] || null;
+  const coutPiece = refDominante ? pieceCPPComplet(refDominante, ligne) : null;
+  const etapes = postes.map(t => ({ opCode: t.poste.opCode, etat: t.etat, texte: t.etape }));
+  return { ligne, postes, gainActe, gainProjete, etats, nonChiffres, refDominante, coutPiece, etapes };
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
@@ -12506,6 +12564,27 @@ function matisVueHTML(){
 function matisDetailHTML(){
   if(!matisLecture) return "";
   const couples = (matisLecture.couples || []).filter(c => c.aProduction);
+  /* 4.58.1 — le rapprochement résumé au niveau du panneau : c'est ICI que vit
+     l'invitation (contestation Hermes Tour 11), pas dans un ambre par ligne.
+     Le gris discret par ligne dit « à saisir », le compteur dit combien il en reste. */
+  let nMatch = 0, nAilleurs = 0, nAbsent = 0, nSans = 0;
+  couples.forEach(c => {
+    const r = matisRapproche(c);
+    c.outils.forEach(o => {
+      const st = matisRapprocheMabec(o, r.ligne).statut;
+      if(st === "match") nMatch++;
+      else if(st === "ailleurs") nAilleurs++;
+      else if(st === "absent") nAbsent++;
+      else nSans++;
+    });
+  });
+  const parts = [];
+  if(nMatch) parts.push(`${nMatch} suivie${nMatch > 1 ? "s" : ""}`);
+  if(nAilleurs) parts.push(`${nAilleurs} suivie${nAilleurs > 1 ? "s" : ""} ailleurs`);
+  if(nAbsent) parts.push(`<b>${nAbsent} à saisir</b>`);
+  if(nSans) parts.push(`${nSans} sans MABEC dans le classeur`);
+  const recapRap = parts.length
+    ? ` <b>Rapprochement :</b> ${parts.join(" · ")}.` : "";
   const blocs = couples.map(c => {
     const r = matisRapproche(c);
     return `
@@ -12535,8 +12614,8 @@ function matisDetailHTML(){
       position (« T517 D2 » = porte-outil T517, position D2), son article, son MABEC. La
       colonne « Dans le suivi » dit si cette plaquette est suivie chez nous : <b>« suivi :
       T517 · D1 (OP10) »</b> = le logement existe ; <b>« suivi ailleurs »</b> = la même
-      plaquette sert sur un autre porte-outil, c'est normal ; <b>« pas encore saisi »</b> =
-      à compléter dans la fiche outil, champ MABEC du logement.</p>
+      plaquette sert sur un autre porte-outil, c'est normal ; <i>« pas encore saisi »</i> =
+      à compléter dans la fiche outil, champ MABEC du logement.${recapRap}</p>
     ${blocs || `<p class="panel-hint">Aucun couple avec production relevée.</p>`}
     <div class="panel-actions"><button class="primary" id="mtDetailClose">Fermer</button></div>`;
 }
@@ -15208,9 +15287,71 @@ function runTests(){
         const htmlDet = matisDetailHTML();
         ok("matis : le détail par outil porte la colonne « Dans le suivi » et la phrase de rapprochement",
            [htmlDet.includes("Dans le suivi"), htmlDet.includes("suivi : T517 · D1 (OP10)")], [true, true]);
-        ok("matis : l'invitation ambre apparaît sur un MABEC non saisi",
-           [htmlDet.includes("mt-suivi-absent"), htmlDet.includes("pas encore saisi")], [true, true]);
+        ok("matis : « pas encore saisi » reste dit, en gris (4.58.1 — plus d'ambre), et le compteur d'en-tête agrège l'invitation",
+           [htmlDet.includes("mt-suivi-absent"), htmlDet.includes("pas encore saisi"),
+            htmlDet.includes("Rapprochement :"), htmlDet.includes("à saisir")], [true, true, true, true]);
       } finally { lignes = lignesC; matisLecture = lectureC; }
+    }
+
+    /* ---- v4.59.0 — gainLigne (le rollup par ligne, Q6-B) + pieceCPPComplet étendu (Q7) ----
+       La tuile-ligne de l'écran d'accueil lira TOUT ici sans recalculer. D3 au niveau
+       au-dessus : ce rollup consomme gainPoste/etatTuile/prochaineEtapePoste/pieceCPPComplet
+       et n'invente aucun second agrégat. L'état-ligne n'est PAS décidé dans la fonction —
+       les comptages sont factuels, la pastille se choisira au tour UI, devant Benjamin. */
+    {
+      const opCfg = (extra) => Object.assign({}, defaultConfig, { volumeActif: true }, extra || {});
+      const LS2 = [ { nom: "EMAG 1", machines: [
+        { code: "OP10", nom: "Ébauche" }, { code: "OP20", nom: "Perçages" },
+        { code: "OP30", nom: "Finition" }, { code: "OP40", nom: "Fraisurage" } ] } ];
+      const refG = normalizeReference({ id: "rG", nom: "356x26", productionAnnuelle: "100000", cibleCPP: "0.300", ops: [
+        { id: "oG10", nom: "OP10 Ebauche", config: opCfg(), scenarios: [
+          { id: "pG10", name: "Prod", baseline: true, outils: [ { id: "uG1", numero: "T1", logements: [ { id: "lG1", nom: "Bol", prix: 30, aretes: 8, charniere: 100 } ] } ] },
+          { id: "eG10", name: "Essai SL500", statut: "serie", outils: [ { id: "uG2", numero: "T2", logements: [ { id: "lG2", nom: "Bol", prix: 10, aretes: 8, charniere: 100 } ] } ] } ] },
+        { id: "oG20", nom: "OP20 Perçages", config: opCfg(), scenarios: [
+          { id: "pG20", name: "Prod", baseline: true, outils: [ { id: "uG3", numero: "T3", logements: [ { id: "lG3", nom: "Bol", prix: "", aretes: 8, charniere: "" } ] } ] } ] },
+        { id: "oG30", nom: "OP30", config: opCfg(), scenarios: [] } ] });
+      const refP = normalizeReference({ id: "rP", nom: "304x28", productionAnnuelle: "50000", cibleCPP: "", ops: [
+        { id: "oP10", nom: "OP10", config: opCfg(), scenarios: [
+          { id: "pP10", name: "Prod", baseline: true, outils: [ { id: "uP1", numero: "T1", logements: [ { id: "lP1", nom: "Bol", prix: 40, aretes: 8, charniere: 100 } ] } ] } ] } ] });
+      const lG = normalizeLigne({ id: "lG", nom: "EMAG 1", coutHoraire: "", references: [ refG, refP ] });
+
+      /* l'extension Q7 : lecture explicite, la ligne passe au coût machine */
+      const cp = pieceCPPComplet(refG, lG);
+      ok("gainLigne : pieceCPPComplet(ref, ligne) lit LA référence demandée, cible comprise",
+         [cp && cp.ref.id, cp && cp.cible, cp && cp.prod], ["rG", 0.3, 0.0375]);
+      ok("gainLigne : les OP non chiffrables restent listées — l'écart se voit, il ne disparaît pas",
+         [cp.nonChiffrees.length, cp.nonChiffrees.map(o => o.op.nom)],
+         [2, ["OP20 Perçages", "OP30"]]);
+      /* le comportement sans argument se teste en posant l'état actif soi-même :
+         le harnais ne garantit PAS ce que les blocs précédents ont laissé dans les
+         actifs — un test qui dépend de cet héritage est un test fragile */
+      const lAv = lignes, alAv = activeLigneId, arAv = activeReferenceId;
+      lignes = [lG]; activeLigneId = "lG"; activeReferenceId = "rG";
+      const cpSans = pieceCPPComplet();
+      lignes = lAv; activeLigneId = alAv; activeReferenceId = arAv;
+      ok("gainLigne : sans arguments, pieceCPPComplet retombe sur le couple ligne × référence actif (inchangé)",
+         cpSans && cpSans.ref.id, "rG");
+
+      /* le rollup */
+      const gl = gainLigne(lG, LS2);
+      ok("gainLigne : quatre machines déclarées = quatre postes, même jamais travaillées",
+         gl.postes.map(t => t.poste.opCode), ["OP10", "OP20", "OP30", "OP40"]);
+      ok("gainLigne : les états se comptent — 1 gagné, 2 à chiffrer (cible posée), 1 opportunité (OP40 jamais servie)",
+         gl.etats, { gagne: 1, encours: 0, aChiffrer: 2, opportunite: 1 });
+      ok("gainLigne : le gain acté du poste remonte tel quel (2 500 €/an, périmètre commun)",
+         gl.gainActe, 2500, 1e-6);
+      ok("gainLigne : la dominante est le plus gros volume (356x26), pas la première saisie",
+         gl.refDominante.nom, "356x26");
+      ok("gainLigne : le coût pièce est ÉTIQUETÉ dominante (Q6-B) — jamais un coût multi-réfs nu",
+         [gl.coutPiece.ref.nom, gl.coutPiece.prod, gl.coutPiece.enCours], ["356x26", 0.0375, 0.0125]);
+      ok("gainLigne : chaque poste porte sa prochaine étape en toutes lettres (4.54) — rien à inventer pour la tuile",
+         [gl.etapes.length, gl.etapes.map(e => e.texte).some(t => String(t).includes("maintenir"))],
+         [4, true]);
+      /* une ligne jamais travaillée : des postes, aucun gain, AUCUN coût — pas un 0 mensonger */
+      const lVide = normalizeLigne({ id: "lV", nom: "Weisser 1", references: [] });
+      const glVide = gainLigne(lVide, [ { nom: "Weisser 1", machines: [ { code: "OP10", nom: "" } ] } ]);
+      ok("gainLigne : une ligne déclarée jamais travaillée = opportunité, coût null (pas 0), aucune étape calculée en vain",
+         [glVide.etats.opportunite, glVide.gainActe, glVide.coutPiece], [1, 0, null]);
     }
 
     /* ---- v4.55.1 — le rattachement d'un scénario à un projet d'une autre ligne ----
