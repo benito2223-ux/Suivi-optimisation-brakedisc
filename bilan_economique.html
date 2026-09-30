@@ -2883,6 +2883,21 @@ function projetContientScenario(pj, ligneId, referenceId, opId, scenarioId){
    peut légitimement traverser les lignes (une plaquette testée sur deux machines) ; mais
    un projet « coût EMAG 1 » qui se retrouve avec un scénario de HESSAPP est presque
    toujours un étiquetage accidentel — d'où l'avertissement au clic et l'info-bulle. */
+/* v4.55.1 — la REGLE du rattachement, extraite en fonction pure pour etre testee.
+   Elle ne dit pas « quel projet a tel nom » (un nom est du texte libre) mais
+   « ce projet, dans les faits, accepte-t-il cette ligne ? ». Trois issues :
+     - "ok"        : la ligne fait deja partie du projet, ou le projet contient des
+                     scenarios de plusieurs lignes (donc il est volontairement ouvert) ;
+     - "premier"   : le projet est vide -- ce serait son premier scenario ;
+     - "refuse"    : le projet est mono-ligne et ce n'est pas la ligne courante. */
+function projetAccepteLigne(pj, nomLigneCourante, ligneCourante){
+  const ses = lignesDuProjet(pj);
+  if(!ligneCourante) return "ok";
+  if(ses.includes(ligneCourante.nom)) return "ok";
+  if(!ses.length) return "premier";
+  return "refuse";
+}
+
 function lignesDuProjet(pj){
   const noms = new Set();
   (pj.tags || []).forEach(t => {
@@ -6939,20 +6954,43 @@ function renderTabs(){
         const pj = projets.find(x => x.id === pill.getAttribute("data-projet"));
         const scId = b.getAttribute("data-tab");
         if(!pj) return;
-        /* v4.29 — rattacher un scénario à un projet d'une AUTRE ligne est possible (un
-           projet peut légitimement traverser les lignes) mais jamais silencieux : le
-           projet « coût EMAG 1 » qui se retrouve avec un scénario de HESSAPP fausse sa
-           lecture. On avertit, on ne bloque pas — la philosophie v4.5. */
+        /* v4.55.1 — rattacher un scénario d'une AUTRE LIGNE à un projet est désormais
+           BLOQUÉ (décision Benjamin, 29/09 : « Coût et qualité EMAG 1 » est un projet
+           EMAG 1, rien d'autre).
+
+           Le trou corrigé : avant, la règle n'avertissait que si le projet contenait
+           DÉJÀ des scénarios d'une autre ligne. Un projet VIDE passait donc en silence,
+           et son nom (« … EMAG 1 ») annonçait une restriction que rien n'appliquait —
+           exactement le cas rencontré.
+
+           On ne se fie pas au NOM du projet (c'est du texte libre) mais au FAIT mesuré :
+           si le projet porte déjà des scénarios, ils doivent tous être de la ligne
+           courante. Pour ouvrir volontairement un projet à une deuxième ligne, la
+           marche à suivre est de rattacher d'abord un scénario de CETTE ligne ; le
+           projet devient alors multi-ligne et accueille l'autre sans question. */
         const rattler = () => { toggleTagScenario(pj, activeLigneId, activeReferenceId, activeOpId, scId); saveData(); render(); };
         if(!projetContientScenario(pj, activeLigneId, activeReferenceId, activeOpId, scId)){
           const ses = lignesDuProjet(pj);
           const ligneCourante = getActiveLigne();
-          if(ses.length && ligneCourante && !ses.includes(ligneCourante.nom)){
-            dialogueConfirmer(
-              "« " + pj.nom + " » ne contient que des scénarios de : " + ses.join(", ") + ".\n" +
-              "Vous êtes sur " + (ligneCourante.nom || "une autre ligne") + " — rattacher quand même ce scénario ?\n\n" +
-              "Un projet peut légitimement grouper plusieurs lignes (une plaquette testée sur deux machines) ; c'est juste pour éviter l'étiquetage accidentel.",
-              { titre: "Projet d'une autre ligne ?", okLabel: "Rattacher" }).then(ok => { if(ok) rattler(); });
+          const decision = projetAccepteLigne(pj, null, ligneCourante);
+          if(decision !== "ok"){
+            /* projet vide : on ne sait pas s'il est mono-ligne. On ne bloque pas — il
+               peut légitimement démarrer sur une campagne commune — mais on le dit. */
+            if(decision === "premier"){
+              dialogueConfirmer(
+                "« " + pj.nom + " » ne contient encore aucun scénario.\n\n" +
+                "Vous êtes sur " + (ligneCourante.nom || "une autre ligne") + " — ce scénario sera le premier du projet. Rattacher ?",
+                { titre: "Premier scénario du projet", okLabel: "Rattacher" }).then(ok => { if(ok) rattler(); });
+              return;
+            }
+            /* projet déjà rattaché à une autre ligne : on refuse, et on dit comment
+               faire si l'intention est d'ouvrir le projet à cette ligne. */
+            dialogueAlerte(
+              "« " + pj.nom + " » ne contient que des scénarios de : " + ses.join(", ") + ".\n\n" +
+              "Vous êtes sur " + (ligneCourante.nom || "une autre ligne") + " : ce scénario ne peut pas y être rattaché.\n\n" +
+              "Si vous voulez vraiment ouvrir ce projet à cette ligne, rattachez d'abord un scénario de " +
+              (ligneCourante.nom || "cette ligne") + " — le projet deviendra alors multi-ligne.",
+              "Projet d'une seule ligne");
             return;
           }
         }
@@ -11332,6 +11370,10 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.55.1", date:"29/09/2026", points:[
+    "<b>Correction : un projet n’accueille plus par erreur un scénario d’une autre ligne.</b> Si le projet « Coût et qualité EMAG 1 » ne contient que des scénarios d’EMAG 1, un scénario HESSAPP ne peut plus y être rattaché : l’outil vous le dit et explique comment procéder.",
+    "Avant, ce rattachement passait en silence dès que le projet était vide — son nom annonçait une règle que rien n’appliquait. Désormais un projet déjà ouvert à plusieurs lignes continue d’accueillir les deux sans question."
+  ]},
   { version:"4.55.0", date:"29/09/2026", points:[
     "<b>Le classeur de Matis se lit directement dans l’outil.</b> Un bouton « Classeur Matis » ouvre le suivi des consommations réelles : production réelle par machine et par référence, coût réellement consommé, et — le plus important — l’écart entre ce que l’outil budgète et ce que l’atelier consomme. Vous choisissez votre fichier : il est lu sur ce poste, rien n’est envoyé.",
     "<b>Un chiffre à surveiller.</b> Sur la période 14-21/09, le budget-outillage annonçait 5 218 €/an pour l’ensemble des couples produits, la consommation réelle est de 8 179 € : <b>2 961 € d’écart, soit +57 %</b>. Ce n’est pas une erreur de saisie, c’est l’écart entre un modèle et le terrain — et c’est exactement ce qu’on ne voyait pas avant.",
@@ -11752,7 +11794,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.55.0";
+const TOOL_VERSION = "4.55.1";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -14909,9 +14951,48 @@ function runTests(){
       ok("matis : le récapitulatif est trié par production décroissante",
          recap[0].production >= recap[1].production, true);
 
-      /* la lecture d'un classeur est un CONSTAT : elle n'écrit rien dans le suivi */
+      /* la lecture est un CONSTAT : elle n'écrit rien dans le suivi */
       ok("matis : la lecture ne touche ni les lignes ni les projets",
          [typeof matisRecap, lignes.length, projets.length] , ["function", lignes.length, projets.length]);
+    }
+
+    /* ---- v4.55.1 — le rattachement d'un scénario à un projet d'une autre ligne ----
+       Bug trouvé par Benjamin : un scénario HESSAPP pouvait être rattaché au projet
+       « Coût et qualité EMAG 1 » SANS AVERTISSEMENT, parce que la règle ne se
+       déclenchait que si le projet contenait déjà des scénarios. Un projet VIDE
+       passait donc en silence. Décision : bloquer (le projet est mono-ligne). */
+    {
+      const lEMAG = normalizeLigne({ id:"l-emag", nom:"EMAG 1" });
+      const lHESS = normalizeLigne({ id:"l-hess", nom:"HESSAPP" });
+      const refA = normalizeReference({ id:"r-a", nom:"356x26", ops:[{ id:"o-a", nom:"OP10", scenarios:[
+        { id:"sc-a", name:"Essai", baseline:true, outils:[] }] }] });
+      const refH = normalizeReference({ id:"r-h", nom:"266x13", ops:[{ id:"o-h", nom:"OP10", scenarios:[
+        { id:"sc-h", name:"Essai H", baseline:true, outils:[] }] }] });
+      lEMAG.references.push(refA); lHESS.references.push(refH);
+      const lignesB = lignes, projetsB = projets;
+      lignes = [lEMAG, lHESS];
+      try {
+        /* le cas de Benjamin : projet mono-ligne EMAG 1, et on est sur HESSAPP */
+        projets = [ normalizeProjet({ nom:"Coût et qualité EMAG 1", tags:[
+          { ligneId:"l-emag", referenceId:"r-a", opId:"o-a", scenarioId:"sc-a" }] }) ];
+        ok("projet : rattacher HESSAPP à un projet EMAG 1 est REFUSÉ (le cas trouvé)",
+           projetAccepteLigne(projets[0], null, lHESS), "refuse");
+        ok("projet : rattacher un scénario de la bonne ligne passe",
+           projetAccepteLigne(projets[0], null, lEMAG), "ok");
+
+        /* le projet vide : pas de refus (on ne sait pas s'il est mono-ligne), mais on
+           demande — c'est ce qui manquait, le rattachement se faisait en silence */
+        projets = [ normalizeProjet({ nom:"Projet neuf", tags:[] }) ];
+        ok("projet : rattacher à un projet VIDE demande une confirmation (ne passe plus en silence)",
+           projetAccepteLigne(projets[0], null, lHESS), "premier");
+
+        /* un projet volontairement multi-ligne accueille les deux, sans question */
+        projets = [ normalizeProjet({ nom:"Coût partagé", tags:[
+          { ligneId:"l-emag", referenceId:"r-a", opId:"o-a", scenarioId:"sc-a" },
+          { ligneId:"l-hess", referenceId:"r-h", opId:"o-h", scenarioId:"sc-h" }] }) ];
+        ok("projet : un projet déjà multi-ligne accueille une nouvelle ligne sans question",
+           projetAccepteLigne(projets[0], null, lHESS), "ok");
+      } finally { lignes = lignesB; projets = projetsB; }
     }
 
     /* ---- v4.54.0 — la fiche poste (couche 1) : ce que dit la machine ---------- */
