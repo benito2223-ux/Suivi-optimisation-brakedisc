@@ -5,6 +5,30 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.63.2] — 2026-09-30 · C3′
+
+**La grammaire visuelle de la proposition, sur nos tuiles existantes.** On
+habille, on n'invente pas — aucune donnée Stitch n'entre dans l'outil.
+
+### Modifié
+- **l'accent à gauche passe à 3 px** sur les cartes (`ca-tuile` : accueil ET
+  carte atelier, même grammaire) — la couleur suit l'état, le mot reste ;
+- **la typographie des chiffres** : le chiffre principal des tuiles KPI du
+  classeur monte à **34 px** (unité avec lui, libellé au-dessus en capitales
+  espacées — déjà la règle) ; sur les tuiles compactes de l'accueil/carte, le
+  gain acté passe à 20 px et le projeté à 14 px — la hiérarchie s'affirme sans
+  casser la densité (la cible Stitch 34–38 px visait des cartes plus grandes :
+  l'écart est documenté) ; mono `tabular-nums` aligné à droite dans les
+  tableaux — déjà la règle ;
+- **le mouvement, court et utile** : une seule durée `--motion:120ms` (bande
+  80–150 ms de la spec) et une seule courbe `--ease` pour toute la grille ;
+  **aucune transition sur un chiffre** (aucune n'existait — audit posé),
+  aucune sur width/height ; `prefers-reduced-motion` conservé (2 occurrences) ;
+  toutes les transitions du CSS outil passent aux tokens (0 restante en dur).
+
+351 tests, tout vert. Captures : sombre, clair, 360 px. Aucun push, aucun
+déploiement.
+
 ## [4.63.1] — 2026-09-30 · C2′
 
 **Aucune dépendance réseau — le check posé formellement.** Le chantier était
