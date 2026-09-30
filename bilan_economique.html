@@ -2326,6 +2326,12 @@ body.atelier-on{overflow:hidden;}
 .mt-ecart-neg{ color:var(--green); font-weight:600; }
 .mt-raison{ font-family:var(--font-body); font-size:11.5px; color:var(--ink-soft); }
 .mt-avert{ font-family:var(--font-mono); font-size:10.5px; color:var(--amber); font-weight:600; }
+/* 4.56.0 — le rapprochement classeur <-> suivi, sous le nom du couple : une phrase
+   discrète quand tout concorde, ambre quand elle demande un oeil (ligne hors suivi,
+   référence absente, production en divergence). */
+.mt-rap{ font-family:var(--font-body); font-size:10.5px; font-weight:400; color:var(--ink-soft);
+  margin-top:3px; line-height:1.35; }
+.mt-rap-attention{ color:var(--amber); font-weight:600; }
 
 .mt-detail td{ font-size:11.5px; }
 .mt-detail .mt-op{ font-family:var(--font-mono); font-size:10px; color:var(--ink-faint); }
@@ -11370,6 +11376,11 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.56.0", date:"30/09/2026", points:[
+    "<b>Le classeur et le suivi se répondent.</b> Chaque couple machine × référence lu dans le classeur vous dit maintenant s’il existe aussi dans le suivi, en toutes lettres : « dans le suivi : EMAG 1 · 356x26 RPI — production conforme (6 781/an) ». Ce qui n’existe pas d’un côté se voit aussi : ligne non déclarée, référence absente, production non relevée.",
+    "<b>Les divergences de production sautent aux yeux.</b> Quand le classeur et l’outil ne racontent pas la même production, la phrase passe en ambre et cite les deux chiffres : « le classeur dit 50/an, l’outil déclare 6 781/an ». Un écart pareil ne doit plus se découvrir des mois plus tard.",
+    "Toujours un constat : cette lecture n’écrit rien dans le suivi."
+  ]},
   { version:"4.55.1", date:"29/09/2026", points:[
     "<b>Correction : un projet n’accueille plus par erreur un scénario d’une autre ligne.</b> Si le projet « Coût et qualité EMAG 1 » ne contient que des scénarios d’EMAG 1, un scénario HESSAPP ne peut plus y être rattaché : l’outil vous le dit et explique comment procéder.",
     "Avant, ce rattachement passait en silence dès que le projet était vide — son nom annonçait une règle que rien n’appliquait. Désormais un projet déjà ouvert à plusieurs lignes continue d’accueillir les deux sans question."
@@ -11794,7 +11805,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.55.1";
+const TOOL_VERSION = "4.56.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -12307,7 +12318,29 @@ function matisRapproche(c){
   const nomLigne = MATIS_LIGNE_OUTIL[c.codeLigne] || c.codeLigne;
   const lg = lignes.find(l => (l.nom || "").toUpperCase() === nomLigne.toUpperCase());
   const ref = lg ? lg.references.find(r => (r.nom || "").toUpperCase().includes(String(c.ref).split(" ")[0].toUpperCase())) : null;
-  return { nomLigne, ligneId: lg ? lg.id : null, referenceId: ref ? ref.id : null };
+  return { nomLigne, ligneId: lg ? lg.id : null, referenceId: ref ? ref.id : null, ref };
+}
+
+/* le rapprochement, dit en atelier (4.56.0) : le classeur parle « E1 · 356x26 »,
+   l'outil déclare « EMAG 1 » et ses références. Chaque couple se voit dire s'il
+   existe des deux côtés, et si la production raconte la même chose des deux —
+   le cas « l'excel dit 50, le terrain dit 30 » doit sauter aux yeux à la lecture,
+   pas se découvrir des mois plus tard. Raison toujours à côté de l'état, jamais un
+   chiffre nu (constitution §3.5) ; `attention` porte la couleur (ambre, comme les
+   autres avertissements de cet écran). La lecture reste un CONSTAT : ce libellé
+   n'écrit rien dans le suivi (option C, 4.55.0). */
+function libelleRapprochementMatis(c, r){
+  if(!r.ligneId) return { texte: `hors suivi — la ligne ${r.nomLigne} n'est pas déclarée dans l'outil`, attention: true };
+  if(!r.ref) return { texte: `la référence ${c.ref} n'est pas déclarée sur la ligne ${r.nomLigne}`, attention: true };
+  const dansSuivi = `dans le suivi : ${r.nomLigne} · ${r.ref.nom}`;
+  if(!c.aProduction) return { texte: `${dansSuivi} — pas de production relevée dans le classeur`, attention: false };
+  const ps = parseFloat(r.ref.productionAnnuelle);
+  if(isNaN(ps)) return { texte: `${dansSuivi} — pas de production annuelle déclarée dans l'outil`, attention: false };
+  const pc = c.production;
+  const conforme = Math.abs(pc - ps) <= 0.005 * Math.max(Math.abs(pc), Math.abs(ps));
+  return conforme
+    ? { texte: `${dansSuivi} — production conforme (${fmt(ps, 0)}/an)`, attention: false }
+    : { texte: `production en divergence — le classeur dit ${fmt(pc, 0)}/an, l'outil déclare ${fmt(ps, 0)}/an`, attention: true };
 }
 
 function matisVueHTML(){
@@ -12349,13 +12382,15 @@ function matisVueHTML(){
   const lignes = couples.map(c => {
     const r = matisRapproche(c);
     const mesure = c.ecart === null;
+    const rap = libelleRapprochementMatis(c, r);
     return `<tr>
-      <td class="mt-lign">${escapeAttr(c.codeLigne)} · ${escapeAttr(c.ref)}</td>
+      <td class="mt-lign">${escapeAttr(c.codeLigne)} · ${escapeAttr(c.ref)}
+        <div class="mt-rap${rap.attention ? " mt-rap-attention" : ""}">${escapeAttr(rap.texte)}</div></td>
       <td class="num">${c.aProduction ? fmt(c.production, 0) : "—"}</td>
       <td class="num">${c.cppTheorique ? fmt(c.cppTheorique, 4) : "—"}</td>
       <td class="num">${c.cppReel ? fmt(c.cppReel, 4) : "—"}</td>
       <td class="num ${c.ecart > 0 ? "mt-ecart-pos" : (c.ecart < 0 ? "mt-ecart-neg" : "")}">${mesure ? "—" : (c.ecart >= 0 ? "+" : "−") + fmt(Math.abs(c.ecart), 4)}</td>
-      <td class="mt-raison">${escapeAttr(libelleEcartMatis(c))}${r.ligneId ? "" : ` <span class="mt-avert">(ligne hors suivi : ${escapeAttr(r.nomLigne)})</span>`}</td>
+      <td class="mt-raison">${escapeAttr(libelleEcartMatis(c))}</td>
     </tr>`;
   }).join("");
 
@@ -14954,6 +14989,73 @@ function runTests(){
       /* la lecture est un CONSTAT : elle n'écrit rien dans le suivi */
       ok("matis : la lecture ne touche ni les lignes ni les projets",
          [typeof matisRecap, lignes.length, projets.length] , ["function", lignes.length, projets.length]);
+    }
+
+    /* ---- v4.56.0 — le rapprochement classeur <-> suivi, dit en toutes lettres ----
+       Le classeur parle « E1 · 356x26 », l'outil déclare « EMAG 1 » et ses références.
+       Jusqu'ici le rapprochement était calculé mais muet : seul survivait l'avertissement
+       « ligne hors suivi ». Désormais chaque couple se voit dire s'il existe des deux
+       côtés, et si la production raconte la même chose des deux — le cas « l'excel dit
+       50, le terrain dit 30 » doit sauter aux yeux à la lecture, pas se découvrir des
+       mois plus tard. Toujours un constat : le libellé n'écrit rien. */
+    {
+      const lE1 = normalizeLigne({ id:"l-e1", nom:"EMAG 1" });
+      lE1.references.push(normalizeReference({ id:"r-356", nom:"356x26 RPI", productionAnnuelle:6781,
+        ops:[{ id:"o-356", nom:"OP10", scenarios:[{ id:"sc-356", name:"Réf", baseline:true, outils:[] }] }] }));
+      lE1.references.push(normalizeReference({ id:"r-290", nom:"290x12",
+        ops:[{ id:"o-290", nom:"OP10", scenarios:[{ id:"sc-290", name:"Réf", baseline:true, outils:[] }] }] }));
+      const lignesB = lignes, lectureB = matisLecture;
+      lignes = [lE1];
+      try {
+        const cOk = { codeLigne:"E1", ref:"356x26 RPI", production:6781, aProduction:true };
+        const rOk = matisRapproche(cOk);
+        ok("matis : le rapprochement rend désormais la référence trouvée, pas seulement son id",
+           [rOk.ligneId, rOk.ref && rOk.ref.nom], ["l-e1", "356x26 RPI"]);
+
+        ok("matis : production identique des deux côtés -> conforme, chiffrée en toutes lettres",
+           [libelleRapprochementMatis(cOk, rOk).attention,
+            libelleRapprochementMatis(cOk, rOk).texte.includes("production conforme"),
+            libelleRapprochementMatis(cOk, rOk).texte.includes(fmt(6781, 0))],
+           [false, true, true]);
+
+        /* le cas qui justifie l'écran : l'excel dit 50, le terrain dit 6 781. Les deux
+           chiffres sont cités — jamais un « divergence » nu sans ses nombres. */
+        const cDiv = { codeLigne:"E1", ref:"356x26 RPI", production:50, aProduction:true };
+        const rDiv = libelleRapprochementMatis(cDiv, rOk);
+        ok("matis : production en divergence -> ambre, les deux chiffres cités",
+           [rDiv.attention, rDiv.texte.includes("divergence"),
+            rDiv.texte.includes(fmt(50, 0)), rDiv.texte.includes(fmt(6781, 0))],
+           [true, true, true, true]);
+
+        ok("matis : la ligne n'est pas déclarée -> « hors suivi », dit avec son nom",
+           libelleRapprochementMatis({ codeLigne:"W9", ref:"123x45", production:10, aProduction:true },
+                                     matisRapproche({ codeLigne:"W9", ref:"123x45" })),
+           { texte: "hors suivi — la ligne W9 n'est pas déclarée dans l'outil", attention: true });
+
+        ok("matis : la ligne existe mais pas la référence -> dit les deux",
+           libelleRapprochementMatis({ codeLigne:"E1", ref:"999x11" }, matisRapproche({ codeLigne:"E1", ref:"999x11" })),
+           { texte: "la référence 999x11 n'est pas déclarée sur la ligne EMAG 1", attention: true });
+
+        ok("matis : pas de production relevée dans le classeur -> dit, sans inventer de comparaison",
+           libelleRapprochementMatis({ codeLigne:"E1", ref:"356x26 RPI", production:0, aProduction:false }, rOk),
+           { texte: "dans le suivi : EMAG 1 · 356x26 RPI — pas de production relevée dans le classeur", attention: false });
+
+        ok("matis : pas de production annuelle déclarée dans l'outil -> dit, sans inventer de comparaison",
+           libelleRapprochementMatis({ codeLigne:"E1", ref:"290x12", production:2234, aProduction:true },
+                                     matisRapproche({ codeLigne:"E1", ref:"290x12" })).texte.includes("pas de production annuelle déclarée dans l'outil"),
+           true);
+
+        /* le RENDU : la phrase vit sous le nom du couple, et l'ancien avertissement
+           redondant de la colonne Lecture a disparu (leçon 4.51.2 : verrouiller le rendu) */
+        matisLecture = { fichier:"classeur-test.xlsx", luLe:"2026-09-30", feuilles:[],
+          couples:[ cOk, { codeLigne:"W9", ref:"123x45", production:10, aProduction:true,
+                           cppTheorique:0, cppReel:0, ecart:null } ] };
+        const htmlMatis = matisVueHTML();
+        ok("matis : le rendu affiche le rapprochement sous le couple, conforme en clair",
+           [htmlMatis.includes("mt-rap"), htmlMatis.includes("production conforme")], [true, true]);
+        ok("matis : le rendu passe en ambre sur la divergence et l'ancien avertissement redondant a disparu",
+           [htmlMatis.includes("mt-rap-attention"), htmlMatis.includes("(ligne hors suivi :")], [true, false]);
+      } finally { lignes = lignesB; matisLecture = lectureB; }
     }
 
     /* ---- v4.55.1 — le rattachement d'un scénario à un projet d'une autre ligne ----

@@ -5,6 +5,67 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.56.0] — 2026-09-30
+
+**Le rapprochement classeur ↔ suivi, dit en toutes lettres.** Le lecteur du classeur
+Matis (4.55.0) calculait déjà le rapprochement de chaque couple ligne × référence avec
+les lignes et références déclarées dans l'outil — mais il se taisait : seul survivait
+l'avertissement « ligne hors suivi ». Désormais chaque couple porte sa phrase de
+rapprochement sous son nom, avec la vérification de production qui va avec.
+
+### Ajouté
+- **`libelleRapprochementMatis(couple, rapprochement)`** — fonction pure rendant un
+  état ET sa raison (constitution §3.5, jamais un chiffre nu) :
+  - « dans le suivi : EMAG 1 · 356x26 RPI — production conforme (6 781/an) » ;
+  - « production en divergence — le classeur dit 50/an, l'outil déclare 6 781/an » :
+    les DEUX chiffres sont cités, jamais un « divergence » nu — c'est le cas réel
+    « l'excel dit 50, le terrain dit 30 », désormais détecté à la lecture au lieu de
+    se découvrir des mois plus tard ;
+  - « hors suivi — la ligne W9 n'est pas déclarée dans l'outil » ;
+  - « la référence 999x11 n'est pas déclarée sur la ligne EMAG 1 » ;
+  - « pas de production relevée dans le classeur » et « pas de production annuelle
+    déclarée dans l'outil » : l'absence se dit, elle n'invente pas de comparaison.
+- **rendu** : la phrase vit sous le nom du couple (aucune colonne de plus, la largeur
+  du tableau ne bouge pas) ; ambre quand elle demande un œil, même convention que
+  `mt-avert` ; l'ancien avertissement redondant de la colonne Lecture disparaît ;
+- `matisRapproche` rend aussi l'objet référence trouvé (pas seulement son id).
+
+### Décisions de seuil
+- conforme = écart relatif ≤ 0,5 % entre production classeur (B1) et production
+  annuelle déclarée : en dessous, artefact de période ; au-dessus, divergence à
+  regarder.
+
+### Toujours vrai
+- la lecture reste un CONSTAT : rien n'est écrit dans le suivi (option C, 4.55.0) ;
+- aucune exception OP30 — la décision du 30/09 (« comptée ET pilotée, partout où
+  elle existe ») ne demande aucun cas particulier dans ce code.
+
+298 → 307 tests, tout vert. Aucun push, aucun déploiement.
+
+## [4.55.1] — 2026-09-29
+
+**Le rattachement d'un scénario à un projet d'une autre ligne ne passe plus en
+silence** (bug trouvé par Benjamin : un scénario HESSAPP pouvait rejoindre le projet
+« Coût et qualité EMAG 1 » sans avertissement). Entrée écrite en retard — repayée au
+commit de la 4.56.0, même dette documentaire que la 4.51.2.
+
+### Corrigé
+- la règle ne se déclenchait que si le projet contenait DÉJÀ des scénarios d'une
+  autre ligne : un projet VIDE court-circuitait la condition et laissait passer le
+  rattachement en silence, alors que son nom annonçait une restriction que rien
+  n'appliquait ;
+- décision Benjamin : bloquer — le projet est mono-ligne.
+
+### Ajouté
+- **`projetAccepteLigne(projet, nomLigneCourante, ligneCourante)`** — fonction pure
+  qui rend « ok » / « premier » / « refuse » : la ligne fait déjà partie du projet →
+  ok ; projet vide → on demande (ce qui manquait) ; projet déjà rattaché à une autre
+  ligne → refus expliqué avec la marche à suivre. Un projet volontairement
+  multi-ligne accueille les lignes suivantes sans question. On ne se fie pas au NOM
+  du projet (texte libre), mais au fait mesuré.
+
+294 → 298 tests, tout vert.
+
 ## [4.55.0] — 2026-09-29
 
 **Option C de l'analyse du classeur Matis : on mesure avant de décider.**
