@@ -261,6 +261,87 @@ ouvrant l'écran le matin.
 **Prochain tour** : à Z Code, pour ce chantier — mais **je veux ta réponse avant**, parce
 qu'elle dépend de ce que tu cherches, pas de ce qui est joli.
 
+### ▸ Tour 30 — 30/09/2026 — **Hermes** (v4.70.2 — L6 et L7, la charte est complète)
+
+**Benjamin : « continue jusqu'à la fin ».** Les deux derniers chantiers, faits.
+
+---
+
+**L6 — le champ souligné.** La charte, §4.4 : *« aucun cadre, aucun fond coloré, aucun
+arrondi. Une bordure inférieure sobre de 1px qui devient rouge au focus. »*
+
+On agit sur `.cell` — le conteneur de saisie — **pas sur le `<input>` nu**. L'outil compte
+**26 cases à cocher, 7 sélecteurs de fichier et 3 sélecteurs de couleur**, et **un filet
+sous une case à cocher n'indique rien** tout en la rendant illisible. Ces trois familles
+gardent leur cadre ; leur focus passe en rouge. C'est un choix, pas un oubli.
+
+Le `<select>` garde un petit triangle dessiné en CSS : un filet seul ne dit pas « il y a une
+liste ici ». **On lui rend la forme, pas la couleur.**
+
+Le focus clavier a son propre filet rouge (`:focus-visible`) : sans lui, un régleur qui
+navigue au clavier ne voit jamais où il est (§5.3).
+
+**L7 — les tables.** En-têtes capitales 11 px, poids 500, tracking .08em ; filets
+`--gray-200` sous l'en-tête, `--gray-100` entre les lignes, survol `--gray-50`. C'est ce qui
+rend un tableau lisible en atelier : **la séparation est un filet, jamais un encadrement.**
+
+**Vérifié : le HTML est strictement identique** — 92 634 caractères avant et après, hors CSS
+et JS. 152 boutons, 320 `id` : intacts. **406/406.**
+
+---
+
+**La charte est complète : 14 points sur 14.**
+
+| | |
+|---|---|
+| tokens DS B (radius 2 px, E30045, 006AB3) | ✅ |
+| Roboto embarquée (hors ligne) | ✅ |
+| poids 600 **interdit** — absent | ✅ |
+| fond blanc | ✅ |
+| **aucun aplat de teinte** (les 69) | ✅ |
+| bouton cercle + chevron | ✅ |
+| filet bicolore 2 px | ✅ |
+| hero : filet 60 px | ✅ |
+| hero : titre 36 px en 700 | ✅ |
+| hero : mot-clé en rouge | ✅ |
+| champ souligné + rouge au focus | ✅ |
+| cases à cocher exclues du filet | ✅ |
+| tables : capitales 11 px | ✅ |
+| **aucune dépendance réseau** | ✅ |
+
+---
+
+**Et le contre-regard a appris quelque chose, que j'inscris dans la constitution.**
+
+Cinq pannes CSS injectées : **une seule vue par le harnais** — celle qui touchait un
+contraste. Les quatre autres sont passées sans bruit. Le harnais teste des **fonctions** et
+le **contraste** ; il ne voit pas une bordure qui disparaît, un rayon qui change, un aplat qui
+devient un filet.
+
+**Les tests protègent ce qu'on a programmé, pas ce qu'on a dessiné.**
+
+C'est écrit dans la constitution (v1.6, règle 9), avec le corollaire : **un chantier de
+charte se vérifie à l'œil et à la capture, jamais par « les tests sont verts ».** C'est la
+limite qu'il faudra traquer à chaque refonte — et elle est exactement l'inverse du
+« harnais aveugle » du Tour 26 : là, c'était le test qui ne voyait pas la couleur ; ici,
+c'est le test qui ne voit pas la forme. **Un test couvre ce qu'on lui a demandé de couvrir,
+et rien d'autre.**
+
+---
+
+**Reste ouvert, et je ne le propose plus tout seul.**
+
+- **la densité** : on l'a gardée, comme demandé. Un champ souligné dans une grille de
+  saisie dense se lit différemment d'un pavé — **c'est ton retour qui dira si ça tient en
+  atelier** ;
+- **les 7 écrans Stitch** que je n'ai pas vus (comparateur, saisie, bilan…) ;
+- **et le message aux 8 demandes à Matis**, toujours pas parti. C'est le seul geste qui
+  débloque les données, donc le contenu réel de tout ce qu'on vient d'habiller.
+
+**Prochain tour** : à Z Code, librement — je n'ai plus de chantier de charte ouvert.
+Et à Benjamin : **regarder 4.70.2 sur Projet**, en particulier la saisie, parce que
+c'est là que la densité et la forme se frottent.
+
 ### ▸ Tour 29 — 30/09/2026 — **Hermes** (v4.70.0 + 4.70.1 — L4 et L5, les formes)
 
 **Décisions de Benjamin :** les boutons cercle + chevron, le filet bicolore et le hero, puis

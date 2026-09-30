@@ -134,6 +134,74 @@ button.primary:hover::before, .btn-serie:hover::before{ background:var(--blue); 
   .bd-titre, .bd-perimetre{ font-size:27px; }
   .bd-accent{ width:44px; }
 }
+
+/* ── v4.70.2 · L6 — LE CHAMP SOULIGNÉ ──────────────────────────────────────
+   La charte CeramTec, §4.4 : « aucun cadre, aucun fond coloré, aucun arrondi.
+   Une bordure inférieure sobre de 1px qui devient rouge au focus. »
+
+   On agit sur `.cell`, le conteneur de saisie de l'outil — pas sur le <input>
+   nu. L'outil compte 26 cases à cocher, 7 sélecteurs de fichier et 3
+   sélecteurs de couleur : un filet sous une case à cocher n'indique rien et la
+   rend illisible. Ces trois familles sont donc EXCLUES, volontairement. */
+input.cell, select.cell, textarea.cell{
+  border:none; border-bottom:1px solid var(--line);
+  background:transparent; border-radius:0;
+  padding:5px 2px 6px;
+  transition:border-color .15s ease;
+}
+input.cell:hover, select.cell:hover, textarea.cell:hover{ border-bottom-color:var(--ink-soft); }
+input.cell:focus, select.cell:focus, textarea.cell:focus{
+  outline:none; border-bottom:2px solid var(--red);
+  padding-bottom:5px;
+}
+/* le focus clavier doit être VOI, comme le focus souris : sans ça, un régleur
+   qui navigue au clavier ne voit jamais où il est (§5.3 — le tactile) */
+input.cell:focus-visible, select.cell:focus-visible, textarea.cell:focus-visible{
+  border-bottom:2px solid var(--red);
+}
+/* une case à cocher, un fichier, une couleur : jamais un filet */
+input[type="checkbox"].cell, input[type="file"].cell, input[type="color"].cell,
+input[type="range"].cell{
+  border:1px solid var(--gray-200); border-radius:var(--radius);
+  background:var(--white); padding:2px;
+}
+input[type="checkbox"].cell:focus, input[type="file"].cell:focus{
+  border-color:var(--red); outline:none;
+}
+/* le select garde un petit triangle : un filet seul ne dit pas « il y a une
+   liste ici ». On lui rend la forme, pas la couleur. */
+select.cell{
+  appearance:none; -webkit-appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--ink-soft) 50%),
+                   linear-gradient(135deg,var(--ink-soft) 50%,transparent 50%);
+  background-position:calc(100% - 12px) 52%, calc(100% - 7px) 52%;
+  background-size:5px 5px, 5px 5px; background-repeat:no-repeat;
+  padding-right:20px;
+}
+
+/* ── v4.70.2 · L7 — LES TABLES ────────────────────────────────────────────
+   La charte, §4.5 : en-têtes capitales 11-12px / poids 500 / letter-spacing
+   .08em, filets `--gray-100` entre les lignes, survol `--gray-50`. C'est ce
+   qui rend un tableau lisible en atelier : la séparation est un FILET, jamais
+   un encadrement. */
+table{ border-collapse:collapse; }
+table th{
+  font-size:11px; font-weight:500; text-transform:uppercase;
+  letter-spacing:.08em; color:var(--label);
+  border-bottom:1px solid var(--gray-200);
+  padding:9px 10px; text-align:left; vertical-align:bottom;
+}
+table td{
+  font-size:13.5px; color:var(--body);
+  border-bottom:1px solid var(--gray-100);
+  padding:10px; vertical-align:top;
+}
+table tbody tr:hover td{ background:var(--gray-50); }
+/* un poste neutre ne s'efface pas : il porte ±0,000 € et reste lisible
+   (constitution §3.5 — la déclaration exhaustive) */
+table td.neutre, table .cell-neutral{ color:var(--label); font-weight:400; }
+table .num, table td.num{ text-align:right; font-variant-numeric:tabular-nums;
+  font-family:var(--font-mono); }
 </style>
 
 <style>
@@ -11696,6 +11764,9 @@ const NOUVEAUTES = [
   { version:"4.65.2", date:"30/09/2026", points:[
     "<b>La table que la hiérarchie lit.</b> Sous les tuiles, toutes les opérations de toutes les lignes vivantes : ligne, opération, référence, gain unitaire, gain annuel (acté et projeté jamais mélangés), statut en toutes lettres — et un poste non impacté reste affiché à ±0,000 €, il ne disparaît pas. Chaque ligne porte sa porte « Ouvrir → ». En pied : l'équipe du suivi et les trois actions existantes (bilan atelier, exporter, historique)."
   ]},
+  { version:"4.70.2", date:"30/09/2026", points:[
+    "<b>Les champs ne sont plus des boites.</b> Un filet sobre sous la saisie, qui devient rouge qu on est dedans — la forme exacte de la charte. Les cases a cocher, les fichiers et les couleurs gardent leur cadre : un filet sous une case ne veut rien dire. Les tableaux, eux, sont rayes de filets gris et leurs en-tetes sont en capitales. Tout cela est de la CSS : aucune ligne de saisie n a bouge."
+  ]},
   { version:"4.70.1", date:"30/09/2026", points:[
     "<b>Les boutons ne sont plus des paves.</b> Un bouton, c est desormais un disque de 34 px avec un chevron, puis le libelle — la forme exacte de la charte CeramTec. La barre porte son filet bicolore de 2 px et l onglet actif est souligne en rouge. Et le titre de l accueil passe de 21 px en mono a 36 px, avec le filet bleu et le mot-cle en rouge. La densite, elle, n a pas bouge : un regleur voit toujours tout sans defiler."
   ]},
@@ -12179,7 +12250,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.70.1";
+const TOOL_VERSION = "4.70.2";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 

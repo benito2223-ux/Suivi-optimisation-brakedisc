@@ -89,6 +89,51 @@ Contraste vérifié sur le hero : titre noir 21:1 · mot-clé rouge 4,83:1 · in
 ### Tests
 406 → **406** (aucun calcul touché, aucune balise touchée).
 
+## [4.70.2] — 2026-09-30 · L6 + L7 — *la charte est complète*
+
+**Benjamin : « continue jusqu'à la fin ».** Les deux derniers chantiers.
+
+### L6 — le champ souligné
+
+La charte, §4.4 : *« aucun cadre, aucun fond coloré, aucun arrondi. Une bordure
+inférieure sobre de 1px qui devient rouge au focus. »*
+
+On agit sur `.cell` — le conteneur de saisie — **pas sur le `<input>` nu**. L'outil compte
+**26 cases à cocher, 7 sélecteurs de fichier et 3 sélecteurs de couleur**, et **un filet
+sous une case à cocher n'indique rien** tout en la rendant illisible. Ces trois familles
+sont donc **exclues, volontairement** : elles gardent leur cadre, et leur focus passe en
+rouge.
+
+Le `<select>` garde un petit triangle dessiné en CSS : un filet seul ne dit pas « il y a une
+liste ici ». On lui rend la forme, pas la couleur.
+
+Le focus clavier a son propre filet rouge (`:focus-visible`) : sans lui, un régleur qui
+navigue au clavier ne voit jamais où il est (constitution §5.3).
+
+### L7 — les tables industrielles
+
+En-têtes en **capitales 11 px, poids 500, tracking .08em**, filets `--gray-200` sous
+l'en-tête et `--gray-100` entre les lignes, survol `--gray-50`. C'est ce qui rend un
+tableau lisible en atelier : **la séparation est un filet, jamais un encadrement.**
+
+Le poste neutre garde `±0,000 €` et reste lisible (constitution §3.5 — la déclaration
+exhaustive).
+
+### Vérifié
+**Le HTML est strictement identique** — 92 634 caractères avant et après, hors CSS et JS.
+Aucune balise, aucun `id`, aucun handler touché. 152 boutons, 320 ids : intacts.
+
+**406/406** tests.
+
+### Et un contre-regard qui a taught quelque chose
+Cinq pannes CSS injectées : **une seule vue par le harnais** (celle qui touchait un
+contraste) ; les quatre autres sont passées sans bruit. Le harnais teste des **fonctions**
+et le **contraste** — il ne voit pas une bordure qui disparaît.
+
+**Les tests protègent ce qu'on a programmé, pas ce qu'on a dessiné.** C'est écrit dans la
+constitution (v1.6, règle 9) : **un chantier de charte se vérifie à l'œil et à la capture,
+jamais par « les tests sont verts ».**
+
 ## [4.67.0] — 2026-09-30 · L1
 
 **Le premier lot de la charte CeramTec : le fond, et le poids interdit.**

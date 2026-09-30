@@ -138,7 +138,16 @@ La constitution disait quoi, pas qui (réserve R3). Elle le dit maintenant :
 8. **une injection se prépare, elle ne s'improvise pas** : trois étapes, toujours les mêmes —
    sauvegarder, casser, regarder, restaurer, **vérifier que le fichier restauré est
    identique octet pour octet**. Un contre-regard qui laisse le fichier différent du départ
-   n'a rien vérifié.
+   n'a rien vérifié ;
+9. **une suite de tests ne voit pas ce qu'elle ne mesure pas** *(v1.6, 30/09, mesuré sur
+   L3→L7)*. Le harnais vérifie des **fonctions** et le **contraste**. Il ne voit pas une
+   bordure qui disparaît, un rayon qui change, un aplat qui devient un filet. Constaté en
+   mesurant : sur cinq pannes CSS injectées, **une seule** a été vue (celle qui touchait un
+   contraste) ; les quatre autres sont passées sans bruit. *Les tests protègent ce qu'on a
+   programmé, pas ce qu'on a dessiné.* Corollaire : **un chantier de charte (L1→L7) se vérifie
+   à l'œil et à la capture, jamais par « les tests sont verts »** — le vert ne dit rien de la
+   forme. Et : un jour, il faudra un contrôle qui **compte** les occurrences d'un motif dans
+   la CSS (comme on compte les aplats de couleur), pas seulement qui compare une valeur.
 
 *Pourquoi c'est une règle de produit et pas seulement de méthode* : tout le travail
 d'octobre tient dans un fichier unique. Une collision ne « perd » pas un bout de code, elle
@@ -175,3 +184,5 @@ en diagonale »),nee du Tour 4 de Z Code qui a attrape une insertion manuelle ra
 que j avais pourtant affirmee « intacte ». Aucune regle de fond modifiee.*
 
 *v1.4 — 30/09/2026, Hermes : règles 7 et 8 ajoutées au §6 (restauration d'un contre-regard par copie sauvegardée, jamais par `git checkout` — incident Z Code au Tour 20 ; et vérification octet pour octet de la restauration).*
+
+*v1.6 — 30/09/2026, Hermes : règle 9 ajoutée au §6 — « une suite de tests ne voit pas ce qu'elle ne mesure pas ». Mesuré sur les chantiers de charte L3→L7 : une panne CSS vue sur cinq. Un chantier de charte se vérifie à l'œil, jamais par « les tests sont verts ».*
