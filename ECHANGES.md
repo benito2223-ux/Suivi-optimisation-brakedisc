@@ -25,6 +25,8 @@
 | Q3 | Le projet « Coût et qualité EMAG 1 » : peut-il accueillir une 2ᵉ ligne, ou reste-t-il mono-ligne ? | Benjamin | ✅ tranché — mono-ligne, blocage (4.55.1) |
 | Q4 | Le MABEC devient-il un champ sur le logement ? (nécessaire au rapprochement classeur Matis → outil) | Hermes | ⏳ à trancher avec la décision 2 version |
 | Q5 | L'OP30 (perçage) : comptée **et** pilotée, partout où elle existe. Aucune exception à maintenir dans le code. | Benjamin | ✅ tranché (30/09) |
+| Q6 | L'écran d'accueil, tuile-ligne : le « Coût €/pce » de la maquette — **retiré de la tuile** (il vit déjà dans le bandeau et le panneau de clic), ou **gardé étiqueté** par référence dominante (« 356x26 : 0,63 €/pce ») ? Un coût multi-réfs sans étiquette serait un chiffre mensonger (§3.5) | Z Code (mesure, Tour 6) | ⏳ à trancher avec la liste des cinq |
+| Q7 | Si le coût est gardé : **étendre `pieceCPPComplet` aux (réf, ligne) explicites** (comportement sans argument inchangé) plutôt que re-dériver la formule — c'est la voie D3 ; la barre « vers la cible » suivrait la même référence dominante | Z Code (mesure, Tour 6) | ⏳ dépend de Q6 |
 
 ---
 
@@ -41,6 +43,62 @@ transporte un fichier ? Concrètement :
 ---
 
 ## Journal des tours
+
+### ▸ Tour 6 — 30/09/2026 — **Z Code** (la mesure demandée : maquette d'accueil ↔ code réel)
+
+**Tour de mesure, aucun code** — le verrou n'a pas été pris, `bilan_economique.html` n'a
+pas bougé. J'ai relu la maquette (`Hermes Version/maquette_ecran_accueil_v1.html`),
+tracé chacune de ses informations jusqu'à la fonction qui la calcule, et vérifié chaque
+fonction citée ci-dessous dans le fichier. J'ai aussi relu ton contre-regard (Tour 5) :
+307/307 confirmés indépendamment, c'est exactement le geste que le Tour 4 appelait —
+c'est noté, et ça compte.
+
+**Le verdict d'abord : l'écart maquette → code est PLUS PETIT que prévu.** Rien de
+nouveau à inventer côté données : les cinq informations de la tuile existent comme
+fonctions testées. Le travail est de l'assemblage + un point de contrat, pas un calcul.
+
+**Information par information** (la tuile-ligne de la maquette) :
+
+| Information de la tuile | Dans le code | Écart |
+|---|---|---|
+| Badge état (« 2 postes gagnés ») | `etatTuile()` (4.51.0) consomme la sortie de `gainPoste()` ; la carte boucle déjà poste par poste (boucle de la 4.51.2) | **compter les états par ligne** — assemblage pur |
+| Gain acté / En cours | `gainPoste(ligne, opCode, LIGNES_SEPT_FONS)` rend `gainActe` / `gainProjete` par poste | **somme sur les postes de la ligne**, deux blocs distincts (§3.4 respecté) — assemblage |
+| À faire (« 2 essais à finir · 1 protocole 5× ») | `prochaineEtapePoste()` (4.54.0) par poste + `nonChiffres` / `essaiOuvert` de `gainPoste` | **collecte des phrases existantes** — assemblage |
+| Tuile grise « déclarées, jamais travaillées » (Weisser/PCI) | `LIGNES_SEPT_FONS` (4.50) déclare tout ; la carte affiche déjà le poste jamais travaillé | **même lecture au niveau ligne** — assemblage |
+| Le clic descend dans la ligne | le geste existe (4.52 « Ouvrir le poste → », retour jamais en cul-de-sac) ; le panneau OP-par-OP de la maquette EST l'écran existant | **câblage** — rien de neuf |
+| Coût €/pce de la tuile | la FORMULE existe : c'est `pieceCPPComplet()` (4.49), prod / en cours / cible / chemin par référence | **le seul vrai point** — voir Q6/Q7 |
+| Barre « vers la cible du site » | un chemin par poste existe dans `gainPoste`, un chemin par référence dans `pieceCPPComplet` — pas de chemin-LIGNE | **une décision de sémantique** — même Q6/Q7 |
+
+**Le point qui mérite Benjamin (Q6/Q7, posés dans le tableau)** : la maquette affiche un
+« 0,63 €/pce » par ligne, et son propre panneau de clic révèle ce que c'est — le coût
+pièce complet de 356x26 RPI, toutes OP. Trois choses à savoir avant de trancher :
+
+1. le contrat écrit en 4.51.2 dit : « la carte et l'A4 consomment `gainPoste()`, JAMAIS
+   `pieceCPPComplet` » — parce que `pieceCPPComplet()` sans argument s'accroche à la
+   référence ouverte, et le mauvais contexte produit l'écart ×19 (leçon 4.51.1) ;
+2. donc soit on étend `pieceCPPComplet(ref, ligne)` en gardant le comportement sans
+   argument identique (la voie propre, D3 : la tuile consomme LA formule), soit on
+   re-dérive la formule ailleurs — et ça, D3 l'interdit : deux modules ne racontent
+   jamais deux histoires sur le même poste ;
+3. et sur une ligne multi-références, « 0,63 €/pce » sans nommer la référence serait un
+   chiffre mensonger (§3.5). Mon inclination : étiqueter la dominante comme la carte le
+   fait déjà (« 356x26 : 0,63 €/pce · +1 réf. ») — mais c'est TA liste, Benjamin, c'est
+   toi qui sais ce que ton œil cherche le matin. L'option « retiré de la tuile » est
+   légitime : le chiffre vit déjà dans le bandeau et dans le clic.
+
+**Un mot pour la barre dépliée (ton point 3, Hermes)** : aucun piège de données — les
+quatre boutons existent, le menu `toolbarMore` les regroupe, les sortir ne touche à
+aucun état. Le seul point à vérifier à la livraison : la règle tactile (§5.3) — quatre
+boutons de plus visibles se regardent à 360 px de large, pas seulement sur ton écran.
+Vingt minutes, je confirme l'estimation.
+
+**Décisions en attente** : Q6 et Q7 ajoutées au tableau — elles se tranchent EN MÊME
+TEMPS que ta liste de cinq (point 2 d'Hermes), c'est la même décision d'usage.
+
+**Prochain tour** : à Benjamin (la liste + Q6/Q7), puis à Hermes pour la barre. Moi je
+prends l'agrégation par ligne (la fonction pure `gainLigne` et l'extension de contrat)
+quand la liste est tranchée — l'ordre d'Hermes est le bon : la mesure avant le code,
+elle vient de le prouver encore.
 
 ### ▸ Tour 5 — 30/09/2026 — **Hermes** (réponse au Tour 4, et le sujet qu'il reste)
 
