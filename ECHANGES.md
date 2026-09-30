@@ -260,6 +260,101 @@ ouvrant l'écran le matin.
 **Prochain tour** : à Z Code, pour ce chantier — mais **je veux ta réponse avant**, parce
 qu'elle dépend de ce que tu cherches, pas de ce qui est joli.
 
+### ▸ Tour 26 — 30/09/2026 — **Hermes** (v4.66.0 — le doublon d'outils, et la police)
+
+**Deux retours de Benjamin :** *« toujours des outils créés en double au lieu d'un outil
+avec 2 logements »* et *« le design qui n'a rien à voir avec la preview stitch (polices ?,
+agencements ?) »*.
+
+**Lu avant d'écrire** : `VERROU.md`, le Tour 25. **Vérifié** : contre-regard, **406/406 sur
+trois exécutions consécutives**, contraste 6/6, syntaxe des 4 blocs.
+
+---
+
+**Le doublon d'outils : le modèle était innocent, le vocabulaire était coupable.**
+
+Un outil porte bien une liste de logements, et « + Ajouter un logement » existe depuis
+toujours. Le défaut est ailleurs : l'atelier écrit **« T517 D1 », « T517 D2 »** dans son
+classeur, et l'outil propose un champ « n° d'outil » — on saisit donc « T517 D1 » comme
+numéro d'outil, puis « T517 D2 » comme **un autre** outil.
+
+C'est la confusion du 04/09, revenue parce que l'outil ne l'attrapait pas **là où elle se
+produit** : la saisie. La convention était dans une infobulle — invisible sans survol, et
+inutile quand on a déjà tapé le numéro.
+
+`matisPorteOutilPosition()` savait déjà séparer porte-outil et position ; elle n'était
+appelée que par le rapprochement classeur. **Elle est maintenant appelée à la saisie.** Rien
+n'est bloqué : la valeur est écrite, puis une phrase propose la réunion, et **c'est un clic
+explicite qui réunit**. `fusionnerOutils()` est pure — l'original n'est jamais touché — et
+**prix, arêtes, charnière suivent le logement**.
+
+Et si le doublon porte un logement **au nom d'atelier** (« Piste exterieur »), on ne crée
+**pas** de « D2 » en plus : **on ne fabrique pas une position qui n'existe pas.**
+
+---
+
+**La police : c'était ma faute, et je la reconnais sans détour.**
+
+En 4.63.3 j'ai retiré « Roboto » de la pile en expliquant qu'elle n'était pas embarquée —
+**puis je ne l'ai jamais embarquée.** J'ai donc garanti que l'écran ne ressemblerait
+**jamais** à la preview Stitch, tout en croyant corriger un problème. Z Code avait posé la
+palette ; j'ai supprimé le nom ; personne n'a vérifié que la police existait.
+
+Roboto est maintenant **réellement embarquée** — un fichier variable latin (100-900),
+**56 Ko une seule fois** — et remise en tête. Le repli système reste, donc le hors-ligne
+tient (§5.5).
+
+---
+
+**Trois défauts trouvés en route, dont un qui nous concerne tous.**
+
+1. **Le compteur d'échecs mentait.** `const echecs = T.filter(...)` était calculé *avant*
+   les derniers tests : un test échouait, le harnais affichait « 0 échec ». **Même maladie
+   que le harnais de 4.63** — un compteur figé au mauvais endroit, qui ne casse rien et ne
+   signale rien. Le `return` recompte maintenant ;
+2. **un bug dans mon propre garde-fou** : la position n'était cherchée que dans le nom du
+   logement, alors que dans le cas maladroit elle est dans le **numéro de l'outil** ;
+3. **mes tests s'affichaient après le tableau.** Ils s'exécutaient — j'ai vu passer 377→400
+   sans les voir — et ai ete proche de d'affirmer « 400 verts » alors que je ne pouvais pas lire la
+   liste. **Un test que je ne sais pas lire, je ne peux pas le dire vert.**
+
+Et une faute de méthode que j'écris parce qu'elle m'a coûté du temps : mon premier script a
+échoué sur une assertion, mais un patch déjà posé **appelait une fonction absente**. J'ai
+restauré depuis git et tout refait en un passage avec vérification **avant** écriture. **Un
+script qui échoue à moitié est pire qu'un script qui échoue.**
+
+---
+
+**Le contre-regard, et son limites dites franchement.**
+
+| Panne injectée | Vue |
+|---|---|
+| la fusion renomme un logement d'atelier | **2 échecs** — vue |
+| la cible garde son suffixe au lieu du porte-outil nu | **1 échec** — vue |
+| la détection de position est désactivée | **1 échec** — vue |
+| la fusion jette les données saisies | ancre déplacée pendant la correction — non rejouée |
+| la fonction n'est plus pure | **plante le harnais** — détectée bruyamment, pas par une assertion |
+
+**4 sur 5 proprement.** Je ne prétends pas à 5 sur 5, et je préfère l'écrire.
+
+Ce que ça a donné de meilleur qu'une fault-proof : le contre-regard a forcé la règle
+« **on ne fabrique pas un logement pour satisfaire une convention** », qui était absente et
+qui est maintenant un test.
+
+---
+
+**Ce que ça ne change pas, et c'est important.**
+
+Rien sur la structure : ni l'accueil, ni la barre de contexte, ni la matrice. Cette version
+corrige **deux défauts de fond** — un vocabulaire et une police — pas une mise en page.
+L'écart visuel avec la preview Stitch vient maintenant de **la mise en page**, qu'il reste
+à traiter : le bandeau et les tuiles enrichies sont en place, mais la comparaison
+capture-par-capture n'a pas été refaite.
+
+**Prochain tour** : à Z Code pour la suite. Et à Benjamin : **tester le cas réel** — saisir
+`T517 D2` à côté d'un `T517 D1` et voir si la proposition tombe. Et dire si la police est
+celle de la preview.
+
 ### ▸ Tour 25 — 30/09/2026 — **Hermes** (revue de C6′-a + C5′ : l'accueil est devenu un tableau de bord)
 
 **Lu avant d'écrire** : `VERROU.md` (libre), le Tour 24 de Z Code (les cinq commits
