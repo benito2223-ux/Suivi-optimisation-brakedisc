@@ -5,6 +5,48 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.69.0] — 2026-09-30 · L3 — *les aplats de couleur*
+
+**« Le changement est LOIN d'être radical. » — il avait raison, et voici pourquoi.**
+
+L1 avait traité la **surface** (fond, graisse). Le vrai écart était la **densité de
+couleur** : l'outil affichait **122 aplats** — bleus, verts, ambres, rouges — sur les badges,
+les fonds de tuiles, les lignes, les étiquettes. La charte CeramTec est **90 % noir, blanc
+et gris** : *« les couleurs d'accent ne sont JAMAIS des aplats massifs »*. Le rouge n'existe
+que sur l'onglet actif, une puce d'alerte et le cercle du CTA ; le bleu, en filet de 2 px.
+
+### 4.68.0 — les 69 teintesDISCÈTES
+
+Les fonds de badges, de puces et de lignes alternées passent de `--blue-bg` / `--amber-bg` /
+`--green-bg` / `--red-bg` à **`--gray-50`**. On garde la **structure** (on voit toujours
+qu'il y a un bloc) sans la couleur.
+
+### 4.69.0 — les 13 aplats PLEINS
+
+`button.primary`, `button.save`, `.baseline-pill.active`, `.tag-pill.on`,
+`.annot-tool.active`, `.badge.ok/.risk/.warn`, `.status-badge.risk`, `#dialogOk.danger`,
+`.aide[open] summary`, `body.locked #lockBtn`, `.params-sync:hover`.
+
+**Aplat plein → fond blanc + texte coloré + filet 1 px.** La couleur cesse d'être une
+surface pour devenir un **signal** : c'est exactement ce que la charte demande.
+
+### Ce qui reste, et c'est voulu
+**35 aplats** subsistent : points de 6-8 px, barres de progression, pastilles d'état,
+`.pc-num`. Ce sont les éléments que la charte **autorise explicitement**. On ne les supprime
+pas — on les garde.
+
+### La règle qui protège l'information (§5.2)
+Retirer un fond ne doit **jamais** retirer l'information. Vérifié : les dix libellés d'état
+(« à chiffrer » 30, « en cours » 80, « gagné » 26, « en production » 60, « opportunité » 19,
+« non chiffrée » 10, « à saisir » 24, « hors périmètre » 25) sont **intacts**. L'écran est
+moins coloré, **pas moins informatif**.
+
+Contraste vérifié sur blanc : bleu foncé 7,02:1 · rouge foncé 6,78:1 · vert 5,39:1 ·
+ambre 5,02:1. **Tous AA.**
+
+### Tests
+406 → **406** (aucun calcul touché).
+
 ## [4.67.0] — 2026-09-30 · L1
 
 **Le premier lot de la charte CeramTec : le fond, et le poids interdit.**

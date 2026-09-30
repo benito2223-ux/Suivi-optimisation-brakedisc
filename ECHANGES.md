@@ -261,6 +261,83 @@ ouvrant l'écran le matin.
 **Prochain tour** : à Z Code, pour ce chantier — mais **je veux ta réponse avant**, parce
 qu'elle dépend de ce que tu cherches, pas de ce qui est joli.
 
+### ▸ Tour 28 — 30/09/2026 — **Hermes** (v4.68.0 + 4.69.0 — les 122 aplats)
+
+**Benjamin, après L1 : « le changement est LOIN d'être radical ». Il avait raison, et j'ai
+trouvé pourquoi en comptant.**
+
+---
+
+**L1 avait traité la SURFACE. Le vrai écart, c'était la DENSITÉ DE COULEUR.**
+
+L'outil affichait **122 aplats** — bleus, verts, ambres, rouges — sur les badges, les fonds
+de tuiles, les lignes, les étiquettes. La charte CeramTec est **90 % noir, blanc et gris** :
+*« les couleurs d'accent ne sont JAMAIS des aplats massifs »*. Le rouge n'existe que sur
+l'onglet actif, une puce d'alerte et le cercle du CTA ; le bleu, en filet de 2 px.
+
+**Un fond blanc et des `font-weight: 500` ne changent rien à cette impression.** J'ai soigné
+la couleur de la toile et laissé la peinture sur les murs.
+
+---
+
+**Ce que j'ai livré, en deux versions.**
+
+**4.68.0 — les 69 teintes DISCÈTES.** Les fonds de badges, de puces et de lignes
+alternées passent de `--blue-bg` / `--amber-bg` / `--green-bg` / `--red-bg` à
+**`--gray-50`** : on garde la structure, on retire la couleur.
+
+**4.69.0 — les 13 aplats PLEINS.** `button.primary`, `button.save`, `.baseline-pill.active`,
+`.tag-pill.on`, `.annot-tool.active`, `.badge.ok/.risk/.warn`, `.status-badge.risk`,
+`#dialogOk.danger`, `.aide[open] summary`, `body.locked #lockBtn`, `.params-sync:hover`.
+
+**Aplat plein → fond blanc + texte coloré + filet 1 px.** La couleur cesse d'être une
+surface pour devenir un **signal**. C'est littéralement ce que la charte demande.
+
+**Ce qui reste : 35 aplats** — points de 6-8 px, barres de progression, pastilles d'état,
+`.pc-num`. Ce sont les éléments que la charte **autorise explicitement**. On ne les touche
+pas.
+
+---
+
+**La règle qui protège l'information — §5.2.**
+
+Retirer un fond ne doit **jamais** retirer l'information. Vérifié : les dix libellés d'état
+sont **intacts** — « à chiffrer » (30), « en cours » (80), « gagné » (26), « en production »
+(60), « opportunité » (19), « non chiffrée » (10), « à saisir » (24), « hors périmètre » (25).
+
+**L'écran est moins coloré, pas moins informatif.** Contraste vérifié sur blanc :
+bleu foncé 7,02:1 · rouge foncé 6,78:1 · vert 5,39:1 · ambre 5,02:1 — **tous AA**.
+
+**406/406**, aucun calcul touché.
+
+---
+
+**La faute de méthode, une fois de plus — et elle a un nom.**
+
+J'ai posé `--blue-bg`, `--amber-bg`, `--green-bg`, `--red-bg` comme tokens, j'ai vu que les
+tokens étaient bons, et j'ai conclu que la palette était respectée. **J'ai vérifié la
+définition des couleurs, pas leur usage.** C'est la même erreur que le harnais aveugle du
+Tour 26 : la donnée est juste, l'application ne l'est pas.
+
+**Un token vérifié n'est pas un token appliqué.** Et le corollaire qui m'aurait fait gagner
+trois heures : il fallait une page de contrôle qui demande « cette couleur est-elle utilisée
+comme fond ? combien de fois ? », au même titre que le test de contraste.
+**Un test qui compte, pas un test qui compare.**
+
+---
+
+**Ce qui reste de la charte, et l'ordre que je propose.**
+
+1. **L4 — les 152 boutons « cercle + chevron »** (le plus visible après la couleur) ;
+2. **L5 — la barre à filet bicolore 2 px et le hero** ;
+3. **L6 — les 116 champs soulignés** ;
+4. **L7 — les 19 tables** : en-têtes capitales 11 px, filets `--gray-100`, poste neutre à
+   `±0,000 €`.
+
+**Prochain tour** : à Z Code, sur L4, avec la méthode de contre-regard. Et à Benjamin :
+**regarder 4.69.0 sur Projet et me dire si l'écran paraît enfin noir et blanc.** Si oui,
+on continue. Si non, on s'arrête et on cherche ce qui coince avant de passer aux boutons.
+
 ### ▸ Tour 27 — 30/09/2026 — **Hermes** (v4.67.0 — L1 : le fond blanc, et le nom du problème)
 
 **Le reproche : « ça ne ressemble toujours absolument pas au projet stitch ».**
