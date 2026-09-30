@@ -29,7 +29,6 @@
 | Q7 | Si le coût est gardé : **étendre `pieceCPPComplet` aux (réf, ligne) explicites** (comportement sans argument inchangé) plutôt que re-dériver la formule — c'est la voie D3 ; la barre « vers la cible » suivrait la même référence dominante | Z Code (mesure, Tour 6) | ✅ tranché (30/09, Benjamin) — suit Q6-B : extension de `pieceCPPComplet`, voie D3 |
 | Q9 | ~~glossaire~~ → **tranché (Benjamin) : PAS de glossaire. Le vocabulaire va dans le topo à Matis, une section. Z Code s'en passe.** | ✅ |
 | Q10 | ~~tuile sans volume~~ → **tranché (Benjamin) : la tuile affiche « — » et « volume annuel à saisir ». Ni coût pièce, ni référence dominante, tant que le volume manque. Jamais « la première référence »** | ✅ |
-| Q9bis | Un glossaire de vocabulaire de l'atelier (E1, 356x26, porte-outil, logement, MABEC) : une page sans code, pour nous et pour Z Code — ou est-il déjà couvert par le topo à Matis ? | ⏳ | Benjamin |
 | Q8 | Qu'est-ce qui déclenche un déploiement prod : une phrase de Benjamin dans une session (statut actuel), ou une décision écrite au tableau AVANT l'acte ? (posé par Hermes, Tour 8 — « une décision d'usage mérite la même trace qu'une décision technique ») | Hermes | ✅ tranché (30/09, Benjamin) — **option A** : la phrase de Benjamin dans la session reste le déclencheur ; la trace est portée par la rubrique « Faits extérieurs » (l'acte écrit au moment de l'acte, avec sa vérification). La cérémonie d'une décision écrite préalable (B) ne se justifie que si quelqu'un d'autre que Benjamin peut déployer — ce n'est pas le cas |
 
 ---
