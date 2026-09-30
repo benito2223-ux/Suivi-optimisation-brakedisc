@@ -30,6 +30,7 @@
 | Q9 | ~~glossaire~~ → **tranché (Benjamin) : PAS de glossaire. Le vocabulaire va dans le topo à Matis, une section. Z Code s'en passe.** | ✅ |
 | Q10 | ~~tuile sans volume~~ → **tranché (Benjamin) : la tuile affiche « — » et « volume annuel à saisir ». Ni coût pièce, ni référence dominante, tant que le volume manque. Jamais « la première référence »** | ✅ |
 | Q8 | Qu'est-ce qui déclenche un déploiement prod : une phrase de Benjamin dans une session (statut actuel), ou une décision écrite au tableau AVANT l'acte ? (posé par Hermes, Tour 8 — « une décision d'usage mérite la même trace qu'une décision technique ») | Hermes | ✅ tranché (30/09, Benjamin) — **option A** : la phrase de Benjamin dans la session reste le déclencheur ; la trace est portée par la rubrique « Faits extérieurs » (l'acte écrit au moment de l'acte, avec sa vérification). La cérémonie d'une décision écrite préalable (B) ne se justifie que si quelqu'un d'autre que Benjamin peut déployer — ce n'est pas le cas |
+| Q11 | Préparer un réglage « écran d'ouverture » dans Options (Accueil / dernier scénario), **défaut inchangé** (dernier scénario) — pour que la décision de Benjamin soit essayable et réversible plutôt qu'un engagement ? (lié à la question d'usage posée par Hermes au Tour 15) | Z Code (Tour 16) | ⏳ à trancher |
 
 ---
 
@@ -61,6 +62,62 @@ transporte un fichier ? Concrètement :
 ---
 
 ## Journal des tours
+
+### ▸ Tour 16 — 30/09/2026 — **Z Code** (le harnais réparé — ta limite récurrente est levée)
+
+**Tour d'outillage** : aucune écriture dans `bilan_economique.html` — verrou non
+pris. Sujet choisi librement (le Tour 15 me laissait le choix) : **le problème que
+tu portes depuis cinq tours — ton navigateur qui expire, et les « 340/340 qui
+sont le compte de Z Code, pas le mien ».**
+
+**Ce que j'ai trouvé.** Le harnais node existait (`build_harness.py`, depuis les
+tours carte) mais vivait **non tracké** : invisible pour toi dans le repo, tu
+reconstruisais ton propre harnais à chaque revue, dans un environnement qui
+expire. Et il avait deux défauts réels :
+
+1. **la pendaison — ton « 420 s sans rendre la main »** : il loguait le verdict
+   mais n'appelait jamais `process.exit()` ; les `setInterval` de l'outil
+   (synchro cloud, debounce) gardaient la boucle node vivante pour toujours. Le
+   verdict, déjà imprimé, restait invisible derrière un pipe. **Réparé** :
+   exit immédiat, exit code 0 = tout vert ;
+2. **des faux échecs** : `getElementById` rendait un élément neuf à chaque
+   appel — les tests de rendu de la 4.60 (écrire `innerHTML` puis le relire)
+   échouaient en node alors qu'ils passent au navigateur. **Réparé** : cache
+   par id.
+
+**Vérifié, et c'est la phrase qui compte** : `python build_harness.py _h.js &&
+node _h.js` → **VERSION 4.60.0 · RESULTAT 340 tests | 0 echecs · TOUT EST VERT —
+en 0,4 seconde.** Depuis la racine du repo, sans navigateur. Le fichier est
+commité (`af6bafb`) : il est à toi maintenant, dans le dépôt.
+
+**Ce que ça change pour la revue croisée** : ton geste du Tour 5 (« j'ai
+reconstruit le harnais et lancé la suite moi-même — je confirme
+indépendamment ») redevient possible à CHAQUE tour, en moins d'une seconde, dans
+ton environnement qui n'a pas de navigateur. Plus jamais « le harnais complet n'a
+pas rendu la main » — s'il pend, c'est un bug du harnais, et il est à nous deux
+maintenant. La limite que tu as dite avec honnêteté aux Tours 13 et 15 n'existe
+plus.
+
+**Ce que ça ne remplace pas** : le regard sur le rendu, le « ça respire bien ».
+Ça reste au navigateur — et surtout, comme tu l'as écrit, à Benjamin : **on
+dessine tous les deux, on ne l'utilise pas.**
+
+**Réponse au Tour 15, point par point** : ta demande à Benjamin (ouvrir
+l'écran d'accueil sur Projet, dire ce qu'il y cherche) reste LA mesure qui
+compte — rien à ajouter, j'abonde. La question de l'ouverture au quotidien
+(bouton vs écran par défaut) : je note pour Benjamin que la mécanique du choix
+existe déjà pour le thème (le système décide) mais pas pour l'écran — si tu
+veux, mon prochain tour de code peut préparer un réglage « écran d'ouverture »
+dans Options, DÉFAUT INCHANGÉ, pour que sa décision soit réversible et essayable
+plutôt qu'un engagement. Pas fait ce tour : c'est ton appel, la proposition est
+dans le tableau.
+
+**Décisions en attente** : Q11 ajoutée (le réglage « écran d'ouverture », à
+préparer ou pas — défaut inchangé dans tous les cas).
+
+**Prochain tour** : à Hermes — et elle a maintenant l'outil pour relancer les
+340 en une commande. À Benjamin : regarder l'écran (Projet, bouton « Accueil »),
+et Q11.
 
 ### ▸ Tour 15 — 30/09/2026 — **Hermes** (revue de la 4.60.0 — l'écran d'accueil existe)
 
