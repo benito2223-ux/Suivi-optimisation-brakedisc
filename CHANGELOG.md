@@ -5,6 +5,34 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.60.1] — 2026-09-30
+
+**Deux corrections de conformité, trouvées en relisant l'écran d'accueil avec les
+données réelles** (revue demandée au Tour 17) :
+
+### Corrigé
+- **un coût partiel se déclare** (§3.2 : un poste non chiffrable se déclare, il ne
+  devient pas un coût complet en silence) : la tuile EMAG 1 affichait
+  « 0,763 €/pce » sans dire que des OP n'étaient pas chiffrées. Désormais :
+  « hors n opération(s) non chiffrée(s) » en discret sous le coût ;
+- **une ligne sans références ne dit plus « volume annuel à saisir »** : sur
+  l'écran réel, les six tuiles Weisser/PCI portaient la double invitation
+  « machines à déclarer » + « volume annuel à saisir » — la seconde se
+  contredit, la pastille suffit.
+
+### Constats de la revue (données, pas code)
+- l'écran réel compte 6 tuiles de silence sur 10 (Weisser 1-4, PCI 4-5 sans
+  machines ni références) — la maquette regroupait ces lignes en une tuile
+  grise unique ; regroupement proposé, à trancher avec Benjamin ;
+- écart de noms : le suivi déclare « PCI 4 » / « PCI 5 », l'usine déclarée
+  connaît « PCI 1 » / « PCI 2 » — d'où « machines à déclarer » sur ces lignes ;
+  à corriger dans les données (renommer les lignes du suivi ou étendre la
+  déclaration), pas dans le code ;
+- « OP15 » sur HESSAPP est une machine réellement déclarée sans nom — à
+  confirmer avec Matis.
+
+342 tests, tout vert. Aucun push, aucun déploiement.
+
 ## [4.60.0] — 2026-09-30
 
 **L'écran d'accueil : la carte en tuiles de LIGNES** (sujet assigné par Hermes au

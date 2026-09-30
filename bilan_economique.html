@@ -11431,6 +11431,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.60.1", date:"30/09/2026", points:[
+    "<b>Deux corrections après relecture de l’écran d’accueil avec vos données réelles.</b> Un coût qui ne couvre pas toutes les opérations le dit désormais : « hors 1 opération non chiffrée » — il ne passe plus pour complet. Et une ligne sans références n’affiche plus « volume annuel à saisir » : sa pastille dit déjà « machines à déclarer », une seule invitation à la fois."
+  ]},
   { version:"4.60.0", date:"30/09/2026", points:[
     "<b>Le premier écran est là : « Accueil », l’usine par lignes.</b> Un bouton « Accueil » ouvre la grille : une tuile = une ligne entière (EMAG 1 avec ses références et ses postes), avec le gain déjà acté et celui en cours dans deux blocs séparés, le coût pièce <b>étiqueté par la référence dominante</b> (« 356x26 : 0,038 €/pce · +1 réf. »), le chemin vers la cible, et <b>le à-faire en toutes lettres</b> (« OP20 — Cible du site posée, aucune mesure »).",
     "<b>La pastille dit l’action la plus urgente.</b> Un poste à chiffrer passe avant tout ; sinon les essais en cours ; sinon la production gagnée ; sinon l’attente. Toujours le mot avec la couleur.",
@@ -11880,7 +11883,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.60.0";
+const TOOL_VERSION = "4.60.1";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -13187,9 +13190,20 @@ function accueilTuileHTML(gl){
   if(gl.gainActe > 0) pouls += `<span class="ca-acte">+${fmtEuroCourt(gl.gainActe)}<small>/an acté</small></span>`;
   if(gl.gainProjete > 0) pouls += `<span class="ca-projete">+${fmtEuroCourt(gl.gainProjete)}<small>/an en cours</small></span>`;
 
-  /* le coût étiqueté dominante (Q6-B) — ou son absence DITE (Q10) */
+  /* le coût étiqueté dominante (Q6-B) — ou son absence DITE (Q10).
+     4.60.1, revue sur données réelles : deux corrections de conformité —
+     · une ligne SANS références ne dit pas « volume annuel à saisir » : sa
+       pastille dit déjà « machines à déclarer », la seconde invitation se
+       contredirait (sur l'écran réel, 6 tuiles_WEISSER/PCI portaient le double
+       message) ;
+     · un coût PARTIEL se déclare (§3.2 : un poste non chiffrable se déclare, il
+       ne devient pas un coût complet en silence) : « 0,763 €/pce » sur EMAG 1
+       ne couvrait pas les OP non chiffrées sans le dire. */
   let cout = "";
-  if(!gl.volumeDominante){
+  const nbNonChiffrees = gl.coutPiece ? (gl.coutPiece.nonChiffrees || []).length : 0;
+  if(!(l.references || []).length){
+    cout = "";
+  } else if(!gl.volumeDominante){
     cout = `<div class="al-cout al-manque">— <span>volume annuel à saisir</span></div>`;
   } else if(!gl.coutPiece){
     cout = `<div class="al-cout al-manque">— <span>aucune opération chiffrée</span></div>`;
@@ -13198,6 +13212,9 @@ function accueilTuileHTML(gl){
     cout = `<div class="al-cout">${escapeAttr(gl.refDominante.nom)} : <b>${fmt(gl.coutPiece.prod, 3)} €/pce</b>`
          + (autres > 0 ? ` <span class="ca-refs" title="${autres} autre(s) référence(s) sur cette ligne">+${autres} réf.</span>` : "")
          + `</div>`;
+    if(nbNonChiffrees > 0){
+      cout += `<div class="al-manque" style="margin-top:1px;">hors ${nbNonChiffrees} opération${nbNonChiffrees > 1 ? "s" : ""} non chiffrée${nbNonChiffrees > 1 ? "s" : ""}</div>`;
+    }
     if(gl.coutPiece.chemin !== null){
       cout += `<div class="ca-chemin" title="Part du chemin vers la cible du site déjà parcourue sur la référence dominante">
         <div class="ca-track"><div class="ca-fill" style="width:${Math.round(gl.coutPiece.chemin)}%"></div></div>
@@ -15586,6 +15603,17 @@ function runTests(){
       const hO = accueilTuileHTML(glO);
       ok("accueil : une ligne jamais travaillée ne montre aucun chiffre — son invitation seulement",
          [hO.includes("déclarée, jamais travaillée"), hO.includes("/an"), hO.includes("€/pce")], [true, false, false]);
+      /* pour « machines à déclarer » il faut une ligne NON déclarée dans l'usine
+         (pas seulement vide de données) : LS3 ne connaît pas « Weisser 9 » */
+      const lO9 = normalizeLigne({ id: "lO9", nom: "Weisser 9", references: [] });
+      const hO9 = accueilTuileHTML(gainLigne(lO9, LS3));
+      ok("accueil : une ligne sans références ni machines ne dit PAS « volume annuel à saisir » — la pastille « machines à déclarer » suffit, pas de double invitation (4.60.1)",
+         [hO9.includes("volume annuel à saisir"), hO9.includes("machines à déclarer")], [false, true]);
+
+      /* 4.60.1 — un coût PARTIEL se déclare (§3.2) : EMAG 1 réel affichait 0,763 €/pce
+         sans dire que des OP n'étaient pas chiffrées. Ici refM a UNE op non chiffrable. */
+      ok("accueil : un coût partiel dit « hors n opération non chiffrée », il ne passe pas pour complet",
+         [hM.includes("hors 1 opération non chiffrée")], [true]);
 
       /* la recette A2 : l'écran dit s'il sert */
       const lignesA = lignes;
