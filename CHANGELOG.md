@@ -5,7 +5,26 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
-## [4.65.0] — 2026-09-30 · C5′ bloc 1
+## [4.65.1] — 2026-09-30 · C5′ bloc 2
+
+**Les tuiles de ligne enrichies** (spec C5 §1.4) — remplies comme sur la
+capture, avec nos sources.
+
+### Ajouté
+- **taux horaire sourcé** à côté du nom de ligne (`coutHoraire`) — absent, il
+  ne s'affiche pas (pas de « — » décoratif sur un détail) ;
+- **gain unitaire + gain annuel côte à côte** : le Δ de coût pièce réalisé sur
+  la dominante (prod − enCours, sourcé `pieceCPPComplet`) à côté du gain annuel
+  — sans Δ mesurable, rien, pas un 0 ;
+- **le contexte en italique, VÉRIFIABLE** : la première étape en attente, ou le
+  maintien à revalider si tout est gagné — jamais une phrase d'ambiance ;
+- **l'emplacement photo : prévu, vide, et il le dit** (« photo machine à
+  fournir ») — aucune photo fictive, on attend Matis.
+
+364 → **368 tests**, tout vert. Contre-regard : placeholder photo muet injecté
+→ vu par un test → restauré par copie sauvegardée, 368/0.
+
+## [4.65.0]## [4.65.0] — 2026-09-30 · C5′ bloc 1
 
 **L'en-tête et le BANDEAU de l'accueil** (spec C5 §1.1 + §1.3). Le bandeau est
 le cœur du chantier et l'endroit de la plus grande tentation d'inventer.

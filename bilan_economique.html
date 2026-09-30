@@ -2262,6 +2262,17 @@ body.atelier-on{overflow:hidden;}
 .bd-v small{ font-size:10px; font-weight:500; color:var(--label); margin-left:4px; letter-spacing:.02em; }
 .bd-sub{ font-family:var(--font-body); font-size:10.5px; color:var(--body); margin-top:4px; line-height:1.35; }
 @media (max-width:760px){ .bd-bandeau{ grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); } .bd-v{ font-size:26px; } }
+/* 4.65.1 (C5' bloc 2) — la tuile enrichie */
+.al-taux{ font-family:var(--font-mono); font-size:10px; font-weight:500; color:var(--label); letter-spacing:0; }
+.al-corps{ display:flex; gap:8px; align-items:flex-start; }
+.al-photo{ flex:0 0 56px; height:42px; border:1px dashed var(--gray-300); border-radius:var(--radius);
+  display:flex; align-items:center; justify-content:center; text-align:center;
+  font-family:var(--font-mono); font-size:7.5px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--label); line-height:1.5; padding:2px; }
+.al-flux{ flex:1; min-width:0; }
+.al-delta{ font-family:var(--font-mono); font-size:11px; font-weight:600; color:var(--green); margin-left:8px; white-space:nowrap; }
+.al-contexte{ font-style:italic; font-size:11px; color:var(--body); line-height:1.35;
+  padding:5px 8px; background:var(--surface-alt); border-radius:var(--radius); }
 .al-hors-liste{ display:flex; flex-wrap:wrap; gap:3px 10px; padding:7px 8px;
   background:var(--surface-alt); border:1px solid var(--border); border-radius:var(--radius);
   font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); }
@@ -11999,7 +12010,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.65.0";
+const TOOL_VERSION = "4.65.1";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -13348,12 +13359,44 @@ function accueilTuileHTML(gl){
       + `</div>`
     : "";
 
+  /* v4.65.1 (C5′ bloc 2) — le taux horaire SOURCÉ de la ligne, à côté du nom ;
+     absent, il ne s'affiche pas (§5.6 : pas de « — » décoratif sur un détail). */
+  const th = parseFloat(l.coutHoraire);
+  const thTxt = !isNaN(th) && th > 0 ? ` <span class="al-taux" title="Coût horaire machine de la ligne">${fmt(th, 0)} €/h</span>` : "";
+
+  /* le contexte en italique : LE fait le plus important, VÉRIFIABLE — la
+     première étape en attente ; si tout est gagné, le maintien à revalider.
+     Jamais une phrase d'ambiance (spec C5 §1.4). */
+  const contexte = aFaire.length
+    ? `${aFaire[0].opCode} — ${aFaire[0].texte}`
+    : (gl.etats.gagne > 0 ? `${gl.etats.gagne} poste${gl.etats.gagne > 1 ? "s" : ""} en production — à revalider au prochain rééquilibrage` : "");
+
+  /* gain unitaire + gain annuel CÔTE À CÔTE (spec C5 §1.4) : le Δ de CPP de la
+     dominante (prod − enCours — sourcé pieceCPPComplet) à côté du gain annuel.
+     Sans Δ mesurable : rien, pas un 0 (§5.6). */
+  let delta = null;
+  if(gl.coutPiece && gl.coutPiece.enCours !== undefined && gl.coutPiece.enCours < gl.coutPiece.prod){
+    delta = gl.coutPiece.prod - gl.coutPiece.enCours;
+  }
+  const deltaTxt = delta !== null
+    ? `<span class="al-delta" title="Écart de coût pièce déjà réalisé sur la référence dominante">Δ ${fmt(delta, 4)} €/pce</span>` : "";
+
+  /* l'emplacement photo : PRÉVU, VIDE — pas de photo fictive (spec C5 §1.4,
+     on attend Matis). Un cadre discret qui dit ce qu'il attend. */
+  const photo = `<div class="al-photo" title="Emplacement prévu pour la photo de la machine — aucune photo fictive">photo machine à fournir</div>`;
+
   return `<div class="ca-tuile ${e.classe} al-tuile" data-ligne="${escapeAttr(l.id)}" tabindex="0" role="button" title="Voir cette ligne sur la carte atelier">
-    <div class="ca-tete"><span class="ca-titre">${escapeAttr(l.nom || "Ligne sans nom")}</span><span class="ca-etat">${escapeAttr(badge)}</span></div>
-    <div class="ca-ref-ligne">${escapeAttr(refsTxt)}</div>
-    <div class="ca-pouls">${pouls || '<span class="ca-vide">—</span>'}</div>
-    ${cout}
+    <div class="ca-tete"><span class="ca-titre">${escapeAttr(l.nom || "Ligne sans nom")}${thTxt}</span><span class="ca-etat">${escapeAttr(badge)}</span></div>
+    <div class="al-corps">
+      ${photo}
+      <div class="al-flux">
+        <div class="ca-ref-ligne">${escapeAttr(refsTxt)}</div>
+        <div class="ca-pouls">${pouls || '<span class="ca-vide">—</span>'}${deltaTxt}</div>
+        ${cout}
+      </div>
+    </div>
     ${gl.etats.opportunite === (gl.postes || []).length && (gl.postes || []).length > 0 ? `<div class="ca-tentant">déclarée, jamais travaillée</div>` : ""}
+    ${contexte ? `<div class="al-contexte">${escapeAttr(contexte)}</div>` : ""}
     ${afTxt}
     <div class="ca-actions"><button class="primary small al-ouvrir" data-ligne="${escapeAttr(l.id)}">Voir l'atelier →</button></div>
   </div>`;
@@ -16085,6 +16128,23 @@ function runTests(){
       const hCV = accueilBandeauHTML([ glCV ]);
       ok("bandeau : une cible posée sans volume dit « volume annuel à saisir », pas un reste inventé",
          [hCV.includes("cible posée sur 1 ligne"), hCV.includes("volume annuel à saisir")], [true, true]);
+
+      /* v4.65.1 (C5′ bloc 2) — la tuile enrichie : taux horaire sourcé, Δ unitaire
+         à côté de l'annuel, contexte italique VÉRIFIABLE, emplacement photo vide */
+      const hT = accueilTuileHTML(glB1);
+      ok("tuile enrichie : le Δ de coût pièce réalisé vit À CÔTÉ du gain annuel (spec §1.4)",
+         [hT.includes("Δ"), hT.includes("€/pce"), hT.includes("/an acté")], [true, true, true]);
+      ok("tuile enrichie : le contexte en italique est un fait VÉRIFIABLE — la première étape en attente ou le maintien",
+         [hT.includes("al-contexte")], [true]);
+      ok("tuile enrichie : l'emplacement photo est VIDE et dit ce qu'il attend — aucune photo fictive",
+         [hT.includes("al-photo"), hT.includes("photo machine")], [true, true]);
+      const glT2 = gainLigne(normalizeLigne({ id: "lT2", nom: "EMAG 3", coutHoraire: "50",
+          references: [ normalizeReference({ id: "rT2", nom: "302x26", productionAnnuelle: "50000", cibleCPP: "",
+            ops: [ { id: "oT2", nom: "OP10", config: opCfgB, scenarios: [
+              { id: "pT2", name: "Prod", baseline: true, outils: [ { id: "uT2", numero: "T", logements: [ { id: "lT2b", nom: "Bol", prix: 30, aretes: 8, charniere: 100 } ] } ] } ] } ] }) ] }),
+        [ { nom: "EMAG 3", machines: [ { code: "OP10", nom: "Ébauche" } ] } ]);
+      ok("tuile enrichie : le taux horaire SOURCÉ s'affiche quand il existe, jamais de « — » décoratif",
+         accueilTuileHTML(glT2).includes("50 €/h"), true);
     }
 
     /* ---- v4.55.1 — le rattachement d'un scénario à un projet d'une autre ligne ----
