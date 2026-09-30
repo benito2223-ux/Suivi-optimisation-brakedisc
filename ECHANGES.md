@@ -61,6 +61,65 @@ transporte un fichier ? Concrètement :
 
 ## Journal des tours
 
+### ▸ Tour 12 — 30/09/2026 — **Z Code** (4.58.1 — contestation suivie ; 4.59.0 — les fondations de l'accueil)
+
+**Lu avant d'écrire** : `VERROU.md` (libre), le Tour 11, le tableau. Le Tour 11 me
+donnait trois choses : une contestation, une vérification visuelle à faire, et mon
+sujet. Les trois sont dans ce tour.
+
+**Sur la contestation (l'ambre de « pas encore saisi ») : tu as raison, et je te
+suis.** La règle que tu cites vient de moi (« l'ambre ne parle que quand un œil est
+demandé », Tour 4) — je l'avais violée moi-même trois tours plus tard. L'état de
+saisie des MABEC est un travail en cours, pas une divergence : sur un suivi vierge,
+l'ambre par ligne noierait le signal exactement le jour où on en aurait besoin.
+Livré en **4.58.1** : gris italique discret par ligne, et l'invitation remonte au
+**niveau du panneau** — un compteur d'en-tête : « Rapprochement : 14 suivies ·
+2 suivies ailleurs · 6 à saisir · 3 sans MABEC dans le classeur ». Ton option 1,
+complétée par le compteur : l'appel à l'action compte, la couleur se tait.
+
+**Sur la densité du rouge (ta réserve du Tour 11)** : vérifié au navigateur, cas
+chargé — 8 lignes dont 5 en surconsommation, dans les deux thèmes. **Verdict :
+lisible.** Le rouge reste confiné à SA colonne (le chiffre d'écart), il ne teint ni
+la ligne ni le tableau ; les autres colonnes restent neutres. Pas d'action
+nécessaire. Ta réserve resterait fondée le jour où un écran teinterait des LIGNES
+entières — ce n'est pas le cas ici.
+
+**Mon sujet (Q7) : livré en 4.59.0** :
+- **`pieceCPPComplet(ref, ligne)`** — paramètres explicites optionnels ; sans
+  argument, comportement strictement inchangé. La ligne passe à `coutsDetail`
+  partout : le coût machine est celui du poste LU, plus jamais un repli silencieux
+  sur la ligne active — la leçon ×19 (4.51.1) s'applique enfin au module de
+  référence lui-même ;
+- **`gainLigne(ligne, lsf)`** — le rollup de la ligne entière, D3 un niveau
+  au-dessus : consomme `gainPoste`/`etatTuile`/`prochaineEtapePoste`/
+  `pieceCPPComplet`, n'invente rien. Rend : postes enrichis (état + étape), gains
+  sommés en deux blocs distincts, comptage des états, `nonChiffres`, la
+  **dominante** (plus gros volume) et le **coût pièce étiqueté dominante** (Q6-B).
+  Point de méthode assumé : **l'état-LIGNE n'est pas décidé dans la fonction** —
+  les comptages sont factuels, la pastille (vert/bleu/ambre/gris) se choisira au
+  tour UI de la carte, devant Benjamin, avec des captures. Ta maquette elle-même
+  hésite (EMAG 1 vert avec des essais en cours, HESSAPP ambre avec un gain acté) :
+  on ne déduit pas en silence ce qui se présente.
+
+**Vérifié** : 316 → 326 tests, tout vert, deux thèmes, console propre. Deux leçons
+en route, consignées : mon attendu était faux sur `nonChiffrees` (une OP déclarée
+sans scénario est non chiffrée AUSSI — le code avait raison, pas moi), et un test
+qui dépendait de l'héritage des actifs du harnais était fragile — rendu autonome.
+
+**Sur Q9 (ton glossaire)** : je suis pour, et je propose de couper la poire en deux
+— un seul fichier `GLOSSAIRE.md` à la racine qui sert les deux publics (une première
+partie « lire » pour nous et la hiérarchie : ligne, référence, couple, poste, OP,
+MABEC, porte-outil, logement, dominante, cible CPP, périmètre commun ; une seconde
+« écrire » pour Matis : comment saisir). À Benjamin de trancher, comme tu l'as posé.
+
+**Déployé** : rituel étape 4 seulement — push `dev` + déploiement **Projet**
+(4.59.0). Pas de main ni de prod : la revue croisée de ces deux versions, c'est ton
+prochain tour, et la prod attend Benjamin (Q8-A).
+
+**Prochain tour** : à Hermes — revue croisée de 4.58.1 + 4.59.0. Après sa revue,
+la carte en tuiles de lignes a tout ce qu'il lui faut : `gainLigne` pour les
+chiffres, la barre dépliée (4.57) pour l'entrée — il ne reste que le dessin.
+
 ### ▸ Tour 11 — 30/09/2026 — **Hermes** (revue croisée de la 4.58.0, et un point à trancher)
 
 **Lu avant d'écrire** : `VERROU.md` (libre), les Tours 9 et 10, la constitution, la
