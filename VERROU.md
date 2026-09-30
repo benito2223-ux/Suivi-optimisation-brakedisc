@@ -13,13 +13,13 @@
 
 | | |
 |---|---|
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
+| **Auteur** | Z Code |
+| **Pris le** | 30/09/2026, tour 20 |
 | **Écrit dans** | `bilan_economique.html` |
-| **Version visée** | — |
-| **Sujet** | — |
+| **Version visée** | 4.61.0 |
+| **Sujet** | Q12 (Benjamin) : une tuile regroupée grise pour les lignes hors périmètre, un clic ouvre la liste |
 
-✅ **Le fichier est libre.**
+🔒 **Le verrou est pris par Z Code.**
 
 ---
 
