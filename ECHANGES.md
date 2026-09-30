@@ -42,6 +42,7 @@
 |---|---|---|---|
 | 30/09 ~09:20 | Prod **4.56.0** + Projet **4.56.0** (merge `main` = `c32a0ee`), ordre de Benjamin dans la session (Tour 7) | suivi-optimisation-septfons.surge.sh · suivi-optimisation-projet.surge.sh | ✅ curl, SW 200 (Z Code, puis re-vérifié par Hermes au Tour 8) |
 | 30/09 ~11:00 | Prod **4.57.0** + Projet **4.57.0** (merge `main` = `b8c7d87`), ordre de Benjamin : « une fois vérifié tu déploies » | idem | ✅ curl `TOOL_VERSION = "4.57.0"`, coquille absente (Z Code, Tour 9) |
+| 30/09 ~12:30 | Prod **4.58.0** + Projet **4.58.0** (merge `main` fast-forward), ordre de Benjamin : « fonce code et déploie » (Q8-A) — MABEC raccordé au logement, rapprochement du classeur par article | idem | ⏳ vérification curl à suivre dans ce tour |
 
 ---
 
@@ -58,6 +59,50 @@ transporte un fichier ? Concrètement :
 ---
 
 ## Journal des tours
+
+### ▸ Tour 10 — 30/09/2026 — **Z Code** (v4.58.0 — le MABEC raccordé, le classeur rapproché plaquette par plaquette)
+
+**Contexte.** Benjamin ne retrouvait pas ses outils : « je ne comprends pas le traitement
+des outils et des logements ! EMAG 1 j'ai : T517 D2, T519 D2… et les outils configurés
+dans notre application ne correspondent pas ». Repasse faite (hors journal) : sa liste de
+20 lignes classeur = **13 porte-outils** × leurs logements ; le coût était déjà insensible
+au regroupement (la somme se fait sur les plaquettes) ; l'écart était de vocabulaire et de
+saisie, pas de modèle. Puis : « fonce code et déploie » — sujet Q4, prioritaire devant
+l'écran d'accueil.
+
+**Ce que je livre (v4.58.0, commit `1c678b5`)** :
+- **le MABEC vit sur le logement** — dans le champ code article EXISTANT, renommé
+  « MABEC (code article) » en saisie et en impression. Aucun champ doublé : le MABEC
+  EST le code article (D3). Migration nulle : champ vide par défaut ;
+- **`matisPorteOutilPosition()` + `matisRapprocheMabec()`** — fonctions pures : le
+  rapprochement par MABEC **+ contexte porte-outil, jamais le MABEC seul** (la
+  précision de Benjamin : une même plaquette se réutilise sur plusieurs porte-outils —
+  ça se lit « suivi ailleurs », une information, pas une erreur). Le contexte rattrape
+  la saisie plate « T517 D1 » en n° d'outil et la casse libre du MABEC ;
+- **colonne « Dans le suivi »** dans le détail par outil du classeur : « suivi : T517 ·
+  D1 (OP10) » / « suivi ailleurs » / « pas encore saisi » (ambre, l'invitation) / « — » ;
+- **la convention d'outillage est écrite dans la fiche outil** (au survol des champs) :
+  n° outil = le PORTE-OUTIL, positions D1/D2 = un logement chacune, champ correcteur
+  réservé aux mono-positions. C'est la réponse durable à la question de Benjamin.
+
+**Vérifié** : 307 → 316 tests, tout vert (calcul ET rendu), deux thèmes, console propre.
+**Un incident en route, consigné** : une SyntaxError dans mon propre bloc de tests
+(fermeture `ops:[` oubliée) — attrapée par `node --check` sur les scripts extraits
+AVANT tout déploiement, réparée en réécrivant les constructions en multiligne une
+fermeture par ligne. Le garde-fou a servi ; j'en retiens l'outil (extraire +
+`node --check` les 4 scripts) comme réflexe avant tout `runTests` qui échoue bizarrement.
+
+**Déployé** sur ordre de Benjamin (« fonce code et déploie », Q8-A) : push `dev`,
+Projet, merge `main`, prod — ligne « Faits extérieurs » écrite au moment de l'acte.
+
+**Ce que ça change pour Matis** : dès qu'il saisit les MABEC dans ses fiches outil
+(ou qu'on les complète ensemble), le détail du classeur dira où vit chaque plaquette —
+et les 20 lignes d'EMAG 1 deviendront lisibles d'un coup. Le topo
+(`TOPO_MATIS_maj_octobre_2026.md`) reste à jour sur le reste.
+
+**Prochain tour** : à Hermes — la revue croisée de la 4.58.0, puis son sujet (l'écran
+d'accueil : j'ai toujours `gainLigne` + l'extension `pieceCPPComplet` (Q7) dans ma
+pipe, l'ordre du Tour 5 tient).
 
 ### ▸ Tour 9 — 30/09/2026 — **Z Code** (revue croisée de la 4.57.0, déploiement, topo Matis)
 
