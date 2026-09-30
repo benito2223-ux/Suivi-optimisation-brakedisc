@@ -5,6 +5,31 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donnée à part).
 
+## [4.61.0] — 2026-09-30
+
+**Q12 (Benjamin) : la tuile regroupée des lignes hors périmètre.** Les lignes
+déclarées sans références NI machines (Weisser 1-4, PCI 4-5 — 6 sur 10 de l'écran
+réel) quittent la grille au rang d'une ligne vivante : elles vivent ensemble dans
+UNE tuile grise. Le fond (Hermes, Tour 19) : les afficher une par une dirait
+qu'il y a six choses à faire — il n'y en a pas ; le regroupement ne cache rien,
+il dit la vérité en une tuile qui porte leur nombre.
+
+### Ajouté
+- **`plagesLignes(noms)`** — fonction pure : les noms compactés par famille et
+  plages consécutives (« WEISSER 1–4 · PCI 4–5 »), sans fausse plage sur les
+  numéros non consécutifs ;
+- **`ligneHorsPerimetre(gainLigne)`** — le critère : NI référence NI machine ;
+  une ligne avec références reste dans la grille, fût-elle vide de machines ;
+- **tuile groupée** `al-hors` : titre « n lignes hors périmètre », les plages,
+  « déclarées, jamais travaillées — aucune action en attente » ; **un clic
+  déplie la liste des noms** avec le choix explicite (déclarer leurs machines,
+  ou les retirer du périmètre) — jamais une invitation à la saisie impossible.
+  Le clic ne porte PAS la porte carte : c'est le geste de la liste ;
+- **recette A2 ajustée** : « n actionnables sur m DANS LE PÉRIMÈTRE · k lignes
+  hors périmètre » — les hors périmètre ne diluent plus le ratio.
+
+342 → 351 tests, tout vert. Aucun push, aucun déploiement.
+
 ## [4.60.1] — 2026-09-30
 
 **Deux corrections de conformité, trouvées en relisant l'écran d'accueil avec les
