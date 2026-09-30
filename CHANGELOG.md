@@ -5,6 +5,33 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.67.0] — 2026-09-30 · L1
+
+**Le premier lot de la charte CeramTec : le fond, et le poids interdit.**
+
+### Corrigé — la page était grise, la charte dit blanche
+
+- `--bg` : `var(--gray-100)` → `var(--white)`. **Toute la page était teintée gris** ;
+  c'était l'écart le plus visible avec la preview, et il tenait en une ligne. Les cartes
+  se détachent maintenant par leur contour (`--gray-200`), comme la charte le demande :
+  *« les couleurs d'accent ne sont jamais des aplats massifs »* ;
+- **145 occurrences de `font-weight: 600` → 500.** La charte l'interdit explicitement
+  (« le poids 600 n'existe pas sur la charte CeramTec ») ; 500 (Medium) est le poids
+  d'emphase de la charte ;
+- **le test de contraste suit le fond réel** : les deux paires « fond de page » sont
+  passées de `--gray-100` à `--white` dans l'outil **et** dans le harnais. Un test qui
+  vérifie un fond qu'on n'utilise plus ne protège plus rien.
+
+### Ce que ce lot ne fait PAS
+Aucun composant n'est encore refait : pas de barre à filet bicolore, pas de hero, pas de
+bouton « cercle + chevron », pas de champ souligné. **Les tokens étaient posés, les
+composants non** — c'est la raison pour laquelle l'écran ne ressemblait pas à la preview,
+et elle est maintenant nommée au journal.
+
+### Tests
+406 → **406** (aucun calcul touché). Contraste 6/6, désormais **sur fond blanc** :
+21,00:1 · 6,57:1 · 6,57:1 · 5,66:1 · 5,07:1 · 4,83:1.
+
 ## [4.66.0] — 2026-09-30
 
 **Deux retours de Benjamin : « toujours des outils créés en double au lieu d'un outil

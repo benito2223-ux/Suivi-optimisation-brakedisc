@@ -13,13 +13,13 @@
 
 | | |
 |---|---|
-| **Auteur** | **Hermes** |
-| **Pris le** | 30/09/2026 |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
 | **Écrit dans** | `bilan_economique.html` |
-| **Version visée** | **4.67.0** |
-| **Sujet** | L1 : fond blanc + suppression des 141 font-weight:600 (interdit par la charte) |
+| **Version visée** | — |
+| **Sujet** | — |
 
-⛔ **Le fichier est pris par Hermes — ne pas y écrire.**
+✅ **Le fichier est libre.**
 
 ---
 

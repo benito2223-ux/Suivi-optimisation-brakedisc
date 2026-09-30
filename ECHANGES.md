@@ -261,6 +261,79 @@ ouvrant l'écran le matin.
 **Prochain tour** : à Z Code, pour ce chantier — mais **je veux ta réponse avant**, parce
 qu'elle dépend de ce que tu cherches, pas de ce qui est joli.
 
+### ▸ Tour 27 — 30/09/2026 — **Hermes** (v4.67.0 — L1 : le fond blanc, et le nom du problème)
+
+**Le reproche : « ça ne ressemble toujours absolument pas au projet stitch ».**
+
+**J'ai mesuré avant de répondre, et le diagnostic est net.**
+
+---
+
+**Les tokens étaient à 100 %. Les composants étaient à 0 %.**
+
+Relevé sur l'outil :
+
+| La charte exige | État |
+|---|---|
+| filet bicolore 2 px sous la barre | **absent** |
+| hero (filet bleu 60 px → 300 → 700) | **absent** |
+| mot-clé en rouge dans le titre | **absent** |
+| bouton « cercle + chevron » | **absent** |
+| champ souligné (jamais de boîte fermée) | **absent** |
+| badge de station, ligne couplée | **absent** |
+
+Et les interdits : **145 `font-weight: 600`**, **108 bordures à 4 côtés**, **113 boutons
+rectangulaires**. Le fond : `--bg: var(--gray-100)` — **toute la page était grise**,
+alors que la charte dit `var(--white)`.
+
+**La cause n'est pas un blocage, c'est mon cadrage.** Z Code a fait exactement ce que j'ai
+demandé : poser les variables. **Un design system, ce n'est pas des variables — c'est
+variables + composants.** Et ma spec disait « on habille, on n'invente pas » : c'est
+précisément ce qui a produit ce résultat. **Je l'avais écrit, et c'était faux de la forme
+(une fois de plus, et je l'ai déjà reconnu au Tour 25).**
+
+---
+
+**Ce que j'ai livré dans ce lot — le plus visible d'abord.**
+
+1. **`--bg` : gris → blanc.** Une ligne, et c'est l'écart le plus visible avec la preview.
+   Les cartes se détachent par leur contour — ce que la charte demande : *« les couleurs
+   d'accent ne sont jamais des aplats massifs »* ;
+2. **145 `font-weight: 600` → 500.** La charte l'interdit nommément ; 500 est son poids
+   d'emphase ;
+3. **le test de contraste suit le fond réel** — les deux paires « fond de page » passent
+   à `--white`, dans l'outil **et** dans le harnais. Un test qui vérifie un fond qu'on
+   n'utilise plus ne protège plus rien.
+
+**406/406**, contraste 6/6 désormais sur fond blanc (21,00:1 · 6,57:1 · 5,66:1 · 5,07:1 · 4,83:1).
+
+---
+
+**Deux directives du guide que je n'applique pas, et je le dis maintenant.**
+
+1. **`@import url('https://fonts.googleapis.com/...')`** — c'est une dépendance réseau.
+   L'outil tourne **hors ligne sur le poste de Matis** : sans réseau, l'écran tombe.
+   Roboto reste **embarquée** (56 Ko). Même rendu, pas de panne ;
+2. **les chiffres du guide** (`84 250 €`, `26 600 €`, `DTV < 8 µm`, `+115 %`, `140
+   pcs/arête`) — constitution §5.6 : on n'affiche pas un chiffre qu'on ne peut pas
+   justifier. **On prend la charte, pas ses chiffres.**
+
+---
+
+**La suite, dans l'ordre de ce qu'on voit.**
+
+**L2** — la barre à filet bicolore 2 px (rouge sous l'onglet actif, bleu ailleurs) et le
+**hero** : filet bleu 60 px, intro en 300, titre 36 px en 700, mot-clé en rouge.
+**L3** — les 152 boutons « cercle + chevron ». **L4** — les 116 champs soulignés.
+**L5** — les 19 tables : badges de station, ligne couplée en ambre, poste neutre à `±0,000 €`.
+
+**Je fais L2 seul et tu me dis si l'écran change.** Si le fond blanc et le hero ne
+transforment pas la page, alors le problème est plus profond que la charte, et il faut que
+je le sache avant de continuer.
+
+**Prochain tour** : à Z Code pour la suite. Et à Benjamin : **regarder 4.67.0 sur Projet.**
+
+
 ### ▸ Tour 26 — 30/09/2026 — **Hermes** (v4.66.0 — le doublon d'outils, et la police)
 
 **Deux retours de Benjamin :** *« toujours des outils créés en double au lieu d'un outil

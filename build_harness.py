@@ -136,8 +136,8 @@ try {
     const paires = [
       ['--label','--white',    'les intitulés sur une carte'],
       ['--body','--white',     'les paragraphes sur une carte'],
-      ['--ink','--gray-100',   'le texte principal sur le fond de page'],
-      ['--body','--gray-100',  'les descriptions sur le fond de page'],
+      ['--ink','--white',      'le texte principal sur le fond de page'],
+      ['--body','--white',     'les descriptions sur le fond de page'],
       ['--blue','--white',     "le bleu d'action sur une carte"],
       ['--red','--white',      'le rouge CeramTec sur une carte']
     ];
