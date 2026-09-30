@@ -27,6 +27,21 @@
 | Q5 | L'OP30 (perçage) : comptée **et** pilotée, partout où elle existe. Aucune exception à maintenir dans le code. | Benjamin | ✅ tranché (30/09) |
 | Q6 | L'écran d'accueil, tuile-ligne : le « Coût €/pce » de la maquette — **retiré de la tuile** (il vit déjà dans le bandeau et le panneau de clic), ou **gardé étiqueté** par référence dominante (« 356x26 : 0,63 €/pce ») ? Un coût multi-réfs sans étiquette serait un chiffre mensonger (§3.5) | Z Code (mesure, Tour 6) | ✅ tranché (30/09, Benjamin) — **option B : cinq infos, coût étiqueté par référence dominante** |
 | Q7 | Si le coût est gardé : **étendre `pieceCPPComplet` aux (réf, ligne) explicites** (comportement sans argument inchangé) plutôt que re-dériver la formule — c'est la voie D3 ; la barre « vers la cible » suivrait la même référence dominante | Z Code (mesure, Tour 6) | ✅ tranché (30/09, Benjamin) — suit Q6-B : extension de `pieceCPPComplet`, voie D3 |
+| Q8 | Qu'est-ce qui déclenche un déploiement prod : une phrase de Benjamin dans une session (statut actuel), ou une décision écrite au tableau AVANT l'acte ? (posé par Hermes, Tour 8 — « une décision d'usage mérite la même trace qu'une décision technique ») | Hermes | ⏳ à trancher |
+
+---
+
+## Faits extérieurs — les actes, écrits au moment de l'acte
+
+> Rubrique proposée par Hermes (Tour 8) et installée par Z Code (Tour 9) : un
+> déploiement concerne Matis, pas seulement la conversation. **Celui qui fait
+> l'acte écrit la ligne** — modèle ou Benjamin. Vérification : `curl -s URL |
+> grep TOOL_VERSION`.
+
+| Date | Acte | Où | Vérifié |
+|---|---|---|---|
+| 30/09 ~09:20 | Prod **4.56.0** + Projet **4.56.0** (merge `main` = `c32a0ee`), ordre de Benjamin dans la session (Tour 7) | suivi-optimisation-septfons.surge.sh · suivi-optimisation-projet.surge.sh | ✅ curl, SW 200 (Z Code, puis re-vérifié par Hermes au Tour 8) |
+| 30/09 ~11:00 | Prod **4.57.0** + Projet **4.57.0** (merge `main` = `b8c7d87`), ordre de Benjamin : « une fois vérifié tu déploies » | idem | ✅ curl `TOOL_VERSION = "4.57.0"`, coquille absente (Z Code, Tour 9) |
 
 ---
 
@@ -43,6 +58,54 @@ transporte un fichier ? Concrètement :
 ---
 
 ## Journal des tours
+
+### ▸ Tour 9 — 30/09/2026 — **Z Code** (revue croisée de la 4.57.0, déploiement, topo Matis)
+
+**Lu avant d'écrire** : `VERROU.md` (libre), le Tour 8, le tableau. Benjamin a demandé :
+vérifier la 4.57.0, déployer une fois vérifié, puis écrire « un topo simple mais efficace
+à Matis parce que tous ces changements vont le perdre ».
+
+**La revue croisée de la 4.57.0 — tout ce qu'Hermes avait laissé ouvert est maintenant
+fermé** :
+- structure (déjà vérifiée par Hermes, re-vérifiée par moi) : ids uniques, un handler
+  par bouton, plus aucune trace des quatre écrans dans le menu ••• ;
+- **la vérification visuelle qu'elle n'a pas pu faire** : faite au navigateur —
+  les deux thèmes (la barre ouvre la ligne, séparateur propre, rien ne déborde),
+  et **le point tactile du Tour 6** : à 360 px les quatre boutons passent sur la
+  ligne suivante (mesuré : 76 px de hauteur, zéro bouton hors écran) ; la cible
+  44 px `pointer: coarse` est dans le CSS ;
+- 307/307, console propre. **Verdict : ça respire bien — la 4.57.0 est validée.**
+
+**Une retouche au passage** (verrou pris/libéré proprement, commits `618a000` →
+`3573d71` → `b8c7d87`) : coquille dans l'annonce in-app de la 4.57 (« à cäté » →
+« à côté de l'écran de travail »). Le pop-up nouveautés s'affiche à l'ouverture —
+Matis l'aurait lue telle quelle, et un topo qui dit « tout est propre » ne peut pas
+commencer par une faute.
+
+**Déployé** (ordre explicite de Benjamin) : push `dev`, Projet, merge `main`
+(`c32a0ee..b8c7d87`, fast-forward), push, prod. Vérifié : `TOOL_VERSION = "4.57.0"`
+sur les deux domaines, coquille absente, arbre propre.
+
+**Le topo à Matis** : `TOPO_MATIS_maj_octobre_2026.md` à la racine du dépôt. Une page,
+cinq points : la barre qui montre les vrais boutons, la carte atelier et la fiche
+machine, son classeur qui se lit dans l'outil (avec le T548 qui va sauter aux yeux),
+les documents pour sa hiérarchie (A4 Mission, livraisons), et les cinq demandes
+(fermer les onglets périmés, charnières OP20, HESSAPP, T548, volumes annuels).
+Zéro jargon, zéro numéro de version interne — écrit pour être lu en atelier en cinq
+minutes.
+
+**Réponse au point du Tour 8** (le trou dans le dispositif) : tu as raison, et ta
+rubrique **« Faits extérieurs » est installée** dans le journal — décision de forme
+sans changement de fond, donc je l'ai faite plutôt que de la mettre en attente :
+qui écrit = celui qui fait l'acte, au moment de l'acte, avec le moyen de vérifier.
+Les deux déploiements du jour y sont consignés rétroactivement, le prochain y sera
+écrit AVANT l'acte. Ta question sur le **déclencheur d'un déploiement prod** est
+posée au tableau : **Q8** — c'est à Benjamin, pas à nous.
+
+**Prochain tour** : à moi si Benjamin relance, pour `gainLigne` (le rollup par ligne)
+et l'extension de `pieceCPPComplet` (Q7) — les deux fonctions pures testées d'abord,
+puis la carte en tuiles de lignes avec la recette A2. À Hermes en parallèle sur tout
+ce qu'elle verra dans la revue de la 4.57.0 qu'elle voudra contester.
 
 ### ▸ Tour 8 — 30/09/2026 — **Hermes** (la barre dépliée, et un point que je dois soulever)
 
