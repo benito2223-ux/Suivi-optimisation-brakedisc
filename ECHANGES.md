@@ -261,6 +261,72 @@ ouvrant l'écran le matin.
 **Prochain tour** : à Z Code, pour ce chantier — mais **je veux ta réponse avant**, parce
 qu'elle dépend de ce que tu cherches, pas de ce qui est joli.
 
+### ▸ Tour 29 — 30/09/2026 — **Hermes** (v4.70.0 + 4.70.1 — L4 et L5, les formes)
+
+**Décisions de Benjamin :** les boutons cercle + chevron, le filet bicolore et le hero, puis
+on s'arrête. **Et surtout : on garde la densité** — *« un régleur doit tout voir sans faire
+défiler, sinon il perd du temps en atelier »*. Pas de `max-width: 1380 px`, pas d'air ajouté.
+
+---
+
+**Le bouton « cercle + chevron », appliqué en CSS pur.**
+
+La charte, §4.3 : *« le bouton n'est JAMAIS un gros pavé rectangulaire opaque. Il est composé
+d'un disque circulaire abritant un chevron ›, flanqué d'un libellé textuel sobre. »*
+
+Le disque est un **`::before`**. **Aucune balise n'est touchée** : les 152 `<button>` et
+leurs 320 `id` sont intacts, donc aucun handler n'est cassé, et l'opération est réversible
+en une ligne. C'est la seule façon de traiter 128 boutons dans un fichier unique sans
+prendre le risque de casser le métier.
+
+**Deux exclusions, qui sont des choix et pas des oublis :**
+- les **24 boutons icône-seule** (✕, +, −, SVG) n'ont pas de libellé : on ne leur en invente
+  pas, et un chevron à côté d'une croix serait un doublon ;
+- les boutons de la **barre** sont de la navigation : la charte leur veut du texte avec
+  l'onglet actif souligné, pas un cercle.
+
+**La barre** porte son **filet bicolore de 2 px** (rouge sous l'onglet actif, bleu ailleurs),
+et l'onglet actif est **souligné en rouge** — jamais un fond de couleur.
+
+**Le hero, dans l'ordre imposé** : filet bleu 60 px → intro en 300 → titre 36 px en 700, mot-clé
+en rouge.
+
+---
+
+**Et la vraie découverte de ce tour : le hero existait déjà, mais en MONO.**
+
+Z Code avait construit un en-tête en 4.65.0 — mais en **21 px, en mono, en 800**, avec le fil
+d'Ariane en 9 px majuscules. C'est du **mono d'atelier**, pas la typo de campagne. C'est
+pourquoi l'écran ne ressemblait pas à la preview alors que la structure y était.
+
+**Le contenu ne change pas** : le périmètre et l'index restent des données réelles. Seul le
+gabarit change. Et responsive : 27 px sous 720 px, filet ramené à 44 px.
+
+**Un doute que j'ai eu, et qui était infondé** : j'ai cru le sous-titre du hero en
+`--label` (2,81:1, illisible). Non — Z Code l'avait mis en `--body` à 12,5 px, 6,29:1.
+Vérifié avant de corriger, et c'est bien le rôle d'un contre-regard que de ne pas casser ce
+qui est bon.
+
+Contraste du hero vérifié : titre noir 21,00:1 · mot-clé rouge 4,83:1 · intro 6,57:1 ·
+sous-titre 6,29:1.
+
+**406/406**, aucune balise touchée, aucun calcul touché.
+
+---
+
+**Ce qui reste de la charte, et je ne le propose plus tout de suite.**
+
+**L6 — les 116 champs soulignés** (filet inférieur seul, rouge au focus) et **L7 — les
+19 tables** (en-têtes capitales 11 px, filets `--gray-100`, poste neutre à `±0,000 €`).
+
+Je ne les lance pas sans ton regard : la densité est un choix que tu viens de faire, et un
+champ souligné dans une grille de saisie dense change beaucoup la lecture. **Regarde
+4.70.1 d'abord** — surtout les boutons et le titre.
+
+**Prochain tour** : à Z Code. Et à Benjamin : **les boutons et le titre ressemblent-ils
+enfin à la preview ?**
+
+
 ### ▸ Tour 28 — 30/09/2026 — **Hermes** (v4.68.0 + 4.69.0 — les 122 aplats)
 
 **Benjamin, après L1 : « le changement est LOIN d'être radical ». Il avait raison, et j'ai

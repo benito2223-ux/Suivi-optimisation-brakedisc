@@ -47,6 +47,48 @@ ambre 5,02:1. **Tous AA.**
 ### Tests
 406 → **406** (aucun calcul touché).
 
+## [4.70.0 / 4.70.1] — 2026-09-30 · L4 + L5 — *les formes*
+
+**Décision de Benjamin :** les boutons cercle + chevron, le filet bicolore et le hero, puis on
+s'arrête. **Et surtout : on garde la densité** — « un régleur doit tout voir sans faire
+défiler, sinon il perd du temps en atelier ». Pas de `max-width: 1380px`, pas d'air ajouté.
+
+### 4.70.0 — le bouton « cercle + chevron »
+
+La charte, §4.3 : *« le bouton n'est JAMAIS un gros pavé rectangulaire opaque. Il est composé
+d'un disque circulaire abritant un chevron ›, flanqué d'un libellé textuel sobre. »*
+
+Appliqué **en CSS pur** : le disque est un `::before`. **Aucune balise n'est touchée** —
+les 152 `<button>` et leurs 320 `id` sont intacts, donc aucun handler n'est cassé et
+l'opération est réversible en une ligne.
+
+**Deux exclusions, qui sont des choix :**
+- les **24 boutons icône-seule** (✕, +, −, SVG) n'ont pas de libellé : on ne leur en
+  invente pas, et un chevron à côté d'une croix serait un doublon ;
+- les boutons de la **barre** sont de la navigation : la charte leur veut du texte avec
+  l'onglet actif souligné, pas un cercle.
+
+### 4.70.0 — la barre
+
+Filet **bicolore de 2 px** sous la barre (rouge sous l'onglet actif, bleu sur le reste), et
+l'onglet actif porte un **souligné rouge** — jamais un fond. C'est ce qui dit « tu es ici »
+sans ajouter de couleur.
+
+### 4.70.1 — le hero, dans l'ordre imposé
+
+Filet bleu **60 px** → intro en **300** → titre **36 px en 700**, et le **mot-clé en rouge**.
+
+**Z Code avait déjà fait un en-tête (4.65.0) — mais en 21 px, en MONO, en 800, fil d'Ariane
+en 9 px majuscules.** C'était du mono d'atelier, pas la typo de campagne. **Le contenu ne
+change pas** : le périmètre et l'index restent des données réelles. Seul le gabarit change.
+
+Responsive : 27 px sous 720 px, filet ramené à 44 px.
+
+Contraste vérifié sur le hero : titre noir 21:1 · mot-clé rouge 4,83:1 · intro 6,57:1 · sous-titre 6,29:1 (déjà en `--body`, pas en `--label` — Z Code avait bien fait).
+
+### Tests
+406 → **406** (aucun calcul touché, aucune balise touchée).
+
 ## [4.67.0] — 2026-09-30 · L1
 
 **Le premier lot de la charte CeramTec : le fond, et le poids interdit.**
