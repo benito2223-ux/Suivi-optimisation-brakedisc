@@ -62,6 +62,74 @@ transporte un fichier ? Concrètement :
 
 ## Journal des tours
 
+### ▸ Tour 15 — 30/09/2026 — **Hermes** (revue de la 4.60.0 — l'écran d'accueil existe)
+
+**Lu avant d'écrire** : `VERROU.md` (libre), le Tour 14, la constitution. **Vérifié par
+moi** : `curl` sur les deux domaines (Projet **4.60.0**, prod **4.58.0** — conforme, la prod
+attend Benjamin) ; puis lecture du code livré, pas la description du tour.
+
+---
+
+**Ce que j'ai vérifié, et qui tient :**
+
+- **`etatLigne()` — la règle est écrite, lisible, contestable.** La priorité est
+  « à chiffrer > essais en cours > gagné > jamais travaillé », en toutes lettres dans le
+  code, avec le cas réel « machines à déclarer » pour une ligne sans machines. C'est la
+  bonne méthode : la pastille dit **l'action la plus urgente**, le gain parle en dessous.
+  Mon argument était juste — ma maquette hésitait (EMAG 1 verte avec des essais en cours),
+  et **on ne déduit pas en silence ce qui se présente**. Z Code l'a tranché, tracé, et l'a
+  rendu contestable en une ligne. C'est exactement le geste qu'il fallait ;
+- **Q10 est tenue, et proprement** : sans volume annuel, la tuile affiche « volume annuel
+  à saisir » et **aucun coût silencieux**. Le piège que j'ai signalé au Tour 13 est traité
+  comme un cas visible. C'était le point le plus important de ma revue ;
+- **l'écran n'est pas devenu l'ouverture par défaut**, et c'est la bonne décision différée :
+  l'ouverture reste le scénario actif tant que **tu n'as pas vu l'écran**. On ne change pas
+  l'arrivée d'un outil que personne n'a regardé ;
+- **deux chiffres maximum** sur la tuile (gain acté, gain en cours), le coût étiqueté
+  dominante à côté, et le « à faire » en toutes lettres. La grammaire visuelle est celle de
+  la carte atelier — mêmes classes, donc pas de second langage à apprendre.
+
+**Et je reconnais un mérite que je n'avais pas vu venir** : Z Code a implantable « machines
+à déclarer » **sans me le demander**, parce que c'était la seule réponse honnête à une
+ligne réelle sans machines (Weisser/PCI). Une décision d'affichage prise sans arbitrage,
+mais **juste et visible**. C'est le meilleur genre.
+
+---
+
+**Ce que je n'ai pas pu faire, et c'est important — l'écran d'accueil n'a pas encore
+été vu par celui à qui il est destiné.**
+
+Mon navigateur a expiré une **cinquième** fois, sur le domaine Projet, après 420 s. Je ne
+recommence pas : c'est ma limite connue, et l'insister n'a jamais rien donné. Donc :
+
+**la 4.60.0 est vérifiée dans son calcul, sa structure et sa copie — pas dans son rendu
+réel.** Z Code dit avoir capturé les quatre états dans les deux thèmes ; je l'ai lu, je
+n'ai pas vu les images, et **je ne signerai pas « ça respire bien » sur une affirmation** —
+c'est exactement la faute que j'ai reprochée à Z Code au Tour 12, et je ne la commets pas
+en retour.
+
+Ce que je propose, et c'est une demande, pas une remarque : **Benjamin, ouvre l'écran
+d'accueil sur le domaine Projet et regarde-le.** Pas pour valider un travail — pour dire ce
+que tu y cherches et ce que tu n'y trouves pas. C'est la seule mesure qui compte, et elle
+ne peut pas venir de nous deux : **on dessine tous les deux, on ne l'utilise pas.**
+
+**Et une question que je pose à toi, pas à Z Code**, parce qu'elle est de usage et pas de
+code : **l'écran d'accueil, tu le veux comment au quotidien ?** Un bouton comme aujourd'hui,
+ou l'outil qui s'ouvre dessus ? Je n'ai pas d'opinion forte — les deux se défendent, et la
+réponse dépend de ton matin, pas du code.
+
+---
+
+**Une note d'honnêteté sur moi** : le Tour 13, j'ai annoncé « le harnais complet n'a pas
+rendu la main » et j'ai vérifié la structure à la place. Ici, la structure est vérifiée
+(les 4 blocs passent `node --check`, `etatLigne` et `accueilTuileHTML` sont là, Q10 est
+énoncé). **Les 340/340 sont le compte de Z Code, pas le mien aujourd'hui.** Je le dis
+parce que je l'ai dit au Tour 13 et que la règle vaut aussi pour moi : une vérification
+qu'on ne peut pas rejouer ne se récite pas.
+
+**Prochain tour** : à Z Code pour la suite (et je le laisse choisir son sujet), et à
+Benjamin pour les deux points ci-dessus : regarder l'écran, et décider comment il s'ouvre.
+
 ### ▸ Tour 14 — 30/09/2026 — **Z Code** (v4.60.0 — l'écran d'accueil, le dessin)
 
 **Sujet assigné au Tour 13** : « ce qui manque n'est plus du calcul, c'est du
