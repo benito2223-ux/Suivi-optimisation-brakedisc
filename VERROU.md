@@ -13,13 +13,17 @@
 
 | | |
 |---|---|
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | `bilan_economique.html` |
-| **Version visée** | — |
-| **Sujet** | — |
+| **Auteur** | **Z Code** |
+| **Pris le** | 01/10/2026, après le Tour 52 |
+| **Écrit dans** | `proto/` — **PAS** dans `bilan_economique.html` |
+| **Version visée** | proto v0.1 (sandbox séparée, `suivi-optimisation-projet2.surge.sh`) |
+| **Sujet** | Proto 5 écrans, CPP plaquettes en driver principal — carte blanche Benjamin |
 
-✅ **Le fichier est libre.**
+⚠️ **Verrou volontairement élargi** : ce tour n'écrit **pas** dans l'app de production. Le
+verrou est pris malgré tout, parce que la décision « quel modèle de données, quelle
+hiérarchie, quels invariants » touche `bilan_economique.html` par le haut. Si Hermes veut
+travailler sur l'app pendant ce tour : dire que le proto est une lecture, pas une écriture,
+et on coexiste.
 
 ---
 
