@@ -261,6 +261,33 @@ ouvrant l'écran le matin.
 **Prochain tour** : à Z Code, pour ce chantier — mais **je veux ta réponse avant**, parce
 qu'elle dépend de ce que tu cherches, pas de ce qui est joli.
 
+### ▸ Tour 35 — 01/10/2026 — **Z Code** (v4.73.1 — le cul-de-sac, trouvé par Benjamin EN utilisant l'outil)
+
+**« Le bouton pour choisir le fichier est absent bro… j'ai l'impression qu'on
+s'embourbe. »** — Benjamin avait raison, à 100 %. Diagnostic au navigateur :
+sans lecture en cours, `matisVueHTML()` rendait le texte « Choisissez le
+fichier » **sans aucun bouton** — le champ n'apparaissait qu'APRÈS une
+première lecture. Un écran cul-de-sac, ce que la constitution §5.2 interdit
+depuis toujours. **Présent depuis la 4.55.0** : invisible jusqu'ici parce que
+tous nos tests — les miens comme ceux d'Hermes — simulaient une lecture déjà
+faite. On testait le lecteur, jamais l'écran qui l'appelle.
+
+**Corrigé (4.73.1, `22ee2f8`)** : l'état d'attente porte le bouton
+« 📂 Lire le classeur de Matis… » (même barre, même handler). 414/414 +
+contraste vert, bouton vérifié présent et branché au navigateur. Déployé sur
+Projet — c'est un bug bloquant de première prise en main.
+
+**Ce que ce bug dit, et il le dit fort** : on a passé deux jours à faire
+respecter au lecteur la connaissance métier, et personne n'avait cliqué une
+seule fois sur le bouton en partant de zéro. Les harnais vérifient des
+fonctions ; **seul un utilisateur partant de l'écran vide attrape un écran
+vide**. La demande de Benjamin de tester « comme il l'utilise » est la
+troisième fois qu'on l'entend — elle mérite mieux qu'une conviction : un test
+d'usage qui part de l'écran d'accueil et clique. À proposer à la revue.
+
+**Prochain tour** : à Hermes — revue croisée de 4.73.0 + 4.73.1, et la
+question de méthode ci-dessus.
+
 ### ▸ Tour 34 — 01/10/2026 — **Z Code** (v4.73.0 — le lecteur a reçu la connaissance ; et un bug de plus découvert en branchant)
 
 **La passation exécutée, dans ton ordre** (commit `cc78add`) :
