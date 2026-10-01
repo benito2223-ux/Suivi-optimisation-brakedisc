@@ -261,6 +261,56 @@ ouvrant l'écran le matin.
 **Prochain tour** : à Z Code, pour ce chantier — mais **je veux ta réponse avant**, parce
 qu'elle dépend de ce que tu cherches, pas de ce qui est joli.
 
+### ▸ Tour 34 — 01/10/2026 — **Z Code** (v4.73.0 — le lecteur a reçu la connaissance ; et un bug de plus découvert en branchant)
+
+**La passation exécutée, dans ton ordre** (commit `cc78add`) :
+
+1. **le lecteur** : une ligne Excel construit désormais UN LOGEMENT (MABEC,
+   article, prix, arêtes, DDV de SA ligne — rien de fabriqué), et la sortie
+   passe par `reparerOutilsD1D2()`. **« T513 D1 » + « T513 D2 » se lisent
+   « T513 — 2 logements »**, positions en noms, ordre d'origine préservé ;
+2. **l'écran** : « T513 — 2 logements » sur la ligne du détail, « 2 MABEC »
+   au lieu d'un tiret quand plusieurs articles vivent sur le porte-outil ;
+3. **le rapport** : un encadré bleu info au-dessus du tableau — « 🔧 2
+   porte-outils regroupés à la lecture : T513 — 2 outils regroupés, 2
+   logements : D1, D2 » — l'écran DIT ce qu'il regroupe, jamais en silence ;
+4. **rien de fabriqué**, vérifié par test : chaque logement garde les champs
+   de SA ligne ; une production à 0 reste « jamais travaillée ».
+
+**Et le point 5 que ta passation ne prévoyait pas : un BUG de plus, découvert
+en branchant.** `reparerOutilsD1D2` rendait l'outil fusionné **DEUX FOIS** pour
+des outils **sans id** — et les lignes du lecteur n'en ont pas (les outils
+saisis, si). `fusionnes.get(undefined)` ne remplaçait rien, `consomme.has
+(undefined)` n'absorbait personne. Diagnostic au harnais (l'API exposée —
+`matisPorteOutilPosition`, `reparer*`, `_matisFeuille` — et un `__DIAG__`
+paramétrable, committés dans `build_harness.py`). **Fix** : clé d'identité
+avec fallback (`__pos_` + numéro), déclarée AVANT tout usage — un TDZ constaté
+en route, attrapé par le harnais. **L'import (avec ids) et le lecteur (sans
+ids) fusionnent tous les deux maintenant.**
+
+**Le point aveugle est fermé** : 5 tests du lecteur au harnais (fusion, noms
+D1/D2, rien de fabriqué, écran), sur des `cells` simulés comme le vrai XML.
+Ton `verifier_import.py` garde l'import ; le harnais a le lecteur.
+
+**Contre-regard en deux actes** (leçon 4.71.0 appliquée à la lettre) :
+- panne « le lecteur ne groupe plus » → **325 tests** : la suite ne va plus
+  jusqu'au bout, et **le total qui chute est le signal** — noté ;
+- panne « placeholder muet » (4.65.1, un ancien chantier) → 414/1, vue.
+- Restaurations par copie sauvegardée, marqueurs vérifiés dans le fichier.
+
+**Vérifié** : 408 → **414 tests**, tout vert ; le VRAI lecteur au navigateur
+(`_matisFeuille` sur des cells simulés) : 1 outil, 2 logements, l'écran dit
+« T513 — 2 logements » et « 2 MABEC », la fusion est annoncée.
+
+**Déployé** : push `dev` + **Projet** (4.73.0). Prod protégée, feu vert à
+Benjamin — qui devrait maintenant voir **un** outil T513 à deux logements, là
+où il en voyait deux distincts.
+
+**Prochain tour** : à Hermes — la revue croisée, y compris le bug sans-id
+(décision : le fix au niveau de la fonction pure est-il le bon niveau ? je
+pense que oui : l'absence d'id est un état légitime du lecteur, pas une
+anomalie). Et le reste : Matis doit relire l'écran avec SES données.
+
 ### ▸ Tour 33 — 01/10/2026 — **Hermes** (v4.72.0 — passation à Z Code)
 
 **Benjamin : « passe la main à Z Code, je vois encore deux outils distincts T513 D1 et D2 ».**

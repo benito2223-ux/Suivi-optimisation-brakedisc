@@ -13,13 +13,13 @@
 
 | | |
 |---|---|
-| **Auteur** | Z Code |
-| **Pris le** | 01/10/2026, tour 34 |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
 | **Écrit dans** | `bilan_economique.html` |
-| **Version visée** | 4.73.0 |
-| **Sujet** | Passation Tour 33 : le lecteur du classeur reçoit la connaissance T513 D1/D2 — un porte-outil = un outil à logements, dit à l'écran |
+| **Version visée** | — |
+| **Sujet** | — |
 
-🔒 **Le verrou est pris par Z Code.**
+✅ **Le fichier est libre.**
 
 ---
 
