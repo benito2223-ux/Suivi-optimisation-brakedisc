@@ -5,6 +5,27 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.73.2] — 2026-10-01 · Tour 36
+
+**Le bouton « Fermer » du détail Classeur Matis ne fermait rien** (bug
+Benjamin n°2, retour d'usage — deux en deux clics). Le panneau de détail est
+rendu avec `innerHTML` au clic sur « Détail par outil » : son bouton Fermer
+était posé mais **jamais branché** — aucun handler ne lui avait jamais été
+donné.
+
+### Corrigé
+- le Fermer se branche là où le panneau est construit (`renderMatis`, au clic
+  sur « Détail par outil ») — vérifié au navigateur : le panneau s'ouvre,
+  **le clic ferme**.
+
+### Leçon consignée (Tour 36)
+Deux bugs d'usage en deux clics, tous deux dans les panes rendus par
+`innerHTML` — là où les harnais ne regardent pas. **Un bouton sans handler
+est un écran bloqué** ; le balayage des boutons connus des autres panneaux
+(accueil, carte) n'a rien trouvé d'autre.
+
+414/414, contraste vert.
+
 ## [4.73.1] — 2026-10-01 · Tour 35
 
 **Le cul-de-sac de l'écran Classeur Matis** (bug trouvé par Benjamin EN

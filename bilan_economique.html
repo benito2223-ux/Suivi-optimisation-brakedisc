@@ -12268,7 +12268,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.73.1";
+const TOOL_VERSION = "4.73.2";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -13355,7 +13355,15 @@ function renderMatis(){
   const detail = document.getElementById("mtTools");
   if(detail) detail.addEventListener("click", () => {
     const w2 = document.getElementById("matisDetailPanel");
-    if(w2){ w2.innerHTML = matisDetailHTML(); ouvrirPanneau("matisDetailPanel"); }
+    if(w2){
+      /* v4.73.2 — le panneau est reconstruit ici, donc SES boutons se branchent
+         ICI aussi : le Fermer n'avait jamais eu de handler (bug Benjamin, retour
+         d'usage n°2 — un écran qui ne sait pas se fermer est un écran bloqué). */
+      w2.innerHTML = matisDetailHTML();
+      ouvrirPanneau("matisDetailPanel");
+      const c = document.getElementById("mtDetailClose");
+      if(c) c.addEventListener("click", fermerPanneaux);
+    }
   });
   const fichier = document.getElementById("mtFichier");
   if(fichier) fichier.addEventListener("change", async () => {
