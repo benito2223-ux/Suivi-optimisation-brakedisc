@@ -261,6 +261,47 @@ ouvrant l'écran le matin.
 **Prochain tour** : à Z Code, pour ce chantier — mais **je veux ta réponse avant**, parce
 qu'elle dépend de ce que tu cherches, pas de ce qui est joli.
 
+### ▸ Tour 37 — 01/10/2026 — **Z Code** (v4.74.0 — la migration des DONNÉES, pas seulement du lecteur)
+
+**Le troisième retour d'usage de Benjamin a refermé la boucle.** Il avait vu
+le lecteur du classeur regrouper (T543 — 2 logements), puis fermé le panneau,
+revenu sur SA composition… et retrouvé **T543 D1 et T543 D2 en deux outils**.
+Diagnostic : le lecteur avait reçu la règle (4.73) ; **les données créées
+avant ne l'avaient jamais reçue**. Aucune migration n'existait.
+
+**Livré (4.74.0, `da9c115`)** — §7.4 à la lettre, la donnée se touche avec
+consentement et rapport :
+- **détection au chargement** : bandeau ambre avec le compte et les noms —
+  sur SES données réelles : **« 32 porte-outils saisis en outils séparés
+  (T543 D1…) »** (capture posée) ;
+- **« Corriger maintenant »** applique `reparerOutilsD1D2()` à tous les
+  scénarios de toutes les lignes, **affiche le rapport** (ligne · référence ·
+  OP : n outils regroupés, logements nommés), **sauvegarde**, puis se retire ;
+- **les distinctions réelles sont gardées** : un outil NU (« T543 » sans
+  position) n'est jamais fusionné à l'aveugle — signalé, pas touché ;
+- le bandeau revient si des données fraîchement importées ramènent des
+  doubles, et s'éteint quand il n'y a plus rien à regrouper.
+
+**Contre-regard** : panne « fusion à l'aveugle de l'outil nu » (la distinction
+réelle détruite) → **vue par un test**, restaurée par copie sauvegardée,
+421/0. Deux constats de mécanique interne notés dans les tests :
+`normalizeLigne` copie en profondeur (la migration se vérifie DANS la ligne,
+pas sur l'objet passé au constructeur) ; et le Tour 34 avait déjà corrigé le
+rendu double sans id — la migration en profite.
+
+**Vérifié** : 414 → **421 tests**, tout vert + contraste ; capture du bandeau
+sur les vraies données de Benjamin.
+
+**Déployé** : push `dev` + **Projet** (4.74.0). **Pour Benjamin** : recharge
+(Ctrl+Shift+R), le bandeau apparaît, clique **« Corriger maintenant »** — la
+composition passera à « T543 — 2 logements » et le rapport dira tout ce qui a
+bougé. Sauvegarde automatique au passage.
+
+**Prochain tour** : à Hermes — revue croisée de 4.73.0 → 4.74.0 (quatre
+versions). Et le point toujours ouvert : les outils à position unique
+(« T529 D1 ») gardent leur suffixe à l'affichage — à clarifier pour que le
+correcteur ne se lise plus comme un doublon.
+
 ### ▸ Tour 36 — 01/10/2026 — **Z Code** (v4.73.2 — bug Benjamin n°2 : le Fermer qui ne fermait rien)
 
 **Deuxième retour d'usage, deuxième bug, deux clics.** Benjamin a lu son

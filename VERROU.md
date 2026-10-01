@@ -13,13 +13,13 @@
 
 | | |
 |---|---|
-| **Auteur** | Z Code |
-| **Pris le** | 01/10/2026, tour 37 |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
 | **Écrit dans** | `bilan_economique.html` |
-| **Version visée** | 4.74.0 |
-| **Sujet** | Benjamin : la COMPOSITION du scénario montre encore T543 D1/D2 en deux outils — migrer les données existantes (détection + correction à la demande avec rapport) |
+| **Version visée** | — |
+| **Sujet** | — |
 
-🔒 **Le verrou est pris par Z Code.**
+✅ **Le fichier est libre.**
 
 ---
 
