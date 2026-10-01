@@ -52,6 +52,8 @@ def cle(porte):
     « T 513 » et « T513 » sont le MÊME porte-outil. L'affichage n'est pas touché."""
     return re.sub(r'[^A-Z0-9]', '', str(porte or '').upper()) or 'X'
 
+journal = []
+
 def nombre(v):
     """Une cellule du classeur en nombre, ou None. JAMAIS 0 à la place d'un vide :
     0 est une mesure, None est une absence de mesure — les deux ne disent pas
@@ -126,8 +128,29 @@ def lire():
             })
         if not ops:
             continue
+        # ── LE CPP DE RÉFÉRENCE ────────────────────────────────────────────
+        # Benjamin, 01/10 : « le fichier de Matis nous sert de référence, le CPP
+        # est le sujet, on va améliorer ces valeurs là ». Elles sont dans la
+        # colonne I (« CPP Actuel »), qui est calculée OUTIL PAR OUTIL : le coût
+        # que cet outil apporte à une pièce. Le coût de la PIÈCE, c'est la
+        # somme sur tous les outils de toutes les OP's.
+        #
+        # C'est cette valeur qui doit finir dans cibleCPP sur la référence —
+        # sinon l'outil ne sait pas où il en est par rapport à Matis, et tous
+        # les gains affichés flottent sans point de comparaison.
+        cpp_piece = sum(e['cppTheorique'] or 0.0 for es in ops.values() for e in es)
+        a_dites = [e['cppTheorique'] is not None for es in ops.values() for e in es]
+        sans_cpp = not any(a_dites)
+        if sans_cpp:
+            cible = None          # aucune mesure : on n'invente pas un zéro
+            journal.append('%s / %s : la colonne « CPP Actuel » est VIDE dans le '
+                           'classeur — la cible de coût n est pas renseignée pour cette '
+                           'référence. Question à poser à Matis.' % (nom_ligne, ref))
+        else:
+            cible = round(cpp_piece, 6)
         key = (nom_ligne, ref)
-        lignes[key] = {'nom': nom_ligne, 'ref': ref, 'production': production, 'ops': ops}
+        lignes[key] = {'nom': nom_ligne, 'ref': ref, 'production': production,
+                       'ops': ops, 'cibleCPP': cible}
     wb.close()
     return lignes
 
@@ -143,7 +166,12 @@ def construire(lignes):
             arborescence.append(lg)
         rf = next((x for x in lg['references'] if x['nom'] == ref), None)
         if rf is None:
-            rf = {'id': 'r-' + cle(nom_ligne) + '-' + cle(ref), 'nom': ref, 'ops': []}
+            rf = {'id': 'r-' + cle(nom_ligne) + '-' + cle(ref), 'nom': ref, 'ops': [],
+                  # v4.78.0 — la cible vient du CLASSEUR, plus d'une saisie à la main.
+                  # C'est le point de comparaison avec Matis : sans elle, aucun gain
+                  # affiché n'a de point de départ.
+                  'cibleCPP': L.get('cibleCPP') if L.get('cibleCPP') is not None else '',
+                  'productionAnnuelle': L['production'] if L.get('production') else ''}
             lg['references'].append(rf)
 
         for op, entrees in L['ops'].items():
@@ -274,6 +302,13 @@ def controler(arborescence, lignes):
     ko += not T(not faux_zero, 'aucune production mise a zero : %d' % len(faux_zero))
     reelles = sum(1 for lg in arborescence for rf in lg['references'] for op in rf['ops']
                   if op['config'].get('volumeAnnuel'))
+    cibles = [(lg['nom'], rf['nom'], rf.get('cibleCPP')) for lg in arborescence
+              for rf in lg['references']]
+    ko += not T(all(c not in (0, 0.0) for _, _, c in cibles),
+                'aucune cible mise a zero : %d' % sum(1 for _, _, c in cibles if c in (0, 0.0)))
+    ko += not T(sum(1 for _, _, c in cibles if c not in ('', None)) >= 8,
+                'au moins 8 references portent la cible du classeur')
+    print('   cibles renseignees : %d / %d' % (sum(1 for _, _, c in cibles if c not in ('', None)), len(cibles)))
     print('   references avec une production reelle : %d' % reelles)
     return ko
 
