@@ -3439,6 +3439,12 @@ recomputeCycles();
 
 function normalizeLogement(l){
   return Object.assign({ id: l.id || ("g"+Math.random().toString(36).slice(2)), nom:"", ref:"", codeArticle:"",
+    // v4.72.0 — le MABEC est la CLE de raccordement avec le classeur de Matis :
+    // « un MABEC = un article = un logement ». Le lecteur de classeur le remontait
+    // déjà, mais le modèle n'avait nulle part où le poser : l'information était lue puis perdue.
+    // Un MABEC n'est PAS l'identifiant de l'outil — plusieurs MABEC sur un même
+    // porte-outil est NORMAL (un par logement). Il est ici, sur le logement, où il doit être.
+    mabec:"",
     prix:"", aretes:8, charniere:"", vc:"", f:"", kappaR:"", rayonBec:"", apPiste:"",
     tempsCoupe:"", tempsDeplacement:"", // mesures machine (s), module "detail du cycle par logement"
     suiviTolerance:true }, l); // la charniere se suit toujours ; la tolerance est desactivable par logement
@@ -11764,6 +11770,9 @@ const NOUVEAUTES = [
   { version:"4.65.2", date:"30/09/2026", points:[
     "<b>La table que la hiérarchie lit.</b> Sous les tuiles, toutes les opérations de toutes les lignes vivantes : ligne, opération, référence, gain unitaire, gain annuel (acté et projeté jamais mélangés), statut en toutes lettres — et un poste non impacté reste affiché à ±0,000 €, il ne disparaît pas. Chaque ligne porte sa porte « Ouvrir → ». En pied : l'équipe du suivi et les trois actions existantes (bilan atelier, exporter, historique)."
   ]},
+  { version:"4.72.0", date:"30/09/2026", points:[
+    "<b>Les donnees du classeur de Matis, importables en un geste.</b> Les 129 outils et 192 logements du classeur, avec le bon nombre de logements par porte-outil : T543 avec D1 et D2, ce sont DEUX logements, pas deux outils. Le MABEC a enfin sa place dans l outil — c est lui qui relie chaque logement a son article. Et une ligne jamais travaillee affiche « jamais travaillee », pas un zero invente."
+  ]},
   { version:"4.71.0", date:"30/09/2026", points:[
     "<b>Un outil, deux correcteurs, deux logements.</b> C etait faux : l outil T543 avec D1 et D2 donnait TROIS logements, dont un provisoire jamais repris.corrige, et mesuré sur ton cas avant. Ajoute : « T 543 D1 » et « T543 D1 » sont desormais le meme porte-outil, et une reparation peut reunir ce qui est deja saisi en double — sans jamais perdre un MABEC, un prix ou une mesure, et en te disant d abord ce qu elle va faire."
   ]},
@@ -12253,7 +12262,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.71.0";
+const TOOL_VERSION = "4.72.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 

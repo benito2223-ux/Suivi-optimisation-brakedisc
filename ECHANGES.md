@@ -261,6 +261,81 @@ ouvrant l'écran le matin.
 **Prochain tour** : à Z Code, pour ce chantier — mais **je veux ta réponse avant**, parce
 qu'elle dépend de ce que tu cherches, pas de ce qui est joli.
 
+### ▸ Tour 32 — 30/09/2026 — **Hermes** (v4.72.0 — les données du classeur, créées une bonne fois)
+
+**Benjamin : « je veux juste que les données du classeur de Matis soient créées une bonne fois
+pour toutes correctement dans l'app, tu peux repasser et corriger toi-même toutes les erreurs
+similaires ».**
+
+---
+
+**Ce n'était pas une correction : rien n'avait encore été importé.**
+
+`specsUsine` n'est qu'un réglage de calcul, pas les données. Il fallait donc **créer à la
+source**, et non réparer après coup. C'est aussi la bonne réponse à « une bonne fois pour
+toutes » : ce qui est juste à la création ne demande aucun rattrapage ensuite.
+
+**La voie : le mécanisme d'import que Benjamin utilise déjà.** `generer_import_matis.py` lit le
+classeur — en lecture seule, il ne le quitte jamais — et produit `IMPORT_MATIS.json` dans la
+forme exacte que `migrerArbre()` attend. Il l'ouvre avec **Importer un suivi**. Rien de neuf,
+rien qui contourne l'architecture, tout réversible.
+
+**4 lignes · 12 références · 44 OP's · 129 outils · 192 logements.**
+
+---
+
+**La famille entière des erreurs, et ce que chacune devient**
+
+| l'erreur | ce qu'elle devient |
+|---|---|
+| `T513 D1` et `T513 D2` vus comme deux outils | **un** porte-outil, deux logements — **14** porte-outils portent 2 ou 3 logements |
+| `T 513` et `T513` | une seule clé de rapprochement, **l'affichage garde la forme de l'atelier** |
+| ISO et MABEC écrits seulement sur la première ligne du groupe | l'ISO est reprise vers le bas ; **le MABEC jamais** — une ligne sans MABEC n'héritera pas de celui du groupe précédent |
+| production à 0 sur 8 feuilles sur 12 | **jamais travaillée**, pas « 0 » — on ne fabrique pas une mesure |
+| `CPP réel` en `#DIV/0!` | la case reste **vide** ; aucun zéro inventé |
+| une ligne Excel répétée (`T515 D1` ×2) | **un** logement, deux exemplaires — le nombre est conservé dans la description |
+| le MABEC **n'existait nulle part** dans le modèle | champ `mabec` ajouté au logement |
+
+**Le MABEC était un trou de modèle** : le lecteur de classeur le remontait déjà, mais
+`normalizeLogement()` n'avait aucun champ où le poser. L'information était lue, puis perdue.
+Or c'est *la* clé de raccordement. Il est ajouté, là où il doit être.
+
+---
+
+**Et un vrai bug de mon générateur, attrapé par son propre contrôle**
+
+35 **identifiants d'outils en double** : mon identifiant ne portait pas la référence, et deux
+références d'une même ligne partagent les noms d'OP. Un identifiant doit être unique dans
+**toute** l'application, pas dans un scénario. Corrigé, et le contrôle le vérifie désormais.
+
+**Deux autres échecs venaient de mes tests, pas des données** — je comparais les productions
+en tri textuel et je comptais les doublons au mauvais niveau. Un contrôle sert aussi à ça.
+
+---
+
+**Vérifié sur les vraies fonctions de l'application**
+
+`verifier_import.py` fait passer le fichier dans les **vraies** `migrerArbre`,
+`normalizeLigne`, `normalizeOp`, `normalizeLogement` — et vérifie **après** normalisation :
+
+`T543` avec **deux logements D1 et D2 portant deux MABEC distincts** · aucun porte-outil en
+double · MABEC survivant · productions 2 490 / 4 180 / 6 781 / 8 149 · aucune mise à zéro.
+**TOUT EST VERT.** 408/408 sur le harnais général, 27 tests de géométrie.
+
+---
+
+**Ce que je laisse ouvert, et pourquoi**
+
+Sept logements n'ont pas de MABEC — **le classeur lui-même ne leur en donne pas**. Ils sont
+signalés, pas remplis. Les outils sans correcteur `Dx` (T532, T533, T535 en OP30) gardent un
+logement provisoire, nommé comme tel.
+
+**Rien n'est importé automatiquement** : tu ouvres `IMPORT_MATIS.json` par **Importer un
+suivi**, comme d'habitude, et tu vois le résultat avant de valider.
+
+**Prochain tour** : à Z Code, librement. Et à Benjamin : **ouvre le fichier, et dis-moi si le
+nombre de logements te paraît juste sur tes outils.**
+
 ### ▸ Tour 31 — 30/09/2026 — **Hermes** (v4.71.0 — le logement, enfin juste)
 
 **Benjamin : « EMAG1 OP40, l'outil T543 a 2 correcteurs D1 et D2, cela signifie qu'il a

@@ -226,6 +226,80 @@ mesure-là, **5 pannes sur 5 sont vues** — y compris la collision de clé, qui
 
 **Un test qui rapporte « 0 échec » n'a pas forcément réussi : il a peut-être planté avant.**
 
+## [4.72.0] — 30/09/2026 · les données du classeur de Matis, créées une bonne fois
+
+**Benjamin : « je veux juste que les données du classeur de Matis soient créées une bonne fois
+pour toutes correctement dans l'app, tu peux repasser et corriger toi-même toutes les erreurs
+similaires ».**
+
+Ce n'est pas une correction : **rien n'avait encore été importé.** `specsUsine` n'est qu'un
+réglage, pas les données. Il fallait donc **créer**, à la source, et non réparer après coup.
+
+---
+
+**La voie : le mécanisme d'import de l'app, pas un raccourci.**
+
+`generer_import_matis.py` lit le classeur (lecture seule, il ne le quitte jamais) et produit
+`IMPORT_MATIS.json` (106 Ko), dans **la forme exacte** que `migrerArbre()` attend déjà.
+Benjamin l'ouvre avec **Importer un suivi** — le geste qu'il fait déjà. Rien de neuf, rien
+qui contourne l'architecture, tout est réversible.
+
+**Résultat : 4 lignes, 12 références, 44 OP's, 129 outils, 192 logements.**
+
+---
+
+**Les erreurs de la famille, et ce que chacune devient**
+
+| l'erreur | ce qu'elle devient |
+|---|---|
+| `T513 D1` et `T513 D2` vus comme deux outils | **un** porte-outil, deux logements — 14 porte-outils portent 2 ou 3 logements |
+| `T 513` et `T513` | une seule clé de rapprochement, **l'affichage garde la forme de l'atelier** |
+| ISO et MABEC écrits seulement sur la première ligne du groupe (fusion de cellules) | l'ISO est **reprise vers le bas** ; le MABEC **jamais** — une ligne sans MABEC n'héritera pas de celui du groupe précédent |
+| production à 0 sur 8 feuilles sur 12 | **jamais travaillée**, pas « 0 » — on ne fabrique pas une mesure |
+| `CPP réel` en `#DIV/0!` | la case reste **vide** ; aucun zéro inventé |
+| une ligne Excel répétée (`T515 D1` deux fois) | **un** logement — deux exemplaires, pas deux outils — et le nombre est conservé dans la description |
+| le MABEC n'existait **nulle part** dans le modèle | champ `mabec` ajouté au logement (v4.72.0) |
+
+---
+
+**Un trou de modèle, trouvé en route**
+
+Le lecteur de classeur remontait déjà le MABEC — **mais `normalizeLogement()` n'avait aucun
+champ pour le poser.** L'information était lue, puis perdue. Or le MABEC est *la* clé de
+raccordement (« un MABEC = un article = un logement »). Il est ajouté, là où il doit être.
+
+---
+
+**Et un vrai bug de mon générateur, attrapé par son propre contrôle**
+
+35 **identifiants d'outils en double**. Mon identifiant ne contenait pas la référence : deux
+références d'une même ligne partagent les noms d'OP, et se chevauchaient. Un identifiant
+doit être unique dans **toute** l'application, pas seulement dans un scénario. Corrigé, et
+le contrôle le vérifie désormais.
+
+**Deux autres erreurs étaient dans mes tests, pas dans les données** : je comparais les
+productions en tri textuel, et je comptais les doublons au mauvais niveau. Le contrôle sert
+aussi à ça.
+
+---
+
+**Vérifié de bout en bout, sur les vraies fonctions de l'application**
+
+`verifier_import.py` fait passer le fichier produit dans les **vraies** fonctions
+`migrerArbre` / `normalizeLigne` / `normalizeOp` / `normalizeLogement` de l'outil, et vérifie
+après normalisation : 4 lignes, 12 références, 129 outils, 192 logements, **aucun
+porte-outil en double**, `T543` avec **deux logements D1 et D2 portant deux MABEC distincts**,
+le MABEC a survécu à la normalisation, les productions sont 2 490 / 4 180 / 6 781 / 8 149,
+aucune mise à zéro. **TOUT EST VERT.**
+
+**408/408** sur le harnais général, plus 27 tests de géométrie.
+
+---
+
+**Sept logements n'ont pas de MABEC — le classeur lui-même ne leur en donne pas.** Ils sont
+signalés, pas remplis. Et les outils sans correcteur `Dx` (T532, T533, T535 en OP30) gardent
+un logement provisoire, nommé comme tel.
+
 ## [4.67.0] — 2026-09-30 · L1
 
 **Le premier lot de la charte CeramTec : le fond, et le poids interdit.**
