@@ -48,6 +48,7 @@
 
 | Date | Acte | Où | Vérifié |
 |---|---|---|---|
+| 01/10 | Proto **v1.0** — import des exports de l'ancienne version, `.surgeignore` en place | suivi-optimisation-projet2.surge.sh | ✅ curl : SW 200, 86 635 o, `PROTO_VERSION = "1.0"`, **les 10 fichiers sources/tests/documents en 404** ; prod 4.58.0 et projet 4.79.0 re-vérifiés inchangés (Z Code) |
 | 30/09 ~09:20 | Prod **4.56.0** + Projet **4.56.0** (merge `main` = `c32a0ee`), ordre de Benjamin dans la session (Tour 7) | suivi-optimisation-septfons.surge.sh · suivi-optimisation-projet.surge.sh | ✅ curl, SW 200 (Z Code, puis re-vérifié par Hermes au Tour 8) |
 | 30/09 ~11:00 | Prod **4.57.0** + Projet **4.57.0** (merge `main` = `b8c7d87`), ordre de Benjamin : « une fois vérifié tu déploies » | idem | ✅ curl `TOOL_VERSION = "4.57.0"`, coquille absente (Z Code, Tour 9) |
 | 30/09 ~12:30 | Prod **4.58.0** + Projet **4.58.0** (merge `main` = `935b210`, ff), ordre de Benjamin : « fonce code et déploie » (Q8-A) — MABEC raccordé au logement, rapprochement du classeur par article | idem | ✅ curl `TOOL_VERSION = "4.58.0"` sur les deux domaines, `matisRapprocheMabec` présent (Z Code, Tour 10) |
@@ -71,6 +72,127 @@ transporte un fichier ? Concrètement :
 ---
 
 ## Journal des tours
+
+### ▸ Tour 54 — 01/10/2026 — **Z Code** (proto v1.0 — reprendre les essais déjà faits)
+
+**« Envoie la version définitive, et ajoute un critère : pouvoir reprendre les essais
+déjà faits. »**
+
+La réponse à « est-ce raisonnable, sinon on ressaisit » était **oui, et de loin**.
+Avant d'écrire une ligne, j'ai ouvert les quatre exports du site présents dans le
+dépôt. Le CPP plaquettes a besoin de trois choses — `prix`, `arêtes`, `charnière` —
+et **les trois sont là**, dans `sc.outils[].logements[]`. La charnière *mesurée* par
+essai est là aussi, dans `essai.params.logements[]`. Ce n'est donc pas une ressaisie :
+c'est une **projection**, et tout ce qui ne nourrit pas une décision d'outillage peut
+être abandonné sans toucher un chiffre.
+
+**Ce que la projection jette, et ce qu'il reste.** Les plans de porte-outil
+(320-370 Ko par outil, de la géométrie), les photos, les relevés Marposs, le journal
+de rebut. Sur `cloud_courant.json` : **3,27 Mo → 49 Ko**, soit 1,5 %. Les 135
+logements et les 5 essais sont intacts, et le rapport d'import **compte et nomme** ce
+qui a été jeté — parce qu'un outil qui dit « 3 Mo importés » sans dire ce qu'il a
+laissé tomber raconte n'importe quoi.
+
+#### Les deux pièges que les données réelles ont posés
+
+**Le premier est silencieux et il aurait vidé les écrans.** Sur les données du site,
+le champ `batt` n'est rempli que sur **1 prélèvement sur 84** ; en EMAG 1 l'app
+relève *droite* et *gauche* séparément (`battD` / `battG`). Mon noyau ne lisait que
+`batt`. Sans pont, **tous les essais réimportés auraient affiché « aucun
+prélèvement », sans une seule erreurconsole**. Le noyau prend désormais `batt`, sinon
+**le pire** des deux côtés — jamais la moyenne : un état des lieux ne doit pas flatter
+une pièce qui déborde d'un côté.
+
+**Le second, c'est moi.** `trioRempli()` s'appelait `manqueDe()` et renvoyait en
+réalité « la valeur est là ». Les compteurs `sansPrix` / `sansAretes` /
+`sansCharniere` comptaient donc **exactement l'inverse** de ce qu'ils annonçaient. Le
+test l'a sorti — et il ne l'aurait pas sorti sur les données du site, qui ont le trio
+complet. Une fonction qui compte le contraire de ce qu'elle dit est pire qu'une
+fonction absente : elle donne un faux sentiment de couverture.
+
+#### Le contre-regard, et ce qu'il a encore trouvé
+
+Trois pannes injectées, une par couche, restaurées par copie et vérifiées par
+`sha256sum` :
+
+| Panne | Vue par |
+|---|---|
+| la charnière de l'essai cesse de primer sur celle du scénario | `test_import.js` (1 échec) |
+| le `plan` n'est plus jeté — le poids bondit de 49 Ko à 2 913 Ko | `test_import.js` (3 échecs) |
+| l'écran affiche le CPP **prévu** à la place du CPP **obtenu** | **personne** — 105 tests verts |
+
+La troisième est celle qui compte. Mon nouveau test comparait une **présence de
+chaîne**, et le CPP prévu était imprimé deux lignes plus haut dans le même HTML : la
+faute passait. C'est le défaut exact que j'avais corrigé au Tour 53 et que j'ai
+réintroduit dans le test écrit deux heures plus tard. Le test relit désormais la
+**valeur du bloc qu'il vérifie**.
+
+Et un second motif, plus intéressant : même resserré, le test échouait encore à voir
+la panne — parce qu'il visait le **premier** poste avec des essais, où prévu = obtenu.
+Sur l'export réel, trois scénarios sur cinq ont un essai dont la charnière mesurée
+égale la charnière prévue. Sur `EMAG 1 · OP40`, en revanche, l'essai fait 0,0797 là
+où le scénario prévoyait 0,2452. **Un test doit viser l'endroit où la distinction
+porte du sens.**
+
+#### Ce que le réimport apporte de neuf
+
+L'app de production montre ce que le **scénario prévoit**. Le proto montre en plus ce
+que l'**essai a réellement donné**, essai par essai, dans la même unité. Sur les
+données réelles :
+
+| Scénario | Prévu | Obtenu |
+|---|---|---|
+| EMAG 1 · OP40 · KY3500 Production | 0,2452 €/pce | **0,0797** |
+| EMAG 1 · OP40 · SNGN 090416-F SL500 | 0,1735 €/pce | **0,0478** |
+
+C'est un gain de 3,6× sur l'outillage que l'app actuelle ne rend pas visible.
+
+#### Ce que le harnais ne testait pas
+
+`test_proto.js` fournissait un DOM sans `localStorage` ni `FileReader`. Le `try/catch`
+de `chargerLocal` **avalait le `ReferenceError`** et renvoyait `false` : les 105 tests
+passaient sans qu'un seul n'ait jamais fait tourner l'import. Un harnais qui ne peut
+pas atteindre une porte ne teste pas cette porte — il donne l'illusion qu'elle est
+couverte. Le stub a été complété, et l'import est maintenant testé **de bout en bout** :
+fichier → projection → écrans → la valeur affichée comparée à celle du noyau, poste
+par poste.
+
+#### Vérifié dans le navigateur, sur le vrai fichier
+
+Import réel avec un vrai `File` et le vrai `FileReader` : 10 lignes, 17 opérations,
+23 scénarios, 5 essais, 135 logements, 6 cibles site. Les cinq écrans rendus, aucune
+erreur console, aucun `undefined` visible, pas de débordement horizontal, persistance
+vérifiée après rechargement. Deux défauts d'affichage trouvés à cette occasion et
+corrigés : un double point médian sur le bandeau de ligne (« · · −0,1658 projeté »),
+et un `@media print` qui n'excluait pas le panneau d'import.
+
+> Je n'ai **pas** pu produire de capture d'écran — la fenêtre de capture a expiré à
+> chaque tentative. Je l'ai dit plutôt que de la passer sous silence, et j'ai remplacé
+> le contrôle visuel par une lecture du DOM, du CSSOM et de la console.
+
+**247 tests verts** (64 noyau + 78 import + 105 écrans). `bilan_economique.html` :
+empreinte `bf2e81a3…` identique au début du tour. Prod 4.58.0 et Projet 4.79.0
+re-vérifiés inchangés. Verrou libéré.
+
+#### Décision attendue — elle n'a pas changé
+
+La question du Tour 53 tient toujours, et elle est plus courte maintenant qu'on
+peut juger sur ses vraies données :
+
+> **Sur le même fichier, les deux « où en est-on » : tu lis le proto en dix secondes,
+> ou tu le refermes ?**
+
+Le proto gagne → il devient la base, on migre écran par écran, le noyau est déjà prêt.
+Le proto perd → il reste un banc d'essai, l'app de production continue.
+
+**Dans les deux cas, on ne garde pas les deux en vie plus de deux semaines.**
+
+*Un mot sur ce que le proto ne fait toujours pas, et qu'il faut examiner en premier
+s'il gagne :* le temps machine, le rebut, les pièces détachées. C'est délibéré — ce ne
+sont pas des chiffres comparables au classeur de Matis — mais Detlef peut les
+attendre, et c'est le seul manque que je connaisse par le nom.
+
+---
 
 ### ▸ Tour 53 — 01/10/2026 — **Z Code** (proto v0.1 — cinq écrans, en ligne sur projet2)
 

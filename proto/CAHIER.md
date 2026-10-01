@@ -75,10 +75,17 @@ Ordre de construction imposé : noyau testé → tests verts → écran. Jamais 
 ## 6. Ce que le proto n'a pas
 
 Par choix, pas par oubli : cloud, photos, annotations, historique, CSV, recherche,
-classeur Matis en import, rapport PDF, PWA, multi-utilisateurs.
+rapport PDF, PWA, multi-utilisateurs.
 
 Le proto tient dans **un fichier**, sans dépendance. S'il dépasse 500 Ko, c'est qu'il
 redevient l'app.
+
+> **v1.0 — une exception, prise le 01/10.** L'import des exports de l'ancienne version
+> n'était pas dans la liste, à tort : sans lui, le proto démarre vide et on juge une
+> maquette sur des données fictives. C'est une **projection**, pas une ressaisie — le
+> fichier est lu sur le poste, et tout ce qui ne nourrit pas une décision d'outillage
+> est abandonné et **compté à l'écran**. Le classeur Matis, lui, reste hors de portée :
+> on n'y saisit rien, on n'y calcule rien.
 
 ## 7. Comment on tranche
 
@@ -97,8 +104,11 @@ exactement ce qui a produit 109 versions et vingt-deux panneaux.
 Écrit d'avance, pour qu'on ne soit pas surpris :
 
 - l'écran 2 (saisie en 90 s) est le plus difficile — la saisie actuelle est riche, et
-  90 s suppose de舍弃 des champs ;
+  90 s suppose d'en abandonner des champs ;
 - le vocabulaire de Matis (MABEC, numéro d'outil, CPP théorique) doit survivre tel quel,
   sinon Matis ne s'y retrouvera pas ;
 - l'écran 1 risque de manquer une information que la carte atelier montre bien — c'est
-  le vrai test, et c'est le but.
+  le vrai test, et c'est le but ;
+- **le proto n'affiche ni le temps machine, ni le rebut, ni les pièces détachées.**
+  C'est délibéré, et c'est peut-être faux : l'app de production les porte, et Detlef
+  peut les attendre. Ce sont les seuls manques à examiner en premier si le proto gagne.
