@@ -1,0 +1,5 @@
+# Deploiement du PROTO (proto2). Liste stricte, comme celle de la racine.
+# Seul index.html part. Les sources, les tests, le cahier et le jeu de donnees
+# restent sur la machine : rien de ce qui est saisi ici ne doit quitter l'ordinateur.
+*
+!index.html

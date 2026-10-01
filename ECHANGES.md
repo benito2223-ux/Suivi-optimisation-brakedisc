@@ -53,7 +53,8 @@
 | 30/09 ~12:30 | Prod **4.58.0** + Projet **4.58.0** (merge `main` = `935b210`, ff), ordre de Benjamin : « fonce code et déploie » (Q8-A) — MABEC raccordé au logement, rapprochement du classeur par article | idem | ✅ curl `TOOL_VERSION = "4.58.0"` sur les deux domaines, `matisRapprocheMabec` présent (Z Code, Tour 10) |
 | 30/09 ~17:00 | **Projet 4.63.3** (4.63.0/1/2 = la peau DS B de Z Code, + le correctif de lisibilité d Hermes : `--label` 2,81:1 → 5,07:1, et la police morte en tête de pile retirée), feu vert de Benjamin : « déploie sur Projet maintenant » | suivi-optimisation-projet.surge.sh | ✅ curl `TOOL_VERSION = "4.63.3"`, `--label:#6E6E73` en ligne, pile système en tête, SW 200 — **pas le « Success! » de surge** (règle du Tour 12) |
 | 30/09 ~22:40 | **Projet 4.66.0** — le garde-fou porte-outil/logement à la saisie + Roboto réellement embarquée, ordre de Benjamin : « deploie sur projet » | suivi-optimisation-projet.surge.sh | ✅ curl `TOOL_VERSION = "4.66.0"`, `font-family:'Roboto'` embarquée, Roboto en tête, `proposerFusionLogement` présent, SW 200 — **pas le « Success! » de surge** (règle du Tour 12). La **prod reste en 4.58.0** |
-| 01/10 soir | **Projet 4.79.0** (Tour 52 : promesses UI + A4 Mission + CSS d'impression au bon endroit), déploiement Projet libre par protocole (la prod ne bouge que sur phrase de Benjamin) | suivi-optimisation-projet.surge.sh | ✅ curl `TOOL_VERSION = "4.79.0"`, `print-mission`/`PROMESSES_UI`/`missionA4HTML` présents (38 occurrences), SW 200 — pas le « Success! ». **Prod re-vérifiée inchangée : 4.58.0** (Z Code, Tour 52) |
+| 01/10 soir | **Projet 4.79.0** (Tour 52 : promesses UI + A4 Mission + CSS d'impression au bon endroit), déploiement Projet libre par protocole (la prod ne bouge que sur phrase de Benjamin) | suivi-optimisation-projet.surge.sh | ✅ curl `TOOL_VERSION = "4.79.0"`, `print-mission`/`PROMESSES_UI`/`missionA4HTML` présents (38 occurrences), SW 200 — pas le « Success! ». **Prod re-vérifiée inchangée : 4.58.0** (Z Code, Tour 52) || 01/10 soir | **Projet 4.79.0** (Tour 52 : promesses UI + A4 Mission + CSS d'impression au bon endroit), déploiement Projet libre par protocole (la prod ne bouge que sur phrase de Benjamin) | suivi-optimisation-projet.surge.sh | ✅ curl `TOOL_VERSION = "4.79.0"`, `print-mission`/`PROMESSES_UI`/`missionA4HTML` présents (38 occurrences), SW 200 — pas le « Success! ». **Prod re-vérifiée inchangée : 4.58.0** (Z Code, Tour 52) |
+| 01/10 nuit | **proto2 v0.1** — le proto 5 écrans déployé sur un **troisième domaine**, à la demande de Benjamin (« carte blanche, tu es le boss, fonce ») après l'analyse « et si tu reprenais de zéro ». `bilan_economique.html` **non écrit**. | suivi-optimisation-projet2.surge.sh | ✅ curl HTTP 200, 58 246 octets, `PROTO v0.1` présent ; **les 6 sources/tests/données en 404** (`coeur.js`, `donnees.js`, `test_coeur.js`, `test_proto.js`, `CAHIER.md`, `proto.html`) — le `.surgeignore` du proto est strict. Vérifié dans Chrome : 5 écrans, 4 KPI, 0 `undefined`/`NaN` **dans le rendu** (les occurrences trouvées sont les mots du code source). **Prod 4.58.0 et Projet 4.79.0 re-vérifiés inchangés** (Z Code, Tour 53) |
 
 ---
 
@@ -70,6 +71,118 @@ transporte un fichier ? Concrètement :
 ---
 
 ## Journal des tours
+
+### ▸ Tour 53 — 01/10/2026 — **Z Code** (proto v0.1 — cinq écrans, en ligne sur projet2)
+
+**« Carte blanche, tu es le boss, fonce. »** Alors j'ai repris le travail à zéro, avec
+le cahier des charges que je venais d'écrire. Le proto est ici :
+**https://suivi-optimisation-projet2.surge.sh** — et `bilan_economique.html` n'a pas
+été touché une seule fois.
+
+---
+
+## Ce qui a été fait, dans l'ordre qui compte
+
+**1. Le cahier des charges d'abord** (`proto/CAHIER.md`). Une page. Le CPP plaquettes
+comme driver, avec la raison : c'est le seul chiffre comparable au classeur de Matis,
+le seul que changer d'insert fait bouger, et le seul que Detlef peut contester
+utilement. Les cinq questions, dans l'ordre où on les pose. Puis ce qui n'existe pas.
+
+**2. Le noyau pur, testé avant le moindre écran** (`proto/coeur.js`, 64 tests).
+`coutLogement`, `cppOutillageScenario`, `cheminCPP`, `statutEssai`, `verdictPoste` —
+aucun DOM, aucune lecture de l'app. L'ordre était imposé par le cahier, et il a payé :
+quand un test a échoué, c'était une **attente de test** fausse, pas un bug (trois fois :
+un chemin borné à 100 quand la prod est sous la cible, un dépassement qui donnerait
+107 %, un arrondi flottant). Vérifié un par un, jamais ajusté à l'aveugle.
+
+**3. Les cinq écrans** (`proto/proto.html`, 70 tests de portes et de cohérence).
+
+**4. Le navigateur.** Un test Node ne prouve pas qu'un écran s'affiche. Les cinq
+écrans parsés dans Chrome, les clics réels, le refus d'un essai sans charnière, et
+l'impression A4 contrôlée. C'est le navigateur qui a trouvé les trois vrais bugs.
+
+---
+
+## Les trois bugs que le navigateur a trouvés
+
+**« À décider » affichait 0.** `recapLignes()` comparait le code `"prêt"` **accentué**
+à des codes ASCII. La comparaison échouait en silence, le compteur restait à zéro, et
+un poste validé 5× n'apparaissait nulle part comme appelant une décision. Pire : mon
+test d'en-tête reprenait **la même chaîne accentuée**, il ne pouvait donc pas le voir.
+Les codes sont désormais ASCII partout, et un test verrouille l'absence d'accent dans
+toute clé du jeu de démonstration.
+
+**L'écran 3 se mentait à lui-même.** Le poste courant était résolu **deux fois**, avec
+et sans repli sur le premier poste. Le sélecteur annonçait « EMAG 1 · OP10 » au-dessus
+d'un « aucun essai saisi ». Une seule résolution maintenant (`posteCourantCle()`), et un
+test qui ouvre l'écran **à froid**, comme un vrai utilisateur — le harnais posait
+`ETAT.saisi.poste` avant d'appeler, ce que le navigateur ne fait jamais.
+
+**Le filtre de l'écran 3 gardait le mauvais scénario.** Il retenait le scénario de
+production (aucun essai) et écartait les deux qui en avaient. La production n'est pas
+une preuve : c'est la référence qu'on cherche à battre.
+
+---
+
+## Le contre-regard, et ce qu'il a appris sur moi
+
+Deux pannes injectées à dessein.
+
+**Panne A** — suppression de la borne « prod déjà sous la cible ». **Vue** par le noyau,
+2 échecs, code de sortie 1. **Pas vue** par le harnais des écrans, et j'ai cherché
+pourquoi : la branche n'est atteignable par aucun poste du jeu de démonstration. C'est
+juste — mais ça veut dire que le noyau est le bon endroit pour la couvrir.
+
+**Panne B** — une unité inventée dans l'affichage de l'écran 1 (« millièmes »).
+**NON vue.** 63 tests verts, code 0. Le harnais testait la *présence* de chaînes, pas
+la *justesse* de ce qu'elles disent. C'est le vrai enseignement du tour : **un test qui
+cherche une chaîne ne prouve pas qu'un chiffre est juste.** Le harnais relit désormais
+la valeur affichée dans le HTML rendu et la compare à celle du noyau, écran par écran.
+
+Restauration par copie dans les deux cas, vérifiée `cmp` octet pour octet.
+
+---
+
+## Ce que le proto pèse
+
+**55 Ko contre 1 400 Ko** pour l'app de production. Un seul fichier, zéro dépendance,
+zéro cloud. Il fait le même travail de décision en 1/25e du poids — et c'est peut-être
+la mesure la plus parlante de ce que l'app actuelle traîne.
+
+## Ce qu'il ne fait pas
+
+Pas de cloud, pas de photos, pas d'historique, pas de recherche, pas de classeur Matis,
+pas de rapport PDF. Par choix (cahier §6). Le proto ne synchronise rien et n'envoie
+rien : tout ce qui est saisi reste sur la machine.
+
+---
+
+## Ce que j'attends de Benjamin
+
+Une seule question, et elle n'est pas technique : **l'écran 1, tu le lis en dix
+secondes ou tu le refermes ?** Compare les deux côte à côte, sur les mêmes données.
+
+Puis, dans la semaine :
+
+- **si le proto gagne** → il devient la base, on migre écran par écran, le noyau est
+  déjà propre et testé, rien ne se réécrit ;
+- **si le proto perd** → il reste un banc d'essai, l'app de production continue.
+
+Dans les deux cas, **on ne garde pas les deux en vie plus de deux semaines.** C'est
+exactement ce qui a produit 109 versions et vingt-deux panneaux.
+
+Le proto dit d'avance ce qu'il est mauvais : la saisie en 90 secondes est un pari, et
+Matis doit pouvoir y retrouver MABEC, numéro d'outil, CPP théorique — sinon il ne
+s'y retrouvera pas.
+
+## État au moment où je rends la main
+
+- `bilan_economique.html` : **v4.79.0, intact, jamais écrit ce tour** ;
+- proto v0.1 : **134 tests verts** (64 noyau + 70 écrans), déployé et curl-vérifié ;
+- prod **4.58.0** et projet **4.79.0** : vérifiés inchangés après le déploiement ;
+- sources, tests, données, cahier : **404 en ligne**, rien ne fuit.
+
+---
 
 ### ▸ Tour 52 — 01/10/2026 — **Z Code** (v4.79.0 — tes deux chantiers livrés, et une découverte en construisant)
 
