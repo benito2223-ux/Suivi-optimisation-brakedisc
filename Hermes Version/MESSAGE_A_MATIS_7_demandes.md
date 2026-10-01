@@ -1,6 +1,6 @@
-# Message prêt à envoyer à Matis — 9 demandes
+# Message prêt à envoyer à Matis — 10 demandes
 
-> **Objet** : 9 points pour que ton outil affiche enfin quelque chose
+> **Objet** : 10 points pour que ton outil affiche enfin quelque chose
 >
 > Bonjour Matis,
 >
@@ -10,7 +10,7 @@
 > Une vieille version restée ouverte peut effacer tes cibles en se connectant au
 > partage. La base est protégée, mais autant fermer la porte.
 >
-> Ensuite, neuf choses. **Rien n'est urgent, rien n'est une faute** — ce sont les trous
+> Ensuite, dix choses. **Rien n'est urgent, rien n'est une faute** — ce sont les trous
 > que l'outil affiche et qu'il ne peut pas remplir tout seul. Tant qu'ils sont là,
 > l'écran d'accueil reste à moitié vide.
 >
@@ -50,6 +50,13 @@
 >    (Z000 519 285) sur la 302x26. **Un même logement, monté sur deux pièces
 >    différentes, porte-t-il deux articles différents ?** Si oui, c'est normal et
 >    l'outil va apprendre à le lire. Dis-nous juste si c'est bien ça.
+> 10. **Un libellé à corriger dans ton Excel.** Le MABEC **Z000 513 527** (le
+>    KY3500 des pistes) porte **deux désignations ISO différentes** selon les
+>    onglets : « SNGN090408F85Z050 KY3500 » sur les onglets EMAG, et
+>    « DWG1743941R01 KY3500 » sur les onglets HESSAPP (et sur la ligne T549, il
+>    n'y a pas d'ISO du tout). Si c'est la même plaquette, lequel des deux
+>    libellés est le bon ? On harmonisera dans ton Excel — 1 article = 1 MABEC =
+>    1 désignation, partout.
 >
 > ---
 >

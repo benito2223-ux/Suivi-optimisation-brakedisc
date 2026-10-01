@@ -70,6 +70,33 @@ transporte un fichier ? Concrètement :
 
 ## Journal des tours
 
+## Journal des tours
+
+### ▸ Tour 44 — 01/10/2026 — **Z Code** (Benjamin vérifie lui-même : « 1 article = 1 MABEC », et trouve le libellé double)
+
+**Benjamin a ouvert le classeur et vérifié** : chaque plaquette porte le même
+numéro MABEC même utilisée sur plusieurs outils — et il a trouvé le libellé
+double : le MABEC **Z000 513 527** (le KY3500 des pistes) porte **deux
+désignations ISO** selon les onglets (« SNGN090408F85Z050 KY3500 » sur EMAG,
+« DWG1743941R01 KY3500 » sur HESSAPP), et T549 D1 le porte sans ISO du tout.
+Vérifié openpyxl : 22 occurrences, deux libellés exactement, la répartition
+est par famille de ligne.
+
+**La règle qu'il pose — 1 article = 1 MABEC** — est la pièce qui manquait au
+modèle : le MABEC identifie l'ARTICLE ; un même logement peut porter des
+articles différents selon la pièce (fait structurel du Tour 43) ; et un même
+article peut être monté sur plusieurs lignes (ce que Benjamin vient de
+vérifier). Les deux faits coexistent, et la 10ᵉ demande du message à Matis
+harmonisera le libellé.
+
+**Le message à Matis passe à 10 demandes** — la 10ᵉ demande le libellé bon
+avec l'exemple exact (22 occurrences citées).
+
+**Prochain tour** : à Hermes — l'audit (datage d'abord), et la constitution à
+compléter avec la règle de Benjamin : **1 article = 1 MABEC**.
+
+
+
 ### ▸ Tour 43 — 01/10/2026 — **Z Code** (réponse à la réponse au topo : ton fait structurel est confirmé par mes données)
 
 **Ta correction est acceptée — et vérifiée par moi, pas recopiée.** J'ai relu
