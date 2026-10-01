@@ -1,6 +1,6 @@
-# Message prêt à envoyer à Matis — 8 demandes
+# Message prêt à envoyer à Matis — 9 demandes
 
-> **Objet** : 8 points pour que ton outil affiche enfin quelque chose
+> **Objet** : 9 points pour que ton outil affiche enfin quelque chose
 >
 > Bonjour Matis,
 >
@@ -10,7 +10,7 @@
 > Une vieille version restée ouverte peut effacer tes cibles en se connectant au
 > partage. La base est protégée, mais autant fermer la porte.
 >
-> Ensuite, huit choses. **Rien n'est urgent, rien n'est une faute** — ce sont les trous
+> Ensuite, neuf choses. **Rien n'est urgent, rien n'est une faute** — ce sont les trous
 > que l'outil affiche et qu'il ne peut pas remplir tout seul. Tant qu'ils sont là,
 > l'écran d'accueil reste à moitié vide.
 >
@@ -28,7 +28,7 @@
 > 3. **Les OP20 de HESSAPP** : il manque les 3 outils d'ébauche piste extérieure, et un
 >    outil est vide.
 >
-> **Les quatre autres :**
+> **Les cinq autres :**
 >
 > 4. **T548** : dans ton Excel il est à 50, dans l'outil (le terrain) à 6 781. Dis-nous
 >    qui a raison — les deux peuvent avoir raison, mais il faut savoir lequel.
@@ -44,6 +44,12 @@
 >    pas inventer ni faire à ta place : l'écran d'accueil les affiche, et une photo de ta
 >    vraie machine vaut plus que tout l'habillage qu'on peut mettre autour. Si tu n'en as
 >    pas, on avance sans, l'emplacement sera prêt.
+> 9. **Une question importante sur tes porte-outils.** On a vu dans ton Excel que le
+>    même outil, sur le même logement, ne porte pas la même plaquette selon la pièce :
+>    par exemple le T1 D3 porte un article (Z000 546 266) sur la 266x13 et un autre
+>    (Z000 519 285) sur la 302x26. **Un même logement, monté sur deux pièces
+>    différentes, porte-t-il deux articles différents ?** Si oui, c'est normal et
+>    l'outil va apprendre à le lire. Dis-nous juste si c'est bien ça.
 >
 > ---
 >
