@@ -13,13 +13,13 @@
 
 | | |
 |---|---|
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
+| **Auteur** | Z Code |
+| **Pris le** | 01/10/2026, tour 40 |
 | **Écrit dans** | `bilan_economique.html` |
-| **Version visée** | — |
-| **Sujet** | — |
+| **Version visée** | 4.74.3 |
+| **Sujet** | Benjamin n°5 : le correcteur non rempli sur les outils déjà migrés (avant 4.74.2) + le dossier Livraisons introuvable depuis l'écran de travail |
 
-✅ **Le fichier est libre.**
+🔒 **Le verrou est pris par Z Code.**
 
 ---
 
