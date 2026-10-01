@@ -11764,6 +11764,9 @@ const NOUVEAUTES = [
   { version:"4.65.2", date:"30/09/2026", points:[
     "<b>La table que la hiérarchie lit.</b> Sous les tuiles, toutes les opérations de toutes les lignes vivantes : ligne, opération, référence, gain unitaire, gain annuel (acté et projeté jamais mélangés), statut en toutes lettres — et un poste non impacté reste affiché à ±0,000 €, il ne disparaît pas. Chaque ligne porte sa porte « Ouvrir → ». En pied : l'équipe du suivi et les trois actions existantes (bilan atelier, exporter, historique)."
   ]},
+  { version:"4.71.0", date:"30/09/2026", points:[
+    "<b>Un outil, deux correcteurs, deux logements.</b> C etait faux : l outil T543 avec D1 et D2 donnait TROIS logements, dont un provisoire jamais repris.corrige, et mesuré sur ton cas avant. Ajoute : « T 543 D1 » et « T543 D1 » sont desormais le meme porte-outil, et une reparation peut reunir ce qui est deja saisi en double — sans jamais perdre un MABEC, un prix ou une mesure, et en te disant d abord ce qu elle va faire."
+  ]},
   { version:"4.70.2", date:"30/09/2026", points:[
     "<b>Les champs ne sont plus des boites.</b> Un filet sobre sous la saisie, qui devient rouge qu on est dedans — la forme exacte de la charte. Les cases a cocher, les fichiers et les couleurs gardent leur cadre : un filet sous une case ne veut rien dire. Les tableaux, eux, sont rayes de filets gris et leurs en-tetes sont en capitales. Tout cela est de la CSS : aucune ligne de saisie n a bouge."
   ]},
@@ -12250,7 +12253,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.70.2";
+const TOOL_VERSION = "4.71.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -12811,6 +12814,130 @@ function matisRapproche(c){
   return { nomLigne, ligneId: lg ? lg.id : null, referenceId: ref ? ref.id : null, ref, ligne: lg || null };
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   v4.71.0 — LA RÉPARATION DES OUTILS DÉJÀ SAISIS EN DOUBLE
+   ═══════════════════════════════════════════════════════════════════════════
+   Benjamin, 30/09 : « encore pas réglé le problème des logements ». Les
+   garde-fous protègent la saisie à venir ; ils ne réparent rien. Or les
+   doublons sont DÉJÀ dans les scénarios.
+
+   Fonction PURE : elle rend un nouveau tableau, ne modifie aucune donnée, et
+   n'est jamais appelée d'elle-même. L'atelier la déclenche, il voit le
+   résultat, il accepte ou il refuse (constitution §3.1 — on ne corrige jamais
+   quelqu'un contre son gré, et §3.2 — rien n'est supprimé en silence).
+
+   Ce qu'elle fait, et RIEN D'AUTRE :
+   · regroupe les outils dont la CLÉ de porte-outil est identique ;
+   · donne à chaque logement le nom de sa POSITION (D1, D2…) ;
+   · un logement encore provisoire qui n'a reçu aucune position prend le
+     numéro de la position LIBRE la plus basse — il ne disparaît pas ;
+   · MABEC, prix, arêtes, analyses, mesures et scénarios voyagent INTACTS.
+   Elle ne fusionne JAMAIS deux outils de clés différentes, et ne touche
+   JAMAIS à un outil qui a déjà ses positions. */
+function reparerOutilsD1D2(outils){
+  const liste = (outils || []).slice();
+  if(liste.length < 2) return liste;
+  const defaut = /^\s*logement\s*\d*\s*$/i;
+  const groupes = new Map();
+  const autres = [];
+  for(const o of liste){
+    const { porte, position } = matisPorteOutilPosition(o.numero);
+    const cle = matisClePorteOutil(porte);
+    /* Un outil sans position (« T543 » nu) est LAISSE TEL QUEL. On ne le verse
+       pas d'office dans le groupe : il peut être un vrai outil à lui seul, et
+       fusionner à l'aveugle détruirait une distinction réelle. Il est en
+       revanche SIGNALÉ dans le rapport — c'est souvent lui, le parent, et
+       c'est à l'atelier de trancher (constitution §3.1). */
+    if(!position){ autres.push(o); continue; }
+    if(!groupes.has(cle)) groupes.set(cle, []);
+    groupes.get(cle).push(o);
+  }
+  const out = autres.slice();
+  const orphelins = [];
+  const fusionnes = new Map();   /* id du 1er outil du groupe -> outil fusionné */
+  const consomme = new Set();
+  for(const [cle, groupe] of groupes){
+    if(groupe.length < 2){ if(!out.includes(groupe[0])) out.push(groupe[0]); continue; }
+    /* le numéro d'affichage : celui qui a le plus de lettres, sinon le premier.
+       « T 513 D1 » gagne sur « T513 D1 » — c'est la forme de l'atelier. */
+    let numero = null, melhor = -1;
+    for(const o of groupe){
+      const n = String(o.numero || "");
+      const nPortee = n.replace(/\s*[Dd]\d*\s*$/, "").trim();
+      const score = nPortee.replace(/\s/g, "").length * 10 + (nPortee.includes(" ") ? 1 : 0);
+      if(score > melhor){ melhor = score; numero = nPortee; }
+    }
+    const logements = [];
+    for(const o of groupe){
+      const position = matisPorteOutilPosition(o.numero).position;
+      for(const l of (o.logements || [])){
+        const copie = Object.assign({}, l);
+        const nom = String(l.nom || "").trim();
+        /* un logement déjà nommé garde son nom d'atelier (« Bol », « Piste ») :
+           il porte une information que la position ne dit pas.
+           un logement provisoire, lui, prend la position de son outil. */
+        if(defaut.test(nom)) copie.nom = position;
+        logements.push(copie);
+      }
+    }
+    /* un provisoire resté sans position n'est pas perdu : il
+       reçoit la plus petite position libre. On ne supprime JAMAIS une ligne. */
+    for(const o of groupe){
+      const { position } = matisPorteOutilPosition(o.numero);
+      if(position) continue;
+      for(const l of (o.logements || [])){
+        const copie = Object.assign({}, l);
+        if(defaut.test(String(l.nom || ""))){
+          let n = 1;
+          while(logements.some(x => x.nom === "D" + n)) n++;
+          copie.nom = "D" + n;
+        }
+        logements.push(copie);
+      }
+    }
+    /* La fusion apparaît à la place du PREMIER outil du groupe : l'atelier
+       retrouve ses outils dans l'ordre où il les a saisis. Une réparation qui
+       réordonne la liste pourrais le faire chercher au mauvais endroit. */
+    fusionnes.set(groupe[0].id, { id: groupe[0].id, numero: numero, logements: logements,
+               position: "", nbOutils: groupe.length, _fusionReparee: true });
+    for(const o of groupe) consomme.add(o.id);
+    /* un outil NU de la même clé (souvent le parent) est signalé, pas touché */
+    for(const o of autres){
+      if(matisClePorteOutil(o.numero) === cle)
+        orphelins.push('un outil « ' + o.numero + ' » sans position existe aussi : '
+          + 'à vous de dire s il est le parent ou un outil distinct');
+    }
+  }
+  /* On reconstruit dans l'ordre d'origine : chaque groupe remplacé par son
+     outil fusionné, à la place de son PREMIER membre. Les autres membres sont
+     absorbés. Une réparation qui réordonnerait la liste pourrait faire
+     chercher un outil au mauvais endroit — et l'atelier ne le retrouverait pas. */
+  const ordre = [];
+  for(const o of liste){
+    const fusion = fusionnes.get(o.id);
+    if(fusion){ ordre.push(fusion); continue; }   /* 1er membre : à sa place */
+    if(consomme.has(o.id)) continue;              /* membre absorbé : disparaît */
+    if(!ordre.includes(o)) ordre.push(o);
+  }
+  ordre._orphelins = orphelins;
+  return ordre;
+}
+
+/* Ce que la réparation a changé, en mots — pas en nombre. L'écran doit dire
+   ce qu'il va advenir, sinon on demande une confiance aveugle. */
+function reparerOutilsRapport(avant, apres){
+  const lignes = [];
+  const a = (avant || []).filter(o => o._fusionReparee);
+  const b = (apres || []).filter(o => o._fusionReparee);
+  for(const o of b){
+    const n = (o.nbOutils || 1);
+    const parts = (o.logements || []).map(l => String(l.nom || "").toUpperCase());
+    lignes.push(n + " outils « " + o.numero + " » meetings en 1, avec " +
+      parts.length + " logements : " + parts.join(", "));
+  }
+  return lignes;
+}
+
 /* v4.58 — le porte-outil et sa position, lus du numéro du classeur (Q4).
    « T517 D2 » = le porte-outil T517, position D2 ; « T533 » = porte-outil seul,
    position inconnue. Fonction pure au service du rapprochement par article. */
@@ -12818,6 +12945,20 @@ function matisPorteOutilPosition(numero){
   const s = String(numero || "").trim().replace(/\s+/g, " ");
   const m = s.match(/^(.*?)\s*([Dd]\d+)$/);
   return m ? { porte: m[1].trim(), position: m[2].toUpperCase() } : { porte: s, position: null };
+}
+
+/* v4.71.0 — Benjamin, 30/09 : « l'outil T543 a 2 correcteurs D1 et D2, cela
+   signifie qu'il a 2 logements, chaque logement correspond à un correcteur ».
+
+   DÉFAUT 1 : « T 543 D1 » et « T543 D1 » sont le MÊME porte-outil. L'atelier
+   tape les deux formes, et son classeur contient les deux. En l'état la
+   comparaison se faisait sur la chaîne brute : deux outils distincts, pour la
+   même pièce. C'est un doublon de SAISIE, pas une information.
+
+   On ne touche PAS à ce qui est affiché — « T 513 D1 » reste « T 513 D1 ».
+   On normalise seulement la CLÉ de rapprochement. */
+function matisClePorteOutil(numero){
+  return String(numero || "").toUpperCase().replace(/[^A-Z0-9]/g, "") || "0";
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
@@ -12876,12 +13017,55 @@ function fusionnerOutils(outils, outilId, prop){
      d'atelier : c'est ce qui le distingue de « Bol » ou « Piste », et c'est
      donc lui seul qu'on renomme d'après la position. */
   const defaut = /^\s*logement\s*\d*\s*$/i;
+  const srcDefaut0 = (src.logements || []).filter(l => defaut.test(l.nom || ""));
   const logements = (cible.logements || []).map(l => Object.assign({}, l));
   const posCible = matisPorteOutilPosition(prop.cible.numero).position;
   if(prop.mode === "complet" && posCible && logements.length && defaut.test(logements[0].nom || "")){
     logements[0].nom = posCible;
   }
   const srcLogements = src.logements || [];
+  /* v4.71.0 — le logement PROVISOIRE est réclamé par la première position.
+     Benjamin, 30/09 : « l'outil T543 a 2 correcteurs D1 et D2, cela signifie
+     qu'il a 2 logements ». Or la saisie donneait :
+         T543 [Logement 1]  +  « T543 D1 »  +  « T543 D2 »
+       =>  T543 [Logement 1 , D1 , D2]     ← TROIS logements pour deux correcteurs
+
+     La règle : quand l'outil nu ne contient QU'UN logement, encore au nom de
+     défaut et ENCORE VIDE, c'est ce logement-là qui devient la position. On ne
+     crée rien, on ne supprime rien — on donne à un provisoire le nom qu'il
+     attendait, et le reste de la liste est conservé tel quel.
+
+     Deux conditions, et elles sont ce qui rend la règle sûre :
+     · le logement doit être au nom de DÉFAUT — un logement au nom d'atelier
+       (« Bol », « Piste ») dit plus que la position, on ne le touche pas ;
+     · il doit être VIDE — s'il porte un MABEC, un prix ou une mesure, il
+       raconte quelque chose : on ne l'écrase pas, on AJOUTE la position à côté
+       et on laisse l'atelier trancher. */
+  /* « VIDE » ne se teste pas sur tous les champs : `normalizeLogement` remplit
+     aretes:8 et suiviTolerance:true par DÉFAUT. Les compter comme des données
+     saisie rendrait la règle inapplicable — aucun logement du monde ne serait
+     jamais vide. On regarde donc SEULEMENT ce que l'atelier a réellement tapé
+     ou choisi : un MABEC, un prix, un code article, une référence, une mesure,
+     une condition de coupe. Tout le reste, c'est la structure. */
+  const CHAMPS_SAISIS = ["mabec","codeArticle","prix","charniere","ref","vc","f",
+                         "kappaR","rayonBec","apPiste","tempsCoupe","tempsDeplacement"];
+  const vide = l => !l || CHAMPS_SAISIS.every(c => l[c] === undefined || l[c] === null
+                 || l[c] === "" || l[c] === 0);
+  const premier = logements[0];
+  if(prop.mode === "simple" && srcDefaut0.length === 1 && premier
+     && defaut.test(premier.nom || "") && vide(premier)){
+    const dejaLa = logements.some(l => String(l.nom || "").trim().toUpperCase() === prop.position);
+    if(!dejaLa){
+      const fusionne = Object.assign({}, premier, { nom: prop.position });
+      for(const champ of Object.keys(srcDefaut0[0])){
+        if(fusionne[champ] === undefined || fusionne[champ] === "" || fusionne[champ] === 0)
+          fusionne[champ] = srcDefaut0[0][champ];
+      }
+      const gardes = logements.slice(1);   /* les autres logements sont conservés */
+      return reste.concat([Object.assign({}, cible,
+        { numero: prop.porte, logements: [fusionne].concat(gardes) })]);
+    }
+  }
   /* Règle : on renomme un logement PORTE UN NOM DE DÉFAUT (« Logement 1 »),
      parce que c'est un nom provisoire que personne n'a voulu taper. Un logement
      AU NOM d'atelier (« Bol », « Piste exterieur ») garde son nom — et dans ce
@@ -16991,7 +17175,22 @@ function runTests(){
       ok("garde-fou : cible propre = mode « simple »", p3 && p3.mode, "simple");
       const f3 = fusionnerOutils(L3, "b", p3);
       ok("garde-fou (mode simple) : un seul outil, numéro inchangé", f3.length + "|" + f3[0].numero, "1|T517");
-      ok("garde-fou (mode simple) : le logement versé s'appelle D1", f3[0].logements[1] && f3[0].logements[1].nom, "D1");
+      /* v4.71.0 — Benjamin, 30/09 : « l'outil a 2 correcteurs D1 et D2, donc
+         2 logements ». Ce test affirmait jusqu'ici qu'un outil nu ["Logement 1"]
+         ACTIONNÉ par D1 devait garder deux logements ["Logement 1","D1"].
+         C'est le LOGEMENT FANTÔME qu'il signalait : trois logements pour deux
+         correcteurs dès qu'on saisissait D2. Le provisoire vide est désormais
+         RÉCLAMÉ par la position — il n'en reste qu'un. */
+      ok("garde-fou (mode simple) : le provisoire est réclamé, il n'y a pas de fantôme",
+         f3[0].logements.length + "|" + f3[0].logements[0].nom, "1|D1");
+      /* …et si le provisoire porte DÉJÀ une information, on ne l'écrase pas :
+         la position est ajoutée à côté, et l'atelier tranche. */
+      const L3b = [{ id:"a", numero:"T517", logements:[{ id:"g1", nom:"Logement 1", mabec:"MAB-7", prix:9 }] },
+                   { id:"b", numero:"T517 D1", logements:[{ id:"h1", nom:"Logement 1" }] }];
+      const f3b = fusionnerOutils(L3b, "b", proposerFusionLogement("T517 D1", L3b, "b"));
+      ok("garde-fou : un provisoire qui porte un MABEC n'est jamais écrasé",
+         f3b[0].logements.some(l => l.mabec === "MAB-7"), true);
+      ok("garde-fou : la position vient s'ajouter à côté", f3b[0].logements.length, 2);
 
       const L4 = [oUtil("a", "T517 D1", ["Bol"]), oUtil("b", "T517 D2", ["Logement 1"])];
       const f4 = fusionnerOutils(L4, "b", proposerFusionLogement("T517 D2", L4, "b"));

@@ -186,3 +186,10 @@ que j avais pourtant affirmee « intacte ». Aucune regle de fond modifiee.*
 *v1.4 — 30/09/2026, Hermes : règles 7 et 8 ajoutées au §6 (restauration d'un contre-regard par copie sauvegardée, jamais par `git checkout` — incident Z Code au Tour 20 ; et vérification octet pour octet de la restauration).*
 
 *v1.6 — 30/09/2026, Hermes : règle 9 ajoutée au §6 — « une suite de tests ne voit pas ce qu'elle ne mesure pas ». Mesuré sur les chantiers de charte L3→L7 : une panne CSS vue sur cinq. Un chantier de charte se vérifie à l'œil, jamais par « les tests sont verts ».*
+
+**v1.7 — 30/09/2026, règle 10 (ajoutée après le contre-regard de la 4.71.0).** Un
+contre-regard ne compte pas seulement les **échecs** : il vérifie que la suite **va jusqu'au
+bout**. Constaté en mesurant la 4.71.0 — une panne qui faisait **planter** le script de
+test était comptée « 0 échec », donc invisible ; et la moitié des tests n'avait pas tourné.
+**0 échec ≠ Vert.** Une suite qui n'a pas terminé n'a rien rapporté. On compte les tests
+exécutés autant que les échecs.

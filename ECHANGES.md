@@ -261,6 +261,90 @@ ouvrant l'écran le matin.
 **Prochain tour** : à Z Code, pour ce chantier — mais **je veux ta réponse avant**, parce
 qu'elle dépend de ce que tu cherches, pas de ce qui est joli.
 
+### ▸ Tour 31 — 30/09/2026 — **Hermes** (v4.71.0 — le logement, enfin juste)
+
+**Benjamin : « EMAG1 OP40, l'outil T543 a 2 correcteurs D1 et D2, cela signifie qu'il a
+2 logements, chaque logement correspond à un correcteur »** — et, plus tard : **« encore pas
+réglé le problème des logements ».**
+
+C'était exact. Et **mesuré** avant d'être corrigé.
+
+---
+
+**Le défaut, reproduit.**
+
+L'atelier crée d'abord l'outil nu `T543` — qui arrive avec un `Logement 1` provisoire — puis
+saisit `T543 D1`, puis `T543 D2` :
+
+```
+T543 [Logement 1]  +  « T543 D1 »  +  « T543 D2 »   =>   T543 [Logement 1 , D1 , D2]
+```
+
+**Trois logements pour deux correcteurs.** Saisir `D1` puis `D2` *sans* l'outil nu
+fonctionnait déjà : c'est **l'outil nu créé en premier** qui déclenchait le problème.
+
+Et, en我cherchant de vérifier au lieu de supposer, j'ai mesuré quatre défauts :
+
+| | |
+|---|---|
+| 1 | le provisoire `Logement 1` n'est **jamais** réclamé → le fantôme |
+| 2 | `T 543 D1` et `T543 D1` = **deux** outils distincts pour la même pièce |
+| 3 | **aucune réparation** de ce qui est déjà saisi en double |
+| 4 | un test de 4.66.0 **encodait le bug** — il validait le fantôme |
+
+---
+
+**Les trois corrections.**
+
+**1. Le provisoire est réclamé par la première position** — s'il est seul, au nom de défaut
+et **encore vide**. On ne crée rien, on ne supprime rien.
+
+La condition « vide » a été le piège : je testais `aretes`, et `normalizeLogement` y met `8`
+**par défaut**. Compter une valeur par défaut comme une saisie rendait la règle
+inapplicable. Elle ne regarde donc qu'une **liste explicite** de ce que l'atelier a réellement
+tapé. Si le provisoire porte un MABEC ou un prix, la position s'ajoute **à côté**.
+
+**2. `matisClePorteOutil()`** normalise espaces, tirets et points. **L'affichage ne change
+pas** : `T 513 D1` reste `T 513 D1`. Seule la clé de rapprochement change.
+
+**3. `reparerOutilsD1D2()`** — fonction **pure**, jamais appelée d'elle-même. MABEC, prix,
+arêtes et mesures voyagent intacts ; un logement au nom d'atelier garde son nom ; un outil
+**nu** n'est pas fusionné mais **signalé** ; et **l'ordre de la liste est conservé**, parce
+qu'une réparation qui réordonne fait chercher un outil au mauvais endroit.
+
+`reparerOutilsRapport()` dit la même chose **en mots** : *« 2 outils "T 543" meetings en 1,
+avec 2 logements : D1, D2 »*.
+
+**408/408**, plus 27 tests de géométrie dédiés.
+
+---
+
+**Et le contre-regard avait un trou — dans la mesure, pas dans les tests.**
+
+Cinq pannes injectées. La cinquième, *fusionner deux porte-outils différents*, **n'était pas
+vue**. En réalité elle **plantait** le script de test, et mon contre-regard comptait
+« 0 échec » : **un plantage ressemble à zéro échec**, et la moitié des tests n'avait pas
+touré.
+
+Corrigé : le contre-regard vérifie maintenant que la suite **va jusqu'au bout**. Avec cette
+mesure-là, **5 pannes sur 5 sont vues** — la collision de clé en donne 3.
+
+**Écrit dans la constitution (v1.7, règle 10) : 0 échec ≠ Vert. Une suite qui n'a pas
+terminé n'a rien rapporté.**
+
+---
+
+**Ce que ça change pour toi, concrètement.**
+
+- **À la saisie** : `T543`, puis `D1`, puis `D2` → **un outil, deux logements**. Vérifié sur
+  ton cas exact, MABEC et prix conservés.
+- **Sur l'existant** : tes scénarios contiennent déjà des doublons. `reparerOutilsD1D2()`
+  est prête, mais **je ne l'ai branchée sur aucun bouton** — c'est un geste sur des données
+  réelles, et je ne le déclenche ni ne l'expose sans ton accord.
+
+**C'est la seule chose que je te demande de décider :** veux-tu que je l'expose dans l'écran
+Matis, avec le rapport affiché **avant** l'application, pour que tu valides ligne par ligne ?
+
 ### ▸ Tour 30 — 30/09/2026 — **Hermes** (v4.70.2 — L6 et L7, la charte est complète)
 
 **Benjamin : « continue jusqu'à la fin ».** Les deux derniers chantiers, faits.

@@ -134,6 +134,98 @@ et le **contraste** — il ne voit pas une bordure qui disparaît.
 constitution (v1.6, règle 9) : **un chantier de charte se vérifie à l'œil et à la capture,
 jamais par « les tests sont verts ».**
 
+## [4.71.0] — 30/09/2026 · le logement, enfin juste
+
+**Benjamin : « EMAG1 OP40, l'outil T543 a 2 correcteurs D1 et D2, cela signifie qu'il
+a 2 logements, chaque logement correspond à un correcteur »** — et, plus tard :
+**« encore pas réglé le problème des logements »**.
+
+C'était exact, et **mesuré** : le cas de Benjamin produisait **trois** logements.
+
+---
+
+**Le défaut, reproduit avant d'être corrigé**
+
+L'atelier crée d'abord l'outil nu `T543` (qui arrive avec un `Logement 1` provisoire),
+puis saisit `T543 D1`, puis `T543 D2` :
+
+```
+T543 [Logement 1]  +  « T543 D1 »  +  « T543 D2 »   =>   T543 [Logement 1 , D1 , D2]
+```
+
+**Trois logements pour deux correcteurs.** Le provisoire ne était jamais réclamé.
+
+Saisir `T543 D1` puis `T543 D2` directement, sans l'outil nu, fonctionnait déjà. C'est
+donc **l'outil nu créé en premier** qui déclenchait le problème.
+
+---
+
+**Trois corrections, mesurées une par une.**
+
+**1. Le provisoire est réclamé par la première position.** Si l'outil nu ne contient
+qu'**un** logement, encore au nom de défaut et **encore vide**, c'est lui qui devient `D1`.
+On ne crée rien, on ne supprime rien — on donne à un provisoire le nom qu'il attendait.
+
+Deux conditions rendent la règle sûre, et elles ne sont pas décoratives :
+- le logement doit être au **nom de défaut** — « Bol », « Piste » disent plus que la
+  position, on ne les touche pas ;
+- il doit être **vide**. « Vide » se teste sur une liste explicite de ce que l'atelier a
+  réellement tapé (MABEC, prix, code article, référence, mesures, conditions de coupe) —
+  **pas sur tous les champs**, parce que `normalizeLogement` remplit `aretes:8` et
+  `suiviTolerance:true` par défaut. Compter ça comme de la saisie rendrait la règle
+  inapplicable. Si le provisoire porte déjà une information, la position s'ajoute **à
+  côté** et l'atelier tranche.
+
+**2. La clé de rapprochement ignore les espaces.** `T 543 D1` et `T543 D1` sont le même
+porte-outil — l'atelier tape les deux, et son classeur contient les deux. En l'état, la
+comparaison se faisait sur la chaîne brute : **deux outils distincts pour la même pièce.**
+`matisClePorteOutil()` normalise espaces, tirets et points. **L'affichage ne change pas** :
+`T 513 D1` reste `T 513 D1`. Seule la clé de rapprochement est normalisée.
+
+**3. La réparation de ce qui est DÉJÀ saisi en double.** Les garde-fous protègent la saisie
+à venir ; ils ne réparent rien — et Benjamin a déjà ses doublons dans les scénarios.
+
+`reparerOutilsD1D2()` est une **fonction pure** : elle rend un nouveau tableau, ne modifie
+aucune donnée, et **n'est jamais appelée d'elle-même**. L'atelier la déclenche, il lit ce
+qu'elle va faire, il accepte ou refuse.
+
+- elle ne fusionne que des outils dont la clé est **réellement** identique ;
+- **MABEC, prix, arêtes, charnière, mesures et conditions voyagent intacts** ;
+- un logement au **nom d'atelier** garde son nom ; seul un provisoire prend la position ;
+- un outil **nu** de la même clé n'est pas fusionné — il est **signalé**, parce qu'il peut
+  être le parent ou un outil distinct, et que c'est à l'atelier de trancher ;
+- **l'ordre de la liste est conservé** : la fusion apparaît à la place du premier membre.
+  Une réparation qui réordonne ferait chercher un outil au mauvais endroit.
+
+`reparerOutilsRapport()` rend la même chose **en mots** : *« 2 outils "T 543" Meetings en 1,
+avec 2 logements : D1, D2 »*. L'écran dit ce qu'il va advenir — on ne demande pas une
+confiance aveugle.
+
+---
+
+**Un test de 4.66.0 encodait le bug**
+
+Il affirmait qu'un outil nu `["Logement 1"]` actionné par `D1` devait garder **deux**
+logements. C'était le logement fantôme qu'il validait. Corrigé, avec le motif écrit à côté,
+et deux tests ajoutés : le provisoire qui porte un MABEC n'est **jamais** écrasé, et la
+position vient s'ajouter à côté.
+
+**408/408**, plus 27 tests de géométrie dédiés (`geometrie_test.py`).
+
+---
+
+**Et le contre-regard a eu un trou, dans la mesure elle-même.**
+
+Cinq pannes injectées. La cinquième — *fusionner deux porte-outils différents* — n'était
+**pas vue**. En réalité elle **plantait** le script de test, et mon contre-regard comptait
+« 0 échec » : **un plantage ressemble à zéro échec**. Il ne comptait ni les plantages, ni la
+moitié des tests exécutés.
+
+Corrigé : le contre-regard vérifie désormais que le script **va jusqu'au bout**. Avec cette
+mesure-là, **5 pannes sur 5 sont vues** — y compris la collision de clé, qui en donne 3.
+
+**Un test qui rapporte « 0 échec » n'a pas forcément réussi : il a peut-être planté avant.**
+
 ## [4.67.0] — 2026-09-30 · L1
 
 **Le premier lot de la charte CeramTec : le fond, et le poids interdit.**
