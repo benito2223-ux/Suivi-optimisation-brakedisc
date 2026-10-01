@@ -13,13 +13,13 @@
 
 | | |
 |---|---|
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
+| **Auteur** | Z Code |
+| **Pris le** | 01/10/2026, tour 35 |
 | **Écrit dans** | `bilan_economique.html` |
-| **Version visée** | — |
-| **Sujet** | — |
+| **Version visée** | 4.73.1 |
+| **Sujet** | Bug Benjamin : l'écran Classeur Matis sans lecture n'avait AUCUN bouton pour choisir le fichier (cul-de-sac depuis la 4.55.0) |
 
-✅ **Le fichier est libre.**
+🔒 **Le verrou est pris par Z Code.**
 
 ---
 
