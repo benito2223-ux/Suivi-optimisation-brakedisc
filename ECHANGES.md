@@ -112,6 +112,98 @@ phrase : opération par opération, outil par outil, logement par logement.
 
 ## Journal des tours
 
+### ▸ Tour 50 — 01/10/2026 — **Hermes** (un contrôlerat que j'ai abandonné, et pourquoi)
+
+Benjamin : « à toi bro ». J'ai pris la chose que j'avais proposée et qui aurait attrapé les
+trois clics morts : **« un bouton n'appelle que des fonctions qui existent »**. **Je n'y suis pas
+parvenu, et je préfère le dire que de livrer un contrôle à moitie fiable.**
+
+---
+
+## Ce que j'ai tenté
+
+Un contrôle **statique** : lire le JavaScript du fichier, repérer les gestionnaires de clic,
+extraire les fonctions qu'ils appellent, vérifier qu'elles sont définies. Sans exécuter quoi que
+ce soit — c'est ce qui le rendrait instantané et indépendant d'un état.
+
+**Trois versions, trois échecs, et le troisième est instructif.**
+
+| version | résultat |
+|---|---|
+| tout le JavaScript du fichier | **560 faux positifs** |
+| après retrait des commentaires | **95** |
+| resserré sur les gestionnaires de clic | **106** |
+
+Le premier parce que le contrôle lisait les phrases des commentaires : *« Cette fonction
+(dossier photos local) nécessite Edge… »* est un appel à la fonction `fonction`. Le deuxième et
+le troisième parce que **mon nettoyage se faisait détruire par le code qu'il analysait**.
+
+---
+
+## La cause, exactement
+
+**Il faut un vrai analyseur JavaScript, pas des regex.** Dans ce fichier :
+
+```js
+/^\/?xl\//, "").replace(/^\.\//
+```
+
+Le littéral `^\/?xl\/` **contient `//`**. Un nettoyeur par regex y voit un début de commentaire
+`//`, et **supprime tout le reste du fichier**. Résultat : les fonctions `renderCarte`,
+`ouvrirCarte`, `redrawAnnotCanvas` — qui sont bien définies — paraissent manquantes.
+
+**Vérifié :** `renderCarte`, `ouvrirCarte` et `redrawAnnotCanvas` sont définies ;
+`missionA4HTML` ne l'est pas. Le contrôle signalait les trois bonnes, plus 103 fausses.
+
+---
+
+## Pourquoi j'ai supprimé le script
+
+**Un contrôle qui donne 106 fausses alertes est pire que pas de contrôle.** Il se coupe au
+deuxième lancement, et ensuite on ne fait plus confiance à toute la chaîne — y compris aux
+contrôles qui marchent. C'est exactement le trait de la 4.71 : une panne qui passe inaperçue
+ coûte plus cher qu'un test bruyant qui fait perdre dix minutes.
+
+Je ne commite pas un `controle_appels.py` qui ne marche pas. **Les trois clics morts restent
+ouverts**, et c'est un fait, pas une excuse.
+
+---
+
+## La bonne voie, et elle existe déjà dans la maison
+
+**Le harnais EXÉCUTE déjà le JavaScript de l'outil dans Node.** Il n'a donc pas besoin d'analyser
+le code : il peut **demander au moteur lui-même**.
+
+```js
+typeof renderCarte   // "function"  → existe
+typeof missionA4HTML // "undefined"  → n'existe pas, et le clic est mort
+```
+
+C'est exact, sans parseur, sans faux positif, et c'est **la réponse du moteur** plutôt que mon
+approximation. C'est ce qu'il faut faire — au prochain tour où j'aurai le budget, ou **à Z Code
+qui en a** : une boucle sur les gestionnaires, un `typeof` par fonction, un `ok()` par résultat.
+
+**La règle que ça confirme, et qui vaut au-delà du CPP :**
+
+> **Une question sur le code se pose au code, pas à une approximation du code.**
+> J'ai voulu vérifier l'existence d'une fonction sans exécuter le programme. C'était
+> l'erreur ; le harnais disposait déjà de la réponse exacte sous la main.
+
+---
+
+## Ce que je propose pour la suite
+
+1. **Le contrôle « `typeof` » dans le harnais** — une heure, attrape toute la famille ;
+2. **écrire `missionA4HTML()`** — le bouton existe, la fonction non ;
+3. **l'import de livraison** et **l'upload des photos de machines** — jamais construits ;
+4. et **la vue CPP**, que Z Code construit.
+
+**Rien de tout cela n'est fait à l'heure où tu lis ça.** C'est l'état réel.
+
+---
+
+*Verrou libre. 4.77.0 sur Projet, 434/434. Aucun contrôle à moitié fiable n'a été commité.*
+
 ### ▸ Tour 49 — 01/10/2026 — **Hermes** (réponse au tour 48, et la porte que Benjamin a posée)
 
 Benjamin demande avant tout : **« le CPP actuel est calculé juste avec l'outillage ? exact ? »**
