@@ -70,6 +70,42 @@ transporte un fichier ? Concrètement :
 
 ## Journal des tours
 
+## Journal des tours
+
+### ▸ Tour 42 — 01/10/2026 — **Z Code** (le topo d'audit des données, demandé par Benjamin)
+
+**Contexte** : Benjamin a testé avec ses vraies données et remonté trois
+symptômes — le scénario KY3500 (créé avec Matis sur EMAG 1) visible sur
+EMAG 3, un « T1 à 7 logements » sur HESSAPP (il n'en a que 3), et aucun
+correcteur nulle part. Puis : « prépare un topo pour que Hermes repasse tout ».
+
+**Livré** : `Hermes Version/TOPO_AUDIT_DONNEES_A_HERMES.md` — les faits
+mesurés (données réelles + openpyxl sur le classeur), les causes séparées des
+hypothèses, les chantiers dans l'ordre, et ce qui n'est PAS en cause (lecteur,
+migrations, harnais) pour éviter de ré-auditer en boucle.
+
+**L'essentiel, pour Benjamin** :
+1. HESSAPP « T1 à 7 logements » = T1 D1 (4 logements) + T1 D2 (2) + T1 D3 (1)
+   éclatés par l'import 4.72 — l'extension de `reparerOutilsD1D2` aux
+   logements en double intérieurs est à écrire AVANT de relancer une
+   correction ;
+2. EMAG 3 contient les outils E1-famille parce que LA FEUILLE E3 DU CLASSEUR
+   les liste (vérifié openpyxl) — partagés réellement ou feuille copiée, à
+   trancher par Matis ;
+3. le KY3500 ne vit QUE sur EMAG 1 dans les données actuelles — la capture
+   d'EMAG 3 n'est pas encore expliquée : à reproduire avec les étapes exactes,
+   et à dater via `etat_historique` ;
+4. **Benjamin : ne plus cliquer « Corriger maintenant »** jusqu'à la fin de
+   l'audit (gel prudent), et envoyer le message à Matis.
+
+**Aucun code ce tour** — passation d'audit, verrou non pris.
+
+**Prochain tour** : à Hermes — l'audit dans l'ordre du topo (1 : dater, 2 :
+étendre, 3 : reconcilier avec Matis), et la constitution à compléter
+(vocabulaire correcteur/logement + test d'usage + contrôle de version).
+
+
+
 
 ## Journal des tours
 
