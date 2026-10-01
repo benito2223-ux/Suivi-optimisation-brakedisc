@@ -261,6 +261,47 @@ ouvrant l'écran le matin.
 **Prochain tour** : à Z Code, pour ce chantier — mais **je veux ta réponse avant**, parce
 qu'elle dépend de ce que tu cherches, pas de ce qui est joli.
 
+### ▸ Tour 38 — 01/10/2026 — **Z Code** (v4.74.1 — l'inversion ISO / MABEC, bug Benjamin n°3)
+
+**Troisième retour d'usage, troisième prise** : « les codes MABEC du T543
+sont dans le champ référence plaquette ; la référence plaquette est le champ
+ISO du fichier de Matis, et le MABEC est dans la colonne MABEC ». Le mapping
+correct était documenté depuis l'import 4.72 (colonne ISO → `logement.ref`,
+colonne MABEC → `logement.codeArticle`) — six logements des scénarios
+d'atelier portaient le MABEC dans `ref`, sans codeArticle. Diagnostic sur les
+données réelles : **6 suspects, 118 sains, 3 vides** — la détection au format
+est sûre (un MABEC « Z000 455 182 » ne ressemble à aucun ISO
+« SNGN090416T00520 SN60 »).
+
+**Livré (4.74.1, `c3de3f7`)** : `estCodeMabec` + détection/permutation/compte,
+intégrés au **bandeau de démarrage** — qui annonce désormais les DEUX
+migrations (« 32 porte-outils séparés » ET « 6 logements avec un MABEC mal
+placé »), et « Corriger maintenant » applique les deux avec le rapport
+consolidé. **L'ISO n'étant pas dans les données, `ref` se vide** — il ne
+s'invente pas ; le rapport dit « référence plaquette à saisir » (§5.6).
+
+**Contre-regard en deux actes, et il est instructif** : la panne « permuter
+tout logement sans codeArticle » fut d'abord **invisible** — mon test de
+protection utilisait un sain trop bien habillé (avec codeArticle), donc non
+représentatif. Sain rendu vulnérable (ISO sans codeArticle : le cas réel des
+données) → **vue par 2 tests** (le sain perdait son ISO ; le rapport comptait
+double). **La leçon, écrite au CHANGELOG : un test de protection n'existe que
+si son cas est représentatif.** En route aussi : deux coquilles `r`/`rf` dans
+mes fonctions (attrapées par l'exception du harnais) et le constat que
+l'exception d'un test avale les suivants — le harnais pourrait la compter
+comme N échecs, pas un ; noté pour la revue.
+
+**Vérifié** : 421 → **425 tests**, tout vert + contraste ; le bandeau au
+navigateur sur les données réelles annonce les deux migrations.
+
+**Déployé** : push `dev` + **Projet** (4.74.1). **Pour Benjamin** : recharger,
+cliquer **« Corriger maintenant »** une bonne fois — les deux corrections
+partent ensemble, le rapport dit tout, et sa fiche logement aura enfin le
+MABEC dans son champ et la référence plaquette en attente de son ISO.
+
+**Prochain tour** : à Hermes — revue croisée (4.73.0 → 4.74.1, cinq versions)
+et la proposition de test d'usage scripté.
+
 ### ▸ Tour 37 — 01/10/2026 — **Z Code** (v4.74.0 — la migration des DONNÉES, pas seulement du lecteur)
 
 **Le troisième retour d'usage de Benjamin a refermé la boucle.** Il avait vu

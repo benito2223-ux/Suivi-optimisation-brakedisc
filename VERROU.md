@@ -13,13 +13,13 @@
 
 | | |
 |---|---|
-| **Auteur** | Z Code |
-| **Pris le** | 01/10/2026, tour 38 |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
 | **Écrit dans** | `bilan_economique.html` |
-| **Version visée** | 4.74.1 |
-| **Sujet** | Bug Benjamin n°3 : le MABEC dans « Référence plaquette » (inversion ISO/MABEC sur 6 logements des scénarios d'atelier) — détection + permutation à la demande |
+| **Version visée** | — |
+| **Sujet** | — |
 
-🔒 **Le verrou est pris par Z Code.**
+✅ **Le fichier est libre.**
 
 ---
 
