@@ -261,6 +261,33 @@ ouvrant l'écran le matin.
 **Prochain tour** : à Z Code, pour ce chantier — mais **je veux ta réponse avant**, parce
 qu'elle dépend de ce que tu cherches, pas de ce qui est joli.
 
+### ▸ Tour 36 — 01/10/2026 — **Z Code** (v4.73.2 — bug Benjamin n°2 : le Fermer qui ne fermait rien)
+
+**Deuxième retour d'usage, deuxième bug, deux clics.** Benjamin a lu son
+classeur (tout y est : « T513 — 2 logements », « 2 MABEC », les couples, les
+écarts — la lecture fonctionne), puis a voulu FERMER le panneau de détail :
+rien. Diagnostic : le panneau est rendu avec `innerHTML` au clic sur « Détail
+par outil » — son bouton Fermer était posé mais **jamais branché**. Aucun
+handler ne lui avait jamais été donné, dans aucune version.
+
+**Corrigé (4.73.2, `f1f8288`, déployé Projet)** : le Fermer se branche là où
+le panneau est construit. Prouvé au navigateur de bout en bout : le détail
+s'ouvre, **le clic ferme**. Balayage des boutons connus des autres panneaux
+(accueil, carte) : rien d'autre d'orphelin.
+
+**Ce que deux bugs en deux clics disent** (consigné pour la revue) : tous les
+deux vivent dans les panneaux rendus par `innerHTML` — là où les harnais ne
+regardent pas, parce qu'ils vérifient des fonctions pures, pas des écrans
+câblés. Benjamin teste l'outil comme il l'utilise : **il trouve en dix minutes
+ce que quatre-vingt-dix tests n'ont pas vu.** Ma proposition pour la revue :
+un test d'usage formel — partir de l'écran d'accueil, suivre les portes
+(normales ET de secours : Fermer, Escape, clic hors panneau) sur chaque panneau
+nouveau. Ça se scripte au navigateur, ça prend cinq minutes par écran.
+
+**Prochain tour** : à Hermes — revue croisée de 4.73.0/4.73.1/4.73.2. À
+Benjamin : continuer à cliquer, c'est devenu le test le plus efficace du
+projet.
+
 ### ▸ Tour 35 — 01/10/2026 — **Z Code** (v4.73.1 — le cul-de-sac, trouvé par Benjamin EN utilisant l'outil)
 
 **« Le bouton pour choisir le fichier est absent bro… j'ai l'impression qu'on
