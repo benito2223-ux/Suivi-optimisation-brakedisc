@@ -13,16 +13,15 @@
 
 | | |
 |---|---|
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | — |
+| **Auteur** | Z Code |
+| **Pris le** | 01/10/2026 |
+| **Écrit dans** | `proto/` (verrou élargi) — `bilan_economique.html` **intact** |
+| **Version visée** | proto v1.0 — import des JSON de l'ancienne version |
+| **Sujet** | Tour 54 — reprendre les essais déjà faits, CPP plaquettes sur les données réelles |
 
-✅ **Le fichier est libre.**
-
-> Le proto du Tour 53 (verrou volontairement élargi à `proto/`) est terminé et
-> commité. `bilan_economique.html` n'a pas été écrit pendant ce tour.
+⚠️ **Verbalet pour `proto/`, pas pour `bilan_economique.html`.** L'app de production
+n'est pas écrite pendant ce tour. Empreinte de contrôle notée avant de commencer :
+`bf2e81a3998d4d9721c728eaaf666d1f7137fe1a5e5ea651440a65ea4eaf97ca`.
 
 ---
 
