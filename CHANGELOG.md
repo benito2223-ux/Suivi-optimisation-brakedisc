@@ -5,6 +5,35 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.74.0] — 2026-10-01 · Tour 37
+
+**La migration des outils D1/D2 séparés, dans les DONNÉES** (Benjamin : la
+composition de son scénario montrait encore « T543 D1 » et « T543 D2 » en deux
+outils). Le lecteur avait reçu la règle (4.73) ; les données créées avant
+n'avaient jamais été migrées.
+
+### Ajouté
+- **détection au chargement** : si des outils séparés (même porte-outil,
+  positions D1/D2) existent dans le suivi, un bandeau ambre le dit avec le
+  compte et les noms — **32 porte-outils** sur les données réelles ;
+- **correction À LA DEMANDE** (§7.4 : la donnée se touche avec consentement) :
+  « Corriger maintenant » applique `reparerOutilsD1D2()` sur tous les
+  scénarios de toutes les lignes, affiche le rapport (ligne · référence · OP :
+  n outils regroupés en 1, logements nommés), **sauvegarde**, et réaffiche ;
+- **les distinctions réelles sont gardées** : un outil NU (« T543 » sans
+  position) n'est jamais fusionné à l'aveugle — il est signalé à l'atelier ;
+- les marqueurs de rapport (`_fusionReparee`, `nbOutils`) ne restent pas dans
+  les données (testé).
+
+### Vérification
+- 414 → **421 tests**, tout vert + contraste ;
+- contre-regard : panne « fusion à l'aveugle de l'outil nu » (distinction
+  réelle détruite) → **vue par un test**, restaurée par copie sauvegardée ;
+- constats du tour consignés dans les tests : `normalizeLigne` copie en
+  profondeur (la migration se vérifie DANS la ligne) ; `reparerOutilsD1D2`
+  rendait deux fois l'outil fusionné sans id — corrigé au Tour 34, la
+  migration en profite.
+
 ## [4.73.2] — 2026-10-01 · Tour 36
 
 **Le bouton « Fermer » du détail Classeur Matis ne fermait rien** (bug

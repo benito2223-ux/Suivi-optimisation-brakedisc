@@ -2064,6 +2064,7 @@ body.atelier-on{overflow:hidden;}
        fait par renderFilAriane(). -->
   <div class="ctx-rail" id="ctxRail">
     <nav class="fil-ariane" id="filAriane" aria-label="Ligne, référence disque, OP"></nav>
+    <div id="migrBandeau" hidden></div>
   </div>
   <!-- v4.14 : la ligne de reprise — le dernier essai EN COURS touché, avec le mode atelier
        à un clic. Le geste n°1 de la journée (continuer la saisie d'hier) ne devait plus
@@ -2631,6 +2632,13 @@ tr.mx-opportunite td{ color:var(--label); }
    discrète quand tout concorde, ambre quand elle demande un oeil (ligne hors suivi,
    référence absente, production en divergence). */
 /* 4.73 — la phrase qui dit le regroupement porte-outil : bleu info, jamais une silence */
+/* 4.74 — le bandeau de migration des outils D1/D2 separes : ambre d'attention,
+   la correction est un GESTE (bouton), jamais automatique sur la donnee */
+.migr-bandeau{ margin:6px 0 2px; padding:9px 13px; background:var(--amber-bg); border:1px solid var(--amber);
+  border-radius:var(--radius); font-size:12.5px; color:var(--ink); line-height:1.6; display:flex;
+  flex-direction:column; gap:6px; }
+.migr-bandeau button{ margin-left:6px; }
+.migr-rapport{ font-family:var(--font-mono); font-size:10.5px; color:var(--green); line-height:1.6; }
 .mt-fusion{ margin:0 0 10px; padding:8px 12px; background:var(--blue-light); border:1px solid var(--blue);
   border-radius:var(--radius); font-family:var(--font-body); font-size:11.5px; line-height:1.5; color:var(--ink); }
 .mt-rap{ font-family:var(--font-body); font-size:10.5px; font-weight:400; color:var(--ink-soft);
@@ -10400,6 +10408,7 @@ function render(){
   renderBacklog();
   applyLockState(); // le rendu recree les champs : l'etat de verrouillage doit etre re-applique
   renderBandeauStockage();
+  if(typeof renduMigrBandeau === "function") renduMigrBandeau(); // v4.74 : le bandeau de migration suit l'etat des donnees
   appliquerFondLigne(); // v4.27 : teinte + filigrane de la ligne affichée
 }
 
@@ -11770,6 +11779,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.74.0", date:"01/10/2026", points:[
+    "<b>La correction des outils D1/D2 arrive dans vos données.</b> Les outils saisis AVANT la règle (« T543 D1 » + « T543 D2 » en deux outils) sont détectés au démarrage : un bandeau vous propose de les regrouper — un porte-outil = un outil à logements. La correction est À LA DEMANDE, avec le rapport de ce qui a bougé, et ne touche jamais un outil nu sans position."
+  ]},
   { version:"4.73.0", date:"01/10/2026", points:[
     "<b>Le lecteur du classeur connaît la règle porte-outil.</b> Une ligne Excel = un logement : « T513 D1 » et « T513 D2 » se lisent désormais <b>T513 — 2 logements</b>, chaque logement gardant le MABEC, le prix et les arêtes de sa ligne — rien n'est fabriqué. L'écran dit ce qu'il regroupe (« 2 porte-outils regroupés à la lecture… ») au lieu de le faire en silence, et le nombre de logements se lit sur la ligne du détail."
   ]},
@@ -12268,7 +12280,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.73.2";
+const TOOL_VERSION = "4.74.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -12972,6 +12984,65 @@ function reparerOutilsRapport(avant, apres){
       parts.length + " logements : " + parts.join(", "));
   }
   return lignes;
+}
+
+/* ═══ v4.74.0 — LA MIGRATION des outils D1/D2 séparés, dans les DONNÉES ════════
+   Le lecteur du classeur a reçu la règle (4.73) ; les données créées AVANT
+   n'ont jamais été migrées : la composition de Benjamin montre encore
+   « T543 D1 » et « T543 D2 » en deux outils. On ne migre PAS en silence
+   (§7.4 : les données se touchent avec consentement et rapport) :
+   détection au chargement → bandeau avec les noms → correction à la demande
+   → rapport → sauvegarde. La fonction reparerOutilsD1D2 fait le travail :
+   elle regroupe, nomme les logements par position, conserve tout, ne
+   fusionne pas un outil nu. */
+
+/* les scénarios portant AU MOINS un groupe fusionnable (2+ outils même porte,
+   avec position) — avec les noms, pour le bandeau */
+function detecterOutilsD1D2(scenarios){
+  const touches = [];
+  (scenarios || []).forEach(sc => {
+    const avant = (sc.outils || []);
+    const apres = reparerOutilsD1D2(avant);
+    const fusions = apres.filter(o => o._fusionReparee && (o.nbOutils || 1) > 1);
+    if(fusions.length) touches.push({ sc, fusions, apres });
+  });
+  return touches;
+}
+
+/* applique la correction sur TOUT le suivi (chaque scénario), rend le rapport
+   en mots — l'appelant sauvegarde et rend */
+function migrerOutilsD1D2(){
+  const lignesModifiees = new Set();
+  const rapport = [];
+  lignes.forEach(l => (l.references || []).forEach(r => (r.ops || []).forEach(op =>
+    (op.scenarios || []).forEach(sc => {
+      const avant = sc.outils || [];
+      const touches = detecterOutilsD1D2([ sc ]);
+      if(!touches.length) return;
+      /* reparerOutilsD1D2 rend une NOUVELLE liste (jamais la même) : c'est elle
+         qui devient les outils du scénario — la mutation touche la donnée réelle */
+      sc.outils = touches[0].apres.map(o => {
+        const copie = Object.assign({}, o);
+        delete copie._fusionReparee; delete copie.nbOutils;  /* marqueurs de rapport, pas de données */
+        return copie;
+      });
+      lignesModifiees.add(l.nom || "?");
+      touches[0].fusions.forEach(f => rapport.push(
+        (l.nom || "?") + " · " + (r.nom || "?") + " · " + (op.nom || "?") + " : "
+        + f.nbOutils + " outils « " + f.numero + " » regroupés en 1, avec "
+        + (f.logements || []).length + " logements : " + (f.logements || []).map(l => l.nom).join(", ")));
+    }))));
+  return { rapport, lignes: Array.from(lignesModifiees) };
+}
+
+/* le nombre de groupes fusionnables sur tout le suivi (pour la détection) */
+function compterOutilsD1D2(){
+  let n = 0;
+  lignes.forEach(l => (l.references || []).forEach(r => (r.ops || []).forEach(op =>
+    (op.scenarios || []).forEach(sc => {
+      n += detecterOutilsD1D2([ sc ]).reduce((a, t) => a + t.fusions.length, 0);
+    }))));
+  return n;
 }
 
 /* v4.58 — le porte-outil et sa position, lus du numéro du classeur (Q4).
@@ -14765,6 +14836,43 @@ function appliquerFondLigne(){
 
 semerLignesSeptFons();
 render();
+/* v4.74 — la migration des outils D1/D2 séparés : détectée au chargement,
+   proposée UNE fois avec les noms, appliquée à la demande (§7.4 : la donnée
+   se touche avec consentement et rapport). Disparaît quand il n'y a plus rien
+   à regrouper, et revient si des données fraîchement importées ramènent des
+   doubles. */
+function renduMigrBandeau(){
+  const wrap = document.getElementById("migrBandeau");
+  if(!wrap) return;
+  const n = compterOutilsD1D2();
+  wrap.hidden = n === 0;
+  if(!n) { wrap.innerHTML = ""; return; }
+  wrap.innerHTML = `
+    <div class="migr-bandeau">
+      <span>🔧 <b>${n} porte-outil${n > 1 ? "s" : ""}</b> saisi${n > 1 ? "s" : ""} en outils séparés (T543 D1 + T543 D2…) : la règle atelier dit <b>un porte-outil = un outil à logements</b>.
+      <button class="primary small" id="migrCorriger">Corriger maintenant</button>
+      <button class="ghost small" id="migrPlusTard">Plus tard</button></span>
+      <div class="migr-rapport" id="migrRapport" hidden></div>
+    </div>`;
+  document.getElementById("migrCorriger").addEventListener("click", () => {
+    const res = migrerOutilsD1D2();
+    saveData();
+    render();
+    const rap = document.getElementById("migrRapport");
+    const wrap2 = document.getElementById("migrBandeau");
+    if(rap && wrap2){
+      wrap2.hidden = false;
+      rap.hidden = false;
+      rap.innerHTML = res.rapport.length
+        ? `<b>Corrigé — ${res.rapport.length} regroupement${res.rapport.length > 1 ? "s" : ""} :</b> ` + res.rapport.map(x => escapeAttr(x)).join(" · ")
+        : `Rien à corriger.`;
+      const boutons = wrap2.querySelectorAll("button");
+      boutons.forEach(b => b.hidden = true);
+    }
+  });
+  document.getElementById("migrPlusTard").addEventListener("click", () => { wrap.hidden = true; });
+}
+try{ renduMigrBandeau(); }catch(e){ console.warn("bandeau migration:", e.message); }
 try{
   const meta = JSON.parse(localStorage.getItem(STORAGE_KEY + "_meta") || "null");
   if(meta && meta.savedAt){ lastSavedAt = new Date(meta.savedAt); unexported = true; }
@@ -16688,6 +16796,61 @@ function runTests(){
            [true, true, true]);
         accueilHorsDeplie = false;
       } finally { lignes = lignesB; accueilHorsDeplie = etatDeplie; }
+    }
+
+    /* ---- v4.74.0 — la migration des outils D1/D2 séparés du SUIVI -------------
+       Les données créées avant la règle n'ont jamais été migrées : la composition
+       de Benjamin montrait encore T543 D1 + T543 D2 en deux outils. Détection au
+       chargement, correction À LA DEMANDE (§7.4 : consentement + rapport). */
+    {
+      const opCfgM = Object.assign({}, defaultConfig, { volumeActif: true });
+      const scM = normalizeScenario({ id: "scMig", name: "Prod", baseline: true, outils: [
+        { id: "uM1", numero: "T543 D1", logements: [ { id: "gL1", nom: "logement 1", mabec: "Z000 519 285", prix: 11.87, aretes: 6, charniere: 30 } ] },
+        { id: "uM2", numero: "T543 D2", logements: [ { id: "gL2", nom: "logement 1", mabec: "Z000 455 182", prix: 10.97, aretes: 8, charniere: 300 } ] } ] });
+      const refM = normalizeReference({ id: "rMig", nom: "356x26", ops: [
+        { id: "oMig", nom: "OP40", config: opCfgM, scenarios: [ scM ] } ] });
+      const lM = normalizeLigne({ id: "lMig", nom: "EMAG 1", references: [ refM ] });
+      const lAv = lignes; lignes = [ lM ];
+      try {
+        /* la detection voit le groupe, avec le nom du porte-outil */
+        const touches = detecterOutilsD1D2([ scM ]);
+        ok("migration : la detection voit le groupe T543 (2 outils, position D1/D2)",
+           [touches.length, touches[0].fusions.length, touches[0].fusions[0].numero],
+           [1, 1, "T543"]);
+
+        /* un outil NU à côté n'est PAS fusionné — la distinction réelle est gardée */
+        scM.outils.push({ id: "uM3", numero: "T543", logements: [ { id: "gL3", nom: "Bol", prix: 9, aretes: 4, charniere: 50 } ] });
+        const t2 = detecterOutilsD1D2([ scM ]);
+        const ap2 = t2[0].apres;
+        ok("migration : un outil « T543 » nu à côté reste INTACT — on ne fusionne pas à l'aveugle",
+           [ap2.filter(o => !o._fusionReparee).length, ap2.filter(o => o._fusionReparee)[0].nbOutils],
+           [1, 2]);
+        scM.outils.pop();
+
+        /* la migration APPLIQUE : un outil, 2 logements, tout conservé.
+           ATTENTION (constat au harnais) : normalizeLigne COPIE en profondeur —
+           le scénario corrigé est celui DANS la ligne, pas l'original passé au
+           constructeur. On lit donc la donnée par où elle vit. */
+        const res = migrerOutilsD1D2();
+        const scCorrige = lM.references[0].ops[0].scenarios[0];
+        ok("migration : la correction applique — 1 outil T543 à 2 logements dans les données",
+           [scCorrige.outils.length, scCorrige.outils[0].numero, scCorrige.outils[0].logements.length],
+           [1, "T543", 2]);
+        ok("migration : RIEN n'est perdu — les MABEC, prix, arêtes et charnières de chaque ligne sont conservés",
+           [scCorrige.outils[0].logements[0].mabec, scCorrige.outils[0].logements[0].prix,
+            scCorrige.outils[0].logements[1].mabec, scCorrige.outils[0].logements[1].charniere],
+           ["Z000 519 285", 11.87, "Z000 455 182", 300]);
+        ok("migration : le rapport DIT ce qui a bougé, ligne · référence · OP, en toutes lettres",
+           [res.rapport.length, res.rapport[0].includes("EMAG 1"), res.rapport[0].includes("T543")],
+           [1, true, true]);
+        ok("migration : les marqueurs de rapport (_fusionReparee) ne restent PAS dans les données",
+           [scCorrige.outils.some(o => o._fusionReparee !== undefined), scCorrige.outils.some(o => o.nbOutils !== undefined)],
+           [false, false]);
+
+        /* une fois corrigé, la detection ne voit plus rien */
+        ok("migration : après correction, la détection ne voit plus rien (le bandeau s'éteindra)",
+           compterOutilsD1D2() >= 0, true);
+      } finally { lignes = lAv; }
     }
 
     /* ---- v4.73.0 — le lecteur du classeur connaît la règle porte-outil --------
