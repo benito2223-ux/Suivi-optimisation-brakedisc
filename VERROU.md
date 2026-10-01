@@ -13,13 +13,13 @@
 
 | | |
 |---|---|
-| **Auteur** | Z Code |
-| **Pris le** | 01/10/2026, tour 39 |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
 | **Écrit dans** | `bilan_economique.html` |
-| **Version visée** | 4.74.2 |
-| **Sujet** | Benjamin n°4 : l'ISO du classeur (colonne C) doit remplir « Référence plaquette » et le correcteur (D1/D2 de la colonne A) le champ Correcteur |
+| **Version visée** | — |
+| **Sujet** | — |
 
-🔒 **Le verrou est pris par Z Code.**
+✅ **Le fichier est libre.**
 
 ---
 

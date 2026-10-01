@@ -261,6 +261,40 @@ ouvrant l'écran le matin.
 **Prochain tour** : à Z Code, pour ce chantier — mais **je veux ta réponse avant**, parce
 qu'elle dépend de ce que tu cherches, pas de ce qui est joli.
 
+### ▸ Tour 39 — 01/10/2026 — **Z Code** (v4.74.2 — la référence plaquette et le correcteur remplis depuis le classeur)
+
+**Quatrième retour d'usage, et il donnait les valeurs lui-même** : « la
+référence plaquette est le champ ISO du fichier de Matis » (TNGN160412T02020
+SL506 pour D1, SNGN090416T00520 SN60 pour D2) et « le correcteur, c'est la
+ref après l'outil ». Vérifié sur la vraie feuille : l'en-tête du classeur le
+dit en toutes lettres — colonne A = « N° d'outil / N° correcteur »,
+**colonne C = « ISO »**, D = « MABEC ». **L'ISO était lu depuis la 4.55 puis
+jeté dans un champ « article » jamais affiché en tant que référence.**
+
+**Livré (4.74.2, `f55a3bc`)** :
+- le lecteur : ISO (colonne C) → **`logement.ref`** (la référence plaquette) ;
+  correcteur (suffixe D1/D2) → **`outil.correcteur`** ;
+- `reparerOutilsD1D2` : l'outil fusionné porte le correcteur — les positions
+  du groupe (« D1, D2 ») ;
+- la migration d'inversion, **cas 2** : une référence vidée par la 4.74.1 dont
+  le MABEC est connu ailleurs (les scénarios « base excel » : ref = ISO,
+  codeArticle = MABEC) est **complétée depuis le classeur** — `isoConnuPourMabec()`
+  cherche dans tout le suivi ; le rapport dit « complétée depuis le classeur »
+  au lieu de « à saisir » quand c'est possible.
+
+**Vérifié** : 425 → **430 tests** ; contre-regard (panne « l'ISO lu puis
+jeté » → vue par un test, restaurée par copie sauvegardée) ; et au navigateur,
+les vraies lignes T543 : correcteur « D2, D1 », D2 = SNGN090416T00520 SN60,
+D1 = TNGN160412T02020 SL506 — **exactement les valeurs données par Benjamin**.
+
+**Déployé** : push `dev` + **Projet** (4.74.2). **Pour Benjamin** : recharger,
+cliquer « Corriger maintenant » une dernière fois — la migration complètera
+les références vidées hier depuis les données « base excel », et le correcteur
+apparaîtra dans la composition.
+
+**Prochain tour** : à Hermes — revue croisée (4.73.0 → 4.74.2, six versions)
+et la question toujours ouverte des outils à position unique à l'affichage.
+
 ### ▸ Tour 38 — 01/10/2026 — **Z Code** (v4.74.1 — l'inversion ISO / MABEC, bug Benjamin n°3)
 
 **Troisième retour d'usage, troisième prise** : « les codes MABEC du T543
