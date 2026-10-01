@@ -11779,6 +11779,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.74.2", date:"01/10/2026", points:[
+    "<b>La référence plaquette et le correcteur remplis depuis le classeur.</b> La colonne « ISO » du fichier de Matis remplit désormais la référence plaquette de chaque logement (elle était lue puis jetée) — et le correcteur (le D1/D2 après le numéro d’outil) remplit le champ Correcteur de l’outil. La correction à la demande complète aussi les références vidées hier : l’ISO de ton T543 (TNGN160412… pour D1, SNGN090416… pour D2) est repris depuis les scénarios « base excel » quand il y est connu."
+  ]},
   { version:"4.74.1", date:"01/10/2026", points:[
     "<b>Le MABEC remis à sa place.</b> Six logements portaient un code MABEC (« Z000 455 182 ») dans le champ « Référence plaquette » — une inversion avec le fichier de Matis, où l’ISO et le MABEC sont deux colonnes distinctes. La correction à la demande remet le MABEC dans son champ ; l’ISO n’étant pas dans les données, la référence restera à saisir. Le bandeau de démarrage le propose avec le reste."
   ]},
@@ -12283,7 +12286,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.74.1";
+const TOOL_VERSION = "4.74.2";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -12759,15 +12762,23 @@ function _matisFeuille(nomFeuille, cells){
        La ligne garde TOUS ses champs (MABEC, prix, arêtes, DDV, CPP) — rien
        n'est fabriqué. La séparation porte-outil/position est faite par
        matisPorteOutilPosition(), la fusion par reparerOutilsD1D2() en sortie. */
+    /* v4.74.2 (Benjamin n°4) — l'en-tête du classeur est explicite :
+       A = « N° d'outil / N° correcteur », C = « ISO », D = « MABEC ».
+       L'ISO va dans logement.ref (la référence plaquette) — il était lu
+       puis jeté dans « article » — et le correcteur (D1/D2 de la colonne A)
+       dans outil.correcteur. */
+    const iso = numOp(cells["C" + row]);
+    const { position } = matisPorteOutilPosition(numOutil);
     outils.push({
       numero: numOutil, opCode: "OP" + mOp[1],
-      article: numOp(cells["C" + row]), mabec: numOp(cells["D" + row]),
+      correcteur: position || "", article: iso, mabec: numOp(cells["D" + row]),
       aretes: f("F"), prix: f("G"), ddv: f("H"),
       cppTheorique: f("I"), qteTheorique: f("J"),
       coutReelAnnuel: f("L"), cppReel: f("M"), qteReelle: f("N"), ecart: f("O"),
       logements: [ {
         nom: "logement 1",
-        mabec: numOp(cells["D" + row]), article: numOp(cells["C" + row]),
+        ref: iso,
+        mabec: numOp(cells["D" + row]), article: iso,
         prix: f("G"), aretes: f("F"), charniere: f("H")
       } ]
     });
@@ -12949,8 +12960,25 @@ function reparerOutilsD1D2(outils){
        lignes du LECTEUR du classeur n'en ont pas (chaque ligne Excel est plate).
        Sans fallback, fusionnes.get(undefined) ne remplace rien et consomme
        personne : l'outil fusionné était rendu DEUX FOIS (constat au harnais). */
-    fusionnes.set(cleId(groupe[0]), { id: groupe[0].id, numero: numero, logements: logements,
-               position: "", nbOutils: groupe.length, _fusionReparee: true });
+    /* v4.74.2 — le correcteur : les positions du groupe (« D1 », « D2 »…),
+       restituées dans le champ Correcteur de l'outil — c'est le mot de
+       l'atelier, Benjamin : « le correcteur, c'est la ref après l'outil ». */
+    const correcteurs = groupe.map(o => matisPorteOutilPosition(o.numero).position).filter(Boolean);
+    /* l'ISO : un logement frère du même MABEC avec une ref qui n'est pas un
+       MABEC la connaît (scénarios « base excel ») — on la rapporte au lieu de
+       laisser le champ vide. Best effort : absent, ref reste vide. */
+    const isoParMabec = {};
+    liste.forEach(o => (o.logements || []).forEach(lg => {
+      const m = String(lg.mabec || "").replace(/\s+/g, " ").trim();
+      const r = String(lg.ref || "").trim();
+      if(m && r && !estCodeMabec(r) && !isoParMabec[m]) isoParMabec[m] = r;
+    }));
+    logements.forEach(lg => {
+      const m = String(lg.mabec || "").replace(/\s+/g, " ").trim();
+      if(m && !String(lg.ref || "").trim() && isoParMabec[m]) lg.ref = isoParMabec[m];
+    });
+    fusionnes.set(cleId(groupe[0]), { id: groupe[0].id, numero: numero, correcteur: correcteurs.join(", "),
+               logements: logements, position: "", nbOutils: groupe.length, _fusionReparee: true });
     for(const o of groupe) consomme.add(cleId(o));
     /* un outil NU de la même clé (souvent le parent) est signalé, pas touché */
     for(const o of autres){
@@ -13055,12 +13083,34 @@ function detecterInversionMabec(scenarios){
   (scenarios || []).forEach(sc => {
     const cibles = [];
     (sc.outils || []).forEach(o => (o.logements || []).forEach(lg => {
-      if(estCodeMabec(lg.ref) && !String(lg.codeArticle || "").trim() && !String(lg.mabec || "").trim())
-        cibles.push(lg);
+      const ref = String(lg.ref || "").trim(), ca = String(lg.codeArticle || "").trim(), mb = String(lg.mabec || "").trim();
+      /* cas 1 (4.74.1) : le MABEC dans ref, sans codeArticle — à permuter ;
+         cas 2 (4.74.2, conséquence de la correction) : le MABEC déjà remis
+         dans codeArticle mais ref VIDE alors que l'ISO est connu ailleurs
+         (base excel) — à compléter. Les deux se corrigent au même bouton. */
+      if(estCodeMabec(ref) && !ca && !mb) cibles.push(lg);
+      else if(!ref && ca && isoConnuPourMabec(ca)) cibles.push(lg);
     }));
     if(cibles.length) touches.push({ sc, cibles });
   });
   return touches;
+}
+
+/* l'ISO d'un MABEC, cherché dans tout le suivi (les scénarios « base excel »
+   l'ont : ref = ISO, codeArticle = MABEC). null si inconnu. */
+function isoConnuPourMabec(mabec){
+  const cible = String(mabec || "").replace(/\s+/g, " ").trim();
+  if(!cible) return null;
+  let iso = null;
+  lignes.forEach(l => (l.references || []).forEach(rf => (rf.ops || []).forEach(op =>
+    (op.scenarios || []).forEach(sc => (sc.outils || []).forEach(ou =>
+      (ou.logements || []).forEach(lg => {
+        const ca = String(lg.codeArticle || "").replace(/\s+/g, " ").trim();
+        const mb = String(lg.mabec || "").replace(/\s+/g, " ").trim();
+        const ref = String(lg.ref || "").trim();
+        if((ca === cible || mb === cible) && ref && !estCodeMabec(ref) && !iso) iso = ref;
+      }))))));
+  return iso;
 }
 
 function migrerInversionMabec(){
@@ -13070,12 +13120,23 @@ function migrerInversionMabec(){
       const touches = detecterInversionMabec([ sc ]);
       if(!touches.length) return;
       touches[0].cibles.forEach(lg => {
-        const mabec = lg.ref;
+        const mabec = estCodeMabec(lg.ref) ? lg.ref : (String(lg.codeArticle || "").trim() || String(lg.mabec || "").trim());
+        if(estCodeMabec(lg.ref)) lg.ref = "";  /* cas 1 : le MABEC quitte ref */
         lg.codeArticle = mabec;
-        lg.ref = "";                    /* l'ISO était absent : le champ se vide, il ne s'invente pas */
+        /* v4.74.2 — l'ISO du même MABEC est-il connu ailleurs (base excel) ? */
+        let iso = isoConnuPourMabec(mabec);
+        lignes.forEach(l2 => (l2.references || []).forEach(r2 => (r2.ops || []).forEach(o2 =>
+          (o2.scenarios || []).forEach(sc2 => (sc2.outils || []).forEach(ou =>
+            (ou.logements || []).forEach(lg2 => {
+              const m2 = String(lg2.mabec || lg2.codeArticle || "").replace(/\s+/g, " ").trim();
+              const r2v = String(lg2.ref || "").trim();
+              if(m2 === mabec && r2v && !estCodeMabec(r2v) && !iso) iso = r2v;
+            }))))));
+        if(iso) lg.ref = iso;
         rapport.push((l.nom || "?") + " · " + (rf.nom || "?") + " · " + (op.nom || "?")
           + " · " + (lg.nom || "logement") + " (" + (sc.name || "?") + ") : MABEC " + mabec
-          + " remis dans le champ MABEC — référence plaquette à saisir (l'ISO n'était pas dans les données)");
+          + " remis dans le champ MABEC"
+          + (iso ? ", référence plaquette complétée depuis le classeur (" + iso + ")" : " — référence plaquette à saisir (l'ISO n'était pas dans les données)"));
       });
     }))));
   return rapport;
@@ -16941,6 +17002,51 @@ function runTests(){
            [rapportInv.length, rapportInv[0].includes("EMAG 1"), rapportInv[0].includes("Z000 519 285"),
             rapportInv[0].includes("référence plaquette à saisir")], [1, true, true, true]);
       } finally { lignes = lAv2; }
+    }
+
+    /* ---- v4.74.2 — l'ISO du classeur remplit la référence, le correcteur rempli ----
+       (Benjamin n°4 : « la référence plaquette est le champ ISO du fichier de
+       Matis, et le correcteur c'est la ref après l'outil »). L'en-tête du
+       classeur le dit : A = « N° d'outil / N° correcteur », C = « ISO ». */
+    {
+      const cells = {
+        "B1": "6781", "C2": "DV 356x26 RPI",
+        "A4": "T543 D2", "B4": "OP 40", "C4": "SNGN090416T00520 SN60", "D4": "Z000 455 182",
+        "F4": "8", "G4": "10.97", "H4": "300"
+      };
+      const f = _matisFeuille("Cout pièce E1 356x26 RPI", cells);
+      const o = f.outils[0];
+      ok("lecteur : l'ISO (colonne C) remplit la RÉFÉRENCE PLAQUETTE du logement — plus jamais jetée",
+         [o.logements[0].ref, o.logements[0].article], ["SNGN090416T00520 SN60", "SNGN090416T00520 SN60"]);
+      ok("lecteur : le correcteur (le suffixe D2 de la colonne A) remplit le champ Correcteur",
+         [o.correcteur, o.numero], ["D2", "T543 D2"]);
+
+      /* le correcteur d'un groupe FUSIONNÉ = les positions, en toutes lettres */
+      const outils = [
+        { numero: "T543 D1", logements: [ { nom: "logement 1", mabec: "Z000 519 285", ref: "" } ] },
+        { numero: "T543 D2", logements: [ { nom: "logement 1", mabec: "Z000 455 182", ref: "" } ] } ];
+      const r1 = reparerOutilsD1D2(outils);
+      ok("migration : l'outil fusionné porte le correcteur — « D1, D2 »",
+         r1[0].correcteur, "D1, D2");
+
+      /* le cas 2 : MABEC déjà en place (4.74.1), ref vide, ISO connu ailleurs
+         (base excel) -> la migration COMPLETE la référence depuis le classeur */
+      const lAv = lignes;
+      try {
+        const scBase = normalizeScenario({ id: "scBX", name: "base excel", baseline: true, outils: [
+          { id: "uBX", numero: "T543 D2", logements: [ { id: "gBX", nom: "Plaquette", ref: "SNGN090416T00520 SN60", codeArticle: "Z000 455 182", prix: 10.97, aretes: 8, charniere: 300 } ] } ] });
+        const scAtelier = normalizeScenario({ id: "scAX", name: "atelier", outils: [
+          { id: "uAX", numero: "T543 D2", logements: [ { id: "gAX", nom: "logement 1", ref: "", codeArticle: "Z000 455 182", prix: 10.97, aretes: 8, charniere: 300 } ] } ] });
+        const refX = normalizeReference({ id: "rX", nom: "330x14", ops: [ { id: "oX", nom: "OP40", scenarios: [ scBase, scAtelier ] } ] });
+        lignes = [ normalizeLigne({ id: "lX", nom: "EMAG 2", references: [ refX ] }) ];
+        const avant = compterInversionsMabec();
+        const rapport = migrerInversionMabec();
+        const corrige = lignes[0].references[0].ops[0].scenarios[1].outils[0].logements[0];
+        ok("migration : une ref vide dont le MABEC est connu AILLEURS est complétée depuis le classeur",
+           [corrige.ref, corrige.codeArticle], ["SNGN090416T00520 SN60", "Z000 455 182"]);
+        ok("migration : le rapport dit « complétée depuis le classeur » avec l'ISO",
+           rapport.some(x => x.includes("complétée depuis le classeur") && x.includes("SNGN090416T00520 SN60")), true);
+      } finally { lignes = lAv; }
     }
 
     /* ---- v4.73.0 — le lecteur du classeur connaît la règle porte-outil --------

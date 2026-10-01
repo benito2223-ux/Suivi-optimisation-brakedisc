@@ -5,6 +5,34 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.74.2] — 2026-10-01 · Tour 39
+
+**La référence plaquette et le correcteur, remplis depuis le classeur**
+(Benjamin n°4 : « la référence plaquette est le champ ISO du fichier de
+Matis, et le correcteur c'est la ref après l'outil »). Vérifié sur la vraie
+feuille : l'en-tête du classeur le dit — colonne A = « N° d'outil / N°
+correcteur », colonne C = « ISO », D = « MABEC ».
+
+### Corrigé
+- **le lecteur** : l'ISO (colonne C) remplit `logement.ref` — il était lu puis
+  jeté dans « article » depuis la 4.55 ; le correcteur (suffixe D1/D2 de la
+  colonne A) remplit `outil.correcteur` ;
+- **`reparerOutilsD1D2`** : l'outil fusionné porte le correcteur — les
+  positions du groupe, « D1, D2 » ;
+- **la migration d'inversion, cas 2** : une référence vidée par la 4.74.1 dont
+  le MABEC est connu ailleurs (scénarios « base excel » : ref = ISO,
+  codeArticle = MABEC) est **complétée depuis le classeur** — le rapport dit
+  « complétée depuis le classeur (ISO) » au lieu de « à saisir » quand c'est
+  possible ; `isoConnuPourMabec()` cherche partout.
+
+### Vérification
+- 425 → **430 tests**, tout vert + contraste ;
+- contre-regard : panne « l'ISO lu puis jeté » (retour à l'ancien
+  comportement) → **vue par un test**, restaurée par copie sauvegardée ;
+- vérifié au navigateur sur les vraies lignes T543 : correcteur « D2, D1 »,
+  D2 = SNGN090416T00520 SN60, D1 = TNGN160412T02020 SL506 — exactement les
+  valeurs données par Benjamin.
+
 ## [4.74.1] — 2026-10-01 · Tour 38
 
 **L'inversion ISO / MABEC, détectée et permutée à la demande** (Benjamin,
