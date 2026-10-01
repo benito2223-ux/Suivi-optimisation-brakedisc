@@ -261,6 +261,97 @@ ouvrant l'écran le matin.
 **Prochain tour** : à Z Code, pour ce chantier — mais **je veux ta réponse avant**, parce
 qu'elle dépend de ce que tu cherches, pas de ce qui est joli.
 
+### ▸ Tour 33 — 01/10/2026 — **Hermes** (v4.72.0 — passation à Z Code)
+
+**Benjamin : « passe la main à Z Code, je vois encore deux outils distincts T513 D1 et D2 ».**
+
+Il a raison, et **la cause est identifiée et localisée**. Je ne corrige pas : je passe la main
+avec le diagnostic exact, pour ne pas perdre une heure à le redécouvrir.
+
+---
+
+## Où il regarde, et pourquoi il a raison
+
+**Ce n'est pas l'import. C'est l'écran « Classeur Matis ».**
+
+`IMPORT_MATIS.json` est correct et vérifié : `T513` y est **un** outil à deux logements
+(`verifier_import.py` le contrôle sur les vraies fonctions de l'app — TOUT EST VERT).
+
+Mais l'écran Classeur Matis a **son propre lecteur** : `matisLireClasseur()`, qui lit le
+fichier .xlsm directement dans le navigateur. Et ce lecteur, lui :
+
+```
+outils.push({
+  numero: numOutil, opCode: "OP" + mOp[1],
+  ...
+```
+
+Trois vérifications sur cette fonction :
+
+| | |
+|---|---|
+| appelle `matisPorteOutilPosition()` | **non** |
+| appelle `reparerOutilsD1D2()` | **non** |
+| construit des **logements** | **non** — il n'y a que `numero` |
+
+Il empile donc `T513 D1` et `T513 D2` comme **deux lignes plates**, sans jamais séparer le
+porte-outil du correcteur. **L'écran affiche fidèlement ce qu'il lit** — il n'a simplement pas
+la règle. Ce n'est pas un bug d'affichage : c'est un lecteur qui n'a pas la connaissance métier
+que le reste de l'outil a acquis.
+
+---
+
+## Ce qui existe déjà, et qu'il suffit à réutiliser
+
+Rien à inventer. Tout est écrit et testé :
+
+- `matisPorteOutilPosition(numero)` → `{ porte, position }` — découpe `T513 D2` ;
+- `matisClePorteOutil(numero)` → clé de rapprochement insensible aux espaces et aux tirets ;
+- `reparerOutilsD1D2(outils)` → **fonction pure** : regroupe par clé, nomme les logements par
+  position, **conserve MABEC, prix, arêtes et mesures**, laisse un logement au nom d'atelier
+  intact, **signale** un outil nu sans le fusionner, et **ne réordonne pas** la liste ;
+- `reparerOutilsRapport(avant, apres)` → la même chose **en mots**, pour l'écran.
+
+`reparerOutilsD1D2()` est écrit pour un tableau d'outils et ne demande rien d'autre que des
+champs `numero` et `logements` — ce qui est précisément ce que `matisLireClasseur` ne
+produit pas encore.
+
+---
+
+## Ce que je.  à Z Code, dans l'ordre
+
+1. **Le lecteur** : faire passer sa sortie par `matisClePorteOutil()` + `matisPorteOutilPosition()`
+   et construire un `logements` par position. Un logement = une ligne Excel.
+2. **L'écran** : afficher **« T513 — 2 logements »** et non deux lignes. Le nombre de logements
+   doit être **lisible sur la tuile**, comme partout ailleurs.
+3. **Le rapport** : appeler `reparerOutilsRapport()` quand plusieurs outils partagent un
+   porte-outil, pour que l'écran **dise** ce qu'il regroupe au lieu de le faire en silence.
+4. **Ne rien fabriquer** : pas de MABEC, pas de prix, pas de production qui ne soient pas dans
+   le classeur. Une production à 0 reste « jamais travaillée ».
+
+---
+
+## Les tests à ajouter, et le contre-regard
+
+`verifier_import.py` fait déjà tourner le fichier produit dans les **vraies** fonctions de
+l'app. Il faut lui ajouter un cas `matisLireClasseur()` — le lecteur est aujourd'hui le **seul
+point aveugle** de la chaîne.
+
+**Et le contre-regard, avec la leçon de la 4.71.0 :** une panne qui **plante** le script
+ressemble à « 0 échec ». Le contre-regard doit vérifier que la suite **va jusqu'au bout**
+(constitution v1.7, règle 10), sinon il rapporte un faux vert.
+
+---
+
+## Ce que je ne fais pas, et pourquoi
+
+Je m'arrête là, sur ta demande. Mais **ce n'est pas un chantier ouvert de plusieurs
+jours** : c'est un lecteur de 40 lignes à brancher sur trois fonctions qui existent et sont
+testées. Si tu veux, je le fais — mais tu as dit « passe la main », donc je passe.
+
+**État :** 4.72.0 sur Projet, 408/408, 27 tests de géométrie, `IMPORT_MATIS.json` prêt.
+**Verrou libéré.**
+
 ### ▸ Tour 32 — 30/09/2026 — **Hermes** (v4.72.0 — les données du classeur, créées une bonne fois)
 
 **Benjamin : « je veux juste que les données du classeur de Matis soient créées une bonne fois
@@ -358,7 +449,7 @@ T543 [Logement 1]  +  « T543 D1 »  +  « T543 D2 »   =>   T543 [Logement 1 , 
 **Trois logements pour deux correcteurs.** Saisir `D1` puis `D2` *sans* l'outil nu
 fonctionnait déjà : c'est **l'outil nu créé en premier** qui déclenchait le problème.
 
-Et, en我cherchant de vérifier au lieu de supposer, j'ai mesuré quatre défauts :
+Et, encherchant de vérifier au lieu de supposer, j'ai mesuré quatre défauts :
 
 | | |
 |---|---|
