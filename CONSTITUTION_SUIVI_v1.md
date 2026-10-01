@@ -26,6 +26,8 @@ Sept Fons). Il sert trois publics, dans cet ordre de priorité :
 | **Ligne** | une machine de production (EMAG 1, HESSAPP…), un taux horaire | données ; topologie déclarée dans `LIGNES_SEPT_FONS` |
 | **Référence** | un disque (ex. DV 356x26 RPI), sa cible de coût (`cibleCPP`), son volume annuel | données |
 | **OP** | une opération sur une référence, identifiée par son **`opCode`** (OP10, OP30…) — le nom libre n'est jamais une clé | données (opCode dérivé, 4.50) |
+| **Outil** (porte-outil) | le corps qui porte les logements ; identifié par son **numéro** (`T543`). **Pas** d'outillage interchangeable : le même `T543` peut être monté sur EMAG 1 et sur EMAG 3 | données (`scenario.outils[].numero`) |
+| **Logement** (correcteur) | **un emplacement physique sur l'outil**, garni d'une plaquette. D1, D2, D3 sont des logements — **jamais des outils différents** | données (`scenario.outils[].logements[]`) |
 | **Scénario** | une configuration d'outils testée contre la prod | données ; **la prod = le scénario ★** |
 | **Poste** | ligne × opCode — un groupe d'outils qui tournent ensemble | **dérivé** (`gainPoste`), jamais stocké |
 | **Livraison** | l'instantané FIGÉ et DATÉ des gains, que la hiérarchie lit | données (`livraisons`, 4.53) |
@@ -34,6 +36,61 @@ Sept Fons). Il sert trois publics, dans cet ordre de priorité :
 **Interdit** : inventer une entité dans le code qui n'est pas dans cette table (leçon
 Bol/Piste v4.39, leçon « tuiles fantômes » 4.51.2). Une nouvelle entité entre ici, par
 décision de Benjamin, avec sa migration.
+
+---
+
+## 2 ter. LA LOI DU CORRECTEUR — le mot, et ce qu'il interdit
+
+*(Benjamin, 30/09 et 01/10/2026. Écrit après huit jours de batailles sur le même mot.
+C'est l'article le plus important de cette constitution, parce que tous les autres
+en découlent.)*
+
+> **« Un correcteur qui se trouve dans l'excel de Matis est un logement. La machine
+> appelle un outil et y ajoute le correcteur correspondant au logement pour avoir le
+> point de départ de l'usinage. »**
+
+### Les mots
+
+| mot | veut dire | ne veut **jamais** dire |
+|---|---|---|
+| **porte-outil** / **outil** | le corps, le numéro `T543` | un jeu d'outillage qu'on interchange |
+| **correcteur** / **logement** | un emplacement : D1, D2, D3 | un outil, une référence, une position d'OP |
+| **plaquette** | ce qui garnit le logement, identifiée par son **MABEC** | l'emplacement lui-même |
+| **MABEC** | le code article d'une plaquette | un identifiant d'outil — **plusieurs MABEC sur un outil est NORMAL** (un par logement) |
+
+### Ce que la loi interdit, explicitement
+
+1. **Créer un outil par correcteur.** `T543 D1` et `T543 D2` sont **un** outil `T543` à
+   **deux** logements. Un outil sans correcteur, c'est un outil à un logement provisoire.
+2. **Rapprocher sur la chaîne brute.** `T 513 D1` et `T513 D1` sont le **même**
+   porte-outil : la clé de rapprochement ignore espaces, tirets et points
+   (`matisClePorteOutil`). L'**affichage** garde la forme de l'atelier.
+3. **Recopier le MABEC d'une ligne à la suivante** quand la ligne n'en a pas. Une case
+   vide vaut mieux qu'un article attribué au mauvais logement.
+4. **Écrire un zéro là où il n'y a pas de mesure.** Une production à 0 est une
+   *absence* de mesure — l'écran dit « jamais travaillée », il n'invente pas.
+5. **Utiliser « DTV » ou « voile »** dans une interface ou dans une variable. Le
+   vocabulaire du projet est **battement, Ra, épaisseur de piste**.
+   ⚠️ **« face appui » reste ambigu** — une mesure ou deux ? **Rien n'est codé tant que
+   Matis n'a pas répondu.**
+
+### La question ouverte — et elle est grande
+
+**Un même logement, monté sur deux références différentes, porte-t-il deux plaquettes
+différentes ?**
+
+Mesuré dans le classeur, 01/10 : **oui, apparemment.** `T1 D1` porte `Z000 546 266` sur
+la 266x13 et `IM02 137 021` (ISO *KY3500*) sur la 302x26.
+
+> **Conséquence sur le modèle :** aujourd'hui MABEC, prix et DDV sont portés par le
+> **logement**. Si la réponse est « oui », ils doivent être portés par le couple
+> **(référence × logement)**.
+
+**Ce n'est pas un bug, c'est une question de modèle** — et elle touche tous les coûts.
+Elle est **posée à Matis** (message à Matis, demande n° 9). **Tant qu'elle n'est pas
+réponse, le modèle ne change pas** : on ne change pas la façon dont tout se calcule sur
+une supposition.
+
 
 ### 2 bis. Trois réserves de Hermes sur la v1 (à trancher, non bloquantes)
 
@@ -193,3 +250,13 @@ bout**. Constaté en mesurant la 4.71.0 — une panne qui faisait **planter** le
 test était comptée « 0 échec », donc invisible ; et la moitié des tests n'avait pas tourné.
 **0 échec ≠ Vert.** Une suite qui n'a pas terminé n'a rien rapporté. On compte les tests
 exécutés autant que les échecs.
+
+**v1.8 — 01/10/2026, Hermes : ajout de l'article 2 ter, « la loi du correcteur ».**
+Huit jours de batailles sur le même mot, et la constitution ne le définissait nulle part.
+Les entités **Outil** et **Logement** manquaient même dans la table du §2. Elles y sont
+maintenant, avec la loi : ce que chaque mot veut dire, ce qu'il ne veut jamais dire, et
+les cinq interdits. La question ouverte (l'article dépend-il de la référence ?) est écrite
+comme question, avec sa mesure, et **n'est pas tranchée** — elle est à Matis.
+
+*Cette version ne change aucun calcul. Elle écrit ce qu'on savait déjà et qu'on n'avait
+jamais mis noir sur blanc.*
