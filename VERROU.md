@@ -13,13 +13,13 @@
 
 | | |
 |---|---|
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
+| **Auteur** | Z Code |
+| **Pris le** | 01/10/2026, tour 52 |
 | **Écrit dans** | `bilan_economique.html` |
-| **Version visée** | — |
-| **Sujet** | — |
+| **Version visée** | 4.79.0 |
+| **Sujet** | le contrôle des promesses UI (typeof, main passée par Hermes T51) + `missionA4HTML()` (clic mort) + CSS d'impression A4 absent du document principal depuis 4.53 |
 
-✅ **Le fichier est libre.**
+🔒 **Le fichier est pris.**
 
 ---
 
