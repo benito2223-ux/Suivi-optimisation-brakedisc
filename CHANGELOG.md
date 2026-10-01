@@ -575,6 +575,74 @@ La cause du déclenchement reste ouverte : *pourquoi* `data` a divergé chez Ben
 — un onglet resté ouvert, une restauration, un partage cloud — demande le chemin exact de
 Benjamin, clic par clic.
 
+## [4.77.0] — 01/10/2026 · T2D1, T5D1, et le T1 aux sept logements
+
+**Benjamin, sur ses données réelles :**
+> « un outil T1 avec 7 logements… un outil appelé T2D1 alors que l'outil est T2 et le
+> correcteur D1, non renseigné dans le bon champ, idem pour le T5 appelé T5D1 »
+
+Trois faits, trois corrections. Toutes dans la **fonction pure** `reparerOutilsD1D2()`, donc
+valables pour la migration comme pour le lecteur de classeur — et toutes réversibles.
+
+---
+
+### 1. Le champ `correcteur` n'était pas rempli
+
+`T2D1`, `T5D1`, `T543 D1` : le porte-outil et le correcteur sont dans le numéro. Le champ
+`correcteur` — celui que Matis remplit et qu'on veut voir — **restait vide**.
+
+`renseignerCorrecteur()` le remplit, et **ne touche pas au numéro** : le contrat de l'outil veut que le numéro reste ce que l'atelier a écrit, et les tests le verrouillent. Si l'outil
+n'a aucun logement, il en reçoit un qui porte le correcteur — sans point de départ, l'écran ne
+peut rien montrer.
+
+### 2. Sept logements de même nom sur un seul outil
+
+`dedoublonnerLogements()` réduit les logements de **même nom** à un seul, en gardant **le plus
+renseigné** — jamais le premier arrivé, qui peut être le plus vide. MABEC, prix, arêtes et
+charnière sont conservés ; le logement gardé est **complété** de ce que les autres
+apportaient, on ne remplace jamais une donnée par une case vide.
+
+**On ne renomme pas.** Les 7 « Plaquette » ne portent aucune position : les réduire à un
+emplacement provisoire et ajouter le logement du correcteur, c'est tout. Les inventer serait
+exactement ce qu'on refuse partout ailleurs.
+
+### 3. Le provisoire est *réclamé*, pas doublé
+
+Un outil « T2D1 » avec un « Logement 1 » provisoire donne **un** logement nommé D1 — le
+provisoire est renommé, pas conservé à côté d'un nouveau. C'est la règle de 4.71, appliquée
+ici aussi.
+
+---
+
+### Et une erreur de méthode
+`positionDeOutil()` — où est la position d'un outil ?
+   numero « T543 D1 »  ->  correcteur « T543 / D1 »  ->  nom du logement « D1 »
+   les trois sont lus, dans cet ordre. Le champ correcteur gagne quand il est rempli : il a
+   été écrit à la main par l'atelier.
+   SANS cette unification, renseignerCorrecteur() suffisait a CASSER le regroupement : la
+   position quittait le numéro, et les deux outils redevenaient « T543 » et « T543 » sans
+   position. Le regroupement ne se déclenchait plus du tout.
+
+Le harnais l'a vu : **323 tests au lieu de 434.** Une exception coupait la suite en silence,
+et sans le compteur on aurait cru à un simple échec.
+
+---
+
+**Vérifié** — `test_correcteur_777.py`, 24 assertions sur les cas de Benjamin :
+
+- `T2D1` et `T5D1` : numéro intact, **correcteur D1 rempli**, logement qui le porte ;
+- T1 à 7 logements : réduit, position **non inventée** ;
+- 7 logements nommés D1/D2/D3 : réduits à **D1, D2, D3** ;
+- **la donnée la plus renseignée est conservée**, pas la première ;
+- la fonction reste **pure** ;
+- `T543 D1` + `T543 D2` = **un** outil, deux logements, correcteur « D1, D2 ».
+
+**Contre-regard : 4 pannes sur 4 vues.** Deux d'entre elles n'étaient d'abord pas vues — le
+dédoublonnage de fin n'était atteint qu'avec deux outils et plus, et rien ne le couvrait.
+Les deux tests qui manquaient ont été ajoutés, et les recontrôlés.
+
+**434/434** sur le harnais général, plus géométrie, contexte, import : **tout vert**.
+
 ## [4.67.0] — 2026-09-30 · L1
 
 **Le premier lot de la charte CeramTec : le fond, et le poids interdit.**

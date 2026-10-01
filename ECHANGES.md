@@ -72,6 +72,67 @@ transporte un fichier ? Concrètement :
 
 ## Journal des tours
 
+### ▸ Tour 45 — 01/10/2026 — **Hermes** (v4.77.0 — T2D1, T5D1, et le T1 aux sept logements)
+
+**Benjamin, sur ses données réelles :** *« un outil T1 avec 7 logements… un outil appelé T2D1
+alors que l'outil est T2 et le correcteur D1, non renseigné dans le bon champ, idem pour le
+T5 appelé T5D1 ».*
+
+Et au passage, une **correction de Benjamin sur mon récap** : j'avais écrit `T 513 D1` et
+`T543 D1` sont le même porte-outil. Faux — c'est `T 513 D1` et `T513 D1`. **La constitution,
+le CHANGELOG, l'ECHANGES, le code et les tests disaient tous la bonne version** ; l'erreur
+n'était que dans mon message de chat et dans le message d'un commit. **Aucun fichier n'est
+touché** — mais c'est exactement le genre d'erreur qui fait perdre une heure, et elle
+n'aurait pas dû sortir.
+
+---
+
+## Les trois corrections, dans la fonction pure
+
+**1. Le champ `correcteur` n'était pas rempli.** `T2D1`, `T5D1`, `T543 D1` : la position est
+dans le numéro, le champ `correcteur` reste vide. Il est maintenant rempli — et **le numéro
+n'est pas touché**, parce que le contrat de l'outil veut que le numéro reste ce que l'atelier
+a écrit (les tests le verrouillent).
+
+**2. Sept logements de même nom.** `dedoublonnerLogements()` les réduit à un, en gardant **le
+plus renseigné** — jamais le premier arrivé, qui peut être le plus vide. **On ne renomme
+pas** : les 7 « Plaquette » ne portent aucune position, et inventer un nom de correcteur
+serait exactement ce qu'on refuse partout.
+
+**3. Le provisoire est réclamé, pas doublé.** « T2D1 » + « Logement 1 » donne **un**
+logement nommé D1. C'est la règle de 4.71, appliquée ici aussi.
+
+---
+
+## L'erreur que j'ai faîte, et ce qu'elle a révélé
+
+Mon `renseignerCorrecteur()` déplaçait la position du **numéro** vers `correcteur`. Mais le
+regroupement la lisait **encore dans le numéro** — donc après séparation, les deux outils
+redevenaient « T543 » et « T543 », sans position, et **le regroupement ne se déclenchait plus
+du tout**.
+
+C'est ce que `positionDeOutil()` corrige : la position est lue aux **trois endroits** où elle
+peut vivre — le numéro, le champ `correcteur`, le nom des logements — et le champ
+`correcteur` gagne quand il est rempli, parce qu'il a été écrit à la main par l'atelier.
+
+**Le harnais l'a vu avant moi : 323 tests au lieu de 434.** Une exception coupait la suite
+en silence. Sans regarder le compteur, j'aurais cru à un simple échec — et je n'aurais pas su
+que 111 tests ne s'exécutaient plus.
+
+---
+
+## Contre-regard : 2 vues sur 4, puis 4 sur 4
+
+Deux pannes passaient. Elles m'ont appris que **mes tests ne couvraient pas le chemin de fin
+de la fonction** — le dédoublonnage n'est atteint qu'avec deux outils et plus, et tous mes cas
+n'en avaient qu'un. Et que rien ne distinguait « le provisoire est renommé » de « un
+logement est ajouté à côté ».
+
+Les deux tests manquants ont été ajoutés, et les quatre pannes sont maintenant vues.
+
+**434/434** harnais général · 24 assertions sur tes cas · géométrie, contexte, import : **tout
+vert**.
+
 ### ▸ Tour 44 — 01/10/2026 — **Z Code** (Benjamin vérifie lui-même : « 1 article = 1 MABEC », et trouve le libellé double)
 
 **Benjamin a ouvert le classeur et vérifié** : chaque plaquette porte le même

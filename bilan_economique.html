@@ -12354,7 +12354,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.76.0";
+const TOOL_VERSION = "4.77.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -12954,9 +12954,136 @@ function matisRapproche(c){
    · MABEC, prix, arêtes, analyses, mesures et scénarios voyagent INTACTS.
    Elle ne fusionne JAMAIS deux outils de clés différentes, et ne touche
    JAMAIS à un outil qui a déjà ses positions. */
+/* v4.77.0 — deux corrections sur les DONNÉES de Benjamin, avant tout regroupement.
+
+   CAS 1 — « T2D1 », « T5D1 ». Le porte-outil et le correcteur sont collés dans le
+   numéro, sans espace. matisPorteOutilPosition() sait déjà les séparer ; on
+   l'applique ICI, sur les données, en écrivant le correcteur dans le champ
+   `correcteur` de l'outil ET en nommant le logement. L'affichage du numéro
+   devient propre (« T2 ») : c'est ce que l'atelier appelle l'outil.
+
+   CAS 2 — « T1 » avec SEPT logements du même nom. Un merge
+   sans le vouloir a empilé des logements de même nom dans un seul outil : 4 + 2
+   + 1. Un outil ne peut pas avoir deux fois le même correcteur. On réduit en
+   gardant le logement le plus RENSEIGNÉ — jamais le premier arrivé, qui peut être
+   le plus vide — et on ne signale rien d'autre : les données du écarté ne sont
+   pas perdues, elles sont simplement redondantes avec la conservée. */
+function renseignerCorrecteur(outil){
+  const o = outil;
+  if(!o) return o;
+  /* v4.77.0 — Benjamin, 01/10, sur ses données : « un outil appelé T2D1 alors que
+     l'outil est T2 et le correcteur D1, non renseigné dans le bon champ ».
+
+     Le NUMÉRO garde la valeur écrite — c'est le contrat de l'outil (les tests le
+     verrouillent), et l'atelier reconnaît son propre numéro. Ce qui manquait,
+     c'est le champ `correcteur`, celui que Matis remplit et qu'on veut voir.
+
+     On le remplit donc, depuis la position, qu'elle vienne du numéro
+     (« T2D1 », « T2 D1 ») ou des logements déjà nommés. Et si l'outil n'a
+     aucun logement, on lui en crée un qui porte ce correcteur : sans lui,
+     l'outil n'a pas de point de départ, et l'écran ne peut rien afficher. */
+  const position = positionDeOutil(o);
+  if(!position) return o;
+  const sortie = Object.assign({}, o);
+  const deja = String(o.correcteur || "").trim();
+  if(!deja){
+    sortie.correcteur = position;
+  } else if(!deja.match(/^D\d+$/)){
+    /* plusieurs correcteurs déjà notés (« D1, D2 ») : on ne rajoute pas un
+       doublon si la position y est déjà. */
+    const liste = deja.split(/[,;\s]+/).map(x => x.trim().toUpperCase()).filter(Boolean);
+    if(!liste.includes(position)) sortie.correcteur = deja + ", " + position;
+  }
+  const logs = (o.logements || []).map(l => Object.assign({}, l));
+  if(!logs.length){
+    sortie.logements = [normalizeLogement({ nom: position })];
+  } else if(!logs.some(l => String(l.nom || "").trim().toUpperCase() === position)){
+    /* Règle v4.71.0, appliquée aussi ici : si l'outil ne porte QU'UN logement et
+       qu'il est encore au nom de DÉFAUT (« Logement 1 »), c'est LUI qui devient
+       la position. On ne crée pas un deuxième logement à côté d'un provisoire :
+       ce serait exactement le fantôme que Benjamin a signalé. Un logement au nom
+       d'atelier en revanche n'est pas touché — il dit plus que la position. */
+    const defaut = /^\s*logement\s*\d*\s*$/i;
+    const tousProvisoires = logs.every(l => defaut.test(String(l.nom || "")));
+    if(logs.length === 1 && tousProvisoires){
+      logs[0] = Object.assign({}, logs[0], { nom: position });
+      sortie.logements = logs;
+    } else {
+      logs.push(normalizeLogement({ nom: position }));
+      sortie.logements = logs;
+    }
+  }
+  return sortie;
+}
+
+/* Réduit les logements de MÊME nom à un seul. On garde le plus renseigné, et à
+   égalité le premier : on ne préfère jamais « le plus récent », car l'outil
+   n'a aucune date de saisie par logement, et en inventer une serait exactement
+   le genre de donnée fabriquee qu'on refuse partout ailleurs. */
+function dedoublonnerLogements(outil){
+  const logs = (outil && outil.logements) || [];
+  if(logs.length < 2) return outil;
+  const compte = logs.reduce((a, l) => {
+    const k = String(l.nom || "").trim().toUpperCase();
+    a[k] = (a[k] || 0) + 1; return a;
+  }, {});
+  if(!Object.values(compte).some(n => n > 1)) return outil;
+  const CHAMPS = ["mabec","codeArticle","prix","charniere","ref","vc","f",
+                   "kappaR","rayonBec","apPiste","tempsCoupe","tempsDeplacement"];
+  const rempli = l => CHAMPS.reduce((n, c) =>
+    n + (l[c] !== undefined && l[c] !== null && l[c] !== "" && l[c] !== 0 ? 1 : 0), 0);
+  const vus = new Set();
+  const gardes = [];
+  logs.forEach(l => {
+    const k = String(l.nom || "").trim().toUpperCase();
+    if(!vus.has(k)){ vus.add(k); gardes.push(l); return; }
+    const deja = gardes.find(g => String(g.nom || "").trim().toUpperCase() === k);
+    /* on complète le logement déjà gardé avec ce que celui-ci apporte de plus :
+       on ne remplace jamais une donnée par une case vide. */
+    if(rempli(l) > rempli(deja)){
+      for(const c of CHAMPS)
+        if((deja[c] === undefined || deja[c] === "" || deja[c] === 0) && l[c] !== undefined && l[c] !== "")
+          deja[c] = l[c];
+    }
+  });
+  return Object.assign({}, outil, { logements: gardes },
+    { _fusionReparee: outil._fusionReparee, nbOutils: outil.nbOutils });
+}
+
+/* v4.77.0 — Où est la POSITION d'un outil ? Elle peut vivre à trois endroits,
+   selon l'âge de la donnée — et c'est exactement pour ça que la réparation ne
+   voyait plus rien :
+
+   1. dans le numéro, tant que la saisie est brute      : « T543 D1 »
+   2. dans le champ `correcteur`, une fois separé        : T543 / correcteur D1
+   3. dans le nom des logements, quand le champ est vide : T543 / logement « D1 »
+
+   renseignerCorrecteur() (ci-dessus) fait passer la donnée du (1) au (2). Si le
+   regroupement continuait de lire le (1) seul, il ne verrait PLUS jamais rien :
+   les deux outils devenaient « T543 » et « T543 », sans position, et la fusion
+   ne se déclenchait plus. On lit donc les trois, dans cet ordre, et c'est le
+   (2) qui gagne quand il est rempli — parce qu'il a été écrit à la main par
+   l'atelier, et qu'il fait autorité sur une déduction. */
+function positionDeOutil(o){
+  const depuisNumero = matisPorteOutilPosition(o && o.numero).position;
+  if(depuisNumero) return depuisNumero;
+  const c = String((o && o.correcteur) || "").trim().toUpperCase();
+  if(c.match(/^D\d+$/)) return c;
+  /* plusieurs correcteurs dans le champ (« D1, D2 ») : ce n'est pas UNE
+     position, c'est un outil déjà groupé — on ne le dédouble pas. */
+  if(c) return null;
+  const positions = ((o && o.logements) || [])
+    .map(l => String(l.nom || "").trim().toUpperCase())
+    .filter(n => n.match(/^D\d+$/));
+  return positions.length === 1 ? positions[0] : null;
+}
+
 function reparerOutilsD1D2(outils){
-  const liste = (outils || []).slice();
-  if(liste.length < 2) return liste;
+  const liste = (outils || []).map(renseignerCorrecteur);
+  /* v4.77.0 — un seul outil n'a rien à regrouper, mais il peut encore avoir des
+     logements en double : c'est EXACTEMENT le cas « T1 avec 7 logements ». Le
+     retour rapidecourt-circuité le dédoublonnage et laissait le cas intact. */
+  if(liste.length < 2) return liste.map(dedoublonnerLogements);
   const defaut = /^\s*logement\s*\d*\s*$/i;
   /* v4.73 (Tour 34) — la clé d'identité d'un outil : les outils SAISIS ont un
      id ; les lignes du LECTEUR du classeur n'en ont pas (chaque ligne Excel est
@@ -12967,7 +13094,8 @@ function reparerOutilsD1D2(outils){
   const groupes = new Map();
   const autres = [];
   for(const o of liste){
-    const { porte, position } = matisPorteOutilPosition(o.numero);
+    const porte = matisPorteOutilPosition(o.numero).porte;
+    const position = positionDeOutil(o);
     const cle = matisClePorteOutil(porte);
     /* Un outil sans position (« T543 » nu) est LAISSE TEL QUEL. On ne le verse
        pas d'office dans le groupe : il peut être un vrai outil à lui seul, et
@@ -12995,7 +13123,7 @@ function reparerOutilsD1D2(outils){
     }
     const logements = [];
     for(const o of groupe){
-      const position = matisPorteOutilPosition(o.numero).position;
+      const position = positionDeOutil(o);
       for(const l of (o.logements || [])){
         const copie = Object.assign({}, l);
         const nom = String(l.nom || "").trim();
@@ -13009,7 +13137,7 @@ function reparerOutilsD1D2(outils){
     /* un provisoire resté sans position n'est pas perdu : il
        reçoit la plus petite position libre. On ne supprime JAMAIS une ligne. */
     for(const o of groupe){
-      const { position } = matisPorteOutilPosition(o.numero);
+      const position = positionDeOutil(o);
       if(position) continue;
       for(const l of (o.logements || [])){
         const copie = Object.assign({}, l);
@@ -13066,8 +13194,13 @@ function reparerOutilsD1D2(outils){
     if(consomme.has(cleId(o))) continue;          /* membre absorbé : disparaît */
     if(!ordre.includes(o)) ordre.push(o);
   }
-  ordre._orphelins = orphelins;
-  return ordre;
+  /* v4.77.0 — en dernier, on réduit les logements en double À L'INTÉRIEUR d'un
+     outil. C'est le cas « T1 avec 7 logements » : on ne peut pas avoir deux fois
+     le même correcteur sur le même porte-outil. */
+  const reduits = ordre.map(dedoublonnerLogements);
+  reduits._orphelins = orphelins;
+  reduits._reduits = ordre.length - reduits.length;
+  return reduits;
 }
 
 /* Ce que la réparation a changé, en mots — pas en nombre. L'écran doit dire
