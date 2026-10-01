@@ -130,6 +130,45 @@ Elle dit quoi, pas qui. L'incident du 29/09 (deux sessions sur `bilan_economique
 auteur sur le fichier à la fois, et un commit par version**. C'est une règle de
 processus, pas de produit — mais c'est elle qui protège tout le reste.
 
+## 2 quater. LE CPP — deux axes, jamais un seul chiffre
+
+*(Benjamin, 01/10/2026, après la démonstration des deux axes.)*
+
+> « Le CPP, c'est le sujet qui va nous servir de référence **jusqu'à la fin des projets**.
+> On doit améliorer ces valeurs là, qui sont les valeurs actuelles. Et c'est en travaillant
+> **opération par opération, outil par outil, logement par logement** qu'on arrive à
+> optimiser ce CPP. »
+
+**La règle.** Un CPP affiché n'est jamais un chiffre, c'est **deux chiffres et leur
+décomposition** :
+
+| axe | ce qu'il mesure | d'où il vient | comparé à Matis ? |
+|---|---|---|---|
+| **OUTILLAGE** | `prix ÷ (arêtes × DDV)`, par plaquette | formule du classeur, colonne I | **oui — c'est sa mesure** |
+| **TEMPS** | `(taux horaire ÷ 3600) × temps de cycle` | mesures atelier, `coutMachinePiece` | **non — le classeur ne l'a pas** |
+
+**Vérifié le 01/10, sur cinq lignes réelles du classeur et sur `posCost()` :**
+`prix ÷ (arêtes × DDV)` = `prix ÷ (arêtes × charnière)`. **La même formule, terme pour
+terme.** Avec la machine désactivée — le défaut — **le CPP de l'outil EST le CPP de Matis.**
+
+**Les trois règles qui en découlent.**
+
+1. **L'outillage est l'indicateur principal**, parce que c'est le seul que Matis peut
+   vérifier. Le temps s'affiche **à côté**, valorisé au taux horaire de la ligne, **uniquement
+   quand les données de cycle sont remplies**.
+2. **Sans donnée de temps, l'outillage reste la base 100.** Une base unique permet de comparer ;
+   deux chiffres non comparables ne permettent rien.
+3. **On ne compare jamais un total de l'outil à un CPP de classeur.** Le total inclut la
+   machine, le classeur l'ignore. La comparaison se fait **axe par axe** — sinon l'écart
+   affiché mélange une amélioration et une différence de périmètre.
+
+**Et la décomposition va jusqu'en bas**, à chaque étage, sur les deux axes :
+pièce → OP → outil → logement. C'est la phrase de Benjamin, littéralement.
+
+**Deux axes, deux questions, deux leviers :**
+- *outillage* — « quelle plaquette me coûte cher ? » → prix, DDV, nombre d'arêtes, réf ;
+- *temps* — « qu'est-ce qui prend du temps ? » → Vc, f, profondeur, machine.
+
 ## 3. Les règles de calcul — d'où vient chaque chiffre
 
 1. **Source unique** : un même chiffre (gain de poste, coût pièce, % de chemin) se
@@ -274,3 +313,12 @@ comme question, avec sa mesure, et **n'est pas tranchée** — elle est à Matis
 jamais mis noir sur blanc.*
 
 **v1.9 — 01/10/2026, Z Code : la direction CPP de Benjamin (01/10) transcrite en tête du §1, telle quelle, avec attribution.** Toute évolution se vérifie désormais contre : le CPP obtenu, sa référence, et l'écart — à chaque niveau de l'arbre pièce → OP → outil → logement.
+
+**v1.10 — 01/10/2026, Hermes : ajout de l'article 2 quater, « le CPP — deux axes ».**
+Trouvé en discutant : la formule de Matis (colonne I) et celle de l'outil (`posCost`) sont
+**la même, terme pour terme** — `prix ÷ (arêtes × DDV)`. Le CPP de l'outil est donc le CPP
+de Matis, exactement, tant que la machine est désactivée. C'est ce qui permet de nommer un
+indicateur principal, et d'afficher le temps à côté sans jamais mélanger les deux périmètres.
+
+*Aucun calcul n'a changé. Cette version écrit une architecture, sur une formule déjà
+vérifiée — elle ne l'invente pas.*
