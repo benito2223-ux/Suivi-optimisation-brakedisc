@@ -70,6 +70,56 @@ transporte un fichier ? Concrètement :
 
 ## Journal des tours
 
+
+## Journal des tours
+
+### ▸ Tour 41 — 01/10/2026 — **Z Code** (v4.75.0 — option A : la carte s'ouvre sur la ligne cliquée)
+
+**Le diagnostic a déplacé le problème.** Benjamin : « depuis la carte atelier
+je clique sur la ligne Emag 3, je me retrouve avec des scénarios qui ne sont
+que sur Emag 1 » — et demandait si revenir au design d'avant-hier réparerait.
+Diagnostic au navigateur : **la carte était déjà par ligne** (sections
+`ca-ligne` de la 4.51, titres + taux horaire + gain), et le clic depuis
+l'accueil ouvrait la carte **au début** — devant HESSAPP, quoi qu'on ait
+cliqué. Avec des postes homonymes (« Ébauche » sur quatre lignes), la
+confusion était structurelle : il croyait regarder EMAG 3, il regardait
+ailleurs.
+
+**Livré (4.75.0, `eeae8f8`)** — option A, sans défaire le design :
+- **`ouvrirCarte(ligneId)`** : la carte défile jusqu'à la section de la ligne
+  cliquée (scrollTop sur le conteneur du panneau — `scrollIntoView` ne roule
+  pas dans un panneau positionné, constat au navigateur) et la surligne deux
+  secondes ; sans argument, comportement inchangé ;
+- les tuiles de l'accueil passent leur ligne (clic et clavier) ;
+- complété au passage (fin du Tour 40 interrompu, dont l'entrée n'avait jamais
+  été écrite) : le bandeau affiche **trois lignes distinctes** — regroupements
+  à faire / correcteurs manquants des outils DÉJÀ regroupés (le cas de
+  Benjamin : « Corriger maintenant » lancé avant la 4.74.2) / références
+  attendues — `compterCorrecteursManquants()` sépare les cas.
+
+**Vérifié** : 430 → **434 tests** ; contre-regard : panne « logements effacés
+pendant le remplissage du correcteur » → vue (434/1), restaurée par copie
+sauvegardée ; navigation EMAG 3 prouvée au navigateur (section ciblée,
+visible à l'écran).
+
+**Sur le retour arrière du design** : discuté, **pas codé** — et le
+diagnostic dit qu'il n'aurait pas réparé ce bug (il précédait la palette).
+Le design reste réversible en une opération séparée si Benjamin veut le
+revoir à froid : les commits 4.63.x sont propres.
+
+**Incident de journal, consigné** : mon Tour 41 a d'abord été inséré au
+mauvais endroit (ancre « Tour 40 » inexistante — le Tour 40 n'a jamais eu
+d'entrée, session interrompue avant), et le journal a été réorganisé par
+Hermes entre-temps (ordre chronologique modifié). Repair : insertion en tête
+du journal, là où vont les nouveaux tours. Deuxième leçon de collision en
+deux jours : **l'ancre d'insertion, on la relit, on ne la devine pas.**
+
+**Déployé** : push `dev` + **Projet** (4.75.0). Prod protégée.
+
+**Prochain tour** : à Hermes — revue croisée de tout le bloc 4.73.0 → 4.75.0
+(sept versions). Et le remplissage Matis reste le seul vrai goulot.
+
+
 ### ▸ Tour 22 — 30/09/2026 — **Hermes** (revue de la 4.61.0 + 4.62.0, et une leçon qui vaut pour moi)
 
 **Lu avant d'écrire** : `VERROU.md` (libre), les Tours 20 et 21. **Vérifié par moi** :
