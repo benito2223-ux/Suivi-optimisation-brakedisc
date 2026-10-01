@@ -5,6 +5,35 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.74.1] — 2026-10-01 · Tour 38
+
+**L'inversion ISO / MABEC, détectée et permutée à la demande** (Benjamin,
+retour d'usage n°3 : « les codes MABEC du T543 sont dans le champ référence
+plaquette »). Le mapping correct est documenté depuis l'import 4.72 :
+colonne ISO → `logement.ref`, colonne MABEC → `logement.codeArticle`. Six
+logements des scénarios d'atelier portaient le MABEC dans `ref`, sans
+codeArticle.
+
+### Ajouté
+- `estCodeMabec` (format lettre + 3×3 chiffres — ne ressemble à aucun ISO),
+  `detecterInversionMabec`, `migrerInversionMabec` (rapport en toutes
+  lettres), `compterInversionsMabec` ;
+- le **bandeau de démarrage** annonce les deux migrations (regroupements
+  D1/D2 ET inversions MABEC) et « Corriger maintenant » applique les deux
+  avec le rapport consolidé ;
+- l'ISO n'étant pas dans les données, `ref` **se vide** — il ne s'invente
+  pas ; la référence plaquette restera à saisir (dit dans le rapport).
+
+### Vérification
+- 421 → **425 tests**, tout vert + contraste ;
+- contre-regard en deux actes : panne « permuter tout logement sans
+  codeArticle » d'abord **invisible** (le sain du test avait un codeArticle —
+  non représentatif), puis **vue par 2 tests** une fois le sain rendu
+  vulnérable (ISO sans codeArticle) : la permutation ne frappe que le format
+  MABEC, jamais un ISO. Restaurations par copie sauvegardée ;
+- la leçon du tour : **un test de protection n'existe que si son cas est
+  représentatif** — un sain trop bien habillé ne protège rien.
+
 ## [4.74.0] — 2026-10-01 · Tour 37
 
 **La migration des outils D1/D2 séparés, dans les DONNÉES** (Benjamin : la

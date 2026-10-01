@@ -26,6 +26,7 @@ API = ("get TOOL_VERSION(){return TOOL_VERSION;}, normalizeLigne, normalizeRefer
        "normalizeOp, normalizeScenario, normalizeProjet, runTests, lignesDuProjet, "
        "projetContientScenario, toggleTagScenario, resoudreTag, matisRecap, libelleEcartMatis, "
        "matisPorteOutilPosition, matisClePorteOutil, reparerOutilsD1D2, reparerOutilsRapport, "
+       "detecterOutilsD1D2, migrerOutilsD1D2, compterOutilsD1D2, detecterInversionMabec, migrerInversionMabec, compterInversionsMabec, "
        "_matisFeuille, "
        "getActiveLigne, get lignes(){return lignes}, set lignes(v){lignes=v}, "
        "get projets(){return projets}, set projets(v){projets=v}, "

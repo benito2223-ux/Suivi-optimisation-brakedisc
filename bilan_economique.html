@@ -11779,6 +11779,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.74.1", date:"01/10/2026", points:[
+    "<b>Le MABEC remis à sa place.</b> Six logements portaient un code MABEC (« Z000 455 182 ») dans le champ « Référence plaquette » — une inversion avec le fichier de Matis, où l’ISO et le MABEC sont deux colonnes distinctes. La correction à la demande remet le MABEC dans son champ ; l’ISO n’étant pas dans les données, la référence restera à saisir. Le bandeau de démarrage le propose avec le reste."
+  ]},
   { version:"4.74.0", date:"01/10/2026", points:[
     "<b>La correction des outils D1/D2 arrive dans vos données.</b> Les outils saisis AVANT la règle (« T543 D1 » + « T543 D2 » en deux outils) sont détectés au démarrage : un bandeau vous propose de les regrouper — un porte-outil = un outil à logements. La correction est À LA DEMANDE, avec le rapport de ce qui a bougé, et ne touche jamais un outil nu sans position."
   ]},
@@ -12280,7 +12283,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.74.0";
+const TOOL_VERSION = "4.74.1";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -13033,6 +13036,56 @@ function migrerOutilsD1D2(){
         + (f.logements || []).length + " logements : " + (f.logements || []).map(l => l.nom).join(", ")));
     }))));
   return { rapport, lignes: Array.from(lignesModifiees) };
+}
+
+/* ═══ v4.74.1 — L'INVERSION ISO / MABEC, détectée et permutée ══════════════════
+   (Benjamin, retour d'usage n°3 : « les codes MABEC du T543 sont dans le champ
+   référence plaquette »). Le mapping correct est documenté depuis l'import
+   4.72 : colonne ISO → logement.ref, colonne MABEC → logement.codeArticle.
+   Six logements des scénarios d'atelier portaient le MABEC dans ref, sans
+   codeArticle. La permutation est SÛRE à détecter : le format MABEC
+   (Z000 455 182 — lettre + 3×3 chiffres) ne ressemble à aucun ISO
+   (SNGN090416T00520 SN60). À la demande, comme la migration D1/D2. */
+function estCodeMabec(v){
+  return /^[A-Z]\d{3}\s\d{3}\s\d{3}$/.test(String(v || "").replace(/\s+/g, " ").trim());
+}
+
+function detecterInversionMabec(scenarios){
+  const touches = [];
+  (scenarios || []).forEach(sc => {
+    const cibles = [];
+    (sc.outils || []).forEach(o => (o.logements || []).forEach(lg => {
+      if(estCodeMabec(lg.ref) && !String(lg.codeArticle || "").trim() && !String(lg.mabec || "").trim())
+        cibles.push(lg);
+    }));
+    if(cibles.length) touches.push({ sc, cibles });
+  });
+  return touches;
+}
+
+function migrerInversionMabec(){
+  const rapport = [];
+  lignes.forEach(l => (l.references || []).forEach(rf => (rf.ops || []).forEach(op =>
+    (op.scenarios || []).forEach(sc => {
+      const touches = detecterInversionMabec([ sc ]);
+      if(!touches.length) return;
+      touches[0].cibles.forEach(lg => {
+        const mabec = lg.ref;
+        lg.codeArticle = mabec;
+        lg.ref = "";                    /* l'ISO était absent : le champ se vide, il ne s'invente pas */
+        rapport.push((l.nom || "?") + " · " + (rf.nom || "?") + " · " + (op.nom || "?")
+          + " · " + (lg.nom || "logement") + " (" + (sc.name || "?") + ") : MABEC " + mabec
+          + " remis dans le champ MABEC — référence plaquette à saisir (l'ISO n'était pas dans les données)");
+      });
+    }))));
+  return rapport;
+}
+
+function compterInversionsMabec(){
+  let n = 0;
+  lignes.forEach(l => (l.references || []).forEach(rf => (rf.ops || []).forEach(op =>
+    (op.scenarios || []).forEach(sc => { n += detecterInversionMabec([ sc ]).reduce((a, t) => a + t.cibles.length, 0); }))));
+  return n;
 }
 
 /* le nombre de groupes fusionnables sur tout le suivi (pour la détection) */
@@ -14845,17 +14898,22 @@ function renduMigrBandeau(){
   const wrap = document.getElementById("migrBandeau");
   if(!wrap) return;
   const n = compterOutilsD1D2();
-  wrap.hidden = n === 0;
-  if(!n) { wrap.innerHTML = ""; return; }
+  const nInv = compterInversionsMabec();
+  wrap.hidden = (n === 0 && nInv === 0);
+  if(n === 0 && nInv === 0) { wrap.innerHTML = ""; return; }
+  const parties = [];
+  if(n) parties.push(`🔧 <b>${n} porte-outil${n > 1 ? "s" : ""}</b> saisi${n > 1 ? "s" : ""} en outils séparés (T543 D1 + T543 D2…) : la règle atelier dit <b>un porte-outil = un outil à logements</b>`);
+  if(nInv) parties.push(`🏷️ <b>${nInv} logement${nInv > 1 ? "s" : ""}</b> portent un code MABEC dans le champ « Référence plaquette » (inversion avec le fichier de Matis) — la correction remet le MABEC à sa place ; l'ISO n'étant pas dans les données, la référence restera à saisir`);
   wrap.innerHTML = `
     <div class="migr-bandeau">
-      <span>🔧 <b>${n} porte-outil${n > 1 ? "s" : ""}</b> saisi${n > 1 ? "s" : ""} en outils séparés (T543 D1 + T543 D2…) : la règle atelier dit <b>un porte-outil = un outil à logements</b>.
+      <span>${parties.join("<br>")}
       <button class="primary small" id="migrCorriger">Corriger maintenant</button>
       <button class="ghost small" id="migrPlusTard">Plus tard</button></span>
       <div class="migr-rapport" id="migrRapport" hidden></div>
     </div>`;
   document.getElementById("migrCorriger").addEventListener("click", () => {
     const res = migrerOutilsD1D2();
+    const rapInv = migrerInversionMabec();
     saveData();
     render();
     const rap = document.getElementById("migrRapport");
@@ -14863,15 +14921,16 @@ function renduMigrBandeau(){
     if(rap && wrap2){
       wrap2.hidden = false;
       rap.hidden = false;
-      rap.innerHTML = res.rapport.length
-        ? `<b>Corrigé — ${res.rapport.length} regroupement${res.rapport.length > 1 ? "s" : ""} :</b> ` + res.rapport.map(x => escapeAttr(x)).join(" · ")
-        : `Rien à corriger.`;
-      const boutons = wrap2.querySelectorAll("button");
-      boutons.forEach(b => b.hidden = true);
+      const tout = [];
+      if(res.rapport.length) tout.push(`<b>Regroupements — ${res.rapport.length} :</b> ` + res.rapport.map(x => escapeAttr(x)).join(" · "));
+      if(rapInv.length) tout.push(`<b>MABEC remis en place — ${rapInv.length} :</b> ` + rapInv.map(x => escapeAttr(x)).join(" · "));
+      rap.innerHTML = tout.length ? tout.join("<br>") : `Rien à corriger.`;
+      wrap2.querySelectorAll("button").forEach(b => b.hidden = true);
     }
   });
   document.getElementById("migrPlusTard").addEventListener("click", () => { wrap.hidden = true; });
 }
+
 try{ renduMigrBandeau(); }catch(e){ console.warn("bandeau migration:", e.message); }
 try{
   const meta = JSON.parse(localStorage.getItem(STORAGE_KEY + "_meta") || "null");
@@ -16851,6 +16910,37 @@ function runTests(){
         ok("migration : après correction, la détection ne voit plus rien (le bandeau s'éteindra)",
            compterOutilsD1D2() >= 0, true);
       } finally { lignes = lAv; }
+    }
+
+    /* ---- v4.74.1 — l'inversion ISO / MABEC : détectée, permutée, JAMAIS sur les sains ----
+       (retour d'usage n°3 de Benjamin : le MABEC du classeur vivait dans
+       « Référence plaquette »). Le format MABEC (Z000 455 182) ne ressemble à
+       aucun ISO (SNGN090416T00520 SN60) — la détection est sûre, et le test
+       suivant l'exige : un logement sain n'est JAMAIS permuté. */
+    {
+      const lAv2 = lignes;
+      const scI = normalizeScenario({ id: "scInv", name: "Prod", baseline: true, outils: [
+        { id: "uI1", numero: "T543 D1", logements: [ { id: "gL1i", nom: "logement 1", ref: "Z000 519 285", prix: 11.87, aretes: 6, charniere: 30 } ] },
+        { id: "uI2", numero: "T544", logements: [ { id: "gL2i", nom: "Piste", ref: "TNGN160412T02020 SL506", prix: 9.5, aretes: 8, charniere: 30 } ] } ] });
+      const refI = normalizeReference({ id: "rInv", nom: "356x26", ops: [
+        { id: "oInv", nom: "OP40", scenarios: [ scI ] } ] });
+      lignes = [ normalizeLigne({ id: "lInv", nom: "EMAG 1", references: [ refI ] }) ];
+      try {
+        const scCible = lignes[0].references[0].ops[0].scenarios[0];
+        const nAvant = compterInversionsMabec();
+        ok("inversion : la détection compte le logement inversé (MABEC dans ref, pas de codeArticle)",
+           nAvant >= 1, true);
+        const rapportInv = migrerInversionMabec();
+        const lgInv = scCible.outils[0].logements[0];
+        const lgSain = scCible.outils[1].logements[0];
+        ok("inversion : le MABEC est remis dans codeArticle, la référence se vide (l'ISO n'était pas dans les données)",
+           [lgInv.codeArticle, lgInv.ref], ["Z000 519 285", ""]);
+        ok("inversion : le logement SAIN garde son ISO même sans codeArticle — la permutation ne frappe que le format MABEC",
+           lgSain.ref, "TNGN160412T02020 SL506");
+        ok("inversion : le rapport cite la ligne, la référence, l'OP et le MABEC déplacé",
+           [rapportInv.length, rapportInv[0].includes("EMAG 1"), rapportInv[0].includes("Z000 519 285"),
+            rapportInv[0].includes("référence plaquette à saisir")], [1, true, true, true]);
+      } finally { lignes = lAv2; }
     }
 
     /* ---- v4.73.0 — le lecteur du classeur connaît la règle porte-outil --------
