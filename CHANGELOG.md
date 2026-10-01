@@ -5,6 +5,24 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.73.1] — 2026-10-01 · Tour 35
+
+**Le cul-de-sac de l'écran Classeur Matis** (bug trouvé par Benjamin EN
+UTILISANT l'outil — le premier vrai retour d'usage, et il a servi) : sans
+lecture en cours, l'écran disait « Choisissez le fichier » **sans proposer
+aucun bouton pour le choisir** — le champ n'apparaissait qu'APRÈS une première
+lecture. Un écran cul-de-sac, exactement ce que la constitution §5.2 interdit.
+Présent depuis la 4.55.0, invisible jusqu'ici parce que tous nos tests
+simulaient une lecture déjà faite.
+
+### Corrigé
+- l'état d'attente porte désormais le bouton **« 📂 Lire le classeur de
+  Matis… »** (même barre que l'état « lu », même handler).
+
+### Vérification
+- 414/414, contraste vert ; au navigateur : bouton présent et branché sur
+  l'écran non lu.
+
 ## [4.73.0] — 2026-10-01 · Tour 34 (passation Tour 33)
 
 **Le lecteur du classeur connaît la règle porte-outil.** Benjamin voyait encore

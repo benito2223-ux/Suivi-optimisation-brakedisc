@@ -12268,7 +12268,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.73.0";
+const TOOL_VERSION = "4.73.1";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -13188,7 +13188,11 @@ function libelleRapprochementMatis(c, r){
 function matisVueHTML(){
   if(!matisLecture) return `<p class="panel-hint">Aucun classeur lu pour l'instant. Choisissez le fichier
     « SUIVI DES CONSOMMATIONS… » de Matis : il est lu <b>sur ce poste uniquement</b>, rien n'est envoyé
-    nulle part, et rien n'est écrit dans le suivi.</p>`;
+    nulle part, et rien n'est écrit dans le suivi.</p>
+    <div class="mt-recap">
+      <label class="ghost" for="mtFichier" style="cursor:pointer;padding:8px 13px;">📂 Lire le classeur de Matis…</label>
+      <input type="file" id="mtFichier" accept=".xlsm,.xlsx" hidden>
+    </div>`;
 
   const couples = matisLecture.couples || [];
   const produits = couples.filter(c => c.aProduction);
