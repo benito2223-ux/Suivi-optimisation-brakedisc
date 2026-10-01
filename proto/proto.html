@@ -1,0 +1,742 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Suivi optimisation — proto 5 écrans</title>
+<style>
+/* ══ le chrome, posé une fois (cahier §6) : une grille, six échelles,
+      quatre couleurs d'état, deux densités. ══ */
+:root{
+  --bg:#f6f6f4; --card:#fff; --ink:#1b1b19; --mute:#6e6e73;
+  --line:#e2e2dd; --accent:#0a5ad6;
+  /* quatre états, et pas plus */
+  --ok:#0a7a3d; --ok-bg:#e6f4ec;
+  --warn:#8a5a00; --warn-bg:#fdf1dc;
+  --bad:#b02020; --bad-bg:#fbe9e9;
+  --mute-bg:#f0f0ed;
+  /* six échelles typographiques */
+  --t1:32px; --t2:22px; --t3:17px; --t4:14px; --t5:12px; --t6:11px;
+  --pad:20px; --gap:14px;
+  --r:10px;
+}
+@media (prefers-color-scheme:dark){
+  :root{ --bg:#16161a; --card:#1e1e24; --ink:#f0f0ee; --mute:#9a9aa2;
+         --line:#2e2e36; --accent:#6ea8ff;
+         --ok:#4ec98a; --ok-bg:#16301f; --warn:#e0b055; --warn-bg:#332a14;
+         --bad:#f08080; --bad-bg:#33191a; --mute-bg:#26262c; }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+     font:400 var(--t4)/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+     -webkit-font-smoothing:antialiased}
+h1,h2,h3{margin:0;font-weight:600}
+button{font:inherit;cursor:pointer}
+a{color:var(--accent)}
+
+/* ── le bandeau-titre : l'outil dit qui il est et où on est ── */
+.top{position:sticky;top:0;z-index:9;background:var(--card);
+     border-bottom:1px solid var(--line);padding:10px var(--pad);
+     display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.top b{font-size:var(--t3)}
+.proto-badge{background:var(--warn-bg);color:var(--warn);border-radius:20px;
+             padding:3px 11px;font-size:var(--t6);font-weight:600;letter-spacing:.02em}
+.steps{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+.step{border:1px solid var(--line);background:transparent;color:var(--mute);
+      border-radius:20px;padding:6px 14px;font-size:var(--t5);font-weight:500}
+.step:hover{border-color:var(--accent);color:var(--accent)}
+.step.on{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.step .n{opacity:.55;margin-right:5px;font-variant-numeric:tabular-nums}
+
+/* ── la structure ── */
+.wrap{max-width:1180px;margin:0 auto;padding:var(--pad)}
+.lede{color:var(--mute);font-size:var(--t5);max-width:70ch;margin:0 0 var(--gap)}
+
+/* ── l'écran 1 : les quatre chiffres. le CPP plaquettes en premier. ── */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));
+      gap:var(--gap);margin-bottom:var(--gap)}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+     padding:15px 17px}
+.kpi .lab{font-size:var(--t6);color:var(--mute);text-transform:uppercase;
+          letter-spacing:.06em;font-weight:600;margin-bottom:9px}
+.kpi .val{font-size:var(--t2);font-weight:650;letter-spacing:-.02em;
+          font-variant-numeric:tabular-nums;line-height:1.1}
+.kpi .val.hero{font-size:var(--t1);color:var(--ok)}
+.kpi .sub{font-size:var(--t6);color:var(--mute);margin-top:7px;line-height:1.45}
+.kpi .sub .why{color:var(--mute);font-style:italic}
+
+/* ── les tuiles de ligne ── */
+.lignes{display:grid;gap:var(--gap)}
+.ligne{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+       overflow:hidden}
+.ligne>header{display:flex;align-items:baseline;gap:12px;padding:14px 17px;
+              border-bottom:1px solid var(--line);cursor:pointer}
+.ligne>header:hover{background:var(--mute-bg)}
+.ligne>header h2{font-size:var(--t3)}
+.ligne>header .meta{font-size:var(--t6);color:var(--mute)}
+.ligne .court{font-size:var(--t5);color:var(--mute);margin-left:auto;text-align:right}
+
+/* ── les postes : une ligne par opération ── */
+.postes{padding:0 17px 8px}
+.poste{display:grid;grid-template-columns:88px 1fr 132px 108px;gap:14px;
+       align-items:center;padding:11px 0;border-top:1px solid var(--line)}
+.poste:first-child{border-top:0}
+.poste .op{font-weight:600;font-size:var(--t5)}
+.poste .op small{display:block;font-weight:400;color:var(--mute);font-size:var(--t6)}
+.cpp{font-variant-numeric:tabular-nums}
+.cpp .big{font-size:var(--t3);font-weight:650}
+.cpp .small{font-size:var(--t6);color:var(--mute)}
+.cpp .gain{color:var(--ok);font-weight:600}
+.cpp .gain .small{color:var(--ok);opacity:.8}
+.absent{color:var(--mute);font-size:var(--t5);font-style:italic}
+
+/* la barre prod → cible */
+.route{height:7px;border-radius:4px;background:var(--mute-bg);
+       position:relative;overflow:hidden;margin:5px 0 4px}
+.route i{position:absolute;left:0;top:0;bottom:0;background:var(--accent);border-radius:4px}
+.route.vide i{background:var(--mute)}
+.route-cap{font-size:var(--t6);color:var(--mute);font-variant-numeric:tabular-nums}
+
+/* la pastille de décision — le mot, lisible en 15 s */
+.mot{border-radius:6px;padding:5px 10px;font-size:var(--t6);font-weight:700;
+     text-align:center;letter-spacing:.03em;white-space:nowrap}
+.mot.serie{background:var(--ok-bg);color:var(--ok)}
+.mot.pret{background:var(--accent);color:#fff}
+.mot.essai{background:var(--warn-bg);color:var(--warn)}
+.mot.chiffrer{background:var(--mute-bg);color:var(--mute)}
+.mot.rien{background:var(--mute-bg);color:var(--mute);opacity:.65}
+
+/* ── l'écran 2 : saisir un essai ── */
+.form{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+      padding:var(--pad)}
+.form h3{font-size:var(--t3);margin-bottom:4px}
+.form .sous{color:var(--mute);font-size:var(--t5);margin:0 0 18px}
+.grille{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+.champ label{display:block;font-size:var(--t6);color:var(--mute);margin-bottom:5px;
+             font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.champ input,.champ select,.champ textarea{width:100%;padding:9px 11px;font:inherit;
+     border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--ink)}
+.champ input:focus,.champ select:focus{outline:2px solid var(--accent);outline-offset:-1px}
+.champ .hint{font-size:var(--t6);color:var(--mute);margin-top:5px}
+.btn{margin-top:20px;background:var(--accent);color:#fff;border:0;border-radius:8px;
+     padding:11px 22px;font-weight:600;font-size:var(--t4)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* ── l'écran 3 : la preuve ── */
+.preuves{display:grid;gap:var(--gap)}
+.preuve{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+        padding:17px}
+.preuve header{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;flex-wrap:wrap}
+.preuve header h3{font-size:var(--t3)}
+.preuve .qq{color:var(--mute);font-size:var(--t5);margin:0 0 14px}
+.paires{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:11px}
+.paire{border:1px solid var(--line);border-radius:8px;padding:11px 13px}
+.paire .nom{font-size:var(--t5);font-weight:600}
+.paire .val{font-size:var(--t3);font-weight:650;font-variant-numeric:tabular-nums;margin:5px 0}
+.paire .detail{font-size:var(--t6);color:var(--mute)}
+
+/* la règle de progression, en clair : NConformes sur 5 */
+.regle{display:flex;gap:5px;margin:9px 0 5px}
+.regle i{width:26px;height:6px;border-radius:3px;background:var(--mute-bg)}
+.regle i.ok{background:var(--ok)}
+.regle i.bad{background:var(--bad)}
+
+/* ── l'écran 4 : la décision ── */
+.dec{display:grid;gap:var(--gap)}
+.dec-carte{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+           padding:17px;display:grid;grid-template-columns:150px 1fr;gap:20px;
+           align-items:center}
+.dec-carte .gros{font-size:var(--t1);font-weight:700;letter-spacing:-.02em;
+                 font-variant-numeric:tabular-nums;text-align:center}
+.dec-carte .gros small{display:block;font-size:var(--t6);font-weight:400;color:var(--mute);
+                      letter-spacing:0;text-transform:uppercase;margin-bottom:5px}
+.dec-carte .mot{font-size:var(--t5);padding:8px 14px;margin-bottom:9px}
+.dec-carte .pourquoi{font-size:var(--t5);color:var(--mute);line-height:1.55}
+.dec-carte .deux{display:flex;gap:26px;margin-top:13px;padding-top:13px;
+                 border-top:1px solid var(--line);flex-wrap:wrap}
+.dec-carte .deux div{font-size:var(--t6)}
+.dec-carte .deux b{display:block;font-size:var(--t3);font-variant-numeric:tabular-nums;
+                    margin-top:3px}
+.dec-carte .deux b.ok{color:var(--ok)}
+
+/* ── l'écran 5 : la page à emporter ── */
+.a4{background:#fff;color:#111;max-width:820px;margin:0 auto;padding:44px 52px;
+    border:1px solid var(--line);border-radius:4px;box-shadow:0 2px 18px rgba(0,0,0,.07)}
+.a4 h1{font-size:23px;letter-spacing:-.01em}
+.a4 .sous{color:#666;font-size:13px;margin:5px 0 26px;padding-bottom:14px;
+          border-bottom:2px solid #111}
+.a4 h2{font-size:14px;text-transform:uppercase;letter-spacing:.09em;margin:26px 0 10px;
+       padding-bottom:5px;border-bottom:1px solid #ddd}
+.a4 table{width:100%;border-collapse:collapse;font-size:13px}
+.a4 th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;
+       color:#666;border-bottom:1px solid #bbb;padding:6px 8px 6px 0;font-weight:600}
+.a4 td{padding:7px 8px 7px 0;border-bottom:1px solid #eee;vertical-align:top}
+.a4 .num{text-align:right;font-variant-numeric:tabular-nums;padding-right:0}
+.a4 .gain{color:#0a7a3d;font-weight:600}
+.a4 .note{font-size:11px;color:#666;margin-top:5px}
+.a4 .pied{margin-top:30px;padding-top:12px;border-top:1px solid #ddd;font-size:11px;
+          color:#666;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.retenir{display:flex;gap:10px;justify-content:center;margin-top:20px}
+
+/* ── l'écran vide, et ce qu'il faut pour le remplir ── */
+.vide{background:var(--card);border:1px dashed var(--line);border-radius:var(--r);
+      padding:34px;text-align:center;color:var(--mute)}
+.vide b{display:block;font-size:var(--t3);color:var(--ink);margin-bottom:7px}
+
+.erreur{background:var(--bad-bg);color:var(--bad);border-radius:8px;padding:12px 15px;
+        font-size:var(--t5);margin-bottom:var(--gap)}
+.note-bas{color:var(--mute);font-size:var(--t6);margin-top:var(--gap);line-height:1.6}
+
+@media print{
+  .top,.steps,.garder,.retirer,.lede,.note-bas{display:none!important}
+  body{background:#fff}
+  .wrap{max-width:none;padding:0}
+  .a4{border:0;box-shadow:none;padding:0;max-width:none}
+}
+@media (max-width:760px){
+  .poste{grid-template-columns:1fr;gap:7px}
+  .dec-carte{grid-template-columns:1fr}
+  .a4{padding:24px}
+}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <b>Suivi optimisation · Sept Fons</b>
+  <span class="proto-badge">PROTO v0.1 — maquette, ne rien saisir de définitif</span>
+  <nav class="steps" id="steps"></nav>
+</div>
+
+<div class="wrap" id="vue"></div>
+
+<script>
+"use strict";
+/* ══ le proto est mono-fichier : le noyau, les données et le rendu sont
+      assemblés ici. C'est la seule page, c'est voulu (cahier §6). ══ */
+
+/* ───────── le noyau —_functions pures, testées avant d'exister ici_───────── */
+__COEUR__
+
+/* ───────── les données de départ ───────── */
+__DONNEES__
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ÉCRAN 1 — OÙ EN EST-ON
+   Le CPP plaquettes en premier citizen (cahier §2). Le temps machine
+   n'apparaît pas ici : il n'est pas comparable au classeur.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+const ETAT = { ecran: 1, ligne: "l1", op: "o10", sc: "e2", saisi: {}, lignes: JEUX.lignes };
+
+/* les postes de toutes les lignes, passés dans le noyau */
+function tousPostes() {
+  const out = [];
+  ETAT.lignes.forEach(l => (l.refs || []).forEach(r =>
+    (r.ops || []).forEach(op =>
+      out.push({ ligne: l, ref: r, op, scs: op.scs }))));
+  return out;
+}
+function verdictsLignes() {
+  return ETAT.lignes.map(l => verdictLigne(l,
+    (l.refs || []).flatMap(r => (r.ops || []).map(op => ({ ref: r, op, scenarios: op.scs })))));
+}
+
+/* ── la barre prod → cible. Elle ne SAVAIT pas ce qu'elle mesurait, avant. ── */
+function routeHTML(v) {
+  if (v.cppProd === null) {
+    return `<div class="route vide"></div>
+            <div class="route-cap">CPP non chiffrable — pas de chemin affichable</div>`;
+  }
+  if (v.cible === null) {
+    return `<div class="route vide"></div>
+            <div class="route-cap">cible site non renseignée</div>`;
+  }
+  const pct = v.chemin === null ? 0 : Math.round(v.chemin);
+  return `<div class="route"><i style="width:${pct}%"></i></div>
+          <div class="route-cap">${pct} % vers la cible · ${fmt(v.cppProd, 4)} → ${fmt(v.cible, 4)} €/pce</div>`;
+}
+
+/* ── une tuile de poste : CPP de prod, gain, chemin, et le mot de la décision ── */
+function posteHTML(v) {
+  const d = decisionPoste(v);
+  const scMeilleur = v.meilleur ? v.meilleur.sc : null;
+  const gain = v.gainActe !== null && v.gainActe !== undefined
+    ? { val: v.gainActe, tag: "acté" }
+    : (v.gainProjete !== null && v.gainProjete !== undefined
+        ? { val: v.gainProjete, tag: "projeté" } : null);
+
+  let cpp;
+  if (v.cppProd === null) {
+    cpp = `<div class="absent">CPP non chiffrable</div>`;
+  } else {
+    cpp = `<div class="cpp">
+        <span class="big">${fmt(v.cppProd, 4)}</span>
+        <span class="small"> €/pce</span>
+        ${gain ? `<div class="small gain">${gain.tag === "acté" ? "−" : "→ −"}${fmt(gain.val, 4)} €/pce ${gain.tag}</div>` : ""}
+      </div>`;
+  }
+  const quoi = scMeilleur ? scMeilleur.name : v.verdict.texte;
+
+  return `<div class="poste" data-ligne="${v.op && v.op.id}" data-op="${v.op ? v.op.id : ""}">
+    <div class="op">${v.op ? v.op.nom : "OP"}<small>${quoi}</small></div>
+    <div>${cpp}</div>
+    <div>${routeHTML(v)}</div>
+    <div class="mot ${v.verdict.code}">${d.mot}</div>
+  </div>`;
+}
+
+function ligneHTML(vl) {
+  const ouverte = ETAT.ligne === vl.ligne.id;
+  const cpp = vl.cppProd === null
+    ? `<span class="absent">CPP non chiffrable</span>`
+    : `<span class="cpp"><span class="big">${fmt(vl.cppProd, 4)}</span><span class="small"> €/pce en prod</span></span>`;
+  const gainTxt = (vl.cppActe > 0 || vl.cppProjete > 0)
+    ? ` · ${vl.cppActe > 0 ? "−" + fmt(vl.cppActe, 4) + " acté" : ""}
+       ${vl.cppProjete > 0 ? (vl.cppActe > 0 ? " · " : "· ") + "−" + fmt(vl.cppProjete, 4) + " projeté" : ""}`
+    : " · aucun gain chiffrable";
+  const refs = (vl.ligne.refs || []).map(r => r.nom).join(", ");
+
+  return `<section class="ligne" data-ligne="${vl.ligne.id}">
+    <header data-toggle="${vl.ligne.id}">
+      <h2>${vl.ligne.nom}</h2>
+      <span class="meta">${refs}</span>
+      <span class="court">${cpp}${gainTxt}</span>
+    </header>
+    ${!ouverte && vl.postes.length ? `<div class="postes" style="padding-top:0">
+       <div class="absent">${vl.postes.length} opération${vl.postes.length > 1 ? "s" : ""} —
+          cliquer pour déplier</div></div>` : ""}
+    ${ouverte ? `<div class="postes">${
+        vl.postes.length ? vl.postes.map(posteHTML).join("")
+                         : `<div class="absent">aucune opération saisie</div>`}</div>` : ""}
+  </section>`;
+}
+
+function ecran1() {
+  const vls = verdictsLignes();
+  const r = recapLignes(vls);
+  const nbPostes = vls.reduce((a, vl) => a + vl.postes.length, 0);
+
+  return `
+  <p class="lede">Où en est-on. Le CPP plaquettes est le coût outillage de la pièce :
+     c'est le seul chiffre comparable au classeur de Matis, et le seul que changer
+     d'insert fait bouger.</p>
+
+  <div class="kpis">
+    <div class="kpi">
+      <div class="lab">CPP plaquettes · prod</div>
+      <div class="val">${fmt(vls.filter(v => v.cppProd !== null)
+        .reduce((a, v) => a + v.cppProd, 0) / Math.max(1, vls.filter(v => v.cppProd !== null).length), 4)}</div>
+      <div class="sub">€/pièce, moyenne des ${vls.filter(v => v.cppProd !== null).length} lignes chiffrées
+        <div class="why">somme des postes chiffrables — les non chiffrés sont comptés à part, jamais dilués</div></div>
+    </div>
+    <div class="kpi">
+      <div class="lab">Déjà gagné · en série</div>
+      <div class="val hero">${fmt(r.cppActe, 4)}</div>
+      <div class="sub">€/pièce actés
+        <div class="why">uniquement ce qui est passé en production</div></div>
+    </div>
+    <div class="kpi">
+      <div class="lab">En essai · projeté</div>
+      <div class="val">${fmt(r.cppProjete, 4)}</div>
+      <div class="sub">€/pièce prometteurs
+        <div class="why">pas encore validés — jamais mélangés aux gains actés</div></div>
+    </div>
+    <div class="kpi">
+      <div class="lab">À décider</div>
+      <div class="val">${r.decisions}</div>
+      <div class="sub">poste${r.decisions > 1 ? "s" : ""} en attente d'une action
+        <div class="why">validé 5× à confirmer, ou essai prometteur à confirmer</div>
+        ${r.aChiffrer ? `<div class="why">+ ${r.aChiffrer} à chiffrer : cible connue, aucun coût saisi</div>` : ""}</div>
+    </div>
+  </div>
+
+  ${r.aChiffrer ? `<div class="erreur">${r.aChiffrer} poste${r.aChiffrer > 1 ? "s" : ""}
+     porte${r.aChiffrer > 1 ? "nt" : ""} une cible CPP mais aucun coût saisi. Sans prix,
+     arêtes ou charnière, il n'existe pas de chemin à afficher — et il ne doit pas disparaître.</div>` : ""}
+
+  <div class="lignes">${vls.map(ligneHTML).join("")}</div>
+
+  <p class="note-bas">Le temps machine, le rebut et les pièces détachées ne sont pas
+     affichés ici : ils ne sont pas comparables au classeur de Matis. L'app de
+     production les porte ; le proto, non. Son but est de trancher sur l'outillage.</p>`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ÉCRAN 2 — ESSAI : insérer un essai en 90 secondes
+   ══════════════════════════════════════════════════════════════════════════ */
+
+function ecran2() {
+  const postes = tousPostes();
+  const s = ETAT.saisi;
+  const ops = postes.map(p => `<option value="${p.ligne.id}|${p.op.id}"
+      ${s.poste === p.ligne.id + "|" + p.op.id ? "selected" : ""}>
+      ${p.ligne.nom} · ${p.op.nom}</option>`).join("");
+
+  return `
+  <p class="lede">J'insère un essai. Trois informations suffisent pour qu'il compte :
+     le poste, la plaquette, et jusqu'où elle tient. Le reste se lit, il ne se saisit pas.</p>
+
+  <form class="form" id="fEssai">
+    <h3>Nouvel essai</h3>
+    <p class="sous">Un essai se juge sur sa charnière atteinte et sa conformité — pas sur un avis.</p>
+
+    <div class="grille">
+      <div class="champ">
+        <label for="cPoste">Poste</label>
+        <select id="cPoste" name="poste">${ops}</select>
+        <div class="hint">ligne et opération</div>
+      </div>
+<div class="champ">
+    <label for="cScenario">Plaquette / configuration</label>
+    <select id="cScenario" name="scenario">${(function(){
+      const scs = scenariosDuPoste(s.poste);
+      return scs.length
+        ? scs.map(x => `<option value="${x.id}">${x.name}</option>`).join("")
+        : `<option value="">aucun scénario sur ce poste</option>`;
+    })()}</select>
+    <div class="hint">le scénario d'essai sur lequel on mesure</div>
+  </div>
+      <div class="champ">
+        <label for="cDate">Date</label>
+        <input type="date" id="cDate" name="date" value="${s.date || "2026-10-01"}">
+      </div>
+      <div class="champ">
+        <label for="cEquipe">Équipe</label>
+        <input type="text" id="cEquipe" name="equipe" placeholder="M. / A." value="${s.equipe || ""}">
+      </div>
+      <div class="champ">
+        <label for="cCharniere">Charnière visée (pièces)</label>
+        <input type="number" id="cCharniere" name="charniere" min="1" value="${s.charniere || ""}">
+        <div class="hint">combien de pièces avant de devoir changer</div>
+      </div>
+      <div class="champ">
+        <label for="cBatt">Battement mesuré (mm)</label>
+        <input type="number" id="cBatt" name="batt" step="0.01" min="0" value="${s.batt || ""}">
+        <div class="hint">vide = non mesuré, l'essai ne sera pas jugé non conforme</div>
+      </div>
+    </div>
+
+    <button class="btn" type="submit">Enregistrer l'essai</button>
+    <button class="btn ghost garder" type="button" onclick="annulerSaisie()">Annuler</button>
+    ${ETAT.erreur ? `<div class="erreur" style="margin-top:16px">${ETAT.erreur}</div>` : ""}
+    ${ETAT.dernierEssai ? `<div class="note-bas" style="color:var(--ok)">
+      ${ETAT.dernierEssai}</div>` : ""}
+  </form>`;
+}
+
+function scenariosDuPoste(cle) {
+  const [lid, oid] = (cle || "").split("|");
+  const p = tousPostes().find(x => x.ligne.id === lid && x.op.id === oid);
+  return p ? p.scs : [];
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ÉCRAN 3 — PREUVE : les répétitions, la charnière, la conformité
+   ══════════════════════════════════════════════════════════════════════════ */
+
+function scenarioCourant() {
+  const postes = tousPostes();
+  const sel = ETAT.saisi.poste || (postes[0] ? postes[0].ligne.id + "|" + postes[0].op.id : "");
+  const p = postes.find(x => x.ligne.id + "|" + x.op.id === sel) || postes[0];
+  if (!p) return null;
+  const sc = (p.scs || []).find(x => x.id === ETAT.sc) || (p.scs || [])[0];
+  return { poste: p, sc: sc };
+}
+
+function preuveHTML(paire) {
+  const sc = paire.sc;
+  if (!sc) return "";
+  const s = statutScenario(sc);
+  const seuil = sc.validationThreshold || 5;
+  const essais = sc.essais || [];
+  const conformes = essais.filter(e => statutEssai(sc, e).code === "conforme").length;
+
+  const cases = [];
+  for (let k = 0; k < seuil; k++) {
+    const e = essais[k];
+    cases.push(!e ? "" : statutEssai(sc, e).code === "conforme" ? "ok"
+      : statutEssai(sc, e).code === "nonconforme" ? "bad" : "");
+  }
+
+  return `<section class="preuve">
+    <header>
+      <h3>${sc.name}</h3>
+      <span class="meta">${paire.poste.ligne.nom} · ${paire.poste.op.nom}</span>
+      <span class="mot ${sc.statut === "serie" ? "serie" : s.code === "valide" ? "pret"
+        : s.code === "encours" ? "essai" : "rien"}" style="margin-left:auto">${s.texte}</span>
+    </header>
+    <p class="qq">La règle du site : un essai concluant est répété ${seuil} fois.
+       ${conformes} sur ${seuil} sont conformes.</p>
+    <div class="regle">${cases.map(c => `<i class="${c}"></i>`).join("")}</div>
+
+    <div class="paires" style="margin-top:14px">
+      ${cppParLogement(sc).map(l => {
+        const cpp = l.cpp === null ? null : l.cpp;
+        return `<div class="paire">
+          <div class="nom">${l.outilNumero} · ${l.logementNom}</div>
+          <div class="val" style="${cpp === null ? "color:var(--mute);font-size:var(--t4)" : ""}">
+            ${cpp === null ? "non chiffrable" : fmt(cpp, 4) + " €/pce"}</div>
+          <div class="detail">${l.article || "article non saisi"} ·
+            ${cpp === null ? "prix, arêtes ou charnière manquants"
+              : `${fmt(l.prix, 0)} € / ${fmt(l.aretes, 0)} arêtes / ${fmt(l.charniere, 0)} p`}</div>
+        </div>`;
+      }).join("")}
+    </div>
+  </section>`;
+}
+
+function ecran3() {
+  /* Le poste affiché par le selecteur et le poste dont on liste les preuves
+     doivent être LE MÊME. Deux résolutions ici (l'une avec repli sur le premier
+     poste, l'autre sans) donnaient un selecteur annonçant « EMAG 1 · OP10 » au
+    -dessus d'un « aucun essai saisi » : l'écran mentait sur lui-même. */
+  const tous = tousPostes();
+  const sel = posteCourantCle();
+  const poste = pairesPoste(sel);
+  /* on ne montre QUE les scénarios qui portent des essais : la production n'est
+     pas une preuve, elle est la référence qu'on cherche à battre. */
+  const paires = poste
+    ? poste.scs.filter(sc => (sc.essais || []).length).map(sc => ({ poste, sc }))
+    : [];
+  const opts = tous.map(x => `<option value="${x.ligne.id}|${x.op.id}"
+    ${sel === x.ligne.id + "|" + x.op.id ? "selected" : ""}>
+    ${x.ligne.nom} · ${x.op.nom}</option>`).join("");
+
+  return `
+  <p class="lede">La preuve. Un essai ne vaut que s'il est répété, et le CPP de chaque
+     logement est affiché avec ses trois ingredients — un chiffre sans ses sources
+     n'est pas une preuve.</p>
+
+  <div class="form" style="margin-bottom:var(--gap)">
+    <div class="champ" style="max-width:340px">
+      <label for="cPreuvePoste">Poste</label>
+      <select id="cPreuvePoste" onchange="changerPreuvePoste(this.value)">${opts}</select>
+    </div>
+  </div>
+
+  ${paires.length ? `<div class="preuves">${paires.map(preuveHTML).join("")}</div>`
+    : `<div class="vide"><b>Aucun essai saisi sur ce poste</b>
+       La production seule ne se prouve pas — un essai doit être lancé pour qu'il y ait
+       une preuve à montrer.</div>`}`;
+}
+
+/* UNE seule resolution du poste courant, utilisee par le selecteur ET par la
+   liste des preuves. C'etait la duplication qui desynchronisait les deux. */
+function posteCourantCle() {
+  const tous = tousPostes();
+  if (ETAT.saisi.poste && pairesPoste(ETAT.saisi.poste)) return ETAT.saisi.poste;
+  return tous.length ? tous[0].ligne.id + "|" + tous[0].op.id : "";
+}
+function pairesPoste(cle) {
+  const [lid, oid] = (cle || "").split("|");
+  if (!lid || !oid) return null;
+  return tousPostes().find(x => x.ligne.id === lid && x.op.id === oid) || null;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ÉCRAN 4 — DÉCISION : le gain, go / no-go, en 15 secondes
+   ══════════════════════════════════════════════════════════════════════════ */
+
+function decHTML(v) {
+  const d = decisionPoste(v);
+  const cpp = v.cppProd === null ? "—" : fmt(v.cppProd, 4);
+  return `<section class="dec-carte">
+    <div>
+      <div class="gros"><small>CPP plaquettes</small>${cpp}</div>
+      <div class="sub" style="font-size:var(--t6);color:var(--mute);text-align:center">
+        €/pièce en prod</div>
+    </div>
+    <div>
+      <div class="mot ${v.verdict.code}">${d.mot}</div>
+      <div class="pourquoi">${d.pourquoi}</div>
+      <div class="deux">
+        <div>Gain acté<b class="${v.gainActe ? "ok" : ""}">${
+          v.gainActe === null || v.gainActe === undefined ? "—" : fmt(v.gainActe, 4) + " €"}</b></div>
+        <div>Gain projeté<b>${
+          v.gainProjete === null || v.gainProjete === undefined ? "—" : fmt(v.gainProjete, 4) + " €"}</b></div>
+        <div>Cible site<b>${v.cible === null ? "non renseignée" : fmt(v.cible, 4) + " €"}</b></div>
+        <div>Chemin<b>${v.chemin === null ? "—" : Math.round(v.chemin) + " %"}</b></div>
+      </div>
+    </div>
+  </section>`;
+}
+
+function ecran4() {
+  const vls = verdictsLignes();
+  const cartes = vls.flatMap(vl => vl.postes.map(v => ({ vl, v })))
+    .filter(x => x.v.verdict.code !== "rien");
+  const tries = cartes.slice().sort((a, b) => {
+    const ordre = { pret: 0, essai: 1, gagne: 2, achiffrer: 3 };
+    return ordre[a.v.verdict.code] - ordre[b.v.verdict.code];
+  });
+  return `
+  <p class="lede">La décision. Chaque poste qui demande une action, dans l'ordre :
+     d'abord ce qui est validé et n'attend plus qu'un mot, puis ce qui mérite un essai.</p>
+  ${tries.length ? `<div class="dec">${tries.map(x => decHTML(x.v)).join("")}</div>`
+    : `<div class="vide"><b>Rien à décider</b>Aucun poste en attente.</div>`}
+  <p class="note-bas">Les postes où aucun essai ne fait mieux que la production sont
+     volontairement absents : ils ne demandent rien.</p>`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ÉCRAN 5 — EMPORTER : la page A4
+   ══════════════════════════════════════════════════════════════════════════ */
+
+function a4HTML() {
+  const vls = verdictsLignes();
+  const lignes = vls.map(vl => `<tr>
+      <td><b>${vl.ligne.nom}</b><div class="note">${(vl.ligne.refs || []).map(r => r.nom).join(", ")}</div></td>
+      <td class="num">${vl.cppProd === null ? "—" : fmt(vl.cppProd, 4)}</td>
+      <td class="num">${vl.cppActe ? fmt(vl.cppActe, 4) : "—"}</td>
+      <td class="num">${vl.cppProjete ? fmt(vl.cppProjete, 4) : "—"}</td>
+      <td class="num">${vl.postes.filter(p => p.verdict.code === "achiffrer").length || "—"}</td>
+    </tr>`).join("");
+
+  const actions = vls.flatMap(vl => vl.postes).filter(p => p.verdict.code !== "rien")
+    .map(p => {
+      const d = decisionPoste(p);
+      const sc = p.meilleur ? p.meilleur.sc.name : "—";
+      return `<tr>
+        <td><b>${p.op ? p.op.nom : "OP"}</b> <span class="note">${sc}</span></td>
+        <td>${p.ref.nom}</td>
+        <td class="num">${p.cppProd === null ? "—" : fmt(p.cppProd, 4)}</td>
+        <td class="num gain">${p.gainActe ? fmt(p.gainActe, 4)
+          : (p.gainProjete ? fmt(p.gainProjete, 4) : "—")}</td>
+        <td><b>${d.mot}</b></td>
+      </tr>`;
+    }).join("");
+
+  const d = new Date().toLocaleDateString("fr-FR");
+  return `<div class="a4" id="a4">
+    <h1>Suivi optimisation — Sept Fons</h1>
+    <div class="sous">CPP plaquettes · coût outillage de la pièce, hors temps machine.
+      Édité le ${d} — vivant, recalculé à chaque édition.</div>
+
+    <h2>Les lignes</h2>
+    <table><thead><tr>
+      <th>Ligne</th><th class="num">CPP prod</th><th class="num">Gain acté</th>
+      <th class="num">Projeté</th><th class="num">À chiffrer</th>
+    </tr></thead><tbody>${lignes}</tbody></table>
+    <div class="note">€/pièce. « Gain acté » = passé en production. « Projeté » = essai
+      prometteur, non validé. Les deux ne sont jamais additionnés. Une cible connue
+      sans coût saisi apparaît en « à chiffrer » plutôt que d'être effacée.</div>
+
+    <h2>Ce qui demande une décision</h2>
+    ${actions ? `<table><thead><tr>
+      <th>Poste</th><th>Référence</th><th class="num">CPP prod</th>
+      <th class="num">Gain</th><th>Décision</th>
+    </tr></thead><tbody>${actions}</tbody></table>`
+      : `<div class="note">Aucun poste en attente de décision.</div>`}
+
+    <h2>La règle</h2>
+    <div class="note">Un essai concluant est répété 5 fois avant d'être proposé à la
+      production. Le CPP plaquettes est la seule base comparable au classeur de
+      consommations ; le temps machine est suivi séparément et n'entre pas dans cette
+      comparaison. Aucun chiffre de cette page n'est estimé : une mesure absente est
+      écrite « non mesurée ».</div>
+
+    <div class="pied">
+      <span>Site de Sept Fons · usinage céramique</span>
+      <span>Document vivant — les valeurs sont recalculées à chaque édition</span>
+    </div>
+  </div>`;
+}
+
+function ecran5() {
+  return `
+  <p class="lede">La page à emporter. Elle se recalcule à chaque édition — ce n'est pas
+     un export figé, c'est l'état courant du suivi.</p>
+  ${a4HTML()}
+  <div class="retirer">
+    <button class="btn garder" onclick="window.print()">🖨 Imprimer / PDF</button>
+  </div>
+  <p class="note-bas" style="text-align:center">Le proto ne synchronise rien, n'envoie
+     rien, et ne se connecte à aucun compte. Ce qui est saisi ici reste sur cette machine.</p>`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   LE ROUTAGE — cinq écrans, cinq boutons, rien d'autre
+   ══════════════════════════════════════════════════════════════════════════ */
+
+const ECRANS = [
+  { n: 1, nom: "Où en est-on", fn: ecran1 },
+  { n: 2, nom: "Essai",        fn: ecran2 },
+  { n: 3, nom: "Preuve",       fn: ecran3 },
+  { n: 4, nom: "Décision",     fn: ecran4 },
+  { n: 5, nom: "Emporter",     fn: ecran5 }
+];
+
+function rendre() {
+  document.getElementById("steps").innerHTML = ECRANS.map(e =>
+    `<button class="step ${ETAT.ecran === e.n ? "on" : ""}" onclick="aller(${e.n})">
+       <span class="n">${e.n}</span>${e.nom}</button>`).join("");
+  const e = ECRANS.find(x => x.n === ETAT.ecran);
+  document.getElementById("vue").innerHTML = e.fn();
+  window.scrollTo(0, 0);
+}
+function aller(n) { ETAT.ecran = n; rendre(); }
+
+function basculerLigne(id) {
+  ETAT.ligne = ETAT.ligne === id ? null : id;
+  rendre();
+}
+function changerPreuvePoste(v) {
+  ETAT.saisi.poste = v; ETAT.sc = null; rendre();
+}
+function annulerSaisie() { ETAT.saisi = {}; ETAT.dernierEssai = null; rendre(); }
+
+/* la saisie — le moins de code possible, et il ne calcule rien */
+function enregistrerEssai(ev) {
+  ev.preventDefault();
+  const d = Object.fromEntries(new FormData(ev.target).entries());
+  if(!d.charniere){
+    ETAT.erreur = "La charnière visée est obligatoire : sans elle, on ne peut pas dire "
+                + "si l'essai a tenu. Un essai sans charnière ne prouve rien.";
+    rendre(); return;
+  }
+  ETAT.erreur = null;
+  ETAT.saisi = Object.assign(ETAT.saisi, d);
+  const scs = scenariosDuPoste(d.poste);
+  if(scs.length && !scs.find(x => x.id === d.scenario)) ETAT.saisi.scenario = scs[0].id;
+  ETAT.dernierEssai = "essai enregistré — à recharger pour l'intégrer aux preuves";
+  rendre();
+}
+
+/* le sélecteur de scénario se remplit selon le poste choisi */
+function remplirScenarios() {
+  const scs = scenariosDuPoste(ETAT.saisi.poste);
+  const sel = document.getElementById("cScenario");
+  if (!sel) return;
+  sel.innerHTML = scs.length
+    ? scs.map(s => `<option value="${s.id}">${s.name}</option>`).join("")
+    : `<option value="">aucun scénario sur ce poste</option>`;
+}
+
+/* les clics et les changements : trois écouteurs, et c'est tout.
+   Chacun est vérifié par typeof dans le harnais — pas de promesse non tenue. */
+document.addEventListener("click", function(ev){
+  const t = ev.target.closest("[data-toggle]");
+  if (t) basculerLigne(t.getAttribute("data-toggle"));
+});
+document.addEventListener("change", function(ev){
+  if (ev.target.id === "cPoste") { ETAT.saisi.poste = ev.target.value; remplirScenarios(); }
+  if (ev.target.id === "cPreuvePoste") changerPreuvePoste(ev.target.value);
+});
+document.addEventListener("submit", function(ev){
+  if (ev.target.id === "fEssai") enregistrerEssai(ev);
+});
+
+/* les cinq portes, exposées — le harnais vérifie qu'elles existent */
+window.proto = { aller, rendre, basculerLigne, changerPreuvePoste, annulerSaisie,
+                 enregistrerEssai, ecran1, ecran2, ecran3, ecran4, ecran5, a4HTML,
+                 verdictPoste, verdictLigne, decisionPoste, cheminCPP,
+                 coutLogement, cppOutillageScenario, statutEssai, statutScenario,
+                 recapLignes, ECRANS, ETAT, tousPostes, verdictsLignes };
+
+remplirScenarios();
+rendre();
+</script>
+</body>
+</html>
