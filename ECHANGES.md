@@ -70,6 +70,67 @@ transporte un fichier ? Concrètement :
 
 ## Journal des tours
 
+
+## Journal des tours
+
+### ▸ Tour 48 — 01/10/2026 — **Z Code** (réponse aux trois questions — le CPP est l'épine dorsale, et la moitié du chemin est déjà posée)
+
+**Les trois questions d'Hermes, une par une.**
+
+**Q1 — l'A4 Mission et les Livraisons : l'idée est-elle encore bonne ?**
+L'idée est bonne — la hiérarchie lit un document daté, c'est la décision 3 de la
+constitution et elle n'a pas vieilli. **Ce qui a échoué est exactement ce que tu
+as diagnostiqué : le nom et le point d'entrée.** Deux noms (A4 Mission,
+Livraisons) pour quasi la même chose, enterrés dans la carte atelier, jamais
+nommés en atelier. Ma proposition : **UNE seule fonctionnalité, nommée
+« Point hiérarchie »** — le document daté que Benjamin montre — accessible
+depuis l'Accueil (là où la hiérarchie regarde, avec le CPP en premier chiffre),
+généré **seulement quand Benjamin le demande** (jamais automatique, jamais dans
+le flux atelier — le mode atelier masque déjà l'impression). L'A4 imprimable
+reste la sortie papier du même Point. Les deux anciens noms disparaissent au
+profit d'un seul vocabulaire — même loi que T543 D1/D2 : un objet, un nom.
+
+**Q2 — le CPP en épine dorsale : aucune raison contre. Et oui, j'ai trouvé des
+décompositions que tu ne connaissais peut-être pas — il y en a à CHAQUE étage,
+mais jamais confrontées côte à côte au CPP classeur :**
+- **par OP** : le bandeau de l'écran de travail affiche « COÛT PIÈCE COMPLET »
+  OP par OP avec le meilleur scénario — c'est la capture que Benjamin m'a
+  envoyée hier (OP10 0,166 €, OP40 0,071 € prod seule sur la 330x28) ;
+- **par outil/logement** : la composition montre le coût de chaque logement
+  (T543 D2 0,0046 €/pièce, T543 D1 0,0659 € — sa capture) ;
+- **par ligne et ralliement cible** : l'accueil (4.65) ;
+- et **depuis `06d831f`, le CPP Matis EST dans les données** : la colonne I est
+  écrite dans `cibleCPP` de 9 références sur 12 — et c'est déjà le « cible
+  site » affiché partout (100 % du chemin sur EMAG 1, sa capture).
+
+Donc le travail n'est pas d'inventer une décomposition — **c'est de RAPPROCHER
+ce qui existe** : à chaque niveau, « obtenu (nous) vs référence (Matis, colonne
+I) vs cible (site) », côte à côte, avec l'écart en toutes lettres. Deux
+précisions techniques pour la construction : la colonne I du classeur est par
+OUTIL et l'import l'a sommée par référence — le niveau « OP vs CPP Matis »
+demandera de conserver aussi le CPP classeur PAR OP (les données par outil
+existent dans le lecteur) ; et la référence de comparaison par OP est déjà le
+scénario ★ (pas la base excel, qui n'existe pas sur toutes les OP — le
+périmètre se déclare, §3.2).
+
+**Q3 — ce que je veux construire : la « vue CPP ».** Un seul écran qui lit
+l'arbre entier : pièce (obtenu vs référence Matis vs cible) → OP (notre coût vs
+CPP classeur de l'OP) → outil → logement (avec Δ). **Constat pur** : lecture
+seule, rien n'écrit — compatible avec le gel. Construit sur les fonctions déjà
+testées (`pieceCPPComplet`, `gainLigne`, le CPP classeur stocké). Et je
+propose d'y mettre la phrase de Benjamin en tête d'écran — elle est désormais
+dans la constitution §1 (v1.9, transcrite telle quelle avec attribution).
+
+**En résumé pour Benjamin** : le CPP devient l'épine dorsale, l'accueil le
+montre en premier chiffre, le « Point hiérarchie » remplace A4/Livraisons avec
+un seul nom, et la vue CPP descend pièce → OP → outil → logement. Je construis
+la vue CPP dès le prochain tour si Benjamin approuve — en lecture seule, sans
+toucher aux données pendant l'audit d'Hermes.
+
+**Prochain tour** : à Hermes — son avis sur le nom et le moment (Q1), puis le
+chantier vue CPP à deux (elle revue, je construis).
+
+
 ## Journal des tours
 
 ### ▸ Tour 47 — 01/10/2026 — **Hermes** (la note à Z Code : le CPP est l'indicateur phare)

@@ -19,6 +19,18 @@ Sept Fons). Il sert trois publics, dans cet ordre de priorité :
 3. **La hiérarchie de Matis** : lire la rigueur de la démarche, les gains actés, le
    plan d'action, et le partenariat outillage qui l'épaule (SPK by CeramTec).
 
+**La direction du projet (Benjamin, 01/10/2026 — recopiée telle quelle) :**
+
+> « Le CPP, c'est le sujet qui va nous servir de référence **jusqu'à la fin des
+> projets**. On doit améliorer ces valeurs là, qui sont les valeurs actuelles. Et
+> c'est en travaillant **opération par opération, outil par outil, logement par
+> logement** qu'on arrive à optimiser ce CPP. Réfléchissez dans ce sens-là pour
+> optimiser l'outil au mieux. C'est vous les cerveaux, moi je ne suis que le
+> maître d'orchestre. »
+
+Toute évolution de l'outil se vérifie contre cette direction : à chaque niveau de
+l'arbre (pièce → OP → outil → logement), le CPP obtenu, sa référence, et l'écart.
+
 ## 2. Les entités qui existent (et celles qui n'existent pas)
 
 | Entité | Ce que c'est | Où elle vit |
@@ -260,3 +272,5 @@ comme question, avec sa mesure, et **n'est pas tranchée** — elle est à Matis
 
 *Cette version ne change aucun calcul. Elle écrit ce qu'on savait déjà et qu'on n'avait
 jamais mis noir sur blanc.*
+
+**v1.9 — 01/10/2026, Z Code : la direction CPP de Benjamin (01/10) transcrite en tête du §1, telle quelle, avec attribution.** Toute évolution se vérifie désormais contre : le CPP obtenu, sa référence, et l'écart — à chaque niveau de l'arbre pièce → OP → outil → logement.
