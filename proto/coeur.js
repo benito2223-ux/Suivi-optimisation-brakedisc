@@ -10,7 +10,7 @@
    Toute absence dit ce qui manque (cahier §4.4). Aucun « — » nu.
    ========================================================================== */
 
-const PROTO_VERSION = "0.1";
+const PROTO_VERSION = "1.0";
 
 /* ---- le formatage, pur lui aussi ---- */
 function fmt(v, d) {
@@ -87,6 +87,42 @@ function cppParLogement(scenario) {
   return out;
 }
 
+/* Le CPP RÉELLEMENT OBTENU par un essai — le prix et les arêtes viennent de la
+   définition du logement dans le scénario, la charnière de l'essai lui-même.
+   C'est le seul endroit où « ce qu'on a prévu » et « ce qu'on a obtenu » se
+   séparent : sans cette fonction, un essai qui tient mieux que prévu ne se voit
+   nulle part, et un réimport des essais existants ne rendrait RIEN.
+
+   Invariant 3 : un logement non chiffrable est COMPTE, pas dilué. On renvoie
+   donc le total des chiffrables ET le nombre de ceux qui ont été écartés. */
+function cppEssai(scenario, essai) {
+  const vide = { cpp: null, nbLogements: 0, nonChiffrables: 0 };
+  if (!scenario || !essai) return vide;
+  const definition = {};                       // logementId -> { prix, aretes }
+  (scenario.outils || []).forEach(o => (o.logements || []).forEach(l => {
+    definition[l.id] = l;
+  }));
+  const suivis = (essai.params && essai.params.logements) || [];
+  if (!suivis.length) return vide;
+  let total = 0, n = 0, ecartes = 0;
+  suivis.forEach(p => {
+    const def = definition[p.logementId];
+    // le prix et les arêtes peuvent aussi être portés par le prélèvement lui-même
+    const prix = def && def.prix !== "" && def.prix != null ? def.prix : p.prix;
+    const aretes = def && def.aretes !== "" && def.aretes != null ? def.aretes : p.aretes;
+    const charniere = (p.charniere !== "" && p.charniere != null)
+      ? p.charniere : (def ? def.charniere : null);
+    const c = coutLogement({ prix: prix, aretes: aretes, charniere: charniere });
+    if (c === null) { ecartes++; return; }
+    total += c; n++;
+  });
+  return {
+    cpp: n ? total : null,
+    nbLogements: n,
+    nonChiffrables: ecartes
+  };
+}
+
 /* ============================================================================
    2. LE CHEMIN PROD → CIBLE
    ========================================================================== */
@@ -111,6 +147,24 @@ function cheminCPP(coutProd, coutMeilleur, cible) {
    3. LA PREUVE — conformité, charnière, répétitions
    ========================================================================== */
 
+/* La battement d'un prélèvement. Deux government's selon les mesures :
+   EMAG 1 relève DROITE et GAUCHE séparément, l'app ancienne ne remplit `batt`
+   que pour les autres scénarios. Sur les données du site, `batt` est vide sur
+   83 prélèvements sur 84 — et `battD`/`battG` sont pleines.
+
+   On prend donc `batt` si elle existe, sinon LE PIRE des deux côtés. Le pire,
+   pas la moyenne : un état des lieux ne doit jamais flatter une pièce qui
+   déborde d'un côté. C'est la seule règle qui ne perd aucune mesure et qui ne
+   peut pas rendre conforme ce qui ne l'est pas. */
+function battDe(prel) {
+  if (!prel) return NaN;
+  const b = parseFloat(prel.batt);
+  if (!isNaN(b)) return b;
+  const cotes = [parseFloat(prel.battD), parseFloat(prel.battG)].filter(v => !isNaN(v));
+  if (!cotes.length) return NaN;
+  return Math.max.apply(null, cotes);
+}
+
 /* Un prélèvement est-il dans la tolérance ? null = « non mesurable », jamais false.
    (cahier §4.1 : un absent ne se comble pas, il se signale) */
 function conforme(sc, prel) {
@@ -118,7 +172,7 @@ function conforme(sc, prel) {
   if (sc && sc.battActif === false) return true;   // critère volontairement désactivé
   const limit = sc && sc.limitOverride ? parseFloat(sc.limitValue) : parseFloat(0.12);
   if (isNaN(limit)) return null;
-  const b = parseFloat(prel.batt);
+  const b = battDe(prel);
   if (isNaN(b)) return null;
   return b <= limit;
 }

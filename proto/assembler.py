@@ -20,10 +20,12 @@ def lire(nom):
 
 coeur = lire("coeur.js")
 donnees = lire("donnees.js")
+importjs = lire("import.js")
 html = lire("proto.html")
 
 for nom, marqueur, contenu in (("coeur", "__COEUR__", coeur),
-                               ("donnees", "__DONNEES__", donnees)):
+                               ("donnees", "__DONNEES__", donnees),
+                               ("import", "__IMPORT__", importjs)):
     if marqueur not in html:
         print("ASSEMBLAGE KO : le marqueur %s est absent de proto.html" % marqueur)
         sys.exit(1)

@@ -60,6 +60,35 @@ global.document = {
 global.FormData = class { entries(){ return []; } };
 global.location = { href: "http://localhost/proto" };
 
+/* ── le stockage local et la lecture de fichier, en vrai cette fois ─────────
+   Au premier jet de la v1.0, le harnais ne fournissait NI l'un NI l'autre. Le
+   `try/catch` de `chargerLocal` avalait alors le ReferenceError et renvoyait
+   false : les 70 tests passaient sans qu'aucun n'ait jamais fait tourner
+   l'import. Un harnais qui ne peut pas atteindre une porte ne teste pas cette
+   porte — il donne l'illusion qu'elle est couverte. */
+const _store = new Map();
+global.localStorage = {
+  getItem(k) { return _store.has(k) ? _store.get(k) : null; },
+  setItem(k, v) { _store.set(k, String(v)); },
+  removeItem(k) { _store.delete(k); },
+  clear() { _store.clear(); }
+};
+/* le contenu du prochain fichier « lu » — le harnais le règle avant d'appeler */
+global.__fichier = { nom: "essai.json", taille: 0, texte: "", erreur: false };
+global.FileReader = class {
+  readAsText() {
+    const f = global.__fichier;
+    setTimeout(() => {
+      if (f.erreur) { if (this.onerror) this.onerror(new Error("illisible")); return; }
+      this.result = f.texte;
+      if (this.onload) this.onload();
+    }, 0);
+  }
+};
+/* les promesses de lecture sont résolues par defers : le harnais doit attendre
+   qu'elles le soient avant d'affirmer quoi que ce soit. */
+function tick() { return new Promise(r => setTimeout(r, 1)); }
+
 /* ── on charge le proto assemblé, SANS exécuter l'auto-rendre final ── */
 const chemin = path.join(__dirname, "index.html");
 if (!fs.existsSync(chemin)) {
@@ -280,7 +309,182 @@ okVrai("chaque CPP affiché porte l'unité €/pce", uniteApresChaqueBig(e1));
 okVrai("aucun CPP n'est affiché en millièmes ou en centimes (unité inventée)",
    e1.indexOf("millièmes") < 0 && e1.indexOf("centimes") < 0);
 
-console.log("\n" + "=".repeat(60));
-console.log("PROTO ÉCRANS : " + total + " tests | " + echecs + " echecs");
-console.log(echecs ? "*** LE PROTO EST ROUGE ***" : "TOUT EST VERT");
-process.exit(echecs ? 1 : 0);
+/* La valeur écrite dans le PREMIER bloc `.cppb` de l'écran Preuve — c'est-à-dire
+   le CPP obtenu du premier essai du scénario affiché. On isole le bloc pour ne
+   pas ramasser le CPP prévu, qui est écrit juste au-dessus dans le même HTML. */
+function valeurCppEssai(html) {
+  const i = html.indexOf('class="cppb">');
+  if (i < 0) return "bloc-absent";
+  const suite = html.slice(i + 'class="cppb">'.length);
+  const fin = suite.indexOf("</div>");
+  const m = suite.slice(0, fin < 0 ? 200 : fin).match(/^([\d,]+)\s*€/);
+  if (m) return m[1];
+  return suite.slice(0, 40).indexOf("non chiffrable") >= 0 ? "non chiffrable" : "illisible";
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   L'IMPORT, AU NIVEAU DES ÉCRANS
+   La projection est testée ailleurs. Ce qui est testé ICI, c'est le trajet
+   complet : un fichier réel → les écrans remplis → les chiffres affichés
+   égaux à ceux du noyau. C'est exactement le genre de chaîne que la seule
+   présence de fonctions ne prouve pas.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+console.log("\n── L'IMPORT DE bout en bout ──────────────────────────────");
+
+const REPO = path.join(__dirname, "..");
+const exportSite = JSON.parse(fs.readFileSync(path.join(REPO, "cloud_courant.json"), "utf8"));
+
+async function importer(source, nom, taille) {
+  const texte = JSON.stringify(source);
+  global.__fichier = {
+    nom: nom || "cloud_courant.json",
+    taille: taille || texte.length,
+    texte: texte,
+    erreur: false
+  };
+  /* le faux input doit PORTER un vrai objet fichier : au premier jet il passait
+     `{ files: [{}] }`, donc `f.name` et `f.size` étaient undefined — et trois
+     tests échouaient sur une absence de donnée que le produit, lui, fournit. */
+  P.chargerFichier({ files: [{ name: global.__fichier.nom, size: global.__fichier.taille }] });
+  await tick();
+}
+
+(async function importation() {
+  ok("la porte d'import existe", typeof P.projeter, "function");
+  ok("le panneau s'ouvre", typeof P.ouvrirImport, "function");
+  ok("le retour au jeu d'exemple existe", typeof P.retourJeu, "function");
+
+  const avant = P.ETAT.lignes.length;
+  P.ouvrirImport();
+  ok("le panneau est ouvert", P.panoramaImport().indexOf("Reprendre les essais") >= 0, true);
+
+  await importer(exportSite);
+  ok("l'import d'un export réel passe", P.ETAT.source.type, "import");
+  ok("la source affiche le nom du fichier", P.ETAT.source.nom, "cloud_courant.json");
+  ok("le jeu d'exemple est remplacé", P.ETAT.lignes.length !== avant || avant === 10, true);
+  ok("les lignes de l'export sont là", P.ETAT.lignes.length, exportSite.lignes.length);
+
+  /* le trajet qui compte : la valeur AFFICHÉE vaut ce que le NOYAU calcule */
+  const vls = P.verdictsLignes();
+  const e1Apres = P.ecran1();
+  const nomLigne = P.ETAT.lignes[0].nom;
+  ok("le nom de la première ligne réelle apparaît à l'écran 1",
+     e1Apres.indexOf(nomLigne) >= 0, true);
+
+  /* le trajet qui compte : la valeur AFFICHÉE vaut ce que le NOYAU calcule.
+     On ouvre la ligne qui porte un poste chiffrable et on interroge SA tuile.
+     Ouvrir « la première ligne venue » ne prouve rien : sur l'export réel, la
+     première ligne peut n'avoir aucun coût saisi, et le test échouerait alors
+     pour une raison qui n'a rien à voir avec l'affichage. */
+  const ligneChiffrable = vls.find(vl => vl.postes.some(p => p.cppProd !== null));
+  ok("au moins une ligne importée porte un poste chiffrable", ligneChiffrable !== undefined, true);
+  if (ligneChiffrable) {
+    P.ETAT.ligne = ligneChiffrable.ligne.id;
+    const e1Ligne = P.ecran1();
+    const poste = ligneChiffrable.postes.find(p => p.cppProd !== null);
+    ok("l'écran 1 affiche le CPP du noyau, au même chiffre près",
+       cppDeLaTuile(e1Ligne, poste.op.nom),
+       String(poste.cppProd.toFixed(4)).replace(".", ","));
+  }
+
+  /* le rapport affiché dit la vérité sur ce qui est entré */
+  const pano = P.panoramaImport();
+  const r = P.ETAT.source.rapport;
+  ok("le rapport annonce le bon nombre d'essais repris",
+     pano.indexOf(">" + r.essais + "<") >= 0, true);
+  ok("le rapport annonce le bon nombre de logements",
+     pano.indexOf(">" + r.logements + "<") >= 0, true);
+  ok("le rapport dit ce qui a été abandonné", pano.indexOf("Abandonnés") >= 0, true);
+  ok("le rapport montre le poids conservé", pano.indexOf("Ko") >= 0
+     && pano.indexOf("Aucun chiffre de décision n'est perdu") >= 0, true);
+  /* et la barre du haut dit la même chose en permanence, écran ouvert ou non */
+  ok("la barre du haut nomme le fichier importé",
+     P.sourceHTML().indexOf("cloud_courant.json") >= 0, true);
+  ok("la barre du haut annonce le poids conservé",
+     P.sourceHTML().indexOf("conservés") >= 0, true);
+  ok("la source affichée est bien l'import, pas le jeu d'exemple",
+     P.sourceHTML().indexOf("jeu d'exemple") < 0, true);
+
+  /* la persistance : un rechargement ne doit pas perdre l'import */
+  P.sauvegarderLocal();
+  ok("quelque chose est bien écrit dans le stockage local",
+     (global.localStorage.getItem("proto-septfons-v1") || "").length > 100, true);
+  P.ETAT.lignes = api.JEUX.lignes;
+  const relu = P.chargerLocal();
+  ok("le rechargement restaure les lignes importées", relu, true);
+  ok("et ce sont bien celles de l'export", P.ETAT.lignes.length, exportSite.lignes.length);
+  ok("la source relue est bien l'import", P.ETAT.source.type, "import");
+
+  /* le refus : un mauvais fichier ne doit rien casser */
+  const lignesAvantRefus = P.ETAT.lignes.length;
+  await importer({ produits: [] }, "pas-un-export.json");
+  ok("un JSON qui n'est pas un export est refusé", P.ETAT.erreur !== null, true);
+  ok("et les données ne sont pas touchées", P.ETAT.lignes.length, lignesAvantRefus);
+
+  global.__fichier = { nom: "casse.json", taille: 12, texte: "{ ceci n'est pas du json", erreur: false };
+  P.ETAT.erreur = null;
+  P.chargerFichier({ files: [{}] });
+  await tick();
+  ok("un JSON cassé est refusé avec une raison", P.ETAT.erreur !== null, true);
+  ok("et toujours sans toucher aux données", P.ETAT.lignes.length, lignesAvantRefus);
+
+  global.__fichier = { nom: "casse.json", taille: 0, texte: "", erreur: true };
+  P.ETAT.erreur = null;
+  P.chargerFichier({ files: [{}] });
+  await tick();
+  ok("un fichier illisible est refusé avec une raison", P.ETAT.erreur !== null, true);
+
+  P.retourJeu();
+  ok("le retour au jeu d'exemple fonctionne", P.ETAT.source.type, "jeu");
+  ok("et les lignes d'exemple sont revenues", P.ETAT.lignes.length, api.JEUX.lignes.length);
+
+  /* l'écran 3 montre-t-il le CPP réellement obtenu ?
+     Il faut se placer sur un poste où PRÉVU et OBTENU DIFFÈRENT. Sur l'export
+     réel, les trois premiers scénarios ont un essai dont la charnière mesurée
+     égale la charnière prévue : prévu = obtenu, et une faute qui afficherait le
+     prévu à la place de l'obtenu y serait indétectable. Sur EMAG 1 · OP40, en
+     revanche, l'essai donne 0,0797 là où le scénario prévoyait 0,2452 — c'est
+     là que la distinction porte du sens, et c'est là qu'il faut tester. */
+  await importer(exportSite);
+  let posteAvecEssais = null;
+  for (const l of P.ETAT.lignes) {
+    for (const r of (l.refs || [])) for (const op of (r.ops || [])) {
+      const sc = (op.scs || []).find(s => (s.essais || []).length
+        && P.cppEssai(s, s.essais[0]).cpp !== null
+        && Math.abs(P.cppEssai(s, s.essais[0]).cpp - P.cppOutillageScenario(s)) > 1e-9);
+      if (!posteAvecEssais && sc) posteAvecEssais = { cle: l.id + "|" + op.id, op: op, sc: sc };
+    }
+  }
+  ok("l'export réel contient un poste où l'essai fait mieux que le scénario",
+     posteAvecEssais !== null, true);
+  if (posteAvecEssais) {
+    P.changerPreuvePoste(posteAvecEssais.cle);
+    const e3 = P.ecran3();
+    ok("l'écran 3 affiche le CPP réellement obtenu par un essai",
+       e3.indexOf("Ce que les essais ont réellement donné") >= 0, true);
+
+    /* On relit la valeur EXACTE écrite dans le bloc `.cppb`, et on la compare à
+       celle du noyau. Un `indexOf(chaine) >= 0` NE SUFFIT PAS : le CPP prévu du
+       scénario est imprimé dans l'en-tête de la même section, donc une faute
+       qui afficherait le prévu à la place de l'obtenu passerait quand même. */
+    const sc = posteAvecEssais.sc;
+    const obtenu = P.cppEssai(sc, sc.essais[0]).cpp;
+    const prevu = P.cppOutillageScenario(sc);
+    const affiche = valeurCppEssai(e3);
+    ok("le CPP écrit dans le bloc essai est celui du noyau",
+       affiche, fmtFr(obtenu, 4));
+    ok("et il n'est PAS le CPP prévu du scénario",
+       affiche === fmtFr(prevu, 4), false);
+    ok("l'écart annoncé entre prévu et obtenu est le bon",
+       e3.indexOf(String(Math.abs(obtenu - prevu).toFixed(4)).replace(".", ",")) >= 0, true);
+    ok("le scénario prévu et le CPP obtenu sont dans la même unité",
+       e3.indexOf("même unité que les tuiles du dessus") >= 0, true);
+  }
+  P.retourJeu();
+
+  console.log("\n" + "=".repeat(60));
+  console.log("PROTO ÉCRANS : " + total + " tests | " + echecs + " echecs");
+  console.log(echecs ? "*** LE PROTO EST ROUGE ***" : "TOUT EST VERT");
+  process.exit(echecs ? 1 : 0);
+})();

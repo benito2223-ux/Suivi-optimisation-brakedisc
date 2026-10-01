@@ -189,15 +189,62 @@ a{color:var(--accent)}
 .note-bas{color:var(--mute);font-size:var(--t6);margin-top:var(--gap);line-height:1.6}
 
 @media print{
-  .top,.steps,.garder,.retirer,.lede,.note-bas{display:none!important}
+  /* `.panneau` et `.depot` y sont ajoutés en v1.0 : le panneau d'import porte un
+     sélecteur de fichier et des boutons, qui n'ont rien à faire sur une page
+     qu'on emmène à Detlef. */
+  .top,.steps,.garder,.retirer,.lede,.note-bas,.panneau,.depot,.rapport{display:none!important}
   body{background:#fff}
   .wrap{max-width:none;padding:0}
   .a4{border:0;box-shadow:none;padding:0;max-width:none}
 }
+/* ── la source des données : ce qui alimente l'outil, et le moyen de le changer.
+      Un outil qui affiche des chiffres sans dire d'où ils viennent ment. ── */
+.srcbtn{border:1px solid var(--line);background:transparent;color:var(--mute);
+        border-radius:20px;padding:6px 14px;font-size:var(--t5);font-weight:500;
+        display:flex;align-items:center;gap:7px}
+.srcbtn:hover{border-color:var(--accent);color:var(--accent)}
+.srcbtn b{color:var(--ink);font-weight:600}
+.srcbtn.reel b{color:var(--ok)}
+
+/* ── le panneau d'import ── */
+.panneau{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+         padding:var(--pad);margin-bottom:var(--gap)}
+.panneau h3{font-size:var(--t3);margin-bottom:5px}
+.panneau .sous{color:var(--mute);font-size:var(--t5);margin:0 0 16px;max-width:75ch}
+.depot{border:2px dashed var(--line);border-radius:var(--r);padding:26px 20px;
+       text-align:center;color:var(--mute);font-size:var(--t5)}
+.depot input[type=file]{font-size:var(--t5);max-width:100%}
+.rapport{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+         gap:10px;margin:16px 0}
+.rapport>div{background:var(--bg);border:1px solid var(--line);border-radius:8px;
+             padding:10px 12px}
+.rapport .lab{font-size:var(--t6);color:var(--mute);text-transform:uppercase;
+              letter-spacing:.05em;font-weight:600}
+.rapport .val{font-size:var(--t3);font-weight:650;font-variant-numeric:tabular-nums;
+              margin-top:3px}
+.avert{border-left:3px solid var(--warn);background:var(--warn-bg);color:var(--warn);
+       padding:10px 13px;border-radius:0 7px 7px 0;font-size:var(--t5);margin-bottom:8px}
+.avert.ok-l{border-color:var(--ok);background:var(--ok-bg);color:var(--ok)}
+.btn{border:1px solid var(--line);background:var(--card);color:var(--ink);
+     border-radius:8px;padding:9px 15px;font-size:var(--t5);font-weight:500}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primaire{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+
+/* ── le CPP obtenu par essai, dans l'écran Preuve ── */
+.essais-liste{display:grid;gap:7px;margin-top:12px}
+.essai-ligne{display:grid;grid-template-columns:1fr 132px 108px;gap:12px;align-items:center;
+             padding:8px 11px;background:var(--bg);border:1px solid var(--line);
+             border-radius:7px;font-size:var(--t5)}
+.essai-ligne .qui{font-weight:600}
+.essai-ligne .qui small{display:block;font-weight:400;color:var(--mute);font-size:var(--t6)}
+.essai-ligne .cppb{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.essai-ligne .cppb small{display:block;font-weight:400;color:var(--mute);font-size:var(--t6)}
+
 @media (max-width:760px){
   .poste{grid-template-columns:1fr;gap:7px}
   .dec-carte{grid-template-columns:1fr}
   .a4{padding:24px}
+  .essai-ligne{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -205,7 +252,8 @@ a{color:var(--accent)}
 
 <div class="top">
   <b>Suivi optimisation · Sept Fons</b>
-  <span class="proto-badge">PROTO v0.1 — maquette, ne rien saisir de définitif</span>
+  <span class="proto-badge" id="badge">PROTO</span>
+  <button class="srcbtn" id="srcbtn" type="button" onclick="ouvrirImport()"></button>
   <nav class="steps" id="steps"></nav>
 </div>
 
@@ -213,8 +261,8 @@ a{color:var(--accent)}
 
 <script>
 "use strict";
-/* ══ le proto est mono-fichier : le noyau, les données et le rendu sont
-      assemblés ici. C'est la seule page, c'est voulu (cahier §6). ══ */
+/* ══ le proto est mono-fichier : le noyau, les données, la projection et le
+      rendu sont assemblés ici. C'est la seule page, c'est voulu (cahier §6). ══ */
 
 /* ───────── le noyau —_functions pures, testées avant d'exister ici_───────── */
 __COEUR__
@@ -222,13 +270,31 @@ __COEUR__
 /* ───────── les données de départ ───────── */
 __DONNEES__
 
+/* ───────── la projection des exports de l'ancienne version ───────── */
+__IMPORT__
+
 /* ══════════════════════════════════════════════════════════════════════════
    ÉCRAN 1 — OÙ EN EST-ON
    Le CPP plaquettes en premier citizen (cahier §2). Le temps machine
    n'apparaît pas ici : il n'est pas comparable au classeur.
    ══════════════════════════════════════════════════════════════════════════ */
 
-const ETAT = { ecran: 1, ligne: "l1", op: "o10", sc: "e2", saisi: {}, lignes: JEUX.lignes };
+const ETAT = { ecran: 1, ligne: "l1", op: "o10", sc: "e2", saisi: {}, lignes: JEUX.lignes,
+               source: { type: "jeu", nom: "jeu d'exemple", rapport: null, poids: null },
+               importOuvert: false, message: null, erreur: null };
+
+/* ── la source affichée dans la bande du haut ──
+   Elle dit TOUJOURS d'où viennent les chiffres affichés. Un outil qui ne le dit
+   pas laisse croire que ses chiffres sont les siens. */
+function sourceHTML() {
+  const s = ETAT.source;
+  const reel = s.type === "import";
+  const poids = s.poids && s.poids.avant
+    ? `<span style="color:var(--mute)"> · ${Math.round(s.poids.avant / 1024)} Ko → `
+      + `${Math.round(s.poids.apres / 1024)} Ko conservés</span>` : "";
+  return `<button class="srcbtn ${reel ? "reel" : ""}" id="srcbtn" type="button"
+            onclick="ouvrirImport()">Données : <b>${s.nom}</b>${poids}</button>`;
+}
 
 /* les postes de toutes les lignes, passés dans le noyau */
 function tousPostes() {
@@ -292,10 +358,15 @@ function ligneHTML(vl) {
   const cpp = vl.cppProd === null
     ? `<span class="absent">CPP non chiffrable</span>`
     : `<span class="cpp"><span class="big">${fmt(vl.cppProd, 4)}</span><span class="small"> €/pce en prod</span></span>`;
-  const gainTxt = (vl.cppActe > 0 || vl.cppProjete > 0)
-    ? ` · ${vl.cppActe > 0 ? "−" + fmt(vl.cppActe, 4) + " acté" : ""}
-       ${vl.cppProjete > 0 ? (vl.cppActe > 0 ? " · " : "· ") + "−" + fmt(vl.cppProjete, 4) + " projeté" : ""}`
-    : " · aucun gain chiffrable";
+  /* Un seul séparateur, toujours. La version précédente composait « · " + (rien
+     si aucun gain acté) + "· " + gain projeté » : sans gain acté il restait
+     deux points médians côte à côte — visible sur EMAG 1 dans le navigateur, sur
+     données réelles. Du cosmétique, mais un cosmétique faux sur la ligne qu'on
+     lit en dix secondes coûte plus cher qu'une ligne de code. */
+  const gains = [];
+  if (vl.cppActe > 0) gains.push("−" + fmt(vl.cppActe, 4) + " acté");
+  if (vl.cppProjete > 0) gains.push("−" + fmt(vl.cppProjete, 4) + " projeté");
+  const gainTxt = gains.length ? " · " + gains.join(" · ") : " · aucun gain chiffrable";
   const refs = (vl.ligne.refs || []).map(r => r.nom).join(", ");
 
   return `<section class="ligne" data-ligne="${vl.ligne.id}">
@@ -484,7 +555,52 @@ function preuveHTML(paire) {
         </div>`;
       }).join("")}
     </div>
+
+    ${essaisHTML(sc, essais)}
   </section>`;
+}
+
+/* ── le CPP RÉELLEMENT OBTENU, essai par essai ───────────────────────────────
+   Les tuiles du dessus montrent ce que le SCÉNARIO prévoit. Elles ne disent rien
+   de ce que l'essai a réellement donné, et c'est le seul chiffre qui décide :
+   un scénario qui tient mieux que prévu est une bonne nouvelle, un scénario qui
+   tient moins bien qu'annoncé est un poste à rouvrir.
+
+   La comparaison se fait dans la même unité que la tuile du scénario — sinon les
+   deux nombres ne sont pas comparables et le rapprochement veut dire n'importe quoi. */
+function essaisHTML(sc, essais) {
+  if (!essais.length) return "";
+  const prevu = cppOutillageScenario(sc);
+  const lignes = essais.map(e => {
+    const st = statutEssai(sc, e);
+    const obtenu = cppEssai(sc, e);
+    const cpp = obtenu.cpp;
+    const ecart = (cpp !== null && prevu !== null) ? cpp - prevu : null;
+    const classe = st.code === "conforme" ? "ok" : st.code === "nonconforme" ? "bad" : "";
+    return `<div class="essai-ligne">
+      <div class="qui">${e.titre || "Essai"}
+        <small>${e.date || "sans date"}${e.operateur ? " · " + e.operateur : ""}
+          · ${st.texte}${obtenu.nonChiffrables ? " · " + obtenu.nonChiffrables
+            + " logement(s) écarté(s)" : ""}</small></div>
+      <div class="cppb">${cpp === null
+          ? `<span style="color:var(--mute);font-weight:400">non chiffrable</span>`
+          : `${fmt(cpp, 4)} €/pce<small>obtenu${ecart !== null
+              ? (ecart < 0 ? " · " + fmt(ecart, 4) + " mieux que prévu"
+                            : (ecart > 0 ? " · +" + fmt(ecart, 4) + " moins bien que prévu"
+                              : " · conforme au prévu")) : ""}</small>`}</div>
+      <div class="mot ${classe || "rien"}">${st.code === "conforme" ? "conforme"
+        : st.code === "nonconforme" ? "hors tolérance" : st.code === "encours" ? "en cours"
+        : st.code === "arrete" ? "arrêté" : "attente"}</div>
+    </div>`;
+  }).join("");
+
+  return `<div style="margin-top:16px">
+    <h4 style="margin:0 0 2px;font-size:var(--t4)">Ce que les essais ont réellement donné</h4>
+    <p class="note-bas" style="margin:0 0 4px">Coût hors plaquettes exclu, CPP outillage seul
+       — même unité que les tuiles du dessus, pour que la comparaison se tienne.
+       Scénario : ${prevu === null ? "non chiffrable" : fmt(prevu, 4) + " €/pce"}.</p>
+    <div class="essais-liste">${lignes}</div>
+  </div>`;
 }
 
 function ecran3() {
@@ -657,6 +773,153 @@ function ecran5() {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
+   LA SOURCE — reprendre les essais déjà faits
+
+   Un export de l'ancienne version est un fichier que l'utilisateur choisit SUR
+   SON POSTE. Il n'est ni téléversé, ni envoyé, ni stocké ailleurs : il est lu
+   par le navigateur, projeté en mémoire, et réduit à ce qui nourrit une décision.
+   Rien ne sort de la machine — c'est la même règle que l'app de production, et
+   elle n'est pas négociable pour des données d'essais réelles.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+const CLE_LOCAL = "proto-septfons-v1";
+
+function panoramaImport() {
+  if (!ETAT.importOuvert) return "";
+  const s = ETAT.source;
+  const r = s.rapport;
+
+  const chiffres = r ? `
+    <div class="rapport">
+      <div><div class="lab">Lignes</div><div class="val">${r.lignes}</div></div>
+      <div><div class="lab">Opérations</div><div class="val">${r.ops}</div></div>
+      <div><div class="lab">Scénarios</div><div class="val">${r.scenarios}</div></div>
+      <div><div class="lab">Essais repris</div><div class="val">${r.essais}</div></div>
+      <div><div class="lab">Logements</div><div class="val">${r.logements}</div></div>
+      <div><div class="lab">Cibles site</div><div class="val">${r.scenariosCibles}</div></div>
+    </div>` : "";
+
+  const poids = s.poids && s.poids.avant ? `
+    <div class="avert ok-l">Sur ${(s.poids.avant / 1048576).toFixed(2)} Mo lus, il reste
+      ${Math.round(s.poids.apres / 1024)} Ko (${Math.round(s.poids.ratio * 100)} %).
+      Abandonnés : ${r.abandons.join(", ")}. Aucun chiffre de décision n'est perdu.</div>` : "";
+
+  const avertissements = r && r.avertissements.length
+    ? r.avertissements.map(a => `<div class="avert">${a}</div>`).join("") : "";
+
+  return `<section class="panneau">
+    <h3>Reprendre les essais déjà faits</h3>
+    <p class="sous">Choisissez un export de l'ancienne version du suivi (le fichier
+       <b>.json</b> téléchargé depuis l'app, ou celui déposé dans le cloud). Le fichier
+       reste sur ce poste : il n'est ni envoyé, ni téléversé, ni conservé ailleurs.
+       Les mesures sont lues telles qu'elles ont été saisies — rien n'est réinterprété.</p>
+
+    <div class="depot">
+      <input type="file" id="fImport" accept=".json,application/json"
+             onchange="chargerFichier(this)">
+      <div style="margin-top:9px;font-size:var(--t6)">
+        Formats 5, 6, 7 et 8 acceptés — c'est-à-dire tout ce que l'app a jamais exporté.</div>
+    </div>
+
+    ${ETAT.message ? `<div class="avert ok-l" style="margin-top:14px">${ETAT.message}</div>` : ""}
+    ${ETAT.erreur ? `<div class="avert" style="margin-top:14px">${ETAT.erreur}</div>` : ""}
+    ${poids}${chiffres}${avertissements}
+
+    <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
+      ${s.type === "import"
+        ? `<button class="btn" type="button" onclick="retourJeu()">Revenir au jeu d'exemple</button>`
+        : `<span style="font-size:var(--t6);color:var(--mute);align-self:center">
+             Le jeu d'exemple est structurel, pas réel : aucun de ses chiffres n'est un relevé.</span>`}
+    </div>
+  </section>`;
+}
+
+/* La lecture du fichier. Trois refus sont distingués — un fichier illisible,
+   un JSON invalide, un JSON qui n'est pas un export : aucun des trois ne doit
+   laisser l'écran dans un état à moitié changé. */
+function chargerFichier(input) {
+  const f = input.files && input.files[0];
+  if (!f) return;
+  ETAT.erreur = null; ETAT.message = null;
+  const lecteur = new FileReader();
+  lecteur.onerror = () => {
+    ETAT.erreur = "Le fichier n'a pas pu être lu. Il est peut-être encore ouvert ailleurs.";
+    rendre();
+  };
+  lecteur.onload = () => {
+    let source;
+    try {
+      source = JSON.parse(lecteur.result);
+    } catch (e) {
+      ETAT.erreur = "Ce fichier n'est pas un JSON valide — il a peut-être été tronqué "
+                  + "par un copier-coller. Rien n'a été changé.";
+      rendre(); return;
+    }
+    const p = projeter(source);
+    if (!p.ok) {
+      ETAT.erreur = p.erreur + " Rien n'a été changé : les données actuelles sont intactes.";
+      rendre(); return;
+    }
+    ETAT.lignes = p.lignes;
+    ETAT.source = {
+      type: "import",
+      nom: f.name,
+      rapport: p.rapport,
+      /* le « avant » est la taille réelle du fichier lu, le « après » la taille
+         de ce que la projection a gardé — c'est le seul endroit où les deux
+         sont connues, et la comparaison affiche exactement ce qui a été jeté. */
+      poids: { avant: f.size, apres: mesurerLignes(p.lignes), ratio: null }
+    };
+    ETAT.source.poids.ratio = f.size
+      ? Math.round((ETAT.source.poids.apres / f.size) * 1000) / 1000 : null;
+    ETAT.ligne = p.lignes[0] ? p.lignes[0].id : null;
+    ETAT.saisi = {};
+    ETAT.ecran = 1;
+    ETAT.message = "Import réussi — " + p.rapport.lignes + " ligne(s), "
+                  + p.rapport.essais + " essai(s) repris. "
+                  + "Les écrans se sont remplis avec ces données.";
+    sauvegarderLocal();
+    rendre();
+  };
+  lecteur.readAsText(f);
+}
+
+function mesurerLignes(lignes) {
+  try { return JSON.stringify(lignes).length; } catch (e) { return 0; }
+}
+
+/* La projection est faite en mémoire, mais elle doit survivre à un rechargement
+   de page : sinon on rouvre le fichier à chaque fois, et le proto se rétrécit
+   en « un écran qu'on recharge ». Le stockage est local, et rien d'autre. */
+function sauvegarderLocal() {
+  try {
+    localStorage.setItem(CLE_LOCAL, JSON.stringify({
+      lignes: ETAT.lignes, source: ETAT.source
+    }));
+  } catch (e) { /* quota plein ou stockage refusé : on continue sans, sans le dire */ }
+}
+function chargerLocal() {
+  try {
+    const brut = localStorage.getItem(CLE_LOCAL);
+    if (!brut) return false;
+    const s = JSON.parse(brut);
+    if (!s || !Array.isArray(s.lignes) || !s.lignes.length) return false;
+    ETAT.lignes = s.lignes;
+    ETAT.source = s.source || ETAT.source;
+    return true;
+  } catch (e) { return false; }
+}
+function retourJeu() {
+  ETAT.lignes = JEUX.lignes;
+  ETAT.source = { type: "jeu", nom: "jeu d'exemple", rapport: null, poids: null };
+  ETAT.ligne = "l1"; ETAT.saisi = {}; ETAT.ecran = 1;
+  ETAT.message = null; ETAT.erreur = null;
+  sauvegarderLocal();
+  rendre();
+}
+function ouvrirImport() { ETAT.importOuvert = !ETAT.importOuvert; rendre(); }
+
+/* ══════════════════════════════════════════════════════════════════════════
    LE ROUTAGE — cinq écrans, cinq boutons, rien d'autre
    ══════════════════════════════════════════════════════════════════════════ */
 
@@ -673,7 +936,12 @@ function rendre() {
     `<button class="step ${ETAT.ecran === e.n ? "on" : ""}" onclick="aller(${e.n})">
        <span class="n">${e.n}</span>${e.nom}</button>`).join("");
   const e = ECRANS.find(x => x.n === ETAT.ecran);
-  document.getElementById("vue").innerHTML = e.fn();
+  document.getElementById("vue").innerHTML = panoramaImport() + e.fn();
+  const b = document.getElementById("badge");
+  if (b) b.textContent = "PROTO v" + PROTO_VERSION
+    + (ETAT.source.type === "import" ? " — données réelles" : " — jeu d'exemple");
+  const sb = document.getElementById("srcbtn");
+  if (sb) sb.outerHTML = sourceHTML();
   window.scrollTo(0, 0);
 }
 function aller(n) { ETAT.ecran = n; rendre(); }
@@ -728,13 +996,20 @@ document.addEventListener("submit", function(ev){
   if (ev.target.id === "fEssai") enregistrerEssai(ev);
 });
 
-/* les cinq portes, exposées — le harnais vérifie qu'elles existent */
+/* les portes, exposées — le harnais vérifie qu'elles existent */
 window.proto = { aller, rendre, basculerLigne, changerPreuvePoste, annulerSaisie,
                  enregistrerEssai, ecran1, ecran2, ecran3, ecran4, ecran5, a4HTML,
                  verdictPoste, verdictLigne, decisionPoste, cheminCPP,
                  coutLogement, cppOutillageScenario, statutEssai, statutScenario,
-                 recapLignes, ECRANS, ETAT, tousPostes, verdictsLignes };
+                 recapLignes, ECRANS, ETAT, tousPostes, verdictsLignes,
+                 projeter, panoramaImport, ouvrirImport, retourJeu, chargerFichier,
+                 sauvegarderLocal, chargerLocal, sourceHTML, essaisHTML,
+                 battDe, cppEssai, mesurerLignes, PROTO_VERSION };
 
+/* On ne passe jamais le proto par-dessus des données réelles laissées par une
+   session précédente : c'est le seul cas où un état persistant pourrait écraser
+   ce que Matis a déposé. Le jeu d'exemple ne l'emporte que s'il n'y a rien. */
+chargerLocal();
 remplirScenarios();
 rendre();
 </script>
