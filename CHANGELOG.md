@@ -509,6 +509,72 @@ aucune mise à zéro. **TOUT EST VERT.**
 signalés, pas remplis. Et les outils sans correcteur `Dx` (T532, T533, T535 en OP30) gardent
 un logement provisoire, nommé comme tel.
 
+## [4.76.0] — 01/10/2026 · le contexte périmé ne peut plus écraser une opération
+
+**Suite du topo de Z Code (§1.3) : « le scénario KY3500 d'EMAG 1 s'affiche sous EMAG 3 ».**
+
+Benjamin m'a passé le topo pour finir le job. J'ai audité. **`activeId` est sain** — `render()`
+le garde-fou, et `switchOp()` / `allerVers()` ferment le contexte avant de le poser. **Le trou
+est ailleurs, et il est plus grave qu'un mauvais affichage.**
+
+---
+
+**Le trou**
+
+`data` est un tableau **séparé** de l'OP active. Et `syncActiveOp()` y écrivait
+`op.scenarios = data` **sans vérifier d'où venait `data`**.
+
+Or `syncActiveOp()` est appelé par :
+
+- `saveData()`
+- `backupSnapshot()`
+- `exportData()`
+- `cloudEcrireEtat()`
+
+**Tous les chemins de persistance.** Une divergence ne produisait donc pas qu'un scénario
+affiché au mauvais endroit : elle **réécrivait les scénarios d'une opération avec ceux d'une
+autre**, et la sauvegarde l'emportait. **Perte de donnée silencieuse.**
+
+---
+
+**La correction — détecter, pas interdire**
+
+On ne peut pas refuser l'écriture : pendant une restauration, ou un test, `data` est
+légitimement un tampon. La règle est donc **précise** :
+
+> un scénario de `data` qui se trouve ailleurs dans l'arbre appartient à une **autre
+> opération**. C'est une fuite, pas un tampon.
+
+Quand elle est détectée, **la hiérarchie fait foi** : on relit la vraie liste de l'OP active
+au lieu d'écrire le tampon par-dessus — et on **signale** le dérangement à l'écran, parce
+qu'un silence ici a déjà coûté une scène.
+
+**Rien n'est effacé** : le scénario d'origine reste intact à sa place. C'est vérifié.
+
+---
+
+**Vérifié**
+
+`test_contexte_perime.py` construit le cas exact de Benjamin — contexte EMAG 3, `data`
+portant le scénario d'EMAG 1 OP40 — et vérifie trois choses : le scénario étranger **ne
+remplace pas** l'opération, la vraie liste est revenue, **le scénario d'EMAG 1 est intact là
+où il est**, et le dérangement est signalé.
+
+Et surtout, **le cas d'une restauration** : un tampon sans scénario étranger est accepté et
+écrit. La correction ne casse rien de ce qui marche.
+
+**9/9.** Contre-regard : **4 pannes sur 4 vues** (détection supprimée, détection aveugle,
+hiérarchie ignorée, boucle tronquée). **434/434** sur le harnais général.
+
+---
+
+**Ce que ça ne tranche pas**
+
+La cause du déclenchement reste ouverte : *pourquoi* `data` a divergé chez Benjamin n'est pas
+établi. Cette correction garantit qu'au pire, **rien n'est perdu et c'est visible**. Le reste
+— un onglet resté ouvert, une restauration, un partage cloud — demande le chemin exact de
+Benjamin, clic par clic.
+
 ## [4.67.0] — 2026-09-30 · L1
 
 **Le premier lot de la charte CeramTec : le fond, et le poids interdit.**

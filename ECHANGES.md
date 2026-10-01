@@ -138,6 +138,86 @@ chantier à part avec sa propre constitution, car il touche tous les calculs.
 goulot reste Benjamin qui envoie le message : sept des neuf demandes sont des
 données que seul Matis peut apporter.
 
+### ▸ Tour 43 — 01/10/2026 — **Hermes** (v4.76.0 — le contexte périmé)
+
+**Benjamin : « à ton tour bro, on finit le job ».** J'ai pris les deux choses qui ne dépendent
+pas de Matis : le **datage** du §1.1, et l'**audit** du §1.3.
+
+---
+
+## Le datage du §1.1 — la piste est close
+
+Z Code mesurait « T1 D1 avec 4 logements nommés Plaquette » dans le scénario **« base excel »**.
+
+**« Plaquette » n'existe nulle part comme nom de logement dans le code** — seulement dans les
+données d'exemple (ligne 2968 : `ref: "Plaquette exemple A"`) et dans une étiquette
+d'impression. Et **« base excel » n'est pas un scénario que j'ai créé** : le mien s'appelle
+« Classeur Matis ». C'est un terme de l'interface — *« Ajouter les outils qui manquent ici
+(base excel) »* — qui désigne la production en cours.
+
+Donc : **les 4 « Plaquette » ne viennent ni de mon import, ni du code.** Ce sont les données
+de Benjamin lui-même. **Le §1.1 est clos** — sauf si quelqu'un peut dire d'où elles viennent.
+
+---
+
+## L'audit du §1.3 — et là, c'est grave
+
+J'ai cherché le bug de navigation. **`activeId` est sain** : `render()` le garde-fou
+(l. 10392), et `switchOp()` / `allerVers()` ferment le contexte avant de le poser. Les
+34 écritures d'`activeId` sont correctes.
+
+**Le trou est ailleurs, et il ne suffisait pas d'un mauvais affichage.**
+
+`data` est un tableau **séparé** de l'OP active. Et :
+
+```js
+function syncActiveOp(){
+  const op = getActiveOp();
+  if(op){ op.scenarios = data; op.config = config; }   // <-- sans vérifier d'où vient data
+}
+```
+
+Or `syncActiveOp()` est appelé par **`saveData()`, `backupSnapshot()`, `exportData()` et
+`cloudEcrireEtat()`** — c'est-à-dire **par tous les chemins de persistance**.
+
+**Une divergence ne produisait pas seulement un scénario affiché au mauvais endroit : elle
+réécrivait les scénarios d'une opération avec ceux d'une autre — et la sauvegarde l'emportait.**
+Perte de donnée silencieuse. C'est le genre de trou qui explique « une scène a disparu sans
+qu'on l'ait vue disparaître ».
+
+**La correction** : on ne peut pas interdire l'écriture — une restauration ou un test
+utilisent `data` comme tampon, légitimement. On **détecte** donc, et la règle est précise :
+*un scénario de `data` qui se trouve ailleurs dans l'arbre appartient à une autre
+opération*. Quand elle est détectée, **la hiérarchie fait foi**, et l'écran **signale** le
+dérangement.
+
+**Vérifié** : dans le cas exact de Benjamin, le scénario étranger ne remplace pas
+l'opération, la vraie liste revient, **le scénario d'EMAG 1 est intact là où il est**, et le
+dérangement est signalé. Et une restauration avec un tampon légitime **passe toujours**.
+
+**9/9. Contre-regard 4 pannes sur 4 vues. 434/434 sur le harnais général.**
+
+---
+
+## Ce que cette correction ne fait pas
+
+Elle ne dit pas **pourquoi** `data` a divergé chez Benjamin. Ça demande le chemin exact,
+clic par clic — **un onglet resté ouvert reste l'hypothèse la plus probable**, et c'est pour
+ça que la première demande du message à Matis est de fermer les onglets.
+
+Mais au pire, désormais : **rien n'est perdu, et c'est visible.**
+
+---
+
+## Le message à Matis est prêt, 10 demandes
+
+Il porte **déjà** la question décisive, au point 9 : *« un même logement monté sur deux
+pièces différentes porte-t-il deux articles différents ? »* C'est elle qui fermera le §1.1
+et le §1.2 d'un coup.
+
+**Il ne manque qu'à être envoyé.** C'est le seul geste qui débloque les données, et donc
+tout le reste.
+
 ### ▸ Tour 42 — 01/10/2026 — **Z Code** (le topo d'audit des données, demandé par Benjamin)
 
 **Contexte** : Benjamin a testé avec ses vraies données et remonté trois

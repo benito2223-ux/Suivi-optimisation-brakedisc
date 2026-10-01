@@ -3398,9 +3398,60 @@ function getActiveOp(){
 }
 /* data/config peuvent avoir ete reassignes en bloc (reset/import/restaurer) : on les
    recopie alors dans l'OP active pour que l'arbre reste coherent. */
+/* v4.76.0 — Benjamin, 01/10 : le contexte EMAG 3 affichait un scenario
+   situe sur EMAG 1 (topo Z Code, §1.3). Les chemins d'ecriture de `activeId`
+   sont sains : render() garde-fou, et switchOp()/allerVers() ferment le
+   contexte avant de poser. Le TROU est ailleurs, et il est grave :
+
+   `data` est un tableau SEPARE de l'OP active, et syncActiveOp() y ecrivait
+   `op.scenarios = data` SANS verifier d'ou venait `data`. Or syncActiveOp()
+   est appele par saveData(), backupSnapshot(), exportData() et
+   cloudEcrireEtat() — c'est-a-dire par TOUS les chemins de persistance.
+
+   Une divergence ne produisait donc pas qu'un mauvais affichage : elle
+   REECRIVAIT les scenarios d'une operation avec ceux d'une autre. Perte de
+   donnee silencieuse, et la sauvegarde l'emportait.
+
+   On ne peut pas interdire : pendant une restauration, ou un test, `data` est
+   legitimement un tampon. On DETECTE donc, et la regle est precise : un
+   scenario de `data` qui se trouve ailleurs dans l'arbre appartient a une
+   AUTRE operation. C'est une fuite, pas un tampon. */
+function signalerContextePerime(op){
+  try{
+    const t = (nom, x) => document.querySelector("#" + nom + " .panel-hint");
+    const el = t("matisPanel") || t("accueilPanel");
+    if(el) el.insertAdjacentHTML("afterbegin",
+      '<p class="panel-hint">Contexte recale : le scenario affiche ne venait pas de cette '
+      + 'operation. Aucune donnee n\'a ete ecrasee. Si tu vois ceci, note ce que tu faisais '
+      + ' juste avant et signale-le a Benjamin.</p>');
+  }catch(e){}
+}
 function syncActiveOp(){
   const op = getActiveOp();
-  if(op){ op.scenarios = data; op.config = config; }
+  if(!op) return;
+  if(op.scenarios !== data && Array.isArray(data) && data.length){
+    const etranger = data.some(sc => {
+      if(!sc) return false;
+      for(const lg of (lignes || [])){
+        for(const rf of ((lg && lg.references) || [])){
+          for(const o of ((rf && rf.ops) || [])){
+            if(o === op) continue;                  // l'OP active : ce n'est pas une fuite
+            if((o.scenarios || []).some(x => x && x.id === sc.id)) return true;
+          }
+        }
+      }
+      return false;
+    });
+    if(etranger){
+      /* la hierarchie fait foi : on relit la VRAIE liste de l'OP active, plutot
+         que d'ecrire le tampon par-dessus. Et on le dit — parce qu'un silence
+         ici a deja coute une scene. */
+      data = op.scenarios || [];
+      signalerContextePerime(op);
+    }
+  }
+  op.scenarios = data;
+  op.config = config;
 }
 function switchOp(ligneId, refId, opId){
   syncActiveOp();
@@ -11793,6 +11844,9 @@ const NOUVEAUTES = [
   { version:"4.75.0", date:"01/10/2026", points:[
     "<b>Depuis l’accueil, la carte s’ouvre SUR la ligne cliquée.</b> Tu cliques EMAG 3 dans le tableau de bord : la carte défile jusqu’à la section EMAG 3, surlignée deux secondes — plus jamais une autre ligne devant les yeux. Et la correction des correcteurs manquants (outils regroupés avant la 4.74.2) est proposée dans le bandeau."
   ]},
+  { version:"4.76.0", date:"01/10/2026", points:[
+    "<b>Un scenario affiche au mauvais endroit ne peut plus rien ecraser.</b> On a trouve un trou ou le scenario ouvert etait reecrit par-dessus ceux d une autre operation — sur tous les chemins de sauvegarde, export et partage. La hierarchie fait desormais foi, et l ecran te previent. Rien n est efface : la scene reste la ou elle est."
+  ]},
   { version:"4.74.2", date:"01/10/2026", points:[
     "<b>La référence plaquette et le correcteur remplis depuis le classeur.</b> La colonne « ISO » du fichier de Matis remplit désormais la référence plaquette de chaque logement (elle était lue puis jetée) — et le correcteur (le D1/D2 après le numéro d’outil) remplit le champ Correcteur de l’outil. La correction à la demande complète aussi les références vidées hier : l’ISO de ton T543 (TNGN160412… pour D1, SNGN090416… pour D2) est repris depuis les scénarios « base excel » quand il y est connu."
   ]},
@@ -12300,7 +12354,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.75.0";
+const TOOL_VERSION = "4.76.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
