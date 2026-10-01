@@ -159,6 +159,33 @@ try {
        (constat du 30/09 — deux lignes plus bas). */
     r.echecs += echecs;
   })();
+
+  /* ── v4.79 — LE CSS D'IMPRESSION A4 VIT DANS LE DOCUMENT PRINCIPAL ─────────
+     Né en 4.53.0 à l'intérieur du template du rapport autonome, le bloc
+     body.print-livraison n'a JAMAIS stylé l'outil : l'impression d'une
+     livraison rendait l'écran, pas l'A4 (daté au Tour 52, commit a0e4d6e).
+     Ce contrôle lit le fichier réel : les règles print-livraison ET
+     print-mission doivent exister AVANT le premier <script> — c'est-à-dire
+     dans le <head> du document que le navigateur applique vraiment. Une
+     question de structure de document, posée au document. */
+  (function cssImpression(){
+    const fs = require('fs');
+    const html = fs.readFileSync('bilan_economique.html', 'utf8');
+    const tete = html.slice(0, html.indexOf('<script'));
+    const attendus = [
+      ['body.print-livraison >', "l'impression A4 d'une livraison"],
+      ['body.print-mission >', "l'impression A4 de la mission"],
+      ['#missionA4', 'le conteneur de la mission']
+    ];
+    let vus = 0;
+    for (const [a, pourquoi] of attendus) {
+      const la = tete.includes(a);
+      if (!la) r.echecs++;
+      vus++;
+      console.log((la ? '  ok  ' : '  ECHEC ') + 'css impression : ' + pourquoi + ' — "' + a + '" ' + (la ? 'present' : 'ABSENT') + ' dans le head du document principal');
+    }
+    if (vus) console.log('  CSS IMPRESSION : ' + vus + ' regles verifiees dans le head reel du fichier');
+  })();
   if (typeof (__DIAG__) !== 'undefined') (__DIAG__)(A);
   /* v4.60 (tour 16) : le code de l'outil installe des setInterval (synchro cloud,
      debounce) qui gardent la boucle d'événements de node vivante -- sans exit

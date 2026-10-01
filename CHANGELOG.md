@@ -40,6 +40,68 @@ opération, outil par outil, logement par logement.
 - vérifié au navigateur sur les données réelles (capture) : obtenu vs
   référence par pièce, écarts en toutes lettres, temps séparé.
 
+## [4.79.0] — 2026-10-01 · Tour 52
+
+**Les promesses de l'interface sont vérifiées, et l'A4 Mission existe enfin.**
+Deux chantiers confiés par Hermes (Tours 50-51) : le contrôle « une question
+sur le code se pose au code » et l'écriture de `missionA4HTML()` — le clic
+mort né en 4.52. Un troisième est né de la construction : le CSS d'impression
+A4 vivait depuis la 4.53 dans le template du rapport autonome, pas dans le
+document principal — l'impression d'une livraison n'a jamais marché.
+
+### Ajouté
+- **`PROMESSES_UI` + son test** — la liste écrite à la main des portes de
+  l'interface (30 portes, 45 fonctions), une par une vérifiée par `typeof`
+  résolu **dans la portée du script** — la réponse du moteur, pas une analyse
+  du source. Le scanner d'`onclick` imaginé d'abord n'avait rien à mordre :
+  ce fichier compte 0 attribut `onclick=` et 166 `addEventListener`. Une
+  promesse non tenue = un clic mort, vu par les tests (règle Hermes T50 :
+  « une boucle sur les gestionnaires, un typeof par fonction, un ok() par
+  résultat ») ;
+- **`missionA4HTML()`** — l'A4 hiérarchie vivant : gains ACTÉS / EN COURS en
+  deux blocs distincts (§3.4), timeline des essais récents avec statut
+  (conforme / non conforme / arrêté / en cours), plan poste par poste,
+  prochaines étapes, protocole 5× écrit. Source unique : `cartePostes()` /
+  `gainPoste()` comme la carte et `creerLivraison()` — jamais un recalcul
+  local. La page dit sa différence avec la livraison : elle **se recalcule à
+  chaque édition**, là où la livraison fige ;
+- **`essaisRecents(n)`** — le collecteur de la timeline, tri par date
+  décroissante, les essais sans date passent après ;
+- **le CSS d'impression A4 dans le document principal** — mêmes classes
+  `.m4` que le template historique, sélecteurs doublés
+  `body.print-livraison #livraisonImpression` /
+  `body.print-mission #missionA4`. Le doublon dans le rapport autonome y est
+  mort (aucun `#livraisonImpression` n'existe là-bas) ; son retrait est un
+  chantier de nettoyage séparé.
+
+### Corrigé
+- **l'impression A4 des livraisons (née morte en 4.53.0)** — le bouton 🖨 d'une
+  livraison posait `body.print-livraison` et remplissait
+  `#livraisonImpression`, mais les règles vivaient dans la chaîne du rapport
+  de validation téléchargé : le navigateur imprimait l'écran, pas l'A4.
+  Daté au git : introduit dans `a0e4d6e` (29/09), jamais stylé dans le
+  document principal. Le bloc v4.79 ci-dessus le répare pour les deux A4.
+
+### Vérification
+- 443 → **497 tests** (8 A4 Mission + 45 promesses + 1 essaisRecents), 0 échec ;
+- contre-regard, deux pannes injectées : (A) `missionA4HTML` renommée → la
+  suite va **jusqu'au bout** (497 exécutés, règle v1.7), **9 échecs** dont la
+  promesse avec la preuve exacte `recu="undefined"` ; (B) bloc CSS d'impression
+  retiré du head → **3 échecs** du garde-fou CSS. Restaurées chacune **par
+  copie sauvegardée, octet pour octet** (§6.8), état final 497/0, exit 0 ;
+- enseignement du contre-regard : le harnais n'expose plus `missionA4HTML` par
+  identifiant dans son API (une fonction manquante y explosait au chargement
+  et masquait le verdict) ; et le test de contenu dégrade sur du vide au lieu
+  de couper la suite ;
+- navigateur : `typeof missionA4HTML === "function"` dans le vrai moteur ;
+  CSSOM du document principal : 19 sélecteurs `print-mission`, 19
+  `print-livraison` ; en mode `body.print-mission`, le seul élément visible
+  est l'A4 ; timeline rendue avec statuts, plan vide **déclaré** (« aucun
+  poste chiffré »), capture faite ;
+- garde-fou harnais : les règles `print-livraison` / `print-mission` /
+  `#missionA4` doivent vivre dans le head du document principal (avant le
+  premier `<script>`) — la classe du bug né en 4.53 est fermée pour toujours.
+
 ## [4.75.0] — 2026-10-01 · Tour 41 · Option A
 
 **Depuis l'accueil, la carte s'ouvre SUR la ligne cliquée.** Le diagnostic du

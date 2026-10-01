@@ -2701,6 +2701,42 @@ tr.mx-opportunite td{ color:var(--label); }
 }
 </style>
 
+<style>
+/* ── v4.79 — IMPRESSION A4 : livraisons & mission, dans le DOCUMENT PRINCIPAL ──
+   Le bloc historique (4.53) vit à l'intérieur du template du rapport de
+   validation autonome (rapportValidationHTML) : il n'a donc JAMAIS stylé le
+   document principal — le bouton 🖨 d'une livraison imprimait l'écran, pas
+   l'A4. Né le 29/09 en 4.53.0, daté au Tour 52. Ce bloc est la copie au bon
+   endroit, écrite une fois pour les DEUX A4 (livraison figée, mission vivante),
+   mêmes classes .m4, même langue visuelle. Le doublon dans le template autonome
+   est mort là-bas (aucun #livraisonImpression n'existe dans ce document-là) ;
+   son retrait est un chantier de nettoyage séparé. */
+#livraisonImpression, #missionA4{ display:none; }
+body.print-livraison > *, body.print-mission > *{ display:none !important; }
+body.print-livraison > #livraisonImpression, body.print-mission > #missionA4{ display:block !important; }
+body.print-livraison #livraisonImpression .m4, body.print-mission #missionA4 .m4{ font-family:'Public Sans',Arial,sans-serif; color:#111; }
+body.print-livraison #livraisonImpression .m4-entete, body.print-mission #missionA4 .m4-entete{ display:flex; justify-content:space-between; border-bottom:3px solid #1B5EA6; padding-bottom:8px; margin-bottom:14px; }
+body.print-livraison #livraisonImpression .m4-sur, body.print-mission #missionA4 .m4-sur{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:#1B5EA6; font-weight:500; }
+body.print-livraison #livraisonImpression .m4-titre2, body.print-mission #missionA4 .m4-titre2{ font-size:12px; color:#333; margin-top:4px; }
+body.print-livraison #livraisonImpression .m4-date2, body.print-mission #missionA4 .m4-date2{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:#555; }
+body.print-livraison #livraisonImpression .m4-blocs, body.print-mission #missionA4 .m4-blocs{ display:flex; gap:12px; margin:14px 0; }
+body.print-livraison #livraisonImpression .m4-bloc, body.print-mission #missionA4 .m4-bloc{ flex:1; border-radius:6px; padding:10px 14px; border:2px solid #1a7a3f; background:#edf7f1; }
+body.print-livraison #livraisonImpression .m4-bloc.encours, body.print-mission #missionA4 .m4-bloc.encours{ border-color:#b45309; background:#fdf6ec; }
+body.print-livraison #livraisonImpression .m4-bloc .n, body.print-mission #missionA4 .m4-bloc .n{ font-family:'Manrope','Open Sans',Arial,sans-serif; font-weight:700; font-size:22px; }
+body.print-livraison #livraisonImpression .m4-bloc .l, body.print-mission #missionA4 .m4-bloc .l{ font-size:10.5px; color:#444; text-transform:uppercase; }
+body.print-livraison #livraisonImpression .m4-h, body.print-mission #missionA4 .m4-h{ font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:#555; margin:14px 0 6px; }
+body.print-livraison #livraisonImpression .m4-row, body.print-mission #missionA4 .m4-row{ display:flex; gap:10px; font-size:11.5px; padding:4px 0; border-bottom:1px solid #eee; }
+body.print-livraison #livraisonImpression .m4-date, body.print-mission #missionA4 .m4-date{ font-family:'IBM Plex Mono',monospace; min-width:80px; color:#555; }
+body.print-livraison #livraisonImpression .m4-titre, body.print-mission #missionA4 .m4-titre{ flex:1; color:#222; }
+body.print-livraison #livraisonImpression .m4-stat, body.print-mission #missionA4 .m4-stat{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:#1a7a3f; }
+body.print-livraison #livraisonImpression .m4-stat.bad, body.print-mission #missionA4 .m4-stat.bad{ color:#b8001a; }
+body.print-livraison #livraisonImpression .m4-proto, body.print-mission #missionA4 .m4-proto{ font-size:10.5px; color:#555; margin-top:12px; border-top:1px solid #ccc; padding-top:8px; }
+@media print{
+  body.print-livraison, body.print-mission{ background:#fff; }
+  body.print-livraison > #livraisonImpression, body.print-mission > #missionA4{ break-inside:avoid; }
+}
+</style>
+
 <script>
 
 const STORAGE_KEY = "spk_suivi_optimisation_v1";
@@ -11868,6 +11904,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.79.0", date:"01/10/2026", points:[
+    "<b>Le bouton « 🖨 A4 Mission » imprime enfin sa page.</b> Il était là depuis la 4.52 — la fonction derrière n'existait pas (clic mort). L'A4 Mission raconte la démarche en un feuillet : gains ACTÉS et EN COURS en deux blocs distincts, timeline des essais récents avec leur statut (conforme / non conforme / arrêté / en cours), plan poste par poste et prochaines étapes. Elle se <b>recalcule à chaque édition</b> — c'est sa différence avec la livraison, qui fige. Au passage : l'impression A4 des <b>livraisons</b> était cassée depuis sa naissance (le CSS d'impression vivait dans le rapport autonome, pas dans l'outil) — les deux A4 s'impriment désormais seuls, sur la même mise en page. Et l'interface s'est donné des <b>promesses vérifiées</b> : chaque bouton n'appelle que des fonctions qui existent — un clic mort est désormais vu par les tests."
+  ]},
   { version:"4.78.0", date:"01/10/2026", points:[
     "<b>La vue CPP : l'épine dorsale de l'outil.</b> Depuis l'accueil, bouton « 🔍 Vue CPP » : chaque pièce avec son CPP outillage (la même mesure que le classeur de Matis) <b>en face de la référence Matis</b>, l'écart en toutes lettres — puis dépliez : opération par opération avec sa part dans la pièce, outil par outil, logement par logement avec MABEC et coût. Le temps machine s'affiche à part et dit qu'il n'est pas comparable au classeur (constitution 2 quater). Lecture seule : rien n'est écrit."
   ]},
@@ -12384,7 +12423,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.78.0";
+const TOOL_VERSION = "4.79.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -14942,6 +14981,78 @@ function livraisonsSectionHTML(){
 }
 function eurTxt(v){ return fmtEuroCourt(Math.abs(v || 0)) + "/an"; }
 
+/* ── v4.79 — A4 MISSION : le livrable hiérarchie, VIVANT ─────────────────────
+   Le bouton « 🖨 A4 Mission » (v4.52) promettait cet imprimable depuis la carte
+   atelier ; la fonction n'existait pas — clic mort diagnostiqué par Hermes
+   (Tour 50-51), écrit ici. Ce que la page dit, exactement comme le spécifie la
+   ligne NOUVEAUTES d'alors : les gains ACTÉS et EN COURS, la timeline des
+   essais récents avec leur statut, et le plan poste par poste avec la
+   prochaine étape. Source unique (§3.1) : cartePostes()/gainPoste(), comme la
+   carte et comme creerLivraison — jamais un recalcul local, jamais un chiffre
+   divergent. La différence avec la livraison est écrite sur la page : la
+   livraison FIGE, la mission RECALCULE à chaque édition. */
+function essaisRecents(n){
+  const out = [];
+  lignes.forEach(l => {
+    (l.references || []).forEach(r => {
+      (r.ops || []).forEach(o => {
+        (o.scenarios || []).forEach(sc => {
+          (sc.essais || []).forEach(es => {
+            out.push({ date: es.date || "", ligne: l.nom || "", opCode: o.opCode || o.nom || "",
+                       scNom: sc.name || "", titre: es.titre || "", statut: (essaiStats(sc, es) || {}).status || "pending" });
+          });
+        });
+      });
+    });
+  });
+  out.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+  return out.slice(0, n || 8);
+}
+function missionA4HTML(){
+  const eur = v => fmtEuroCourt(Math.abs(v || 0)) + "/an";
+  /* même source que creerLivraison : les postes réels, opportunités exclues —
+     une tuile jamais travaillée ne promet rien, elle n'a pas sa page */
+  const postes = cartePostes().filter(t => t.etat !== "opportunite");
+  const gainsActes = postes.reduce((a, t) => a + (t.poste.gainActe || 0), 0);
+  const gainsProjetes = postes.reduce((a, t) => a + (t.poste.gainProjete || 0), 0);
+  const planRows = postes.map(t => {
+    const p = t.poste;
+    const ref = (p.refDominante && ((p.refDominante.ref && p.refDominante.ref.nom) || p.refDominante.nom)) || "";
+    const statutTxt = p.gainActe > 0 ? "acté " + eur(p.gainActe)
+                     : p.gainProjete > 0 ? "en cours " + eur(p.gainProjete)
+                     : t.etat === "aChiffrer" ? "à chiffrer" : "—";
+    return `<div class="m4-row"><span class="m4-date">${escapeAttr(t.ligne.nom || "")}</span>` +
+      `<span class="m4-titre">${escapeAttr(t.nomMachine || t.code)} — ${escapeAttr(ref || "")}</span>` +
+      `<span class="m4-stat">${statutTxt}</span></div>`;
+  }).join("");
+  const essaisRows = essaisRecents(8).map(e => {
+    const stTxt = e.statut === "ok" ? "conforme" : e.statut === "bad" ? "non conforme" : e.statut === "arrete" ? "arrêté" : "en cours";
+    return `<div class="m4-row"><span class="m4-date">${escapeAttr(e.date || "—")}</span>` +
+      `<span class="m4-titre">${escapeAttr(e.ligne)} · ${escapeAttr(e.opCode)} — ${escapeAttr(e.scNom)} · ${escapeAttr(e.titre)}</span>` +
+      `<span class="m4-stat${e.statut === "bad" ? " bad" : ""}">${stTxt}</span></div>`;
+  }).join("");
+  const etapesRows = postes.filter(t => t.etat !== "gagne").slice(0, 6).map(t =>
+    `<div class="m4-row"><span class="m4-date">${escapeAttr(t.ligne.nom || "")}</span>` +
+    `<span class="m4-titre">${escapeAttr(t.nomMachine || t.code)} — ${escapeAttr(prochaineEtapePoste(t))}</span></div>`).join("");
+  return `<div class="m4">
+    <div class="m4-entete">
+      <div><div class="m4-sur">Mission — A4</div>
+      <div class="m4-titre2">Suivi d'optimisation SPK by CeramTec × Sept Fons — pilote : Matis Hernu · partenaire outillage : SPK by CeramTec (Benjamin Rouquette)</div></div>
+      <div class="m4-date2">Édité le ${new Date().toLocaleDateString("fr-FR")} — vivant, recalculé à chaque édition</div>
+    </div>
+    <div class="m4-blocs">
+      <div class="m4-bloc ok"><div class="n">${eur(gainsActes)}</div><div class="l">Gains ACTÉS — en production</div></div>
+      <div class="m4-bloc encours"><div class="n">${eur(gainsProjetes)}</div><div class="l">EN COURS — validés ou en essai</div></div>
+    </div>
+    <h4 class="m4-h">Le plan — poste par poste</h4>
+    ${planRows || `<div class="m4-row"><span class="m4-titre">aucun poste chiffré pour l'instant</span></div>`}
+    <h4 class="m4-h">Essais récents — timeline avec statut</h4>
+    ${essaisRows || `<div class="m4-row"><span class="m4-titre">aucun essai relevé pour l'instant</span></div>`}
+    ${etapesRows ? `<h4 class="m4-h">Prochaines étapes</h4>${etapesRows}` : ""}
+    <div class="m4-proto">Protocole du site : tout essai concluant est répété 5× ; validé 5× et viable économiquement, il passe en production. Document interne au projet — pilote Matis Hernu, partenaire outillage SPK by CeramTec.</div>
+  </div>`;
+}
+
 /* Filtre du tableau de bord (v4.1) : null = tous les scenarios, sinon l'id d'un projet --
 
 /* Filtre du tableau de bord (v4.1) : null = tous les scenarios, sinon l'id d'un projet --
@@ -16050,6 +16161,55 @@ cloudDemarrage();
      unique sans etape de build, donc les tests vivent avec le code qu'ils testent.
      ============================================================ -->
 <script>
+
+/* ── v4.79 — LES PROMESSES DE L'INTERFACE ─────────────────────────────────────
+   Contrôle voulu par Hermes (Tours 50-51) et construit ici, main passée. Le
+   constat de départ : « un bouton n'appelle que des fonctions qui existent ».
+   La méthode exacte — « une question sur le code se pose au code » : chaque
+   promesse est vérifiée par typeof DANS LA PORTÉE du script, là où le clic
+   résout ses noms. Aucune analyse du source, aucun regex sur le JavaScript —
+   la réponse vient du moteur. (Le scanner d'attributs onclick imaginé d'abord
+   n'avait rien à mordre : ce fichier compte 0 onclick= et 166 addEventListener.)
+
+   La liste est ÉCRITE À LA MAIN, porte par porte, en lisant les gestionnaires —
+   c'est sa force (zéro faux positif) et sa limite (une porte nouvelle n'est
+   couverte que si sa promesse entre ici ; la constitution §6.9 le sait déjà :
+   les tests protègent ce qu'on a programmé). Chaque porte nomme les fonctions
+   SANS lesquelles son clic est mort. Les portes internes (fermetures, dialogues
+   génériques) sont regroupées ; les portes mortes CONNUES et non construites
+   (import de livraison, photos de machines) ne figurent pas ici : elles sont
+   des chantiers, pas des promesses. */
+const PROMESSES_UI = [
+  { porte:"🖨 A4 Mission (carte atelier)", fns:["missionA4HTML"] },
+  { porte:"📦 Nouvelle livraison (carte atelier)", fns:["creerLivraison", "dialogueDemander"] },
+  { porte:"🖨 d'une livraison (dossier hiérarchie)", fns:["livraisonImpressionHTML"] },
+  { porte:"🔍 Vue CPP (accueil et fiche poste)", fns:["ouvrirVueCpp", "renderVueCpp"] },
+  { porte:"Carte atelier (barre, accueil, fiche)", fns:["ouvrirCarte", "renderCarte", "scenariosPostes", "renderFichePoste", "ouvrirPosteDepuisFiche"] },
+  { porte:"Accueil (barre)", fns:["ouvrirAccueil"] },
+  { porte:"Tableau de bord (barre)", fns:["renderDashboard"] },
+  { porte:"Historique (barre)", fns:["renderHistoryPanel"] },
+  { porte:"Backlog (barre)", fns:["renderBacklog"] },
+  { porte:"Classeur Matis (barre)", fns:["ouvrirMatis"] },
+  { porte:"Recherche (barre et frappe)", fns:["ouvrirRecherche", "rendreRecherche"] },
+  { porte:"Parcours (barre)", fns:["ouvrirParcours"] },
+  { porte:"Nouveautés (barre)", fns:["ouvrirNouveautes"] },
+  { porte:"Bandeau reprise (repAtelier/repOuvrir/repFermer)", fns:["allerVers", "ouvrirAtelier", "renderReprise"] },
+  { porte:"Verrouillage (barre)", fns:["toggleLock"] },
+  { porte:"Sauvegarde de secours (barre)", fns:["restoreBackup"] },
+  { porte:"Export JSON (barre)", fns:["exportData"] },
+  { porte:"Export CSV (barre)", fns:["renderCsvPanel"] },
+  { porte:"Rapport de validation (barre)", fns:["telechargerRapport"] },
+  { porte:"Dossier photos (Options)", fns:["connectPhotosDir"] },
+  { porte:"Options (barre)", fns:["syncOptionsUI"] },
+  { porte:"Projets — créer/supprimer/infos (bandeau)", fns:["creerProjet", "validerCreationProjet", "supprimerProjetActif", "enregistrerProjetInfo"] },
+  { porte:"Import — remplacer/fusionner", fns:["appliquerImport"] },
+  { porte:"Migration D1D2 et inversion MABEC (proposée)", fns:["migrerOutilsD1D2", "migrerInversionMabec"] },
+  { porte:"Fiche outil — ouvrir/retirer (OP)", fns:["ouvrirPieceJointe", "dialogueConfirmer"] },
+  { porte:"Annotations — enregistrer", fns:["saveAnnotEditor"] },
+  { porte:"Ligne — infos (appliquer en fermant)", fns:["appliquerLigneInfo"] },
+  { porte:"Fiches et fonds — fermer (✕, Annuler, fond)", fns:["fermerPanneaux", "fermerPanneauxConfirme", "fermerDialogue", "fermerLightbox"] }
+];
+
 function runTests(){
   const T = [];
   const ok = (nom, recu, attendu, tol) => {
@@ -16859,6 +17019,63 @@ function runTests(){
       ok("creerLivraison : protocole embarqué", /5/.test(lv.protocole), true);
       lignes = lSauve;
     }
+
+    /* ---- v4.79 : A4 Mission — le clic mort écrit, et ce qu'il promet ---- */
+    {
+      const lSauve = lignes;
+      const scP = normalizeScenario({ id:"sM1", name:"Prod actuelle", baseline:true, cycle:100, statut:"serie",
+        outils:[{ id:"tM1", numero:"T1", logements:[{ id:"gM1", nom:"Piste", prix:10, aretes:8, charniere:100 }] }], essais:[], scrapLog:[] });
+      const scE = normalizeScenario({ id:"sM2", name:"Essai optimisant", baseline:false, cycle:150, statut:"valide",
+        outils:[{ id:"tM2", numero:"T2", logements:[{ id:"gM2", nom:"Piste", prix:5, aretes:8, charniere:150 }] }], scrapLog:[] });
+      scE.essais = [ essaiBrut("eM1", [prel("pM1", 10, 0.05)]) ];
+      scE.essais[0].params = { logements: snapshotLogements(scE) };
+      scE.essais[0].date = "2026-09-28";
+      const scAr = normalizeScenario({ id:"sM3", name:"Essai arrêté", baseline:false, statut:"essai",
+        outils:[{ id:"tM3", numero:"T3", logements:[{ id:"gM3", nom:"Piste", prix:7, aretes:8, charniere:120 }] }], scrapLog:[] });
+      scAr.essais = [ essaiBrut("eM2", [prel("pM2", 5, 0.05)]) ];
+      scAr.essais[0].params = { logements: snapshotLogements(scAr) };
+      scAr.essais[0].date = "2026-09-30";
+      scAr.essais[0].cloture = { motif: "casse", detail: "éclat arête", date: "2026-09-30" };
+      const lM = normalizeLigne({ id:"lM", nom:"EMAG 1", coutHoraire:50,
+        references:[{ id:"rM", nom:"DV 356x26 RPI", productionAnnuelle:100000, cibleCPP:0.575,
+          ops:[{ id:"oM", nom:"OP10 Ebauche", ordre:10, config:cfg, scenarios:[scP, scE] },
+               { id:"oM2", nom:"OP20 Finition", ordre:20, config:cfg, scenarios:[scAr] }] }] });
+      lignes = [lM];
+      /* si la fonction manque (clic mort), la suite doit continuer jusqu'au bout
+         et le dire — pas s'arrêter net (v1.7) : les tests de contenu échouent
+         sur du vide, et la promesse échoue séparément */
+      const htmlM = (typeof missionA4HTML === "function") ? missionA4HTML() : "";
+      ok("missionA4HTML : la page se titre Mission — A4", /Mission — A4/.test(htmlM), true);
+      ok("missionA4HTML : vivante — dit qu'elle se recalcule (vs livraison figée)",
+         /recalculé à chaque édition/.test(htmlM) && !/figé/.test(htmlM), true);
+      ok("missionA4HTML : actés et en cours en DEUX blocs, jamais sommés (§3.4)",
+         /Gains ACTÉS/.test(htmlM) && /EN COURS — validés ou en essai/.test(htmlM), true);
+      ok("missionA4HTML : le plan porte le poste chiffré et sa référence dominante",
+         /DV 356x26 RPI/.test(htmlM) && /en cours/.test(htmlM), true);
+      ok("missionA4HTML : la timeline écrit les statuts — arrêté et en cours",
+         /arrêté/.test(htmlM) && /en cours/.test(htmlM), true);
+      ok("missionA4HTML : la timeline range le plus récent d'abord (eM2 du 30/09 avant eM1 du 28/09)",
+         (() => { const iA = htmlM.indexOf("eM2"), iB = htmlM.indexOf("eM1");
+                  return iA !== -1 && iB !== -1 && iA < iB; })(), true);
+      ok("missionA4HTML : la timeline cite le scénario et la ligne de chaque essai",
+         /Essai optimisant/.test(htmlM) && /EMAG 1/.test(htmlM), true);
+      ok("missionA4HTML : le protocole 5× est écrit sur la page", /répété 5×/.test(htmlM), true);
+      ok("essaisRecents : les essais sans date passent après les datés",
+         essaisRecents(10)[0].date !== "", true);
+      lignes = lSauve;
+    }
+
+    /* ---- v4.79 : les promesses de l'interface — typeof, la réponse du moteur ----
+       Hermes, Tour 50 : « une boucle sur les gestionnaires de clic, un typeof par
+       fonction appelée, un ok() par résultat ». Le typeof est résolu par eval direct
+       DANS la portée du script — exactement là où un gestionnaire résoudrait le
+       nom. Une promesse non tenue = un clic mort, exactement comme missionA4HTML
+       l'a été de la 4.52 à la 4.78. */
+    PROMESSES_UI.forEach(p => p.fns.forEach(f => {
+      let t;
+      try { t = eval("typeof " + f); } catch(e){ t = "erreur: " + e.message; }
+      ok("promesse UI — " + p.porte + " → " + f + "()", t, "function");
+    }));
 
     /* ---- v4.48 : compléter depuis la prod — rapprochement par préfixe ---- */
     {
