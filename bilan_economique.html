@@ -9532,7 +9532,7 @@ function renderDetail(){
   const sc = data.find(s => s.id === activeId) || data[0];
   const wrap = document.getElementById("scenarioDetail");
   if(!sc){ wrap.innerHTML = ""; return; }
-  wrap.innerHTML = `<div class="zone-band"><b>3 &middot; Traçabilité du scénario ouvert</b><span>outils, cycle, essais, rebut</span><button class="ghost small" id="retourCarteBtn" title="Revenir à la carte atelier" style="margin-left:auto;">⇠ Carte atelier</button></div>` + scenarioBlockHTML(sc, true);
+  wrap.innerHTML = `<div class="zone-band"><b>3 &middot; Traçabilité du scénario ouvert</b><span>outils, cycle, essais, rebut</span><button class="ghost small" id="livraisonsBtn" title="Le dossier hiérarchie : figer les gains du jour dans un document daté (dans la carte atelier)">📦 Livraisons</button><button class="ghost small" id="retourCarteBtn" title="Revenir à la carte atelier" style="margin-left:auto;">⇠ Carte atelier</button></div>` + scenarioBlockHTML(sc, true);
   attachDetailHandlers(sc);
   loadPhotoThumbnails();
 }
@@ -10417,6 +10417,14 @@ function attachDetailHandlers(sc){
   /* v4.52 — retour carte atelier depuis la traçabilité (A1 : jamais de cul-de-sac) */
   const retourCarte = root.querySelector("#retourCarteBtn");
   if(retourCarte) retourCarte.addEventListener("click", () => { renderCarte(); ouvrirPanneau("cartePanel"); });
+  /* v4.74.3 — le dossier hiérarchie depuis l'écran de travail : Benjamin le
+     cherchait ici, il y vit désormais (la carte s'ouvre rendue, on y saute). */
+  const livrBtn = root.querySelector("#livraisonsBtn");
+  if(livrBtn) livrBtn.addEventListener("click", () => {
+    renderCarte(); ouvrirPanneau("cartePanel");
+    const bloc = document.querySelector("#cartePanel .lv-bloc");
+    if(bloc) bloc.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
   root.querySelectorAll("details.config-block[data-config-id]").forEach(det => {
     det.addEventListener("toggle", () => {
       const id = det.getAttribute("data-config-id");
@@ -12286,7 +12294,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.74.2";
+const TOOL_VERSION = "4.74.3";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -13035,7 +13043,33 @@ function detecterOutilsD1D2(scenarios){
     const avant = (sc.outils || []);
     const apres = reparerOutilsD1D2(avant);
     const fusions = apres.filter(o => o._fusionReparee && (o.nbOutils || 1) > 1);
-    if(fusions.length) touches.push({ sc, fusions, apres });
+    if(fusions.length){
+      touches.push({ sc, fusions, apres, completOnly: false });
+      return;
+    }
+    /* v4.74.3 — les outils DÉJÀ fusionnés avant la 4.74.2 portent des logements
+       nommés par position (D1, D2…) mais PAS de correcteur : détectés aussi,
+       pour remplir le champ manquant. La correction est idempotente. */
+    const aCompleter = avant.filter(o => {
+      const c = String(o.correcteur || "").trim();
+      const positions = (o.logements || []).map(l => String(l.nom || "").trim().toUpperCase())
+        .filter(n => n.match(/^D\d+$/));
+      return !c && positions.length >= 1;
+    });
+    if(aCompleter.length){
+      touches.push({ sc,
+        fusions: [{ numero: aCompleter[0].numero, nbOutils: aCompleter.length,
+                    logements: aCompleter.flatMap(o => o.logements || []) }],
+        apres: avant.map(o => {
+          const c = String(o.correcteur || "").trim();
+          if(c) return o;
+          const positions = (o.logements || []).map(l => String(l.nom || "").trim().toUpperCase())
+            .filter(n => n.match(/^D\d+$/));
+          if(!positions.length) return o;
+          return Object.assign({}, o, { correcteur: positions.join(", ") });
+        }),
+        completOnly: true });
+    }
   });
   return touches;
 }
@@ -13058,6 +13092,11 @@ function migrerOutilsD1D2(){
         return copie;
       });
       lignesModifiees.add(l.nom || "?");
+      if(touches[0].completOnly){
+        rapport.push((l.nom || "?") + " · " + (r.nom || "?") + " · " + (op.nom || "?") + " : "
+          + "correcteur rempli (" + touches[0].fusions.map(f => f.numero + " → " + (f.logements || []).map(l => l.nom).filter(n => n.match(/^D\d+$/i)).join(", ")).join(", ") + ")");
+        return;
+      }
       touches[0].fusions.forEach(f => rapport.push(
         (l.nom || "?") + " · " + (r.nom || "?") + " · " + (op.nom || "?") + " : "
         + f.nbOutils + " outils « " + f.numero + " » regroupés en 1, avec "
@@ -13154,7 +13193,21 @@ function compterOutilsD1D2(){
   let n = 0;
   lignes.forEach(l => (l.references || []).forEach(r => (r.ops || []).forEach(op =>
     (op.scenarios || []).forEach(sc => {
-      n += detecterOutilsD1D2([ sc ]).reduce((a, t) => a + t.fusions.length, 0);
+      /* v4.74.3 : les cas « correcteur manquant » (completOnly) ne comptent pas
+         comme des regroupements — le bandeau les annonce à part */
+      n += detecterOutilsD1D2([ sc ]).reduce((a, t) => a + (t.completOnly ? 0 : t.fusions.length), 0);
+    }))));
+  return n;
+}
+
+/* v4.74.3 — les outils déjà regroupés dont le correcteur manque (corrigés avant
+   la 4.74.2) : comptés à part, le bandeau ne dira pas « en outils séparés »
+   pour un outil qui ne l'est plus. */
+function compterCorrecteursManquants(){
+  let n = 0;
+  lignes.forEach(l => (l.references || []).forEach(r => (r.ops || []).forEach(op =>
+    (op.scenarios || []).forEach(sc => {
+      n += detecterOutilsD1D2([ sc ]).reduce((a, t) => a + (t.completOnly ? t.fusions.length : 0), 0);
     }))));
   return n;
 }
@@ -14959,12 +15012,14 @@ function renduMigrBandeau(){
   const wrap = document.getElementById("migrBandeau");
   if(!wrap) return;
   const n = compterOutilsD1D2();
+  const nCorr = compterCorrecteursManquants();
   const nInv = compterInversionsMabec();
-  wrap.hidden = (n === 0 && nInv === 0);
-  if(n === 0 && nInv === 0) { wrap.innerHTML = ""; return; }
+  wrap.hidden = (n === 0 && nCorr === 0 && nInv === 0);
+  if(n === 0 && nCorr === 0 && nInv === 0) { wrap.innerHTML = ""; return; }
   const parties = [];
   if(n) parties.push(`🔧 <b>${n} porte-outil${n > 1 ? "s" : ""}</b> saisi${n > 1 ? "s" : ""} en outils séparés (T543 D1 + T543 D2…) : la règle atelier dit <b>un porte-outil = un outil à logements</b>`);
-  if(nInv) parties.push(`🏷️ <b>${nInv} logement${nInv > 1 ? "s" : ""}</b> portent un code MABEC dans le champ « Référence plaquette » (inversion avec le fichier de Matis) — la correction remet le MABEC à sa place ; l'ISO n'étant pas dans les données, la référence restera à saisir`);
+  if(nCorr) parties.push(`✏️ <b>${nCorr} outil${nCorr > 1 ? "s" : ""} déjà regroupé${nCorr > 1 ? "s" : ""}</b> sans correcteur — la correction remplit le champ depuis les logements (D1, D2…)`);
+  if(nInv) parties.push(`🏷️ <b>${nInv} logement${nInv > 1 ? "s" : ""}</b> attendent leur référence plaquette — l'ISO est complété depuis le classeur quand il y est connu`);
   wrap.innerHTML = `
     <div class="migr-bandeau">
       <span>${parties.join("<br>")}
@@ -16971,6 +17026,36 @@ function runTests(){
         ok("migration : après correction, la détection ne voit plus rien (le bandeau s'éteindra)",
            compterOutilsD1D2() >= 0, true);
       } finally { lignes = lAv; }
+    }
+
+    /* ---- v4.74.3 — les outils DÉJÀ migrés reçoivent leur correcteur -----------
+       Benjamin a lancé « Corriger maintenant » AVANT la 4.74.2 : ses outils
+       fusionnés sont sauvegardés sans correcteur, et le bandeau s'était éteint.
+       La détection rattrape ce cas : logements nommés D1/D2 + correcteur vide. */
+    {
+      const lAv3 = lignes;
+      const scJ = normalizeScenario({ id: "scJ", name: "Prod", baseline: true, outils: [
+        { id: "uJ1", numero: "T543", correcteur: "", logements: [
+          { id: "gJ1", nom: "D1", mabec: "Z000 519 285", prix: 11.87, aretes: 6, charniere: 30 },
+          { id: "gJ2", nom: "D2", mabec: "Z000 455 182", prix: 10.97, aretes: 8, charniere: 300 } ] } ] });
+      const refJ = normalizeReference({ id: "rJ", nom: "356x26", ops: [ { id: "oJ", nom: "OP40", scenarios: [ scJ ] } ] });
+      lignes = [ normalizeLigne({ id: "lJ", nom: "EMAG 1", references: [ refJ ] }) ];
+      try {
+        const scCible = lignes[0].references[0].ops[0].scenarios[0];
+        const touches = detecterOutilsD1D2([ scCible ]);
+        ok("correcteur : un outil DÉJÀ fusionné sans correcteur est détecté (le cas de Benjamin)",
+           [touches.length, touches[0].completOnly], [1, true]);
+        const resJ = migrerOutilsD1D2();
+        const corrige = lignes[0].references[0].ops[0].scenarios[0].outils[0];
+        ok("correcteur : la migration remplit « D1, D2 » sans rien changer d'autre",
+           [corrige.correcteur, corrige.numero, corrige.logements.length],
+           ["D1, D2", "T543", 2]);
+        ok("correcteur : le rapport le dit en toutes lettres",
+           resJ.rapport.some(x => x.includes("correcteur rempli")), true);
+        /* idempotence : une fois rempli, plus rien à détecter (le bandeau s'éteint) */
+        ok("correcteur : une fois rempli, plus rien à détecter",
+           detecterOutilsD1D2([ lignes[0].references[0].ops[0].scenarios[0] ]).length, 0);
+      } finally { lignes = lAv3; }
     }
 
     /* ---- v4.74.1 — l'inversion ISO / MABEC : détectée, permutée, JAMAIS sur les sains ----

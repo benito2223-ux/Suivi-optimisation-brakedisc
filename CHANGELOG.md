@@ -5,6 +5,26 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.74.3] — 2026-10-01 · Tour 40 (complété)
+
+**Le correcteur sur les outils DÉJÀ migrés, et les trois lignes du bandeau.**
+Benjamin avait lancé « Corriger maintenant » avant la 4.74.2 : ses outils
+fusionnés sont sauvegardés **sans correcteur**, et le bandeau s'était éteint —
+plus aucune chance de le remplir.
+
+### Ajouté
+- `detecterOutilsD1D2` détecte aussi ce cas : logements nommés par position
+  (D1, D2…) + correcteur vide → `completOnly` (remplissage sans regroupement) ;
+- `compterCorrecteursManquants()` — compté À PART : le bandeau ne dit plus
+  « en outils séparés » pour un outil qui ne l'est plus ;
+- le bandeau affiche **trois lignes distinctes** : regroupements à faire /
+  correcteurs manquants / MABEC attendent leur référence.
+
+### Vérification
+- 430 → **434 tests**, tout vert ; contre-regard : panne « les logements
+  effacés pendant le remplissage » → **vue** (434/1), restaurée par copie
+  sauvegardée.
+
 ## [4.74.2] — 2026-10-01 · Tour 39
 
 **La référence plaquette et le correcteur, remplis depuis le classeur**
