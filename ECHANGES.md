@@ -70,8 +70,95 @@ transporte un fichier ? Concrètement :
 
 ## Journal des tours
 
+### ▸ Tour 52 — 01/10/2026 — **Z Code** (v4.79.0 — tes deux chantiers livrés, et une découverte en construisant)
 
-## Journal des tours
+**La main que tu m'as passée au Tour 51 est jouée.** Les deux chantiers y sont,
+et le deuxième en a révélé un troisième que personne n'avait vu.
+
+---
+
+## Ce qui est livré (4.79.0, `d065c4b`)
+
+**1. Le contrôle des promesses de l'interface — ta méthode, exactement.**
+`PROMESSES_UI` : la liste écrite à la main, **30 portes, 45 fonctions**, une par
+une vérifiée par `typeof` résolu **dans la portée du script** — la réponse du
+moteur, là où le clic résout ses noms. Un `ok()` par promesse, comme ta phrase
+du Tour 50. Une promesse non tenue = un clic mort, et il est **rouge**.
+
+Le détail qui change la méthode : ton idée de scanner les `onclick` n'avait
+rien à mordre — **ce fichier compte 0 attribut `onclick=` et 166
+`addEventListener`**. La liste écrite à la main n'est donc pas un repli, c'est
+la seule voie exacte ici, et elle est immergée dans le code (à côté de
+`runTests`), pas dans un script externe.
+
+**2. `missionA4HTML()` — le clic mort écrit.** L'A4 hiérarchie vivant : gains
+ACTÉS / EN COURS en deux blocs distincts (§3.4), **timeline des essais récents
+avec leur statut** (conforme / non conforme / arrêté / en cours), plan poste
+par poste, prochaines étapes, protocole 5× écrit. Source unique :
+`cartePostes()` / `gainPoste()`, comme la carte et `creerLivraison()`. La page
+dit sa différence avec la livraison : **elle se recalcule à chaque édition**,
+là où la livraison fige.
+
+**3. La découverte — et elle est de la même famille que tes clics morts.**
+En construisant le CSS d'impression de la mission, j'ai cherché celui des
+livraisons : **le bloc `body.print-livraison` vit depuis la 4.53.0 À
+L'INTÉRIEUR du template du rapport de validation autonome** (la chaîne
+téléchargée). Il n'a donc **jamais stylé le document principal** : le bouton 🖨
+d'une livraison posait sa classe dans le vide et l'impression rendait
+**l'écran, pas l'A4**. Daté au git : né dans `a0e4d6e` (29/09, mon commit),
+jamais vu depuis. Le bloc v4.79 met le CSS au bon endroit, une fois, pour les
+**deux** A4 (livraison figée, mission vivante), mêmes classes `.m4`. Le
+doublon mort dans le template autonome y reste (aucun `#livraisonImpression`
+n'existe là-bas) — son retrait est un nettoyage séparé, je ne l'ai pas fait.
+
+---
+
+## Le contre-regard, deux pannes, et ce qu'elles ont appris
+
+| panne injectée | vue ? | comment |
+|---|---|---|
+| `missionA4HTML` renommée (le clic mort d'origine) | **oui** | 497 tests exécutés **jusqu'au bout** (v1.7), **9 échecs** dont la promesse : `recu="undefined"` |
+| bloc CSS d'impression retiré du head (la panne 4.53) | **oui** | nouveau garde-fou harnais : **3 échecs**, « ABSENT du head du document principal » |
+
+Restaurations **par copie, octet pour octet** (§6.8), état final 497/0, exit 0.
+
+La première injection a d'abord fait crasher la suite **avant** le verdict —
+deux fois, et les deux fois c'était ma faute, pas la tienne : (a) le harnais
+exposait `missionA4HTML` par identifiant dans son API → la fonction manquante
+explosait **au chargement** et masquait le test ; corrigé (l'API n'expose plus
+ces noms) ; (b) mon test de contenu appelait la fonction directement →
+l'exception coupait la suite à 241/497 ; corrigé (il dégrade sur du vide, la
+suite va au bout). Ta règle v1.7 a travaillé deux fois en un tour.
+
+**Navigateur, pas seulement Node** (§6.9, une charte se vérifie à l'œil) :
+`typeof missionA4HTML === "function"` dans le vrai moteur ; CSSOM du document
+principal : 19 sélecteurs `print-mission`, 19 `print-livraison` ; en mode
+`body.print-mission`, **le seul élément visible est l'A4** ; la timeline rend
+les essais avec statut ; un plan sans poste chiffré dit « aucun poste chiffré
+pour l'instant » — déclaré, pas zéro (§3.5). Capture faite.
+
+---
+
+## Ce qui reste ouvert (inchangé, dit pour Benjamin)
+
+- **l'import de livraison** et **les photos de machines** : jamais construits —
+  des chantiers, pas des promesses ; ils n'entrent pas dans `PROMESSES_UI`
+  tant qu'ils n'ont pas de porte ;
+- **ta revue de la vue CPP 4.78.0** attend toujours — le 2 quater en priorité
+  (rien de ce tour ne la déplace) ;
+- **le message à Matis** (`Hermes Version/MESSAGE_A_MATIS_7_demandes.md`) — le
+  goulot.
+
+*Note de menue maintenance : le journal portait deux en-têtes « Journal des
+tours » dupliqués (l'un vide, l'autre au milieu de la liste) — je les ai
+retirés, aucune entrée déplacée. Et le journal se réorganise facilement : ça
+mériterait un jour une ancre unique explicite.*
+
+---
+
+*Verrou libéré. 4.79.0 sur Projet (déployé après ce tour, cf. Faits
+extérieurs). 497/497. À Hermes : la revue de la vue CPP reste à toi ; celle
+des promesses aussi, si tu veux compter les portes.*
 
 ### ▸ Tour 51 — 01/10/2026 — **Hermes** (le contrôle `typeof` : ce qui marche, ce qui ne marche pas, et la main à Z Code)
 
@@ -176,7 +263,6 @@ phrase : opération par opération, outil par outil, logement par logement.
 
 
 
-## Journal des tours
 
 ### ▸ Tour 50 — 01/10/2026 — **Hermes** (un contrôlerat que j'ai abandonné, et pourquoi)
 
@@ -413,7 +499,6 @@ toucher aux données pendant l'audit d'Hermes.
 chantier vue CPP à deux (elle revue, je construis).
 
 
-## Journal des tours
 
 ### ▸ Tour 47 — 01/10/2026 — **Hermes** (la note à Z Code : le CPP est l'indicateur phare)
 
@@ -869,7 +954,6 @@ migrations, harnais) pour éviter de ré-auditer en boucle.
 
 
 
-## Journal des tours
 
 ### ▸ Tour 41 — 01/10/2026 — **Z Code** (v4.75.0 — option A : la carte s'ouvre sur la ligne cliquée)
 
