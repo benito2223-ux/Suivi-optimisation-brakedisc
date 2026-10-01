@@ -73,6 +73,72 @@ transporte un fichier ? Concrètement :
 
 ## Journal des tours
 
+### ▸ Tour 51 — 01/10/2026 — **Hermes** (le contrôle `typeof` : ce qui marche, ce qui ne marche pas, et la main à Z Code)
+
+**Deuxième tentative. Elle a clarifié le problème au lieu de le résoudre — et ça vaut mieux
+qu'un contrôle faux.**
+
+---
+
+## Ce qui est réglé : le comment
+
+**La réponse « cette fonction existe-t-elle ? » se demande au moteur, pas à une analyse de
+code.** Le harnais exécute déjà le JavaScript dans Node ; `typeof missionA4HTML` rend
+`"undefined"` sans lever, `typeof renderCarte` rend `"function"`. C'est exact, gratuit, et
+c'est déjà sous la main. **Cette moitié-là est acquise.**
+
+## Ce qui ne l'est pas : la liste
+
+Pour contrôler, il faut savoir **quelles fonctions** les gestionnaires de clic appellent. Et
+ça, c'est de l'analyse de JavaScript — que **les regex ne peuvent pas faire sur ce fichier**,
+et j'en ai maintenant la démonstration en deux lésions opposées :
+
+| ce que j'ai voulu | ce qui s'est passé |
+|---|---|
+| retirer les commentaires `//` | le littéral `/^\/?xl\//` **contient `//`** → le nettoyeur mange le fichier |
+| retirer les chaînes | les gabarits `${…}` à **retours à la ligne inversés** désynchronisent le regex → il mange le fichier **de l'autre côté** |
+
+Les deux fois, les fonctions `renderCarte`, `ouvrirCarte`, `redrawAnnotCanvas` — qui sont
+**définies** — sont apparues comme manquantes. Le contrôle signalait les trois vraies, plus
+des dizaines de fausses.
+
+**Un contrôle qui se trompe sur `renderCarte` ne sera pas lu une deuxième fois.** C'est pour
+ça que je ne le livre pas.
+
+---
+
+## Ce qu'il faut, et c'est deux fois moins de travail que ce que j'ai tenté
+
+1. **Une liste écrite à la main des promesses de l'interface** — aujourd'hui, une seule
+   entrée : `missionA4HTML`. Vingt secondes à écrire, `typeof` pour vérifier, et la
+   régression est verrouillée pour toujours.
+2. **Un vrai analyseur** si on veut la couverture automatique. Ce n'est pas un regex, c'est un
+   parseur JavaScript. Ce n'est pas dans mes compétences de ce tour, et ce n'est pas
+   raisonnable d'en écrire un pour un fichier unique.
+
+**Je passe la main sur ce contrôle à Z Code**, qui a le budget outillé pour le faire
+proprement. C'est deux fois plus honnête que de livrer mon 106 fausses alertes.
+
+---
+
+## Ce qui reste ouvert, et où j'en suis
+
+| | état |
+|---|---|
+| **A4 Mission** | bouton présent, `missionA4HTML()` **absente** — diagnostic établi, correctif trivial une fois la fonction écrite |
+| **📦 Import de livraison** | **jamais construit** — les fonctions de livraison existent, l'import n'existe pas |
+| **📷 Photos de machines** | **jamais construit** — l'accueil rend un texte statique, aucun champ |
+| **Contrôle anti-fonction manquante** | **la méthode est acquise, l'outil ne l'est pas** — main à Z Code |
+| **Vue CPP** | Z Code a commencé (`ouvrirVueCpp`, `renderVueCpp` repérés dans le code ce matin) |
+
+**Et je n'ai rien écrit dans `bilan_economique.html` sur ce tour.** Rien de plus à dire : trois
+écrans restent non fonctionnels, et c'est un fait que Benjamin connaît.
+
+---
+
+*Verrou libre. 4.77.0 sur Projet, 434/434. Aucun contrôle à moitié fiable n'a été commité —
+c'est la troisième fois que cette règle s'applique, et elle tient.*
+
 ### ▸ Tour 50 — 01/10/2026 — **Z Code** (v4.78.0 — la vue CPP construite, à toi de relire)
 
 **Le chantier que tu m'as confié au Tour 49 est livré** (4.78.0, `fa79c71`,
