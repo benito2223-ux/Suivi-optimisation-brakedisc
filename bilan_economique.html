@@ -2446,6 +2446,9 @@ body.atelier-on{overflow:hidden;}
 .al-flux{ flex:1; min-width:0; }
 .al-delta{ font-family:var(--font-mono); font-size:11px; font-weight:500; color:var(--green); margin-left:8px; white-space:nowrap; }
 /* 4.65.2 (C5' bloc 3) — la matrice des opérations et le pied */
+/* 4.75 — la ligne demandee depuis l'accueil : surlignee deux secondes */
+.ca-ligne-ciblee > .ca-ligne-titre{ color:var(--blue); }
+.ca-ligne-ciblee{ outline:2px solid var(--blue); outline-offset:4px; border-radius:var(--radius); }
 .mx-titre{ font-family:var(--font-mono); font-size:10px; font-weight:500; letter-spacing:.12em;
   text-transform:uppercase; color:var(--label); margin:16px 0 6px; }
 .mx-tbl td{ font-size:11.5px; padding:5px 8px; }
@@ -9475,7 +9478,7 @@ function outilCarteHTML(sc, o, oi, showFrFa, showCycleDetail){
         <span class="os-grip" title="Glisser pour déplacer cet outil dans l'ordre">⠿</span>
         <span class="outil-pastille">${oi + 1}</span>
         <span class="os-numero">${escapeAttr(o.numero || "Outil sans n°")}</span>
-        ${o.correcteur ? `<span class="os-corr">${escapeAttr(o.correcteur)}</span>` : ""}
+        ${o.correcteur ? `<span class="os-corr" title="Correcteur">${escapeAttr(o.correcteur)}</span>` : ""}
         <span class="os-desc">${escapeAttr(o.description || "")}</span>
         <span class="os-logements">${o.logements.map(l => escapeAttr(l.nom || "—")).join(" + ") || "aucun logement"}</span>
         ${oi > 0 && o.simultaneAvecPrecedent ? `<span class="os-sim" title="Cet outil usine en même temps que le précédent — leurs temps ne s'additionnent pas, le groupe vaut le plus long.">⇉ simultané</span>` : ""}
@@ -11787,6 +11790,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.75.0", date:"01/10/2026", points:[
+    "<b>Depuis l’accueil, la carte s’ouvre SUR la ligne cliquée.</b> Tu cliques EMAG 3 dans le tableau de bord : la carte défile jusqu’à la section EMAG 3, surlignée deux secondes — plus jamais une autre ligne devant les yeux. Et la correction des correcteurs manquants (outils regroupés avant la 4.74.2) est proposée dans le bandeau."
+  ]},
   { version:"4.74.2", date:"01/10/2026", points:[
     "<b>La référence plaquette et le correcteur remplis depuis le classeur.</b> La colonne « ISO » du fichier de Matis remplit désormais la référence plaquette de chaque logement (elle était lue puis jetée) — et le correcteur (le D1/D2 après le numéro d’outil) remplit le champ Correcteur de l’outil. La correction à la demande complète aussi les références vidées hier : l’ISO de ton T543 (TNGN160412… pour D1, SNGN090416… pour D2) est repris depuis les scénarios « base excel » quand il y est connu."
   ]},
@@ -13932,7 +13938,7 @@ function renderCarte(){
     const infos = [];
     if(ligne.coutHoraire !== "" && !isNaN(parseFloat(ligne.coutHoraire))) infos.push(fmt(parseFloat(ligne.coutHoraire), 2) + " €/h");
     infos.push(`${tuilesL.filter(t => t.etat === "gagne").length} gagné${tuilesL.filter(t => t.etat === "gagne").length > 1 ? "s" : ""}`);
-    return `<section class="ca-ligne">
+    return `<section class="ca-ligne" data-ligne-id="${escapeAttr(ligne.id)}">
       <h3 class="ca-ligne-titre">${escapeAttr(nom)}
         <span class="ca-ligne-info">${escapeAttr(infos.join(" · "))}</span>
         ${gainL > 0 ? `<span class="ca-ligne-gain">+${fmtEuroCourt(gainL)}/an acté</span>` : ""}
@@ -14070,7 +14076,22 @@ function renderCarte(){
 }
 
 /* l'entrée : le bouton de la barre d'outils ouvre la carte (v4.51.2) */
-function ouvrirCarte(){ renderCarte(); ouvrirPanneau("cartePanel"); }
+function ouvrirCarte(ligneId){
+  renderCarte();
+  ouvrirPanneau("cartePanel");
+  /* v4.75 — depuis l'accueil : la tuile cliquée mène À SA LIGNE, pas au début
+     de la carte. La section est mise en évidence deux secondes. */
+  if(ligneId){
+    const sec = document.querySelector('#cartePanel .ca-ligne[data-ligne-id="' + ligneId + '"]');
+    if(sec){
+      /* le panneau est le conteneur scrollable : on y deplace la section */
+      const panneau = document.getElementById("cartePanel");
+      panneau.scrollTop = sec.offsetTop - panneau.offsetTop - 8;
+      sec.classList.add("ca-ligne-ciblee");
+      setTimeout(() => sec.classList.remove("ca-ligne-ciblee"), 2000);
+    }
+  }
+}
 
 /* ════════════════════════════════════════════════════════════════════════════
    v4.60.0 — L'ÉCRAN D'ACCUEIL : la carte en tuiles de LIGNES (le « premier écran »)
@@ -14326,10 +14347,10 @@ function renderAccueil(){
   const fermer = document.getElementById("alClose");
   if(fermer) fermer.addEventListener("click", fermerPanneaux);
   wrap.querySelectorAll(".al-ouvrir").forEach(btn =>
-    btn.addEventListener("click", ev => { ev.stopPropagation(); ouvrirCarte(); }));
+    btn.addEventListener("click", ev => { ev.stopPropagation(); ouvrirCarte(btn.getAttribute("data-ligne")); }));
   wrap.querySelectorAll(".al-tuile:not(.al-hors)").forEach(t => {
-    t.addEventListener("click", () => ouvrirCarte());
-    t.addEventListener("keydown", ev => { if(ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); ouvrirCarte(); } });
+    t.addEventListener("click", () => ouvrirCarte(t.getAttribute("data-ligne")));
+    t.addEventListener("keydown", ev => { if(ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); ouvrirCarte(t.getAttribute("data-ligne")); } });
   });
   /* v4.65.2 — la porte de la matrice : même mécanique que la carte (couche 2) */
   wrap.querySelectorAll(".mx-ouvrir").forEach(b => {

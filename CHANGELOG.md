@@ -5,6 +5,36 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.75.0] — 2026-10-01 · Tour 41 · Option A
+
+**Depuis l'accueil, la carte s'ouvre SUR la ligne cliquée.** Le diagnostic du
+bug de Benjamin : la carte était déjà structurée par ligne (sections
+`ca-ligne` de la 4.51), mais le clic depuis un tableau de bord ouvrait la
+carte **au début** — devant HESSAPP, quoi qu'on ait cliqué. Avec des postes
+homonymes (« Ébauche » sur quatre lignes), il se retrouvait « sur EMAG 1 » en
+croyant regarder EMAG 3.
+
+### Modifié
+- **`ouvrirCarte(ligneId)`** — paramètre optionnel : la carte défile jusqu'à
+  la section de la ligne cliquée (`scrollTop` sur le conteneur du panneau) et
+  la surligne deux secondes (outline bleu + titre bleu) ; sans argument,
+  comportement inchangé ;
+- la section porte `data-ligne-id` ; les tuiles de l'accueil passent leur
+  ligne au clic (clavier inclus) ;
+- le bandeau de migration affiche **trois lignes distinctes** (regroupements /
+  correcteurs manquants / références attendues) — `compterCorrecteursManquants()`
+  sépare les outils déjà regroupés des regroupements à faire.
+
+### Vérification
+- 434/434, tout vert ; contre-regard : panne « logements effacés pendant le
+  remplissage du correcteur » → **vue** (434/1), restaurée par copie
+  sauvegardée ; navigation EMAG 3 vérifiée au navigateur (section ciblée,
+  visible à l'écran).
+
+**Décision Benjamin (discutée, pas codée)** : pas de retour arrière du
+design DS B — le bug de navigation ne venait pas de la palette mais de
+l'ouverture de carte sans ciblage.
+
 ## [4.74.3] — 2026-10-01 · Tour 40 (complété)
 
 **Le correcteur sur les outils DÉJÀ migrés, et les trois lignes du bandeau.**
