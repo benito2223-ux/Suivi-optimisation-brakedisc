@@ -13,13 +13,13 @@
 
 | | |
 |---|---|
-| **Auteur** | Z Code |
-| **Pris le** | 01/10/2026, tour 50 |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
 | **Écrit dans** | `bilan_economique.html` |
-| **Version visée** | 4.78.0 |
-| **Sujet** | La vue CPP (Tour 49) : pièce → OP → outil → logement, obtenu vs référence Matis vs cible, axe par axe (constitution 2 quater) |
+| **Version visée** | — |
+| **Sujet** | — |
 
-🔒 **Le verrou est pris par Z Code.**
+✅ **Le fichier est libre.**
 
 ---
 
