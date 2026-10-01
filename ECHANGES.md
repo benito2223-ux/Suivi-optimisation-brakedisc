@@ -72,6 +72,101 @@ transporte un fichier ? Concrètement :
 
 ## Journal des tours
 
+### ▸ Tour 46 — 01/10/2026 — **Hermes** (diagnostic : trois clics morts, **aucun corrigé**)
+
+Benjamin signale trois clics qui ne font rien, et pose une question sur les chiffres cibles.
+**Les trois sont diagnostiqués avec leur cause exacte. Je n'ai rien corrigé sur ce tour, et je
+le dis franchement plutôt que d'annoncer une demi-correction.**
+
+---
+
+## 1. « 🖨 A4 Mission » ne déclenche rien — **la fonction n'existe pas**
+
+Le bouton `missionA4Btn` existe (l. 14160), le handler aussi (l. 14241-14250), et il est
+bien réattribué à chaque `renderCarte()`. Le CSS `print-mission` est en place.
+
+**Mais le handler appelle `missionA4HTML()` — et cette fonction n'est écrite nulle part.**
+
+```
+function\s+missionA4HTML     0
+missionA4HTML\s*=            0
+const\s+missionA4HTML        0
+let\s+missionA4HTML          0
+missionA4HTML                1     ← l'appel, et rien d'autre
+```
+
+Un `ReferenceError` à l'intérieur d'un `addEventListener` ne s'affiche nulle part : **le clic
+meurt en silence.** C'est exactement ce que Benjamin voit.
+
+---
+
+## 2. 📦 Livraisons — **il n'y a pas d'upload, et c'est vrai**
+
+`creerLivraison()`, `livraisonImpressionHTML()`, `livraisonsSectionHTML()` et
+`normalizeLivraison()` existent et fonctionnent. **Mais aucun contrôle de fichier n'existe**
+pour le dossier hiérarchie : pas de `<input type="file">`, pas d'import, pas de
+`livraisonImport`.
+
+Benjamin ne s'est pas trompé : **il n'y a rien à cliquer.** Les livraisons se créent depuis
+l'état courant du suivi, pas depuis un fichier envoyé par la hiérarchie.
+
+---
+
+## 3. 📷 Photos de machines — **l'emplacement existe, le bouton n'a jamais été fait**
+
+L'accueil rend, en dur :
+
+```html
+<div class="al-photo" title="Emplacement prévu pour la photo de la machine
+     — aucune photo fictive">photo machine à fournir</div>
+```
+
+**C'est un texte statique.** Aucun `<input type="file">`, aucun écouteur, aucune écriture.
+Un test le vérifie d'ailleurs — il contrôle que le marqueur est bien là, pas qu'un
+téléversement fonctionne.
+
+Et Benjamin **a demandé les photos à Matis** (demande n° 8 du message). L'outil n'a
+aujourd'hui **aucun endroit où les déposer**. C'est le trou le plus gênant des trois, parce
+qu'il bloque exactement la donnée qu'on attend.
+
+---
+
+## 4. Les chiffres cibles : d'où viennent-ils ?
+
+**Réponse : d'un champ, rien de plus.** `refActive.cibleCPP` — la cible de coût pièce du
+site, saisie **à la main sur chaque référence**. Quand elle est vide, l'écran n'affiche
+rien : pas de zéro, pas de valeur inventée.
+
+**Mais mon import ne la remplit pas — alors que la donnée est dans le classeur.**
+
+La colonne **I** de chaque feuille « Coût pièce » s'appelle **« CPP Actuel »** : c'est
+exactement la cible. Mon générateur la lit déjà (`cppTheorique`) et **la jette** — comme le
+MABEC avant le 4.72. Même famille, même oubli.
+
+**C'est le troisième « lu puis perdu » de la série**, et il explique la question : les
+chiffres que Benjamin voit ne viennent pas du classeur, ils viennent de saisies
+éparses — ou de nulle part.
+
+---
+
+## La règle que ces trois cas font apparaître
+
+**Un bouton dont la fonction n'existe pas ne se voit pas au moment de l'écrire.** Il se
+voit au clic, à l'atelier, des mois plus tard. C'est vérifiable en une ligne : appeler la
+fonction au démarrage et échouer bruyamment.
+
+C'est le même motif que le harnais qui ne voyait pas la couleur, et que le contre-regard qui
+comptait « 0 échec » pendant un plantage : **ce qui n'est pas testé n'existe pas.** Un
+contrôle d'une ligne — « toute fonction appelée par un bouton est définie » — aurait
+attrapé les trois avant qu'ils n'atteignent l'atelier.
+
+**Je propose de l'ajouter au harnais**, avant de corriger les trois.
+
+---
+
+*Verrou libre. 4.77.0 sur Projet, 434/434. Rien n'a été écrit dans
+`bilan_economique.html` sur ce tour — uniquement ce diagnostic.*
+
 ### ▸ Tour 45 — 01/10/2026 — **Hermes** (v4.77.0 — T2D1, T5D1, et le T1 aux sept logements)
 
 **Benjamin, sur ses données réelles :** *« un outil T1 avec 7 logements… un outil appelé T2D1
