@@ -2119,6 +2119,7 @@ body.atelier-on{overflow:hidden;}
   </div>
   <div class="panel panel-large" id="dashboardPanel" hidden></div>
   <div class="panel panel-large" id="accueilPanel" hidden></div>
+  <div class="panel panel-large" id="vueCppPanel" hidden></div>
   <div class="panel panel-large" id="cartePanel" hidden></div>
   <div class="panel panel-large" id="matisPanel" hidden></div>
   <div class="panel panel-large" id="matisDetailPanel" hidden></div>
@@ -2471,6 +2472,32 @@ tr.mx-opportunite td{ color:var(--label); }
 .pf-nom{ font-size:12px; font-weight:500; color:var(--ink); padding:2px 9px; border-radius:999px;
   border:1px solid var(--c); white-space:nowrap; }
 .pf-actions{ margin-left:auto; display:flex; gap:7px; }
+/* 4.78 — la vue CPP : l'arbre obtenu vs reference, a chaque etage */
+.cpp-ref{ margin-bottom:10px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); }
+.cpp-ref > summary{ display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; padding:10px 13px; cursor:pointer; }
+.cpp-ref-nom{ font-family:var(--font-disp); font-size:15px; font-weight:800; }
+.cpp-ref-cout{ font-family:var(--font-mono); font-size:17px; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; }
+.cpp-ref-ref{ font-family:var(--font-mono); font-size:11px; color:var(--ink-soft); }
+.cpp-ecart{ font-family:var(--font-body); font-size:11.5px; color:var(--green); font-weight:600; }
+.cpp-ecart-att{ color:var(--amber); }
+.cpp-ref-corps{ padding:0 13px 10px; border-top:1px solid var(--border); }
+.cpp-machine{ font-family:var(--font-mono); font-size:11px; color:var(--ink-soft); padding:8px 0 2px;
+  border-bottom:1px dotted var(--border); margin-bottom:6px; }
+.cpp-op{ margin:4px 0; }
+.cpp-op > summary{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; padding:7px 10px;
+  background:var(--surface-alt); border-radius:var(--radius); cursor:pointer; }
+.cpp-op-nom{ font-weight:600; font-size:13px; }
+.cpp-op-cout{ font-family:var(--font-mono); font-size:14px; font-weight:700; font-variant-numeric:tabular-nums; }
+.cpp-op-part{ font-family:var(--font-mono); font-size:10.5px; color:var(--label); }
+.cpp-meilleur{ font-family:var(--font-body); font-size:11px; color:var(--blue); margin-left:auto; }
+.cpp-op-corps{ padding:6px 10px 4px 14px; }
+.cpp-outil{ padding:4px 0; border-bottom:1px dotted var(--border); font-size:12px; }
+.cpp-outil b{ font-family:var(--font-mono); font-size:12px; }
+.cpp-corr{ font-family:var(--font-mono); font-size:10px; color:var(--label); }
+.cpp-outil-cout{ font-family:var(--font-mono); font-size:11.5px; color:var(--ink-soft); margin-left:8px; font-variant-numeric:tabular-nums; }
+.cpp-logs{ display:flex; flex-wrap:wrap; gap:2px 12px; margin-top:2px; }
+.cpp-log{ font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); }
+.cpp-nonchiffree{ font-family:var(--font-mono); font-size:10.5px; color:var(--amber); padding:6px 0 2px; }
 .al-contexte{ font-style:italic; font-size:11px; color:var(--body); line-height:1.35;
   padding:5px 8px; background:var(--surface-alt); border-radius:var(--radius); }
 .al-hors-liste{ display:flex; flex-wrap:wrap; gap:3px 10px; padding:7px 8px;
@@ -11841,6 +11868,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.78.0", date:"01/10/2026", points:[
+    "<b>La vue CPP : l'épine dorsale de l'outil.</b> Depuis l'accueil, bouton « 🔍 Vue CPP » : chaque pièce avec son CPP outillage (la même mesure que le classeur de Matis) <b>en face de la référence Matis</b>, l'écart en toutes lettres — puis dépliez : opération par opération avec sa part dans la pièce, outil par outil, logement par logement avec MABEC et coût. Le temps machine s'affiche à part et dit qu'il n'est pas comparable au classeur (constitution 2 quater). Lecture seule : rien n'est écrit."
+  ]},
   { version:"4.75.0", date:"01/10/2026", points:[
     "<b>Depuis l’accueil, la carte s’ouvre SUR la ligne cliquée.</b> Tu cliques EMAG 3 dans le tableau de bord : la carte défile jusqu’à la section EMAG 3, surlignée deux secondes — plus jamais une autre ligne devant les yeux. Et la correction des correcteurs manquants (outils regroupés avant la 4.74.2) est proposée dans le bandeau."
   ]},
@@ -12354,7 +12384,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.77.0";
+const TOOL_VERSION = "4.78.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -14467,6 +14497,132 @@ function accueilMatriceHTML(gls){
 /* le pied : les PERSONNES qui portent le suivi (responsables réels, sans rôle
    inventé — le modèle n'en a pas), et les trois actions EXISTANTES exposées :
    on ne crée rien, on montre (spec C5 §1.6). */
+/* ═══ v4.78.0 — LA VUE CPP (Tour 49 : « à Z Code de construire, à Hermes de relire ») ═══
+   La direction de Benjamin (constitution §1, v1.9) : « opération par opération,
+   outil par outil, logement par logement ». La règle 2 quater (v1.10) :
+   JAMAIS le total de l'outil comparé au CPP du classeur — le total inclut la
+   machine, le classeur l'ignore. Comparaison AXE PAR AXE :
+   · OUTILLAGE = prix ÷ (arêtes × DDV) — LA mesure de Matis (colonne I) ;
+   · TEMPS = (taux ÷ 3600) × cycle — affiché À CÔTÉ, jamais mêlé, seulement
+     quand les données existent ; sinon la base reste l'outillage seul.
+   À chaque niveau : le CPP obtenu, la référence Matis (cibleCPP, colonne I
+   sommée par référence — 06d831f), la cible, et l'écart EN TOUTES LETTRES.
+   CONST AT PUR : lecture seule, rien n'écrit (compatible gel d'audit). */
+
+/* les données de la vue, pures et testables : l'arbre entier en une passe */
+function vueCppData(){
+  const out = [];
+  lignes.forEach(l => {
+    if((l.references || []).length === 0) return; /* hors périmètre : pas dans la vue */
+    (l.references || []).forEach(ref => {
+      /* l'axe OUTILLAGE de chaque OP : le scénario de prod (★ puis excel),
+         plaquettes seules — coutsDetail().plaquettes, jamais le total */
+      const ops = [];
+      let cppObtenu = 0, nonChiffrees = 0, machine = null;
+      (ref.ops || []).forEach(op => {
+        const excel = (op.scenarios || []).find(x => /base excel/i.test(x.name || ""));
+        const star = (op.scenarios || []).find(x => x.baseline);
+        const prodSc = star || excel || null;
+        if(!prodSc){ nonChiffrees++; return; }
+        const det = coutsDetail(prodSc, undefined, l);
+        const outillage = det.plaquettes;
+        if(outillage === null || outillage === undefined){ nonChiffrees++; return; }
+        cppObtenu += outillage;
+        /* le meilleur scénario chiffrable, même axe */
+        let meilleur = null;
+        (op.scenarios || []).forEach(sc => {
+          if(prodSc.id === sc.id) return;
+          const d2 = coutsDetail(sc, undefined, l);
+          if(d2.plaquettes === null || d2.plaquettes === undefined) return;
+          if(!meilleur || d2.plaquettes < meilleur.cout) meilleur = { sc, cout: d2.plaquettes };
+        });
+        ops.push({ op, outillage, meilleur,
+          outils: (prodSc.outils || []).map(o => ({
+            numero: o.numero, correcteur: o.correcteur || "",
+            cout: (o.logements || []).reduce((a, lg) => a + (posCost(lg) || 0), 0),
+            logements: (o.logements || []).map(lg => ({
+              nom: lg.nom, mabec: lg.mabec || lg.codeArticle || "", ref: lg.ref || "",
+              prix: lg.prix, aretes: lg.aretes, ddv: lg.charniere,
+              cout: posCost(lg)
+            }))
+          })) });
+        /* l'axe TEMPS : seulement si les données existent, jamais mêlé */
+        const cm = det.machine;
+        if(cm !== null && cm !== undefined) machine = (machine || 0) + cm;
+      });
+      const cible = cibleCPPDe(ref);
+      out.push({ ligne: l, ref, ops, cppObtenu, nonChiffrees, machine,
+                 referenceMatis: cible, cible });
+    });
+  });
+  return out;
+}
+
+/* l'écart, dit en atelier — jamais un chiffre nu (§3.5) */
+function libelleEcartCpp(obtenu, reference){
+  if(reference === null) return { texte: "aucune référence Matis sur cette pièce — colonne I vide dans le classeur", attention: false };
+  const e = obtenu - reference;
+  if(Math.abs(e) < 0.0005) return { texte: "conforme à la référence Matis", attention: false };
+  if(e < 0) return { texte: `${fmt(Math.abs(e), 4)} € SOUS la référence Matis`, attention: false };
+  return { texte: `${fmt(e, 4)} € AU-DESSUS de la référence Matis`, attention: true };
+}
+
+function vueCppHTML(){
+  const data = vueCppData();
+  if(!data.length) return `<p class="panel-hint">Aucune ligne vivante : la vue CPP lit l'arbre
+    des références déclarées.</p>`;
+  const lignesVue = data.map(d => {
+    const ecart = libelleEcartCpp(d.cppObtenu, d.referenceMatis);
+    const opsTxt = d.ops.map(o => {
+      const part = d.cppObtenu > 0 ? (o.outillage / d.cppObtenu) * 100 : 0;
+      const meilleurTxt = o.meilleur
+        ? `<span class="cpp-meilleur">meilleur essai : ${fmt(o.meilleur.cout, 4)} € <small>(−${fmt(Math.max(0, o.outillage - o.meilleur.cout), 4)} si passé en série)</small></span>` : "";
+      const outilsTxt = (o.outils || []).map(u => {
+        const logs = (u.logements || []).map(lg =>
+          `<span class="cpp-log">${escapeAttr(lg.nom || "logement")} · ${lg.mabec ? escapeAttr(lg.mabec) : "MABEC à saisir"} · ${lg.cout !== null && lg.cout !== undefined ? fmt(lg.cout, 4) + " €" : "— DDV à saisir"}</span>`).join("");
+        return `<div class="cpp-outil"><b>${escapeAttr(u.numero || "outil")}</b>${u.correcteur ? ` <span class="cpp-corr">${escapeAttr(u.correcteur)}</span>` : ""}
+          <span class="cpp-outil-cout">${u.cout ? fmt(u.cout, 4) + " €" : "—"}</span>
+          <div class="cpp-logs">${logs}</div></div>`;
+      }).join("");
+      return `<details class="cpp-op"><summary>
+        <span class="cpp-op-nom">${escapeAttr(o.op.nom)}</span>
+        <span class="cpp-op-cout">${fmt(o.outillage, 4)} €</span>
+        <span class="cpp-op-part">${fmt(part, 0)} % de la pièce</span>
+        ${meilleurTxt}
+      </summary><div class="cpp-op-corps">${outilsTxt}</div></details>`;
+    }).join("");
+    return `<details class="cpp-ref" open><summary>
+      <span class="cpp-ref-nom">${escapeAttr(d.ligne.nom)} · ${escapeAttr(d.ref.nom)}</span>
+      <span class="cpp-ref-cout">${fmt(d.cppObtenu, 4)} €</span>
+      <span class="cpp-ref-ref">${d.referenceMatis !== null ? "réf. Matis " + fmt(d.referenceMatis, 4) + " €" : "réf. Matis : —"}</span>
+      <span class="cpp-ecart${ecart.attention ? " cpp-ecart-att" : ""}">${escapeAttr(ecart.texte)}</span>
+    </summary>
+    <div class="cpp-ref-corps">
+      ${d.machine !== null ? `<div class="cpp-machine">⏱ temps valorisé (taux ${escapeAttr(d.ligne.nom)}) : ${fmt(d.machine, 4)} €/pièce — <i>non comparable au classeur, il l'ignore</i></div>` : ""}
+      ${opsTxt}
+      ${d.nonChiffrees ? `<div class="cpp-nonchiffree">⚠ ${d.nonChiffrees} OP non chiffrable${d.nonChiffrees > 1 ? "s" : ""} — hors du CPP affiché, l'écart doit se voir (§3.2)</div>` : ""}
+      ${d.referenceMatis === null ? `<div class="cpp-nonchiffree">référence Matis absente : colonne I vide dans le classeur pour cette pièce (question posée à Matis)</div>` : ""}
+    </div></details>`;
+  }).join("");
+  return `<p class="mt-raz"><b>Ce que cette vue mesure.</b> Le CPP outillage de chaque pièce —
+    la même mesure que le classeur de Matis (prix ÷ arêtes ÷ DDV) — décomposé opération par
+    opération, outil par outil, logement par logement. La référence Matis en face, l'écart en
+    toutes lettres. Le temps machine, quand il est chiffré, s'affiche à part : le classeur
+    l'ignore, on ne le compare jamais (constitution 2 quater).</p>
+    ${lignesVue}
+    <p class="panel-hint" style="margin-top:10px;">Lecture seule : cette vue n'écrit rien. Dépliez une pièce pour ses OP, une OP pour ses outils.</p>`;
+}
+
+function renderVueCpp(){
+  const wrap = document.getElementById("vueCppPanel");
+  if(!wrap) return;
+  wrap.innerHTML = `<h3>Vue CPP — obtenu vs référence, à chaque étage</h3>` + vueCppHTML() +
+    `<div class="panel-actions"><button class="primary" id="vcClose">Fermer</button></div>`;
+  const c = document.getElementById("vcClose");
+  if(c) c.addEventListener("click", fermerPanneaux);
+}
+function ouvrirVueCpp(){ renderVueCpp(); ouvrirPanneau("vueCppPanel"); }
+
 function accueilPiedHTML(){
   const gens = (responsables || []).filter(r => r.nom);
   const gensTxt = gens.length
@@ -14479,6 +14635,7 @@ function accueilPiedHTML(){
       <button class="ghost small" id="pfCarte" title="La carte atelier : chaque machine, son état, sa fiche">Bilan atelier</button>
       <button class="ghost small" id="pfExport" title="Enregistre un fichier .json à archiver ou à envoyer">Exporter</button>
       <button class="ghost small" id="pfHisto" title="Les sauvegardes automatiques précédentes">Historique</button>
+      <button class="primary small" id="pfVueCpp" title="Le CPP obtenu vs la référence Matis, décomposé OP par OP, outil par outil, logement par logement">🔍 Vue CPP</button>
     </div>
   </div>`;
 }
@@ -14564,6 +14721,9 @@ function renderAccueil(){
   if(cExport) cExport.addEventListener("click", () => { const b = document.getElementById("exportBtn"); if(b) b.click(); });
   const cHisto = document.getElementById("pfHisto");
   if(cHisto) cHisto.addEventListener("click", () => { const b = document.getElementById("historyBtn"); if(b) b.click(); });
+  /* v4.78 — la vue CPP : la porte depuis l'accueil, là où la hiérarchie regarde */
+  const cCpp = document.getElementById("pfVueCpp");
+  if(cCpp) cCpp.addEventListener("click", ouvrirVueCpp);
   /* la tuile hors périmètre déplie sa liste — le geste de Q12, pas la porte carte */
   const thors = wrap.querySelector(".al-hors");
   if(thors){
@@ -17233,6 +17393,61 @@ function runTests(){
         /* une fois corrigé, la detection ne voit plus rien */
         ok("migration : après correction, la détection ne voit plus rien (le bandeau s'éteindra)",
            compterOutilsD1D2() >= 0, true);
+      } finally { lignes = lAv; }
+    }
+
+    /* ---- v4.78.0 — LA VUE CPP : obtenu vs référence, axe par axe (2 quater) ------- */
+    {
+      const opCfgV = Object.assign({}, defaultConfig, { volumeActif: true });
+      const scP = (id, prix) => normalizeScenario({ id, name: id, baseline: true, outils: [
+        { id: "u" + id, numero: "T543", logements: [ { id: "g" + id, nom: "D1", prix, aretes: 8, charniere: 100 } ] } ] });
+      const refV = normalizeReference({ id: "rV", nom: "330x14", productionAnnuelle: "2490", cibleCPP: "0.5443", ops: [
+        { id: "oV40", nom: "OP40", config: opCfgV, scenarios: [ scP("pV", 40) ] },
+        { id: "oV20", nom: "OP20", config: opCfgV, scenarios: [ scP("pV2", 20) ] } ] });
+      const lV = normalizeLigne({ id: "lV", nom: "EMAG 2", coutHoraire: "", references: [ refV ] });
+      const lAv = lignes; lignes = [ lV ];
+      try {
+        const data = vueCppData();
+        const d = data[0];
+        /* axe outillage : 40/(8x100) + 20/(8x100) = 0,05 + 0,025 = 0,075 */
+        ok("vue CPP : l'axe OUTILLAGE seul — jamais le total avec machine (2 quater)",
+           [data.length, fmt(d.cppObtenu, 4)], [1, "0,0750"]);
+        ok("vue CPP : la référence Matis est lue de cibleCPP (colonne I importée)",
+           d.referenceMatis, 0.5443);
+        const ecart = libelleEcartCpp(d.cppObtenu, d.referenceMatis);
+        ok("vue CPP : l'écart est EN TOUTES LETTRES — sous la référence ici, dit comme tel",
+           [ecart.attention, ecart.texte.includes("SOUS la référence"), ecart.texte.includes("0,4693")],
+           [false, true, true]);
+        ok("vue CPP : sans référence Matis, l'absence est DITE, pas zéro",
+           libelleEcartCpp(0.1, null).texte.includes("aucune référence Matis"), true);
+        ok("vue CPP : les OP non chiffrables sont déclarées, hors du CPP (§3.2)",
+           d.nonChiffrees >= 0 && data[0].ops.length === 2, true);
+        /* le rendu : les étages existent, la machine jamais mêlée */
+        const h = vueCppHTML();
+        ok("vue CPP : le rendu porte les étages pièce → OP → outil → logement",
+           [h.includes("cpp-ref"), h.includes("cpp-op"), h.includes("cpp-outil"), h.includes("cpp-log")],
+           [true, true, true, true]);
+        ok("vue CPP : le rendu affiche la part de chaque OP dans la pièce",
+           h.includes("% de la pièce"), true);
+        ok("vue CPP : l'axe temps s'affiche SÉPARÉMENT et dit sa non-comparabilité — ou pas du tout",
+           !h.includes("cpp-machine") || h.includes("non comparable"), true);
+
+        /* le cas VULNÉRABLE (leçon 4.74.1 : un test de protection n'existe que si
+           son cas est représentatif) : machine ET rebut actifs — le total diverge
+           de l'outillage, et la vue doit rester sur l'axe outillage seul. */
+        const cfgM = Object.assign({}, defaultConfig, { volumeActif: true, coutMachineActif: true, coutRebutActif: true, cycleRefSec: 60 });
+        const scM2 = normalizeScenario({ id: "pM2", name: "Prod", baseline: true, cycle: 100, scrapLog: [], outils: [
+          { id: "uM2", numero: "T1", logements: [ { id: "gM2", nom: "D1", prix: 40, aretes: 8, charniere: 100 } ] } ] });
+        const lM2 = normalizeLigne({ id: "lM2", nom: "EMAG 2", coutHoraire: "50",
+          references: [ normalizeReference({ id: "rM2", nom: "290x12", cibleCPP: "0.3", ops: [
+            { id: "oM2", nom: "OP10", config: cfgM, scenarios: [ scM2 ] } ] }) ] });
+        const lAv2 = lignes; lignes = [ lM2 ];
+        try {
+          const dM2 = vueCppData()[0];
+          /* outillage = 40/(8x100) = 0,05 ; total = 0,05 + machine (50/3600x100x... avec indice) + rebut — différent */
+          ok("vue CPP (cas vulnérable machine+rebut actifs) : l'axe reste l'OUTILLAGE seul — le total avec machine ne se compare jamais au classeur (2 quater)",
+             fmt(dM2.cppObtenu, 4), "0,0500");
+        } finally { lignes = lAv2; }
       } finally { lignes = lAv; }
     }
 

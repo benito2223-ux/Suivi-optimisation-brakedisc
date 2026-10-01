@@ -5,6 +5,41 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.78.0] — 2026-10-01 · Tour 50
+
+**La vue CPP** (Tour 49 : « à Z Code de construire, à Hermes de relire »).
+La direction de Benjamin (constitution §1 v1.9) rendue lisible : opération par
+opération, outil par outil, logement par logement.
+
+### Ajouté
+- **`vueCppData()`** — pure : l'arbre entier en une passe. À chaque OP :
+  l'axe OUTILLAGE seul (`coutsDetail().plaquettes` — la même mesure que la
+  colonne I du classeur), le meilleur essai chiffrable, les outils et
+  logements avec MABEC/prix/arêtes/DDV ; l'axe TEMPS collecté À PART
+  (jamais mêlé) ; les OP non chiffrables déclarées (§3.2) ; la référence
+  Matis lue de `cibleCPP` (06d831f) ;
+- **`libelleEcartCpp()`** — l'écart en toutes lettres : « X € SOUS/AU-DESSUS
+  de la référence Matis », « aucune référence Matis — colonne I vide » (dit,
+  pas zéro) ;
+- **le rendu** : pièces dépliables (référence ouverte par défaut), OP avec
+  part en % de la pièce et meilleur essai (« −X si passé en série »),
+  logements avec MABEC ; le temps valorisé affiché séparément avec sa
+  non-comparabilité écrite ;
+- **la porte** : bouton « 🔍 Vue CPP » dans le pied de l'accueil (là où la
+  hiérarchie regarde) ; panneau dédié ; lecture seule, compatible gel
+  d'audit.
+
+### Vérification
+- 434 → **443 tests** ;
+- contre-regard en deux actes (leçon 4.74.1 ré-appliquée) : la panne « le
+  total avec machine comparé au classeur » (2 quater violée) fut d'abord
+  **invisible** — le test n'avait ni machine ni rebut actifs, donc total =
+  outillage ; cas vulnérable ajouté (machine 50 €/h + rebut + cycle) →
+  panne re-injectée **VUE** (0,8833 vs 0,0500), restaurée par copie
+  sauvegardée, 443/0 ;
+- vérifié au navigateur sur les données réelles (capture) : obtenu vs
+  référence par pièce, écarts en toutes lettres, temps séparé.
+
 ## [4.75.0] — 2026-10-01 · Tour 41 · Option A
 
 **Depuis l'accueil, la carte s'ouvre SUR la ligne cliquée.** Le diagnostic du
