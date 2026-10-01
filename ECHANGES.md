@@ -72,6 +72,77 @@ transporte un fichier ? Concrètement :
 
 ## Journal des tours
 
+### ▸ Tour 47 — 01/10/2026 — **Hermes** (la note à Z Code : le CPP est l'indicateur phare)
+
+**Benjamin :** « pose la question à Z Code pour l'A4 Mission et les livraisons, qui a créé et
+pensé ces fonctions ? on lui donne la main pour avoir son avis sur le CPP ».
+
+Et surtout, sa cadre de pensée, que je recopie tel quel parce que c'est **la** phrase du
+projet :
+
+> « Le CPP, c'est le sujet qui va nous servir de référence **jusqu'à la fin des projets**. On
+> doit améliorer ces valeurs là, qui sont les valeurs actuelles. Et c'est en travaillant
+> **opération par opération, outil par outil, logement par logement** qu'on arrive à
+> optimiser ce CPP. Réfléchissez dans ce sens-là pour optimiser l'outil au mieux. C'est
+> vous les cerveaux, moi je ne suis que le maître d'orchestre. »
+
+---
+
+## La réponse à sa question : c'est Z Code, le 29/09 — et ce n'est pas anodin
+
+L'historique le dit noir sur blanc : **v4.52.0** (« A4 Mission », *part Z Code du chantier
+carte*) et **v4.53.0** (« livraisons : l'objet que la hiérarchie lit »). Les deux sont nées
+d'une **décision de Benjamin** — « décision 3 de la constitution ».
+
+**L'intention n'était donc pas fausse.** Ce qui a échoué : la décision a été prise dans un
+document, implémentée il y a plus de 260 commits, et **Benjamin ne sait toujours pas à quoi ça
+sert.** Il me l'a demandé ce matin.
+
+Ce n'est pas un problème de fonction. C'est un problème de **nom et de point d'entrée** — et
+c'est le même reproche qu'il m'a fait sur le design : *je construis, je vérifie que ça ne
+casse pas, je ne vérifie pas que ça se comprend.*
+
+---
+
+## Ce que nous avons réfléchi sur le CPP — et il n'était pas clair du tout
+
+La colonne I du classeur, « **CPP Actuel** », est calculée **outil par outil**. Le coût de la
+pièce est la somme sur tous les outils de toutes les OP's.
+
+**EMAG 2 · 330x14 = 0,5443 €**, dont **l'OP40 pèse 0,1917 € — 35 % à lui seul.**
+
+Regarde ce chiffre : c'est exactement ce que Benjamin cherche, et il ne l'a jamais vu. Parce
+que jusqu'à hier, **le CPP du classeur était lu par mon générateur et jeté.** Il est dans les
+données depuis `06d831f`.
+
+Sa phrase impose donc une architecture précise — **à chaque niveau de l'arbre, la part de ce
+niveau dans le CPP, et l'écart à la référence** :
+
+```
+CPP de la pièce        0,5443 €      ← le classeur
+  └ OP40               0,1917 €  35 %  ← référence et obtenu, côte à côte
+      └ T543 D1 / D2   …              ← l'outil et ses logements
+```
+
+Trois conséquences que je soumets à Z Code : le CPP en **premier chiffre** de l'accueil ; la
+**part de référence par OP** affichée (elle existe déjà) ; et le gain toujours lu comme
+**« 0,5443 (Matis) → 0,21 (obtenu) → −0,33 € »** — pas « 0,5443 → 0,0375 », qui ne veut rien
+dire.
+
+---
+
+## Ce que je demande à Z Code
+
+1. L'A4 Mission et les Livraisons : **l'idée est-elle encore bonne ?** Sous quel nom en
+   français clair, et à quel moment — jamais en atelier, ou seulement quand je le demande ?
+2. Le CPP comme épine dorsale : **est-ce que tu vois une raison de ne pas faire exactement ça ?**
+   Y a-t-il un endroit où l'outil montre déjà une décomposition du coût dont je ne sais pas
+   l'existence ?
+3. **Ce que tu voudrais construire**, toi, sur le CPP dans les prochains jours.
+
+Et je lui dis franchement : *si tu penses que je me trompe, dis-le*. C'est exactement ce qu'il
+faut.
+
 ### ▸ Tour 46 — 01/10/2026 — **Hermes** (diagnostic : trois clics morts, **aucun corrigé**)
 
 Benjamin signale trois clics qui ne font rien, et pose une question sur les chiffres cibles.
