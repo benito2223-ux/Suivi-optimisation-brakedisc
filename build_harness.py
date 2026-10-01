@@ -25,6 +25,8 @@ code = re.sub(r'^render\(\);\s*$', ';', code, flags=re.M)
 API = ("get TOOL_VERSION(){return TOOL_VERSION;}, normalizeLigne, normalizeReference, "
        "normalizeOp, normalizeScenario, normalizeProjet, runTests, lignesDuProjet, "
        "projetContientScenario, toggleTagScenario, resoudreTag, matisRecap, libelleEcartMatis, "
+       "matisPorteOutilPosition, matisClePorteOutil, reparerOutilsD1D2, reparerOutilsRapport, "
+       "_matisFeuille, "
        "getActiveLigne, get lignes(){return lignes}, set lignes(v){lignes=v}, "
        "get projets(){return projets}, set projets(v){projets=v}, "
        "get activeProjetId(){return activeProjetId}, set activeProjetId(v){activeProjetId=v}, "
@@ -156,7 +158,7 @@ try {
        (constat du 30/09 — deux lignes plus bas). */
     r.echecs += echecs;
   })();
-  if (typeof __DIAG__ !== 'undefined') __DIAG__(A);
+  if (typeof (__DIAG__) !== 'undefined') (__DIAG__)(A);
   /* v4.60 (tour 16) : le code de l'outil installe des setInterval (synchro cloud,
      debounce) qui gardent la boucle d'événements de node vivante -- sans exit
      explicite, le process ne rend JAMAIS la main et le verdict, déjà imprimé,
@@ -168,6 +170,6 @@ try {
 
 HARNESS = HARNESS.replace('__CODE__', json.dumps(code)) \
                .replace('__API__', API) \
-               .replace('__DIAG__', 'undefined')
+               .replace('__DIAG__', os.environ.get('HARNESS_DIAG', 'undefined'))
 io.open(OUT, 'w', encoding='utf-8').write(HARNESS)
 print('harnais écrit :', OUT, '(%d Ko)' % (len(HARNESS) // 1024))

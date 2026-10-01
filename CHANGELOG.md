@@ -5,6 +5,40 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.73.0] — 2026-10-01 · Tour 34 (passation Tour 33)
+
+**Le lecteur du classeur connaît la règle porte-outil.** Benjamin voyait encore
+« deux outils distincts T513 D1 et D2 » — la cause était dans `matisLireClasseur`,
+qui empilait les lignes plates sans la connaissance métier que le reste de
+l'outil avait acquise (diagnostic exact d'Hermes au Tour 33).
+
+### Corrigé
+- **une ligne Excel = UN logement** : chaque ligne construit désormais un outil
+  à un logement (MABEC, article, prix, arêtes, DDV de SA ligne) et la sortie
+  passe par **`reparerOutilsD1D2()`** — « T513 D1 » + « T513 D2 » se lisent
+  **« T513 — 2 logements »**, positions comme noms de logements, ordre
+  d'origine préservé ;
+- **l'écran dit le regroupement** : « 2 porte-outils regroupés à la lecture… »
+  en encadré bleu info (les phrases de `reparerOutilsRapport`), et le nombre de
+  logements se lit sur la ligne du détail (« T513 — 2 logements », « 2 MABEC ») ;
+- **rien n'est fabriqué** : pas de MABEC, prix ou production absents du
+  classeur ; une production à 0 reste « jamais travaillée ».
+
+### Corrigé aussi — le bug découvert en branchant
+`reparerOutilsD1D2` rendait l'outil fusionné **DEUX FOIS** pour des outils
+**sans id** (les lignes du lecteur — les outils saisis ont un id) :
+`fusionnes.get(undefined)` ne remplaçait rien. **Clé d'identité avec fallback**
+(`__pos_` + numéro), déclarée AVANT tout usage (TDZ constaté au harnais).
+L'import (avec ids) et le lecteur (sans ids) fusionnent tous les deux.
+
+### Vérification
+- 408 → **414 tests**, tout vert (5 tests du lecteur : fusion, noms D1/D2,
+  rien de fabriqué, écran) ;
+- contre-regard en deux actes (leçon 4.71.0 appliquée) : panne « le lecteur ne
+  groupe plus » → **325 tests** : la suite ne va plus jusqu'au bout, le total
+  qui chute EST le signal ; panne « placeholder muet » (4.65.1) → 414/1, vue.
+  Restaurations par copie sauvegardée, marqueurs vérifiés.
+
 ## [4.69.0] — 2026-09-30 · L3 — *les aplats de couleur*
 
 **« Le changement est LOIN d'être radical. » — il avait raison, et voici pourquoi.**

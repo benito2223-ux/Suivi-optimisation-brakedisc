@@ -2630,6 +2630,9 @@ tr.mx-opportunite td{ color:var(--label); }
 /* 4.56.0 — le rapprochement classeur <-> suivi, sous le nom du couple : une phrase
    discrète quand tout concorde, ambre quand elle demande un oeil (ligne hors suivi,
    référence absente, production en divergence). */
+/* 4.73 — la phrase qui dit le regroupement porte-outil : bleu info, jamais une silence */
+.mt-fusion{ margin:0 0 10px; padding:8px 12px; background:var(--blue-light); border:1px solid var(--blue);
+  border-radius:var(--radius); font-family:var(--font-body); font-size:11.5px; line-height:1.5; color:var(--ink); }
 .mt-rap{ font-family:var(--font-body); font-size:10.5px; font-weight:400; color:var(--ink-soft);
   margin-top:3px; line-height:1.35; }
 .mt-rap-attention{ color:var(--amber); font-weight:500; }
@@ -11767,6 +11770,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.73.0", date:"01/10/2026", points:[
+    "<b>Le lecteur du classeur connaît la règle porte-outil.</b> Une ligne Excel = un logement : « T513 D1 » et « T513 D2 » se lisent désormais <b>T513 — 2 logements</b>, chaque logement gardant le MABEC, le prix et les arêtes de sa ligne — rien n'est fabriqué. L'écran dit ce qu'il regroupe (« 2 porte-outils regroupés à la lecture… ») au lieu de le faire en silence, et le nombre de logements se lit sur la ligne du détail."
+  ]},
   { version:"4.65.2", date:"30/09/2026", points:[
     "<b>La table que la hiérarchie lit.</b> Sous les tuiles, toutes les opérations de toutes les lignes vivantes : ligne, opération, référence, gain unitaire, gain annuel (acté et projeté jamais mélangés), statut en toutes lettres — et un poste non impacté reste affiché à ±0,000 €, il ne disparaît pas. Chaque ligne porte sa porte « Ouvrir → ». En pied : l'équipe du suivi et les trois actions existantes (bilan atelier, exporter, historique)."
   ]},
@@ -12262,7 +12268,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.72.0";
+const TOOL_VERSION = "4.73.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -12732,12 +12738,23 @@ function _matisFeuille(nomFeuille, cells){
     const mOp = op.match(/^OP\s?(\d+)/i);
     if(!mOp) continue;                     // ligne de garde : seuls les outils comptent
     const f = k => { const v = parseFloat(cells[k + row]); return isNaN(v) ? null : v; };
+    /* v4.73 (Tour 34, passation Tour 33) — une ligne Excel = UN LOGEMENT : la
+       connaissance métier (un porte-outil T513 porte les positions D1/D2 ; un
+       MABEC = une plaquette = un logement) n'est plus perdue à la lecture.
+       La ligne garde TOUS ses champs (MABEC, prix, arêtes, DDV, CPP) — rien
+       n'est fabriqué. La séparation porte-outil/position est faite par
+       matisPorteOutilPosition(), la fusion par reparerOutilsD1D2() en sortie. */
     outils.push({
       numero: numOutil, opCode: "OP" + mOp[1],
       article: numOp(cells["C" + row]), mabec: numOp(cells["D" + row]),
       aretes: f("F"), prix: f("G"), ddv: f("H"),
       cppTheorique: f("I"), qteTheorique: f("J"),
-      coutReelAnnuel: f("L"), cppReel: f("M"), qteReelle: f("N"), ecart: f("O")
+      coutReelAnnuel: f("L"), cppReel: f("M"), qteReelle: f("N"), ecart: f("O"),
+      logements: [ {
+        nom: "logement 1",
+        mabec: numOp(cells["D" + row]), article: numOp(cells["C" + row]),
+        prix: f("G"), aretes: f("F"), charniere: f("H")
+      } ]
     });
   }
   const prod = parseFloat(cells["B1"]);
@@ -12746,7 +12763,7 @@ function _matisFeuille(nomFeuille, cells){
     ref: m[3].trim(),
     refComplete: (numOp(cells["C2"])) || m[3].trim(),
     production: isNaN(prod) ? null : prod,
-    outils
+    outils: reparerOutilsD1D2(outils)
   };
 }
 
@@ -12847,6 +12864,12 @@ function reparerOutilsD1D2(outils){
   const liste = (outils || []).slice();
   if(liste.length < 2) return liste;
   const defaut = /^\s*logement\s*\d*\s*$/i;
+  /* v4.73 (Tour 34) — la clé d'identité d'un outil : les outils SAISIS ont un
+     id ; les lignes du LECTEUR du classeur n'en ont pas (chaque ligne Excel est
+     plate). Sans fallback, fusionnes.get(undefined) ne remplace rien et
+     consomme personne : l'outil fusionné était rendu DEUX FOIS (constat au
+     harnais, DIAG). Déclaré AVANT tout usage (constat : TDZ). */
+  const cleId = o => o.id !== undefined ? o.id : "__pos_" + o.numero;
   const groupes = new Map();
   const autres = [];
   for(const o of liste){
@@ -12907,9 +12930,13 @@ function reparerOutilsD1D2(outils){
     /* La fusion apparaît à la place du PREMIER outil du groupe : l'atelier
        retrouve ses outils dans l'ordre où il les a saisis. Une réparation qui
        réordonne la liste pourrais le faire chercher au mauvais endroit. */
-    fusionnes.set(groupe[0].id, { id: groupe[0].id, numero: numero, logements: logements,
+    /* v4.73 (Tour 34) — la clé d'identité : les outils SAISIS ont un id ; les
+       lignes du LECTEUR du classeur n'en ont pas (chaque ligne Excel est plate).
+       Sans fallback, fusionnes.get(undefined) ne remplace rien et consomme
+       personne : l'outil fusionné était rendu DEUX FOIS (constat au harnais). */
+    fusionnes.set(cleId(groupe[0]), { id: groupe[0].id, numero: numero, logements: logements,
                position: "", nbOutils: groupe.length, _fusionReparee: true });
-    for(const o of groupe) consomme.add(o.id);
+    for(const o of groupe) consomme.add(cleId(o));
     /* un outil NU de la même clé (souvent le parent) est signalé, pas touché */
     for(const o of autres){
       if(matisClePorteOutil(o.numero) === cle)
@@ -12923,9 +12950,9 @@ function reparerOutilsD1D2(outils){
      chercher un outil au mauvais endroit — et l'atelier ne le retrouverait pas. */
   const ordre = [];
   for(const o of liste){
-    const fusion = fusionnes.get(o.id);
+    const fusion = fusionnes.get(cleId(o));
     if(fusion){ ordre.push(fusion); continue; }   /* 1er membre : à sa place */
-    if(consomme.has(o.id)) continue;              /* membre absorbé : disparaît */
+    if(consomme.has(cleId(o))) continue;          /* membre absorbé : disparaît */
     if(!ordre.includes(o)) ordre.push(o);
   }
   ordre._orphelins = orphelins;
@@ -13221,6 +13248,19 @@ function matisVueHTML(){
       <span class="mt-fichier">${escapeAttr(matisLecture.fichier)} — lu le ${escapeAttr(matisLecture.luLe)} · ${(matisLecture.feuilles || []).length} feuilles « Cout pièce »</span>
     </div>
     ${tuiles}
+    ${(() => {
+      /* v4.73 (Tour 34, point 3) — l'écran DIT ce qu'il regroupe : les outils
+         fusionnés (T513 D1 + T513 D2 → T513, 2 logements) sont annoncés, en
+         mots, jamais en silence. reparerOutilsRapport existe pour ça. */
+      const fusions = [];
+      (matisLecture.feuilles || []).forEach(f => {
+        if(!f || !f.outils) return;
+        f.outils.forEach(o => { if(o._fusionReparee && (o.nbOutils || 1) > 1) fusions.push(o); });
+      });
+      if(!fusions.length) return "";
+      const phrases = fusions.map(o => `${o.numero} — ${(o.nbOutils)} outils regroupés, ${(o.logements || []).length} logements : ${(o.logements || []).map(l => l.nom).join(", ")}`);
+      return `<p class="mt-fusion">🔧 ${phrases.length} porte-outil${phrases.length > 1 ? "s" : ""} regroupé${phrases.length > 1 ? "s" : ""} à la lecture : ${phrases.map(p => `« ${escapeAttr(p)} »`).join(" · ")}</p>`;
+    })()}
     <div class="tbl-wrap">
       <table class="mt-tbl">
         <thead><tr><th>Couple</th><th class="num">Prod.</th><th class="num">CPP théo.</th><th class="num">CPP réel</th><th class="num">Écart</th><th>Lecture</th></tr></thead>
@@ -13271,11 +13311,17 @@ function matisDetailHTML(){
           <thead><tr><th>Outil</th><th>OP</th><th>Article</th><th>MABEC</th><th class="num">CPP théo.</th><th class="num">CPP réel</th><th class="num">Qté réelle</th><th>Dans le suivi</th></tr></thead>
           <tbody>${c.outils.map(o => {
             const rap = matisRapprocheMabec(o, r.ligne);
+            /* v4.73 (Tour 34) — « T513 — 2 logements » : le nombre de logements
+               est lisible sur la ligne, comme partout ailleurs. Un outil fusionné
+               (_fusionReparee) l'est avec ses positions ; une ligne plate garde
+               son libellé. */
+            const nbLog = (o.logements || []).length;
+            const numTxt = o.numero + (nbLog > 1 ? ` — ${nbLog} logements` : "");
             return `<tr>
-            <td class="mt-lign">${escapeAttr(o.numero)}</td>
+            <td class="mt-lign">${escapeAttr(numTxt)}</td>
             <td class="mt-op">${escapeAttr(o.opCode)}</td>
-            <td class="mt-op">${escapeAttr(o.article || "—")}</td>
-            <td class="mt-op">${escapeAttr(o.mabec || "—")}</td>
+            <td class="mt-op">${escapeAttr(o.article || (nbLog > 1 ? `${nbLog} articles` : "—"))}</td>
+            <td class="mt-op">${escapeAttr(o.mabec || (nbLog > 1 ? `${nbLog} MABEC` : "—"))}</td>
             <td class="num">${o.cppTheorique ? fmt(o.cppTheorique, 5) : "—"}</td>
             <td class="num">${o.cppReel ? fmt(o.cppReel, 5) : "—"}</td>
             <td class="num">${o.qteReelle === null ? "—" : fmt(o.qteReelle, 0)}</td>
@@ -16630,6 +16676,48 @@ function runTests(){
            [true, true, true]);
         accueilHorsDeplie = false;
       } finally { lignes = lignesB; accueilHorsDeplie = etatDeplie; }
+    }
+
+    /* ---- v4.73.0 — le lecteur du classeur connaît la règle porte-outil --------
+       (passation Tour 33) : une ligne Excel = UN logement, et la sortie du
+       lecteur passe par reparerOutilsD1D2 — « T513 D1 » + « T513 D2 » se lisent
+       « T513 — 2 logements », avec les MABEC/prix/arêtes de chaque ligne
+       conservés (rien n'est fabriqué). Le lecteur était le SEUL point aveugle
+       de la chaîne : verifier_import.py teste l'import, pas le lecteur. */
+    {
+      /* un lecteur simulé : les CELLS d'une feuille, comme le vrai _xlCells */
+      const cells = {
+        "B1": "6781", "C2": "DV 356x26 RPI",
+        "A4": "T513 D1", "B4": "OP 10", "C4": "SNGX 120716", "D4": "IM02 198 054",
+        "F4": "4", "G4": "20", "H4": "100", "I4": "0.05", "M4": "0.06", "N4": "3",
+        "A5": "T513 D2", "B5": "OP 10", "C5": "CNGX 120716", "D5": "IM02 209 560",
+        "F5": "4", "G5": "23", "H5": "100", "I5": "0.058", "M5": "0.07", "N5": "2"
+      };
+      const feuille = _matisFeuille("Cout pièce E1 356x26 RPI", cells);
+      ok("lecteur : la feuille se lit et passe par la réparation porte-outil",
+         [feuille.codeLigne, feuille.ref, feuille.production, feuille.outils.length],
+         ["E1", "356x26 RPI", 6781, 1]);
+      const t513 = feuille.outils[0];
+      ok("lecteur : « T513 D1 » + « T513 D2 » se lisent UN outil à 2 logements",
+         [t513.numero, t513.logements.length, !!t513._fusionReparee],
+         ["T513", 2, true]);
+      ok("lecteur : les positions deviennent les noms des logements",
+         [t513.logements[0].nom, t513.logements[1].nom], ["D1", "D2"]);
+      ok("lecteur : RIEN n'est fabriqué — chaque logement garde le MABEC, le prix et les arêtes de SA ligne",
+         [t513.logements[0].mabec, t513.logements[0].prix, t513.logements[0].aretes,
+          t513.logements[1].mabec, t513.logements[1].prix],
+         ["IM02 198 054", 20, 4, "IM02 209 560", 23]);
+      /* l'écran dit le nombre de logements */
+      matisLecture = { fichier: "t.xlsx", luLe: "2026-10-01", feuilles: [], couples: [
+        { key: "E1·356x26 RPI", codeLigne: "E1", ref: "356x26 RPI", production: 6781, aProduction: true,
+          cppTheorique: 0.1, cppReel: 0.13, ecart: 0.03,
+          outils: [ Object.assign({}, t513) ] } ] };
+      const hDet = matisDetailHTML();
+      ok("lecteur : l'écran lit « T513 — 2 logements », plus deux lignes plates",
+         [hDet.includes("T513 — 2 logements"), !hDet.includes("T513 D1</td>")], [true, true]);
+      ok("lecteur : les MABEC multiples s'affichent comme un compte, pas un tiret",
+         hDet.includes("2 MABEC"), true);
+      matisLecture = null;
     }
 
     /* ---- v4.64.0 — C6′-a : la barre de contexte en 4 étapes ---------------------
