@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | — |
+| **Auteur** | **Z Code** |
+| **Pris le** | 02/10/2026 |
+| **Écrit dans** | `bilan_economique.html` |
+| **Version visée** | 4.80.0 |
+| **Sujet** | Retour à l'identité d'avant le Design System B — palette v3.15 (fond gris, aplats qui ressortent), angles 3/4 px, et **hiérarchie de forme à trois rôles** (Manrope / Roboto / IBM Plex Mono). Décision de Benjamin : « on garde le design système avant le design système B, avec notre nouvelle infrastructure ». Déploiement sur le domaine **projet** seulement. |
 
 ✅ **Verrou libéré par Z Code le 02/10/2026** (Tour 55, proto v2.0). Pendant le tour,
 `bilan_economique.html` n'a pas été écrit : son empreinte
