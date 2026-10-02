@@ -56,6 +56,7 @@
 | 30/09 ~22:40 | **Projet 4.66.0** — le garde-fou porte-outil/logement à la saisie + Roboto réellement embarquée, ordre de Benjamin : « deploie sur projet » | suivi-optimisation-projet.surge.sh | ✅ curl `TOOL_VERSION = "4.66.0"`, `font-family:'Roboto'` embarquée, Roboto en tête, `proposerFusionLogement` présent, SW 200 — **pas le « Success! » de surge** (règle du Tour 12). La **prod reste en 4.58.0** |
 | 01/10 soir | **Projet 4.79.0** (Tour 52 : promesses UI + A4 Mission + CSS d'impression au bon endroit), déploiement Projet libre par protocole (la prod ne bouge que sur phrase de Benjamin) | suivi-optimisation-projet.surge.sh | ✅ curl `TOOL_VERSION = "4.79.0"`, `print-mission`/`PROMESSES_UI`/`missionA4HTML` présents (38 occurrences), SW 200 — pas le « Success! ». **Prod re-vérifiée inchangée : 4.58.0** (Z Code, Tour 52) || 01/10 soir | **Projet 4.79.0** (Tour 52 : promesses UI + A4 Mission + CSS d'impression au bon endroit), déploiement Projet libre par protocole (la prod ne bouge que sur phrase de Benjamin) | suivi-optimisation-projet.surge.sh | ✅ curl `TOOL_VERSION = "4.79.0"`, `print-mission`/`PROMESSES_UI`/`missionA4HTML` présents (38 occurrences), SW 200 — pas le « Success! ». **Prod re-vérifiée inchangée : 4.58.0** (Z Code, Tour 52) |
 | 01/10 nuit | **proto2 v0.1** — le proto 5 écrans déployé sur un **troisième domaine**, à la demande de Benjamin (« carte blanche, tu es le boss, fonce ») après l'analyse « et si tu reprenais de zéro ». `bilan_economique.html` **non écrit**. | suivi-optimisation-projet2.surge.sh | ✅ curl HTTP 200, 58 246 octets, `PROTO v0.1` présent ; **les 6 sources/tests/données en 404** (`coeur.js`, `donnees.js`, `test_coeur.js`, `test_proto.js`, `CAHIER.md`, `proto.html`) — le `.surgeignore` du proto est strict. Vérifié dans Chrome : 5 écrans, 4 KPI, 0 `undefined`/`NaN` **dans le rendu** (les occurrences trouvées sont les mots du code source). **Prod 4.58.0 et Projet 4.79.0 re-vérifiés inchangés** (Z Code, Tour 53) |
+| 02/10 | Proto **v2.0** — l'accueil en tuiles (une par ligne de production) puis le détail de la ligne, scénario de production seul, puis les scénarios à optimiser. Production hebdomadaire **retirée du périmètre** (décision de Benjamin) et **déclarée à l'écran** plutôt que témoignée. `bilan_economique.html` **non écrit**. | suivi-optimisation-projet2.surge.sh | ✅ curl SW 200, 115 279 o, `PROTO_VERSION = "2.0"`, `EMPREINTE_ASSEMBLAGE = "a58277527ed0079c"` — **les 11 sources / tests / documents en 404**, le JSON réel aussi. Vérifié dans le navigateur sur `cloud_courant.json` : 10 lignes, 6 déclarées vides, EMAG 1 décomposée jusqu'au logement. **Prod 4.58.0 et Projet 4.79.0 inchangés** (Z Code, Tour 55) |
 
 ---
 
@@ -72,6 +73,107 @@ transporte un fichier ? Concrètement :
 ---
 
 ## Journal des tours
+
+### ▸ Tour 55 — 02/10/2026 — **Z Code** (proto v2.0 — l'accueil en tuiles, et le détail qui ne montre que la production)
+
+**« on laisse l'option production de côté … lance le code »**
+
+La production hebdomadaire sort du périmètre. Ce n'est pas une suppression
+silencieuse : l'écran 1 **écrit pourquoi elle est absente** (« détaillée par lot de
+lignes, elle ne dit rien d'un poste d'outillage », daté de la décision). Un écran qui
+se tait laisse croire que l'absence était prévue ; un écran qui l'explique ferme la
+porte à la question qui reviendra dans six mois.
+
+**L'ordre que tu as demandé, brique par brique.**
+
+- **Étage 1** — une tuile par ligne : le CPP outillage de la production, la référence
+  dominante, l'écart à la cible du site, et les postes **hors** chiffrage comptés à part.
+  Les six lignes sans référence de l'export réel sont déclarées « aucune référence
+  déclarée » — pas 0.
+- **Étage 2** — la ligne, ses opérations, et sous chaque opération **le détail de
+  l'outillage du scénario de production, jusqu'au logement** : c'est le chiffre qu'on peut
+  vérifier à la calculette. Un poste sans scénario de production reste visible, marqué
+  « sans production » : sinon il disparaît et la ligne paraît complète à tort.
+- **Étage 3** — « Scénario et optimisation » : les scénarios qui **ne sont pas** en
+  production, avec leurs essais, leur conformité et le mot de la décision. C'est là que vit
+  le formulaire d'essai.
+
+**Deux faits mesurés sur l'export réel qui justifient cet ordre** (mesurés, pas supposés) :
+
+1. sur les dix lignes de `cloud_courant.json`, **un seul scénario de production porte un
+   essai** (HESSAPP · OP40) ;
+2. les deux scénarios où l'essai fait **mieux** que le prévu — EMAG 1 · OP40, KY3500
+   puis SL500 — **ne sont pas** des scénarios de production.
+
+Autrement dit : si l'étage 3 n'existait pas, la preuve d'EMAG 1 · OP40 — celle où
+l'essai a ramené 0,0797 làe où le scénario prévoyait 0,2452 — serait hors de la
+vue de l'agent. C'est ce que la contre-regard a vérifié.
+
+**Deux trous trouvés en construisant, pas après coup…**
+
+1. **Les essais portés par la production étaient sur le point de disparaître.** La v1.0
+   les montrait à l'écran 3 ; le nouvel étage 3 ne liste que les scénarios à
+   optimiser. Le bloc d'essais est donc aussi restitué **sur le scénario de production, à
+   l'étage 2** — et quand il n'y en a pas, l'écran le dit (« son CPP est celui qu'on a
+   prévu, pas celui qu'on a mesuré »).
+2. **Le formulaire d'essai regardait deux postes différents.** C'est trouvé **à
+   l'œil dans le navigateur**, pas par un test : le sélecteur de poste annonçait
+   « EMAG 1 · OP10 » au-dessus d'un « aucun scénario sur ce poste ». Les deux
+   sélecteurs regardent maintenant la même valeur, résolue une fois.
+
+**La découverte du tour : le harnais testait le fichier assemblé, pas le code.**
+
+En injectant une faute dans `coeur.js`, j'ai vu les tests du noyau broncher et **les
+118 tests d'écran rester verts**. Cause : `test_proto.js` charge `index.html`, donc
+l'état du code au moment de la **dernière couture**. Modifier le noyau et oublier
+`python assembler.py` laissait une suite entière valider du code qui n'était plus
+dans le fichier. C'est exactement l'illusion que ce harnais existe pour interdire.
+
+`assembler.py` pose maintenant une empreinte SHA-256 des quatre sources **dans** le
+fichier produit, et `test_proto.js` la recalcule : s'il y a une différence, il **refuse
+de tourner** plutôt que de valider. Vérifié : toucher `coeur.js` sans réassembler
+fait échouer le harnais sur la seule empreinte.
+
+**La contre-regard — neuf fautes injectées, une par couche.** Résultats :
+
+| Faute injectée | Vue par |
+|---|---|
+| tri des tuiles supprimé | noyau étages 1-2 |
+| `null` remplacé par `0` (invariant 3) | noyau étages 1-2 |
+| `scenarioDeProd` prend le premier scénario | noyau étages 1-2 (8) |
+| le poste affiche aussi un scénario non productif | noyau étages 1-2 (3) **et** écrans |
+| l'écran 3 liste le scénario de production | **rien — puis les écrans, après correction** |
+| l'écran 2 cesse d'afficher les essais de prod | écrans |
+| la phrase « production détaillée par lot » disparaît | **rien — puis écrans, après correction** |
+| le formulaire retombe sur « aucun poste » | écrans |
+| les deux sélecteurs du formulaire divergent | écrans |
+
+Les deux lignes en gras sont le résultat le plus utile du tour : **deux tests verts
+qui ne voyaient pas une faute réelle.** Le troisième `indexOf("lot") && indexOf("cadence")`
+était trop lâche — les deux mots reparaissent ailleurs dans l'écran ; il faut tester la
+**phrase**, pas les mots. Et la comparaison d'écrans se fait désormais par **ensembles**,
+pas par présence : l'écran 3 doit lister *exactement* les scénarios hors production du
+noyau, sinon il peut remonter un scénario déjà en série et l'agent l'optimise deux fois.
+
+**Un fait à signaler, qui ne vient pas de ce tour.** `suivi-optimisation-septfons.surge.sh`
+— le domaine que Matis utilise — sert toujours la **4.58.0**, alors que le fichier local
+et `suivi-optimisation-projet.surge.sh` sont à la **4.79.0**. Ce n'est pas moi qui l'ai
+laissé : la prod n'a pas été déployée depuis le 30/09, et elle ne bouge que sur
+phrase de Benjamin. Mais cela veut dire que **Matis travaille sur une version
+qui traîne vingt et une versions de retard sur le code qu'on fait**. À trancher par lui.
+
+**État.** proto v2.0 en ligne sur projet2. `bilan_economique.html` **non écrit**,
+empreinte `bf2e81a3…f97ca` identique à celle du début du tour. Les quatre suites :
+cœur **64/0**, import **78/0**, étages 1-2 **62/0**, écrans **118/0**.
+
+**Suite.** Tour 56 : la lecture du classeur de Matis (`matisLireClasseur` + `matisRecap`,
+déjà écrits dans l'ancien outil et jamais portés) et le **delta théorie / réalité**
+sur les tuiles — le dépliant « Théorie et réalité » existe et déclare aujourd'hui
+que le delta n'est pas encore branché. Et avant lui, le correctif `saveData()`
+(rejeu d'bascule + purge d'historique au quota plein + 3,2 Mo de PDF en base64) :
+c'est une journée de travail, et tout test à venir s'appuie dessus.
+
+---
 
 ### ▸ Tour 54 — 01/10/2026 — **Z Code** (proto v1.0 — reprendre les essais déjà faits)
 

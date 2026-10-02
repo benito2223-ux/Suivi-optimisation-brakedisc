@@ -1,4 +1,4 @@
-# PROTO — cinq écrans, CPP plaquettes en driver, et les essais déjà faits
+# PROTO — l'atelier d'abord : une tuile par ligne, puis la ligne, puis l'optimisation
 
 Maquette à tester, **à côté** de l'app de production. Le proto ne remplace rien et
 ne touche jamais `bilan_economique.html`.
@@ -8,8 +8,21 @@ ne touche jamais `bilan_economique.html`.
 
 ## Ce qu'on teste
 
-Une seule question : **cinq écrans valent-ils mieux que vingt ?** Cinq écrans, dans
-l'ordre où les questions se posent : où en est-on → essai → preuve → décision → emporter.
+Une seule question : **cinq écrans valent-ils mieux que vingt ?** — et depuis le
+02/10, **dans quel ordre**. La réponse retenue : l'atelier d'abord.
+
+1. **Les tuiles** — une par ligne de production (Weisser, Hessapp, EMAG, PCI).
+2. **La ligne** — ses opérations, et sous chacune le **scénario de production**
+   décomposé **jusqu'au logement**. Rien d'autre.
+3. **Scénario et optimisation** — les scénarios **qui ne sont pas** en production,
+   où ils en sont, et le formulaire d'essai.
+4. Décision · 5. Emporter (inchangés).
+
+**La production hebdomadaire n'y est plus** : elle est détaillée par lot de lignes et
+ne dit rien d'un poste d'outillage. L'écran 1 **écrit pourquoi elle est absente**.
+
+Le CPP plaquettes reste le driver : c'est le coût outillage de la pièce, et c'est le
+seul chiffre comparable au classeur de Matis.
 
 ## Reprendre les essais déjà faits (v1.0)
 
@@ -36,7 +49,13 @@ L'app de production montre ce que le **scénario prévoit**. Le proto montre en 
 que l'**essai a donné**, essai par essai, dans la même unité — donc comparable.
 
 Sur l'export réel du site, `EMAG 1 · OP40 · SL500` : le scénario prévoyait
-**0,1735 €/pce**, l'essai a donné **0,0478 €/pce**.
+**0,1735 €/pce**, l'essai a donné **0,0478 €/pce**. `KY3500` : prévu **0,2452**,
+obtenu **0,0797**.
+
+> Ces deux scénarios-là **ne sont pas** en production — ils vivent à l'étage 3. Un seul
+> scénario de production sur les dix lignes porte un essai (`HESSAPP · OP40`). Sans
+> l'étage 3, la meilleure preuve du site serait invisible. Ce n'est pas un choix
+> d'affichage : c'est ce que les données dictent.
 
 ## Fichiers
 
@@ -50,7 +69,8 @@ Sur l'export réel du site, `EMAG 1 · OP40 · SL500` : le scénario prévoyait
 | `assembler.py` | couture les quatre en un `index.html` déployable |
 | `test_coeur.js` | 64 tests du noyau |
 | `test_import.js` | 78 tests de la projection, **sur les vrais exports du site** |
-| `test_proto.js` | 105 tests des écrans, des portes et de l'import de bout en bout |
+| `test_tuiles.js` | 62 tests des deux premiers étages, **sur les vrais exports** |
+| `test_proto.js` | 118 tests des écrans, des portes et de l'import de bout en bout |
 
 ## Les tests
 
@@ -58,10 +78,18 @@ Sur l'export réel du site, `EMAG 1 · OP40 · SL500` : le scénario prévoyait
 python assembler.py       # obligatoire après toute modif : le déployé est index.html
 node test_coeur.js        # le noyau
 node test_import.js       # la projection
+node test_tuiles.js       # les étages 1 et 2
 node test_proto.js        # les écrans + l'import de bout en bout
 ```
 
-Les trois doivent dire `TOUT EST VERT` et sortir en code 0.
+Les quatre doivent dire `TOUT EST VERT` et sortir en code 0.
+
+> **`test_proto.js` refuse de tourner sur un assemblage périmé.** Il teste `index.html`,
+> donc l'état du code au moment de la dernière couture : modifier `coeur.js` et oublier
+> `assembler.py` le ferait valider du code qui n'est plus dans le fichier — ce que le
+> contre-regard du Tour 55 a constaté (118 tests verts sur une faute injectée dans le
+> noyau). `assembler.py` pose donc une empreinte SHA-256 des quatre sources dans le
+> fichier produit, et le harnais la recalcule : à la différence, il sort en erreur.
 
 `test_import.js` tourne sur les **quatre exports réels** présents dans le dépôt
 (`cloud_courant.json`, `suivi_corrige_mabec.json`, `base_depart_2026_2027.json`,

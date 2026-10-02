@@ -13,18 +13,16 @@
 
 | | |
 |---|---|
-| **Auteur** | Z Code |
-| **Pris le** | 02/10/2026 04:05 |
-| **Écrit dans** | `proto/` (et `VERROU.md`, `ECHANGES.md`) — **`bilan_economique.html` en lecture seule** |
-| **Version visée** | proto **v2.0** |
-| **Sujet** | socle format 8 + niveau 1 (tuiles) + niveau 2 (détail ligne, scénario de production) |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | — |
 
-🔒 **Verrou pris par Z Code.** `bilan_economique.html` ne doit pas être écrit par un autre auteur pendant ce tour.
-
-> Le proto v1.0 du Tour 54 (verrou élargi à `proto/`) est terminé, commité et
-> déployé sur projet2. `bilan_economique.html` **n'a pas été écrit pendant ce tour** :
-> son empreinte `bf2e81a3998d4d9721c728eaaf666d1f7137fe1a5e5ea651440a65ea4eaf97ca`
-> est identique à celle notée au début.
+✅ **Verrou libéré par Z Code le 02/10/2026** (Tour 55, proto v2.0). Pendant le tour,
+`bilan_economique.html` n'a pas été écrit : son empreinte
+`bf2e81a3998d4d9721c728eaaf666d1f7137fe1a5e5ea651440a65ea4eaf97ca` est identique à celle
+notée au début. Seuls `proto/`, `ECHANGES.md` et `VERROU.md` ont été écrits.
 
 ---
 

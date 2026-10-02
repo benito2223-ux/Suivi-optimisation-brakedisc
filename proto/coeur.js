@@ -10,7 +10,7 @@
    Toute absence dit ce qui manque (cahier §4.4). Aucun « — » nu.
    ========================================================================== */
 
-const PROTO_VERSION = "1.0";
+const PROTO_VERSION = "2.0";
 
 /* ---- le formatage, pur lui aussi ---- */
 function fmt(v, d) {
@@ -397,5 +397,294 @@ function recapLignes(verdictsLignes) {
     cppProjete,       // €/pièce prometteurs, pas encore actés
     aChiffrer,        // combien de postes sans chiffrage malgré une cible
     decisions         // combien de postes attendent une action de l'atelier
+  };
+}
+
+/* ============================================================================
+   7. LE RÉFÉRENTIEL DES LIGNES — quatre familles, quatre couleurs
+   ============================================================================ */
+
+/* Benjamin, à l'atelier : « Weisser Rouge, Emag Gris, Hessapp vert, PCI bleu ».
+   Ces quatre familles EXISTENT déjà dans l'app de production (référentiel
+   LIGNES_SEPT_FONS, Tour 50 du proto) — on le porte tel quel, pas on le
+   réinvente. Les couleurs ne sont pas dans les données : elles sont dans le
+   code, et c'est le bon endroit, parce qu'elles sont un fait d'atelier et pas
+   une mesure. */
+const FAMILLES_LIGNE = {
+  weisser: { libelle: "Weisser", encre: "#E2001A", alpha: 0.07 },
+  hessapp: { libelle: "Hessapp", encre: "#556b2f", alpha: 0.13 },
+  emag:    { libelle: "EMAG",    encre: "#545e68", alpha: 0.08 },
+  pci:     { libelle: "PCI",     encre: "#1b5ea6", alpha: 0.07 }
+};
+const ORDRE_FAMILLES = ["weisser", "hessapp", "emag", "pci"];
+
+function familleDeLigne(nom) {
+  const n = String(nom || "").trim().toLowerCase();
+  if (n.startsWith("weisser")) return "weisser";
+  if (n.startsWith("hessap")) return "hessapp";
+  if (n.startsWith("emag")) return "emag";
+  if (n.startsWith("pci")) return "pci";
+  return "";
+}
+
+/* L'ordre physique de l'atelier, du fond vers l'entrée (fait d'atelier, pas un
+   tri alphabétique). Une ligne inconnue se range après le référentiel, jamais
+   avant : une ligne hors nomenclature ne doit pas passer devant Weisser. */
+const RANG_LIGNES = [
+  "weisser 1", "weisser 2", "weisser 3", "weisser 4",
+  "hessapp", "emag 1", "emag 2", "emag 3", "pci 1", "pci 2", "pci 3", "pci 4"
+];
+function rangLigne(nom) {
+  const n = String(nom || "").trim().toLowerCase();
+  const i = RANG_LIGNES.indexOf(n);
+  return i === -1 ? RANG_LIGNES.length : i;
+}
+
+/* Le code que Matis donne à une ligne (E1, E2, E3, HESSAPP). C'est ce code qui
+   fait le pont avec le classeur : les feuilles s'appellent « Coût pièce E1 … ».
+   On le déduit du NOM, jamais stocké en double — deux sources pour un fait,
+   c'est une source de désaccord. */
+function codeLigneDe(nom) {
+  const n = String(nom || "").trim().toUpperCase();
+  const m = /^EMAG\s*(\d+)$/.exec(n);
+  if (m) return "E" + m[1];
+  if (n.startsWith("HESSAP")) return "HESSAPP";
+  const w = /^WEISSER\s*(\d+)$/.exec(n);
+  if (w) return "W" + w[1];
+  const p = /^PCI\s*(\d+)$/.exec(n);
+  if (p) return "P" + p[1];
+  return "";
+}
+
+/* ============================================================================
+   8. LES POSTES, LA TUILE ET LE DÉTAIL — les deux premiers étages
+   ============================================================================ */
+
+/* Quel est le scénario EN PRODUCTION d'une opération ?
+   L'app de production exige `baseline === true` ET `statut === "serie"`. On
+   reprend cet ordre de recherche, du plus sûr au plus douteux :
+     1. le scénario marqué baseline
+     2. à défaut, celui qui est en série (l'app les tient verrouillés ensemble,
+        mais un export ancien peut n'avoir qu'un des deux)
+     3. à défaut, celui dont le nom dit « base excel » — c'est le fallback que
+        l'app utilise déjà pour les lignes importées d'un classeur.
+   Jamais « le premier de la liste » : sans règle explicite, deux scénarios
+   equally claimed would silently pick one. */
+function scenarioDeProd(scs) {
+  const liste = scs || [];
+  return liste.find(s => s && s.baseline === true)
+      || liste.find(s => s && s.statut === "serie")
+      || liste.find(s => s && /base excel/i.test(s.name || ""))
+      || null;
+}
+
+/* Les postes d'une ligne : une opération sur une référence, avec son scénario
+   de production. C'est la structure du DÉTAIL (étage 2) — et la tuile s'y
+   branche au lieu de recalculer sa propre version. */
+function postesDeLigne(ligne) {
+  const out = [];
+  ((ligne && ligne.refs) || []).forEach(ref => {
+    ((ref && ref.ops) || []).forEach(op => {
+      const scs = op.scs || [];
+      const prod = scenarioDeProd(scs);       // UN SEUL calcul, réutilisé
+      out.push({
+        ref: ref,
+        op: op,
+        scs: scs,
+        prod: prod,
+        autres: prod ? scs.filter(s => s && s !== prod) : scs.filter(Boolean)
+      });
+    });
+  });
+  return out;
+}
+
+/* Le CPP outillage d'une RÉFÉRENCE : la somme sur ses postes, en ne gardant que
+   les postes chiffrables — et en COMPTANT les autres. Invariant 3 : un poste non
+   chiffrable ne se dilue pas dans le total, il se dit.
+
+   `distanceCible` est l'écart brut au-dessus de la cible, en €/pièce. On ne calcule
+   PAS de pourcentage de « chemin » ici : `cheminCPP` a besoin du MEILLEUR essai
+   disponible, et à l'étage 1 il n'y en a pas de calculé — lui passer null
+   donnerait un pourcentage qui ne repose sur rien. Le pourcentage reste réservé
+   à l'étage 3, où l'on sait enfin de quel essai on parle. */
+function cppReference(ligne, ref) {
+  const postes = postesDeLigne(ligne).filter(p => p.ref.id === ref.id);
+  let total = 0, chiffres = 0, nonChiffrables = 0, sansScenario = 0;
+  postes.forEach(p => {
+    if (!p.prod) { sansScenario++; nonChiffrables++; return; }
+    const c = cppOutillageScenario(p.prod);
+    if (c === null) { nonChiffrables++; return; }
+    total += c; chiffres++;
+  });
+  const cpp = chiffres ? total : null;
+  const cible = (ref && ref.cibleCPP !== "" && ref.cibleCPP != null
+                 && !isNaN(parseFloat(ref.cibleCPP))) ? parseFloat(ref.cibleCPP) : null;
+  const distanceCible = (cpp !== null && cible !== null) ? cpp - cible : null;
+  return {
+    ref: ref,
+    cpp: cpp,
+    nbPostes: postes.length,
+    chiffres: chiffres,
+    nonChiffrables: nonChiffrables,
+    sansScenario: sansScenario,
+    cible: cible,
+    distanceCible: distanceCible
+  };
+}
+
+/* LA TUILE — l'étage 1. Une tuile par ligne de production, et rien d'autre que
+   ce qu'un chef d'atelier regarde en passant : la référence en production, son
+   CPP outillage actuel, et où il se situe par rapport à la cible.
+
+   Ce qui n'y est PAS, et pourquoi — c'est écrit ici pour qu'on ne le relogue
+   pas dans trois mois sans s'en souvenir :
+     · la production hebdomadaire. Décision de Benjamin le 02/10/2026 : elle est
+       détaillée par lot de lignes, donc elle ne parle pas d'un poste d'outillage.
+       L'accueil n'affiche donc ni cadence, ni cumul, ni taux d'atteinte.
+     · le delta théorie/réalité. Il exige le classeur de Matis, qui n'est pas
+       encore branché (Tour 56). La tuile le DIT au lieu de l'inventer.
+     · un coût partiel présenté comme un coût complet. Une opération non
+       chiffrable est comptée, et la tuile l'annonce sous le chiffre. */
+function tuileDeLigne(ligne) {
+  const famille = familleDeLigne(ligne && ligne.nom);
+  const refs = ((ligne && ligne.refs) || []).map(r => cppReference(ligne, r));
+  const chiffres = refs.filter(r => r.cpp !== null);
+  /* Les postes non chiffrables se comptent sur TOUTES les références, pas
+     seulement sur celles qui ont un CPP. Le premier jet sommait `nonChiffrables`
+     dans la boucle des références chiffrables : une référence dont AUCUN poste
+     n'est chiffrable verrait ses postes non chiffrables disparaître du compte —
+     exactement le silence que l'invariant 3 interdit. Le total, lui, ne prend
+     que ce qui est chiffrable. */
+  let cppLigne = 0, nonChiffrables = 0, sansScenario = 0;
+  refs.forEach(r => {
+    if (r.cpp !== null) cppLigne += r.cpp;
+    nonChiffrables += r.nonChiffrables;
+    sansScenario += r.sansScenario;
+  });
+
+  /* La référence en production : celle qui a le plus de postes chiffrés. En cas
+     d'égalité, la première dans l'ordre du fichier — jamais un tri par nom,
+     qui ferait jumping d'une tuile à l'autre d'une version à l'autre. */
+  let dominante = null;
+  chiffres.forEach(r => {
+    if (!dominante || r.chiffres > dominante.chiffres) dominante = r;
+  });
+
+  return {
+    ligne: ligne,
+    nom: (ligne && ligne.nom) || "Ligne sans nom",
+    famille: famille,
+    encre: famille ? FAMILLES_LIGNE[famille].encre : "#545e68",
+    code: codeLigneDe(ligne && ligne.nom),
+    rang: rangLigne(ligne && ligne.nom),
+    refs: refs,
+    dominante: dominante,
+    cpp: chiffres.length ? cppLigne : null,
+    nbRefs: refs.length,
+    nbChiffres: chiffres.length,
+    nonChiffrables: nonChiffrables,
+    sansScenario: sansScenario,
+    vide: refs.length === 0
+  };
+}
+
+/* Les tuiles, dans l'ordre de l'atelier. */
+function tuilesDeLignes(lignes) {
+  return (lignes || []).map(tuileDeLigne)
+    .sort((a, b) => a.rang - b.rang || a.nom.localeCompare(b.nom));
+}
+
+/* LE DÉTAIL — l'étage 2. Une ligne, ses références, ses opérations, et POUR LE
+   SCÉNARIO DE PRODUCTION SEUL. C'est une règle de lecture, pas une limitation :
+   les autres scénarios existent et sont comptés, mais l'étage 2 ne les montre
+   pas — ils sont l'objet de l'étage 3. Une exception : si une opération n'a
+   AUCUN scénario de production, elle est quand même montrée, marquée « aucun
+   scénario en production » — sinon une opération vide disparaîtrait de l'écran
+   et l'agent croirait la ligne complète. */
+function detailLigne(ligne) {
+  const postes = postesDeLigne(ligne);
+  const parRef = [];
+  ((ligne && ligne.refs) || []).forEach(ref => {
+    const siens = postes.filter(p => p.ref.id === ref.id);
+    if (!siens.length) return;
+    const c = cppReference(ligne, ref);
+    parRef.push({
+      ref: ref,
+      nom: ref.nom || "Référence sans nom",
+      cpp: c.cpp,
+      cible: c.cible,
+      distanceCible: c.distanceCible,
+      nonChiffrables: c.nonChiffrables,
+      postes: siens.map(p => ({
+        op: p.op,
+        code: p.op.code || p.op.nom || "OP",
+        nom: p.op.nom || "",
+        prod: p.prod,
+        cpp: p.prod ? cppOutillageScenario(p.prod) : null,
+        outillage: p.prod ? outillageDeScenario(p.prod) : null,
+        essais: p.prod ? (p.prod.essais || []).length : 0,
+        nbAutres: p.autres.length
+      }))
+    });
+  });
+  return {
+    ligne: ligne,
+    tuile: tuileDeLigne(ligne),
+    refs: parRef,
+    nbPostes: postes.length,
+    nbPostesSansProd: postes.filter(p => !p.prod).length,
+    nbScenariosAutres: postes.reduce((a, p) => a + p.autres.length, 0)
+  };
+}
+
+/* L'outillage d'un scénario, décomposé : outil par outil, logement par
+   logement. C'est ce que l'étage 2 montre sous chaque opération, et c'est la
+   seule décomposition qui permet de voir OÙ part l'argent.
+
+   Chaque outil porte SES logements, calculés sur place. Deux jet ont fait
+   autrement et deux ont failli :
+     · le premier passait par `cppParLogement(sc)`, qui perd l'identité de
+       l'outil et ne rend que son numéro — la décomposition était donc fausse
+       dès qu'un outil n'a pas de CPP ;
+     · le deuxième regroupait les logements par numéro d'outil avant de les
+       redistribuer : deux outils PORTAIENT le même numéro se retrouvaient donc
+       dans le même seau, et le premier affichait les logements du second. Aucun
+       export du site ne porte ce cas ; `test_tuiles.js` le fabrique exprès.
+   Un seau par outil, et le seau se remplit en parcourant cet outil. */
+function outillageDeScenario(sc) {
+  if (!sc) return { outils: [], cpp: null, nonChiffrables: 0 };
+  const outils = [];
+  let total = 0, chiffres = 0, nonChiffrables = 0;
+  (sc.outils || []).forEach(o => {
+    const numero = o.numero || "?";
+    const logements = (o.logements || []).map(l => {
+      const cpp = coutLogement(l);
+      if (cpp === null) nonChiffrables++;
+      return {
+        outilNumero: numero,
+        logementNom: l.nom || "?",
+        article: l.ref || "",
+        cpp: cpp,
+        prix: parseFloat(l.prix),
+        aretes: parseFloat(l.aretes),
+        charniere: parseFloat(l.charniere)
+      };
+    });
+    const valeurs = logements.filter(x => x.cpp !== null).map(x => x.cpp);
+    const cpp = valeurs.length ? valeurs.reduce((a, b) => a + b, 0) : null;
+    if (cpp !== null) { total += cpp; chiffres++; }
+    outils.push({
+      numero: numero,
+      description: o.description || "",
+      correcteur: o.correcteur || "",
+      cpp: cpp,
+      logements: logements
+    });
+  });
+  return {
+    outils: outils,
+    cpp: chiffres ? total : null,
+    nonChiffrables: nonChiffrables
   };
 }

@@ -35,7 +35,12 @@ le temps machine ne sort qu'en zone secondaire, marqué « non comparable au cla
 
 ## 3. Les cinq écrans, dans l'ordre où les questions se posent
 
-| # | Écran | La question | Temps visé |
+> **v2.0 — cet ordre a été changé le 02/10, sur instruction de Benjamin.**
+> Le tableau ci-dessous est celui de la v1.0 ; la structure qui l'a remplacé est
+> en 3 bis. Les deux sont gardés : c'est la trace d'une décision, pas une
+> contradiction.
+
+| # | Écran (v1.0) | La question | Temps visé |
 |---|---|---|---|
 | 1 | Où en est-on | quelles lignes, quels postes, quelle décision en attente | 10 s |
 | 2 | Essai | j'insère un essai | 90 s |
@@ -45,6 +50,46 @@ le temps machine ne sort qu'en zone secondaire, marqué « non comparable au cla
 
 Pas de sixième écran. Pas de menu « Outils », pas de réglages, pas de panneaux
 secondaires. Ce qui ne sert pas les cinq questions n'existe pas.
+
+## 3 bis. L'ordre v2.0 — l'atelier d'abord
+
+L'écran 1 de la v1.0 partait d'une carte technique. On ne s'y retrouvait pas : un agent
+qui se rend sur une ligne ne commence pas par la décision d'un poste, il commence par
+**sa ligne**.
+
+| # | Étage | La question | Réponse |
+|---|---|---|---|
+| 1 | **Les tuiles** | où en est-on, ligne par ligne | une tuile par ligne de production : CPP outillage, référence dominante, écart à la cible du site |
+| 2 | **La ligne** | qu'est-ce qui tourne aujourd'hui | les opérations, et sous chacune **le scénario de production décomposé jusqu'au logement** |
+| 3 | **Scénario et optimisation** | qu'est-ce qu'on teste, et où en est-on | les scénarios **qui ne sont pas** en production : essais, conformité, décision — et le formulaire d'essai |
+| 4 | Décision | le gain CPP, go / no-go | inchangé |
+| 5 | Emporter | la page A4 | inchangé |
+
+**Ce qui a changé, et pourquoi c'est une décision et pas un goût :**
+
+- **La production est sortie du périmètre** (Benjamin, 02/10) : elle est détaillée par
+  lot de lignes et ne dit rien d'un poste d'outillage. L'écran 1 **écrit pourquoi elle
+  est absente** — il ne se tait pas. Un écran muet laisse croire que l'absence était
+  prévue ; un écran qui l'explique ferme la porte à la question qui reviendra.
+- **L'étage 2 ne montre QUE la production.** Les autres scénarios sont derrière une
+  porte. Un poste sans scénario de production reste visible, marqué « sans production » :
+  s'il disparaît, la ligne paraît complète à tort.
+- **Les essais portés par la production sont aussi montrés à l'étage 2.** Sur l'export
+  réel, un seul scénario de production porte un essai — mais ce sont des mesures
+  réelles, et les cacher derrière « optimisation » les aurait effacées. Quand il n'y en a
+  pas, l'écran le dit : « son CPP est celui qu'on a prévu, pas celui qu'on a mesuré ».
+
+**Ce qui reste hors de portée :** la cadence, la production cumulée, et — jusqu'au
+Tour 56 — le delta théorie / réalité du classeur de Matis. Le dépliant
+« Théorie et réalité » existe dès l'étage 1 et **déclare** que le delta n'est pas
+encore branché. L'outil ne l'invente pas.
+
+**Ce que l'export réel a décidé pour nous.** Sur `cloud_courant.json`, un seul scénario
+de production porte un essai (HESSAPP · OP40), et les deux scénarios où l'essai fait
+mieux que le prévu (EMAG 1 · OP40, KY3500 puis SL500) **ne sont pas** des scénarios de
+production. Sans l'étage 3, la meilleure preuve du site serait hors de la vue de
+l'agent. L'ordre des étages n'est donc pas une préférence d'affichage : c'est ce que les
+données exigent.
 
 ## 4. Les invariants, écrits AVANT le code
 

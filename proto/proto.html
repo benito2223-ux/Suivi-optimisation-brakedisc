@@ -240,11 +240,58 @@ a{color:var(--accent)}
 .essai-ligne .cppb{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
 .essai-ligne .cppb small{display:block;font-weight:400;color:var(--mute);font-size:var(--t6)}
 
+/* ══ les deux premiers étages (v2.0) ══════════════════════════════════════
+   La tuile d'une ligne : à gauche le chiffre de la ligne, à droite la liste de
+   ses références. Le chiffre de gauche est celui qu'on regarde en passant ; le
+   détail à droite est là pour qu'on n'ait pas à ouvrir la ligne. */
+.ligne{--encre:#545e68}
+.ligne header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.ligne header h2{margin:0;font-size:var(--t3)}
+.pastille{width:10px;height:10px;border-radius:50%;flex:none;
+  box-shadow:0 0 0 3px color-mix(in srgb, currentColor 8%, transparent)}
+.vide-ligne{opacity:.72}
+
+.tuile-corps{display:grid;grid-template-columns:180px 1fr;gap:var(--gap);align-items:start}
+.tuile-principal{background:var(--mute-bg);border-radius:8px;padding:12px;text-align:center}
+.tuile-principal .cpp{font-size:var(--t1);font-weight:650;letter-spacing:-.02em;line-height:1.1}
+.tuile-principal .cpp small{font-size:var(--t5);font-weight:400;color:var(--mute)}
+.tuile-principal .lab{color:var(--mute);font-size:var(--t5);margin-top:2px}
+
+.tuile-refs{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.tuile-ref{border:1px solid var(--line);border-radius:8px;padding:9px 11px;background:var(--card)}
+.tuile-ref .nom{font-size:var(--t5);color:var(--mute);font-weight:600}
+.tuile-ref .cpp{font-size:var(--t2);font-weight:650;letter-spacing:-.02em;margin:1px 0}
+.tuile-ref .cpp small{font-size:var(--t5);font-weight:400;color:var(--mute)}
+.tuile-ref .sous{font-size:var(--t6);color:var(--mute)}
+.ecart-haut{display:block;margin-top:4px;font-size:var(--t6);color:var(--warn)}
+.ecart-bas{display:block;margin-top:4px;font-size:var(--t6);color:var(--ok)}
+.declarations{margin-top:10px}
+
+.depliant{margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
+.depliant summary{cursor:pointer;font-size:var(--t5);color:var(--mute);
+  list-style:none;display:flex;align-items:center;gap:6px}
+.depliant summary::-webkit-details-marker{display:none}
+.depliant summary::before{content:"▸";color:var(--encre);font-size:var(--t5)}
+.depliant[open] summary::before{content:"▾"}
+.depliant-corps{margin-top:8px;padding:10px;border-left:2px solid var(--encre);
+  background:var(--mute-bg);border-radius:0 6px 6px 0}
+
+.poste{border:1px solid var(--line);border-radius:8px;padding:11px 13px;margin-top:10px;
+  background:var(--card)}
+.poste header{display:flex;align-items:baseline;gap:9px;margin-bottom:6px}
+.poste header h3{margin:0;font-size:var(--t4)}
+.outil{border-top:1px solid var(--line);padding-top:7px;margin-top:7px}
+.outil:first-of-type{border-top:0;margin-top:0}
+.outil-tete{display:flex;align-items:baseline;gap:9px;font-size:var(--t5)}
+
+.btn.petit{padding:3px 9px;font-size:var(--t6)}
+
 @media (max-width:760px){
   .poste{grid-template-columns:1fr;gap:7px}
   .dec-carte{grid-template-columns:1fr}
   .a4{padding:24px}
   .essai-ligne{grid-template-columns:1fr}
+  .tuile-corps{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -267,6 +314,13 @@ a{color:var(--accent)}
 /* ───────── le noyau —_functions pures, testées avant d'exister ici_───────── */
 __COEUR__
 
+/* L'empreinte de l'assemblage, calculée par assembler.py à partir des quatre
+   fichiers sources AU MOMENT de la couture. Le harnais des écrans la recalcule ;
+   s'il y a une différence, il REFUSE de tourner plutôt que de valider un
+  assemblage périmé — car un test vert sur du code qui n'est plus dans le
+   fichier ne prouve rien du tout. */
+const EMPREINTE_ASSEMBLAGE = "__ASSEMBLAGE__";
+
 /* ───────── les données de départ ───────── */
 __DONNEES__
 
@@ -279,7 +333,7 @@ __IMPORT__
    n'apparaît pas ici : il n'est pas comparable au classeur.
    ══════════════════════════════════════════════════════════════════════════ */
 
-const ETAT = { ecran: 1, ligne: "l1", op: "o10", sc: "e2", saisi: {}, lignes: JEUX.lignes,
+const ETAT = { ecran: 1, ligne: null, op: "o10", sc: "e2", saisi: {}, lignes: JEUX.lignes,
                source: { type: "jeu", nom: "jeu d'exemple", rapport: null, poids: null },
                importOuvert: false, message: null, erreur: null };
 
@@ -385,116 +439,216 @@ function ligneHTML(vl) {
 }
 
 function ecran1() {
-  const vls = verdictsLignes();
-  const r = recapLignes(vls);
-  const nbPostes = vls.reduce((a, vl) => a + vl.postes.length, 0);
+  const tuiles = tuilesDeLignes(ETAT.lignes);
+  const chiffres = tuiles.filter(t => t.cpp !== null);
 
   return `
-  <p class="lede">Où en est-on. Le CPP plaquettes est le coût outillage de la pièce :
-     c'est le seul chiffre comparable au classeur de Matis, et le seul que changer
-     d'insert fait bouger.</p>
+  <p class="lede">Les lignes de Sept Fons, une tuile chacune. Le chiffre d'une tuile est
+     le CPP outillage de la production : le seul que changer d'insert fait bouger.</p>
 
   <div class="kpis">
     <div class="kpi">
-      <div class="lab">CPP plaquettes · prod</div>
-      <div class="val">${fmt(vls.filter(v => v.cppProd !== null)
-        .reduce((a, v) => a + v.cppProd, 0) / Math.max(1, vls.filter(v => v.cppProd !== null).length), 4)}</div>
-      <div class="sub">€/pièce, moyenne des ${vls.filter(v => v.cppProd !== null).length} lignes chiffrées
-        <div class="why">somme des postes chiffrables — les non chiffrés sont comptés à part, jamais dilués</div></div>
+      <div class="lab">Lignes suivies</div>
+      <div class="val">${tuiles.length}</div>
+      <div class="sub">dont ${chiffres.length} avec un CPP chiffrable
+        <div class="why">une ligne sans référence n'a pas de coût : elle n'est pas à 0, elle n'est pas saisie</div></div>
     </div>
     <div class="kpi">
-      <div class="lab">Déjà gagné · en série</div>
-      <div class="val hero">${fmt(r.cppActe, 4)}</div>
-      <div class="sub">€/pièce actés
-        <div class="why">uniquement ce qui est passé en production</div></div>
+      <div class="lab">CPP outillage · moyenne</div>
+      <div class="val">${chiffres.length ? fmt(chiffres.reduce((a, t) => a + t.cpp, 0) / chiffres.length, 4) : "—"}</div>
+      <div class="sub">€/pièce, sur les ${chiffres.length} lignes chiffrées
+        <div class="why">moyenne de lignes, pas de postes : une tuile montre une ligne, pas une opération</div></div>
     </div>
     <div class="kpi">
-      <div class="lab">En essai · projeté</div>
-      <div class="val">${fmt(r.cppProjete, 4)}</div>
-      <div class="sub">€/pièce prometteurs
-        <div class="why">pas encore validés — jamais mélangés aux gains actés</div></div>
+      <div class="lab">Postes non chiffrables</div>
+      <div class="val">${tuiles.reduce((a, t) => a + t.nonChiffrables, 0)}</div>
+      <div class="sub">sur toutes les lignes
+        <div class="why">comptés, jamais dilués : ils n'entrent dans aucun total</div></div>
     </div>
     <div class="kpi">
-      <div class="lab">À décider</div>
-      <div class="val">${r.decisions}</div>
-      <div class="sub">poste${r.decisions > 1 ? "s" : ""} en attente d'une action
-        <div class="why">validé 5× à confirmer, ou essai prometteur à confirmer</div>
-        ${r.aChiffrer ? `<div class="why">+ ${r.aChiffrer} à chiffrer : cible connue, aucun coût saisi</div>` : ""}</div>
+      <div class="lab">Scénarios hors production</div>
+      <div class="val">${nbScenariosHorsProd()}</div>
+      <div class="sub">à l'étude, en essai ou validés
+        <div class="why">ils ne sont pas sur les tuiles : on les ouvre ligne par ligne</div></div>
     </div>
   </div>
 
-  ${r.aChiffrer ? `<div class="erreur">${r.aChiffrer} poste${r.aChiffrer > 1 ? "s" : ""}
-     porte${r.aChiffrer > 1 ? "nt" : ""} une cible CPP mais aucun coût saisi. Sans prix,
-     arêtes ou charnière, il n'existe pas de chemin à afficher — et il ne doit pas disparaître.</div>` : ""}
+  <div class="lignes">${tuiles.map(tuileHTML).join("")}</div>
 
-  <div class="lignes">${vls.map(ligneHTML).join("")}</div>
+  <p class="note-bas">Ni cadence, ni production cumulée : la production est détaillée par lot
+     de lignes, elle ne dit rien d'un poste d'outillage (décision du 02/10/2026).
+     Ni le temps machine, ni le rebut, ni les pièces détachées : ils ne sont pas
+     comparables au classeur de Matis.</p>`;
+}
 
-  <p class="note-bas">Le temps machine, le rebut et les pièces détachées ne sont pas
-     affichés ici : ils ne sont pas comparables au classeur de Matis. L'app de
-     production les porte ; le proto, non. Son but est de trancher sur l'outillage.</p>`;
+/* La tuile d'une ligne. Ce qu'elle porte, ce qu'elle ne porte pas, et pourquoi :
+   c'est écrit dans `tuileDeLigne`, côté noyau. Ici on ne fait que le dire en clair. */
+function tuileHTML(t) {
+  if (t.vide) {
+    return `<section class="ligne vide-ligne">
+      <header><span class="pastille" style="background:${t.encre}"></span>
+        <h2>${t.nom}</h2>
+        <span class="meta">${t.code || "hors nomenclature"}</span></header>
+      <div class="absent">Aucune référence déclarée sur cette ligne</div>
+      <p class="qq">Une ligne sans référence n'a pas de CPP : pas 0, mais rien à chiffrer.</p>
+    </section>`;
+  }
+  const chiffres = t.refs.filter(r => r.cpp !== null);
+  const autres = t.refs.length - chiffres.length;
+
+  const liste = chiffres.map(r => {
+    const ecart = r.distanceCible === null ? ""
+      : (r.distanceCible > 0
+          ? `<span class="ecart-haut">${fmt(r.distanceCible, 4)} au-dessus de la cible</span>`
+          : `<span class="ecart-bas">cible atteinte</span>`);
+    return `<div class="tuile-ref">
+      <div class="nom">${r.ref.nom || "Référence sans nom"}</div>
+      <div class="cpp">${fmt(r.cpp, 4)} <small>€/pce</small></div>
+      <div class="sous">${r.chiffres} poste${r.chiffres > 1 ? "s" : ""} chiffré${r.chiffres > 1 ? "s" : ""}
+        · cible ${r.cible === null ? "non renseignée" : fmt(r.cible, 4) + " " + "€"}</div>
+      ${ecart}
+      ${r.nonChiffrables ? `<div class="absent">hors ${r.nonChiffrables} poste${r.nonChiffrables > 1 ? "s" : ""} non chiffrable${r.nonChiffrables > 1 ? "s" : ""}</div>` : ""}
+    </div>`;
+  }).join("");
+
+  return `<section class="ligne" style="--encre:${t.encre}">
+    <header>
+      <span class="pastille" style="background:${t.encre}"></span>
+      <h2>${t.nom}</h2>
+      <span class="meta">${t.code || "hors nomenclature"} · ${t.nbRefs} référence${t.nbRefs > 1 ? "s" : ""}</span>
+      <span style="margin-left:auto"><button class="btn petit" type="button"
+        onclick="ouvrirLigne('${t.ligne.id}')">Ouvrir →</button></span>
+    </header>
+
+    <div class="tuile-corps">
+      <div class="tuile-principal">
+        <div class="cpp">${chiffres.length ? fmt(t.cpp, 4) + " <small>€/pce</small>" : "—"}</div>
+        <div class="lab">CPP outillage · ${t.nbRefs} référence${t.nbRefs > 1 ? "s" : ""}</div>
+      </div>
+      <div class="tuile-refs">${liste || '<div class="absent">aucun poste chiffrable</div>'}</div>
+    </div>
+
+    ${t.nonChiffrables || t.sansScenario ? `<div class="declarations">
+      ${t.sansScenario ? `<div class="absent">${t.sansScenario} poste${t.sansScenario > 1 ? "s" : ""} sans scénario en production : non compté${t.sansScenario > 1 ? "s" : ""}</div>` : ""}
+    </div>` : ""}
+
+    <details class="depliant">
+      <summary>Théorie et réalité</summary>
+      <div class="depliant-corps">
+        <div class="absent">Le delta entre la théorie et la réalité n'est pas encore branché.</div>
+        <p class="qq">Il se lit dans le classeur de Matis (quantité réelle, colonne N) et il n'est
+           pas encore importé ici. Tant qu'il ne l'est pas, l'outil ne l'invente pas : il le dit.</p>
+      </div>
+    </details>
+
+    ${autres > 0 ? `<div class="note-bas">+ ${autres} référence${autres > 1 ? "s" : ""} non chiffrable${autres > 1 ? "s" : ""} sur cette ligne</div>` : ""}
+  </section>`;
+}
+
+function nbScenariosHorsProd() {
+  let n = 0;
+  ETAT.lignes.forEach(l => (l.refs || []).forEach(r => (r.ops || []).forEach(op => {
+    const scs = op.scs || [];
+    const prod = scenarioDeProd(scs);
+    scs.forEach(s => { if (s && s !== prod) n++; });
+  })));
+  return n;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   ÉCRAN 2 — ESSAI : insérer un essai en 90 secondes
+   ÉCRAN 2 — LE DÉTAIL DE LA LIGNE : le scénario de production, et lui seul
    ══════════════════════════════════════════════════════════════════════════ */
 
 function ecran2() {
-  const postes = tousPostes();
-  const s = ETAT.saisi;
-  const ops = postes.map(p => `<option value="${p.ligne.id}|${p.op.id}"
-      ${s.poste === p.ligne.id + "|" + p.op.id ? "selected" : ""}>
-      ${p.ligne.nom} · ${p.op.nom}</option>`).join("");
+  const ligne = ligneCourante();
+  if (!ligne) {
+    return `<div class="vide"><b>Aucune ligne ouverte</b>
+       Revenez aux tuiles et choisissez une ligne.</div>`;
+  }
+  const d = detailLigne(ligne);
+  const horsProd = nbScenariosHorsProdDe(ligne);
 
   return `
-  <p class="lede">J'insère un essai. Trois informations suffisent pour qu'il compte :
-     le poste, la plaquette, et jusqu'où elle tient. Le reste se lit, il ne se saisit pas.</p>
+  <p class="lede">${d.tuile.nom} — ce qui est en production aujourd'hui. Le scénario de
+     production, et lui seul : les autres sont derrière la porte « Scénario et optimisation ».</p>
 
-  <form class="form" id="fEssai">
-    <h3>Nouvel essai</h3>
-    <p class="sous">Un essai se juge sur sa charnière atteinte et sa conformité — pas sur un avis.</p>
+  ${d.refs.map(refLigneHTML).join("")}
 
-    <div class="grille">
-      <div class="champ">
-        <label for="cPoste">Poste</label>
-        <select id="cPoste" name="poste">${ops}</select>
-        <div class="hint">ligne et opération</div>
-      </div>
-<div class="champ">
-    <label for="cScenario">Plaquette / configuration</label>
-    <select id="cScenario" name="scenario">${(function(){
-      const scs = scenariosDuPoste(s.poste);
-      return scs.length
-        ? scs.map(x => `<option value="${x.id}">${x.name}</option>`).join("")
-        : `<option value="">aucun scénario sur ce poste</option>`;
-    })()}</select>
-    <div class="hint">le scénario d'essai sur lequel on mesure</div>
-  </div>
-      <div class="champ">
-        <label for="cDate">Date</label>
-        <input type="date" id="cDate" name="date" value="${s.date || "2026-10-01"}">
-      </div>
-      <div class="champ">
-        <label for="cEquipe">Équipe</label>
-        <input type="text" id="cEquipe" name="equipe" placeholder="M. / A." value="${s.equipe || ""}">
-      </div>
-      <div class="champ">
-        <label for="cCharniere">Charnière visée (pièces)</label>
-        <input type="number" id="cCharniere" name="charniere" min="1" value="${s.charniere || ""}">
-        <div class="hint">combien de pièces avant de devoir changer</div>
-      </div>
-      <div class="champ">
-        <label for="cBatt">Battement mesuré (mm)</label>
-        <input type="number" id="cBatt" name="batt" step="0.01" min="0" value="${s.batt || ""}">
-        <div class="hint">vide = non mesuré, l'essai ne sera pas jugé non conforme</div>
-      </div>
+  ${horsProd || d.nbPostesSansProd ? `<div class="form" style="margin-bottom:var(--gap)">
+    <button class="btn" type="button" onclick="aller(3)">Scénario et optimisation →
+      <span class="meta">${horsProd} scénario${horsProd > 1 ? "s" : ""} hors production</span></button>
+  </div>` : `<p class="note-bas">Cette ligne n'a aucun scénario hors production : rien à optimiser pour l'instant.</p>`}`;
+}
+
+/* Une référence, ses postes, et sous chaque poste l'outillage du scénario de
+   production décomposé logement par logement. C'est là que l'on voit OÙ part
+   l'argent d'une pièce. */
+function refLigneHTML(r) {
+  return `<section class="ligne">
+    <header><h2>${r.nom}</h2>
+      <span class="meta">${r.postes.length} poste${r.postes.length > 1 ? "s" : ""}</span></header>
+
+    <div class="kpis" style="margin-bottom:var(--gap)">
+      <div class="kpi"><div class="lab">CPP outillage · production</div>
+        <div class="val">${r.cpp === null ? "non chiffrable" : fmt(r.cpp, 4)}</div>
+        <div class="sub">${r.cpp === null ? "aucun poste chiffrable" : "€/pièce, postes chiffrables seuls"}</div></div>
+      <div class="kpi"><div class="lab">Cible du site</div>
+        <div class="val">${r.cible === null ? "—" : fmt(r.cible, 4)}</div>
+        <div class="sub">${r.cible === null ? "non renseignée" : "€/pièce"}</div></div>
+      <div class="kpi"><div class="lab">Reste à gagner</div>
+        <div class="val">${r.distanceCible === null ? "—" : (r.distanceCible > 0 ? fmt(r.distanceCible, 4) : "0,0000")}</div>
+        <div class="sub">${r.distanceCible === null ? "ni CPP ni cible : rien à comparer"
+          : (r.distanceCible > 0 ? "€/pièce au-dessus de la cible" : "la cible est atteinte")}</div></div>
     </div>
 
-    <button class="btn" type="submit">Enregistrer l'essai</button>
-    <button class="btn ghost garder" type="button" onclick="annulerSaisie()">Annuler</button>
-    ${ETAT.erreur ? `<div class="erreur" style="margin-top:16px">${ETAT.erreur}</div>` : ""}
-    ${ETAT.dernierEssai ? `<div class="note-bas" style="color:var(--ok)">
-      ${ETAT.dernierEssai}</div>` : ""}
-  </form>`;
+    ${r.postes.map(posteProdHTML).join("")}
+  </section>`;
+}
+
+function posteProdHTML(p) {
+  if (!p.prod) {
+    return `<section class="poste">
+      <header><h3>${p.code}</h3><span class="mot rien">sans production</span></header>
+      <div class="absent">Aucun scénario en production sur ce poste : il n'entre dans aucun
+         CPP et il reste visible pour qu'on sache qu'il manque.</div>
+    </section>`;
+  }
+  const o = p.outillage;
+  const essais = p.prod.essais || [];
+  return `<section class="poste">
+    <header><h3>${p.code}</h3>
+      <span class="meta">${p.prod.name || "scénario de production"}</span>
+      <span class="mot serie" style="margin-left:auto">${o.cpp === null ? "non chiffrable" : fmt(o.cpp, 4) + " €/pce"}</span></header>
+    ${o.outils.map(outilHTML).join("") || '<div class="absent">aucun outil saisi sur ce poste</div>'}
+    ${essais.length ? `<div class="bloc-essais">
+      <h4>Ce que les essais ont réellement donné (${essais.length})</h4>
+      ${essaisHTML(p.prod, essais)}
+    </div>` : `<div class="note-bas">Aucun essai porté par ce scénario de production :
+      son CPP est celui qu'on a prévu, pas celui qu'on a mesuré.</div>`}
+    ${p.nbAutres ? `<div class="note-bas">${p.nbAutres} autre${p.nbAutres > 1 ? "s" : ""} scénario${p.nbAutres > 1 ? "s" : ""} sur ce poste — voir « Scénario et optimisation »</div>` : ""}
+  </section>`;
+}
+
+function outilHTML(o) {
+  return `<div class="outil">
+    <div class="outil-tete"><b>${o.numero}</b>
+      ${o.description ? `<span class="meta">${o.description}</span>` : ""}
+      ${o.correcteur ? `<span class="meta">correcteur ${o.correcteur}</span>` : ""}
+      <span style="margin-left:auto">${o.cpp === null ? '<span class="absent">non chiffrable</span>' : fmt(o.cpp, 4) + " €/pce"}</span></div>
+    <div class="paires">${o.logements.map(l => `<div class="paire">
+      <div class="nom">${l.logementNom}</div>
+      <div class="val" style="${l.cpp === null ? "color:var(--mute);font-size:var(--t5)" : ""}">${l.cpp === null ? "non chiffrable" : fmt(l.cpp, 4) + " €/pce"}</div>
+      <div class="detail">${l.article || "article non saisi"} · ${l.cpp === null
+        ? "prix, arêtes ou charnière manquants"
+        : fmt(l.prix, 2) + " € / " + fmt(l.aretes, 0) + " arêtes / " + fmt(l.charniere, 0) + " p"}</div>
+    </div>`).join("")}</div>
+  </div>`;
+}
+
+function nbScenariosHorsProdDe(ligne) {
+  let n = 0;
+  postesDeLigne(ligne).forEach(p => { n += p.autres.length; });
+  return n;
 }
 
 function scenariosDuPoste(cle) {
@@ -597,46 +751,154 @@ function essaisHTML(sc, essais) {
   return `<div style="margin-top:16px">
     <h4 style="margin:0 0 2px;font-size:var(--t4)">Ce que les essais ont réellement donné</h4>
     <p class="note-bas" style="margin:0 0 4px">Coût hors plaquettes exclu, CPP outillage seul
-       — même unité que les tuiles du dessus, pour que la comparaison se tienne.
+       — même unité que les chiffres du dessus, pour que la comparaison se tienne.
        Scénario : ${prevu === null ? "non chiffrable" : fmt(prevu, 4) + " €/pce"}.</p>
     <div class="essais-liste">${lignes}</div>
   </div>`;
 }
 
 function ecran3() {
-  /* Le poste affiché par le selecteur et le poste dont on liste les preuves
-     doivent être LE MÊME. Deux résolutions ici (l'une avec repli sur le premier
-     poste, l'autre sans) donnaient un selecteur annonçant « EMAG 1 · OP10 » au
-    -dessus d'un « aucun essai saisi » : l'écran mentait sur lui-même. */
-  const tous = tousPostes();
-  const sel = posteCourantCle();
-  const poste = pairesPoste(sel);
-  /* on ne montre QUE les scénarios qui portent des essais : la production n'est
-     pas une preuve, elle est la référence qu'on cherche à battre. */
-  const paires = poste
-    ? poste.scs.filter(sc => (sc.essais || []).length).map(sc => ({ poste, sc }))
-    : [];
-  const opts = tous.map(x => `<option value="${x.ligne.id}|${x.op.id}"
-    ${sel === x.ligne.id + "|" + x.op.id ? "selected" : ""}>
-    ${x.ligne.nom} · ${x.op.nom}</option>`).join("");
+  const ligne = ligneCourante();
+  if (!ligne) {
+    return `<div class="vide"><b>Aucune ligne ouverte</b>
+       Revenez aux tuiles et choisissez une ligne.</div>`;
+  }
+
+  /* Tous les scénarios de la ligne qui ne sont PAS en production. On prend la
+     liste du NOYAU (postesDeLigne → autres), pas une re-dérivation ici : si les
+     deux règles divergeaient, l'écran 3 montrerait des scénarios que l'écran 2
+     déclare être en production, et l'agent ne saurait plus lequel croire. */
+  const paires = [];
+  postesDeLigne(ligne).forEach(p => {
+    p.autres.forEach(sc => paires.push({ ligne: ligne, poste: p, op: p.op, sc: sc }));
+  });
 
   return `
-  <p class="lede">La preuve. Un essai ne vaut que s'il est répété, et le CPP de chaque
-     logement est affiché avec ses trois ingredients — un chiffre sans ses sources
-     n'est pas une preuve.</p>
+  <p class="lede">Scénario et optimisation. Les scénarios qui ne sont pas en production,
+     et où ils en sont : combien d'essais, combien de conformes, et ce qu'il manque
+     pour passer en série.</p>
 
   <div class="form" style="margin-bottom:var(--gap)">
-    <div class="champ" style="max-width:340px">
-      <label for="cPreuvePoste">Poste</label>
-      <select id="cPreuvePoste" onchange="changerPreuvePoste(this.value)">${opts}</select>
-    </div>
+    <button class="btn ghost" type="button" onclick="aller(2)">← ${ligne.nom} en production</button>
   </div>
 
-  ${paires.length ? `<div class="preuves">${paires.map(preuveHTML).join("")}</div>`
-    : `<div class="vide"><b>Aucun essai saisi sur ce poste</b>
-       La production seule ne se prouve pas — un essai doit être lancé pour qu'il y ait
-       une preuve à montrer.</div>`}`;
+  ${paires.length
+    ? `<div class="preuves">${paires.map(scenarioOptimisationHTML).join("")}</div>`
+    : `<div class="vide"><b>Aucun scénario hors production</b>
+       Sur cette ligne, il n'y a rien à optimiser : la production est le seul outillage déclaré.</div>`}
+
+  <h3 style="margin-top:var(--gap)">Ajouter un essai</h3>
+  ${essaiFormHTML()}`;
 }
+
+/* Un scénario hors production, avec son état et le mot de la décision.
+   `preuveHTML` montre la conformité en détail ; ici on ajoute le mot — parce que
+   c'est la seule question qu'on se pose à cet étage : « qu'est-ce qu'on en fait ? » */
+function scenarioOptimisationHTML(paire) {
+  const sc = paire.sc;
+  const s = statutScenario(sc);
+  const essais = sc.essais || [];
+  const conformes = essais.filter(e => statutEssai(sc, e).code === "conforme").length;
+  const cpp = cppOutillageScenario(sc);
+  const prod = paire.poste.prod;
+  const cppProd = prod ? cppOutillageScenario(prod) : null;
+  const ecart = (cpp !== null && cppProd !== null) ? cppProd - cpp : null;
+  const classe = s.code === "serie" ? "serie" : s.code === "valide" ? "pret"
+    : s.code === "encours" ? "essai" : "rien";
+
+  return `<section class="preuve">
+    <header>
+      <h3>${sc.name || "Scénario"}</h3>
+      <span class="meta">${paire.op.code || paire.op.nom || "poste"}</span>
+      <span class="mot ${classe}" style="margin-left:auto">${s.texte}</span>
+    </header>
+    <p class="qq">${conformes} essai${conformes > 1 ? "s" : ""} conforme${conformes > 1 ? "s" : ""}
+       sur ${essais.length} lancé${essais.length > 1 ? "s" : ""}
+       — la règle du site en demande ${sc.validationThreshold || 5}.</p>
+    ${ecart === null ? `<div class="absent">CPP non comparable : le scénario de production
+       de ce poste n'est pas chiffrable.</div>`
+      : (ecart > 0
+        ? `<div class="cpp"><span class="big">${fmt(ecart, 4)}</span>
+             <span class="small"> €/pce de gain sur la production</span></div>`
+        : `<div class="absent">ce scénario ne fait PAS mieux que la production
+             (${fmt(ecart, 4)} €/pce)</div>`)}
+    ${essaisHTML(sc, essais)}
+  </section>`;
+}
+
+/* Le formulaire d'essai. Il a quitté l'écran 2 — qui montre maintenant la ligne —
+   pour venir ici : un essai n'a de sens que sur un scénario qu'on cherche à
+   passer en production. Le formulaire n'a pas changé de contenu, seulement de
+   place ; c'est le seul endroit du proto où l'on saisit quelque chose. */
+function essaiFormHTML() {
+  const s = ETAT.saisi;
+  const postes = tousPostes();
+  /* Le poste de saisie par défaut. Sans cela, le formulaire s'ouvrait avec le
+     premier poste de la liste alors que le sélecteur de scénarios était calculé
+     sur l'absence de poste : l'écran annonçait « EMAG 1 · OP10 » au-dessus d'un
+     « aucun scénario sur ce poste ». Les deux sélecteurs doivent regarder la
+     MÊME valeur, résolue une seule fois.
+
+     Et le poste par défaut est le premier de la LIGNE OUVERTE, pas le premier
+     de l'atelier : on arrive ici depuis une ligne, c'est elle qu'on travaille. */
+  const ligne = ligneCourante();
+  const defaut = (ligne ? postes.find(p => p.ligne.id === ligne.id) : null) || postes[0];
+  const posteChoisi = s.poste || (defaut ? defaut.ligne.id + "|" + defaut.op.id : "");
+  const ops = postes.map(p => `<option value="${p.ligne.id}|${p.op.id}"
+      ${posteChoisi === p.ligne.id + "|" + p.op.id ? "selected" : ""}>
+      ${p.ligne.nom} · ${p.op.nom}</option>`).join("");
+  const scs = scenariosDuPoste(posteChoisi);
+
+  return `
+  <form class="form" id="fEssai">
+    <p class="sous">Un essai se juge sur sa charnière atteinte et sa conformité — pas sur un avis.</p>
+    <div class="grille">
+      <div class="champ">
+        <label for="cPoste">Poste</label>
+        <select id="cPoste" name="poste">${ops}</select>
+        <div class="hint">ligne et opération</div>
+      </div>
+      <div class="champ">
+        <label for="cScenario">Plaquette / configuration</label>
+        <select id="cScenario" name="scenario">${scs.length
+          ? scs.map(x => `<option value="${x.id}" ${(s.scenario || scs[0].id) === x.id ? "selected" : ""}>${x.name}</option>`).join("")
+          : `<option value="">aucun scénario sur ce poste</option>`}</select>
+        <div class="hint">le scénario d'essai sur lequel on mesure</div>
+      </div>
+      <div class="champ">
+        <label for="cDate">Date</label>
+        <input type="date" id="cDate" name="date" value="${s.date || "2026-10-02"}">
+      </div>
+      <div class="champ">
+        <label for="cEquipe">Équipe</label>
+        <input type="text" id="cEquipe" name="equipe" placeholder="M. / A." value="${s.equipe || ""}">
+      </div>
+      <div class="champ">
+        <label for="cCharniere">Charnière visée (pièces)</label>
+        <input type="number" id="cCharniere" name="charniere" min="1" value="${s.charniere || ""}">
+        <div class="hint">combien de pièces avant de devoir changer</div>
+      </div>
+      <div class="champ">
+        <label for="cBatt">Battement mesuré (mm)</label>
+        <input type="number" id="cBatt" name="batt" step="0.01" min="0" value="${s.batt || ""}">
+        <div class="hint">vide = non mesuré, l'essai ne sera pas jugé non conforme</div>
+      </div>
+    </div>
+    <button class="btn" type="submit">Enregistrer l'essai</button>
+    <button class="btn ghost garder" type="button" onclick="annulerSaisie()">Annuler</button>
+    ${ETAT.erreur ? `<div class="erreur" style="margin-top:16px">${ETAT.erreur}</div>` : ""}
+    ${ETAT.dernierEssai ? `<div class="note-bas" style="color:var(--ok)">${ETAT.dernierEssai}</div>` : ""}
+  </form>`;
+}
+
+/* La ligne ouverte — celle dont on regarde le détail et l'optimisation.
+   Une seule résolution, partagée par l'écran 2 et l'écran 3 : c'était la
+   duplication qui faisait que les deux écrans annonçaient des choses
+   différentes. */
+function ligneCourante() {
+  return ETAT.lignes.find(l => l.id === ETAT.ligne) || null;
+}
+function ouvrirLigne(id) { ETAT.ligne = id; ETAT.saisi = {}; ETAT.ecran = 2; rendre(); }
 
 /* UNE seule resolution du poste courant, utilisee par le selecteur ET par la
    liste des preuves. C'etait la duplication qui desynchronisait les deux. */
@@ -924,9 +1186,9 @@ function ouvrirImport() { ETAT.importOuvert = !ETAT.importOuvert; rendre(); }
    ══════════════════════════════════════════════════════════════════════════ */
 
 const ECRANS = [
-  { n: 1, nom: "Où en est-on", fn: ecran1 },
-  { n: 2, nom: "Essai",        fn: ecran2 },
-  { n: 3, nom: "Preuve",       fn: ecran3 },
+  { n: 1, nom: "Lignes", fn: ecran1 },
+  { n: 2, nom: "Ligne",  fn: ecran2 },
+  { n: 3, nom: "Scénario et optimisation", fn: ecran3 },
   { n: 4, nom: "Décision",     fn: ecran4 },
   { n: 5, nom: "Emporter",     fn: ecran5 }
 ];
@@ -972,14 +1234,22 @@ function enregistrerEssai(ev) {
   rendre();
 }
 
-/* le sélecteur de scénario se remplit selon le poste choisi */
-function remplirScenarios() {
-  const scs = scenariosDuPoste(ETAT.saisi.poste);
+/* Le changement de poste remplit le sélecteur de scénarios. Il ne rend pas :
+   le formulaire fait partie de l'écran 3, et le rendre reconfigurerait le
+   formulaire en cours de saisie. Le seul état touché est celui du formulaire. */
+function postesChange() {
+  ETAT.saisi.poste = document.getElementById("cPoste").value;
+  ETAT.saisi.scenario = null;
   const sel = document.getElementById("cScenario");
   if (!sel) return;
+  const scs = scenariosDuPoste(ETAT.saisi.poste);
   sel.innerHTML = scs.length
-    ? scs.map(s => `<option value="${s.id}">${s.name}</option>`).join("")
+    ? scs.map(x => `<option value="${x.id}">${x.name}</option>`).join("")
     : `<option value="">aucun scénario sur ce poste</option>`;
+}
+function scenarioChange() {
+  const sel = document.getElementById("cScenario");
+  if (sel) ETAT.saisi.scenario = sel.value;
 }
 
 /* les clics et les changements : trois écouteurs, et c'est tout.
@@ -989,7 +1259,8 @@ document.addEventListener("click", function(ev){
   if (t) basculerLigne(t.getAttribute("data-toggle"));
 });
 document.addEventListener("change", function(ev){
-  if (ev.target.id === "cPoste") { ETAT.saisi.poste = ev.target.value; remplirScenarios(); }
+  if (ev.target.id === "cPoste") postesChange();
+  if (ev.target.id === "cScenario") scenarioChange();
   if (ev.target.id === "cPreuvePoste") changerPreuvePoste(ev.target.value);
 });
 document.addEventListener("submit", function(ev){
@@ -999,18 +1270,25 @@ document.addEventListener("submit", function(ev){
 /* les portes, exposées — le harnais vérifie qu'elles existent */
 window.proto = { aller, rendre, basculerLigne, changerPreuvePoste, annulerSaisie,
                  enregistrerEssai, ecran1, ecran2, ecran3, ecran4, ecran5, a4HTML,
+                 ouvrirLigne, ligneCourante, tuileHTML, refLigneHTML, posteProdHTML,
+                 postesChange, scenarioChange,
+                 outilHTML, scenarioOptimisationHTML, essaiFormHTML,
+                 nbScenariosHorsProd, nbScenariosHorsProdDe,
                  verdictPoste, verdictLigne, decisionPoste, cheminCPP,
                  coutLogement, cppOutillageScenario, statutEssai, statutScenario,
                  recapLignes, ECRANS, ETAT, tousPostes, verdictsLignes,
                  projeter, panoramaImport, ouvrirImport, retourJeu, chargerFichier,
                  sauvegarderLocal, chargerLocal, sourceHTML, essaisHTML,
-                 battDe, cppEssai, mesurerLignes, PROTO_VERSION };
+                 battDe, cppEssai, mesurerLignes,
+                 scenarioDeProd, postesDeLigne, cppReference, tuileDeLigne,
+                 tuilesDeLignes, detailLigne, outillageDeScenario,
+                 familleDeLigne, rangLigne, codeLigneDe, FAMILLES_LIGNE,
+                 PROTO_VERSION, EMPREINTE_ASSEMBLAGE };
 
 /* On ne passe jamais le proto par-dessus des données réelles laissées par une
    session précédente : c'est le seul cas où un état persistant pourrait écraser
    ce que Matis a déposé. Le jeu d'exemple ne l'emporte que s'il n'y a rien. */
 chargerLocal();
-remplirScenarios();
 rendre();
 </script>
 </body>

@@ -240,11 +240,58 @@ a{color:var(--accent)}
 .essai-ligne .cppb{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
 .essai-ligne .cppb small{display:block;font-weight:400;color:var(--mute);font-size:var(--t6)}
 
+/* ══ les deux premiers étages (v2.0) ══════════════════════════════════════
+   La tuile d'une ligne : à gauche le chiffre de la ligne, à droite la liste de
+   ses références. Le chiffre de gauche est celui qu'on regarde en passant ; le
+   détail à droite est là pour qu'on n'ait pas à ouvrir la ligne. */
+.ligne{--encre:#545e68}
+.ligne header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.ligne header h2{margin:0;font-size:var(--t3)}
+.pastille{width:10px;height:10px;border-radius:50%;flex:none;
+  box-shadow:0 0 0 3px color-mix(in srgb, currentColor 8%, transparent)}
+.vide-ligne{opacity:.72}
+
+.tuile-corps{display:grid;grid-template-columns:180px 1fr;gap:var(--gap);align-items:start}
+.tuile-principal{background:var(--mute-bg);border-radius:8px;padding:12px;text-align:center}
+.tuile-principal .cpp{font-size:var(--t1);font-weight:650;letter-spacing:-.02em;line-height:1.1}
+.tuile-principal .cpp small{font-size:var(--t5);font-weight:400;color:var(--mute)}
+.tuile-principal .lab{color:var(--mute);font-size:var(--t5);margin-top:2px}
+
+.tuile-refs{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.tuile-ref{border:1px solid var(--line);border-radius:8px;padding:9px 11px;background:var(--card)}
+.tuile-ref .nom{font-size:var(--t5);color:var(--mute);font-weight:600}
+.tuile-ref .cpp{font-size:var(--t2);font-weight:650;letter-spacing:-.02em;margin:1px 0}
+.tuile-ref .cpp small{font-size:var(--t5);font-weight:400;color:var(--mute)}
+.tuile-ref .sous{font-size:var(--t6);color:var(--mute)}
+.ecart-haut{display:block;margin-top:4px;font-size:var(--t6);color:var(--warn)}
+.ecart-bas{display:block;margin-top:4px;font-size:var(--t6);color:var(--ok)}
+.declarations{margin-top:10px}
+
+.depliant{margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
+.depliant summary{cursor:pointer;font-size:var(--t5);color:var(--mute);
+  list-style:none;display:flex;align-items:center;gap:6px}
+.depliant summary::-webkit-details-marker{display:none}
+.depliant summary::before{content:"▸";color:var(--encre);font-size:var(--t5)}
+.depliant[open] summary::before{content:"▾"}
+.depliant-corps{margin-top:8px;padding:10px;border-left:2px solid var(--encre);
+  background:var(--mute-bg);border-radius:0 6px 6px 0}
+
+.poste{border:1px solid var(--line);border-radius:8px;padding:11px 13px;margin-top:10px;
+  background:var(--card)}
+.poste header{display:flex;align-items:baseline;gap:9px;margin-bottom:6px}
+.poste header h3{margin:0;font-size:var(--t4)}
+.outil{border-top:1px solid var(--line);padding-top:7px;margin-top:7px}
+.outil:first-of-type{border-top:0;margin-top:0}
+.outil-tete{display:flex;align-items:baseline;gap:9px;font-size:var(--t5)}
+
+.btn.petit{padding:3px 9px;font-size:var(--t6)}
+
 @media (max-width:760px){
   .poste{grid-template-columns:1fr;gap:7px}
   .dec-carte{grid-template-columns:1fr}
   .a4{padding:24px}
   .essai-ligne{grid-template-columns:1fr}
+  .tuile-corps{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -265,407 +312,703 @@ a{color:var(--accent)}
       rendu sont assemblés ici. C'est la seule page, c'est voulu (cahier §6). ══ */
 
 /* ───────── le noyau —_functions pures, testées avant d'exister ici_───────── */
-/* ============================================================================
-   PROTO — LE NOYAU
-   Fonctions PURES. Aucun DOM, aucun état global, aucune lecture de l'app.
-   Ce fichier est écrit et testé AVANT le moindre écran (cahier §5).
-
-   Le CPP plaquettes est le driver (cahier §2) :
-     coutOutillage(logements) = Σ prix / (arêtes × charnière)
-   C'est le seul chiffre comparable au classeur de Matis.
-
-   Toute absence dit ce qui manque (cahier §4.4). Aucun « — » nu.
-   ========================================================================== */
-
-const PROTO_VERSION = "1.0";
-
-/* ---- le formatage, pur lui aussi ---- */
-function fmt(v, d) {
-  if (v === null || v === undefined || v === "" || isNaN(parseFloat(v))) return "—";
-  const n = parseFloat(v);
-  return n.toFixed(d === undefined ? 3 : d).replace(".", ",");
+/* ============================================================================
+   PROTO — LE NOYAU
+   Fonctions PURES. Aucun DOM, aucun état global, aucune lecture de l'app.
+   Ce fichier est écrit et testé AVANT le moindre écran (cahier §5).
+
+   Le CPP plaquettes est le driver (cahier §2) :
+     coutOutillage(logements) = Σ prix / (arêtes × charnière)
+   C'est le seul chiffre comparable au classeur de Matis.
+
+   Toute absence dit ce qui manque (cahier §4.4). Aucun « — » nu.
+   ========================================================================== */
+
+const PROTO_VERSION = "2.0";
+
+/* ---- le formatage, pur lui aussi ---- */
+function fmt(v, d) {
+  if (v === null || v === undefined || v === "" || isNaN(parseFloat(v))) return "—";
+  const n = parseFloat(v);
+  return n.toFixed(d === undefined ? 3 : d).replace(".", ",");
+}
+/* la même chose, mais en gardant le nombre si la saisie est un champ vide :
+   utilisé quand on veut distinguer « 0 » de « pas saisi » */
+function fmtDispo(v, d, manque) {
+  if (v === null || v === undefined || v === "") return manque || "— non saisi";
+  if (isNaN(parseFloat(v))) return manque || "— non saisi";
+  return fmt(v, d);
+}
+
+/* ============================================================================
+   1. LE CPP OUTILLAGE — le driver
+   ========================================================================== */
+
+/* Le coût d'UN logement : prix de la plaquette divisé par ce qu'elle rend.
+   Le prix est en €, les arêtes en nombre d'arêtes, la charnière en pièces.
+   -> € par pièce usinée.
+   Une donnée manquante ne donne pas 0 : elle donne null (non chiffrable). C'est
+   l'invariant 1 du cahier : un absent ne se comble jamais. */
+function coutLogement(log) {
+  if (!log) return null;
+  const prix = parseFloat(log.prix);
+  const aretes = parseFloat(log.aretes);
+  const charniere = parseFloat(log.charniere);
+  if (isNaN(prix) || prix <= 0) return null;
+  if (isNaN(aretes) || aretes <= 0) return null;
+  if (isNaN(charniere) || charniere <= 0) return null;
+  return prix / (aretes * charniere);
+}
+
+/* Le CPP outillage d'un scénario = la somme sur TOUS ses logements.
+   Le CPP outillage d'un outil, de la même façon. */
+function cppOutillageScenario(scenario) {
+  if (!scenario || !scenario.outils) return null;
+  const parts = [];
+  scenario.outils.forEach(o => {
+    (o.logements || []).forEach(l => {
+      const c = coutLogement(l);
+      if (c !== null) parts.push(c);
+    });
+  });
+  if (!parts.length) return null;
+  return parts.reduce((a, b) => a + b, 0);
+}
+
+function cppOutillageOutil(outil) {
+  if (!outil || !outil.logements) return null;
+  const parts = (outil.logements || []).map(coutLogement).filter(v => v !== null);
+  if (!parts.length) return null;
+  return parts.reduce((a, b) => a + b, 0);
+}
+
+/* Les CPP par logement, pour l'écran Décision (où part l'argent). */
+function cppParLogement(scenario) {
+  const out = [];
+  (scenario.outils || []).forEach(o => {
+    (o.logements || []).forEach(l => {
+      out.push({
+        outilNumero: o.numero || "?",
+        logementNom: l.nom || "?",
+        article: l.ref || "",
+        cpp: coutLogement(l),
+        prix: parseFloat(l.prix),
+        aretes: parseFloat(l.aretes),
+        charniere: parseFloat(l.charniere)
+      });
+    });
+  });
+  return out;
+}
+
+/* Le CPP RÉELLEMENT OBTENU par un essai — le prix et les arêtes viennent de la
+   définition du logement dans le scénario, la charnière de l'essai lui-même.
+   C'est le seul endroit où « ce qu'on a prévu » et « ce qu'on a obtenu » se
+   séparent : sans cette fonction, un essai qui tient mieux que prévu ne se voit
+   nulle part, et un réimport des essais existants ne rendrait RIEN.
+
+   Invariant 3 : un logement non chiffrable est COMPTE, pas dilué. On renvoie
+   donc le total des chiffrables ET le nombre de ceux qui ont été écartés. */
+function cppEssai(scenario, essai) {
+  const vide = { cpp: null, nbLogements: 0, nonChiffrables: 0 };
+  if (!scenario || !essai) return vide;
+  const definition = {};                       // logementId -> { prix, aretes }
+  (scenario.outils || []).forEach(o => (o.logements || []).forEach(l => {
+    definition[l.id] = l;
+  }));
+  const suivis = (essai.params && essai.params.logements) || [];
+  if (!suivis.length) return vide;
+  let total = 0, n = 0, ecartes = 0;
+  suivis.forEach(p => {
+    const def = definition[p.logementId];
+    // le prix et les arêtes peuvent aussi être portés par le prélèvement lui-même
+    const prix = def && def.prix !== "" && def.prix != null ? def.prix : p.prix;
+    const aretes = def && def.aretes !== "" && def.aretes != null ? def.aretes : p.aretes;
+    const charniere = (p.charniere !== "" && p.charniere != null)
+      ? p.charniere : (def ? def.charniere : null);
+    const c = coutLogement({ prix: prix, aretes: aretes, charniere: charniere });
+    if (c === null) { ecartes++; return; }
+    total += c; n++;
+  });
+  return {
+    cpp: n ? total : null,
+    nbLogements: n,
+    nonChiffrables: ecartes
+  };
+}
+
+/* ============================================================================
+   2. LE CHEMIN PROD → CIBLE
+   ========================================================================== */
+
+/* Combien de chemin a fait le meilleur essai disponible vers la cible CPP ?
+   (cahier §4.3 : une cible sans chiffrage reste visible, elle ne disparaît pas)
+   Renvoie null si on ne peut pas calculer — et l'appelant affiche pourquoi. */
+function cheminCPP(coutProd, coutMeilleur, cible) {
+  if (cible === null || cible === undefined || isNaN(parseFloat(cible))) return null;
+  if (isNaN(coutProd) || isNaN(coutMeilleur)) return null;
+  const c = parseFloat(cible);
+  const p = parseFloat(coutProd);
+  const m = parseFloat(coutMeilleur);
+  // déjà en dessous de la cible : le chemin est fait, 100 %
+  if (p <= c) return 100;
+  if (p <= 0) return null;
+  const pct = ((p - m) / (p - c)) * 100;
+  return Math.max(0, Math.min(100, pct));
+}
+
+/* ============================================================================
+   3. LA PREUVE — conformité, charnière, répétitions
+   ========================================================================== */
+
+/* La battement d'un prélèvement. Deux government's selon les mesures :
+   EMAG 1 relève DROITE et GAUCHE séparément, l'app ancienne ne remplit `batt`
+   que pour les autres scénarios. Sur les données du site, `batt` est vide sur
+   83 prélèvements sur 84 — et `battD`/`battG` sont pleines.
+
+   On prend donc `batt` si elle existe, sinon LE PIRE des deux côtés. Le pire,
+   pas la moyenne : un état des lieux ne doit jamais flatter une pièce qui
+   déborde d'un côté. C'est la seule règle qui ne perd aucune mesure et qui ne
+   peut pas rendre conforme ce qui ne l'est pas. */
+function battDe(prel) {
+  if (!prel) return NaN;
+  const b = parseFloat(prel.batt);
+  if (!isNaN(b)) return b;
+  const cotes = [parseFloat(prel.battD), parseFloat(prel.battG)].filter(v => !isNaN(v));
+  if (!cotes.length) return NaN;
+  return Math.max.apply(null, cotes);
+}
+
+/* Un prélèvement est-il dans la tolérance ? null = « non mesurable », jamais false.
+   (cahier §4.1 : un absent ne se comble pas, il se signale) */
+function conforme(sc, prel) {
+  if (!prel) return null;
+  if (sc && sc.battActif === false) return true;   // critère volontairement désactivé
+  const limit = sc && sc.limitOverride ? parseFloat(sc.limitValue) : parseFloat(0.12);
+  if (isNaN(limit)) return null;
+  const b = battDe(prel);
+  if (isNaN(b)) return null;
+  return b <= limit;
+}
+
+/* La charnière visée d'un logement (pour un essai donné). */
+function charniereVisee(scenario, essai, logementId) {
+  const liste = (essai && essai.params && essai.params.logements) || [];
+  const trouve = liste.find(p => p.logementId === logementId);
+  if (trouve) {
+    const v = parseFloat(trouve.charniere);
+    if (!isNaN(v)) return v;
+  }
+  // repli : la charnière du logement dans le scénario
+  let out = null;
+  (scenario.outils || []).forEach(o => (o.logements || []).forEach(l => {
+    if (l.id === logementId) {
+      const v = parseFloat(l.charniere);
+      if (!isNaN(v)) out = v;
+    }
+  }));
+  return out;
+}
+
+/* Le statut d'un ESSAI : conforme / non conforme / arrêté / en cours.
+   L'ordre est délibéré — un arrêt est une décision, pas un échec (§ essaiStats). */
+function statutEssai(sc, essai) {
+  if (!essai) return { code: "vide", texte: "aucun essai" };
+  const prels = essai.prelevements || [];
+  if (essai.cloture && essai.cloture.motif) {
+    return { code: "arrete", texte: "arrêté — " + (essai.cloture.motif || "sans motif") };
+  }
+  const mesures = prels.map(p => conforme(sc, p));
+  const evalues = mesures.filter(v => v !== null);
+  if (!prels.length) return { code: "attente", texte: "aucun prélèvement" };
+  if (evalues.some(v => v === false)) {
+    const premier = prels[mesures.indexOf(false)];
+    return {
+      code: "nonconforme",
+      texte: "hors tolérance",
+      piece: premier ? parseFloat(premier.piece) : null
+    };
+  }
+  const manquantes = prels.length - evalues.length;
+  // la charnière : chaque logement suivi doit être atteint
+  const suivis = (essai.params && essai.params.logements) || [];
+  const restants = [];
+  suivis.forEach(p => {
+    const cible = charniereVisee(sc, essai, p.logementId);
+    if (isNaN(cible) || cible === null) return;
+    const pieces = prels.map(x => parseFloat(x.piece)).filter(v => !isNaN(v));
+    const derniere = pieces.length ? Math.max(...pieces) : null;
+    if (derniere === null || derniere < cible) {
+      restants.push({
+        logementNom: p.logementNom || "?",
+        dernier: derniere === null ? 0 : derniere,
+        cible: cible
+      });
+    }
+  });
+  if (restants.length) {
+    return {
+      code: "encours",
+      texte: restants.map(r => r.logementNom + " " + r.dernier + "/" + r.cible).join(" · ") + " p"
+    };
+  }
+  if (manquantes > 0) {
+    return { code: "attente", texte: manquantes + " mesure" + (manquantes > 1 ? "s" : "") + " à saisir" };
+  }
+  return { code: "conforme", texte: "conforme — charnière atteinte" };
+}
+
+/* Le statut d'un SCÉNARIO : c'est le verdict de la décision (écran 4).
+   séries = validé en prod, valide = validé 5× mais pas encore en prod. */
+function statutScenario(sc) {
+  const essais = sc.essais || [];
+  const verdi = essais.map(e => statutEssai(sc, e));
+  if (sc.statut === "serie") return { code: "serie", texte: "en série" };
+  const conformes = verdi.filter(v => v.code === "conforme").length;
+  if (conformes >= (sc.validationThreshold || 5)) {
+    return { code: "valide", texte: "validé 5× — à passer en série", validations: conformes };
+  }
+  if (essais.length) return { code: "encours", texte: "essai en cours", validations: conformes };
+  return { code: "opportunite", texte: "rien d'essayé" };
+}
+
+/* ============================================================================
+   4. LE VERDICT D'UN POSTE — ce que l'écran 1 montre, et l'écran 4 tranche
+   ========================================================================== */
+
+/* Un poste = une opération sur une ligne. Il a une prod (scénario de base),
+   peut-être des essais, et une cible CPP du site.
+   Renvoie tout ce dont les écrans ont besoin — mais le CALCUL est ici, jamais
+   dans le rendu (cahier §5). */
+function verdictPoste(ref, op, scenarios) {
+  const scs = scenarios || (op && op.scenarios) || [];
+  const prod = scs.find(s => s.baseline) || scs.find(s => /base excel/i.test(s.name || ""));
+  const cppProd = prod ? cppOutillageScenario(prod) : null;
+  const cible = ref && ref.cibleCPP !== "" && ref.cibleCPP != null && !isNaN(parseFloat(ref.cibleCPP))
+    ? parseFloat(ref.cibleCPP) : null;
+
+  // le MEILLEUR essai disponible : celui dont le CPP outillage est le plus bas
+  let meilleur = null;
+  scs.forEach(s => {
+    if (prod && s.id === prod.id) return;
+    const cpp = cppOutillageScenario(s);
+    if (cpp === null) return;
+    if (!meilleur || cpp < meilleur.cpp) meilleur = { sc: s, cpp: cpp };
+  });
+
+  const chemin = (cppProd !== null && meilleur) ? cheminCPP(cppProd, meilleur.cpp, cible) : null;
+
+  // le statut de la décision
+  let verdict;
+  const sMeilleur = meilleur ? statutScenario(meilleur.sc) : null;
+  if (!prod || cppProd === null) {
+    verdict = { code: "achiffrer", texte: cible !== null ? "cible connue, à chiffrer" : "à chiffrer" };
+  } else if (sMeilleur && sMeilleur.code === "serie") {
+    verdict = { code: "gagne", texte: "gagné — en série" };
+  } else if (sMeilleur && sMeilleur.code === "valide") {
+    verdict = { code: "pret", texte: "validé 5× — décision à prendre" };
+  } else if (meilleur && meilleur.cpp < cppProd) {
+    verdict = { code: "essai", texte: "essai prometteur" };
+  } else {
+    verdict = { code: "rien", texte: "rien à faire ici" };
+  }
+
+  // le gain CPP, JAMAIS fusionné avec un autre (§3.4 du cahier) :
+  //  - gainProjete : le meilleur essai disponible, pas encore acté
+  //  - gainActe : ce qui est réellement passé en série
+  let gainProjete = null, gainActe = null;
+  if (cppProd !== null && meilleur && meilleur.cpp < cppProd) {
+    gainProjete = cppProd - meilleur.cpp;
+  }
+  const enSerie = scs.filter(s => s.statut === "serie");
+  if (cppProd !== null && enSerie.length) {
+    const cppSerie = cppOutillageScenario(enSerie[0]);
+    if (cppSerie !== null && cppSerie < cppProd) gainActe = cppProd - cppSerie;
+  }
+
+  return {
+    ref, op, prod, cppProd, cible, chemin,
+    meilleur, gainProjete, gainActe, verdict
+  };
+}
+
+/* Le verdict d'une LIGNE : le CPP outillage total de la prod, et le chemin vers la cible.
+   C'est la somme des postes CHIFFRABLES seulement — une OP non chiffrable est
+   comptée à part, elle ne se dilue pas dans le total (§3.2 de la constitution). */
+function verdictLigne(ligne, postes) {
+  let cppProd = 0, cppActe = 0, cppProjete = 0;
+  let nonChiffrables = 0, enAttente = 0;
+  const liste = [];
+  (postes || []).forEach(p => {
+    const v = verdictPoste(p.ref, p.op, p.scenarios);
+    liste.push(v);
+    if (v.cppProd === null) { nonChiffrables++; return; }
+    cppProd += v.cppProd;
+    if (v.gainActe) cppActe += v.gainActe;
+    else if (v.gainProjete) cppProjete += v.gainProjete;
+    if (v.verdict.code === "essai") enAttente++;
+  });
+  return {
+    ligne, postes: liste,
+    cppProd: cppProd || null,
+    cppActe: cppActe || 0,
+    cppProjete: cppProjete || 0,
+    nonChiffrables, enAttente
+  };
+}
+
+/* ============================================================================
+   5. LA DÉCISION — l'écran 4, en une phrase
+   ========================================================================== */
+
+/* Que fait-on de ce poste ? Un seul mot, pour qu'on puisse le lire en 15 s. */
+function decisionPoste(v) {
+  if (!v) return { mot: "—", pourquoi: "" };
+  switch (v.verdict.code) {
+    case "gagne":
+      return { mot: "SÉRIE", pourquoi: "l'essai est passé en production" };
+    case "pret":
+      return {
+        mot: "DÉCIDER",
+        pourquoi: "validé " + (v.verdict.validations || 5) + " fois — il reste à dire oui ou non"
+      };
+    case "essai":
+      return {
+        mot: "ESSAYER",
+        pourquoi: "l'essai gagne " + fmt(v.gainProjete, 4) + " €/pièce — à confirmer sur " +
+                   ((v.meilleur && v.meilleur.sc.validationThreshold) || 5) + " pièces"
+      };
+    case "achiffrer":
+      return { mot: "CHIFFRER", pourquoi: v.verdict.texte };
+    default:
+      return { mot: "RIEN", pourquoi: "aucun essai ne fait mieux que la prod" };
+  }
+}
+
+/* ============================================================================
+   6. LE RÉCAPITULATIF — l'écran 1 en un objet
+   ========================================================================== */
+
+/* Les quatre chiffres du bandeau. Chacun remonte à sa source, et une absence
+   dit ce qui manque (invariant 4). */
+function recapLignes(verdictsLignes) {
+  let cppActe = 0, cppProjete = 0, aChiffrer = 0;
+  verdictsLignes.forEach(vl => {
+    cppActe += vl.cppActe;
+    cppProjete += vl.cppProjete;
+    vl.postes.forEach(p => { if (p.verdict.code === "achiffrer") aChiffrer++; });
+  });
+  /* « À décider » = tout ce qui attend une action : un validé 5× à confirmer, ou un
+     essai prometteur à confirmer. Compter seulement les validés 5× donnait « 0 » alors
+     que l'écran regorge d'appels à l'action — et un 0 lu comme « rien à faire » est un
+     mensonge (§3.5).
+     Les codes de verdict sont en ASCII ("pret", pas "prêt") : l'accent ici faisait
+     échouer la comparaison en silence et le compte restait à zéro. */
+  const decisions = verdictsLignes.reduce((a, vl) =>
+    a + vl.postes.filter(p => p.verdict.code === "pret" || p.verdict.code === "essai").length, 0);
+  return {
+    cppActe,          // €/pièce déjà gagnés, actés en série
+    cppProjete,       // €/pièce prometteurs, pas encore actés
+    aChiffrer,        // combien de postes sans chiffrage malgré une cible
+    decisions         // combien de postes attendent une action de l'atelier
+  };
+}
+
+/* ============================================================================
+   7. LE RÉFÉRENTIEL DES LIGNES — quatre familles, quatre couleurs
+   ============================================================================ */
+
+/* Benjamin, à l'atelier : « Weisser Rouge, Emag Gris, Hessapp vert, PCI bleu ».
+   Ces quatre familles EXISTENT déjà dans l'app de production (référentiel
+   LIGNES_SEPT_FONS, Tour 50 du proto) — on le porte tel quel, pas on le
+   réinvente. Les couleurs ne sont pas dans les données : elles sont dans le
+   code, et c'est le bon endroit, parce qu'elles sont un fait d'atelier et pas
+   une mesure. */
+const FAMILLES_LIGNE = {
+  weisser: { libelle: "Weisser", encre: "#E2001A", alpha: 0.07 },
+  hessapp: { libelle: "Hessapp", encre: "#556b2f", alpha: 0.13 },
+  emag:    { libelle: "EMAG",    encre: "#545e68", alpha: 0.08 },
+  pci:     { libelle: "PCI",     encre: "#1b5ea6", alpha: 0.07 }
+};
+const ORDRE_FAMILLES = ["weisser", "hessapp", "emag", "pci"];
+
+function familleDeLigne(nom) {
+  const n = String(nom || "").trim().toLowerCase();
+  if (n.startsWith("weisser")) return "weisser";
+  if (n.startsWith("hessap")) return "hessapp";
+  if (n.startsWith("emag")) return "emag";
+  if (n.startsWith("pci")) return "pci";
+  return "";
+}
+
+/* L'ordre physique de l'atelier, du fond vers l'entrée (fait d'atelier, pas un
+   tri alphabétique). Une ligne inconnue se range après le référentiel, jamais
+   avant : une ligne hors nomenclature ne doit pas passer devant Weisser. */
+const RANG_LIGNES = [
+  "weisser 1", "weisser 2", "weisser 3", "weisser 4",
+  "hessapp", "emag 1", "emag 2", "emag 3", "pci 1", "pci 2", "pci 3", "pci 4"
+];
+function rangLigne(nom) {
+  const n = String(nom || "").trim().toLowerCase();
+  const i = RANG_LIGNES.indexOf(n);
+  return i === -1 ? RANG_LIGNES.length : i;
+}
+
+/* Le code que Matis donne à une ligne (E1, E2, E3, HESSAPP). C'est ce code qui
+   fait le pont avec le classeur : les feuilles s'appellent « Coût pièce E1 … ».
+   On le déduit du NOM, jamais stocké en double — deux sources pour un fait,
+   c'est une source de désaccord. */
+function codeLigneDe(nom) {
+  const n = String(nom || "").trim().toUpperCase();
+  const m = /^EMAG\s*(\d+)$/.exec(n);
+  if (m) return "E" + m[1];
+  if (n.startsWith("HESSAP")) return "HESSAPP";
+  const w = /^WEISSER\s*(\d+)$/.exec(n);
+  if (w) return "W" + w[1];
+  const p = /^PCI\s*(\d+)$/.exec(n);
+  if (p) return "P" + p[1];
+  return "";
+}
+
+/* ============================================================================
+   8. LES POSTES, LA TUILE ET LE DÉTAIL — les deux premiers étages
+   ============================================================================ */
+
+/* Quel est le scénario EN PRODUCTION d'une opération ?
+   L'app de production exige `baseline === true` ET `statut === "serie"`. On
+   reprend cet ordre de recherche, du plus sûr au plus douteux :
+     1. le scénario marqué baseline
+     2. à défaut, celui qui est en série (l'app les tient verrouillés ensemble,
+        mais un export ancien peut n'avoir qu'un des deux)
+     3. à défaut, celui dont le nom dit « base excel » — c'est le fallback que
+        l'app utilise déjà pour les lignes importées d'un classeur.
+   Jamais « le premier de la liste » : sans règle explicite, deux scénarios
+   equally claimed would silently pick one. */
+function scenarioDeProd(scs) {
+  const liste = scs || [];
+  return liste.find(s => s && s.baseline === true)
+      || liste.find(s => s && s.statut === "serie")
+      || liste.find(s => s && /base excel/i.test(s.name || ""))
+      || null;
+}
+
+/* Les postes d'une ligne : une opération sur une référence, avec son scénario
+   de production. C'est la structure du DÉTAIL (étage 2) — et la tuile s'y
+   branche au lieu de recalculer sa propre version. */
+function postesDeLigne(ligne) {
+  const out = [];
+  ((ligne && ligne.refs) || []).forEach(ref => {
+    ((ref && ref.ops) || []).forEach(op => {
+      const scs = op.scs || [];
+      const prod = scenarioDeProd(scs);       // UN SEUL calcul, réutilisé
+      out.push({
+        ref: ref,
+        op: op,
+        scs: scs,
+        prod: prod,
+        autres: prod ? scs.filter(s => s && s !== prod) : scs.filter(Boolean)
+      });
+    });
+  });
+  return out;
+}
+
+/* Le CPP outillage d'une RÉFÉRENCE : la somme sur ses postes, en ne gardant que
+   les postes chiffrables — et en COMPTANT les autres. Invariant 3 : un poste non
+   chiffrable ne se dilue pas dans le total, il se dit.
+
+   `distanceCible` est l'écart brut au-dessus de la cible, en €/pièce. On ne calcule
+   PAS de pourcentage de « chemin » ici : `cheminCPP` a besoin du MEILLEUR essai
+   disponible, et à l'étage 1 il n'y en a pas de calculé — lui passer null
+   donnerait un pourcentage qui ne repose sur rien. Le pourcentage reste réservé
+   à l'étage 3, où l'on sait enfin de quel essai on parle. */
+function cppReference(ligne, ref) {
+  const postes = postesDeLigne(ligne).filter(p => p.ref.id === ref.id);
+  let total = 0, chiffres = 0, nonChiffrables = 0, sansScenario = 0;
+  postes.forEach(p => {
+    if (!p.prod) { sansScenario++; nonChiffrables++; return; }
+    const c = cppOutillageScenario(p.prod);
+    if (c === null) { nonChiffrables++; return; }
+    total += c; chiffres++;
+  });
+  const cpp = chiffres ? total : null;
+  const cible = (ref && ref.cibleCPP !== "" && ref.cibleCPP != null
+                 && !isNaN(parseFloat(ref.cibleCPP))) ? parseFloat(ref.cibleCPP) : null;
+  const distanceCible = (cpp !== null && cible !== null) ? cpp - cible : null;
+  return {
+    ref: ref,
+    cpp: cpp,
+    nbPostes: postes.length,
+    chiffres: chiffres,
+    nonChiffrables: nonChiffrables,
+    sansScenario: sansScenario,
+    cible: cible,
+    distanceCible: distanceCible
+  };
+}
+
+/* LA TUILE — l'étage 1. Une tuile par ligne de production, et rien d'autre que
+   ce qu'un chef d'atelier regarde en passant : la référence en production, son
+   CPP outillage actuel, et où il se situe par rapport à la cible.
+
+   Ce qui n'y est PAS, et pourquoi — c'est écrit ici pour qu'on ne le relogue
+   pas dans trois mois sans s'en souvenir :
+     · la production hebdomadaire. Décision de Benjamin le 02/10/2026 : elle est
+       détaillée par lot de lignes, donc elle ne parle pas d'un poste d'outillage.
+       L'accueil n'affiche donc ni cadence, ni cumul, ni taux d'atteinte.
+     · le delta théorie/réalité. Il exige le classeur de Matis, qui n'est pas
+       encore branché (Tour 56). La tuile le DIT au lieu de l'inventer.
+     · un coût partiel présenté comme un coût complet. Une opération non
+       chiffrable est comptée, et la tuile l'annonce sous le chiffre. */
+function tuileDeLigne(ligne) {
+  const famille = familleDeLigne(ligne && ligne.nom);
+  const refs = ((ligne && ligne.refs) || []).map(r => cppReference(ligne, r));
+  const chiffres = refs.filter(r => r.cpp !== null);
+  /* Les postes non chiffrables se comptent sur TOUTES les références, pas
+     seulement sur celles qui ont un CPP. Le premier jet sommait `nonChiffrables`
+     dans la boucle des références chiffrables : une référence dont AUCUN poste
+     n'est chiffrable verrait ses postes non chiffrables disparaître du compte —
+     exactement le silence que l'invariant 3 interdit. Le total, lui, ne prend
+     que ce qui est chiffrable. */
+  let cppLigne = 0, nonChiffrables = 0, sansScenario = 0;
+  refs.forEach(r => {
+    if (r.cpp !== null) cppLigne += r.cpp;
+    nonChiffrables += r.nonChiffrables;
+    sansScenario += r.sansScenario;
+  });
+
+  /* La référence en production : celle qui a le plus de postes chiffrés. En cas
+     d'égalité, la première dans l'ordre du fichier — jamais un tri par nom,
+     qui ferait jumping d'une tuile à l'autre d'une version à l'autre. */
+  let dominante = null;
+  chiffres.forEach(r => {
+    if (!dominante || r.chiffres > dominante.chiffres) dominante = r;
+  });
+
+  return {
+    ligne: ligne,
+    nom: (ligne && ligne.nom) || "Ligne sans nom",
+    famille: famille,
+    encre: famille ? FAMILLES_LIGNE[famille].encre : "#545e68",
+    code: codeLigneDe(ligne && ligne.nom),
+    rang: rangLigne(ligne && ligne.nom),
+    refs: refs,
+    dominante: dominante,
+    cpp: chiffres.length ? cppLigne : null,
+    nbRefs: refs.length,
+    nbChiffres: chiffres.length,
+    nonChiffrables: nonChiffrables,
+    sansScenario: sansScenario,
+    vide: refs.length === 0
+  };
+}
+
+/* Les tuiles, dans l'ordre de l'atelier. */
+function tuilesDeLignes(lignes) {
+  return (lignes || []).map(tuileDeLigne)
+    .sort((a, b) => a.rang - b.rang || a.nom.localeCompare(b.nom));
+}
+
+/* LE DÉTAIL — l'étage 2. Une ligne, ses références, ses opérations, et POUR LE
+   SCÉNARIO DE PRODUCTION SEUL. C'est une règle de lecture, pas une limitation :
+   les autres scénarios existent et sont comptés, mais l'étage 2 ne les montre
+   pas — ils sont l'objet de l'étage 3. Une exception : si une opération n'a
+   AUCUN scénario de production, elle est quand même montrée, marquée « aucun
+   scénario en production » — sinon une opération vide disparaîtrait de l'écran
+   et l'agent croirait la ligne complète. */
+function detailLigne(ligne) {
+  const postes = postesDeLigne(ligne);
+  const parRef = [];
+  ((ligne && ligne.refs) || []).forEach(ref => {
+    const siens = postes.filter(p => p.ref.id === ref.id);
+    if (!siens.length) return;
+    const c = cppReference(ligne, ref);
+    parRef.push({
+      ref: ref,
+      nom: ref.nom || "Référence sans nom",
+      cpp: c.cpp,
+      cible: c.cible,
+      distanceCible: c.distanceCible,
+      nonChiffrables: c.nonChiffrables,
+      postes: siens.map(p => ({
+        op: p.op,
+        code: p.op.code || p.op.nom || "OP",
+        nom: p.op.nom || "",
+        prod: p.prod,
+        cpp: p.prod ? cppOutillageScenario(p.prod) : null,
+        outillage: p.prod ? outillageDeScenario(p.prod) : null,
+        essais: p.prod ? (p.prod.essais || []).length : 0,
+        nbAutres: p.autres.length
+      }))
+    });
+  });
+  return {
+    ligne: ligne,
+    tuile: tuileDeLigne(ligne),
+    refs: parRef,
+    nbPostes: postes.length,
+    nbPostesSansProd: postes.filter(p => !p.prod).length,
+    nbScenariosAutres: postes.reduce((a, p) => a + p.autres.length, 0)
+  };
+}
+
+/* L'outillage d'un scénario, décomposé : outil par outil, logement par
+   logement. C'est ce que l'étage 2 montre sous chaque opération, et c'est la
+   seule décomposition qui permet de voir OÙ part l'argent.
+
+   Chaque outil porte SES logements, calculés sur place. Deux jet ont fait
+   autrement et deux ont failli :
+     · le premier passait par `cppParLogement(sc)`, qui perd l'identité de
+       l'outil et ne rend que son numéro — la décomposition était donc fausse
+       dès qu'un outil n'a pas de CPP ;
+     · le deuxième regroupait les logements par numéro d'outil avant de les
+       redistribuer : deux outils PORTAIENT le même numéro se retrouvaient donc
+       dans le même seau, et le premier affichait les logements du second. Aucun
+       export du site ne porte ce cas ; `test_tuiles.js` le fabrique exprès.
+   Un seau par outil, et le seau se remplit en parcourant cet outil. */
+function outillageDeScenario(sc) {
+  if (!sc) return { outils: [], cpp: null, nonChiffrables: 0 };
+  const outils = [];
+  let total = 0, chiffres = 0, nonChiffrables = 0;
+  (sc.outils || []).forEach(o => {
+    const numero = o.numero || "?";
+    const logements = (o.logements || []).map(l => {
+      const cpp = coutLogement(l);
+      if (cpp === null) nonChiffrables++;
+      return {
+        outilNumero: numero,
+        logementNom: l.nom || "?",
+        article: l.ref || "",
+        cpp: cpp,
+        prix: parseFloat(l.prix),
+        aretes: parseFloat(l.aretes),
+        charniere: parseFloat(l.charniere)
+      };
+    });
+    const valeurs = logements.filter(x => x.cpp !== null).map(x => x.cpp);
+    const cpp = valeurs.length ? valeurs.reduce((a, b) => a + b, 0) : null;
+    if (cpp !== null) { total += cpp; chiffres++; }
+    outils.push({
+      numero: numero,
+      description: o.description || "",
+      correcteur: o.correcteur || "",
+      cpp: cpp,
+      logements: logements
+    });
+  });
+  return {
+    outils: outils,
+    cpp: chiffres ? total : null,
+    nonChiffrables: nonChiffrables
+  };
 }
-/* la même chose, mais en gardant le nombre si la saisie est un champ vide :
-   utilisé quand on veut distinguer « 0 » de « pas saisi » */
-function fmtDispo(v, d, manque) {
-  if (v === null || v === undefined || v === "") return manque || "— non saisi";
-  if (isNaN(parseFloat(v))) return manque || "— non saisi";
-  return fmt(v, d);
-}
 
-/* ============================================================================
-   1. LE CPP OUTILLAGE — le driver
-   ========================================================================== */
-
-/* Le coût d'UN logement : prix de la plaquette divisé par ce qu'elle rend.
-   Le prix est en €, les arêtes en nombre d'arêtes, la charnière en pièces.
-   -> € par pièce usinée.
-   Une donnée manquante ne donne pas 0 : elle donne null (non chiffrable). C'est
-   l'invariant 1 du cahier : un absent ne se comble jamais. */
-function coutLogement(log) {
-  if (!log) return null;
-  const prix = parseFloat(log.prix);
-  const aretes = parseFloat(log.aretes);
-  const charniere = parseFloat(log.charniere);
-  if (isNaN(prix) || prix <= 0) return null;
-  if (isNaN(aretes) || aretes <= 0) return null;
-  if (isNaN(charniere) || charniere <= 0) return null;
-  return prix / (aretes * charniere);
-}
-
-/* Le CPP outillage d'un scénario = la somme sur TOUS ses logements.
-   Le CPP outillage d'un outil, de la même façon. */
-function cppOutillageScenario(scenario) {
-  if (!scenario || !scenario.outils) return null;
-  const parts = [];
-  scenario.outils.forEach(o => {
-    (o.logements || []).forEach(l => {
-      const c = coutLogement(l);
-      if (c !== null) parts.push(c);
-    });
-  });
-  if (!parts.length) return null;
-  return parts.reduce((a, b) => a + b, 0);
-}
-
-function cppOutillageOutil(outil) {
-  if (!outil || !outil.logements) return null;
-  const parts = (outil.logements || []).map(coutLogement).filter(v => v !== null);
-  if (!parts.length) return null;
-  return parts.reduce((a, b) => a + b, 0);
-}
-
-/* Les CPP par logement, pour l'écran Décision (où part l'argent). */
-function cppParLogement(scenario) {
-  const out = [];
-  (scenario.outils || []).forEach(o => {
-    (o.logements || []).forEach(l => {
-      out.push({
-        outilNumero: o.numero || "?",
-        logementNom: l.nom || "?",
-        article: l.ref || "",
-        cpp: coutLogement(l),
-        prix: parseFloat(l.prix),
-        aretes: parseFloat(l.aretes),
-        charniere: parseFloat(l.charniere)
-      });
-    });
-  });
-  return out;
-}
-
-/* Le CPP RÉELLEMENT OBTENU par un essai — le prix et les arêtes viennent de la
-   définition du logement dans le scénario, la charnière de l'essai lui-même.
-   C'est le seul endroit où « ce qu'on a prévu » et « ce qu'on a obtenu » se
-   séparent : sans cette fonction, un essai qui tient mieux que prévu ne se voit
-   nulle part, et un réimport des essais existants ne rendrait RIEN.
-
-   Invariant 3 : un logement non chiffrable est COMPTE, pas dilué. On renvoie
-   donc le total des chiffrables ET le nombre de ceux qui ont été écartés. */
-function cppEssai(scenario, essai) {
-  const vide = { cpp: null, nbLogements: 0, nonChiffrables: 0 };
-  if (!scenario || !essai) return vide;
-  const definition = {};                       // logementId -> { prix, aretes }
-  (scenario.outils || []).forEach(o => (o.logements || []).forEach(l => {
-    definition[l.id] = l;
-  }));
-  const suivis = (essai.params && essai.params.logements) || [];
-  if (!suivis.length) return vide;
-  let total = 0, n = 0, ecartes = 0;
-  suivis.forEach(p => {
-    const def = definition[p.logementId];
-    // le prix et les arêtes peuvent aussi être portés par le prélèvement lui-même
-    const prix = def && def.prix !== "" && def.prix != null ? def.prix : p.prix;
-    const aretes = def && def.aretes !== "" && def.aretes != null ? def.aretes : p.aretes;
-    const charniere = (p.charniere !== "" && p.charniere != null)
-      ? p.charniere : (def ? def.charniere : null);
-    const c = coutLogement({ prix: prix, aretes: aretes, charniere: charniere });
-    if (c === null) { ecartes++; return; }
-    total += c; n++;
-  });
-  return {
-    cpp: n ? total : null,
-    nbLogements: n,
-    nonChiffrables: ecartes
-  };
-}
-
-/* ============================================================================
-   2. LE CHEMIN PROD → CIBLE
-   ========================================================================== */
-
-/* Combien de chemin a fait le meilleur essai disponible vers la cible CPP ?
-   (cahier §4.3 : une cible sans chiffrage reste visible, elle ne disparaît pas)
-   Renvoie null si on ne peut pas calculer — et l'appelant affiche pourquoi. */
-function cheminCPP(coutProd, coutMeilleur, cible) {
-  if (cible === null || cible === undefined || isNaN(parseFloat(cible))) return null;
-  if (isNaN(coutProd) || isNaN(coutMeilleur)) return null;
-  const c = parseFloat(cible);
-  const p = parseFloat(coutProd);
-  const m = parseFloat(coutMeilleur);
-  // déjà en dessous de la cible : le chemin est fait, 100 %
-  if (p <= c) return 100;
-  if (p <= 0) return null;
-  const pct = ((p - m) / (p - c)) * 100;
-  return Math.max(0, Math.min(100, pct));
-}
-
-/* ============================================================================
-   3. LA PREUVE — conformité, charnière, répétitions
-   ========================================================================== */
-
-/* La battement d'un prélèvement. Deux government's selon les mesures :
-   EMAG 1 relève DROITE et GAUCHE séparément, l'app ancienne ne remplit `batt`
-   que pour les autres scénarios. Sur les données du site, `batt` est vide sur
-   83 prélèvements sur 84 — et `battD`/`battG` sont pleines.
-
-   On prend donc `batt` si elle existe, sinon LE PIRE des deux côtés. Le pire,
-   pas la moyenne : un état des lieux ne doit jamais flatter une pièce qui
-   déborde d'un côté. C'est la seule règle qui ne perd aucune mesure et qui ne
-   peut pas rendre conforme ce qui ne l'est pas. */
-function battDe(prel) {
-  if (!prel) return NaN;
-  const b = parseFloat(prel.batt);
-  if (!isNaN(b)) return b;
-  const cotes = [parseFloat(prel.battD), parseFloat(prel.battG)].filter(v => !isNaN(v));
-  if (!cotes.length) return NaN;
-  return Math.max.apply(null, cotes);
-}
-
-/* Un prélèvement est-il dans la tolérance ? null = « non mesurable », jamais false.
-   (cahier §4.1 : un absent ne se comble pas, il se signale) */
-function conforme(sc, prel) {
-  if (!prel) return null;
-  if (sc && sc.battActif === false) return true;   // critère volontairement désactivé
-  const limit = sc && sc.limitOverride ? parseFloat(sc.limitValue) : parseFloat(0.12);
-  if (isNaN(limit)) return null;
-  const b = battDe(prel);
-  if (isNaN(b)) return null;
-  return b <= limit;
-}
-
-/* La charnière visée d'un logement (pour un essai donné). */
-function charniereVisee(scenario, essai, logementId) {
-  const liste = (essai && essai.params && essai.params.logements) || [];
-  const trouve = liste.find(p => p.logementId === logementId);
-  if (trouve) {
-    const v = parseFloat(trouve.charniere);
-    if (!isNaN(v)) return v;
-  }
-  // repli : la charnière du logement dans le scénario
-  let out = null;
-  (scenario.outils || []).forEach(o => (o.logements || []).forEach(l => {
-    if (l.id === logementId) {
-      const v = parseFloat(l.charniere);
-      if (!isNaN(v)) out = v;
-    }
-  }));
-  return out;
-}
-
-/* Le statut d'un ESSAI : conforme / non conforme / arrêté / en cours.
-   L'ordre est délibéré — un arrêt est une décision, pas un échec (§ essaiStats). */
-function statutEssai(sc, essai) {
-  if (!essai) return { code: "vide", texte: "aucun essai" };
-  const prels = essai.prelevements || [];
-  if (essai.cloture && essai.cloture.motif) {
-    return { code: "arrete", texte: "arrêté — " + (essai.cloture.motif || "sans motif") };
-  }
-  const mesures = prels.map(p => conforme(sc, p));
-  const evalues = mesures.filter(v => v !== null);
-  if (!prels.length) return { code: "attente", texte: "aucun prélèvement" };
-  if (evalues.some(v => v === false)) {
-    const premier = prels[mesures.indexOf(false)];
-    return {
-      code: "nonconforme",
-      texte: "hors tolérance",
-      piece: premier ? parseFloat(premier.piece) : null
-    };
-  }
-  const manquantes = prels.length - evalues.length;
-  // la charnière : chaque logement suivi doit être atteint
-  const suivis = (essai.params && essai.params.logements) || [];
-  const restants = [];
-  suivis.forEach(p => {
-    const cible = charniereVisee(sc, essai, p.logementId);
-    if (isNaN(cible) || cible === null) return;
-    const pieces = prels.map(x => parseFloat(x.piece)).filter(v => !isNaN(v));
-    const derniere = pieces.length ? Math.max(...pieces) : null;
-    if (derniere === null || derniere < cible) {
-      restants.push({
-        logementNom: p.logementNom || "?",
-        dernier: derniere === null ? 0 : derniere,
-        cible: cible
-      });
-    }
-  });
-  if (restants.length) {
-    return {
-      code: "encours",
-      texte: restants.map(r => r.logementNom + " " + r.dernier + "/" + r.cible).join(" · ") + " p"
-    };
-  }
-  if (manquantes > 0) {
-    return { code: "attente", texte: manquantes + " mesure" + (manquantes > 1 ? "s" : "") + " à saisir" };
-  }
-  return { code: "conforme", texte: "conforme — charnière atteinte" };
-}
-
-/* Le statut d'un SCÉNARIO : c'est le verdict de la décision (écran 4).
-   séries = validé en prod, valide = validé 5× mais pas encore en prod. */
-function statutScenario(sc) {
-  const essais = sc.essais || [];
-  const verdi = essais.map(e => statutEssai(sc, e));
-  if (sc.statut === "serie") return { code: "serie", texte: "en série" };
-  const conformes = verdi.filter(v => v.code === "conforme").length;
-  if (conformes >= (sc.validationThreshold || 5)) {
-    return { code: "valide", texte: "validé 5× — à passer en série", validations: conformes };
-  }
-  if (essais.length) return { code: "encours", texte: "essai en cours", validations: conformes };
-  return { code: "opportunite", texte: "rien d'essayé" };
-}
-
-/* ============================================================================
-   4. LE VERDICT D'UN POSTE — ce que l'écran 1 montre, et l'écran 4 tranche
-   ========================================================================== */
-
-/* Un poste = une opération sur une ligne. Il a une prod (scénario de base),
-   peut-être des essais, et une cible CPP du site.
-   Renvoie tout ce dont les écrans ont besoin — mais le CALCUL est ici, jamais
-   dans le rendu (cahier §5). */
-function verdictPoste(ref, op, scenarios) {
-  const scs = scenarios || (op && op.scenarios) || [];
-  const prod = scs.find(s => s.baseline) || scs.find(s => /base excel/i.test(s.name || ""));
-  const cppProd = prod ? cppOutillageScenario(prod) : null;
-  const cible = ref && ref.cibleCPP !== "" && ref.cibleCPP != null && !isNaN(parseFloat(ref.cibleCPP))
-    ? parseFloat(ref.cibleCPP) : null;
-
-  // le MEILLEUR essai disponible : celui dont le CPP outillage est le plus bas
-  let meilleur = null;
-  scs.forEach(s => {
-    if (prod && s.id === prod.id) return;
-    const cpp = cppOutillageScenario(s);
-    if (cpp === null) return;
-    if (!meilleur || cpp < meilleur.cpp) meilleur = { sc: s, cpp: cpp };
-  });
-
-  const chemin = (cppProd !== null && meilleur) ? cheminCPP(cppProd, meilleur.cpp, cible) : null;
-
-  // le statut de la décision
-  let verdict;
-  const sMeilleur = meilleur ? statutScenario(meilleur.sc) : null;
-  if (!prod || cppProd === null) {
-    verdict = { code: "achiffrer", texte: cible !== null ? "cible connue, à chiffrer" : "à chiffrer" };
-  } else if (sMeilleur && sMeilleur.code === "serie") {
-    verdict = { code: "gagne", texte: "gagné — en série" };
-  } else if (sMeilleur && sMeilleur.code === "valide") {
-    verdict = { code: "pret", texte: "validé 5× — décision à prendre" };
-  } else if (meilleur && meilleur.cpp < cppProd) {
-    verdict = { code: "essai", texte: "essai prometteur" };
-  } else {
-    verdict = { code: "rien", texte: "rien à faire ici" };
-  }
-
-  // le gain CPP, JAMAIS fusionné avec un autre (§3.4 du cahier) :
-  //  - gainProjete : le meilleur essai disponible, pas encore acté
-  //  - gainActe : ce qui est réellement passé en série
-  let gainProjete = null, gainActe = null;
-  if (cppProd !== null && meilleur && meilleur.cpp < cppProd) {
-    gainProjete = cppProd - meilleur.cpp;
-  }
-  const enSerie = scs.filter(s => s.statut === "serie");
-  if (cppProd !== null && enSerie.length) {
-    const cppSerie = cppOutillageScenario(enSerie[0]);
-    if (cppSerie !== null && cppSerie < cppProd) gainActe = cppProd - cppSerie;
-  }
-
-  return {
-    ref, op, prod, cppProd, cible, chemin,
-    meilleur, gainProjete, gainActe, verdict
-  };
-}
-
-/* Le verdict d'une LIGNE : le CPP outillage total de la prod, et le chemin vers la cible.
-   C'est la somme des postes CHIFFRABLES seulement — une OP non chiffrable est
-   comptée à part, elle ne se dilue pas dans le total (§3.2 de la constitution). */
-function verdictLigne(ligne, postes) {
-  let cppProd = 0, cppActe = 0, cppProjete = 0;
-  let nonChiffrables = 0, enAttente = 0;
-  const liste = [];
-  (postes || []).forEach(p => {
-    const v = verdictPoste(p.ref, p.op, p.scenarios);
-    liste.push(v);
-    if (v.cppProd === null) { nonChiffrables++; return; }
-    cppProd += v.cppProd;
-    if (v.gainActe) cppActe += v.gainActe;
-    else if (v.gainProjete) cppProjete += v.gainProjete;
-    if (v.verdict.code === "essai") enAttente++;
-  });
-  return {
-    ligne, postes: liste,
-    cppProd: cppProd || null,
-    cppActe: cppActe || 0,
-    cppProjete: cppProjete || 0,
-    nonChiffrables, enAttente
-  };
-}
-
-/* ============================================================================
-   5. LA DÉCISION — l'écran 4, en une phrase
-   ========================================================================== */
-
-/* Que fait-on de ce poste ? Un seul mot, pour qu'on puisse le lire en 15 s. */
-function decisionPoste(v) {
-  if (!v) return { mot: "—", pourquoi: "" };
-  switch (v.verdict.code) {
-    case "gagne":
-      return { mot: "SÉRIE", pourquoi: "l'essai est passé en production" };
-    case "pret":
-      return {
-        mot: "DÉCIDER",
-        pourquoi: "validé " + (v.verdict.validations || 5) + " fois — il reste à dire oui ou non"
-      };
-    case "essai":
-      return {
-        mot: "ESSAYER",
-        pourquoi: "l'essai gagne " + fmt(v.gainProjete, 4) + " €/pièce — à confirmer sur " +
-                   ((v.meilleur && v.meilleur.sc.validationThreshold) || 5) + " pièces"
-      };
-    case "achiffrer":
-      return { mot: "CHIFFRER", pourquoi: v.verdict.texte };
-    default:
-      return { mot: "RIEN", pourquoi: "aucun essai ne fait mieux que la prod" };
-  }
-}
-
-/* ============================================================================
-   6. LE RÉCAPITULATIF — l'écran 1 en un objet
-   ========================================================================== */
-
-/* Les quatre chiffres du bandeau. Chacun remonte à sa source, et une absence
-   dit ce qui manque (invariant 4). */
-function recapLignes(verdictsLignes) {
-  let cppActe = 0, cppProjete = 0, aChiffrer = 0;
-  verdictsLignes.forEach(vl => {
-    cppActe += vl.cppActe;
-    cppProjete += vl.cppProjete;
-    vl.postes.forEach(p => { if (p.verdict.code === "achiffrer") aChiffrer++; });
-  });
-  /* « À décider » = tout ce qui attend une action : un validé 5× à confirmer, ou un
-     essai prometteur à confirmer. Compter seulement les validés 5× donnait « 0 » alors
-     que l'écran regorge d'appels à l'action — et un 0 lu comme « rien à faire » est un
-     mensonge (§3.5).
-     Les codes de verdict sont en ASCII ("pret", pas "prêt") : l'accent ici faisait
-     échouer la comparaison en silence et le compte restait à zéro. */
-  const decisions = verdictsLignes.reduce((a, vl) =>
-    a + vl.postes.filter(p => p.verdict.code === "pret" || p.verdict.code === "essai").length, 0);
-  return {
-    cppActe,          // €/pièce déjà gagnés, actés en série
-    cppProjete,       // €/pièce prometteurs, pas encore actés
-    aChiffrer,        // combien de postes sans chiffrage malgré une cible
-    decisions         // combien de postes attendent une action de l'atelier
-  };
-}
+/* L'empreinte de l'assemblage, calculée par assembler.py à partir des quatre
+   fichiers sources AU MOMENT de la couture. Le harnais des écrans la recalcule ;
+   s'il y a une différence, il REFUSE de tourner plutôt que de valider un
+  assemblage périmé — car un test vert sur du code qui n'est plus dans le
+   fichier ne prouve rien du tout. */
+const EMPREINTE_ASSEMBLAGE = "a58277527ed0079c";
 
 /* ───────── les données de départ ───────── */
 /* ============================================================================
@@ -1060,7 +1403,7 @@ function poids(jsonSource, projete) {
    n'apparaît pas ici : il n'est pas comparable au classeur.
    ══════════════════════════════════════════════════════════════════════════ */
 
-const ETAT = { ecran: 1, ligne: "l1", op: "o10", sc: "e2", saisi: {}, lignes: JEUX.lignes,
+const ETAT = { ecran: 1, ligne: null, op: "o10", sc: "e2", saisi: {}, lignes: JEUX.lignes,
                source: { type: "jeu", nom: "jeu d'exemple", rapport: null, poids: null },
                importOuvert: false, message: null, erreur: null };
 
@@ -1166,116 +1509,216 @@ function ligneHTML(vl) {
 }
 
 function ecran1() {
-  const vls = verdictsLignes();
-  const r = recapLignes(vls);
-  const nbPostes = vls.reduce((a, vl) => a + vl.postes.length, 0);
+  const tuiles = tuilesDeLignes(ETAT.lignes);
+  const chiffres = tuiles.filter(t => t.cpp !== null);
 
   return `
-  <p class="lede">Où en est-on. Le CPP plaquettes est le coût outillage de la pièce :
-     c'est le seul chiffre comparable au classeur de Matis, et le seul que changer
-     d'insert fait bouger.</p>
+  <p class="lede">Les lignes de Sept Fons, une tuile chacune. Le chiffre d'une tuile est
+     le CPP outillage de la production : le seul que changer d'insert fait bouger.</p>
 
   <div class="kpis">
     <div class="kpi">
-      <div class="lab">CPP plaquettes · prod</div>
-      <div class="val">${fmt(vls.filter(v => v.cppProd !== null)
-        .reduce((a, v) => a + v.cppProd, 0) / Math.max(1, vls.filter(v => v.cppProd !== null).length), 4)}</div>
-      <div class="sub">€/pièce, moyenne des ${vls.filter(v => v.cppProd !== null).length} lignes chiffrées
-        <div class="why">somme des postes chiffrables — les non chiffrés sont comptés à part, jamais dilués</div></div>
+      <div class="lab">Lignes suivies</div>
+      <div class="val">${tuiles.length}</div>
+      <div class="sub">dont ${chiffres.length} avec un CPP chiffrable
+        <div class="why">une ligne sans référence n'a pas de coût : elle n'est pas à 0, elle n'est pas saisie</div></div>
     </div>
     <div class="kpi">
-      <div class="lab">Déjà gagné · en série</div>
-      <div class="val hero">${fmt(r.cppActe, 4)}</div>
-      <div class="sub">€/pièce actés
-        <div class="why">uniquement ce qui est passé en production</div></div>
+      <div class="lab">CPP outillage · moyenne</div>
+      <div class="val">${chiffres.length ? fmt(chiffres.reduce((a, t) => a + t.cpp, 0) / chiffres.length, 4) : "—"}</div>
+      <div class="sub">€/pièce, sur les ${chiffres.length} lignes chiffrées
+        <div class="why">moyenne de lignes, pas de postes : une tuile montre une ligne, pas une opération</div></div>
     </div>
     <div class="kpi">
-      <div class="lab">En essai · projeté</div>
-      <div class="val">${fmt(r.cppProjete, 4)}</div>
-      <div class="sub">€/pièce prometteurs
-        <div class="why">pas encore validés — jamais mélangés aux gains actés</div></div>
+      <div class="lab">Postes non chiffrables</div>
+      <div class="val">${tuiles.reduce((a, t) => a + t.nonChiffrables, 0)}</div>
+      <div class="sub">sur toutes les lignes
+        <div class="why">comptés, jamais dilués : ils n'entrent dans aucun total</div></div>
     </div>
     <div class="kpi">
-      <div class="lab">À décider</div>
-      <div class="val">${r.decisions}</div>
-      <div class="sub">poste${r.decisions > 1 ? "s" : ""} en attente d'une action
-        <div class="why">validé 5× à confirmer, ou essai prometteur à confirmer</div>
-        ${r.aChiffrer ? `<div class="why">+ ${r.aChiffrer} à chiffrer : cible connue, aucun coût saisi</div>` : ""}</div>
+      <div class="lab">Scénarios hors production</div>
+      <div class="val">${nbScenariosHorsProd()}</div>
+      <div class="sub">à l'étude, en essai ou validés
+        <div class="why">ils ne sont pas sur les tuiles : on les ouvre ligne par ligne</div></div>
     </div>
   </div>
 
-  ${r.aChiffrer ? `<div class="erreur">${r.aChiffrer} poste${r.aChiffrer > 1 ? "s" : ""}
-     porte${r.aChiffrer > 1 ? "nt" : ""} une cible CPP mais aucun coût saisi. Sans prix,
-     arêtes ou charnière, il n'existe pas de chemin à afficher — et il ne doit pas disparaître.</div>` : ""}
+  <div class="lignes">${tuiles.map(tuileHTML).join("")}</div>
 
-  <div class="lignes">${vls.map(ligneHTML).join("")}</div>
+  <p class="note-bas">Ni cadence, ni production cumulée : la production est détaillée par lot
+     de lignes, elle ne dit rien d'un poste d'outillage (décision du 02/10/2026).
+     Ni le temps machine, ni le rebut, ni les pièces détachées : ils ne sont pas
+     comparables au classeur de Matis.</p>`;
+}
 
-  <p class="note-bas">Le temps machine, le rebut et les pièces détachées ne sont pas
-     affichés ici : ils ne sont pas comparables au classeur de Matis. L'app de
-     production les porte ; le proto, non. Son but est de trancher sur l'outillage.</p>`;
+/* La tuile d'une ligne. Ce qu'elle porte, ce qu'elle ne porte pas, et pourquoi :
+   c'est écrit dans `tuileDeLigne`, côté noyau. Ici on ne fait que le dire en clair. */
+function tuileHTML(t) {
+  if (t.vide) {
+    return `<section class="ligne vide-ligne">
+      <header><span class="pastille" style="background:${t.encre}"></span>
+        <h2>${t.nom}</h2>
+        <span class="meta">${t.code || "hors nomenclature"}</span></header>
+      <div class="absent">Aucune référence déclarée sur cette ligne</div>
+      <p class="qq">Une ligne sans référence n'a pas de CPP : pas 0, mais rien à chiffrer.</p>
+    </section>`;
+  }
+  const chiffres = t.refs.filter(r => r.cpp !== null);
+  const autres = t.refs.length - chiffres.length;
+
+  const liste = chiffres.map(r => {
+    const ecart = r.distanceCible === null ? ""
+      : (r.distanceCible > 0
+          ? `<span class="ecart-haut">${fmt(r.distanceCible, 4)} au-dessus de la cible</span>`
+          : `<span class="ecart-bas">cible atteinte</span>`);
+    return `<div class="tuile-ref">
+      <div class="nom">${r.ref.nom || "Référence sans nom"}</div>
+      <div class="cpp">${fmt(r.cpp, 4)} <small>€/pce</small></div>
+      <div class="sous">${r.chiffres} poste${r.chiffres > 1 ? "s" : ""} chiffré${r.chiffres > 1 ? "s" : ""}
+        · cible ${r.cible === null ? "non renseignée" : fmt(r.cible, 4) + " " + "€"}</div>
+      ${ecart}
+      ${r.nonChiffrables ? `<div class="absent">hors ${r.nonChiffrables} poste${r.nonChiffrables > 1 ? "s" : ""} non chiffrable${r.nonChiffrables > 1 ? "s" : ""}</div>` : ""}
+    </div>`;
+  }).join("");
+
+  return `<section class="ligne" style="--encre:${t.encre}">
+    <header>
+      <span class="pastille" style="background:${t.encre}"></span>
+      <h2>${t.nom}</h2>
+      <span class="meta">${t.code || "hors nomenclature"} · ${t.nbRefs} référence${t.nbRefs > 1 ? "s" : ""}</span>
+      <span style="margin-left:auto"><button class="btn petit" type="button"
+        onclick="ouvrirLigne('${t.ligne.id}')">Ouvrir →</button></span>
+    </header>
+
+    <div class="tuile-corps">
+      <div class="tuile-principal">
+        <div class="cpp">${chiffres.length ? fmt(t.cpp, 4) + " <small>€/pce</small>" : "—"}</div>
+        <div class="lab">CPP outillage · ${t.nbRefs} référence${t.nbRefs > 1 ? "s" : ""}</div>
+      </div>
+      <div class="tuile-refs">${liste || '<div class="absent">aucun poste chiffrable</div>'}</div>
+    </div>
+
+    ${t.nonChiffrables || t.sansScenario ? `<div class="declarations">
+      ${t.sansScenario ? `<div class="absent">${t.sansScenario} poste${t.sansScenario > 1 ? "s" : ""} sans scénario en production : non compté${t.sansScenario > 1 ? "s" : ""}</div>` : ""}
+    </div>` : ""}
+
+    <details class="depliant">
+      <summary>Théorie et réalité</summary>
+      <div class="depliant-corps">
+        <div class="absent">Le delta entre la théorie et la réalité n'est pas encore branché.</div>
+        <p class="qq">Il se lit dans le classeur de Matis (quantité réelle, colonne N) et il n'est
+           pas encore importé ici. Tant qu'il ne l'est pas, l'outil ne l'invente pas : il le dit.</p>
+      </div>
+    </details>
+
+    ${autres > 0 ? `<div class="note-bas">+ ${autres} référence${autres > 1 ? "s" : ""} non chiffrable${autres > 1 ? "s" : ""} sur cette ligne</div>` : ""}
+  </section>`;
+}
+
+function nbScenariosHorsProd() {
+  let n = 0;
+  ETAT.lignes.forEach(l => (l.refs || []).forEach(r => (r.ops || []).forEach(op => {
+    const scs = op.scs || [];
+    const prod = scenarioDeProd(scs);
+    scs.forEach(s => { if (s && s !== prod) n++; });
+  })));
+  return n;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   ÉCRAN 2 — ESSAI : insérer un essai en 90 secondes
+   ÉCRAN 2 — LE DÉTAIL DE LA LIGNE : le scénario de production, et lui seul
    ══════════════════════════════════════════════════════════════════════════ */
 
 function ecran2() {
-  const postes = tousPostes();
-  const s = ETAT.saisi;
-  const ops = postes.map(p => `<option value="${p.ligne.id}|${p.op.id}"
-      ${s.poste === p.ligne.id + "|" + p.op.id ? "selected" : ""}>
-      ${p.ligne.nom} · ${p.op.nom}</option>`).join("");
+  const ligne = ligneCourante();
+  if (!ligne) {
+    return `<div class="vide"><b>Aucune ligne ouverte</b>
+       Revenez aux tuiles et choisissez une ligne.</div>`;
+  }
+  const d = detailLigne(ligne);
+  const horsProd = nbScenariosHorsProdDe(ligne);
 
   return `
-  <p class="lede">J'insère un essai. Trois informations suffisent pour qu'il compte :
-     le poste, la plaquette, et jusqu'où elle tient. Le reste se lit, il ne se saisit pas.</p>
+  <p class="lede">${d.tuile.nom} — ce qui est en production aujourd'hui. Le scénario de
+     production, et lui seul : les autres sont derrière la porte « Scénario et optimisation ».</p>
 
-  <form class="form" id="fEssai">
-    <h3>Nouvel essai</h3>
-    <p class="sous">Un essai se juge sur sa charnière atteinte et sa conformité — pas sur un avis.</p>
+  ${d.refs.map(refLigneHTML).join("")}
 
-    <div class="grille">
-      <div class="champ">
-        <label for="cPoste">Poste</label>
-        <select id="cPoste" name="poste">${ops}</select>
-        <div class="hint">ligne et opération</div>
-      </div>
-<div class="champ">
-    <label for="cScenario">Plaquette / configuration</label>
-    <select id="cScenario" name="scenario">${(function(){
-      const scs = scenariosDuPoste(s.poste);
-      return scs.length
-        ? scs.map(x => `<option value="${x.id}">${x.name}</option>`).join("")
-        : `<option value="">aucun scénario sur ce poste</option>`;
-    })()}</select>
-    <div class="hint">le scénario d'essai sur lequel on mesure</div>
-  </div>
-      <div class="champ">
-        <label for="cDate">Date</label>
-        <input type="date" id="cDate" name="date" value="${s.date || "2026-10-01"}">
-      </div>
-      <div class="champ">
-        <label for="cEquipe">Équipe</label>
-        <input type="text" id="cEquipe" name="equipe" placeholder="M. / A." value="${s.equipe || ""}">
-      </div>
-      <div class="champ">
-        <label for="cCharniere">Charnière visée (pièces)</label>
-        <input type="number" id="cCharniere" name="charniere" min="1" value="${s.charniere || ""}">
-        <div class="hint">combien de pièces avant de devoir changer</div>
-      </div>
-      <div class="champ">
-        <label for="cBatt">Battement mesuré (mm)</label>
-        <input type="number" id="cBatt" name="batt" step="0.01" min="0" value="${s.batt || ""}">
-        <div class="hint">vide = non mesuré, l'essai ne sera pas jugé non conforme</div>
-      </div>
+  ${horsProd || d.nbPostesSansProd ? `<div class="form" style="margin-bottom:var(--gap)">
+    <button class="btn" type="button" onclick="aller(3)">Scénario et optimisation →
+      <span class="meta">${horsProd} scénario${horsProd > 1 ? "s" : ""} hors production</span></button>
+  </div>` : `<p class="note-bas">Cette ligne n'a aucun scénario hors production : rien à optimiser pour l'instant.</p>`}`;
+}
+
+/* Une référence, ses postes, et sous chaque poste l'outillage du scénario de
+   production décomposé logement par logement. C'est là que l'on voit OÙ part
+   l'argent d'une pièce. */
+function refLigneHTML(r) {
+  return `<section class="ligne">
+    <header><h2>${r.nom}</h2>
+      <span class="meta">${r.postes.length} poste${r.postes.length > 1 ? "s" : ""}</span></header>
+
+    <div class="kpis" style="margin-bottom:var(--gap)">
+      <div class="kpi"><div class="lab">CPP outillage · production</div>
+        <div class="val">${r.cpp === null ? "non chiffrable" : fmt(r.cpp, 4)}</div>
+        <div class="sub">${r.cpp === null ? "aucun poste chiffrable" : "€/pièce, postes chiffrables seuls"}</div></div>
+      <div class="kpi"><div class="lab">Cible du site</div>
+        <div class="val">${r.cible === null ? "—" : fmt(r.cible, 4)}</div>
+        <div class="sub">${r.cible === null ? "non renseignée" : "€/pièce"}</div></div>
+      <div class="kpi"><div class="lab">Reste à gagner</div>
+        <div class="val">${r.distanceCible === null ? "—" : (r.distanceCible > 0 ? fmt(r.distanceCible, 4) : "0,0000")}</div>
+        <div class="sub">${r.distanceCible === null ? "ni CPP ni cible : rien à comparer"
+          : (r.distanceCible > 0 ? "€/pièce au-dessus de la cible" : "la cible est atteinte")}</div></div>
     </div>
 
-    <button class="btn" type="submit">Enregistrer l'essai</button>
-    <button class="btn ghost garder" type="button" onclick="annulerSaisie()">Annuler</button>
-    ${ETAT.erreur ? `<div class="erreur" style="margin-top:16px">${ETAT.erreur}</div>` : ""}
-    ${ETAT.dernierEssai ? `<div class="note-bas" style="color:var(--ok)">
-      ${ETAT.dernierEssai}</div>` : ""}
-  </form>`;
+    ${r.postes.map(posteProdHTML).join("")}
+  </section>`;
+}
+
+function posteProdHTML(p) {
+  if (!p.prod) {
+    return `<section class="poste">
+      <header><h3>${p.code}</h3><span class="mot rien">sans production</span></header>
+      <div class="absent">Aucun scénario en production sur ce poste : il n'entre dans aucun
+         CPP et il reste visible pour qu'on sache qu'il manque.</div>
+    </section>`;
+  }
+  const o = p.outillage;
+  const essais = p.prod.essais || [];
+  return `<section class="poste">
+    <header><h3>${p.code}</h3>
+      <span class="meta">${p.prod.name || "scénario de production"}</span>
+      <span class="mot serie" style="margin-left:auto">${o.cpp === null ? "non chiffrable" : fmt(o.cpp, 4) + " €/pce"}</span></header>
+    ${o.outils.map(outilHTML).join("") || '<div class="absent">aucun outil saisi sur ce poste</div>'}
+    ${essais.length ? `<div class="bloc-essais">
+      <h4>Ce que les essais ont réellement donné (${essais.length})</h4>
+      ${essaisHTML(p.prod, essais)}
+    </div>` : `<div class="note-bas">Aucun essai porté par ce scénario de production :
+      son CPP est celui qu'on a prévu, pas celui qu'on a mesuré.</div>`}
+    ${p.nbAutres ? `<div class="note-bas">${p.nbAutres} autre${p.nbAutres > 1 ? "s" : ""} scénario${p.nbAutres > 1 ? "s" : ""} sur ce poste — voir « Scénario et optimisation »</div>` : ""}
+  </section>`;
+}
+
+function outilHTML(o) {
+  return `<div class="outil">
+    <div class="outil-tete"><b>${o.numero}</b>
+      ${o.description ? `<span class="meta">${o.description}</span>` : ""}
+      ${o.correcteur ? `<span class="meta">correcteur ${o.correcteur}</span>` : ""}
+      <span style="margin-left:auto">${o.cpp === null ? '<span class="absent">non chiffrable</span>' : fmt(o.cpp, 4) + " €/pce"}</span></div>
+    <div class="paires">${o.logements.map(l => `<div class="paire">
+      <div class="nom">${l.logementNom}</div>
+      <div class="val" style="${l.cpp === null ? "color:var(--mute);font-size:var(--t5)" : ""}">${l.cpp === null ? "non chiffrable" : fmt(l.cpp, 4) + " €/pce"}</div>
+      <div class="detail">${l.article || "article non saisi"} · ${l.cpp === null
+        ? "prix, arêtes ou charnière manquants"
+        : fmt(l.prix, 2) + " € / " + fmt(l.aretes, 0) + " arêtes / " + fmt(l.charniere, 0) + " p"}</div>
+    </div>`).join("")}</div>
+  </div>`;
+}
+
+function nbScenariosHorsProdDe(ligne) {
+  let n = 0;
+  postesDeLigne(ligne).forEach(p => { n += p.autres.length; });
+  return n;
 }
 
 function scenariosDuPoste(cle) {
@@ -1378,46 +1821,154 @@ function essaisHTML(sc, essais) {
   return `<div style="margin-top:16px">
     <h4 style="margin:0 0 2px;font-size:var(--t4)">Ce que les essais ont réellement donné</h4>
     <p class="note-bas" style="margin:0 0 4px">Coût hors plaquettes exclu, CPP outillage seul
-       — même unité que les tuiles du dessus, pour que la comparaison se tienne.
+       — même unité que les chiffres du dessus, pour que la comparaison se tienne.
        Scénario : ${prevu === null ? "non chiffrable" : fmt(prevu, 4) + " €/pce"}.</p>
     <div class="essais-liste">${lignes}</div>
   </div>`;
 }
 
 function ecran3() {
-  /* Le poste affiché par le selecteur et le poste dont on liste les preuves
-     doivent être LE MÊME. Deux résolutions ici (l'une avec repli sur le premier
-     poste, l'autre sans) donnaient un selecteur annonçant « EMAG 1 · OP10 » au
-    -dessus d'un « aucun essai saisi » : l'écran mentait sur lui-même. */
-  const tous = tousPostes();
-  const sel = posteCourantCle();
-  const poste = pairesPoste(sel);
-  /* on ne montre QUE les scénarios qui portent des essais : la production n'est
-     pas une preuve, elle est la référence qu'on cherche à battre. */
-  const paires = poste
-    ? poste.scs.filter(sc => (sc.essais || []).length).map(sc => ({ poste, sc }))
-    : [];
-  const opts = tous.map(x => `<option value="${x.ligne.id}|${x.op.id}"
-    ${sel === x.ligne.id + "|" + x.op.id ? "selected" : ""}>
-    ${x.ligne.nom} · ${x.op.nom}</option>`).join("");
+  const ligne = ligneCourante();
+  if (!ligne) {
+    return `<div class="vide"><b>Aucune ligne ouverte</b>
+       Revenez aux tuiles et choisissez une ligne.</div>`;
+  }
+
+  /* Tous les scénarios de la ligne qui ne sont PAS en production. On prend la
+     liste du NOYAU (postesDeLigne → autres), pas une re-dérivation ici : si les
+     deux règles divergeaient, l'écran 3 montrerait des scénarios que l'écran 2
+     déclare être en production, et l'agent ne saurait plus lequel croire. */
+  const paires = [];
+  postesDeLigne(ligne).forEach(p => {
+    p.autres.forEach(sc => paires.push({ ligne: ligne, poste: p, op: p.op, sc: sc }));
+  });
 
   return `
-  <p class="lede">La preuve. Un essai ne vaut que s'il est répété, et le CPP de chaque
-     logement est affiché avec ses trois ingredients — un chiffre sans ses sources
-     n'est pas une preuve.</p>
+  <p class="lede">Scénario et optimisation. Les scénarios qui ne sont pas en production,
+     et où ils en sont : combien d'essais, combien de conformes, et ce qu'il manque
+     pour passer en série.</p>
 
   <div class="form" style="margin-bottom:var(--gap)">
-    <div class="champ" style="max-width:340px">
-      <label for="cPreuvePoste">Poste</label>
-      <select id="cPreuvePoste" onchange="changerPreuvePoste(this.value)">${opts}</select>
-    </div>
+    <button class="btn ghost" type="button" onclick="aller(2)">← ${ligne.nom} en production</button>
   </div>
 
-  ${paires.length ? `<div class="preuves">${paires.map(preuveHTML).join("")}</div>`
-    : `<div class="vide"><b>Aucun essai saisi sur ce poste</b>
-       La production seule ne se prouve pas — un essai doit être lancé pour qu'il y ait
-       une preuve à montrer.</div>`}`;
+  ${paires.length
+    ? `<div class="preuves">${paires.map(scenarioOptimisationHTML).join("")}</div>`
+    : `<div class="vide"><b>Aucun scénario hors production</b>
+       Sur cette ligne, il n'y a rien à optimiser : la production est le seul outillage déclaré.</div>`}
+
+  <h3 style="margin-top:var(--gap)">Ajouter un essai</h3>
+  ${essaiFormHTML()}`;
 }
+
+/* Un scénario hors production, avec son état et le mot de la décision.
+   `preuveHTML` montre la conformité en détail ; ici on ajoute le mot — parce que
+   c'est la seule question qu'on se pose à cet étage : « qu'est-ce qu'on en fait ? » */
+function scenarioOptimisationHTML(paire) {
+  const sc = paire.sc;
+  const s = statutScenario(sc);
+  const essais = sc.essais || [];
+  const conformes = essais.filter(e => statutEssai(sc, e).code === "conforme").length;
+  const cpp = cppOutillageScenario(sc);
+  const prod = paire.poste.prod;
+  const cppProd = prod ? cppOutillageScenario(prod) : null;
+  const ecart = (cpp !== null && cppProd !== null) ? cppProd - cpp : null;
+  const classe = s.code === "serie" ? "serie" : s.code === "valide" ? "pret"
+    : s.code === "encours" ? "essai" : "rien";
+
+  return `<section class="preuve">
+    <header>
+      <h3>${sc.name || "Scénario"}</h3>
+      <span class="meta">${paire.op.code || paire.op.nom || "poste"}</span>
+      <span class="mot ${classe}" style="margin-left:auto">${s.texte}</span>
+    </header>
+    <p class="qq">${conformes} essai${conformes > 1 ? "s" : ""} conforme${conformes > 1 ? "s" : ""}
+       sur ${essais.length} lancé${essais.length > 1 ? "s" : ""}
+       — la règle du site en demande ${sc.validationThreshold || 5}.</p>
+    ${ecart === null ? `<div class="absent">CPP non comparable : le scénario de production
+       de ce poste n'est pas chiffrable.</div>`
+      : (ecart > 0
+        ? `<div class="cpp"><span class="big">${fmt(ecart, 4)}</span>
+             <span class="small"> €/pce de gain sur la production</span></div>`
+        : `<div class="absent">ce scénario ne fait PAS mieux que la production
+             (${fmt(ecart, 4)} €/pce)</div>`)}
+    ${essaisHTML(sc, essais)}
+  </section>`;
+}
+
+/* Le formulaire d'essai. Il a quitté l'écran 2 — qui montre maintenant la ligne —
+   pour venir ici : un essai n'a de sens que sur un scénario qu'on cherche à
+   passer en production. Le formulaire n'a pas changé de contenu, seulement de
+   place ; c'est le seul endroit du proto où l'on saisit quelque chose. */
+function essaiFormHTML() {
+  const s = ETAT.saisi;
+  const postes = tousPostes();
+  /* Le poste de saisie par défaut. Sans cela, le formulaire s'ouvrait avec le
+     premier poste de la liste alors que le sélecteur de scénarios était calculé
+     sur l'absence de poste : l'écran annonçait « EMAG 1 · OP10 » au-dessus d'un
+     « aucun scénario sur ce poste ». Les deux sélecteurs doivent regarder la
+     MÊME valeur, résolue une seule fois.
+
+     Et le poste par défaut est le premier de la LIGNE OUVERTE, pas le premier
+     de l'atelier : on arrive ici depuis une ligne, c'est elle qu'on travaille. */
+  const ligne = ligneCourante();
+  const defaut = (ligne ? postes.find(p => p.ligne.id === ligne.id) : null) || postes[0];
+  const posteChoisi = s.poste || (defaut ? defaut.ligne.id + "|" + defaut.op.id : "");
+  const ops = postes.map(p => `<option value="${p.ligne.id}|${p.op.id}"
+      ${posteChoisi === p.ligne.id + "|" + p.op.id ? "selected" : ""}>
+      ${p.ligne.nom} · ${p.op.nom}</option>`).join("");
+  const scs = scenariosDuPoste(posteChoisi);
+
+  return `
+  <form class="form" id="fEssai">
+    <p class="sous">Un essai se juge sur sa charnière atteinte et sa conformité — pas sur un avis.</p>
+    <div class="grille">
+      <div class="champ">
+        <label for="cPoste">Poste</label>
+        <select id="cPoste" name="poste">${ops}</select>
+        <div class="hint">ligne et opération</div>
+      </div>
+      <div class="champ">
+        <label for="cScenario">Plaquette / configuration</label>
+        <select id="cScenario" name="scenario">${scs.length
+          ? scs.map(x => `<option value="${x.id}" ${(s.scenario || scs[0].id) === x.id ? "selected" : ""}>${x.name}</option>`).join("")
+          : `<option value="">aucun scénario sur ce poste</option>`}</select>
+        <div class="hint">le scénario d'essai sur lequel on mesure</div>
+      </div>
+      <div class="champ">
+        <label for="cDate">Date</label>
+        <input type="date" id="cDate" name="date" value="${s.date || "2026-10-02"}">
+      </div>
+      <div class="champ">
+        <label for="cEquipe">Équipe</label>
+        <input type="text" id="cEquipe" name="equipe" placeholder="M. / A." value="${s.equipe || ""}">
+      </div>
+      <div class="champ">
+        <label for="cCharniere">Charnière visée (pièces)</label>
+        <input type="number" id="cCharniere" name="charniere" min="1" value="${s.charniere || ""}">
+        <div class="hint">combien de pièces avant de devoir changer</div>
+      </div>
+      <div class="champ">
+        <label for="cBatt">Battement mesuré (mm)</label>
+        <input type="number" id="cBatt" name="batt" step="0.01" min="0" value="${s.batt || ""}">
+        <div class="hint">vide = non mesuré, l'essai ne sera pas jugé non conforme</div>
+      </div>
+    </div>
+    <button class="btn" type="submit">Enregistrer l'essai</button>
+    <button class="btn ghost garder" type="button" onclick="annulerSaisie()">Annuler</button>
+    ${ETAT.erreur ? `<div class="erreur" style="margin-top:16px">${ETAT.erreur}</div>` : ""}
+    ${ETAT.dernierEssai ? `<div class="note-bas" style="color:var(--ok)">${ETAT.dernierEssai}</div>` : ""}
+  </form>`;
+}
+
+/* La ligne ouverte — celle dont on regarde le détail et l'optimisation.
+   Une seule résolution, partagée par l'écran 2 et l'écran 3 : c'était la
+   duplication qui faisait que les deux écrans annonçaient des choses
+   différentes. */
+function ligneCourante() {
+  return ETAT.lignes.find(l => l.id === ETAT.ligne) || null;
+}
+function ouvrirLigne(id) { ETAT.ligne = id; ETAT.saisi = {}; ETAT.ecran = 2; rendre(); }
 
 /* UNE seule resolution du poste courant, utilisee par le selecteur ET par la
    liste des preuves. C'etait la duplication qui desynchronisait les deux. */
@@ -1705,9 +2256,9 @@ function ouvrirImport() { ETAT.importOuvert = !ETAT.importOuvert; rendre(); }
    ══════════════════════════════════════════════════════════════════════════ */
 
 const ECRANS = [
-  { n: 1, nom: "Où en est-on", fn: ecran1 },
-  { n: 2, nom: "Essai",        fn: ecran2 },
-  { n: 3, nom: "Preuve",       fn: ecran3 },
+  { n: 1, nom: "Lignes", fn: ecran1 },
+  { n: 2, nom: "Ligne",  fn: ecran2 },
+  { n: 3, nom: "Scénario et optimisation", fn: ecran3 },
   { n: 4, nom: "Décision",     fn: ecran4 },
   { n: 5, nom: "Emporter",     fn: ecran5 }
 ];
@@ -1753,14 +2304,22 @@ function enregistrerEssai(ev) {
   rendre();
 }
 
-/* le sélecteur de scénario se remplit selon le poste choisi */
-function remplirScenarios() {
-  const scs = scenariosDuPoste(ETAT.saisi.poste);
+/* Le changement de poste remplit le sélecteur de scénarios. Il ne rend pas :
+   le formulaire fait partie de l'écran 3, et le rendre reconfigurerait le
+   formulaire en cours de saisie. Le seul état touché est celui du formulaire. */
+function postesChange() {
+  ETAT.saisi.poste = document.getElementById("cPoste").value;
+  ETAT.saisi.scenario = null;
   const sel = document.getElementById("cScenario");
   if (!sel) return;
+  const scs = scenariosDuPoste(ETAT.saisi.poste);
   sel.innerHTML = scs.length
-    ? scs.map(s => `<option value="${s.id}">${s.name}</option>`).join("")
+    ? scs.map(x => `<option value="${x.id}">${x.name}</option>`).join("")
     : `<option value="">aucun scénario sur ce poste</option>`;
+}
+function scenarioChange() {
+  const sel = document.getElementById("cScenario");
+  if (sel) ETAT.saisi.scenario = sel.value;
 }
 
 /* les clics et les changements : trois écouteurs, et c'est tout.
@@ -1770,7 +2329,8 @@ document.addEventListener("click", function(ev){
   if (t) basculerLigne(t.getAttribute("data-toggle"));
 });
 document.addEventListener("change", function(ev){
-  if (ev.target.id === "cPoste") { ETAT.saisi.poste = ev.target.value; remplirScenarios(); }
+  if (ev.target.id === "cPoste") postesChange();
+  if (ev.target.id === "cScenario") scenarioChange();
   if (ev.target.id === "cPreuvePoste") changerPreuvePoste(ev.target.value);
 });
 document.addEventListener("submit", function(ev){
@@ -1780,18 +2340,25 @@ document.addEventListener("submit", function(ev){
 /* les portes, exposées — le harnais vérifie qu'elles existent */
 window.proto = { aller, rendre, basculerLigne, changerPreuvePoste, annulerSaisie,
                  enregistrerEssai, ecran1, ecran2, ecran3, ecran4, ecran5, a4HTML,
+                 ouvrirLigne, ligneCourante, tuileHTML, refLigneHTML, posteProdHTML,
+                 postesChange, scenarioChange,
+                 outilHTML, scenarioOptimisationHTML, essaiFormHTML,
+                 nbScenariosHorsProd, nbScenariosHorsProdDe,
                  verdictPoste, verdictLigne, decisionPoste, cheminCPP,
                  coutLogement, cppOutillageScenario, statutEssai, statutScenario,
                  recapLignes, ECRANS, ETAT, tousPostes, verdictsLignes,
                  projeter, panoramaImport, ouvrirImport, retourJeu, chargerFichier,
                  sauvegarderLocal, chargerLocal, sourceHTML, essaisHTML,
-                 battDe, cppEssai, mesurerLignes, PROTO_VERSION };
+                 battDe, cppEssai, mesurerLignes,
+                 scenarioDeProd, postesDeLigne, cppReference, tuileDeLigne,
+                 tuilesDeLignes, detailLigne, outillageDeScenario,
+                 familleDeLigne, rangLigne, codeLigneDe, FAMILLES_LIGNE,
+                 PROTO_VERSION, EMPREINTE_ASSEMBLAGE };
 
 /* On ne passe jamais le proto par-dessus des données réelles laissées par une
    session précédente : c'est le seul cas où un état persistant pourrait écraser
    ce que Matis a déposé. Le jeu d'exemple ne l'emporte que s'il n'y a rien. */
 chargerLocal();
-remplirScenarios();
 rendre();
 </script>
 </body>
