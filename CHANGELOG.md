@@ -5,6 +5,80 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.80.0] — 2026-10-02 · Tour 56
+
+**Retour à l'identité d'avant le Design System B**, sur demande de Benjamin :
+« on garde le design système avant le design système B, avec notre nouvelle
+infrastructure ». Déployé sur le domaine **projet** ; la prod n'a pas bougé.
+
+### Ce qui a été décidé, et mesuré avant de le faire
+
+La maquette d'accueil de `Hermes Version/maquette_ecran_accueil_v1.html`
+n'attendait pas d'être implémentée : elle **l'est déjà** (ligne 15544, on
+atterrit dessus au chargement ; les cinq chiffres de la maquette sont déjà
+dans `accueilTuileHTML`, lus dans `gainLigne()`). Ce n'était donc pas une
+maquette à refaire, mais une identité à restaurer.
+
+Le Design System B (4.63.0, 30/09) n'avait **pas supprimé** la couche
+d'aplats : `--head` (#2F4159), `--fill`, `--fill-good`, `--on-accent`,
+`--radius-lg` sont tous restés intacts. Il avait changé la base — page
+blanche, angles à 2 px, bleu moins profond — et surtout réduit la typographie
+à **une seule famille** pour les titres et le texte. Les aplats n'ont pas
+disparu : ils ne ressortaient plus.
+
+### Changé
+
+- **la palette** : `--ink #000000 → #1a1a1a`, `--body #5C5D62 → #4a5560`,
+  `--label #6E6E73 → #5a6470`, `--blue #006AB3 → #1B5EA6`,
+  `--red #E30045 → #E2001A`, `--fill #006AB3 → #1B5EA6`,
+  `--bg blanc → #e8eaed` (cartes blanches sur fond gris : c'est ce retrait
+  qui fait ressortir les aplats), rayons `2px → 3px` et `4px` ;
+- **l'impression** : le bloc `@media print` portait ses propres valeurs
+  dérivées du DS B (`--blue #005C99`, `--red #B8003A`). Rétabli sur l'identité
+  SPK, le rouge seul s'assombrit pour le tirage papier (#b30016) ;
+- **la hiérarchie de forme** : `--font-disp` et `--font-body` étaient **la
+  même déclaration** (Roboto). Les titres reprennent **Manrope**, récupéré
+  de l'historique git — exactement le fichier qui était embarqué avant le
+  DS B, 25 Ko, aucun appel réseau. Trois rôles, trois formes : Manrope /
+  Roboto / IBM Plex Mono ;
+- **le mode nuit n'a pas été touché** : le DS B ne l'avait jamais modifié.
+
+Aucun calcul, aucune fonction, aucune saisie : c'est un changement de valeurs
+de tokens, pas de logique. Conséquence secondaire : le fichier mélangeait
+deux palettes depuis le 30/09 (CSS d'impression A4, graphiques, texte
+d'aide des Nouveautés qui annonçait « bleu #006AB3 ») — le retour en arrière
+répare cette incohérence au lieu d'en créer une.
+
+### Vérification
+
+- **497 tests | 0 échecs**, plus 6 paires de contraste et **11 portes
+  d'identité** lues sur le CSS réel. Le contrôle de contraste n'a demandé
+  **aucune** modification : il lit les valeurs, il ne les fige pas — il a
+  donc recalculé seul, et ses six ratios sont exactement ceux mesurés avant
+  le choix (6,01 / 7,61 / 17,40 / 7,61 / 6,57 / 4,94). Quatre sont
+  **meilleurs** qu'en DS B, les deux autres restent au-dessus de 4,5:1 ;
+- **contre-regard, un angle mort trouvé et refermé.** Remettre
+  `--font-disp` sur Roboto — c'est-à-dire annuler *exactement* la plainte
+  de Benjamin — laissait la suite à **497/0**. La seule garde qui existait
+  (le contraste) ne contrôle pas la FORME, seulement le plancher 4,5:1. Les
+  11 portes d'identité referment l'angle : valeurs, rayons, **famille des
+  titres distincte de celle du texte**, présence réelle du `@font-face`, et
+  **disparition des valeurs du DS B** — une ré-application du DS B échoue
+  désormais. Faute ré-injectée : 2 portes vues, sortie 1 ; restaurée par
+  copie, empreinte SHA-256 identique ;
+- **un mensonge d'affichage réparé au passage** : `runTests()` imprime son
+  résumé *avant* que les contrôles hors-suite ne tournent, donc une
+  régression de palette s'affichait « TOUT EST VERT — 497 tests | 0 échecs »
+  alors que le processus sortait en 1. Le code de sortie disait vrai,
+  l'écran mentait. Un verdict affiché ne vaut que s'il couvre tout ce qui a
+  été contrôlé ;
+- **piège Windows rencontré** : `core.autocrlf = true`, donc `git checkout`
+  rend le fichier en CRLF alors que le fichier de travail était en LF. Le
+  script de restauration ne compare que des chaînes multi-lignes : il n'a
+  plus rien trouvé, et **allait le signaler** au lieu d'écrire un fichier vide.
+  C'est son garde-fou « motif trouvé 0 fois → arrêt », mis en place au
+  Tour 55, qui l'a signalé.
+
 ## [4.78.0] — 2026-10-01 · Tour 50
 
 **La vue CPP** (Tour 49 : « à Z Code de construire, à Hermes de relire »).

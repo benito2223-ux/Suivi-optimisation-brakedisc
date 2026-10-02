@@ -160,6 +160,102 @@ try {
     r.echecs += echecs;
   })();
 
+  /* ── v4.80 — L'IDENTITÉ SPK, ÉCRITE SOIT QU'ELLE PUISSE REVENIR ───────────
+     Constat du Tour 56 : on a restauré la palette v3.15 et surtout la
+     hiérarchie de forme (Manrope / Roboto / IBM Plex Mono). Le contre-regard
+     a montré qu'UNE SEULE de ces valeurs était gardée : remettre
+     --font-disp sur Roboto — c'est-à-dire annuler exactement la plainte de
+     Benjamin, « les polices sont les mêmes » — laissait la suite à 497/0
+     sans un seul soupir. Le contrôle de contraste ne l'aurait pas vu : il ne
+     contrôle pas la FORME, il ne contrôle que le plancher 4,5:1.
+
+     Ces portes referment l'angle mort. Elles lisent le fichier réel, comme
+     le contrôle de contraste ; elles ne vivent pas dans runTests(), donc
+     elles ne coûtent aucun octet à l'outil déployé. Elles gardent deux choses
+     distinctes : les VALEURS de l'identité, et le FAIT qu'il y ait trois
+     formes — une ré-application du Design System B doit les faire échouer. */
+  (function identiteTokens(){
+    const fs = require('fs');
+    const html = fs.readFileSync('bilan_economique.html', 'utf8');
+    let corps = null;
+    for (const m of html.matchAll(/:root\s*\{/g)) {
+      const debut = m.index + m[0].length;
+      let prof = 1, i = debut;
+      while (i < html.length && prof > 0) {
+        const c = html[i];
+        if (c === '{') prof++;
+        else if (c === '}') prof--;
+        i++;
+      }
+      const bloc = html.slice(debut, i);
+      if (/--ink\s*:/.test(bloc)) { corps = bloc; break; }
+    }
+    if (!corps) { console.log('  IDENTITE : bloc :root de reference non trouve — test non joue'); process.exitCode = 2; return; }
+    const tok = {};
+    for (const m of corps.matchAll(/(--[a-z0-9-]+)\s*:\s*([^;]+);/g)) tok[m[1]] = m[2].trim();
+
+    let joues = 0, echecs = 0;
+    const porte = (nom, obtenu, attendu) => {
+      joues++;
+      const okc = obtenu === attendu;
+      if (!okc) echecs++;
+      console.log((okc ? '  ok  ' : '  ECHEC ') + 'identité : ' + nom + ' — attendu « ' + attendu
+        + ' », lu « ' + obtenu + ' »');
+    };
+
+    /* 1. la palette de l'identité SPK by CeramTec (v3.15, restaurée en 4.80) */
+    porte("le bleu d'action", tok['--blue'], '#1B5EA6');
+    porte('le rouge CeramTec', tok['--red'], '#E2001A');
+    porte('le fond de page est gris, pas blanc', tok['--bg'], '#e8eaed');
+    porte('le plein bleu des aplats', tok['--fill'], '#1B5EA6');
+
+    /* 2. les rayons : c'est la signature d'un système « quasi-plat » */
+    porte('le rayon des cartes', tok['--radius'], '3px');
+    porte('le rayon des grandes surfaces', tok['--radius-lg'], '4px');
+
+    /* 3. LA HIÉRARCHIE DE FORME — la porte qui manquait le 02/10.
+       Titres et texte ne doivent PAS être la même famille : c'est exactement
+       ce que le Design System B avait fait, et ce que Benjamin a vu. */
+    const disp = (tok['--font-disp'] || '').split(',')[0].trim().replace(/^'|'$/g, '');
+    const body = (tok['--font-body'] || '').split(',')[0].trim().replace(/^'|'$/g, '');
+    porte('les titres ont leur propre famille', disp, 'Manrope');
+    joues++;
+    if (disp === body) {
+      echecs++;
+      console.log('  ECHEC identité : titres et texte partagent la famille « ' + disp
+        + " » — c'est exactement l'aplatissement du Design System B");
+    } else {
+      console.log('  ok  identité : titres « ' + disp + ' » ≠ texte « ' + body + ' » — trois formes');
+    }
+
+    /* 4. Manrope est RÉELLEMENT embarquée, pas seulement nommée dans un token.
+       Un token qui promet une police absente du fichier donne un repli
+       silencieux : la page aurait l'air de marcher et serait redevenue plate. */
+    joues++;
+    if (html.indexOf("@font-face{font-family:'Manrope'") < 0) {
+      echecs++;
+      console.log("  ECHEC identite : Manrope est nommee dans le token mais AUCUN @font-face ne l'embarque");
+    } else {
+      console.log('  ok  identité : Manrope est embarquée en base64 (aucun appel réseau)');
+    }
+
+    /* 5. Les valeurs du Design System B ne doivent plus être là. Une réapplication
+       du DS B — par une session qui ne lit pas l'historique — échoue ici. */
+    for (const p of [['le bleu du DS B', '#006AB3'], ['le rouge du DS B', '#E30045']]) {
+      joues++;
+      if (corps.toUpperCase().includes(p[1].toUpperCase())) {
+        echecs++;
+        console.log('  ECHEC identité : ' + p[0] + ' (' + p[1] + ') est encore dans le bloc :root');
+      } else {
+        console.log('  ok  identité : ' + p[0] + ' (' + p[1] + ') a bien disparu du bloc :root');
+      }
+    }
+
+    console.log('  IDENTITE : ' + joues + ' portes verifiees sur le CSS reel du fichier, '
+      + echecs + ' en echec');
+    r.echecs += echecs;
+  })();
+
   /* ── v4.79 — LE CSS D'IMPRESSION A4 VIT DANS LE DOCUMENT PRINCIPAL ─────────
      Né en 4.53.0 à l'intérieur du template du rapport autonome, le bloc
      body.print-livraison n'a JAMAIS stylé l'outil : l'impression d'une
@@ -187,6 +283,22 @@ try {
     if (vus) console.log('  CSS IMPRESSION : ' + vus + ' regles verifiees dans le head reel du fichier');
   })();
   if (typeof (__DIAG__) !== 'undefined') (__DIAG__)(A);
+  /* v4.80 — LE VERDICT FINAL TIENT COMPTE DES GARDE-FOUS.
+     runTests() imprime son résumé AVANT que les contrôles de hors-suite ne
+     tournent (contraste, identité, CSS d'impression) : sur une régression de
+     la palette, la console affichait donc « TOUT EST VERT — 497 tests | 0
+     echecs » alors que le process sortait en 1. Le code de sortie, lui, disait
+     vrai ; l'écran, non. C'est exactement le défaut qu'on reproche à une
+     contre-vérification qui passe sans avoir rien vérifié : un verdict
+     affiché ne vaut que s'il couvre tout ce qui a été contrôlé. */
+  if (r.echecs > 0) {
+    console.log('');
+    console.log('VERDICT : ECHEC — ' + r.echecs + ' controle(s) hors runTests() ont échoue.');
+    console.log('          (le résumé « 497 tests | 0 echecs » ci-dessus ne les compte pas)');
+  } else {
+    console.log('');
+    console.log('VERDICT : tout est vert — y compris les garde-fous de hors-suite.');
+  }
   /* v4.60 (tour 16) : le code de l'outil installe des setInterval (synchro cloud,
      debounce) qui gardent la boucle d'événements de node vivante -- sans exit
      explicite, le process ne rend JAMAIS la main et le verdict, déjà imprimé,
