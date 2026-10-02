@@ -77,6 +77,27 @@ transporte un fichier ? Concrètement :
 
 ## Journal des tours
 
+### ▸ Tour 58 — 02/10/2026 — **Z Code** (la question ouverte du §2 ter est fermée)
+
+Benjamin répond à la demande n° 9 (celle qui était grande) : **« Le correcteur
+correspond à un logement de plaquettes ISO. Il n'est pas marié à une référence de
+plaquette. Ça peut être un autre fournisseur sur un autre disque, mais sur le même
+outil, sur le même logement. »**
+
+C'est le monde « oui » du §2 ter : le correcteur porte l'emplacement et la famille de
+géométrie, **pas la plaquette**. MABEC, prix, arêtes et charnière appartiennent au
+**couple (référence × logement)**. Conséquences consignées dans la constitution
+(**v1.11**) : deux MABEC différents sur le même logement selon la référence sont
+normaux (plus un artefact de classeur) ; on ne recopie jamais un couple vers l'autre ;
+le rapprochement classeur se fait à la clé **(ligne × référence × porte-outil ×
+logement)**.
+
+**Aucun calcul ne change** — dans l'arbre de données (référence → OP → scénario →
+outils → logements), les champs sont déjà portés à l'endroit juste : ce qui se fixe
+est la règle de lecture et la clé du rapprochement. `projet3` reste en v3.0.0 (le
+CAHIER §7 est mis à jour : la question qui bloquait le module classeur est levée,
+le module reste hors périmètre v1). `bilan_economique.html` et `proto/` non écrits.
+
 ### ▸ Tour 57 — 02/10/2026 — **Z Code** (projet3 v3.0.0 — la génération 3, créée de zéro sur carte blanche)
 
 **« Tu pars de 0 et tu crées l'outil parfait selon toi. Tu as carte blanche. Je

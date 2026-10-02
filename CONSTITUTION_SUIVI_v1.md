@@ -103,6 +103,30 @@ Elle est **posée à Matis** (message à Matis, demande n° 9). **Tant qu'elle n
 réponse, le modèle ne change pas** : on ne change pas la façon dont tout se calcule sur
 une supposition.
 
+**→ RÉPONDUE le 02/10/2026 — par Benjamin** (réalité atelier, demande n° 9 close) :
+
+> **« Le correcteur correspond à un logement de plaquettes ISO. Il n'est pas marié à
+> une référence de plaquette. Ça peut être un autre fournisseur sur un autre disque,
+> mais sur le même outil, sur le même logement. »**
+
+C'est le monde « oui » : le correcteur définit **l'emplacement et la famille de
+géométrie qui peut s'y asseoir** — pas la plaquette qui y est. MABEC, prix, arêtes et
+charnière appartiennent au **couple (référence × logement)**. Conséquences, écrites
+une fois pour toutes :
+
+1. deux couples qui pointent le **même porte-outil + le même logement** peuvent porter
+   deux MABEC, deux prix, deux charnières différents : **c'est normal, ce n'est pas une
+   erreur de données** — et ce n'est pas un artefact de classeur non plus ;
+2. **on ne recopie jamais** un MABEC, un prix ou une charnière d'un couple vers
+   l'autre (sœur de l'interdit 3 : une case vide vaut mieux qu'un article attribué au
+   mauvais logement) ;
+3. le rapprochement classeur se fait à la clé **(ligne × référence × porte-outil ×
+   logement)** — jamais au logement seul ;
+4. dans l'arbre de données (référence → OP → scénario → outils → logements), les
+   champs sont déjà portés à l'endroit juste : **aucun calcul ne change**. Ce qui se
+   fixe, c'est la règle de lecture et la clé du rapprochement — le module « classeur
+   Matis » (delta théorie/réalité) peut être rouvert sur cette base.
+
 
 ### 2 bis. Trois réserves de Hermes sur la v1 (à trancher, non bloquantes)
 
@@ -322,3 +346,13 @@ indicateur principal, et d'afficher le temps à côté sans jamais mélanger les
 
 *Aucun calcul n'a changé. Cette version écrit une architecture, sur une formule déjà
 vérifiée — elle ne l'invente pas.*
+
+**v1.11 — 02/10/2026, Z Code : la question ouverte du §2 ter est RÉPONDUE.** Benjamin :
+« le correcteur… n'est pas marié à une référence de plaquette ; ça peut être un autre
+fournisseur sur un autre disque, mais sur le même outil, sur le même logement ». Le
+correcteur porte l'emplacement et la famille de géométrie, pas la plaquette. MABEC,
+prix, arêtes et charnière appartiennent au couple (référence × logement) ; deux valeurs
+différentes sur le même logement selon la référence sont normales et jamais recopiées ;
+le rapprochement classeur se fait à la clé (ligne × référence × porte-outil × logement).
+La demande n° 9 est close. **Aucun calcul ne change** — l'arbre de données porte déjà
+les champs à l'endroit juste.

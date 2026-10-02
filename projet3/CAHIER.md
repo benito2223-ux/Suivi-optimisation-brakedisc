@@ -90,8 +90,11 @@ geste. Rien ne se répète dans un même écran. La raison d'un état est à cô
 ## 7. Ce que la v3 n'a pas (par choix, écrit ici)
 
 - Le **classeur Matis** (delta théorie/réalité) : la question « le logement
-  dépend-il de la référence ? » est posée à Matis et non tranchée — l'outil ne
-  l'invente pas. La clé MABEC de raccordement est dans le modèle.
+  dépend-il de la référence ? » a été **répondue le 02/10 — oui, le correcteur
+  n'est pas marié à une plaquette** (constitution v1.11) : MABEC, prix, arêtes
+  et charnière appartiennent au couple (référence × logement). Le module reste
+  hors périmètre v1 ; la clé de raccordement (ligne × référence × porte-outil ×
+  logement) est désormais écrite pour quand il sera rouvert.
 - L'**éditeur d'annotation photo** : les photos et leurs annotations existantes
   sont conservées à l'import et affichées ; le canevas d'édition reste dans l'app
   4.x jusqu'à ce que la v3 soit éprouvée.
