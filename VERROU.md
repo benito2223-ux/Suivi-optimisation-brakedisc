@@ -13,13 +13,13 @@
 
 | | |
 |---|---|
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | — |
+| **Auteur** | Z Code |
+| **Pris le** | 02/10/2026 04:05 |
+| **Écrit dans** | `proto/` (et `VERROU.md`, `ECHANGES.md`) — **`bilan_economique.html` en lecture seule** |
+| **Version visée** | proto **v2.0** |
+| **Sujet** | socle format 8 + niveau 1 (tuiles) + niveau 2 (détail ligne, scénario de production) |
 
-✅ **Le fichier est libre.**
+🔒 **Verrou pris par Z Code.** `bilan_economique.html` ne doit pas être écrit par un autre auteur pendant ce tour.
 
 > Le proto v1.0 du Tour 54 (verrou élargi à `proto/`) est terminé, commité et
 > déployé sur projet2. `bilan_economique.html` **n'a pas été écrit pendant ce tour** :
