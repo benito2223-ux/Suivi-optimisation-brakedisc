@@ -48,6 +48,7 @@
 
 | Date | Acte | Où | Vérifié |
 |---|---|---|---|
+| 02/10 ~21:40 | **projet3 v3.0.0** — la génération 3 créée de zéro sur carte blanche de Benjamin (« tu pars de 0 et tu crées l'outil parfait selon toi… livraison sur une adresse surge projet3 »). Nouveau dossier `projet3/`, 9 sources + assembleur + 4 suites de tests. `bilan_economique.html` et `proto/` **non écrits**, verrou non nécessaire. | suivi-optimisation-projet3.surge.sh | ✅ 347 tests \| 0 échecs (149 noyau, 76 migration sur les 4 exports réels, 122 application) **avant** déploiement ; contre-regard **5/5 pannes vues**, restauration par copie vérifiée SHA-256 ; curl `VERSION = "3.0.0"`, empreinte locale = distante (`253bf49af7ac9c82`), SW + manifest + icônes 200 ; **sources, tests, documents et tout JSON de données en 404** (liste blanche stricte) ; vérifié dans le navigateur **depuis l'URL publique** (accueil, ligne, poste prévu/obtenu, nuit, A4, import réel IMPORT_MATIS 192 logements). **Prod 4.80.0 et proto2 v2.0 re-vérifiés inchangés.** (Z Code, Tour 57) |
 | 02/10 ~14:20 | **PROD 4.80.0** — « on va deployer en prod ». Saute **22 versions** (4.58.0 → 4.80.0) : c'est le plus grand écart jamais mis en prod d'un coup. Contenu inchangé depuis le déploiement projet (le même fichier, le même SHA). | suivi-optimisation-septfons.surge.sh | ✅ 497 tests \| 0 échecs, `VERDICT : tout est vert` **avant** déploiement ; curl SW 200, **1 401 140 o**, `TOOL_VERSION = "4.80.0"` ; fichier publié **identique octet pour octet** au local (`6a082cda…`) ; **18 chemins testés, seuls les 5 blancs du `.surgeignore` renvoient 200** — `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md`, `build_harness.py`, `cloud_courant.json`, `proto/`, `outils/`, `.git/config` et 10 autres en **404**, et les quatre premiers vérifiés **présents en local** (le 404 est donc un vrai refus, pas un fichier fantôme). Projet 4.80.0 et proto2 v2.0 re-vérifiés inchangés. (Z Code, Tour 56) |
 | 02/10 ~13:35 | **Projet 4.80.0** — retour à l'identité d'avant le Design System B : palette v3.15, fond gris, rayons 3/4 px, et surtout **trois formes** (Manrope / Roboto / IBM Plex Mono) au lieu d'une seule. Ordre de Benjamin : « on garde le design système avant le design système B, avec notre nouvelle infrastructure ». Premier tour qui écrit dans `bilan_economique.html` depuis 21 versions. | suivi-optimisation-projet.surge.sh | ✅ curl SW 200, **1 401 140 o**, `TOOL_VERSION = "4.80.0"`, `--blue:#1B5EA6`, `--bg:#e8eaed`, `--font-disp:'Manrope'`, Manrope embarquée, **0 occurrence de `--blue:#006AB3`** ; fichier publié **identique octet pour octet** au local (`6a082cda…`) ; **les 7 fichiers testés renvoient 404**, le JSON réel compris. **Prod re-vérifiée inchangée : 4.58.0.** Proto projet2 inchangé : v2.0. 497 tests + 6 contrastes + **11 portes d'identité** (Z Code, Tour 56) |
 | 01/10 | Proto **v1.0** — import des exports de l'ancienne version, `.surgeignore` en place | suivi-optimisation-projet2.surge.sh | ✅ curl : SW 200, 86 635 o, `PROTO_VERSION = "1.0"`, **les 10 fichiers sources/tests/documents en 404** ; prod 4.58.0 et projet 4.79.0 re-vérifiés inchangés (Z Code) |
@@ -75,6 +76,71 @@ transporte un fichier ? Concrètement :
 ---
 
 ## Journal des tours
+
+### ▸ Tour 57 — 02/10/2026 — **Z Code** (projet3 v3.0.0 — la génération 3, créée de zéro sur carte blanche)
+
+**« Tu pars de 0 et tu crées l'outil parfait selon toi. Tu as carte blanche. Je
+n'interviendrai absolument pas jusqu'à la livraison. Livraison sur une adresse
+surge projet3. »** — Benjamin, 02/10, après le Tour 56.
+
+**Ce qui est né : `projet3/`, la génération 3 du suivi** — le successeur assumé
+des deux lignées : les trois étages atelier-d'abord du proto, la richesse de
+saisie de l'app, l'identité restaurée du Tour 56 (Manrope / Roboto / IBM Plex
+Mono récupérées du bilan, fond gris, cartes blanches). Neuf sources lisibles
+couturées par `projet3/assembler.py` en un `index.html` unique (330 Ko, polices
+embarquées, zéro réseau), empreinte SHA-256 des sources posée dans le fichier
+et vérifiée par la suite — le garde-fou du Tour 55, repris tel quel.
+
+**Ce qu'il porte d'emblée** (tout ce que les cahiers avaient acté, écrit une
+seule fois) : le CPP en **deux chiffres** (prévu / obtenu) à chaque étage ; les
+projets du CDC Projets v2 (responsables + couleurs, étiquettes multi-projets) ;
+la migration **sans perte** des formats 5-8 (photos, plans, Marposs, rebut —
+ce que le proto jetait) et la fusion arbitrage `modifieLe` ; le battement jugé
+au pire des deux côtés ; le protocole 5× ; deux thèmes + A4 ; pas de cloud
+(modèle cloud-ready, `modifieLe` partout ; l'échange passe par export/fusion,
+les données ne quittent jamais le poste). `projet3/CAHIER.md` est l'aiguille,
+écrite avant le code ; le constitutionnel est appliqué : K et P_req absents de
+toute sortie, loi du correcteur, un absent ne se comble jamais, acté ≠ projeté.
+
+**Vérification — 347 tests verts + contre-regard 5/5 :**
+
+- `test_coeur.js` **149/149** — le noyau pur, testé avant tout écran (cahier §8) ;
+- `test_import.js` **76/76** — sur les **4 exports réels du dépôt** : le CPP
+  survit à la migration à 1e-12 près, les MABEC vides restent vides, la fusion
+  ne perd aucun essai ;
+- `test_app.js` **122/122** — l'assemblé : empreinte recalculée, 50 portes par
+  `typeof`, et les **VALEURS** relues dans l'arbre rendu (leçon Tour 54) ;
+- `tests/contre_regard.py` : **5 pannes** (charnière sortie du CPP, battement
+  à la moyenne, prévu affiché à la place de l'obtenu, fusion qui inverse
+  l'arbitrage, « P_req = K » en étiquette) — **5 vues**, restauration par copie
+  vérifiée au SHA-256. Les deux pannes d'abord invisibles étaient des fautes de
+  MES tests : l'un visait un essai où prévu = obtenu (l'erreur exacte du Tour 54),
+  l'autre ne regardait que l'accueil pour une règle qui vaut sur tous les écrans.
+
+**Le navigateur a corrigé l'outil** (constitution §6.9 : la charte se vérifie à
+l'œil) : un poste sans aucun scénario est « jamais travaillée » et non « à
+chiffrer » ; « Économie actée — volume annuel non saisi » disait faux quand le
+volume est saisi mais aucun gain acté (la raison est nommée exactement) ;
+« au meilleur connu » remplace « rien à faire » ; la topologie ne crée plus de
+postes fantômes (les OPs connus se pré-posent à la création de référence) ; le
+**service worker est réseau-d'abord** — un cache-first aurait servi éternellement
+la première version installée.
+
+**Déploiement :** `suivi-optimisation-projet3.surge.sh` — curl : v3.0.0,
+empreinte locale = distante (`253bf49af7ac9c82`), icônes 200 ; sources, tests,
+documents et tout JSON de données en **404** (`.surgeignore` liste blanche
+stricte, corrigée d'un coup : `!icons` seul faisait manquer les icônes). Vérifié
+dans le navigateur **depuis l'URL publique** : accueil, ligne, poste (prévu vs
+obtenu, protocole 5×), nuit, menu groupé, A4, import réel d'IMPORT_MATIS (192
+logements, avertissements honnêtes), fusion sans perte. **Prod 4.80.0 et projet2
+v2.0 non touchés** — le verrou n'a pas été nécessaire (aucune écriture dans
+`bilan_economique.html` ni `proto/`).
+
+**En attente de Benjamin** (écrit, pas tranché) : le nom de domaine « projet3 »
+reprend la famille (projet, projet2) ; si un autre nom est préféré, un redéploiement
+surge suffit. Deux choix de conception à lire quand il voudra : pas de cloud en
+v1 (voir `projet3/CAHIER.md` §6-7), et le jeu d'exemple démarre l'outil tant
+qu'aucun import n'a eu lieu.
 
 ### ▸ Tour 56 — 02/10/2026 — **Z Code** (v4.80.0 — retour à l'identité d'avant le Design System B)
 

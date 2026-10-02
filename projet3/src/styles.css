@@ -1,0 +1,606 @@
+/* ============================================================================
+   PROJET3 — LE SYSTÈME VISUEL
+   L'identité restaurée au Tour 56 : fond gris, cartes blanches, aplats qui
+   ressortent, trois rôles de forme (Manrope / Roboto / IBM Plex Mono),
+   rayons 3 et 4 px. Deux thèmes, impression A4, tactile ≥ 44 px.
+
+   Espacement 4/8/12/16/24/32 — on sépare par du vide, pas par des traits.
+   Une seule forme de badge partout : seule la couleur change.
+   ========================================================================== */
+
+:root {
+  /* les encres du jour */
+  --bg: #e8eaed;
+  --carte: #ffffff;
+  --carte-2: #f6f7f8;
+  --ink: #1a1a1a;
+  --body: #4a5560;
+  --label: #5a6470;
+  --filet: #dfe2e6;
+  --filet-fort: #c9cdd3;
+
+  /* les couleurs qui comptent (réservées à ce qui compte) */
+  --blue: #1b5ea6;
+  --blue-encore: #164a83;
+  --blue-fluide: #dbe7f3;
+  --red: #e2001a;
+  --ok: #1f7a3f;
+  --ok-fluide: #ddefe4;
+  --bleu-fluide: #dbe7f3;
+  --ambre: #9a6a00;
+  --ambre-fluide: #f6ecd4;
+  --gris: #6a7480;
+  --gris-fluide: #e9ebee;
+
+  /* les formes */
+  --radius: 3px;
+  --radius-lg: 4px;
+  --font-disp: 'Manrope', 'Open Sans', Arial, sans-serif;
+  --font-body: 'Roboto', 'Open Sans', Arial, sans-serif;
+  --font-mono: 'IBM Plex Mono', Consolas, monospace;
+
+  --ombre: 0 1px 2px rgba(10, 15, 25, 0.06), 0 1px 6px rgba(10, 15, 25, 0.05);
+  --ombre-forte: 0 4px 14px rgba(10, 15, 25, 0.14), 0 2px 4px rgba(10, 15, 25, 0.10);
+}
+
+/* ── la nuit ─────────────────────────────────────────────────────────── */
+[data-theme="nuit"] {
+  --bg: #14171a;
+  --carte: #1d2126;
+  --carte-2: #24292e;
+  --ink: #eceff2;
+  --body: #b6bdc5;
+  --label: #8d969f;
+  --filet: #2e343a;
+  --filet-fort: #3c434a;
+
+  --blue: #6aa5dd;
+  --blue-encore: #8cbbE9;
+  --blue-fluide: #223140;
+  --red: #ff7a70;
+  --ok: #5cc98a;
+  --ok-fluide: #1d2e25;
+  --bleu-fluide: #223140;
+  --ambre: #e0b25c;
+  --ambre-fluide: #332b1a;
+  --gris: #99a2ab;
+  --gris-fluide: #262b30;
+
+  --ombre: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --ombre-forte: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+h1, h2, h3, h4 { font-family: var(--font-disp); color: var(--ink); margin: 0; }
+button, input, select, textarea { font-family: inherit; font-size: inherit; color: inherit; }
+
+/* le mono est réservé aux chiffres : tabular pour s'aligner */
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* ============================================================================
+   LA BARRE DU HAUT — la marque, le fil, les actions
+   ========================================================================== */
+
+.topbar {
+  background: var(--ink);
+  color: #ffffff;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  box-shadow: var(--ombre);
+}
+[data-theme="nuit"] .topbar { background: #0d0f11; border-bottom: 1px solid var(--filet); }
+
+.topbar .marque {
+  font-family: var(--font-disp);
+  font-weight: 800;
+  font-size: 16px;
+  letter-spacing: 0.2px;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.topbar .marque .site { color: #b8cfe6; font-weight: 600; }
+.topbar .marque .confidentiel { color: #ffb3bd; font-weight: 500; margin-left: 10px; }
+
+.topbar .actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.topbar .theme-bascule {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #fff;
+  border-radius: var(--radius);
+  min-width: 44px;
+  min-height: 36px;
+  cursor: pointer;
+  font-size: 15px;
+}
+.topbar .theme-bascule:hover { background: rgba(255, 255, 255, 0.12); }
+
+/* ============================================================================
+   LES BOUTONS — une famille, des tailles franches
+   ========================================================================== */
+
+.bouton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--filet-fort);
+  background: var(--carte);
+  color: var(--ink);
+  font-family: var(--font-disp);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.bouton:hover { border-color: var(--blue); color: var(--blue); }
+.bouton.primaire {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #ffffff;
+}
+.bouton.primaire:hover { background: var(--blue-encore); border-color: var(--blue-encore); color: #fff; }
+.bouton.danger { color: var(--red); border-color: var(--red); background: transparent; }
+.bouton.danger:hover { background: var(--red); color: #fff; }
+.bouton.petit { min-height: 34px; padding: 4px 10px; font-size: 13px; }
+.bouton:disabled { opacity: 0.5; cursor: default; }
+
+.topbar .bouton {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #fff;
+  min-height: 38px;
+}
+.topbar .bouton:hover { background: rgba(255, 255, 255, 0.12); border-color: #fff; color: #fff; }
+.topbar .bouton.primaire { background: #ffffff; color: #16324f; border-color: #ffffff; }
+.topbar .bouton.primaire:hover { background: #dbe7f3; }
+
+/* le menu groupé (remplace tout menu plat fourre-tout) */
+.menu-famille { padding: 8px 0; }
+.menu-famille .titre-famille {
+  font-family: var(--font-disp);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--label);
+  padding: 10px 18px 4px;
+}
+.menu-famille .item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 12px 18px;
+  font-size: 15px;
+  color: var(--ink);
+  cursor: pointer;
+  min-height: 44px;
+}
+.menu-famille .item:hover { background: var(--carte-2); color: var(--blue); }
+.menu-famille .item.rouge { color: var(--red); }
+.menu-famille .separateur { height: 1px; background: var(--filet); margin: 8px 0; }
+.menu-famille .zone-rouge { background: var(--carte-2); }
+
+/* ============================================================================
+   LE FIL — une seule hiérarchie visible à la fois
+   ========================================================================== */
+
+.fil {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 14px 20px 2px;
+  max-width: 1180px;
+  margin: 0 auto;
+  font-size: 13px;
+  color: var(--label);
+}
+.fil a, .fil button-lien {
+  color: var(--blue);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 13px;
+  font-family: var(--font-body);
+  min-height: 0;
+}
+.fil a:hover, .fil button-lien:hover { text-decoration: underline; }
+.fil .maillon-actif { color: var(--ink); font-weight: 700; font-size: 15px; font-family: var(--font-disp); }
+.fil .sep { color: var(--filet-fort); }
+
+/* ============================================================================
+   LES PAGES
+   ========================================================================== */
+
+.page {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 8px 20px 64px;
+}
+.page-titre { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin: 10px 0 4px; }
+.page-titre h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.2px; }
+.page-titre .peri { color: var(--blue); font-family: var(--font-disp); font-weight: 700; font-size: 15px; }
+.sous-titre { color: var(--label); margin: 0 0 18px; font-size: 14px; }
+
+/* ============================================================================
+   LE BANDEAU — les chiffres qui comptent, avec leur contexte en dessous
+   ========================================================================== */
+
+.bandeau {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 14px 0 22px;
+}
+.bandeau .bloc {
+  background: var(--carte);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--ombre);
+  padding: 14px 18px 12px;
+}
+.bandeau .bloc .etiquette {
+  font-family: var(--font-disp);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  color: var(--label);
+}
+.bandeau .bloc .valeur {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 30px;
+  font-weight: 500;
+  margin: 4px 0 2px;
+  color: var(--ink);
+}
+.bandeau .bloc .valeur .unite { font-size: 15px; color: var(--label); margin-left: 4px; }
+.bandeau .bloc .contexte { font-size: 12.5px; color: var(--label); min-height: 18px; }
+.bandeau .bloc.acte .valeur { color: var(--ok); }
+.bandeau .bloc.rouge .valeur { color: var(--red); }
+
+/* ============================================================================
+   LES TUILES — une par ligne, la couleur ET le mot disent l'état
+   ========================================================================== */
+
+.grille-tuiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+  margin: 6px 0 24px;
+}
+.tuile {
+  background: var(--carte);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--ombre);
+  padding: 0;
+  overflow: hidden;
+  cursor: pointer;
+  border: 1px solid transparent;
+  text-align: left;
+  transition: box-shadow 0.12s;
+}
+.tuile:hover { box-shadow: var(--ombre-forte); }
+.tuile .t-ete {
+  height: 4px;
+  background: var(--tuile-encre, var(--gris));
+}
+.tuile .t-corps { padding: 14px 18px 16px; }
+.tuile .t-entete { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+.tuile .t-nom { font-family: var(--font-disp); font-weight: 800; font-size: 17px; color: var(--ink); }
+.tuile .t-code { font-family: var(--font-mono); font-size: 12px; color: var(--label); }
+.tuile .t-chiffre { display: flex; align-items: baseline; gap: 8px; margin: 8px 0 2px; }
+.tuile .t-cpp { font-family: var(--font-mono); font-size: 26px; font-weight: 500; color: var(--ink); }
+.tuile .t-cpp-unite { font-size: 12px; color: var(--label); }
+.tuile .t-ecart { font-family: var(--font-mono); font-size: 12.5px; }
+.tuile .t-ecart.sur { color: var(--red); }
+.tuile .t-ecart.sous { color: var(--ok); }
+.tuile .t-ecart.manque { color: var(--label); font-family: var(--font-body); }
+.tuile .t-dominante { font-size: 13px; color: var(--body); margin-top: 6px; }
+.tuile .t-bas { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.tuile .t-suite { margin-left: auto; color: var(--blue); font-weight: 600; font-size: 13px; }
+
+/* la barre de ralliement vers la cible */
+.barre-cible { height: 6px; border-radius: 3px; background: var(--gris-fluide); overflow: hidden; margin-top: 10px; }
+.barre-cible .remplissage { height: 100%; background: var(--blue); border-radius: 3px; }
+
+/* ============================================================================
+   LES BADGES — UNE forme partout, seule la couleur change (CDC UX §3.4)
+   ========================================================================== */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 12px;
+  font-family: var(--font-disp);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  background: var(--gris-fluide);
+  color: var(--gris);
+  white-space: nowrap;
+}
+.badge.vert { background: var(--ok-fluide); color: var(--ok); }
+.badge.bleu { background: var(--bleu-fluide); color: var(--blue); }
+.badge.ambre { background: var(--ambre-fluide); color: var(--ambre); }
+.badge.rouge { background: rgba(226, 0, 26, 0.10); color: var(--red); }
+[data-theme="nuit"] .badge.rouge { background: rgba(255, 122, 112, 0.14); }
+.badge.contour { background: transparent; border: 1px solid var(--filet-fort); color: var(--body); }
+.badge.pastille { padding: 0 9px 0 7px; }
+.badge .point { width: 9px; height: 9px; border-radius: 50%; background: currentColor; flex: 0 0 auto; }
+.badge.etoile { background: var(--ink); color: var(--carte); }
+[data-theme="nuit"] .badge.etoile { color: var(--ink); background: #31373d; }
+
+/* ============================================================================
+   LES CARTES DE POSTE ET DE SCÉNARIO
+   ========================================================================== */
+
+.carte {
+  background: var(--carte);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--ombre);
+  padding: 16px 18px;
+  margin-bottom: 14px;
+}
+.carte .c-entete { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.carte .c-titre { font-family: var(--font-disp); font-weight: 800; font-size: 16px; }
+.carte .c-titre .mono { font-weight: 500; }
+.carte .c-chiffres { display: flex; gap: 24px; flex-wrap: wrap; margin: 10px 0; }
+.carte .c-chiffres .celle { min-width: 110px; }
+.carte .c-chiffres .celle .etiquette {
+  font-size: 10.5px; text-transform: uppercase; letter-spacing: 1px;
+  font-family: var(--font-disp); font-weight: 700; color: var(--label);
+}
+.carte .c-chiffres .celle .valeur { font-family: var(--font-mono); font-size: 19px; color: var(--ink); }
+.carte .c-chiffres .celle .valeur.grand { font-size: 26px; }
+.carte .c-chiffres .celle .contexte { font-size: 12px; color: var(--label); }
+
+.carte.bordure-responsable { border-left: 4px solid var(--bordure-couleur, var(--filet-fort)); }
+
+/* la porte : la décomposition outil → logement (l'endroit où part l'argent) */
+.porte { margin-top: 10px; }
+.porte .outil-bloc { border-top: 1px solid var(--filet); padding: 10px 0 4px; }
+.porte .outil-ligne { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.porte .outil-numero { font-family: var(--font-mono); font-weight: 600; font-size: 13.5px; color: var(--ink); }
+.porte .outil-desc { font-size: 12.5px; color: var(--label); }
+.porte .outil-cpp { margin-left: auto; font-family: var(--font-mono); font-size: 13.5px; color: var(--body); }
+.porte table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+.porte th {
+  text-align: left; font-family: var(--font-disp); font-size: 10.5px;
+  text-transform: uppercase; letter-spacing: 0.8px; color: var(--label);
+  padding: 4px 8px 4px 0; font-weight: 700; border-bottom: 1px solid var(--filet);
+}
+.porte td { padding: 6px 8px 6px 0; font-size: 13.5px; border-bottom: 1px solid var(--carte-2); vertical-align: baseline; }
+.porte td.mono, .porte th.mono { text-align: right; }
+.porte td .logement-nom { font-weight: 600; }
+.porte td .article { color: var(--label); font-size: 12px; display: block; }
+.porte tr.non-chiffrable td { color: var(--label); font-style: italic; }
+.porte .part { font-size: 11.5px; color: var(--label); }
+
+/* ============================================================================
+   LES TABLEAUX — la matrice des postes
+   ========================================================================== */
+
+.tableau-enveloppe { background: var(--carte); border-radius: var(--radius-lg); box-shadow: var(--ombre); padding: 6px 0; overflow-x: auto; }
+table.tableau { width: 100%; border-collapse: collapse; min-width: 640px; }
+.tableau th {
+  text-align: left; padding: 10px 14px;
+  font-family: var(--font-disp); font-size: 11px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 1px; color: var(--label);
+  border-bottom: 1px solid var(--filet);
+  white-space: nowrap;
+}
+.tableau td { padding: 10px 14px; border-bottom: 1px solid var(--carte-2); font-size: 13.5px; }
+.tableau tr.dernier td { border-bottom: none; }
+.tableau tr:hover td { background: var(--carte-2); }
+.tableau td.mono, .tableau th.mono { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.tableau .ligne-groupe td {
+  background: var(--carte-2);
+  font-family: var(--font-disp); font-weight: 800; font-size: 12px;
+  text-transform: uppercase; letter-spacing: 1px; color: var(--ink);
+  padding: 8px 14px;
+}
+
+/* ============================================================================
+   LES FORMULAIRES — posés, pas entassés
+   ========================================================================== */
+
+.champ { display: block; margin-bottom: 14px; }
+.champ .etiquette {
+  display: block;
+  font-family: var(--font-disp); font-size: 12px; font-weight: 700;
+  color: var(--label); margin-bottom: 5px;
+}
+.champ input[type="text"], .champ input[type="number"], .champ input[type="date"],
+.champ input[type="time"], .champ select, .champ textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--filet-fort);
+  border-radius: var(--radius);
+  background: var(--carte);
+  color: var(--ink);
+}
+.champ textarea { min-height: 96px; resize: vertical; line-height: 1.5; }
+.champ input:focus, .champ select:focus, .champ textarea:focus {
+  outline: 2px solid var(--blue); outline-offset: -1px;
+}
+.champ .aide { font-size: 12px; color: var(--label); margin-top: 4px; }
+.champ.demi { display: inline-block; width: calc(50% - 6px); margin-right: 8px; }
+.champ input[type="color"] { width: 52px; height: 44px; padding: 2px; border: 1px solid var(--filet-fort); border-radius: var(--radius); background: var(--carte); cursor: pointer; }
+
+.rangee { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+.rangee .champ { flex: 1 1 180px; margin-bottom: 12px; }
+
+.groupe-champs { border: 1px solid var(--filet); border-radius: var(--radius-lg); padding: 14px 16px 4px; margin-bottom: 16px; }
+.groupe-champs > .titre-groupe {
+  font-family: var(--font-disp); font-weight: 800; font-size: 13px;
+  text-transform: uppercase; letter-spacing: 1px; color: var(--body);
+  margin: -26px 0 12px -4px; background: var(--carte); display: inline-block; padding: 0 8px;
+}
+
+/* ============================================================================
+   LES PANNEAUX — un tiroir pour les fiches, une feuille pour les menus
+   ========================================================================== */
+
+.voile {
+  position: fixed; inset: 0;
+  background: rgba(12, 16, 22, 0.45);
+  z-index: 40;
+  display: flex;
+  justify-content: flex-end;
+}
+.panneau {
+  background: var(--carte);
+  width: min(520px, 96vw);
+  height: 100%;
+  overflow-y: auto;
+  box-shadow: var(--ombre-forte);
+  padding: 20px 22px 40px;
+}
+.panneau.large { width: min(760px, 96vw); }
+.panneau .p-entete { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+.panneau .p-titre { font-family: var(--font-disp); font-weight: 800; font-size: 18px; }
+.panneau .p-sous { font-size: 13px; color: var(--label); margin-bottom: 16px; }
+.panneau .p-fermer { margin-left: auto; }
+
+/* ============================================================================
+   DIVERS — notes, étiquettes de projet, toasts, listes
+   ========================================================================== */
+
+.note {
+  background: var(--carte-2);
+  border-radius: var(--radius-lg);
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--body);
+  margin: 10px 0;
+}
+.note .note-titre { font-family: var(--font-disp); font-weight: 700; color: var(--ink); margin-right: 6px; }
+
+.zone-source { font-size: 12px; color: var(--label); padding: 10px 0; }
+
+.etiquettes { display: inline-flex; gap: 6px; flex-wrap: wrap; vertical-align: middle; }
+.etiquette-pj {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 22px; padding: 0 9px; border-radius: 11px;
+  font-size: 11px; font-weight: 700; font-family: var(--font-disp);
+  background: var(--couleur-pj, var(--gris-fluide));
+  color: #ffffff; cursor: pointer; border: none;
+}
+[data-theme="nuit"] .etiquette-pj { color: #10141a; }
+.etiquette-pj.off { background: transparent; border: 1px dashed var(--filet-fort); color: var(--label); }
+
+.liste-actions { display: flex; gap: 10px; flex-wrap: wrap; margin: 14px 0; align-items: center; }
+.droite { margin-left: auto; }
+
+.toast {
+  position: fixed;
+  bottom: 22px; left: 50%;
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: var(--carte);
+  padding: 12px 22px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--ombre-forte);
+  font-size: 14px;
+  z-index: 60;
+  max-width: 90vw;
+}
+[data-theme="nuit"] .toast { background: #eceff2; color: #14171a; }
+
+.aucun {
+  text-align: center;
+  color: var(--label);
+  padding: 34px 20px;
+  font-size: 14px;
+}
+.aucun .grand { font-size: 17px; color: var(--body); font-family: var(--font-disp); font-weight: 700; display: block; margin-bottom: 4px; }
+
+.surbrillance { color: var(--blue); font-weight: 700; }
+.juste { color: var(--ok); }
+.faux { color: var(--red); }
+
+hr.separateur { border: none; border-top: 1px solid var(--filet); margin: 20px 0; }
+
+/* le pied — la marque et la version, discrets */
+.pied {
+  max-width: 1180px; margin: 0 auto; padding: 18px 20px 34px;
+  font-size: 12px; color: var(--label);
+  display: flex; gap: 14px; flex-wrap: wrap; align-items: center;
+}
+
+/* ============================================================================
+   L'IMPRESSION — la page A4 que Benjamin emmène
+   ========================================================================== */
+
+@media print {
+  :root {
+    --bg: #ffffff; --carte: #ffffff; --carte-2: #f4f5f6;
+    --ink: #111111; --body: #333a42; --label: #5a6470;
+    --filet: #d8dbdf; --filet-fort: #c0c4ca;
+    --blue: #164a83; --red: #b30016;
+    --ombre: none; --ombre-forte: none;
+  }
+  .topbar, .fil, .pied, .bouton, .menu-ancrage, .zone-non-imprimee { display: none !important; }
+  body { background: #fff; font-size: 12px; }
+  .page { max-width: none; padding: 0; }
+  .a4 { display: block !important; }
+  .carte, .bandeau .bloc, .tableau-enveloppe { box-shadow: none; border: 1px solid var(--filet); border-radius: 2px; }
+  .bandeau .bloc .valeur { font-size: 22px; }
+  .page-titre h1 { font-size: 18px; }
+  @page { margin: 12mm; }
+}
+
+/* l'écran Emporter prévisualise la page A4 */
+.a4-veille { max-width: 760px; margin: 0 auto; background: var(--carte); box-shadow: var(--ombre-forte); padding: 34px 40px; border-radius: var(--radius-lg); }
+.a4 .a4-entete { display: flex; align-items: baseline; gap: 12px; border-bottom: 2px solid var(--ink); padding-bottom: 10px; margin-bottom: 16px; }
+.a4 .a4-marque { font-family: var(--font-disp); font-weight: 800; font-size: 18px; }
+.a4 .a4-date { margin-left: auto; font-family: var(--font-mono); font-size: 12px; color: var(--label); }
+.a4 h2 { font-size: 15px; margin: 18px 0 8px; text-transform: uppercase; letter-spacing: 0.8px; }
+.a4 .a4-pied { margin-top: 26px; padding-top: 10px; border-top: 1px solid var(--filet); font-size: 10.5px; color: var(--label); }
+.a4 table.tableau { min-width: 0; }
+.a4 .bandeau { margin: 10px 0 6px; }
+
+/* ============================================================================
+   LE TACTILE ET LE PETIT ÉCRAN
+   ========================================================================== */
+
+@media (max-width: 720px) {
+  .topbar { padding: 8px 12px; gap: 8px; }
+  .topbar .actions .bouton .texte-long { display: none; }
+  .page { padding: 6px 12px 48px; }
+  .fil { padding: 10px 12px 0; }
+  .bandeau .bloc .valeur { font-size: 24px; }
+  .carte .c-chiffres { gap: 16px; }
+  .voile { justify-content: center; align-items: flex-end; }
+  .panneau { width: 100vw; height: 88vh; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+}
