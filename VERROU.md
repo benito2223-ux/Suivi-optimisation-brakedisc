@@ -13,11 +13,19 @@
 
 | | |
 |---|---|
-| **Auteur** | **Z Code** |
-| **Pris le** | 02/10/2026 |
-| **Écrit dans** | `bilan_economique.html` |
-| **Version visée** | 4.80.0 |
-| **Sujet** | Retour à l'identité d'avant le Design System B — palette v3.15 (fond gris, aplats qui ressortent), angles 3/4 px, et **hiérarchie de forme à trois rôles** (Manrope / Roboto / IBM Plex Mono). Décision de Benjamin : « on garde le design système avant le design système B, avec notre nouvelle infrastructure ». Déploiement sur le domaine **projet** seulement. |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+
+✅ **Verrou libéré par Z Code le 02/10/2026** (Tour 56, v4.80.0). Pendant le tour,
+`bilan_economique.html` est passé de l'empreinte `afb7aa5d…` à `6a082cda…`
+(1 348 004 → 1 401 140 octets) : palette v3.15, angles 3/4 px, Manrope
+ré-embarquée, `TOOL_VERSION = "4.80.0"`. Aucun calcul, aucune fonction, aucune
+saisie modifiés. Écrits pendant le tour : `bilan_economique.html`,
+`build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md`. Le proto2 et la
+prod n'ont pas été touchés (4.58.0 et 2.0 re-vérifiés).
 
 ✅ **Verrou libéré par Z Code le 02/10/2026** (Tour 55, proto v2.0). Pendant le tour,
 `bilan_economique.html` n'a pas été écrit : son empreinte

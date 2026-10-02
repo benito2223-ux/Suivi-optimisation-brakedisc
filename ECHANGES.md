@@ -48,6 +48,7 @@
 
 | Date | Acte | Où | Vérifié |
 |---|---|---|---|
+| 02/10 ~13:35 | **Projet 4.80.0** — retour à l'identité d'avant le Design System B : palette v3.15, fond gris, rayons 3/4 px, et surtout **trois formes** (Manrope / Roboto / IBM Plex Mono) au lieu d'une seule. Ordre de Benjamin : « on garde le design système avant le design système B, avec notre nouvelle infrastructure ». Premier tour qui écrit dans `bilan_economique.html` depuis 21 versions. | suivi-optimisation-projet.surge.sh | ✅ curl SW 200, **1 401 140 o**, `TOOL_VERSION = "4.80.0"`, `--blue:#1B5EA6`, `--bg:#e8eaed`, `--font-disp:'Manrope'`, Manrope embarquée, **0 occurrence de `--blue:#006AB3`** ; fichier publié **identique octet pour octet** au local (`6a082cda…`) ; **les 7 fichiers testés renvoient 404**, le JSON réel compris. **Prod re-vérifiée inchangée : 4.58.0.** Proto projet2 inchangé : v2.0. 497 tests + 6 contrastes + **11 portes d'identité** (Z Code, Tour 56) |
 | 01/10 | Proto **v1.0** — import des exports de l'ancienne version, `.surgeignore` en place | suivi-optimisation-projet2.surge.sh | ✅ curl : SW 200, 86 635 o, `PROTO_VERSION = "1.0"`, **les 10 fichiers sources/tests/documents en 404** ; prod 4.58.0 et projet 4.79.0 re-vérifiés inchangés (Z Code) |
 | 30/09 ~09:20 | Prod **4.56.0** + Projet **4.56.0** (merge `main` = `c32a0ee`), ordre de Benjamin dans la session (Tour 7) | suivi-optimisation-septfons.surge.sh · suivi-optimisation-projet.surge.sh | ✅ curl, SW 200 (Z Code, puis re-vérifié par Hermes au Tour 8) |
 | 30/09 ~11:00 | Prod **4.57.0** + Projet **4.57.0** (merge `main` = `b8c7d87`), ordre de Benjamin : « une fois vérifié tu déploies » | idem | ✅ curl `TOOL_VERSION = "4.57.0"`, coquille absente (Z Code, Tour 9) |
@@ -73,6 +74,101 @@ transporte un fichier ? Concrètement :
 ---
 
 ## Journal des tours
+
+### ▸ Tour 56 — 02/10/2026 — **Z Code** (v4.80.0 — retour à l'identité d'avant le Design System B)
+
+**« Tes prototypes sont vraiment trop moches … on va modifier l'outil existant.
+Si tu me dis qu'il va rester fiable »** puis, après la réponse :
+**« on peut faire évoluer si tu veux la version prod maintenant qu'on sait qu'il
+n'y aura pas de nouveaux prototypes … garder le design système avant le design
+système B, avec notre nouvelle infrastructure, et déployer sur l'adresse
+projet »**
+
+**La réponse à « est-ce que ça reste fiable » a été un oui, et elle est
+mesurée** — mais elle ne portait pas sur ce qu'il semblait porter. Trois
+constats, trouvés en trois mesures, ont changé la nature du tour.
+
+**Constat 1 — la maquette est déjà dans l'outil.** Le fichier qu'il a rouvert,
+`Hermes Version/maquette_ecran_accueil_v1.html`, s'intitule « discussion, rien
+n'est codé ». Il est codé : ligne 15544, `if(!location.hash || location.hash
+=== "#accueil") ouvrirAccueil();` — on atterrit déjà dessus au chargement, et
+les cinq chiffres de la maquette (gain acté, en cours, coût €/pce, chemin vers
+la cible, à faire) sont déjà lus dans `accueilTuileHTML()` via `gainLigne()`.
+Le code a même **corrigé** la maquette, et le dit. Ce n'était donc pas une
+maquette à réaliser : c'était une identité à restaurer. Le proto, lui, n'a
+jamais été demandé — et il ne le sera plus.
+
+**Constat 2 — le Design System B n'avait rien supprimé.** Comparaison des
+tokens avant/après, ligne par ligne : `--head` (#2F4159), `--fill-good`,
+`--on-accent`, `--teal`, `--radius-lg` sont **restés intacts**. Ce qui avait
+changé, c'était la base — page blanche, angles à 2 px, bleu moins profond —
+et surtout la typographie réduite à **une seule famille** pour les titres et
+le texte. Les aplats ne disparaissaient pas : ils ne ressortaient plus.
+La restauration est donc un changement de **valeurs**, pas une réécriture.
+
+**Constat 3 — l'accueil est vide pour une raison qui n'est pas le style.**
+Rendu sur `cloud_courant.json` : les quatre lignes sont ambre « N postes à
+chiffrer », le **gain acté est de 0 € partout**, et le seul gain en cours est
+EMAG 1 à 23 513 €/an. Ce n'est pas une panne : les quatorze scénarios « en
+série » s'appellent tous « Prod actuelle » ou « Process actuel » — c'est la
+référence contre elle-même, donc zéro. La maquette affichait « +12,4 k€/an
+acté » sur EMAG 1 : c'était beau, et inventé.
+
+**Ce qui a été fait.** Palette v3.15 restaurée dans le `:root`, bloc
+`@media print` compris (il portait ses propres valeurs DS B), fond gris
+#e8eaed, rayons 3 et 4 px, et **trois formes** : Manrope pour les titres,
+reprise **depuis l'historique git** — exactement le fichier qui était
+embarqué avant, 25 Ko, aucun appel réseau — Roboto pour le texte, IBM Plex
+Mono pour les chiffres. Le mode nuit n'a pas été touché : le DS B ne l'avait
+jamais modifié. Aucun calcul, aucune fonction, aucune saisie.
+
+Effet secondaire : le fichier mélangeait **deux palettes** depuis le 30/09
+(CSS d'impression A4, graphiques, texte d'aide des Nouveautés). Le retour en
+arrière répare cette incohérence.
+
+**Le contre-regard a trouvé un angle mort, et il était exactement celui que
+Benjamin voyait.** Remettre `--font-disp` sur Roboto — annuler *précisément*
+sa plainte — laissait la suite à **497/0**. La seule garde qui existait
+(le contraste) ne contrôle pas la forme, seulement le plancher 4,5:1. Onze
+portes d'identité referment l'angle : valeurs, rayons, famille des titres
+distincte de celle du texte, présence **réelle** du `@font-face`, et
+disparition des valeurs du DS B — une ré-application du DS B échoue
+désormais. Faute ré-injectée : 2 portes vues, code de sortie 1 ; restaurée
+par copie, empreinte SHA-256 identique.
+
+**Un mensonge d'affichage réparé au passage.** `runTests()` imprime son
+résumé *avant* que les contrôles hors-suite ne tournent : une régression de
+palette s'affichait « TOUT EST VERT — 497 tests | 0 échecs » alors que le
+processus sortait en 1. Le code disait vrai, l'écran mentait. Le verdict
+final couvre désormais les garde-fous. C'est le même défaut que Tour 55 :
+un verdict qui passe sans avoir tout vérifié ne prouve rien.
+
+**Le contrôle de contraste n'a demandé aucune modification** — il lit les
+valeurs au lieu de les figer. Il a recalculé seul, et ses six ratios sont
+exactement ceux mesurés **avant** le choix (6,01 / 7,61 / 17,40 / 7,61 /
+6,57 / 4,94) : quatre sont meilleurs qu'en DS B, les deux autres restent
+au-dessus du seuil. C'est la preuve que l'infrastructure est saine — et
+qu'il fallait garder l'infrastructure, comme Benjamin le proposait.
+
+**Ce qui n'a pas été fait, et pourquoi.** La **prod** (4.58.0) n'a pas bougé :
+21 versions de retard, et elle ne bouge que sur phrase explicite. Le
+**proto2** reste en ligne tel quel (v2.0) — le retirer est une décision de
+Benjamin, pas un effet de bord de ce tour.
+
+**Un point de fond que je dois signaler, pas enterrer.** Les entrées
+« Nouveautés » des 4.67 et 4.69 annonçaient le contraire de ce tour : « la
+page est blanche, comme la charte CeramTec — le fond était gris clair, toute
+l'écran était teinté », et « l'écran est enfin noir et blanc ». Ce retour en
+arrière **contredit donc une décision de charte déjà prise le 30/09**, et pas
+seulement un goût. Ce que j'ai restauré, c'est l'identité visuelle d'avant ;
+ce qui reste en vigueur, c'est le principe « une couleur d'accent n'est pas
+une décision, c'est un signal ». Si les deux doivent tenir, la carte est la
+bonne unité de couleur, pas l'écran. **À trancher par Benjamin, pas par moi.**
+
+**Prochain tour attendu** : le même écran, jugé à l'œil cette fois — je ne
+consomme pas d'images, tout ce que j'ai dit du rendu est **mesuré**, pas vu.
+Puis le `saveData()` de l'app, qui reste la correction la plus rentable et que
+rien de ce tour n'a effleurée.
 
 ### ▸ Tour 55 — 02/10/2026 — **Z Code** (proto v2.0 — l'accueil en tuiles, et le détail qui ne montre que la production)
 
