@@ -48,6 +48,7 @@
 
 | Date | Acte | Où | Vérifié |
 |---|---|---|---|
+| 02/10 ~14:20 | **PROD 4.80.0** — « on va deployer en prod ». Saute **22 versions** (4.58.0 → 4.80.0) : c'est le plus grand écart jamais mis en prod d'un coup. Contenu inchangé depuis le déploiement projet (le même fichier, le même SHA). | suivi-optimisation-septfons.surge.sh | ✅ 497 tests \| 0 échecs, `VERDICT : tout est vert` **avant** déploiement ; curl SW 200, **1 401 140 o**, `TOOL_VERSION = "4.80.0"` ; fichier publié **identique octet pour octet** au local (`6a082cda…`) ; **18 chemins testés, seuls les 5 blancs du `.surgeignore` renvoient 200** — `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md`, `build_harness.py`, `cloud_courant.json`, `proto/`, `outils/`, `.git/config` et 10 autres en **404**, et les quatre premiers vérifiés **présents en local** (le 404 est donc un vrai refus, pas un fichier fantôme). Projet 4.80.0 et proto2 v2.0 re-vérifiés inchangés. (Z Code, Tour 56) |
 | 02/10 ~13:35 | **Projet 4.80.0** — retour à l'identité d'avant le Design System B : palette v3.15, fond gris, rayons 3/4 px, et surtout **trois formes** (Manrope / Roboto / IBM Plex Mono) au lieu d'une seule. Ordre de Benjamin : « on garde le design système avant le design système B, avec notre nouvelle infrastructure ». Premier tour qui écrit dans `bilan_economique.html` depuis 21 versions. | suivi-optimisation-projet.surge.sh | ✅ curl SW 200, **1 401 140 o**, `TOOL_VERSION = "4.80.0"`, `--blue:#1B5EA6`, `--bg:#e8eaed`, `--font-disp:'Manrope'`, Manrope embarquée, **0 occurrence de `--blue:#006AB3`** ; fichier publié **identique octet pour octet** au local (`6a082cda…`) ; **les 7 fichiers testés renvoient 404**, le JSON réel compris. **Prod re-vérifiée inchangée : 4.58.0.** Proto projet2 inchangé : v2.0. 497 tests + 6 contrastes + **11 portes d'identité** (Z Code, Tour 56) |
 | 01/10 | Proto **v1.0** — import des exports de l'ancienne version, `.surgeignore` en place | suivi-optimisation-projet2.surge.sh | ✅ curl : SW 200, 86 635 o, `PROTO_VERSION = "1.0"`, **les 10 fichiers sources/tests/documents en 404** ; prod 4.58.0 et projet 4.79.0 re-vérifiés inchangés (Z Code) |
 | 30/09 ~09:20 | Prod **4.56.0** + Projet **4.56.0** (merge `main` = `c32a0ee`), ordre de Benjamin dans la session (Tour 7) | suivi-optimisation-septfons.surge.sh · suivi-optimisation-projet.surge.sh | ✅ curl, SW 200 (Z Code, puis re-vérifié par Hermes au Tour 8) |
@@ -55,7 +56,7 @@
 | 30/09 ~12:30 | Prod **4.58.0** + Projet **4.58.0** (merge `main` = `935b210`, ff), ordre de Benjamin : « fonce code et déploie » (Q8-A) — MABEC raccordé au logement, rapprochement du classeur par article | idem | ✅ curl `TOOL_VERSION = "4.58.0"` sur les deux domaines, `matisRapprocheMabec` présent (Z Code, Tour 10) |
 | 30/09 ~17:00 | **Projet 4.63.3** (4.63.0/1/2 = la peau DS B de Z Code, + le correctif de lisibilité d Hermes : `--label` 2,81:1 → 5,07:1, et la police morte en tête de pile retirée), feu vert de Benjamin : « déploie sur Projet maintenant » | suivi-optimisation-projet.surge.sh | ✅ curl `TOOL_VERSION = "4.63.3"`, `--label:#6E6E73` en ligne, pile système en tête, SW 200 — **pas le « Success! » de surge** (règle du Tour 12) |
 | 30/09 ~22:40 | **Projet 4.66.0** — le garde-fou porte-outil/logement à la saisie + Roboto réellement embarquée, ordre de Benjamin : « deploie sur projet » | suivi-optimisation-projet.surge.sh | ✅ curl `TOOL_VERSION = "4.66.0"`, `font-family:'Roboto'` embarquée, Roboto en tête, `proposerFusionLogement` présent, SW 200 — **pas le « Success! » de surge** (règle du Tour 12). La **prod reste en 4.58.0** |
-| 01/10 soir | **Projet 4.79.0** (Tour 52 : promesses UI + A4 Mission + CSS d'impression au bon endroit), déploiement Projet libre par protocole (la prod ne bouge que sur phrase de Benjamin) | suivi-optimisation-projet.surge.sh | ✅ curl `TOOL_VERSION = "4.79.0"`, `print-mission`/`PROMESSES_UI`/`missionA4HTML` présents (38 occurrences), SW 200 — pas le « Success! ». **Prod re-vérifiée inchangée : 4.58.0** (Z Code, Tour 52) || 01/10 soir | **Projet 4.79.0** (Tour 52 : promesses UI + A4 Mission + CSS d'impression au bon endroit), déploiement Projet libre par protocole (la prod ne bouge que sur phrase de Benjamin) | suivi-optimisation-projet.surge.sh | ✅ curl `TOOL_VERSION = "4.79.0"`, `print-mission`/`PROMESSES_UI`/`missionA4HTML` présents (38 occurrences), SW 200 — pas le « Success! ». **Prod re-vérifiée inchangée : 4.58.0** (Z Code, Tour 52) |
+| 01/10 soir | **Projet 4.79.0** (Tour 52 : promesses UI + A4 Mission + CSS d'impression au bon endroit), déploiement Projet libre par protocole (la prod ne bouge que sur phrase de Benjamin) | suivi-optimisation-projet.surge.sh | ✅ curl `TOOL_VERSION = "4.79.0"`, `print-mission`/`PROMESSES_UI`/`missionA4HTML` présents (38 occurrences), SW 200 — pas le « Success! ». **Prod re-vérifiée inchangée : 4.58.0** (Z Code, Tour 52) |
 | 01/10 nuit | **proto2 v0.1** — le proto 5 écrans déployé sur un **troisième domaine**, à la demande de Benjamin (« carte blanche, tu es le boss, fonce ») après l'analyse « et si tu reprenais de zéro ». `bilan_economique.html` **non écrit**. | suivi-optimisation-projet2.surge.sh | ✅ curl HTTP 200, 58 246 octets, `PROTO v0.1` présent ; **les 6 sources/tests/données en 404** (`coeur.js`, `donnees.js`, `test_coeur.js`, `test_proto.js`, `CAHIER.md`, `proto.html`) — le `.surgeignore` du proto est strict. Vérifié dans Chrome : 5 écrans, 4 KPI, 0 `undefined`/`NaN` **dans le rendu** (les occurrences trouvées sont les mots du code source). **Prod 4.58.0 et Projet 4.79.0 re-vérifiés inchangés** (Z Code, Tour 53) |
 | 02/10 | Proto **v2.0** — l'accueil en tuiles (une par ligne de production) puis le détail de la ligne, scénario de production seul, puis les scénarios à optimiser. Production hebdomadaire **retirée du périmètre** (décision de Benjamin) et **déclarée à l'écran** plutôt que témoignée. `bilan_economique.html` **non écrit**. | suivi-optimisation-projet2.surge.sh | ✅ curl SW 200, 115 279 o, `PROTO_VERSION = "2.0"`, `EMPREINTE_ASSEMBLAGE = "a58277527ed0079c"` — **les 11 sources / tests / documents en 404**, le JSON réel aussi. Vérifié dans le navigateur sur `cloud_courant.json` : 10 lignes, 6 déclarées vides, EMAG 1 décomposée jusqu'au logement. **Prod 4.58.0 et Projet 4.79.0 inchangés** (Z Code, Tour 55) |
 
@@ -154,6 +155,12 @@ qu'il fallait garder l'infrastructure, comme Benjamin le proposait.
 21 versions de retard, et elle ne bouge que sur phrase explicite. Le
 **proto2** reste en ligne tel quel (v2.0) — le retirer est une décision de
 Benjamin, pas un effet de bord de ce tour.
+
+> **Ajout, même jour, après relecture de l'écran par Benjamin** : « ça va très bien,
+> on va déployer en prod ». La prod est donc passée en **4.80.0** juste après ce
+> tour — voir la ligne du 02/10 ~14:20 dans le tableau des actes. Le même fichier,
+> le même SHA, vingt-deux versions d'un coup. Ce qui précède dit ce qui était vrai
+> au moment où ce tour s'est terminé ; il n'est pas réécrit.
 
 **Un point de fond que je dois signaler, pas enterrer.** Les entrées
 « Nouveautés » des 4.67 et 4.69 annonçaient le contraire de ce tour : « la
@@ -257,6 +264,13 @@ et `suivi-optimisation-projet.surge.sh` sont à la **4.79.0**. Ce n'est pas moi 
 laissé : la prod n'a pas été déployée depuis le 30/09, et elle ne bouge que sur
 phrase de Benjamin. Mais cela veut dire que **Matis travaille sur une version
 qui traîne vingt et une versions de retard sur le code qu'on fait**. À trancher par lui.
+
+> **Tranché le 02/10, plus tard le jour même** : Benjamin a répondu « on va deployer en
+> prod ». La prod est passée de **4.58.0 à 4.80.0 d'un coup** — vingt-deux versions — et
+> sert désormais **exactement le même fichier** que le domaine projet (`6a082cda…`,
+> 1 401 140 o, vérifié octet pour octet). Le fait ci-dessus est résolu ; il est laissé
+> tel quel parce qu'un journal dit ce qui était vrai ce jour-là. Voir la ligne du
+> 02/10 ~14:20 dans le tableau des actes.
 
 **État.** proto v2.0 en ligne sur projet2. `bilan_economique.html` **non écrit**,
 empreinte `bf2e81a3…f97ca` identique à celle du début du tour. Les quatre suites :
