@@ -1,0 +1,5 @@
+# Deploiement de 2resume sur l'adresse projet 2. Liste stricte, comme partout
+# dans ce depot : seul index.html part. Les sources, les tests, le cahier,
+# le README et les donnees reelles restent sur la machine.
+*
+!index.html

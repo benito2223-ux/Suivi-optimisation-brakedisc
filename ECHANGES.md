@@ -48,6 +48,7 @@
 
 | Date | Acte | Où | Vérifié |
 |---|---|---|---|
+| 05/10 ~10:45 | **2resume v1.0.0 sur projet2** — l'outil écrit de zéro (Tour 59) remplace le proto sur `suivi-optimisation-projet2.surge.sh`. Déploiement sur ordre de Benjamin dans la fenêtre (« fini ce nouvel outil jusqu'à la livraison finale », « livraison sur l'adresse projet 2 »). `.surgeignore` liste blanche stricte ; le JSON d'essai réel copié pour le test navigateur a été **supprimé avant le déploiement**. | suivi-optimisation-projet2.surge.sh | ✅ curl : HTTP 200, **287 730 o** (identique au local), `OUTIL_VERSION = "1.0.0"`, `EMPREINTE_ASSEMBLAGE = "4bb9982c60ab57f3"` ; **les 12 sources/tests/documents en 404** ; **prod re-vérifiée inchangée : `bilan_economique.html` 1 401 140 o, `TOOL_VERSION = "4.80.0"`** ; empreinte locale du fichier de prod inchangée (`6a082cda…`) ; **projet3 re-vérifié non écrit** (Z Code, Tour 59) |
 | 02/10 ~21:40 | **projet3 v3.0.0** — la génération 3 créée de zéro sur carte blanche de Benjamin (« tu pars de 0 et tu crées l'outil parfait selon toi… livraison sur une adresse surge projet3 »). Nouveau dossier `projet3/`, 9 sources + assembleur + 4 suites de tests. `bilan_economique.html` et `proto/` **non écrits**, verrou non nécessaire. | suivi-optimisation-projet3.surge.sh | ✅ 347 tests \| 0 échecs (149 noyau, 76 migration sur les 4 exports réels, 122 application) **avant** déploiement ; contre-regard **5/5 pannes vues**, restauration par copie vérifiée SHA-256 ; curl `VERSION = "3.0.0"`, empreinte locale = distante (`253bf49af7ac9c82`), SW + manifest + icônes 200 ; **sources, tests, documents et tout JSON de données en 404** (liste blanche stricte) ; vérifié dans le navigateur **depuis l'URL publique** (accueil, ligne, poste prévu/obtenu, nuit, A4, import réel IMPORT_MATIS 192 logements). **Prod 4.80.0 et proto2 v2.0 re-vérifiés inchangés.** (Z Code, Tour 57) |
 | 02/10 ~14:20 | **PROD 4.80.0** — « on va deployer en prod ». Saute **22 versions** (4.58.0 → 4.80.0) : c'est le plus grand écart jamais mis en prod d'un coup. Contenu inchangé depuis le déploiement projet (le même fichier, le même SHA). | suivi-optimisation-septfons.surge.sh | ✅ 497 tests \| 0 échecs, `VERDICT : tout est vert` **avant** déploiement ; curl SW 200, **1 401 140 o**, `TOOL_VERSION = "4.80.0"` ; fichier publié **identique octet pour octet** au local (`6a082cda…`) ; **18 chemins testés, seuls les 5 blancs du `.surgeignore` renvoient 200** — `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md`, `build_harness.py`, `cloud_courant.json`, `proto/`, `outils/`, `.git/config` et 10 autres en **404**, et les quatre premiers vérifiés **présents en local** (le 404 est donc un vrai refus, pas un fichier fantôme). Projet 4.80.0 et proto2 v2.0 re-vérifiés inchangés. (Z Code, Tour 56) |
 | 02/10 ~13:35 | **Projet 4.80.0** — retour à l'identité d'avant le Design System B : palette v3.15, fond gris, rayons 3/4 px, et surtout **trois formes** (Manrope / Roboto / IBM Plex Mono) au lieu d'une seule. Ordre de Benjamin : « on garde le design système avant le design système B, avec notre nouvelle infrastructure ». Premier tour qui écrit dans `bilan_economique.html` depuis 21 versions. | suivi-optimisation-projet.surge.sh | ✅ curl SW 200, **1 401 140 o**, `TOOL_VERSION = "4.80.0"`, `--blue:#1B5EA6`, `--bg:#e8eaed`, `--font-disp:'Manrope'`, Manrope embarquée, **0 occurrence de `--blue:#006AB3`** ; fichier publié **identique octet pour octet** au local (`6a082cda…`) ; **les 7 fichiers testés renvoient 404**, le JSON réel compris. **Prod re-vérifiée inchangée : 4.58.0.** Proto projet2 inchangé : v2.0. 497 tests + 6 contrastes + **11 portes d'identité** (Z Code, Tour 56) |
@@ -76,6 +77,54 @@ transporte un fichier ? Concrètement :
 ---
 
 ## Journal des tours
+
+### ▸ Tour 59 — 05/10/2026 — **Z Code** (2resume v1.0.0 — l'outil écrit de zéro, livré sur projet2)
+
+**La commande.** « Tu pars de 0 et tu crées l'outil parfait selon toi, carte
+blanche… livraison sur l'adresse projet 2 », puis, après plusieurs tours sans
+fichier écrit (Benjamin : « tu cales ? » — c'était vrai), « crée app.html » et
+« fini ce nouvel outil jusqu'à la livraison finale, sans t'arrêter ». Le domaine
+a été confirmé par une question unique en tête de fenêtre : c'est bien le suivi
+coût/outillage de Sept Fons, réécrit complètement.
+
+**Ce qui est livré.** Le dossier `2resume/` — un cahier écrit AVANT le code
+(`CAHIER.md`), un noyau pur (`coeur.js`), une projection en liste blanche
+(`import.js`), un jeu structurel (`donnees.js`), les polices embarquées extraites
+octet pour octet de l'app de production (`polices.css`), un assembleur avec
+empreinte, une coquille à cinq écrans (`app.html`), et **372 tests verts**
+(149 noyau, 141 projection sur les quatre exports réels, 82 écrans dont
+l'import bout en bout). Le CPP outillage `prix ÷ (arêtes × charnière)` est
+calculé à UN seul endroit, terme pour terme la colonne I du classeur ; le CPP
+**obtenu par essai** est affiché à côté du prévu (sur l'export réel : SL500
+0,1735 prévu → **0,0478 obtenu**) ; chaque absence est nommée, aucun zéro ne
+prétend rien.
+
+**Ce que les contre-regards ont attrapé** (consigné pour ne pas le refaire) :
+le champ `ordre` primait sur le nom et « OP40 Finition Pistes » sortait en
+OP30 ; un battement non mesuré comptait « conforme » quand le critère Ra était
+inactif ; `toFixed` arrondissait 0,04375 en « 0,0437 » (biais binaire, vu par le
+juge visuel : 2 × 0,0437 ne faisait pas le total affiché) ; et — seul le
+navigateur réel pouvait le voir — le `display:flex` de l'overlay écrasait
+l'attribut `hidden` : **le panneau ne se fermait jamais**, sans une seule erreur
+console. Le contre-regard automatisé casse trois règles (formule du CPP, prévu
+contre obtenu, pont D/G) et prouve que les tests les voient.
+
+**Coexistence projet3 / 2resume.** Le Tour 57 a livré `projet3/` (v3.0.0) sur
+une commande voisine d'une autre fenêtre ; ce tour livre `2resume/` sur projet2,
+à la demande expresse de Benjamin dans celle-ci. Les deux outils vivent côte à
+côte dans le dépôt et sur deux adresses distinctes ; **le choix entre eux
+revient à Benjamin** — il n'est pas tranché ici. Aucun des deux n'écrit dans
+`bilan_economique.html`.
+
+**Hygiène.** `bilan_economique.html` non écrit : empreinte `6a082cda…` inchangée
+du début à la fin du tour ; verrou jamais pris (aucun tour sur le fichier de
+prod) ; `proto/` non écrit ; la copie temporaire de `cloud_courant.json` utilisée
+pour le test navigateur a été supprimée AVANT le déploiement.
+
+**Prochain tour** : à Hermes (revue de 2resume, si elle veut), ou à Benjamin —
+deux décisions lui reviennent : le sort de projet3 contre 2resume, et la
+création des tables cloud dédiées (`etat_2resume`, SQL fourni dans le panneau
+« Partager ») quand il voudra activer le dépôt partagé.
 
 ### ▸ Tour 58 — 02/10/2026 — **Z Code** (la question ouverte du §2 ter est fermée)
 

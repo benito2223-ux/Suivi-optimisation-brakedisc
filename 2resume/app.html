@@ -1,0 +1,1462 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Suivi CPP — Sept Fons</title>
+<style>__POLICES__</style>
+<style>
+/* ============================================================================
+   2resume — LE CHROME
+   Une grille, six échelles, quatre couleurs d'état, deux thèmes. Aucune
+   dépendance réseau : les polices sont embarquées, le fond est posé ici.
+   Les jetons suivent l'identité restaurée de l'atelier (bleu #1B5EA6, fond
+   gris clair, rayons 4 px, trois formes : Manrope / Roboto / IBM Plex Mono).
+   ========================================================================== */
+:root{
+  --bg:#e8eaed; --surface:#ffffff; --surface-2:#f2f4f6; --surface-3:#e9edf1;
+  --line:#c7ced5; --line-soft:#e2e7ec;
+  --ink:#14181c; --ink-2:#454e57; --ink-3:#6b747d;
+  --blue:#1B5EA6; --blue-dark:#154d8a; --blue-bg:#e8f0fb;
+  --good:#1a7a3f; --good-bg:#edf7f1;
+  --warn:#8a5a00; --warn-bg:#fdf1dc;
+  --bad:#b30016; --bad-bg:#fce8ea;
+  --fill:#1B5EA6; --fill-ink:#ffffff;
+  --fill-good:#17603a; --fill-warn:#8a5a00; --fill-bad:#b30016;
+  --r:4px; --r-lg:6px;
+  --disp:'Manrope','Segoe UI',system-ui,sans-serif;
+  --txt:'Roboto','Segoe UI',system-ui,sans-serif;
+  --mono:'IBM Plex Mono',Consolas,monospace;
+  --t1:30px; --t2:21px; --t3:16px; --t4:14px; --t5:12px; --t6:10.5px;
+  --pad:18px; --gap:12px;
+  --ombre:0 1px 2px rgba(20,24,28,.08),0 4px 14px rgba(20,24,28,.06);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#101418; --surface:#181d22; --surface-2:#1f252b; --surface-3:#242b32;
+    --line:#39434d; --line-soft:#2b333b;
+    --ink:#f1f4f7; --ink-2:#c3ccd5; --ink-3:#93a0ac;
+    --blue:#5ba4f5; --blue-dark:#8fc2ff; --blue-bg:#16304f;
+    --good:#4ecb87; --good-bg:#12331f;
+    --warn:#eba53f; --warn-bg:#3a2a0f;
+    --bad:#ff7183; --bad-bg:#3d1720;
+    --fill:#1b4a80; --fill-ink:#eaf2fd;
+    --fill-good:#17603a; --fill-warn:#7a5410; --fill-bad:#7c2333;
+    --ombre:none;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#101418; --surface:#181d22; --surface-2:#1f252b; --surface-3:#242b32;
+  --line:#39434d; --line-soft:#2b333b;
+  --ink:#f1f4f7; --ink-2:#c3ccd5; --ink-3:#93a0ac;
+  --blue:#5ba4f5; --blue-dark:#8fc2ff; --blue-bg:#16304f;
+  --good:#4ecb87; --good-bg:#12331f;
+  --warn:#eba53f; --warn-bg:#3a2a0f;
+  --bad:#ff7183; --bad-bg:#3d1720;
+  --fill:#1b4a80; --fill-ink:#eaf2fd;
+  --fill-good:#17603a; --fill-warn:#7a5410; --fill-bad:#7c2333;
+  --ombre:none;
+}
+*{box-sizing:border-box}
+/* L'attribut `hidden` doit toujours gagner : sans cette règle, le display:flex
+   de .overlay écrase le display:none du navigateur et le panneau ne se ferme
+   JAMAIS — panne invisible au harnais (son DOM est factice), vue en une
+   capture dans un vrai navigateur. */
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:400 var(--t4)/1.5 var(--txt);-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--disp);margin:0;line-height:1.25}
+code,kbd{font-family:var(--mono);font-size:.92em}
+.num,.cppb b,.grande em,.kpi b{font-variant-numeric:tabular-nums}
+a{color:var(--blue)}
+
+/* ── le bandeau ─────────────────────────────────────────────────────────── */
+.top{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:14px;
+  padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.marque{display:flex;align-items:center;gap:12px;margin-right:auto;min-width:0}
+.logo{font:800 15px/1 var(--disp);letter-spacing:.02em;color:var(--fill-ink);
+  background:var(--fill);padding:8px 9px;border-radius:var(--r)}
+.marque h1{font-size:var(--t3);font-weight:800;letter-spacing:-.01em;white-space:nowrap}
+.source{margin:1px 0 0;font:400 var(--t6)/1.35 var(--mono);color:var(--ink-3)}
+.source b{color:var(--blue);font-weight:500}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{font:600 var(--t4)/1 var(--txt);color:var(--ink);background:var(--surface-2);
+  border:1px solid var(--line);border-radius:var(--r);padding:0 14px;min-height:44px;
+  cursor:pointer;transition:background .12s,border-color .12s}
+.btn:hover{background:var(--surface-3)}
+.btn.primaire{background:var(--fill);border-color:var(--fill);color:var(--fill-ink)}
+.btn.primaire:hover{background:var(--blue-dark);border-color:var(--blue-dark)}
+.btn.icon{padding:0 12px;font-size:17px}
+.btn.mini{min-height:32px;padding:0 10px;font-size:var(--t5);font-weight:500}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn:disabled{opacity:.45;cursor:default}
+
+/* ── les étapes ─────────────────────────────────────────────────────────── */
+.etapes{position:sticky;top:0;z-index:29;display:flex;gap:6px;padding:8px 16px;
+  background:var(--surface-2);border-bottom:1px solid var(--line-soft);overflow-x:auto}
+.etape{display:flex;align-items:center;gap:8px;font:600 var(--t4)/1 var(--txt);
+  color:var(--ink-2);background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--r-lg);padding:0 14px;min-height:44px;cursor:pointer;white-space:nowrap}
+.etape .n{font:500 var(--t5)/1 var(--mono);color:var(--ink-3);
+  border:1px solid var(--line);border-radius:50%;width:22px;height:22px;
+  display:inline-flex;align-items:center;justify-content:center}
+.etape.on{background:var(--fill);border-color:var(--fill);color:var(--fill-ink)}
+.etape.on .n{color:var(--fill-ink);border-color:rgba(255,255,255,.45)}
+
+/* ── la page ────────────────────────────────────────────────────────────── */
+.wrap{max-width:1180px;margin:0 auto;padding:20px 16px 60px}
+.lede{font-size:var(--t4);color:var(--ink-2);margin:0 0 16px;max-width:74ch}
+.lede b{color:var(--ink)}
+.retour{margin:0 0 12px}
+.titres{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:4px 0 14px}
+.titres h2{font-size:var(--t2);font-weight:800;letter-spacing:-.01em}
+.titres .encadre{font:500 var(--t5)/1 var(--mono);color:var(--blue);
+  border:1px solid var(--blue);border-radius:var(--r);padding:5px 8px}
+.titres .spacer{margin-left:auto}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:var(--gap);margin:0 0 18px}
+.kpi{background:var(--surface);border:1px solid var(--line-soft);border-radius:var(--r-lg);
+  padding:12px 14px;box-shadow:var(--ombre)}
+.kpi b{display:block;font:500 var(--t6)/1.3 var(--mono);text-transform:uppercase;
+  letter-spacing:.08em;color:var(--ink-3)}
+.kpi em{display:block;font:650 var(--t1)/1.15 var(--disp);letter-spacing:-.02em;margin-top:4px}
+.kpi small{display:block;color:var(--ink-3);font-size:var(--t5);margin-top:2px}
+.kpi.attention em{color:var(--warn)}
+
+.ligne-card{background:var(--surface);border:1px solid var(--line-soft);
+  border-left:4px solid var(--encre,#545e68);border-radius:var(--r-lg);
+  box-shadow:var(--ombre);margin:0 0 12px;overflow:hidden}
+.ligne-card>header{display:flex;align-items:center;gap:10px;padding:11px 14px;
+  border-bottom:1px solid var(--line-soft)}
+.pastille{width:10px;height:10px;border-radius:50%;background:var(--encre,#545e68);flex:none}
+.ligne-card h2{font-size:var(--t3);font-weight:800}
+.code{font:500 var(--t6)/1 var(--mono);color:var(--ink-3);border:1px solid var(--line);
+  border-radius:var(--r);padding:4px 6px}
+.ligne-card header .spacer,.poste header .spacer,.dechead .spacer{margin-left:auto}
+.chiffres{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;
+  background:var(--line-soft);border-bottom:1px solid var(--line-soft)}
+.cell{background:var(--surface);padding:10px 14px}
+.cell b{display:block;font:500 var(--t6)/1.3 var(--mono);text-transform:uppercase;
+  letter-spacing:.07em;color:var(--ink-3)}
+.cell em{display:block;font:650 var(--t2)/1.2 var(--disp);letter-spacing:-.015em;margin-top:2px}
+.cell em.positif{color:var(--good)} .cell em.negatif{color:var(--bad)}
+.etat{margin:0;padding:9px 14px;font-size:var(--t5);color:var(--ink-3)}
+.etat .sep{margin:0 7px;color:var(--line)}
+.vide{background:var(--surface-2);color:var(--ink-3);font-style:normal}
+
+.poste{background:var(--surface);border:1px solid var(--line-soft);border-radius:var(--r-lg);
+  box-shadow:var(--ombre);margin:0 0 14px;overflow:hidden}
+.poste>header{display:flex;align-items:center;gap:10px;padding:10px 14px;
+  background:var(--surface-2);border-bottom:1px solid var(--line-soft);flex-wrap:wrap}
+.poste h3{font-size:var(--t4);font-weight:700}
+.poste h3 code{color:var(--blue);background:var(--blue-bg);border-radius:var(--r);
+  padding:2px 6px;margin-right:6px}
+.mot{font:600 var(--t6)/1 var(--txt);text-transform:uppercase;letter-spacing:.06em;
+  border-radius:var(--r);padding:5px 8px}
+.mot.serie{color:var(--fill-ink);background:var(--fill-good)}
+.mot.essai{color:var(--warn);background:var(--warn-bg)}
+.mot.valide{color:var(--good);background:var(--good-bg)}
+.mot.abandonne,.mot.muet{color:var(--ink-3);background:var(--surface-3)}
+.mot.bad{color:var(--fill-ink);background:var(--fill-bad)}
+.mot.attente{color:var(--ink-2);background:var(--surface-3)}
+.cppb{font:650 var(--t2)/1.2 var(--disp);letter-spacing:-.015em}
+.cppb small{display:block;font:500 var(--t6)/1.3 var(--mono);color:var(--ink-3);
+  text-transform:uppercase;letter-spacing:.07em}
+.cppb b{font-weight:650}
+.corps{padding:12px 14px}
+table.outillage{width:100%;border-collapse:collapse;font-size:var(--t4)}
+table.outillage th{font:500 var(--t6)/1.3 var(--mono);text-transform:uppercase;
+  letter-spacing:.06em;color:var(--ink-3);text-align:left;padding:6px 8px;
+  border-bottom:1px solid var(--line)}
+table.outillage td{padding:8px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+table.outillage tr:last-child td{border-bottom:none}
+table.outillage td.num{font-family:var(--mono);font-size:var(--t4);white-space:nowrap}
+table.outillage tr.manque td{color:var(--warn)}
+table.outillage tr.manque td:first-child::before{content:"⚠ ";font-size:var(--t5)}
+tr.clic{cursor:pointer}
+tr.clic:hover td{background:var(--surface-2)}
+.mabec{font-family:var(--mono);font-size:var(--t5)}
+
+.bloc-essais{border-top:1px dashed var(--line);padding:10px 14px;background:var(--surface-2)}
+.bloc-essais h4{font-size:var(--t5);text-transform:uppercase;letter-spacing:.07em;
+  font-family:var(--mono);color:var(--ink-3);margin:0 0 8px;font-weight:500}
+.essai-ligne{display:flex;align-items:center;gap:10px;padding:7px 0;
+  border-bottom:1px solid var(--line-soft);flex-wrap:wrap}
+.essai-ligne:last-child{border-bottom:none}
+.essai-ligne .titre{font-weight:600}
+.essai-ligne .detail{color:var(--ink-3);font-size:var(--t5)}
+.essai-ligne .spacer{margin-left:auto}
+.progres{display:flex;gap:6px;align-items:center;font:500 var(--t5)/1 var(--mono);color:var(--ink-2)}
+.decl{margin:10px 0 0;padding:10px 14px;background:var(--surface-2);
+  border:1px dashed var(--line);border-radius:var(--r-lg);font-size:var(--t5);color:var(--ink-3)}
+.decl b{color:var(--ink-2)}
+.decl ul{margin:6px 0 0;padding-left:18px}
+.decl li{margin:2px 0}
+
+/* ── décision ───────────────────────────────────────────────────────────── */
+.dec-carte{display:grid;grid-template-columns:170px 1fr;gap:0;background:var(--surface);
+  border:1px solid var(--line-soft);border-radius:var(--r-lg);box-shadow:var(--ombre);
+  margin:0 0 12px;overflow:hidden}
+.dec-carte .gros{padding:14px;border-right:1px solid var(--line-soft);background:var(--surface-2)}
+.dec-carte .gros .cppb b{font-size:var(--t1)}
+.dec-carte .droite{padding:12px 14px}
+.dec-mot{font:800 var(--t3)/1 var(--disp);letter-spacing:.01em}
+.dec-pourquoi{color:var(--ink-2);font-size:var(--t4);margin:6px 0 10px}
+.deux{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1px;
+  background:var(--line-soft);border:1px solid var(--line-soft);border-radius:var(--r);overflow:hidden}
+.deux .cell em{font-size:var(--t3)}
+
+/* ── formulaire ─────────────────────────────────────────────────────────── */
+.form{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);
+  padding:14px;margin:12px 0;box-shadow:var(--ombre)}
+.form h3{font-size:var(--t4);margin:0 0 12px}
+.rangée{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 10px}
+.champ{display:flex;flex-direction:column;gap:4px;flex:1;min-width:130px}
+.champ label{font:500 var(--t6)/1.3 var(--mono);text-transform:uppercase;
+  letter-spacing:.06em;color:var(--ink-3)}
+input,select,textarea{font:400 var(--t4)/1.4 var(--txt);color:var(--ink);
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  padding:9px 10px;min-height:44px;width:100%}
+textarea{min-height:64px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--blue);outline-offset:1px;
+  border-color:var(--blue)}
+.petits input,.petits select{min-height:38px;padding:6px 8px;font-size:var(--t5)}
+
+/* ── A4 ─────────────────────────────────────────────────────────────────── */
+.a4{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);
+  box-shadow:var(--ombre);max-width:860px;margin:0 auto;padding:26px 30px;color:#14181c}
+.a4 h1{font-size:24px;font-weight:800}
+.a4 .sous{font:400 10.5px/1.5 var(--mono);color:#5a6470;margin:2px 0 16px}
+.a4 h2{font-size:15px;margin:18px 0 8px;padding-bottom:5px;border-bottom:2px solid #1B5EA6}
+.a4 table{width:100%;border-collapse:collapse;font-size:11.5px;margin:6px 0}
+.a4 th{font:500 9.5px/1.4 var(--mono);text-transform:uppercase;letter-spacing:.06em;
+  color:#5a6470;text-align:left;border-bottom:1px solid #b9c0c9;padding:5px 7px}
+.a4 td{padding:6px 7px;border-bottom:1px solid #e2e7ec}
+.a4 .note{font-size:10.5px;color:#5a6470;margin:6px 0}
+.a4 .pied{display:flex;justify-content:space-between;gap:20px;margin-top:22px;
+  padding-top:10px;border-top:1px solid #e2e7ec;font:400 9px/1.6 var(--mono);color:#6b747d}
+.a4 .pied b{color:#b30016;font-weight:500}
+.garder{display:flex;justify-content:center;margin:18px 0}
+
+/* ── panneau (overlay) ──────────────────────────────────────────────────── */
+.overlay{position:fixed;inset:0;z-index:50;background:rgba(16,20,24,.5);
+  display:flex;align-items:flex-start;justify-content:center;padding:40px 14px;overflow:auto}
+.panneau{background:var(--surface);border-radius:var(--r-lg);box-shadow:0 12px 40px rgba(0,0,0,.3);
+  max-width:720px;width:100%;padding:20px}
+.panneau h3{font-size:var(--t3);margin:0 0 4px}
+.panneau .sous{font-size:var(--t5);color:var(--ink-3);margin:0 0 14px}
+.depot{border:2px dashed var(--line);border-radius:var(--r-lg);padding:22px;text-align:center;
+  background:var(--surface-2);margin:0 0 12px}
+.rapport{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:12px 0}
+.rapport .kpi{box-shadow:none;padding:9px 11px}
+.rapport .kpi em{font-size:var(--t2)}
+.avert{display:flex;gap:8px;font-size:var(--t5);border-radius:var(--r);
+  padding:9px 11px;margin:6px 0;border:1px solid var(--line)}
+.avert.ok{background:var(--good-bg);border-color:var(--good);color:var(--good)}
+.avert.warn{background:var(--warn-bg);border-color:var(--warn);color:var(--warn)}
+.avert.bad{background:var(--bad-bg);border-color:var(--bad);color:var(--bad)}
+
+/* ── pied ───────────────────────────────────────────────────────────────── */
+.pied{max-width:1180px;margin:0 auto;padding:14px 16px 30px;font:400 var(--t6)/1.7 var(--mono);color:var(--ink-3)}
+.pied b{color:var(--ink-2);font-weight:500}
+
+/* ── impression : la page A4 seule ──────────────────────────────────────── */
+@media print{
+  :root{--bg:#fff;--surface:#fff;--surface-2:#fff;--line:#b9c0c9;--line-soft:#e2e7ec;
+    --ink:#14181c;--ink-2:#3b444f;--ink-3:#5a6470;--blue:#1B5EA6;
+    --ombre:none}
+  @page{size:A4;margin:14mm 12mm}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body{background:#fff;font-size:11.5px}
+  .top,.etapes,.garder,.retour,.decl,.pied,.overlay{display:none!important}
+  .wrap{max-width:none;padding:0}
+  .a4{border:0;box-shadow:none;padding:0;max-width:none}
+  .dec-carte,.ligne-card,.poste{break-inside:avoid;box-shadow:none}
+}
+
+@media (max-width:760px){
+  .dec-carte{grid-template-columns:1fr}
+  .dec-carte .gros{border-right:none;border-bottom:1px solid var(--line-soft)}
+  .titres h2{font-size:var(--t3)}
+  .wrap{padding:14px 10px 50px}
+}
+</style>
+</head>
+<body>
+
+<header class="top" id="top">
+  <div class="marque">
+    <span class="logo">CPP</span>
+    <div>
+      <h1>Suivi CPP — Sept Fons</h1>
+      <p class="source" id="sourceLigne"></p>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn" data-act="ouvrir-import">Données</button>
+    <button class="btn" data-act="exporter">Exporter</button>
+    <button class="btn" data-act="ouvrir-reglages">Réglages</button>
+    <button class="btn" data-act="ouvrir-partage">Partager</button>
+    <button class="btn icon" data-act="basculer-theme" title="Basculer le thème">◐</button>
+    <button class="btn icon" data-act="imprimer" title="Imprimer la page">⎙</button>
+  </div>
+</header>
+
+<nav class="etapes" id="etapes" aria-label="Étapes"></nav>
+
+<main class="wrap" id="vue"></main>
+
+<footer class="pied" id="pied"></footer>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="panneau" id="panneau" role="dialog" aria-modal="true"></div>
+</div>
+
+<script>__COEUR__</script>
+<script>__DONNEES__</script>
+<script>__IMPORT__</script>
+<script>
+"use strict";
+
+/* ============================================================================
+   2resume — L'ÉCRAN
+   ----------------------------------------------------------------------------
+   Le rendu lit, il ne calcule rien : toute valeur affichée sort du noyau par
+   une fonction nommée, et le test le vérifie par la valeur, pas par la chaîne.
+
+   Un seul état, une seule sauvegarde, un seul chemin d'import. La source est
+   affichée en permanence : un outil qui ne dit pas d'où viennent ses chiffres
+   laisse croire qu'ils sont les siens.
+   ========================================================================== */
+
+const EMPREINTE_ASSEMBLAGE = "__ASSEMBLAGE__";
+const CLE_LOCALE = "2resume_donnees_v1";
+const CLE_SESSION = "2resume_cloud_session";
+const CLE_STAMP = "2resume_cloud_stamp";
+
+const CLOUD_URL = "https://cxjfyaorkkxemjnollnj.supabase.co";
+const CLOUD_KEY = "sb_publishable_TQySmct-8qg3qMiS2WodbA_gQCcPp9Z";
+/* Tables DÉDIÉES à cet outil : jamais la table `etat` de l'app de production.
+   Deux modèles différents dans une même ligne s'écraseraient l'un l'autre au
+   premier dépôt, et ce serait silencieux. Voir le panneau Partager. */
+const CLOUD_TABLE = "etat_2resume";
+const CLOUD_TABLE_HIST = "etat_2resume_historique";
+
+const ETAT = {
+  etape: 1,
+  ligneId: null,
+  donnees: etatVierge(),
+  source: { type: "jeu", nom: "jeu d'exemple", rapport: null, poids: null },
+  modifieLe: "", modifiePar: "",
+  panneau: null,
+  saisie: null,
+  theme: "auto",
+  cloud: { session: null, stamp: null, sale: false, enCours: false, erreur: "", info: null, note: "" }
+};
+
+/* ── utilitaires de rendu ─────────────────────────────────────────────────── */
+
+function esc(s) {
+  return String(s === null || s === undefined ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+function $(id) { return document.getElementById(id); }
+
+function lignes() { return ETAT.donnees.lignes; }
+function ligneCourante() {
+  return lignes().find(l => l.id === ETAT.ligneId) || lignes()[0] || null;
+}
+function trouverScenario(id) {
+  let trouve = null;
+  lignes().forEach(l => (l.references || []).forEach(r => (r.ops || []).forEach(op =>
+    (op.scenarios || []).forEach(sc => { if (sc.id === id) trouve = { ligne: l, ref: r, op: op, sc: sc }; }))));
+  return trouve;
+}
+
+function badgeSource() {
+  const s = ETAT.source;
+  const q = s.type === "jeu" ? "jeu d'exemple — aucun chiffre réel"
+    : s.type === "import" ? "importé : " + s.nom
+    : s.type === "cloud" ? "partagé : " + s.nom
+    : s.nom;
+  return "Source : <b>" + esc(q) + "</b> · v" + esc(OUTIL_VERSION)
+    + " · assemblage " + esc(EMPREINTE_ASSEMBLAGE);
+}
+
+/* ── les cinq écrans ─────────────────────────────────────────────────────── */
+
+const ECRANS = [
+  { n: 1, nom: "Lignes", fn: ecran1 },
+  { n: 2, nom: "Ligne", fn: ecran2 },
+  { n: 3, nom: "Scénarios et essais", fn: ecran3 },
+  { n: 4, nom: "Décision", fn: ecran4 },
+  { n: 5, nom: "À emporter", fn: ecran5 }
+];
+
+function aller(n) {
+  ETAT.etape = Math.max(1, Math.min(ECRANS.length, n));
+  if (ETAT.etape > 1 && !ETAT.ligneId && lignes().length) ETAT.ligneId = lignes()[0].id;
+  rendre();
+}
+
+/* ── ÉCRAN 1 : les lignes ─────────────────────────────────────────────────── */
+
+function ecran1() {
+  const tuiles = tuilesDeLignes(lignes());
+  const sante = santeDonnees(ETAT.donnees);
+  const verdicts = lignes().map(verdictLigne);
+  const recap = recapLignes(verdicts);
+  const chiffrees = tuiles.filter(t => t.cpp !== null);
+  const cppTotal = chiffrees.length ? chiffrees.reduce((a, t) => a + t.cpp, 0) : null;
+
+  let html = '<p class="lede"><b>Le CPP, c\'est le coût d\'outillage de la pièce : '
+    + 'prix ÷ (arêtes × charnière).</b> C\'est le seul chiffre comparable au classeur '
+    + 'de Matis. Le temps machine, le rebut et les pièces détachées existent, sont '
+    + 'valorisés à côté — et ne sont jamais ajoutés à ce qui se compare.</p>';
+
+  html += '<div class="kpis">'
+    + kpi("Lignes suivies", tuiles.length, "")
+    + kpi("Postes suivis", recap.postes, sante.sansProd + " sans production")
+    + kpi("Gain acté", recap.cppActe ? fmtEuro(recap.cppActe) + "/pièce" : "—", recap.cppActe ? "passé en production" : "rien d'acté")
+    + kpi("Postes à chiffrer", recap.aChiffrer, recap.decisions + " en attente de décision", recap.aChiffrer > 0)
+    + "</div>";
+
+  if (!tuiles.length) {
+    html += '<div class="decl"><b>Aucune donnée.</b> Ouvre <b>Données</b> pour importer '
+      + 'un export de l\'ancienne application, ou <b>Partager</b> pour reprendre le suivi du cloud.</div>';
+  }
+
+  tuiles.forEach(t => {
+    const dom = t.dominante;
+    const cible = dom ? dom.cible : null;
+    const ecart = dom ? dom.ecartCible : null;
+    const avecEssais = postesAvecEssais(t.ligne).length;
+    html += '<section class="ligne-card" style="--encre:' + esc(t.encre) + '">'
+      + '<header><span class="pastille"></span><h2>' + esc(t.nom) + '</h2>'
+      + (t.code ? '<span class="code">' + esc(t.code) + '</span>' : '')
+      + '<span class="spacer"></span>'
+      + '<button class="btn mini primaire" data-act="ouvrir-ligne" data-id="' + esc(t.ligne.id) + '">Ouvrir →</button></header>';
+    if (t.vide) {
+      html += '<p class="etat"><span class="vide">Aucune référence sur cette ligne — elle attend ses données.</span></p>';
+    } else {
+      html += '<div class="chiffres">'
+        + cellule("CPP outillage", t.cpp !== null ? fmtEuro(t.cpp, 4) : "à chiffrer",
+          t.cpp !== null ? "par pièce (production)" : "aucun poste chiffrable", t.cpp === null)
+        + cellule("Cible du site", dom ? (cible !== null ? fmtEuro(cible, 4) : "— non saisie") : "—",
+          dom ? esc(dom.ref.nom) : "aucun poste chiffré : la cible se lit référence par référence", !dom || cible === null)
+        + cellule("Écart à la cible",
+          ecart !== null ? (ecart <= 0 ? "−" : "+") + fmtEuro(Math.abs(ecart), 4) : "—",
+          ecart !== null ? (ecart <= 0 ? "sous la cible" : "au-dessus de la cible") : "cible ou coût manquant", ecart === null)
+        + cellule("Gain acté", fmtEuro(verdicts.find(v => v.ligne.id === t.ligne.id) ? sommeGains(verdicts.find(v => v.ligne.id === t.ligne.id).postes, "gainActe") : null, 4), "par pièce, en production")
+        + "</div>";
+      const morceaux = [t.nbRefs + " référence" + (t.nbRefs > 1 ? "s" : ""),
+        t.nbPostes + " poste" + (t.nbPostes > 1 ? "s" : "")];
+      if (t.nonChiffrables) morceaux.push(t.nonChiffrables + " non chiffrable" + (t.nonChiffrables > 1 ? "s" : ""));
+      if (t.sansProd) morceaux.push(t.sansProd + " sans production");
+      if (avecEssais) morceaux.push(avecEssais + " avec essais");
+      html += '<p class="etat">' + morceaux.map(esc).join('<span class="sep">·</span>') + '</p>';
+    }
+    html += "</section>";
+  });
+
+  /* Ce qui manque, compté et nommé (cahier §5) : un outil qui n'affiche que ce
+     qu'il sait faire laisse croire que le reste est faux. */
+  const trous = [];
+  if (sante.sansReference) trous.push(sante.sansReference + " ligne(s) sans aucune référence");
+  if (sante.sansProd) trous.push(sante.sansProd + " poste(s) sans scénario de production");
+  if (sante.nonChiffrables) trous.push(sante.nonChiffrables + " logement(s) non chiffrable(s) (prix, arêtes ou charnière manquants)");
+  if (sante.sansMabec) trous.push(sante.sansMabec + " logement(s) sans MABEC");
+  if (sante.referencesSansCible) trous.push(sante.referencesSansCible + " référence(s) sans cible CPP");
+  if (sante.referencesSansVolume) trous.push(sante.referencesSansVolume + " référence(s) sans volume annuel — les gains resteront en €/pièce");
+  if (sante.sansBatt) trous.push(sante.sansBatt + " prélèvement(s) sans battement mesuré");
+  html += '<div class="decl"><b>Ce qui manque</b> — l\'outil le dit au lieu de le taire :'
+    + (trous.length ? "<ul>" + trous.map(t => "<li>" + esc(t) + "</li>").join("") + "</ul>"
+      : " rien. Toutes les données de décision sont complètes.") + "</div>";
+
+  html += '<div class="decl"><b>Ce que cet outil ne montre pas</b>, et pourquoi : la '
+    + '<b>production hebdomadaire</b> (elle est détaillée par lot de lignes et ne dit '
+    + 'rien d\'un poste d\'outillage), la <b>cadence</b> (non mesurée : l\'outil n\'invente '
+    + 'pas), et le <b>delta théorie/réalité du classeur de Matis</b> (il se lit dans le '
+    + 'classeur, en local — on n\'y calcule rien d\'ici).</div>';
+  return html;
+}
+
+function kpi(libelle, valeur, sous, attention) {
+  return '<div class="kpi' + (attention ? " attention" : "") + '"><b>' + esc(libelle) + '</b>'
+    + '<em>' + esc(valeur) + '</em>' + (sous ? "<small>" + esc(sous) + "</small>" : "") + "</div>";
+}
+function cellule(libelle, valeur, sous, attention) {
+  return '<div class="cell"><b>' + esc(libelle) + '</b><em class="' + (attention ? "" : "") + '">'
+    + esc(valeur) + '</em><small>' + esc(sous || "") + "</small></div>";
+}
+
+/* ── ÉCRAN 2 : la ligne, décomposée jusqu'au logement ────────────────────── */
+
+function ecran2() {
+  const ligne = ligneCourante();
+  if (!ligne) return '<div class="decl">Aucune ligne. Importe des données ou reviens au jeu d\'exemple.</div>';
+  ETAT.ligneId = ligne.id;
+  const verdicts = verdictLigne(ligne);
+  const tuile = verdicts.tuile;
+
+  let html = '<p class="retour"><button class="btn mini" data-act="aller" data-id="1">← Les lignes</button></p>'
+    + '<div class="titres"><h2>' + esc(ligne.nom) + '</h2>'
+    + (tuile.code ? '<span class="encadre">' + esc(tuile.code) + '</span>' : '')
+    + '<span class="spacer"></span>'
+    + '<button class="btn mini" data-act="ouvrir-reglages">Taux horaire &amp; seuils</button></div>';
+
+  html += '<div class="kpis">'
+    + kpi("CPP outillage production", tuile.cpp !== null ? fmtEuro(tuile.cpp, 4) + "/pièce" : "à chiffrer", "toutes références")
+    + kpi("Référence dominante", tuile.dominante ? esc(tuile.dominante.ref.nom) : "—", tuile.dominante ? tuile.dominante.chiffres + " postes chiffrés" : "aucune chiffrée")
+    + kpi("Gain acté sur la ligne", fmtEuro(sommeGains(verdicts.postes, "gainActe"), 4) + "/pièce", "déjà en production")
+    + kpi("Gain projeté", fmtEuro(sommeGains(verdicts.postes, "gainProjete"), 4) + "/pièce", "essais en cours, non actés")
+    + "</div>";
+
+  (ligne.references || []).forEach(ref => {
+    const c = cppReference(ligne, ref);
+    html += '<section class="ligne-card" style="--encre:' + esc(tuile.encre) + '">'
+      + '<header><span class="pastille"></span><h2>' + esc(ref.nom) + '</h2>'
+      + '<span class="spacer"></span>'
+      + '<span class="code">cible ' + (c.cible !== null ? fmtEuro(c.cible, 4) : "non saisie") + '</span></header>';
+    html += '<div class="chiffres">'
+      + cellule("CPP outillage", c.cpp !== null ? fmtEuro(c.cpp, 4) : "à chiffrer", c.chiffres + "/" + c.nbPostes + " postes chiffrés", c.cpp === null)
+      + cellule("Écart à la cible", c.ecartCible !== null ? (c.ecartCible <= 0 ? "−" : "+") + fmtEuro(Math.abs(c.ecartCible), 4) : "—",
+        c.ecartCible !== null ? (c.ecartCible <= 0 ? "sous la cible" : "au-dessus") : "cible ou coût manquant", c.ecartCible === null)
+      + cellule("Volume annuel", dispo(ref.productionAnnuelle, 0, "— non saisi"), ref.productionAnnuelle !== "" ? "pièces/an" : "les gains resteront en €/pièce")
+      + "</div>";
+
+    ((ref.ops) || []).forEach(op => {
+      const v = verdictPoste(ligne, ref, op);
+      html += posteHTML(v, true);
+    });
+    html += "</section>";
+  });
+  return html;
+}
+
+/* Un poste = son scénario de production, décomposé outil → logement, et ses
+   essais. Un poste sans production reste visible et le dit : s'il disparaissait,
+   la ligne paraîtrait complète à tort (cahier §4). */
+function posteHTML(v, avecPorte) {
+  const prod = v.prod;
+  let html = '<section class="poste"><header><h3><code>' + esc(v.opCode) + '</code>'
+    + esc(prod ? prod.name : "sans scénario de production") + '</h3>'
+    + (prod ? '<span class="mot serie">en production</span>' : '<span class="mot muet">sans production</span>')
+    + '<span class="spacer"></span>'
+    + (v.cppProd !== null ? '<div class="cppb"><b>' + fmtEuro(v.cppProd, 4) + '</b><small>€ / pièce</small></div>' : '<span class="mot attente">à chiffrer</span>')
+    + "</header>";
+
+  if (!prod) {
+    html += '<div class="corps"><div class="decl" style="margin:0">Ce poste n\'a aucun scénario de production : '
+      + 'il reste affiché pour que la ligne ne paraisse pas complète. '
+      + (v.autres.length ? v.autres.length + " scénario" + (v.autres.length > 1 ? "s" : "") + " à l'étude derrière la porte « Scénarios et essais »." : "Aucun scénario du tout.") + "</div></div>";
+  } else {
+    const out = outillageDeScenario(prod);
+    html += '<div class="corps">';
+    if (!out.outils.length) {
+      html += '<div class="decl" style="margin:0">Aucun outil dans ce scénario.</div>';
+    } else {
+      html += '<table class="outillage"><thead><tr><th>Outil</th><th>Logt</th><th>MABEC</th><th>Plaquette</th><th>Prix</th><th>Arêtes</th><th>Charnière</th><th>Coût/pce</th><th></th></tr></thead><tbody>';
+      out.outils.forEach(o => {
+        if (!o.logements.length) {
+          html += '<tr class="manque"><td class="num">' + esc(o.numero) + "</td>"
+            + '<td colspan="7">Aucun logement sur cet outil</td><td></td></tr>';
+          return;
+        }
+        o.logements.forEach(l => {
+          const manque = l.cpp === null;
+          html += '<tr class="' + (manque ? "manque " : "") + 'clic" data-act="editer-logement" data-id="' + esc(l.id) + '" data-id2="' + esc(prod.id) + '">'
+            + '<td class="num">' + esc(o.numero) + (o.correcteur ? " <span class=\"mabec\">" + esc(o.correcteur) + "</span>" : "") + "</td>"
+            + '<td>' + esc(l.nom) + "</td>"
+            + '<td class="num">' + (l.mabec ? '<span class="mabec">' + esc(l.mabec) + "</span>" : '<span class="mabec" style="color:var(--warn)">sans MABEC</span>') + "</td>"
+            + '<td>' + (l.article ? esc(l.article) : '<span style="color:var(--ink-3)">non nommée</span>') + "</td>"
+            + '<td class="num">' + dispo(l.prix, 2, "— non saisi") + "</td>"
+            + '<td class="num">' + dispo(l.aretes, 0, "—") + "</td>"
+            + '<td class="num">' + dispo(l.charniere, 0, "—") + " p</td>"
+            + '<td class="num"><b>' + (l.cpp !== null ? fmtEuro(l.cpp, 4) : esc(l.motif)) + "</b></td>"
+            + '<td><button class="btn mini" data-act="editer-logement" data-id="' + esc(l.id) + '" data-id2="' + esc(prod.id) + '">Modifier</button></td></tr>';
+        });
+      });
+      html += "</tbody></table>";
+      if (out.nonChiffrables) html += '<div class="decl">' + out.nonChiffrables
+        + " logement(s) non chiffrable(s) dans ce scénario — le CPP ci-dessus ne porte QUE ce qui est chiffrable, et il le dit.</div>";
+    }
+
+    const essaisProd = essaisDuScenario(prod);
+    if (essaisProd.length) {
+      html += '<div class="bloc-essais"><h4>Essais portés par ce scénario de production</h4>';
+      essaisProd.forEach(e => { html += essaiLigneHTML(prod, e); });
+      html += "</div>";
+    } else {
+      html += '<div class="bloc-essais"><h4>Essais</h4><p class="etat" style="padding:0">'
+        + "Aucun essai porté par ce scénario : son CPP est celui qu'on a prévu, pas celui qu'on a mesuré.</p></div>";
+    }
+  }
+
+  html += '<div class="bloc-essais" style="display:flex;gap:8px;flex-wrap:wrap">'
+    + '<button class="btn mini" data-act="aller-scenarios" data-id="' + esc(v.op.id) + '">'
+    + (v.autres.length ? v.autres.length + " scénario" + (v.autres.length > 1 ? "s" : "") + " à optimiser →" : "Scénarios et essais →") + "</button>"
+    + '<button class="btn mini" data-act="nouvel-essai" data-id="' + esc(v.op.id) + '">+ Ajouter un essai</button></div>';
+  html += "</section>";
+  return html;
+}
+
+function essaiLigneHTML(sc, e) {
+  const st = statutEssai(sc, e);
+  const obt = cppEssai(sc, e);
+  const su = suiviEssai(sc, e);
+  const classMot = { conforme: "valide", nonconforme: "bad", encours: "essai", attente: "attente", arrete: "muet", vide: "muet" };
+  let progres = su.filter(x => x.cible !== null)
+    .map(x => esc(x.logementNom) + " " + x.atteint + "/" + Math.round(x.cible) + " p").join(" · ");
+  let html = '<div class="essai-ligne"><span class="titre">' + esc(e.titre || "Essai") + "</span>"
+    + '<span class="mot ' + (classMot[st.code] || "attente") + '">' + esc(st.texte) + "</span>";
+  if (obt.cpp !== null) {
+    html += '<span class="detail">CPP obtenu <b class="num">' + fmtEuro(obt.cpp, 4) + "</b></span>";
+    if (obt.prevu !== null) html += '<span class="detail">(prévu ' + fmtEuro(obt.prevu, 4) + ")</span>";
+  }
+  if (progres && st.code !== "encours") html += '<span class="progres">' + progres + "</span>";
+  html += '<span class="spacer"></span>'
+    + '<button class="btn mini" data-act="voir-essai" data-id="' + esc(e.id) + '" data-id2="' + esc(sc.id) + '">Détail</button></div>';
+  return html;
+}
+
+/* ── ÉCRAN 3 : les scénarios qui ne sont pas en production ───────────────── */
+
+function ecran3() {
+  const ligne = ligneCourante();
+  if (!ligne) return '<div class="decl">Aucune ligne.</div>';
+  const postes = postesDeLigne(ligne);
+  const autres = [];
+  postes.forEach(p => p.autres.forEach(sc => autres.push({ p: p, sc: sc })));
+
+  let html = '<p class="retour"><button class="btn mini" data-act="aller" data-id="2">← ' + esc(ligne.nom) + '</button></p>'
+    + '<div class="titres"><h2>Scénarios et essais</h2><span class="encadre">' + esc(ligne.nom) + '</span></div>'
+    + '<p class="lede">Tout ce qui n\'est pas en production : ce qu\'on teste, ce que '
+    + 'l\'essai a réellement donné, et la décision qu\'il prépare. Le CPP <b>prévu</b> '
+    + 'dit ce que le scénario croit ; le CPP <b>obtenu</b> dit ce qui s\'est passé.</p>';
+
+  if (!autres.length) {
+    html += '<div class="decl">Aucun scénario hors production sur cette ligne. '
+      + 'Ajoute-en un depuis un poste, ou importe un export qui en porte.</div>';
+  }
+
+  autres.forEach(a => {
+    const sc = a.sc;
+    const st = statutScenario(sc);
+    const cpp = cppOutillageScenario(sc);
+    const v = verdictPoste(ligne, a.p.ref, a.p.op);
+    const classMot = { serie: "serie", valide: "valide", pret: "valide", encours: "essai", essai: "essai", rien: "muet", abandonne: "abandonne" };
+    html += '<section class="poste"><header><h3><code>' + esc(v.opCode) + '</code>' + esc(sc.name) + '</h3>'
+      + '<span class="mot ' + (classMot[st.code] || "attente") + '">' + esc(st.texte) + "</span>"
+      + '<span class="spacer"></span>'
+      + (cpp !== null ? '<div class="cppb"><b>' + fmtEuro(cpp, 4) + '</b><small>prévu, € / pièce</small></div>' : '<span class="mot attente">à chiffrer</span>')
+      + "</header><div class=\"corps\">";
+
+    const out = outillageDeScenario(sc);
+    if (out.outils.length) {
+      html += '<table class="outillage"><thead><tr><th>Outil</th><th>Logt</th><th>MABEC</th><th>Plaquette</th><th>Prix</th><th>Arêtes</th><th>Charnière</th><th>Coût/pce</th><th></th></tr></thead><tbody>';
+      out.outils.forEach(o => o.logements.forEach(l => {
+        html += '<tr class="' + (l.cpp === null ? "manque " : "") + 'clic" data-act="editer-logement" data-id="' + esc(l.id) + '" data-id2="' + esc(sc.id) + '">'
+          + '<td class="num">' + esc(o.numero) + "</td><td>" + esc(l.nom) + "</td>"
+          + '<td class="num">' + (l.mabec ? '<span class="mabec">' + esc(l.mabec) + "</span>" : '<span class="mabec" style="color:var(--warn)">sans MABEC</span>') + "</td>"
+          + '<td>' + (l.article ? esc(l.article) : '<span style="color:var(--ink-3)">non nommée</span>') + "</td>"
+          + '<td class="num">' + dispo(l.prix, 2, "— non saisi") + "</td>"
+          + '<td class="num">' + dispo(l.aretes, 0, "—") + "</td>"
+          + '<td class="num">' + dispo(l.charniere, 0, "—") + " p</td>"
+          + '<td class="num"><b>' + (l.cpp !== null ? fmtEuro(l.cpp, 4) : esc(l.motif)) + "</b></td>"
+          + '<td><button class="btn mini" data-act="editer-logement" data-id="' + esc(l.id) + '" data-id2="' + esc(sc.id) + '">Modifier</button></td></tr>';
+      }));
+      html += "</tbody></table>";
+    }
+
+    const essais = essaisDuScenario(sc);
+    if (essais.length) {
+      html += '<div class="bloc-essais"><h4>' + essais.length + " essai" + (essais.length > 1 ? "s" : "") + "</h4>";
+      essais.forEach(e => { html += essaiLigneHTML(sc, e); });
+      html += "</div>";
+      /* Le gain, périmètre à périmètre, jamais un total contre une cible. */
+      if (v.cppProd !== null && cpp !== null && cpp < v.cppProd) {
+        const g = v.cppProd - cpp;
+        html += '<div class="decl"><b>Si cet essai passait en production :</b> '
+          + fmtEuro(g, 4) + " €/pièce de gagné sur le poste plaquettes"
+          + (v.gainProjeteAnnuel !== null ? ", soit " + fmtEnt(v.gainProjeteAnnuel) + " €/an (volume " + esc(v.volume.source) + ")" : " — volume annuel non saisi, le gain annuel reste inconnu")
+          + ".</div>";
+      }
+    } else {
+      html += '<div class="bloc-essais"><h4>Essais</h4><p class="etat" style="padding:0">Aucun essai : '
+        + "ce scénario n'a pas encore de preuve.</p></div>";
+    }
+
+    html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">'
+      + '<button class="btn mini" data-act="nouvel-essai" data-id="' + esc(a.p.op.id) + '" data-id2="' + esc(sc.id) + '">+ Ajouter un essai</button>'
+      + (sc.statut !== "serie" ? '<button class="btn mini" data-act="passer-serie" data-id="' + esc(sc.id) + '">Passer en production</button>' : "")
+      + '<button class="btn mini" data-act="abandonner" data-id="' + esc(sc.id) + '">Abandonner</button>'
+      + "</div></div></section>";
+  });
+
+  html += formulaireEssaiHTML();
+  return html;
+}
+
+/* ── le formulaire d'essai ──────────────────────────────────────────────── */
+
+function formulaireEssaiHTML() {
+  const s = ETAT.saisie;
+  if (!s) return "";
+  const ligne = ligneCourante();
+  if (!ligne) return "";
+  const postes = postesDeLigne(ligne);
+  let html = '<form class="form" id="formEssai" data-form="essai"><h3>Nouvel essai</h3>';
+  html += '<div class="rangée"><div class="champ"><label>Poste</label><select data-champ="saisie-op">';
+  postes.forEach(p => {
+    html += '<option value="' + esc(p.op.id) + '"' + (p.op.id === s.opId ? " selected" : "") + ">"
+      + esc(p.code + " — " + p.ref.nom) + "</option>";
+  });
+  html += "</select></div>";
+  const poste = postes.find(p => p.op.id === s.opId) || postes[0];
+  if (poste) {
+    html += '<div class="champ"><label>Scénario</label><select data-champ="saisie-sc">';
+    poste.scs.forEach(sc => {
+      html += '<option value="' + esc(sc.id) + '"' + (sc.id === s.scId ? " selected" : "") + ">"
+        + esc(sc.name + (sc === poste.prod ? " (production)" : "")) + "</option>";
+    });
+    html += "</select></div>";
+  }
+  html += '<div class="champ"><label>Date</label><input type="date" data-champ="saisie-date" value="' + esc(s.date) + '"></div>'
+    + '<div class="champ"><label>Équipe</label><select data-champ="saisie-equipe">'
+    + ["", "Matin", "Après-midi"].map(e => '<option value="' + e + '"' + (s.equipe === e ? " selected" : "") + ">" + (e || "—") + "</option>").join("")
+    + '</select></div></div>';
+  html += '<div class="rangée"><div class="champ"><label>Titre</label><input type="text" data-champ="saisie-titre" value="' + esc(s.titre) + '" placeholder="Ex. première série"></div>'
+    + '<div class="champ"><label>Opérateur</label><input type="text" data-champ="saisie-operateur" value="' + esc(s.operateur) + '"></div>'
+    + '<div class="champ"><label>But</label><input type="text" data-champ="saisie-but" value="' + esc(s.but) + '" placeholder="Ce qu\'on cherche"></div></div>';
+
+  const trouve = trouverScenario(s.scId);
+  if (trouve) {
+    const logements = cppParLogement(trouve.sc);
+    if (logements.length) {
+      html += '<h3 style="margin-top:6px">Charnière visée par logement</h3><div class="petits">';
+      logements.forEach(l => {
+        const suivi = s.logements.find(x => x.logementId === l.logementId);
+        html += '<div class="rangée"><div class="champ" style="max-width:90px"><label>Logement</label><input type="text" value="' + esc(l.logementNom) + '" disabled></div>'
+          + '<div class="champ" style="max-width:140px"><label>Charnière visée</label>'
+          + '<input type="number" step="1" min="0" data-champ="saisie-charniere" data-id="' + esc(l.logementId) + '" value="' + esc(suivi ? suivi.charniere : (l.charniere !== null ? l.charniere : "")) + '"></div></div>';
+      });
+      html += "</div>";
+    }
+    html += '<h3 style="margin-top:6px">Prélèvements</h3><div class="petits" id="prels">';
+    s.prels.forEach((p, i) => {
+      html += '<div class="rangée"><div class="champ" style="max-width:100px"><label>Pièce n°</label>'
+        + '<input type="number" step="1" min="0" data-champ="prel-piece" data-id="' + i + '" value="' + esc(p.piece) + '"></div>'
+        + '<div class="champ" style="max-width:120px"><label>Batt D (mm)</label><input type="number" step="0.0001" min="0" data-champ="prel-battd" data-id="' + i + '" value="' + esc(p.battD) + '"></div>'
+        + '<div class="champ" style="max-width:120px"><label>Batt G (mm)</label><input type="number" step="0.0001" min="0" data-champ="prel-battg" data-id="' + i + '" value="' + esc(p.battG) + '"></div>'
+        + '<div class="champ" style="max-width:150px"><label>Usure</label><select data-champ="prel-usure" data-id="' + i + '">'
+        + ["", "ok", "limite", "changer"].map(u => '<option value="' + u + '"' + (p.usure === u ? " selected" : "") + ">" + (u === "" ? "—" : USURE_LABELS[u]) + "</option>").join("")
+        + '</select></div>'
+        + '<div class="champ" style="max-width:60px"><label>&nbsp;</label><button type="button" class="btn mini" data-act="retirer-prel" data-id="' + i + '">✕</button></div></div>';
+    });
+    html += '</div><div><button type="button" class="btn mini" data-act="ajouter-prel">+ Ajouter un prélèvement</button></div>';
+  }
+
+  html += '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">'
+    + '<button type="submit" class="btn primaire">Enregistrer l\'essai</button>'
+    + '<button type="button" class="btn" data-act="annuler-essai">Annuler</button></div></form>';
+  return html;
+}
+
+function ouvrirEssai(opId, scId) {
+  const ligne = ligneCourante();
+  const op = postesDeLigne(ligne).find(p => p.op.id === opId);
+  const sc = op ? op.scs.find(x => x.id === scId) : null;
+  const logements = sc ? cppParLogement(sc) : [];
+  ETAT.saisie = {
+    opId: opId, scId: scId, date: new Date().toISOString().slice(0, 10),
+    equipe: "", titre: "", operateur: "", but: "",
+    logements: logements.map(l => ({ logementId: l.logementId, logementNom: l.logementNom, charniere: l.charniere })),
+    prels: [{ piece: "", battD: "", battG: "", usure: "", logementId: logements.length ? logements[0].logementId : "" }]
+  };
+  if (ETAT.etape !== 3) { ETAT.etape = 3; }
+  rendre();
+  setTimeout(() => { const f = $("formEssai"); if (f) f.scrollIntoView({ behavior: "smooth" }); }, 30);
+}
+
+/* ── ÉCRAN 4 : la décision ──────────────────────────────────────────────── */
+
+const ORDRE_VERDICT = { pret: 0, essai: 1, gagne: 2, achiffrer: 3, rien: 4 };
+
+function ecran4() {
+  const verdicts = [];
+  lignes().forEach(l => { const vl = verdictLigne(l); if (vl.postes.length) verdicts.push(vl); });
+  const recap = recapLignes(verdicts);
+
+  let html = '<p class="lede">Un mot par poste, et la raison à côté. Les gains '
+    + '<b>actés</b> et <b>projetés</b> ne s\'additionnent jamais : le premier est '
+    + 'en production, le second attend ses cinq preuves.</p>';
+  html += '<div class="kpis">'
+    + kpi("Gain acté", recap.cppActe ? fmtEuro(recap.cppActe, 4) + "/pièce" : "—", recap.cppActe ? "en production" : "rien d'acté")
+    + kpi("Gain projeté", recap.cppProjete ? fmtEuro(recap.cppProjete, 4) + "/pièce" : "—", recap.cppProjete ? "essais à confirmer" : "aucun essai qui gagne")
+    + kpi("À décider", recap.decisions, "postes qui attendent un geste")
+    + kpi("À chiffrer", recap.aChiffrer, "postes sans coût calculable", recap.aChiffrer > 0)
+    + "</div>";
+
+  verdicts.forEach(vl => {
+    const tries = vl.postes.slice().sort((a, b) =>
+      (ORDRE_VERDICT[a.code] ?? 9) - (ORDRE_VERDICT[b.code] ?? 9) || a.code.localeCompare(b.code));
+    tries.forEach(v => {
+      const d = decisionPoste(v);
+      const classe = { gagne: "valide", pret: "valide", essai: "essai", achiffrer: "attente", rien: "muet" }[v.code] || "attente";
+      html += '<section class="dec-carte"><div class="gros">'
+        + '<div class="cppb"><b>' + (v.cppProd !== null ? fmtEuro(v.cppProd, 4) : "—") + '</b><small>CPP outillage en production</small></div>'
+        + '<p class="etat" style="padding:8px 0 0">' + esc(vl.ligne.nom) + ' · <code>' + esc(v.opCode) + '</code> ' + esc(v.nomOp || "") + "</p></div>"
+        + '<div class="droite"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
+        + '<span class="dec-mot">' + esc(d.mot) + '</span><span class="mot ' + classe + '">' + esc(v.verdict) + "</span></div>"
+        + '<p class="dec-pourquoi">' + esc(d.pourquoi) + "</p>";
+      html += '<div class="deux">'
+        + cellule("Gain acté", v.gainActe !== null ? fmtEuro(v.gainActe, 4) : "—", v.gainActeAnnuel !== null ? fmtEnt(v.gainActeAnnuel) + " €/an" : "rien d'acté")
+        + cellule("Gain projeté", v.gainProjete !== null ? fmtEuro(v.gainProjete, 4) : "—", v.gainProjeteAnnuel !== null ? fmtEnt(v.gainProjeteAnnuel) + " €/an" : (v.gainProjete !== null ? "volume non saisi" : "aucun essai"))
+        + cellule("Cible du site", v.cible !== null ? fmtEuro(v.cible, 4) : "— non saisie", "par pièce")
+        + cellule("Chemin vers la cible", v.chemin !== null ? Math.round(v.chemin) + " %" : "—", v.chemin !== null ? "du meilleur scénario" : "cible ou essai manquant")
+        + "</div></div></section>";
+    });
+  });
+
+  html += '<div class="garder"><button class="btn primaire" data-act="aller" data-id="5">Voir la page à emporter →</button></div>';
+  return html;
+}
+
+/* ── ÉCRAN 5 : l'A4 ─────────────────────────────────────────────────────── */
+
+function ecran5() {
+  const tuiles = tuilesDeLignes(lignes());
+  const verdicts = lignes().map(verdictLigne);
+  const recap = recapLignes(verdicts);
+  const decisions = [];
+  verdicts.forEach(vl => vl.postes.forEach(p => {
+    if (p.code === "pret" || p.code === "essai" || p.code === "gagne") decisions.push({ vl: vl, p: p });
+  }));
+  decisions.sort((a, b) => (ORDRE_VERDICT[a.p.code] ?? 9) - (ORDRE_VERDICT[b.p.code] ?? 9));
+
+  const aujourdhui = new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+  let html = '<div class="garder"><button class="btn primaire" data-act="imprimer">⎙ Imprimer cette page</button></div>'
+    + '<div class="a4"><h1>Suivi d\'optimisation — coût d\'outillage</h1>'
+    + '<p class="sous">' + esc(aujourdhui) + " · Sept Fons · CPP = Σ prix ÷ (arêtes × charnière), le seul chiffre comparable au classeur · source : "
+    + esc(ETAT.source.type === "jeu" ? "jeu d'exemple" : ETAT.source.nom) + "</p>";
+
+  html += "<h2>Les lignes</h2><table><thead><tr><th>Ligne</th><th>CPU outillage /pce</th><th>Gain acté</th><th>Gain projeté</th><th>À chiffrer</th></tr></thead><tbody>";
+  tuiles.forEach(t => {
+    const vl = verdicts.find(v => v.ligne.id === t.ligne.id);
+    html += "<tr><td><b>" + esc(t.nom) + "</b></td>"
+      + "<td>" + (t.cpp !== null ? fmtEuro(t.cpp, 4) : "à chiffrer") + "</td>"
+      + "<td>" + fmtEuro(sommeGains(vl.postes, "gainActe"), 4) + "</td>"
+      + "<td>" + fmtEuro(sommeGains(vl.postes, "gainProjete"), 4) + "</td>"
+      + "<td>" + (vl.postes.filter(p => p.code === "achiffrer").length || "—") + "</td></tr>";
+  });
+  html += '<tr><td><b>Total</b></td><td><b>—</b></td>'
+    + "<td><b>" + (recap.cppActe ? fmtEuro(recap.cppActe, 4) : "—") + "</b></td>"
+    + "<td><b>" + (recap.cppProjete ? fmtEuro(recap.cppProjete, 4) : "—") + "</b></td>"
+    + "<td><b>" + recap.aChiffrer + "</b></td></tr>";
+  html += "</tbody></table>";
+  html += '<p class="note">Les gains actés et projetés sont deux colonnes séparées : ils ne '
+    + "s'additionnent jamais. Un « à chiffrer » est un poste sans coût calculable, pas un poste gratuit.</p>";
+
+  html += "<h2>Ce qui demande une décision</h2>";
+  if (decisions.length) {
+    html += '<table><thead><tr><th>Poste</th><th>Mot</th><th>Raison</th><th>Gain /pce</th></tr></thead><tbody>';
+    decisions.forEach(d => {
+      const v = d.p; const mot = decisionPoste(v);
+      html += "<tr><td>" + esc(d.vl.ligne.nom + " · " + v.opCode + " " + (v.nomOp || "")) + "</td>"
+        + "<td><b>" + esc(mot.mot) + "</b></td><td>" + esc(mot.pourquoi) + "</td>"
+        + "<td>" + (v.gainProjete !== null ? fmtEuro(v.gainProjete, 4) : (v.gainActe !== null ? fmtEuro(v.gainActe, 4) : "—")) + "</td></tr>";
+    });
+    html += "</tbody></table>";
+  } else {
+    html += '<p class="note">Aucune décision en attente.</p>';
+  }
+
+  html += "<h2>La règle</h2><p class=\"note\">Le CPP affiché est le coût d'<b>outillage</b> de la "
+    + "pièce — celui du classeur. Le temps machine, le rebut et les pièces détachées sont "
+    + "valorisés dans l'outil mais jamais comparés au classeur : ce n'est pas le même périmètre. "
+    + "Un chiffre absent est écrit comme absent ; rien n'est estimé.</p>";
+
+  html += '<div class="pied"><span>Document généré localement · v' + esc(OUTIL_VERSION)
+    + " · assemblage " + esc(EMPREINTE_ASSEMBLAGE) + "</span>"
+    + "<span><b>Confidentiel interne</b> — données d'atelier, ne pas diffuser</span></div></div>";
+  return html;
+}
+
+/* ── le rendu ────────────────────────────────────────────────────────────── */
+
+function rendre() {
+  const etapes = $("etapes");
+  if (etapes) etapes.innerHTML = ECRANS.map(e =>
+    '<button class="etape' + (ETAT.etape === e.n ? " on" : "") + '" data-act="aller" data-id="' + e.n + '">'
+    + '<span class="n">' + e.n + "</span>" + esc(e.nom) + "</button>").join("");
+  const src = $("sourceLigne");
+  if (src) src.innerHTML = badgeSource();
+  const vue = $("vue");
+  if (vue) vue.innerHTML = panoramaSiImport() + ECRANS[ETAT.etape - 1].fn();
+  const pied = $("pied");
+  if (pied) pied.innerHTML = "Suivi CPP — Sept Fons · outil local, aucune donnée transmise sans « Exporter » ou « Partager » · v"
+    + esc(OUTIL_VERSION) + " · assemblage " + esc(EMPREINTE_ASSEMBLAGE);
+}
+
+function panoramaSiImport() {
+  const s = ETAT.source;
+  if (s.type !== "import" || !s.rapport) return "";
+  const r = s.rapport;
+  let html = '<div class="decl"><b>Import réussi — ' + esc(s.nom) + "</b> : "
+    + r.lignes + " lignes, " + r.references + " références, " + r.ops + " opérations, "
+    + r.scenarios + " scénarios, " + r.essais + " essais, " + r.logements + " logements."
+    + (s.poids && s.poids.avant ? " Sur " + fmtEnt(s.poids.avant / 1024) + " Ko lus, il reste "
+      + fmtEnt(s.poids.apres / 1024) + " Ko (" + Math.round((s.poids.ratio || 0) * 100) + " %)." : "")
+    + " Abandonnés : " + r.abandons.map(esc).join(", ") + ".</div>";
+  if (r.avertissements.length) {
+    html += r.avertissements.map(a => '<div class="avert warn">⚠ ' + esc(a) + "</div>").join("");
+  }
+  return html;
+}
+
+/* ── la persistance ─────────────────────────────────────────────────────── */
+
+let _timerSauve = null;
+function marquerSale() {
+  ETAT.modifieLe = new Date().toISOString();
+  if (_timerSauve) clearTimeout(_timerSauve);
+  _timerSauve = setTimeout(sauvegarderLocal, 300);
+  ETAT.cloud.sale = true;
+  programmerPush();
+}
+
+function sauvegarderLocal() {
+  try {
+    localStorage.setItem(CLE_LOCALE, JSON.stringify({
+      donnees: ETAT.donnees, source: ETAT.source, modifieLe: ETAT.modifieLe,
+      modifiePar: ETAT.modifiePar, theme: ETAT.theme
+    }));
+  } catch (e) { /* quota : l'outil continue en mémoire */ }
+}
+
+function chargerLocal() {
+  let brut = null;
+  try { brut = localStorage.getItem(CLE_LOCALE); } catch (e) { brut = null; }
+  if (!brut) { ETAT.donnees = relireEtat(JEUX); ETAT.source = { type: "jeu", nom: "jeu d'exemple", rapport: null, poids: null }; return; }
+  try {
+    const j = JSON.parse(brut);
+    if (!j || !j.donnees) throw new Error("vide");
+    ETAT.donnees = relireEtat(j.donnees);
+    ETAT.source = j.source || ETAT.source;
+    ETAT.modifieLe = j.modifieLe || "";
+    ETAT.modifiePar = j.modifiePar || "";
+    if (j.theme) { ETAT.theme = j.theme; appliquerTheme(); }
+  } catch (e) {
+    ETAT.donnees = relireEtat(JEUX);
+  }
+}
+
+function exporter() {
+  ETAT.donnees.exporteLe = new Date().toISOString();
+  ETAT.donnees.exportePar = ETAT.modifiePar || "local";
+  const blob = new Blob([JSON.stringify(ETAT.donnees, null, 1)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "suivi_cpp_" + new Date().toISOString().slice(0, 10) + ".json";
+  document.body.appendChild(a); a.click(); a.remove();
+  marquerSale();
+}
+
+/* ── l'import ────────────────────────────────────────────────────────────── */
+
+let _fichierEnAttente = null;
+
+function ouvrirImport() {
+  ETAT.panneau = "import";
+  const p = $("panneau");
+  if (!p) return;
+  p.innerHTML = '<h3>Données</h3><p class="sous">Choisis un export <code>.json</code> de l\'ancienne '
+    + "application — tous les formats jamais produits sont acceptés. Le fichier est lu "
+    + "<b>sur ce poste</b> : il n'est ni envoyé, ni conservé ailleurs. Les formats de CET outil "
+    + "sont relus par la même porte.</p>"
+    + '<div class="depot"><input type="file" id="fichier" accept=".json,application/json"></div>'
+    + '<div id="importRetour">' + importRetourHTML() + "</div>"
+    + '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">'
+    + '<button class="btn mini" data-act="retour-jeu">Revenir au jeu d\'exemple</button>'
+    + '<span class="spacer" style="margin-left:auto"></span>'
+    + '<button class="btn mini primaire" data-act="fermer-panneau">Fermer</button></div>';
+  $("overlay").hidden = false;
+  const f = $("fichier");
+  if (f) f.addEventListener("change", lireFichier);
+}
+
+function importRetourHTML() {
+  const s = ETAT.source;
+  if (s.type !== "import" || !s.rapport) return "";
+  const r = s.rapport;
+  let html = '<div class="avert ok">✓ ' + esc(s.nom) + " — " + r.lignes + " lignes, "
+    + r.references + " références, " + r.ops + " opérations, " + r.scenarios + " scénarios, "
+    + r.essais + " essais, " + r.prelevements + " prélèvements, " + r.logements + " logements.</div>";
+  if (s.poids && s.poids.avant) {
+    html += '<div class="avert ok">Sur ' + fmtEnt(s.poids.avant / 1024) + " Ko lus, il reste "
+      + fmtEnt(s.poids.apres / 1024) + " Ko (" + Math.round((s.poids.ratio || 0) * 100) + " %). "
+      + "Rien de ce qui nourrit une décision n'est perdu.</div>";
+  }
+  html += r.avertissements.map(a => '<div class="avert warn">⚠ ' + esc(a) + "</div>").join("");
+  html += '<div class="avert">Abandonnés : ' + r.abandons.map(esc).join(" · ") + ".</div>";
+  return html;
+}
+
+function lireFichier(ev) {
+  const fichier = ev && ev.target && ev.target.files && ev.target.files[0];
+  if (!fichier) return;
+  const lecteur = new FileReader();
+  lecteur.onload = () => {
+    try {
+      const source = JSON.parse(lecteur.result);
+      appliquerImport(source, fichier.name, fichier.size);
+    } catch (e) {
+      ETAT.source = { type: "erreur", nom: fichier.name, rapport: null, poids: null };
+      afficherImportErreur("Ce fichier n'est pas du JSON lisible : " + e.message);
+    }
+  };
+  lecteur.onerror = () => afficherImportErreur("Fichier illisible.");
+  lecteur.readAsText(fichier);
+}
+
+function appliquerImport(source, nom, taille) {
+  const p = projeter(source);
+  if (!p.ok) {
+    /* Un refus doit se voir au bandeau : un écran qui garde l'ancienne source
+       pendant qu'il affiche une erreur laisse croire que les données ont changé. */
+    ETAT.source = { type: "erreur", nom: nom || "fichier", rapport: null, poids: null };
+    afficherImportErreur(p.erreur);
+    return false;
+  }
+  ETAT.donnees = relireEtat({ lignes: p.lignes, projets: [], livraisons: [] });
+  ETAT.source = { type: "import", nom: nom || "export", rapport: p.rapport, poids: poids(source, p.lignes) };
+  ETAT.ligneId = null; ETAT.etape = 1;
+  marquerSale(); rendre(); ouvrirImport();
+  return true;
+}
+
+function afficherImportErreur(message) {
+  const zone = $("importRetour");
+  if (zone) zone.innerHTML = '<div class="avert bad">✕ ' + esc(message) + "</div>";
+}
+
+function retourJeu() {
+  ETAT.donnees = relireEtat(JEUX);
+  ETAT.source = { type: "jeu", nom: "jeu d'exemple", rapport: null, poids: null };
+  ETAT.ligneId = null; ETAT.etape = 1;
+  marquerSale(); rendre(); ouvrirImport();
+}
+
+/* ── les réglages ───────────────────────────────────────────────────────── */
+
+function ouvrirReglages() {
+  ETAT.panneau = "reglages";
+  const p = $("panneau");
+  if (!p) return;
+  const specs = ETAT.donnees.specsUsine || {};
+  let html = '<h3>Réglages</h3><p class="sous">Les seuils du site et les taux horaires. '
+    + "Un taux horaire absent rend le temps machine non chiffrable — il est déclaré, pas inventé.</p>";
+  html += '<div class="rangée"><div class="champ"><label>Auteur des saisies</label>'
+    + '<input type="text" data-champ="auteur" value="' + esc(ETAT.modifiePar) + '" placeholder="Ton nom"></div></div>';
+  html += '<h3 style="font-size:var(--t4);margin:8px 0">Seuils du site</h3><div class="petits"><div class="rangée">'
+    + '<div class="champ"><label>Battement par défaut (mm)</label><input type="number" step="0.001" data-champ="spec-batt" value="' + esc(nb(specs.battement) === null ? "" : specs.battement) + '"></div>'
+    + '<div class="champ"><label>Ra par défaut (µm)</label><input type="number" step="0.1" data-champ="spec-ra" value="' + esc(nb(specs.ra) === null ? "" : specs.ra) + '"></div>'
+    + "</div></div>";
+  html += '<h3 style="font-size:var(--t4);margin:14px 0 8px">Taux horaires par ligne (€/h)</h3><div class="petits">';
+  lignes().forEach(l => {
+    html += '<div class="rangée"><div class="champ" style="max-width:220px"><label>' + esc(l.nom) + "</label>"
+      + '<input type="number" step="0.01" min="0" data-champ="taux" data-id="' + esc(l.id) + '" value="' + esc(l.coutHoraire === "" ? "" : l.coutHoraire) + '"></div></div>';
+  });
+  html += '</div><div style="display:flex;gap:8px;margin-top:14px"><span style="margin-left:auto"></span>'
+    + '<button class="btn mini primaire" data-act="fermer-panneau">Fermer</button></div>';
+  p.innerHTML = html;
+  $("overlay").hidden = false;
+}
+
+/* ── le partage cloud ────────────────────────────────────────────────────── */
+
+function ouvrirPartage() {
+  ETAT.panneau = "partage";
+  const p = $("panneau");
+  if (!p) return;
+  const c = ETAT.cloud;
+  let html = '<h3>Partager</h3><p class="sous">Le cloud est un partage volontaire, jamais une '
+    + "dépendance : hors ligne, tout fonctionne. Les données ne partent que par le bouton "
+    + "<b>Déposer</b> — jamais par effet de bord d'une saisie.</p>";
+
+  if (!c.session) {
+    html += '<div class="rangée"><div class="champ"><label>Email</label><input type="email" id="cloudEmail"></div>'
+      + '<div class="champ"><label>Mot de passe</label><input type="password" id="cloudMdp"></div>'
+      + '<div class="champ" style="max-width:130px"><label>&nbsp;</label><button class="btn primaire" data-act="cloud-connexion">Se connecter</button></div></div>';
+  } else {
+    html += '<div class="avert ok">✓ Connecté : ' + esc(c.session.email) + "</div>";
+    html += '<div class="avert">' + etatCloudHTML() + "</div>";
+    html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">'
+      + '<button class="btn primaire" data-act="cloud-deposer"' + (c.enCours ? " disabled" : "") + ">Déposer ce suivi</button>"
+      + '<button class="btn" data-act="cloud-prendre">Prendre le cloud</button>'
+      + '<button class="btn" data-act="cloud-rafraichir">Rafraîchir</button>'
+      + '<span style="margin-left:auto"></span>'
+      + '<button class="btn danger" data-act="cloud-deconnexion">Se déconnecter</button></div>';
+    if (c.note) html += '<div class="avert">' + esc(c.note) + "</div>";
+  }
+  if (c.erreur) html += '<div class="avert bad">✕ ' + esc(c.erreur) + "</div>";
+  html += '<div class="decl"><b>Table dédiée.</b> Cet outil écrit dans <code>' + esc(CLOUD_TABLE)
+    + "</code> — jamais dans la table de l'app de production. Si la table n'existe pas encore, "
+    + "l'erreur affichée donnera le SQL à exécuter une fois dans le tableau Supabase.</div>";
+  html += '<div style="display:flex;gap:8px;margin-top:12px"><span style="margin-left:auto"></span>'
+    + '<button class="btn mini primaire" data-act="fermer-panneau">Fermer</button></div>';
+  p.innerHTML = html;
+  $("overlay").hidden = false;
+}
+
+function etatCloudHTML() {
+  const c = ETAT.cloud;
+  if (!c.info) return "Le cloud n'a pas encore été lu — clique « Rafraîchir ».";
+  if (c.info.vide) return "Le cloud est <b>vide</b> : le dépôt initial passe uniquement par « Déposer ce suivi ».";
+  return "Dernier dépôt : <b>" + esc(c.info.modifie_le || "?") + "</b> par <b>" + esc(c.info.modifie_par || "?") + "</b>"
+    + (c.sale ? " · <b>des saisies locales ne sont pas encore déposées</b>" : " · tout est déposé");
+}
+
+function cloudFetch(url, opts, delai) {
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), delai || 15000);
+  return fetch(url, Object.assign({}, opts, { signal: ctl.signal })).finally(() => clearTimeout(t));
+}
+function cloudEntetes(extra) {
+  const c = ETAT.cloud;
+  return Object.assign({
+    "apikey": CLOUD_KEY,
+    "Authorization": "Bearer " + ((c.session && c.session.access_token) || CLOUD_KEY),
+    "Content-Type": "application/json"
+  }, extra || {});
+}
+async function cloudConnexion(email, mdp) {
+  ETAT.cloud.erreur = "";
+  let r;
+  try {
+    r = await cloudFetch(CLOUD_URL + "/auth/v1/token?grant_type=password", {
+      method: "POST", headers: { "apikey": CLOUD_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ email: email, password: mdp })
+    });
+  } catch (e) { ETAT.cloud.erreur = "Cloud injoignable (réseau ?)."; ouvrirPartage(); return false; }
+  if (!r.ok) { ETAT.cloud.erreur = "Connexion refusée (" + r.status + ")."; ouvrirPartage(); return false; }
+  const j = await r.json();
+  ETAT.cloud.session = { access_token: j.access_token, refresh_token: j.refresh_token,
+    expires_at: Date.now() + (j.expires_in || 3600) * 1000, email: email };
+  try { localStorage.setItem(CLE_SESSION, JSON.stringify(ETAT.cloud.session)); } catch (e) {}
+  ouvrirPartage();
+  return true;
+}
+function cloudDeconnexion() {
+  ETAT.cloud.session = null; ETAT.cloud.info = null; ETAT.cloud.stamp = null;
+  try { localStorage.removeItem(CLE_SESSION); localStorage.removeItem(CLE_STAMP); } catch (e) {}
+  ouvrirPartage();
+}
+async function cloudLireEtat() {
+  const r = await cloudFetch(CLOUD_URL + "/rest/v1/" + CLOUD_TABLE + "?id=eq.1&select=donnees,modifie_le,modifie_par",
+    { headers: cloudEntetes() });
+  if (!r.ok) throw new Error("cloud injoignable (" + r.status + ")");
+  const j = await r.json();
+  return j[0] || null;
+}
+async function cloudRafraichir() {
+  const c = ETAT.cloud;
+  c.erreur = "";
+  try {
+    const row = await cloudLireEtat();
+    c.info = row ? { vide: false, modifie_le: row.modifie_le, modifie_par: row.modifie_par }
+                 : { vide: true, modifie_le: null, modifie_par: null };
+  } catch (e) { c.erreur = e.message; }
+  ouvrirPartage();
+}
+async function cloudDeposer() {
+  const c = ETAT.cloud;
+  if (!c.session) return;
+  const avant = await cloudLireEtat().catch(() => null);
+  if (avant && !confirm("Le cloud porte déjà un suivi déposé par « " + (avant.modifie_par || "?")
+    + " ». Le remplacer ? L'ancienne version est archivée.")) return;
+  c.enCours = true; ouvrirPartage();
+  try {
+    if (avant) {
+      await cloudFetch(CLOUD_URL + "/rest/v1/" + CLOUD_TABLE_HIST, {
+        method: "POST", headers: cloudEntetes({ "Prefer": "return=minimal" }),
+        body: JSON.stringify({ donnees: avant.donnees, sauve_par: avant.modifie_par || "" })
+      });
+    }
+    ETAT.donnees.exporteLe = new Date().toISOString();
+    ETAT.donnees.exportePar = (c.session.email || "local");
+    const corps = { id: 1, donnees: ETAT.donnees, modifie_par: c.session.email || "local" };
+    let r = await cloudFetch(CLOUD_URL + "/rest/v1/" + CLOUD_TABLE + "?id=eq.1", {
+      method: "PATCH", headers: cloudEntetes({ "Prefer": "return=representation" }),
+      body: JSON.stringify(corps)
+    });
+    if (!r.ok) {
+      const texte = await r.text();
+      if (r.status === 404 || /does not exist|relation/i.test(texte)) {
+        throw new Error("La table " + CLOUD_TABLE + " n'existe pas encore. SQL à exécuter une fois : "
+          + "CREATE TABLE " + CLOUD_TABLE + " (id int primary key, donnees jsonb, modifie_par text, "
+          + "modifie_le timestamptz default now()); CREATE TABLE " + CLOUD_TABLE_HIST
+          + " (id bigint generated always as identity primary key, donnees jsonb, sauve_par text, "
+          + "depose_le timestamptz default now()); puis active RLS « authenticated ».");
+      }
+      throw new Error("dépôt refusé (" + r.status + ")");
+    }
+    const j = await r.json();
+    if (!j.length) {
+      r = await cloudFetch(CLOUD_URL + "/rest/v1/" + CLOUD_TABLE, {
+        method: "POST", headers: cloudEntetes({ "Prefer": "resolution=merge-duplicates,return=representation" }),
+        body: JSON.stringify(corps)
+      });
+      if (!r.ok) throw new Error("dépôt refusé (" + r.status + ")");
+    }
+    c.stamp = (j[0] && j[0].modifie_le) || new Date().toISOString();
+    try { localStorage.setItem(CLE_STAMP, c.stamp); } catch (e) {}
+    c.sale = false;
+    c.info = { vide: false, modifie_le: c.stamp, modifie_par: corps.modifie_par };
+    c.note = "Déposé à " + new Date().toLocaleTimeString("fr-FR") + ".";
+    ETAT.source = { type: "cloud", nom: "suivi partagé", rapport: ETAT.source.rapport, poids: ETAT.source.poids };
+    marquerSale();
+  } catch (e) { c.erreur = e.message; }
+  c.enCours = false;
+  ouvrirPartage();
+}
+async function cloudPrendre() {
+  const c = ETAT.cloud;
+  c.erreur = "";
+  try {
+    const row = await cloudLireEtat();
+    if (!row) { c.erreur = "Le cloud est vide — rien à prendre."; ouvrirPartage(); return; }
+    sauvegarderLocal();
+    ETAT.donnees = relireEtat(row.donnees);
+    ETAT.source = { type: "cloud", nom: "suivi partagé", rapport: null, poids: null };
+    c.stamp = row.modifie_le;
+    try { localStorage.setItem(CLE_STAMP, c.stamp); } catch (e) {}
+    c.sale = false;
+    ETAT.ligneId = null; ETAT.etape = 1;
+    fermerPanneaux(); marquerSale(); rendre();
+  } catch (e) { c.erreur = e.message; ouvrirPartage(); }
+}
+let _timerPush = null;
+function programmerPush() {
+  if (!ETAT.cloud.session || !ETAT.cloud.sale) return;
+  if (_timerPush) clearTimeout(_timerPush);
+  _timerPush = setTimeout(() => { if (ETAT.cloud.sale && ETAT.cloud.session) cloudDeposer(); }, 4000);
+}
+
+/* ── l'édition d'un logement ────────────────────────────────────────────── */
+
+function ouvrirLogement(logementId, scId) {
+  const trouve = trouverScenario(scId);
+  if (!trouve) return;
+  let logement = null;
+  trouve.sc.outils.forEach(o => { const l = (o.logements || []).find(x => x.id === logementId); if (l) logement = l; });
+  if (!logement) return;
+  ETAT.panneau = "logement";
+  const p = $("panneau");
+  const cpp = coutLogement(logement);
+  p.innerHTML = '<h3>' + esc(logement.nom) + ' — <code>' + esc(trouve.sc.name) + '</code></h3>'
+    + '<p class="sous">Le CPP de ce logement : prix ÷ (arêtes × charnière). '
+    + (cpp !== null ? "Actuellement <b>" + fmtEuro(cpp, 5) + " €/pièce</b>." : "Actuellement <b>non chiffrable</b> — il manque une des trois valeurs.")
+    + "</p>"
+    + '<div class="rangée"><div class="champ"><label>MABEC</label><input type="text" data-champ="log-mabec" value="' + esc(logement.mabec) + '"></div>'
+    + '<div class="champ"><label>Plaquette (ISO)</label><input type="text" data-champ="log-iso" value="' + esc(logement.iso) + '"></div></div>'
+    + '<div class="rangée"><div class="champ"><label>Prix (€)</label><input type="number" step="0.01" min="0" data-champ="log-prix" value="' + esc(logement.prix === "" ? "" : logement.prix) + '"></div>'
+    + '<div class="champ"><label>Arêtes</label><input type="number" step="1" min="0" data-champ="log-aretes" value="' + esc(logement.aretes === "" ? "" : logement.aretes) + '"></div>'
+    + '<div class="champ"><label>Charnière (pièces)</label><input type="number" step="1" min="0" data-champ="log-charniere" value="' + esc(logement.charniere === "" ? "" : logement.charniere) + '"></div></div>'
+    + '<div class="rangée"><div class="champ"><label>Vc (m/min) — optionnel</label><input type="number" step="1" data-champ="log-vc" value="' + esc(logement.vc === "" ? "" : logement.vc) + '"></div>'
+    + '<div class="champ"><label>f (mm/t) — optionnel</label><input type="number" step="0.01" data-champ="log-f" value="' + esc(logement.f === "" ? "" : logement.f) + '"></div></div>'
+    + '<div style="display:flex;gap:8px;margin-top:10px"><button class="btn mini primaire" data-act="fermer-panneau">Terminé</button></div>';
+  $("overlay").hidden = false;
+}
+
+function majChampLogement(logementId, scId, champ, valeur) {
+  const trouve = trouverScenario(scId);
+  if (!trouve) return;
+  let logement = null;
+  trouve.sc.outils.forEach(o => { const l = (o.logements || []).find(x => x.id === logementId); if (l) logement = l; });
+  if (!logement) return;
+  if (champ === "mabec" || champ === "iso") logement[champ] = valeur.trim();
+  else {
+    const n = parseFloat(valeur);
+    logement[champ] = (valeur === "" || isNaN(n)) ? "" : n;
+  }
+  marquerSale();
+  ouvrirLogement(logementId, scId);
+  rendre();
+}
+
+/* ── la saisie d'un essai ───────────────────────────────────────────────── */
+
+function enregistrerEssai() {
+  const s = ETAT.saisie;
+  if (!s) return;
+  const trouve = trouverScenario(s.scId);
+  if (!trouve) { ETAT.saisie = null; rendre(); return; }
+  const logements = s.logements.filter(l => l.charniere !== "" && l.charniere !== null && !isNaN(parseFloat(l.charniere)))
+    .map(l => ({ logementId: l.logementId, logementNom: l.logementNom,
+      charniere: parseFloat(l.charniere) }));
+  const prels = s.prels.filter(p =>
+    p.piece !== "" || p.battD !== "" || p.battG !== "")
+    .map((p, i) => ({
+      id: "pr_" + Date.now().toString(36) + "_" + i,
+      piece: p.piece === "" ? "" : parseFloat(p.piece),
+      logementId: (logements[0] && logements[0].logementId) || "",
+      pointMesure: "", batt: "", battD: p.battD === "" ? "" : parseFloat(p.battD),
+      battG: p.battG === "" ? "" : parseFloat(p.battG),
+      usure: p.usure, valeur2: ""
+    }));
+  trouve.sc.essais.push({
+    id: "es_" + Date.now().toString(36),
+    titre: s.titre || "Essai",
+    date: s.date, operateur: s.operateur, equipe: s.equipe, but: s.but,
+    observations: "", cloture: null,
+    params: { logements: logements },
+    prelevements: prels
+  });
+  ETAT.modifiePar = ETAT.modifiePar || s.operateur || "";
+  ETAT.saisie = null;
+  marquerSale(); rendre();
+}
+
+/* ── les actions ────────────────────────────────────────────────────────── */
+
+function changerStatut(scId, statut) {
+  const trouve = trouverScenario(scId);
+  if (!trouve) return;
+  trouve.sc.statut = statut;
+  if (statut === "serie") {
+    /* Un poste n'a qu'UNE production : passer un scénario en série retire la
+       baseline à ses frères, sinon deux scénarios se disent « en production »
+       et le poste se compare à lui-même. */
+    trouve.sc.baseline = true;
+    (trouve.op.scenarios || []).forEach(s => { if (s.id !== trouve.sc.id) s.baseline = false; });
+  }
+  marquerSale(); rendre();
+}
+
+function fermerPanneaux() {
+  ETAT.panneau = null;
+  const o = $("overlay");
+  if (o) o.hidden = true;
+}
+
+function appliquerTheme() {
+  const t = ETAT.theme;
+  if (t === "dark") document.documentElement.setAttribute("data-theme", "dark");
+  else if (t === "light") document.documentElement.setAttribute("data-theme", "light");
+  else document.documentElement.removeAttribute("data-theme");
+}
+
+const ACTIONS = {
+  "aller": id => aller(parseInt(id, 10)),
+  "ouvrir-ligne": id => { ETAT.ligneId = id; ETAT.etape = 2; rendre(); },
+  "aller-scenarios": id => { ETAT.etape = 3; rendre(); },
+  "nouvel-essai": (id, id2) => ouvrirEssai(id, id2 || null),
+  "annuler-essai": () => { ETAT.saisie = null; rendre(); },
+  "ajouter-prel": () => { if (ETAT.saisie) { ETAT.saisie.prels.push({ piece: "", battD: "", battG: "", usure: "", logementId: "" }); rendre(); } },
+  "retirer-prel": id => { if (ETAT.saisie) { ETAT.saisie.prels.splice(parseInt(id, 10), 1); rendre(); } },
+  "voir-essai": (id, id2) => { ETAT.etape = 3; rendre(); },
+  "editer-logement": (id, id2) => ouvrirLogement(id, id2),
+  "passer-serie": id => changerStatut(id, "serie"),
+  "abandonner": id => changerStatut(id, "abandonne"),
+  "ouvrir-import": () => ouvrirImport(),
+  "retour-jeu": () => retourJeu(),
+  "exporter": () => exporter(),
+  "ouvrir-reglages": () => ouvrirReglages(),
+  "ouvrir-partage": () => ouvrirPartage(),
+  "fermer-panneau": () => fermerPanneaux(),
+  "basculer-theme": () => {
+    ETAT.theme = ETAT.theme === "dark" ? "light" : "dark";
+    appliquerTheme(); marquerSale();
+  },
+  "imprimer": () => window.print(),
+  "cloud-connexion": () => {
+    const e = $("cloudEmail"), m = $("cloudMdp");
+    if (e && m) cloudConnexion(e.value, m.value);
+  },
+  "cloud-deconnexion": () => cloudDeconnexion(),
+  "cloud-deposer": () => cloudDeposer(),
+  "cloud-prendre": () => cloudPrendre(),
+  "cloud-rafraichir": () => cloudRafraichir()
+};
+
+function faire(act, id, id2) {
+  const f = ACTIONS[act];
+  if (f) f(id, id2);
+}
+
+/* ── les écouteurs (délégués : ils survivent au rendu) ──────────────────── */
+
+document.addEventListener("click", ev => {
+  const cible = ev.target.closest ? ev.target.closest("[data-act]") : null;
+  if (!cible) return;
+  faire(cible.getAttribute("data-act"), cible.getAttribute("data-id"), cible.getAttribute("data-id2"));
+});
+document.addEventListener("change", ev => {
+  const cible = ev.target;
+  const champ = cible.getAttribute && cible.getAttribute("data-champ");
+  if (!champ) return;
+  const id = cible.getAttribute("data-id");
+  const v = cible.value;
+  switch (champ) {
+    case "saisie-op": if (ETAT.saisie) { ETAT.saisie.opId = v; const poste = postesDeLigne(ligneCourante()).find(p => p.op.id === v); ETAT.saisie.scId = poste && poste.scs[0] ? poste.scs[0].id : null; ouvrirEssai(ETAT.saisie.opId, ETAT.saisie.scId); } break;
+    case "saisie-sc": if (ETAT.saisie) { ETAT.saisie.scId = v; ouvrirEssai(ETAT.saisie.opId, v); } break;
+    case "saisie-date": if (ETAT.saisie) ETAT.saisie.date = v; break;
+    case "saisie-equipe": if (ETAT.saisie) ETAT.saisie.equipe = v; break;
+    case "saisie-titre": if (ETAT.saisie) ETAT.saisie.titre = v; break;
+    case "saisie-operateur": if (ETAT.saisie) ETAT.saisie.operateur = v; break;
+    case "saisie-but": if (ETAT.saisie) ETAT.saisie.but = v; break;
+    case "saisie-charniere": if (ETAT.saisie) { const l = ETAT.saisie.logements.find(x => x.logementId === id); if (l) l.charniere = v; } break;
+    case "prel-piece": if (ETAT.saisie) ETAT.saisie.prels[+id].piece = v; break;
+    case "prel-battd": if (ETAT.saisie) ETAT.saisie.prels[+id].battD = v; break;
+    case "prel-battg": if (ETAT.saisie) ETAT.saisie.prels[+id].battG = v; break;
+    case "prel-usure": if (ETAT.saisie) ETAT.saisie.prels[+id].usure = v; break;
+    case "log-mabec": case "log-iso": case "log-prix": case "log-aretes": case "log-charniere": case "log-vc": case "log-f":
+      majChampLogement(id, ETAT.panneau === "logement" ? _scPanneau : "", champ.replace("log-", ""), v); break;
+    case "taux": { const l = lignes().find(x => x.id === id); if (l) { const n = parseFloat(v); l.coutHoraire = (v === "" || isNaN(n)) ? "" : n; marquerSale(); } break; }
+    case "spec-batt": { const n = parseFloat(v); ETAT.donnees.specsUsine.battement = (v === "" || isNaN(n)) ? SEUILS.battementDefaut : n; marquerSale(); break; }
+    case "spec-ra": { const n = parseFloat(v); ETAT.donnees.specsUsine.ra = (v === "" || isNaN(n)) ? SEUILS.raDefaut : n; marquerSale(); break; }
+    case "auteur": ETAT.modifiePar = v; break;
+  }
+});
+document.addEventListener("submit", ev => {
+  const f = ev.target;
+  if (f.getAttribute && f.getAttribute("data-form") === "essai") { ev.preventDefault(); enregistrerEssai(); }
+});
+document.addEventListener("keydown", ev => {
+  if (ev.key === "Escape") fermerPanneaux();
+});
+let _scPanneau = null;
+const _ouvrirLogementBrut = ouvrirLogement;
+ouvrirLogement = function (logementId, scId) { _scPanneau = scId; _ouvrirLogementBrut(logementId, scId); };
+$("overlay") && $("overlay").addEventListener("click", ev => { if (ev.target === $("overlay")) fermerPanneaux(); });
+
+/* ── la porte de test ───────────────────────────────────────────────────── */
+
+window.resume = {
+  ETAT: ETAT, ECRANS: ECRANS, JEUX: JEUX,
+  EMPREINTE_ASSEMBLAGE: EMPREINTE_ASSEMBLAGE,
+  rendre: rendre, aller: aller, faire: faire,
+  ouvrirLigne: ACTIONS["ouvrir-ligne"],
+  ouvrirImport: ouvrirImport, appliquerImport: appliquerImport, retourJeu: retourJeu,
+  ouvrirEssai: ouvrirEssai, enregistrerEssai: enregistrerEssai,
+  changerStatut: changerStatut, ouvrirLogement: ouvrirLogement,
+  majChampLogement: majChampLogement, ouvrirReglages: ouvrirReglages,
+  ouvrirPartage: ouvrirPartage, exporter: exporter,
+  sauvegarderLocal: sauvegarderLocal, chargerLocal: chargerLocal,
+  cloudConnexion: cloudConnexion, cloudDeposer: cloudDeposer, cloudPrendre: cloudPrendre,
+  cloudRafraichir: cloudRafraichir, cloudDeconnexion: cloudDeconnexion,
+  ecran1: ecran1, ecran2: ecran2, ecran3: ecran3, ecran4: ecran4, ecran5: ecran5,
+  ligneCourante: ligneCourante, posterHTML: posteHTML, essaiLigneHTML: essaiLigneHTML,
+  badgeSource: badgeSource, panoramaSiImport: panoramaSiImport
+};
+
+chargerLocal();
+rendre();
+</script>
+</body>
+</html>
