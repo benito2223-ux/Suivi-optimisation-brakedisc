@@ -69,6 +69,19 @@
 
 ---
 
+
+**Fait de données — 12/10 ~22:25, l'acte de Benjamin.** Premier import par bouton
+réussi depuis le 29/09 : l'export post-import de l'origine prod (rev 422) porte
+**exactement le fichier fusionné** — vérifié mécaniquement : 10 lignes / 13 refs /
+47 OP / 47 baselines, 7 entrées d'essai / 4 ids, ids générateur (`l-EMAG1`…),
+baseline « Classeur Matis 6781.0 » avec T517 D1/D2 MABEC/prix/arêtes, EMAG 3 sans
+contamination (les seuls `smud*` restants sont la copie légitime EMAG 1/OP40),
+HESSAPP 426 000 / 0,129 posés, DP 290x12 conservée, projet et responsable présents.
+Les 59 scénarios de la fusion sont identiques un à un (id / baseline / outils /
+essais). Preuve locale : `AUDIT_export_prod_apres-import_12-10_22h25_rev422.json`.
+**La prod est prête pour la session Matis du 13/10** — et le rituel du premier
+dépôt cloud prendra CET état-là, pas un fossile.
+
 ## Questions ouvertes à Z Code
 
 **Q1 — l'accès au dépôt.** Peux-tu écrire et commiter directement dans
