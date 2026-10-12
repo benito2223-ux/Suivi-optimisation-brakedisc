@@ -48,6 +48,7 @@
 
 | Date | Acte | Où | Vérifié |
 |---|---|---|---|
+| 12/10 ~10:40 | **Projet 4.81.0** — le pull aveugle est remplacé par le tampon léger (Tour 61), ordre de Benjamin : « on attend la réinitialisation et remplace le pull aveugle ». La prod reste en 4.80.0 et ne bougera que sur sa phrase. | suivi-optimisation-projet.surge.sh | ✅ 500 tests \| 0 échecs (497 + 3 portes cloud), contre-regard protocole (règle cassée → 1 test la voit → restauration par copie, empreinte identique) **avant** déploiement ; curl HTTP 200, **1 404 978 o**, `TOOL_VERSION = "4.81.0"`, `cloudLireTampon` présente (9 occurrences), `select=modifie_le,modifie_par` en ligne, fichier publié **identique octet pour octet** au local (`c13417e9…`) ; **prod re-vérifiée : 4.80.0 inchangée** (Z Code, Tour 61) |
 | 12/10 ~09:55 | **Cloud restreint : `exceed_egress_quota`** — le projet Supabase `suivi-septfons` répond **402** sur tous les endpoints (« The project owner must upgrade their plan or remove spend caps ») : le quota mensuel de bande sortante du plan gratuit est épuisé. La synchro de la prod ET du proto2 est muette jusqu'à restauration — aucune donnée perdue, la requête échoue proprement côté client. Cause quasi certaine : le pull complet de l'état (~3,43 Mo) toutes les 90 s par onglet ouvert (`bilan_economique.html:16154`) ≈ 132 Mo/h/onglet. **Fait sans ordre, réversible** : 2resume passe en v1.0.1 — la lecture « Rafraîchir » ne tire plus que le tampon horaire (`select=modifie_le,modifie_par`, sans `donnees`) ; et une tâche planifiée Windows quotidienne (`Supabase keepalive suivi-septfons`, 09:17, `outils/supabase_keepalive.cmd`) pingue l'API contre la pause-7-jours du mail de Supabase. **Revient à Benjamin** : restaurer le service dans le dashboard (attendre la réinitialisation du quota ou Pro), puis dire si le patch egress de la prod est souhaité. | cloud `cxjfyaorkkxemjnollnj` · suivi-optimisation-projet2.surge.sh | ✅ curl rest/auth : **402** avec le corps `exceed_egress_quota` ; 2resume v1.0.1 : **372 tests verts**, redéployé, empreinte distante = `3bc951680c5718fb` ; tâche planifiée : **dernier résultat 0, activée, quotidienne 09:17** ; prod `bilan_economique.html` non écrite (empreinte `6a082cda…` inchangée) (Z Code, Tour 60) |
 | 05/10 ~10:45 | **2resume v1.0.0 sur projet2** — l'outil écrit de zéro (Tour 59) remplace le proto sur `suivi-optimisation-projet2.surge.sh`. Déploiement sur ordre de Benjamin dans la fenêtre (« fini ce nouvel outil jusqu'à la livraison finale », « livraison sur l'adresse projet 2 »). `.surgeignore` liste blanche stricte ; le JSON d'essai réel copié pour le test navigateur a été **supprimé avant le déploiement**. | suivi-optimisation-projet2.surge.sh | ✅ curl : HTTP 200, **287 730 o** (identique au local), `OUTIL_VERSION = "1.0.0"`, `EMPREINTE_ASSEMBLAGE = "4bb9982c60ab57f3"` ; **les 12 sources/tests/documents en 404** ; **prod re-vérifiée inchangée : `bilan_economique.html` 1 401 140 o, `TOOL_VERSION = "4.80.0"`** ; empreinte locale du fichier de prod inchangée (`6a082cda…`) ; **projet3 re-vérifié non écrit** (Z Code, Tour 59) |
 | 02/10 ~21:40 | **projet3 v3.0.0** — la génération 3 créée de zéro sur carte blanche de Benjamin (« tu pars de 0 et tu crées l'outil parfait selon toi… livraison sur une adresse surge projet3 »). Nouveau dossier `projet3/`, 9 sources + assembleur + 4 suites de tests. `bilan_economique.html` et `proto/` **non écrits**, verrou non nécessaire. | suivi-optimisation-projet3.surge.sh | ✅ 347 tests \| 0 échecs (149 noyau, 76 migration sur les 4 exports réels, 122 application) **avant** déploiement ; contre-regard **5/5 pannes vues**, restauration par copie vérifiée SHA-256 ; curl `VERSION = "3.0.0"`, empreinte locale = distante (`253bf49af7ac9c82`), SW + manifest + icônes 200 ; **sources, tests, documents et tout JSON de données en 404** (liste blanche stricte) ; vérifié dans le navigateur **depuis l'URL publique** (accueil, ligne, poste prévu/obtenu, nuit, A4, import réel IMPORT_MATIS 192 logements). **Prod 4.80.0 et proto2 v2.0 re-vérifiés inchangés.** (Z Code, Tour 57) |
@@ -78,6 +79,51 @@ transporte un fichier ? Concrètement :
 ---
 
 ## Journal des tours
+
+### ▸ Tour 61 — 12/10/2026 — **Z Code** (v4.81.0 — le pull aveugle est remplacé par le tampon léger)
+
+**La commande.** Benjamin, après le diagnostic du Tour 60 : **« on attend la
+réinitialisation et remplace le pull aveugle. »** Deux décisions en une : pas de
+passage en Pro, et le patch egress de la prod est voulu. Verrou pris dans un
+commit (`f65c0cf`), travail, verrou libéré dans celui-ci.
+
+**Le changement, en une phrase.** La synchro de routine lit désormais le
+**tampon horaire seul** (`cloudLireTampon()`,
+`select=modifie_le,modifie_par`, ~100 octets) et ne re-télécharge l'état
+complet (3,43 Mo) que lorsqu'une décision en a besoin : premier contact,
+adoption, fusion. Le flux de `cloudSync()` est inchangé décision par décision —
+seul le poids du regard change. Le dépôt (`cloudEcrireEtat`) garde sa lecture
+complète : il archive l'ancienne version, le contenu lui est nécessaire.
+Gain mesuré : ~99,997 % de bande en moins sur le cycle de 90 s, qui était
+l'égout du quota (`exceed_egress_quota`, Tour 60).
+
+**Ce que le harnais a révélé au passage.** Un test « nouveautés : l'entrée du
+jour reste visible » cherchait `4.25.0` **codé en dur** — un ancrage qui
+s'est périmé tout seul dix versions plus tard : aujourd'hui, l'entrée de la
+4.25.0 a plus de dix jours, le filtre la masque, et le test aurait échoué sur
+la 4.80.0 aussi. Réparé en ancrant l'attente à `TOOL_VERSION` — l'invariant
+réel (« l'entrée de la version courante reste visible ») — plus jamais un
+numéro.
+
+**Les preuves.** 500 tests \| 0 échec (497 + 3 portes cloud nouvelles :
+`cloudLireTampon` existe, elle lit le tampon et JAMAIS le `donnees`,
+`cloudSync` passe par elle avant toute lecture lourde). Contre-regard selon le
+protocole : sauvegarde par copie, règle cassée volontairement (le tampon
+re-télécharge le `donnees`) → **exactement un test la voit** (la porte « JAMAIS
+le donnees »), restauration par copie, empreinte `c13417e9…` identique avant et
+après, 500 verts. Déploiement **Projet** vérifié par curl : 1 404 978 o,
+`TOOL_VERSION = "4.81.0"`, fichier publié identique octet pour octet au local.
+
+**Ce qui reste ouvert.** La prod est **prête** (le même fichier, testé) mais
+**ne bouge pas sans la phrase de Benjamin** — la constitution ne se contourne
+pas, même quand la suite est évidente. Côté dashboard, la réinitialisation du
+quota est attendue (décision de Benjamin) ; le keep-alive quotidien (Tour 60)
+tiendra la règle des 7 jours. Le dépôt initial de Matis attend la
+restauration ; ses données locales n'ont rien perdu.
+
+**Prochain tour** : à Benjamin — la phrase de déploiement prod quand il la
+veut (« déploie en prod » suffit), et la confirmation de la restauration
+quand Supabase aura réinitialisé le quota.
 
 ### ▸ Tour 60 — 12/10/2026 — **Z Code** (le cloud restreint : diagnostic et garde-fous)
 

@@ -11913,6 +11913,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.81.0", date:"12/10/2026", points:[
+    "<b>La synchro cloud ne télécharge plus l'état complet à chaque cycle.</b> L'état partagé pèse 3 à 4 Mo ; toutes les 90 secondes, chaque onglet ouvert le re-téléchargeait en entier pour comparer une date — quelques jours d'onglet ouvert suffisaient à épuiser le quota de bande du plan gratuit, et Supabase a restreint le projet (vous avez peut-être vu « cloud injoignable »). Désormais la synchro de routine lit <b>le tampon horaire seul</b> (~100 octets) et ne télécharge le contenu complet que lorsqu'une décision le demande : première connexion, mise à jour à prendre, fusion. <b>Mêmes décisions, même ordre, aucune saisie touchée</b> — seul le poids du regard change. Rien à faire de votre côté : au prochain chargement, l'outil consomme ~1 000 fois moins. Le cloud redeviendra actif dès la réinitialisation du quota par Supabase."
+  ]},
   { version:"4.80.0", date:"02/10/2026", points:[
     "<b>L'écran a de nouveau des couleurs, du relief, et des polices qui se distinguent.</b> Le fond redevient gris et les cartes blanches — c'est ce retrait qui les fait ressortir. Le bleu #1B5EA6, le rouge #E2001A, les angles à 3 et 4 px : l'identité d'avant le Design System B, rendue à nouveau. Surtout, <b>les titres ont leur propre police</b> (Manrope) et redeviennent distincts du texte (Roboto) et des chiffres (IBM Plex Mono) : depuis la 4.63, c'était la même pour tous, et l'écran paraissait sans hiérarchie. Rien n'est perdu en lisibilité : quatre des six contrastes de l'outil s'y trouvent <b>meilleurs</b> (le gris des intitulés passe de 5,07:1 à 6,01:1), et les deux autres restent au-dessus du seuil. <b>Aucun chiffre, aucun calcul, aucune saisie n'est touché.</b>"
   ]},
@@ -12435,7 +12438,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.80.0";
+const TOOL_VERSION = "4.81.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -15829,6 +15832,20 @@ async function cloudLireEtat(){
   const j = await r.json();
   return j[0] || null;
 }
+/* v4.81.0 — la lecture LÉGÈRE : le tampon horaire seul, sans le `donnees`.
+   L'état partagé pèse 3 à 4 Mo ; chaque cycle de synchro qui le re-télécharge
+   en entier pour lire une date a épuisé le quota de bande sortante du plan
+   gratuit (exceed_egress_quota, 12/10/2026 — service restreint). Désormais la
+   synchro de routine passe par ici (~100 octets) et la lecture lourde ne se
+   paie que lorsqu'une décision a besoin du contenu : premier contact,
+   adoption, fusion. Mêmes décisions, même ordre — seul le poids du regard
+   change. */
+async function cloudLireTampon(){
+  const r = await cloudFetch(CLOUD_URL + "/rest/v1/etat?id=eq.1&select=modifie_le,modifie_par", { headers: cloudEntetes() });
+  if(!r.ok) throw new Error("cloud injoignable (" + r.status + ")");
+  const j = await r.json();
+  return j[0] || null;
+}
 /* Dépose la version locale : archive l'ancienne (historique 20 versions), écrit la
    nouvelle, retient le tampon horaire renvoyé par la base (jamais calculé côté client). */
 async function cloudEcrireEtat(){
@@ -15987,12 +16004,17 @@ async function cloudSync(raison){
   cloudEnCours = true;
   cloudRenduPastille();
   try{
-    const row = await cloudLireEtat();
-    cloudInfo = row
-      ? { vide:false, modifie_le: row.modifie_le, modifie_par: row.modifie_par }
+    /* v4.81.0 — le tampon d'abord (~100 o), le contenu lourd seulement si une
+       décision l'exige. Le flux et l'ordre des décisions sont INCHANGÉS :
+       cloud vide → rien ; premier contact → dialogue ; bougé + saisies locales
+       → fusion ; bougé + poste propre → adoption silencieuse ; pas bougé +
+       saisies → dépôt ; rien → point d'horloge. */
+    const tampon = await cloudLireTampon();
+    cloudInfo = tampon
+      ? { vide:false, modifie_le: tampon.modifie_le, modifie_par: tampon.modifie_par }
       : { vide:true, modifie_le:null, modifie_par:null };
 
-    if(!row){
+    if(!tampon){
       // cloud vide : rien à tirer. Le dépôt initial reste volontaire (bouton dans
       // Options) — jamais un effet de bord d'une saisie, sinon le jeu d'exemple
       // d'un poste partirait au cloud par accident.
@@ -16001,16 +16023,17 @@ async function cloudSync(raison){
       return;
     }
     if(cloudStamp === null){
-      await cloudPremierContact(row);
+      await cloudPremierContact(await cloudLireEtat());
       return;
     }
-    if(row.modifie_le !== cloudStamp){
+    if(tampon.modifie_le !== cloudStamp){
       if(cloudSale){
-        await cloudConflit(row);
+        await cloudConflit(await cloudLireEtat());
       } else {
         // tirage silencieux — le cas nominal. Si la version vient de l'autre poste et
         // n'avait jamais été vue : message à l'ouverture (le journal de synchro).
-        const annonce = (row.modifie_le !== cloudVu) && ((row.modifie_par || "") !== cloudMonIdentite());
+        const row = await cloudLireEtat();
+        const annonce = (tampon.modifie_le !== cloudVu) && ((tampon.modifie_par || "") !== cloudMonIdentite());
         await cloudAdopter(row, true);
         if(annonce) cloudAnnoncerVersion(row);
       }
@@ -16892,7 +16915,13 @@ function runTests(){
       const htmlNv = nouveautesHTML();
       NOUVEAUTES.pop();
       ok("nouveautes : entrée de plus de 10 jours masquée", /0\.0\.0-test/.test(htmlNv), false);
-      ok("nouveautes : l'entrée du jour reste visible", /4\.25\.0/.test(htmlNv), true);
+      /* l'« entrée du jour » est l'entrée de la version COURANTE — jamais un
+         numéro codé en dur : ancré à 4.25.0, ce test s'est périmé tout seul
+         dix versions plus tard (vu le 12/10 en 4.81.0, et il aurait échoué
+         sur la 4.80.0 aussi). L'invariant : l'entrée de TOOL_VERSION reste
+         visible tant qu'elle a moins de 10 jours. */
+      ok("nouveautes : l'entrée du jour (la version courante) reste visible",
+         new RegExp(TOOL_VERSION.split(".").join("\\.")).test(htmlNv), true);
     }
 
     /* ---- v4.27 : référentiel lignes Sept Fons (familles, ordre atelier) ---- */
@@ -18455,6 +18484,23 @@ function runTests(){
   console.table(T.map(t => ({ test: t.nom, ok: t.pass })));
 
 
+
+  /* v4.81.0 — portes du tampon léger. La règle protégée : la synchro de
+     routine ne télécharge JAMAIS le `donnees` complet — elle lit le tampon
+     (`select=modifie_le,modifie_par`) et ne paie la lecture lourde que sur
+     décision (premier contact, adoption, fusion). On vérifie la porte par
+     typeof ET la légèreté par la requête que la fonction écrit : un test qui
+     ne regarderait que la présence de la fonction accepterait un
+     `cloudLireTampon` qui télécharge 4 Mo. */
+  ok("porte cloud : cloudLireTampon existe et est async",
+     typeof cloudLireTampon, "function");
+  ok("porte cloud : le tampon lit modifie_le,modifie_par — JAMAIS le donnees",
+     [cloudLireTampon.toString().indexOf("select=modifie_le,modifie_par") >= 0,
+      cloudLireTampon.toString().indexOf("select=donnees") >= 0], [true, false]);
+  ok("porte cloud : cloudSync passe par le tampon AVANT toute lecture lourde",
+     [cloudSync.toString().indexOf("cloudLireTampon()") >= 0,
+      cloudSync.toString().indexOf("cloudLireTampon()") < cloudSync.toString().indexOf("cloudLireEtat()")],
+     [true, true]);
 
   /* v4.66.0 — on RECALCULE le nombre d'échecs au moment du retour.
      `echecs` est figé plus haut (pour l'affichage) : un test ajouté

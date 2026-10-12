@@ -5,6 +5,58 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.81.0] — 2026-10-12 · Tour 61
+
+**La synchro cloud ne télécharge plus l'état complet à chaque cycle** — le
+pull aveugle est remplacé par un tampon léger, sur ordre de Benjamin après la
+restriction du projet Supabase. Déployé sur le domaine **projet** ; la prod
+attend la phrase de déploiement.
+
+### Le fait qui a déclenché le tour
+
+Le 12/10, Supabase restreint le projet `suivi-septfons` :
+**`exceed_egress_quota`** — le quota mensuel de bande sortante du plan gratuit
+est épuisé, tous les endpoints répondent 402. Le mail parlait d'une pause-7-jours
+pour inactivité ; le vrai problème était l'inverse : **trop d'activité** — mais
+de la mauvaise. Cause identifiée : `cloudSync()` re-téléchargeait l'état
+complet (~3,43 Mo) à **chaque** cycle — au chargement, au focus, et toutes les
+90 secondes par `setInterval` (ligne 16154) — pour comparer une date.
+~132 Mo/heure par onglet ouvert : quelques jours d'onglet à l'atelier et les
+5 Go/mois du plan gratuit tombent.
+
+### Changé
+
+- **`cloudLireTampon()`** (nouveau) : lit `select=modifie_le,modifie_par`
+  (~100 octets). C'est elle que **chaque** cycle de synchro emprunte
+  désormais.
+- **`cloudSync()`** : même flux, mêmes décisions, même ordre — cloud vide →
+  rien ; premier contact → dialogue ; bougé + saisies locales → fusion
+  automatique ; bougé + poste propre → adoption silencieuse ; pas bougé +
+  saisies → dépôt ; rien → point d'horloge. La seule différence : la lecture
+  lourde (`cloudLireEtat()`, le `donnees` complet) ne se paie **que lorsqu'une
+  décision en a besoin** — premier contact, adoption, fusion. Le dépôt
+  (`cloudEcrireEtat`) conserve sa lecture complète : il archive l'ancienne
+  version, il lui faut le contenu. Gain mesuré : ~99,997 % de bande en moins
+  sur le cycle de routine (3,43 Mo → ~100 octets par 90 s).
+- **Test réparé au passage** : « nouveautés : l'entrée du jour reste visible »
+  cherchait `4.25.0` codé en dur (époque v4.27) ; l'entrée de plus de 10 jours
+  étant filtrée, le test aurait échoué sur la 4.80.0 aussi, ce jour-là. Il est
+  ancré à `TOOL_VERSION` — l'invariant réel — et non plus à un numéro.
+
+### Vérifications
+
+500 tests \| 0 échec au harnais (497 + 3 portes cloud nouvelles) ; contre-regard
+selon le protocole : règle cassée volontairement (le tampon re-télécharge le
+`donnees`) → **exactement un test la voit** (la porte « JAMAIS le donnees ») →
+restauration par copie, empreinte `c13417e9…` identique avant/après, 500 verts.
+
+### Ce qui reste à la main
+
+La restauration du service est côté dashboard (réinitialisation mensuelle du
+quota — décision de Benjamin : attendre). Tant qu'elle n'a pas eu lieu, les
+clients affichent « cloud injoignable » et travaillent en local, sans perte :
+le dépôt initial de Matis attend la restauration.
+
 ## [4.80.0] — 2026-10-02 · Tour 56
 
 **Retour à l'identité d'avant le Design System B**, sur demande de Benjamin :

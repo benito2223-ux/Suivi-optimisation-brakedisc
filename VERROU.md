@@ -13,11 +13,24 @@
 
 | | |
 |---|---|
-| **Auteur** | Z Code (Tour 61) |
-| **Pris le** | 12/10/2026 — matin |
-| **Écrit dans** | `bilan_economique.html` (+ harnais, CHANGELOG, journal) |
-| **Version visée** | 4.81.0 |
-| **Sujet** | Remplacement du pull aveugle (état complet 3,43 Mo toutes les 90 s) par un tampon léger : lire `modifie_le,modifie_par` (~100 o), ne re-télécharger le `donnees` complet que quand le tampon a bougé. Cause : le projet Supabase est restreint (`exceed_egress_quota`). |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+
+✅ **Verrou libéré par Z Code le 12/10/2026** (Tour 61, v4.81.0). Pendant le tour,
+`bilan_economique.html` est passé de l'empreinte `6a082cda…` à `c13417e9…`
+(1 401 140 → 1 404 978 octets) : `cloudLireTampon()` (lecture légère
+`select=modifie_le,modifie_par`), `cloudSync()` réécrit pour ne payer la lecture
+lourde que sur décision, 3 portes de test cloud, test « nouveautés » ré-ancré à
+`TOOL_VERSION` (il était codé en dur 4.25.0 et se serait périmé seul),
+`TOOL_VERSION = "4.81.0"`, NOUVEAUTES + CHANGELOG. Contre-regard selon protocole
+(règle cassée → 1 test la voit → restauration par copie, empreinte vérifiée).
+**Déployé sur Projet (4.81.0, vérifié curl, identique au local) ; la PROD reste
+en 4.80.0 — elle ne bougera que sur phrase de Benjamin.** Écrits pendant le tour :
+`bilan_economique.html`, `build_harness.py` (regénéré), `CHANGELOG.md`,
+`ECHANGES.md`, `VERROU.md`. 2resume, proto/ et projet3 non écrits.
 
 ✅ **Verrou libéré par Z Code le 02/10/2026** (Tour 56, v4.80.0). Pendant le tour,
 `bilan_economique.html` est passé de l'empreinte `afb7aa5d…` à `6a082cda…`
