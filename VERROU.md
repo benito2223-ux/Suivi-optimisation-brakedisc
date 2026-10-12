@@ -13,11 +13,15 @@
 
 | | |
 |---|---|
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | Z Code |
+| **Pris le** | 12/10/2026 ~21:30 |
+| **Écrit dans** | `bilan_economique.html` |
+| **Version visée** | 4.81.1 |
+| **Sujet** | La porte de l'import : `preparerImportDepuis` lisait `source.livraisons` — le paramètre d'une autre fonction — ReferenceError silencieuse dans le onload du FileReader depuis la 4.53.0 : aucun panneau, aucun message, aucun import. Fix, porte de test, contre-regard. |
+
+🔒 **Verrou pris par Z Code le 12/10/2026 ~21:30** (tour 62, v4.81.1 — la porte de l'import).
+
+---
 
 ✅ **Verrou libéré par Z Code le 12/10/2026** (Tour 61, v4.81.0). Pendant le tour,
 `bilan_economique.html` est passé de l'empreinte `6a082cda…` à `c13417e9…`
