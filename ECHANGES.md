@@ -82,6 +82,20 @@ essais). Preuve locale : `AUDIT_export_prod_apres-import_12-10_22h25_rev422.json
 **La prod est prête pour la session Matis du 13/10** — et le rituel du premier
 dépôt cloud prendra CET état-là, pas un fossile.
 
+
+**Décision de Benjamin — 12/10 tard, l'arbitrage des productions.** « 426 000 sur
+HESSAPP, c'est oui, et idem pour EMAG 1 : ce sont les valeurs de production
+annuelles. » **Deux des sept divergences sont closes : l'atelier prime, les valeurs
+déjà posées dans la prod (426 000 / 148 942) ne bougent pas.** Conséquence lue au
+calcul : le classeur de Matis ne compte PAS en annuel — 8 149 × 52,3 = 426 000
+exactement (une semaine, cohérent avec son titre « 14-09 au 21-09 »), mais
+6 781 × 22,0 = 148 942 (ni semaine ni année : période ou lot, à faire dire par
+Matis). Point d'attention ouvert pour l'audit : l'écran « Classeur Matis » affiche
+des « coûts /an » calculés sur ces productions — l'étiquette est fausse si
+l'entrée est hebdomadaire ; rien ne se corrige sans datage (gel actif). Les
+questions de demain chez Matis tombent à **deux** : la cible CPP de la 356x26
+(0,575 vs 0,357 — 61 %) et ce que compte le 6 781 du classeur.
+
 ## Questions ouvertes à Z Code
 
 **Q1 — l'accès au dépôt.** Peux-tu écrire et commiter directement dans

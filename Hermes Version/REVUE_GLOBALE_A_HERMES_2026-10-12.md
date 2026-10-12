@@ -68,7 +68,21 @@ touché.
   exactement 1 baseline, 7 entrées d'essai / 4 ids, T517 D1/D2 avec MABEC.
   Puis, après le fix 4.81.1, par `preparerImportDepuis` elle-même.
 
-### 2.3 Les 7 divergences saisie atelier vs classeur — ouvertes, aucune tranchée
+### 2.3 Les divergences saisie atelier vs classeur — MISE À JOUR 22:45
+
+**L'arbitrage de Benjamin est tombé (12/10 tard) : « 426 000 sur HESSAPP, c'est oui,
+et idem pour EMAG 1 : ce sont les valeurs de production annuelles. »**
+→ Les deux divergences de production sont **closes** : l'atelier prime (§3.1), les
+valeurs posées dans la prod ne bougent pas.
+→ Le classeur ne compte **pas** en annuel : `8 149 × 52,3 = 426 000` exactement
+(une semaine — cohérent avec son titre « 14-09 au 21-09 ») ; mais
+`6 781 × 22,0 = 148 942` : ni semaine ni année — période ou lot, question Matis.
+→ **Point d'audit ouvert** : l'écran « Classeur Matis » affiche des « coûts /an »
+calculés sur ces productions ; l'étiquette est fausse si l'entrée est hebdomadaire.
+Rien ne se corrige sans datage (gel actif).
+
+Il reste **5 divergences ouvertes**, dont une seule d'enjeu — les valeurs sont celles
+du fichier fusionné (recoupées 7/7) :
 
 | Ligne / réf | Champ | Atelier | Classeur |
 |---|---|---|---|
