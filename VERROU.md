@@ -13,13 +13,27 @@
 
 | | |
 |---|---|
-| **Auteur** | Z Code |
-| **Pris le** | 12/10/2026 ~21:30 |
-| **Écrit dans** | `bilan_economique.html` |
-| **Version visée** | 4.81.1 |
-| **Sujet** | La porte de l'import : `preparerImportDepuis` lisait `source.livraisons` — le paramètre d'une autre fonction — ReferenceError silencieuse dans le onload du FileReader depuis la 4.53.0 : aucun panneau, aucun message, aucun import. Fix, porte de test, contre-regard. |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
 
-🔒 **Verrou pris par Z Code le 12/10/2026 ~21:30** (tour 62, v4.81.1 — la porte de l'import).
+✅ **Verrou libéré par Z Code le 12/10/2026** (Tour 62, v4.81.1). Pendant le tour,
+`bilan_economique.html` est passé de l'empreinte `c13417e9…` à `77340221…`
+(1 404 978 → 1 425 878 octets) : la porte de l'import (`preparerImportDepuis`,
+faute `source.livraisons` depuis la 4.53.0 — ReferenceError silencieuse, aucun
+import possible par bouton depuis le 29/09), une porte de test, entrée
+NOUVEAUTES 4.81.1, `TOOL_VERSION = "4.81.1"`, CHANGELOG. Contre-regard selon
+protocole : faute ré-injectée → **vue** par la porte
+(`["ReferenceError: source is not defined"]`) → restaurée par copie
+sauvegardée, empreinte `77340221…` identique avant/après, 501/501 verts.
+Le fichier d'état fusionné réel passe par `preparerImportDepuis` : 10 lignes,
+révision 421, T517 D1/D2 avec MABEC. **Déployé sur Projet, vérifié curl ; la
+PROD reste en 4.81.0 et attend la phrase de Benjamin — c'est elle qui bloque
+l'import du fichier fusionné demain chez Matis.** Écrits pendant le tour :
+`bilan_economique.html`, `build_harness.py` (API + `preparerImportDepuis`),
+`CHANGELOG.md`, `ECHANGES.md`, `VERROU.md`.
 
 ---
 

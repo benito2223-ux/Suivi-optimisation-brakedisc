@@ -5027,8 +5027,12 @@ function preparerImportDepuis(parsed){
     nouveauBacklog = [];
     revisionEntrante = 0;
   }
+  /* v4.81.1 — cette ligne lisait `source`, le paramètre de migrerArbre : ReferenceError
+     levée en silence dans le onload du FileReader — aucun panneau, aucun message,
+     aucun import, depuis la 4.53.0. Les livraisons normalisées existent déjà dans
+     migreImport ; le repli (anciens formats) n'en porte pas. */
   return { nouvellesLignes, nouveauxProjets, nouveauxResponsables, nouveauBacklog, revisionEntrante,
-           livraisons: (source.livraisons || []).map(normalizeLivraison) };
+           livraisons: migreImport ? (migreImport.livraisons || []) : [] };
 }
 
 function importData(file){
@@ -11913,6 +11917,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.81.1", date:"12/10/2026", points:[
+    "<b>Le bouton « 📂 Importer » fonctionne de nouveau.</b> Depuis le 29 septembre, choisir un fichier ne faisait <b>rien du tout</b> : aucune fenêtre, aucun message — la panne mourait en silence. Si vous avez essayé d'importer un fichier reçu et que « rien ne se passait », c'était ça : rechargez cette version et recommencez, le fichier sera proposé à l'import comme avant. Aucune donnée n'a pu être perdue par cette panne (rien n'était écrit) — le seul dommage était l'impossibilité d'en charger une."
+  ]},
   { version:"4.81.0", date:"12/10/2026", points:[
     "<b>La synchro cloud ne télécharge plus l'état complet à chaque cycle.</b> L'état partagé pèse 3 à 4 Mo ; toutes les 90 secondes, chaque onglet ouvert le re-téléchargeait en entier pour comparer une date — quelques jours d'onglet ouvert suffisaient à épuiser le quota de bande du plan gratuit, et Supabase a restreint le projet (vous avez peut-être vu « cloud injoignable »). Désormais la synchro de routine lit <b>le tampon horaire seul</b> (~100 octets) et ne télécharge le contenu complet que lorsqu'une décision le demande : première connexion, mise à jour à prendre, fusion. <b>Mêmes décisions, même ordre, aucune saisie touchée</b> — seul le poids du regard change. Rien à faire de votre côté : au prochain chargement, l'outil consomme ~1 000 fois moins. Le cloud redeviendra actif dès la réinitialisation du quota par Supabase."
   ]},
@@ -12438,7 +12445,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.81.0";
+const TOOL_VERSION = "4.81.1";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -18501,6 +18508,26 @@ function runTests(){
      [cloudSync.toString().indexOf("cloudLireTampon()") >= 0,
       cloudSync.toString().indexOf("cloudLireTampon()") < cloudSync.toString().indexOf("cloudLireEtat()")],
      [true, true]);
+
+  /* v4.81.1 — LA PORTE DE L'IMPORT. Toute la chaîne du bouton « 📂 Importer » passe
+     par preparerImportDepuis : depuis la 4.53.0, sa ligne livraisons lisait `source`
+     — le paramètre d'une AUTRE fonction (migrerArbre) — et levait une ReferenceError
+     qui mourait en silence dans le onload du FileReader : aucun panneau, aucun
+     message, aucun import. Le 12/10, l'import du fichier fusionné de Benjamin n'a
+     jamais atterri pour cette seule raison — 14 versions pendant lesquelles la
+     porte paraissait ouverte. Le test fait ce que le clic fait : préparer un export
+     format 8 réel, livraisons comprises. */
+  ok("porte import : preparerImportDepuis prepare un format 8 (lignes, revision, livraisons)",
+     (()=>{ try{
+             const prep = preparerImportDepuis({ format:8, revision:7,
+               lignes:[{ id:"lxA", nom:"EMAG 1", references:[{ id:"rxA", nom:"DV 356x26 RPI",
+                 ops:[{ id:"oxA", nom:"OP10", ordre:10,
+                   scenarios:[{ id:"sxA", name:"Process", baseline:true, outils:[] }] }] }] }],
+               projets:[], responsables:[],
+               livraisons:[{ id:"lv1", nom:"Livraison test", date:"2026-10-12" }] });
+             return [prep !== null, prep.nouvellesLignes.length, (prep.livraisons||[]).length, prep.revisionEntrante];
+           }catch(e){ return ["ReferenceError: " + e.message]; } })(),
+     [true, 1, 1, 7]);
 
   /* v4.66.0 — on RECALCULE le nombre d'échecs au moment du retour.
      `echecs` est figé plus haut (pour l'affichage) : un test ajouté

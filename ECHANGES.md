@@ -82,6 +82,47 @@ transporte un fichier ? Concrètement :
 
 ## Journal des tours
 
+### ▸ Tour 62 — 12/10/2026 — **Z Code** (v4.81.1 — la porte de l'import, muette depuis 14 versions)
+
+**Le fait.** Benjamin, veille de sa session Matis : « j'ai importé mais
+l'app ne m'a pas demandé remplacer tout ». Son export post-import (rev 421,
+structure identique à l'avant-import) datait la panne : **l'import n'avait
+jamais atterri**. En cause, une seule ligne : `preparerImportDepuis()` lisait
+`source.livraisons` — `source` est le paramètre d'une **autre** fonction
+(`migrerArbre`). `ReferenceError` dans le `onload` du FileReader : aucune
+fenêtre, aucun message, rien. Introduite en **4.53.0 (29/09)**, déployée
+depuis — autrement dit, tout import par bouton était mort depuis 14 versions
+et personne ne l'avait vu, parce que la panne était **silencieuse par
+construction**.
+
+**Le correctif.** Les livraisons normalisées existent déjà dans le retour de
+`migrerArbre` : `livraisons: migreImport ? (migreImport.livraisons || []) : []`.
+Une ligne. Plus la porte de test qui manquait : « porte import :
+preparerImportDepuis prepare un format 8 » — le test fait ce que le clic fait.
+
+**Le contre-regard, en deux actes (encore).** Premier essai : faute
+« ré-injectée » → 501 verts → **la porte n'a rien vu**. Cause : ma chaîne de
+remplacement ne correspondait pas (`[];` vs `[] };`) — l'injection n'avait
+jamais eu lieu, et le `print()` inconditionnel mentait. Ré-injection avec
+`assert` → **vue** : `["ReferenceError: source is not defined"]` →
+restauration par copie sauvegardée, empreinte `77340221…` identique, 501/501.
+La leçon des tests aveugles (4.74.1, Tour 50) s'applique aux injections :
+une injection qui n'a pas d'assert n'a pas eu lieu.
+
+**Vérifié.** 500 → 501 tests. Le fichier d'état fusionné réel
+(`ETAT_FUSION_PROPRE_2026-10-12.json`, préparé ce matin pour la session
+Matis) passe par `preparerImportDepuis` dans le harnais : 10 lignes,
+révision 421, baseline « Classeur Matis 6781.0 », T517 D1/D2 avec MABEC.
+Déployé sur **Projet**, vérifié curl. **La prod reste en 4.81.0** : sans la
+phrase de Benjamin, son import de demain mourra en silence — c'est le seul
+bloquant restant avant la session Matis.
+
+**Prochain tour** : la phrase de déploiement prod de Benjamin, puis l'import
+du fichier fusionné sur l'origine prod ; à Hermes ensuite, la revue de fond
+(les 7 divergences saisie/classeur listées au tableau des faits).
+
+
+
 ### ▸ Tour 61 — 12/10/2026 — **Z Code** (v4.81.0 — le pull aveugle est remplacé par le tampon léger)
 
 **La commande.** Benjamin, après le diagnostic du Tour 60 : **« on attend la

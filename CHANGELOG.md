@@ -5,6 +5,34 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.81.1] — 2026-10-12 · Tour 62
+
+**La porte de l'import réparée — elle était muette depuis 14 versions.**
+Depuis la 4.53.0 (29/09), le bouton « 📂 Importer » ne faisait **rien du
+tout** : `preparerImportDepuis()` lisait `source.livraisons` — `source`
+est le paramètre d'une *autre* fonction (`migrerArbre`) — et la
+`ReferenceError` mourait en silence dans le `onload` du FileReader. Aucun
+panneau de choix, aucun message d'erreur, aucun import. L'import du fichier
+d'état fusionné de Benjamin (12/10, veille de la session Matis) n'a jamais
+atterri pour cette seule raison — daté par l'export post-import : structure
+inchangée, la panne invisible.
+
+### Corrigé
+- `livraisons: migreImport ? (migreImport.livraisons || []) : []` — les
+  livraisons normalisées existent déjà dans le résultat de `migrerArbre` ;
+  le repli (anciens formats) n'en porte pas ;
+- **porte de test** : « porte import : preparerImportDepuis prepare un
+  format 8 (lignes, revision, livraisons) » — le test fait ce que le clic
+  fait. Contre-regard : faute ré-injectée → **vue**
+  (`["ReferenceError: source is not defined"]`) → restaurée par copie
+  sauvegardée, empreinte identique.
+
+### Vérification
+- 500 → **501 tests** ;
+- le fichier d'état fusionné réel (`ETAT_FUSION_PROPRE_2026-10-12.json`)
+  passe par `preparerImportDepuis` dans le harnais : 10 lignes, révision
+  421, baseline « Classeur Matis 6781.0 », T517 D1/D2 avec MABEC.
+
 ## [4.81.0] — 2026-10-12 · Tour 61
 
 **La synchro cloud ne télécharge plus l'état complet à chaque cycle** — le
