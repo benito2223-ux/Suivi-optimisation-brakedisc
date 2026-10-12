@@ -48,6 +48,7 @@
 
 | Date | Acte | Où | Vérifié |
 |---|---|---|---|
+| 12/10 ~09:55 | **Cloud restreint : `exceed_egress_quota`** — le projet Supabase `suivi-septfons` répond **402** sur tous les endpoints (« The project owner must upgrade their plan or remove spend caps ») : le quota mensuel de bande sortante du plan gratuit est épuisé. La synchro de la prod ET du proto2 est muette jusqu'à restauration — aucune donnée perdue, la requête échoue proprement côté client. Cause quasi certaine : le pull complet de l'état (~3,43 Mo) toutes les 90 s par onglet ouvert (`bilan_economique.html:16154`) ≈ 132 Mo/h/onglet. **Fait sans ordre, réversible** : 2resume passe en v1.0.1 — la lecture « Rafraîchir » ne tire plus que le tampon horaire (`select=modifie_le,modifie_par`, sans `donnees`) ; et une tâche planifiée Windows quotidienne (`Supabase keepalive suivi-septfons`, 09:17, `outils/supabase_keepalive.cmd`) pingue l'API contre la pause-7-jours du mail de Supabase. **Revient à Benjamin** : restaurer le service dans le dashboard (attendre la réinitialisation du quota ou Pro), puis dire si le patch egress de la prod est souhaité. | cloud `cxjfyaorkkxemjnollnj` · suivi-optimisation-projet2.surge.sh | ✅ curl rest/auth : **402** avec le corps `exceed_egress_quota` ; 2resume v1.0.1 : **372 tests verts**, redéployé, empreinte distante = `3bc951680c5718fb` ; tâche planifiée : **dernier résultat 0, activée, quotidienne 09:17** ; prod `bilan_economique.html` non écrite (empreinte `6a082cda…` inchangée) (Z Code, Tour 60) |
 | 05/10 ~10:45 | **2resume v1.0.0 sur projet2** — l'outil écrit de zéro (Tour 59) remplace le proto sur `suivi-optimisation-projet2.surge.sh`. Déploiement sur ordre de Benjamin dans la fenêtre (« fini ce nouvel outil jusqu'à la livraison finale », « livraison sur l'adresse projet 2 »). `.surgeignore` liste blanche stricte ; le JSON d'essai réel copié pour le test navigateur a été **supprimé avant le déploiement**. | suivi-optimisation-projet2.surge.sh | ✅ curl : HTTP 200, **287 730 o** (identique au local), `OUTIL_VERSION = "1.0.0"`, `EMPREINTE_ASSEMBLAGE = "4bb9982c60ab57f3"` ; **les 12 sources/tests/documents en 404** ; **prod re-vérifiée inchangée : `bilan_economique.html` 1 401 140 o, `TOOL_VERSION = "4.80.0"`** ; empreinte locale du fichier de prod inchangée (`6a082cda…`) ; **projet3 re-vérifié non écrit** (Z Code, Tour 59) |
 | 02/10 ~21:40 | **projet3 v3.0.0** — la génération 3 créée de zéro sur carte blanche de Benjamin (« tu pars de 0 et tu crées l'outil parfait selon toi… livraison sur une adresse surge projet3 »). Nouveau dossier `projet3/`, 9 sources + assembleur + 4 suites de tests. `bilan_economique.html` et `proto/` **non écrits**, verrou non nécessaire. | suivi-optimisation-projet3.surge.sh | ✅ 347 tests \| 0 échecs (149 noyau, 76 migration sur les 4 exports réels, 122 application) **avant** déploiement ; contre-regard **5/5 pannes vues**, restauration par copie vérifiée SHA-256 ; curl `VERSION = "3.0.0"`, empreinte locale = distante (`253bf49af7ac9c82`), SW + manifest + icônes 200 ; **sources, tests, documents et tout JSON de données en 404** (liste blanche stricte) ; vérifié dans le navigateur **depuis l'URL publique** (accueil, ligne, poste prévu/obtenu, nuit, A4, import réel IMPORT_MATIS 192 logements). **Prod 4.80.0 et proto2 v2.0 re-vérifiés inchangés.** (Z Code, Tour 57) |
 | 02/10 ~14:20 | **PROD 4.80.0** — « on va deployer en prod ». Saute **22 versions** (4.58.0 → 4.80.0) : c'est le plus grand écart jamais mis en prod d'un coup. Contenu inchangé depuis le déploiement projet (le même fichier, le même SHA). | suivi-optimisation-septfons.surge.sh | ✅ 497 tests \| 0 échecs, `VERDICT : tout est vert` **avant** déploiement ; curl SW 200, **1 401 140 o**, `TOOL_VERSION = "4.80.0"` ; fichier publié **identique octet pour octet** au local (`6a082cda…`) ; **18 chemins testés, seuls les 5 blancs du `.surgeignore` renvoient 200** — `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md`, `build_harness.py`, `cloud_courant.json`, `proto/`, `outils/`, `.git/config` et 10 autres en **404**, et les quatre premiers vérifiés **présents en local** (le 404 est donc un vrai refus, pas un fichier fantôme). Projet 4.80.0 et proto2 v2.0 re-vérifiés inchangés. (Z Code, Tour 56) |
@@ -77,6 +78,56 @@ transporte un fichier ? Concrètement :
 ---
 
 ## Journal des tours
+
+### ▸ Tour 60 — 12/10/2026 — **Z Code** (le cloud restreint : diagnostic et garde-fous)
+
+**Le fait.** Benjamin transmet le mail de Supabase annonçant une pause-7-jours
+pour inactivité du projet `suivi-septfons` (« tu peux solutionner ? »). En
+vérifiant : le projet n'est pas (encore) en pause d'inactivité, il répond
+**402 `exceed_egress_quota`** — le quota mensuel de bande sortante du plan
+gratuit est épuisé, le service est restreint. Deux problèmes distincts, donc :
+
+1. **l'égout** : la synchro de l'app de production re-télécharge l'état complet
+   (~3,43 Mo) toutes les 90 secondes par onglet ouvert — `setInterval(…
+   cloudSync("periode"), 90000)`, `bilan_economique.html:16154` — soit
+   ~132 Mo/heure/onglet. Quelques jours d'onglet ouvert à l'atelier épuisent
+   les 5 Go/mois du plan gratuit. Rien n'est perdu : les clients voient
+   « cloud injoignable », les données locales restent la copie de travail.
+2. **la pause de 7 jours** (le sujet du mail) : tant que Matis n'a pas déposé,
+   le cloud ne génère aucune activité et se fera pauser dès qu'il sera
+   restauré si rien ne le touche pendant une semaine.
+
+**Ce qui a été fait sans ordre, et pourquoi c'est réversible.** (a) 2resume
+passe en **v1.0.1** : le clic « Rafraîchir » lit désormais le tampon horaire
+seul (`select=modifie_le,modifie_par`) au lieu du `donnees` complet — mes
+propres lectures d'état étaient du même gaspillage que celle de la prod, à
+échelle réduite. 372 tests verts, redéployé, vérifié par curl. (b) Une tâche
+planifiée Windows quotidienne (`Supabase keepalive suivi-septfons`, 09:17,
+script `outils/supabase_keepalive.cmd`) pingue l'API avec la clé publishable :
+quelques octets par jour, invisibles côté quota, mais suffisants pour tenir la
+règle des 7 jours. Suppression : `schtasks /Delete /TN "Supabase keepalive
+suivi-septfons" /F`. Pendant la restriction, ces pings reçoivent 402 — ils
+redeviennent utiles dès la restauration.
+
+**Ce qui revient à Benjamin (rien de technique ne se décide sans lui) :**
+
+1. **Restaurer le service** — dans le dashboard Supabase : soit attendre la
+   réinitialisation mensuelle du quota, soit passer en Pro. Je ne peux pas le
+   faire d'ici (l'API de gestion exige un token personnel, et je n'y touche
+   pas sans ordre).
+2. **Dire si le patch egress de la prod est souhaité** : remplacer le pull
+   aveugle de 90 s par un tampon léger (`select=modifie_le,modifie_par`,
+   ~100 octets) et ne re-télécharger le `donnees` complet que quand le tampon
+   a bougé — une coupe d'environ 99 % de la bande sortante, le modèle que
+   2resume applique déjà. C'est `bilan_economique.html` : verrou, tests, et
+   **déploiement sur phrase explicite**, la prod ne bouge pas autrement.
+
+**Précision de date** : le Tour 59 ci-dessous est daté « 05/10 » par erreur
+d'horloge de session ; le commit `6f644a8` porte la vraie date (05/10 au matin,
+`git log` fait foi). Aucune conséquence sur le fond.
+
+**Prochain tour** : à Benjamin (restauration + feu vert egress), ou à Hermes
+pour revue.
 
 ### ▸ Tour 59 — 05/10/2026 — **Z Code** (2resume v1.0.0 — l'outil écrit de zéro, livré sur projet2)
 

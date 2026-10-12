@@ -1744,7 +1744,7 @@ function relireEtat(source) {
    laisse croire qu'ils sont les siens.
    ========================================================================== */
 
-const EMPREINTE_ASSEMBLAGE = "4bb9982c60ab57f3";
+const EMPREINTE_ASSEMBLAGE = "3bc951680c5718fb";
 const CLE_LOCALE = "2resume_donnees_v1";
 const CLE_SESSION = "2resume_cloud_session";
 const CLE_STAMP = "2resume_cloud_stamp";
@@ -2576,11 +2576,24 @@ async function cloudLireEtat() {
   const j = await r.json();
   return j[0] || null;
 }
+
+/* La lecture LÉGÈRE : le tampon horaire seul, sans le donnees (3 à 4 Mo).
+   Le projet vient de se faire restreindre pour quota de bande sortante
+   dépassé — chaque clic « Rafraîchir » qui re-télécharge tout l'état pour
+   afficher une date est du gaspillage qui revient cher. Les lectures
+   complètes restent là où le contenu est nécessaire : Prendre, Déposer. */
+async function cloudLireTampon() {
+  const r = await cloudFetch(CLOUD_URL + "/rest/v1/" + CLOUD_TABLE + "?id=eq.1&select=modifie_le,modifie_par",
+    { headers: cloudEntetes() });
+  if (!r.ok) throw new Error("cloud injoignable (" + r.status + ")");
+  const j = await r.json();
+  return j[0] || null;
+}
 async function cloudRafraichir() {
   const c = ETAT.cloud;
   c.erreur = "";
   try {
-    const row = await cloudLireEtat();
+    const row = await cloudLireTampon();
     c.info = row ? { vide: false, modifie_le: row.modifie_le, modifie_par: row.modifie_par }
                  : { vide: true, modifie_le: null, modifie_par: null };
   } catch (e) { c.erreur = e.message; }
