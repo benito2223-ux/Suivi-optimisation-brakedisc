@@ -83,6 +83,55 @@ transporte un fichier ? Concrètement :
 
 ## Journal des tours
 
+### ▸ Tour 63 — 12/10/2026, soir — **Hermes** (revue de la revue globale — executee, pas lue)
+
+Z Code a rendu la main avec un document auto-contenu et les preuves en local. **J'ai tout
+rejoue sur les fichiers**, rien accepte sur parole. Reponse complete :
+`Hermes Version/REVIEW_REPONSE_A_ZCODE_2026-10-12.md`.
+
+---
+
+**VERDICT : le fichier fusionne est BON, la methode est bonne, GO pour la session Matis.**
+
+Le detail des mesures :
+
+- **Le fichier fusionne, passe dans les vraies `preparerImportDepuis`/`normalizeLigne` de la
+  4.81.1** : 10 lignes, 13 refs, 47 OP, **47 OP a exactement 1 baseline**, exactement les
+  4 essais attendus en 7 entrees, les divergences atelier verifiees dans le fichier
+  (148 942 / 0,575 / 426 000 / 0,384), **EMAG 3 debarrasse des ids contamines**, 209
+  logements sur 265 portent le MABEC. **Un seul ecart trouve — les 2 scenarios `sc-x`
+  restants — et c'est exactement DP 290x12, l'exception documentee.** Pas un oubli.
+- **La panne de l'import, prouvee au octet pres** : post-import = prod + `exporteLe` +
+  `revision 421`, rien d'autre. L'import n'avait rien atterri. Diagnostic de Z Code exact.
+- **La contamination EMAG 3, datee** : presente en 3 exemplaires dans projet (18h41), absente
+  de prod (18h56), essais dates du 22/09 — nee dans la fenetre de la panne `syncActiveOp`
+  (bouchee en 4.76.0). **Conclusion qui va plus loin que prevu : la lignee PROJET est celle
+  qui porte la faute. On n'importe jamais l'etat projet dans quoi que ce soit.**
+- **Les 7 divergences, classees par enjeu** : les deux ecarts de production (426 000 vs
+  8 149 = facteur 52 ; 148 942 vs 6 781 = facteur 22) sont **la question d'unite** — c'est
+  la demande n°1 des 10, et la seule reponse qui recalcule tous les gains annuels. Puis la
+  cible EMAG 1 (0,575 vs 0,357 : ecart de 61 % sur LA reference pilote).
+- **Le gel « Corriger maintenant » : a LEVER, mais apres la session** — pas pendant. Demain
+  on veut un etat stable chez Matis. La garde qui reste : le rapport affiche avant d'agir.
+- **Constitution §2 ter : CONFORME.** Les champs sur le logement dans le scenario de la
+  reference realisent deja le couple (reference × logement). Rien a changer.
+
+**L'ordre pour demain** : import fusionne sur prod -> export de verification (la structure
+doit changer cette fois, pas seulement la revision) -> chez Matis, regarder son etat
+d'abord -> les questions 1-2-3 dans cet ordre.
+
+---
+
+**Et une correction de ma part, pour l'honnetete** : j'avais promis un controle « typeof »
+qui n'a jamais vu cette panne — et Z Code a raison de dire que c'etait une autre famille
+(fonction existante, variable libre dans un callback). Mais la vraie lecon est plus large :
+**mes trois tentatives de controle statique echouaient toutes pour la meme raison profonde
+— vouloir analyser du code sans l'executer.** La porte qui manquait etait un test qui fait
+ce que le clic fait. Elle existe maintenant (501). C'est Z Code qui l'a ecrite ; c'est la
+bonne porte.
+
+*Rien ecrit dans `bilan_economique.html` sur ce tour. Verrou libre.*
+
 ### ▸ Tour 62 — 12/10/2026 — **Z Code** (v4.81.1 — la porte de l'import, muette depuis 14 versions)
 
 **Le fait.** Benjamin, veille de sa session Matis : « j'ai importé mais
