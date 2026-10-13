@@ -1,10 +1,10 @@
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | Z Code |
+| **Pris le** | 14/10/2026 soir |
+| **Écrit dans** | `bilan_economique.html` |
+| **Version visée** | 4.89.0 |
+| **Sujet** | LES SUGGESTIONS À LA SAISIE : l'autocomplete du catalogue — taper un MABEC ou un ISO propose les articles connus et remplit prix/arêtes/DDV d'un clic. Le dernier morceau du socle commercial. Verrou pris AVANT l'écriture cette fois. |
 
-✅ **Verrou libéré par Z Code le 14/10/2026** (Tour 71, v4.88.0 — verrou pris
+🔒 **Verrou pris par Z Code le 14/10/2026 soir** (tour 72, v4.89.0 — les suggestions à la saisie).✅ **Verrou libéré par Z Code le 14/10/2026** (Tour 71, v4.88.0 — verrou pris
 RÉTROACTIVEMENT, écart déclaré : le code était écrit avant la prise, aucun
 autre auteur n'est intervenu). Pendant le tour, `bilan_economique.html` est
 passé à l'empreinte post-patch : le **basculeur de consommation** dans le
