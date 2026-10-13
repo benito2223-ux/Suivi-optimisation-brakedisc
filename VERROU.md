@@ -13,11 +13,15 @@
 
 | | |
 |---|---|
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | Z Code |
+| **Pris le** | 14/10/2026 matin |
+| **Écrit dans** | `bilan_economique.html` |
+| **Version visée** | 4.86.0 |
+| **Sujet** | ⚔️ LE PLAN DE CONVERSION (la vitrine commerciale de Benjamin) : chaque article actuel avec sa consommation théorique, la cible SPK éditable (auto-suggérée pour les KY3500 → LKT640 @5 €), les états step-by-step (à proposer/proposée/en essai/gagnée), le gain/an par article et en total. Persistant dans le suivi. Puis déploiement prod 4.86.0 (phrase reçue dans le même message). |
+
+🔒 **Verrou pris par Z Code le 14/10/2026 matin** (tour 69, v4.86.0 — le Plan de conversion).
+
+---
 
 ✅ **Verrou libéré par Z Code le 13/10/2026** (Tour 68, v4.85.0). Pendant le
 tour, `bilan_economique.html` est passé à l'empreinte `90ae73b6…` : le
