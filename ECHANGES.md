@@ -361,6 +361,40 @@ n'écrivait pas), la règle est réaffirmée au VERROU.
 **Prochain tour** : les suggestions à la saisie ; la revue d'Hermes ;
 l'export de l'accueil ; le chantier UI.
 
+### Tour 71 — 14/10/2026 — **Z Code** (v4.88.0 — le basculeur de consommation)
+
+**La commande.** Benjamin, apres avoir valide le diagnostic : « construis le
+basculeur ». Son doute sur les quantites du Plan etait fonde — les
+quantites theoriques (production / (aretes x DDV classeur)) sont contredites
+par l'historique de ses propres classeurs : ~867 000 EUR/an de reel contre
+115 469 theorique, un rapport de 7,5.
+
+**Livre.** Dans le Plan de conversion, un basculeur « theorique / REELLE
+extrapolee » : la reelle lit les feuilles « Pareto conso » de SES classeurs
+(parseur `consoDepuisFeuille()` — sections EMAG/PCI/HESSAPP, cumul
+multi-lignes, refus d'un pareto de cout, ligne d'en-tetes cherhee), une
+semaine reelle par article, x 52. En mode reel : un article sans donnee lue
+**perd son gain** (affiche, jamais complete) ; l'avertissement « regime
+suppose constant » est affiche ; l'export CSV porte le mode. Etat de session
+(comme la lecture Classeur Matis) : jamais ecrit dans le suivi.
+
+**Verifie.** 542 -> **547 tests** : le parseur (sections, cumul, refus du
+cout), le gain reel (semaine x 52 x ecart de prix), l'article sans donnee
+(gain null), le retour au theorique exact. Deux attentes de tests corrigees
+en chemin (le tri par cout mettait le 209 560 en premier : ciblage par
+MABEC ; et 66,33 etait le cout EUR/an — les plaquettes/an sont 8,33).
+
+**Ecart declare.** Verrou pris RETROACTIVEMENT (apres l'ecriture) — deuxieme
+fois. La regle des patchs-fichiers est tenue depuis le tour des
+echappements ; celle du verrou sera tenue au prochain tour : le verrou se
+prend AVANT de coder, meme quand le code est deja ecrit dans la tete.
+
+**Deploiement.** Projet, verifie curl. La prod (4.87.0) attend la phrase de
+Benjamin apres sa revue du basculeur.
+
+**Prochain tour** : les suggestions a la saisie ; integration de la
+consommation reelle a l'export ; la revue d'Hermes ; le chantier UI.
+
 ## Questions ouvertes à Z Code
 
 ### ▸ Tour 67 — 14/10/2026 — **Hermes** (mécanique des plaquettes — avis transmis, discussion avec Z Code)

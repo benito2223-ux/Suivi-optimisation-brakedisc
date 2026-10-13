@@ -5,6 +5,40 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.88.0] — 2026-10-14 · Tour 71
+
+**Le basculeur de consommation — theorique vs REELLE.** Benjamin, en voyant
+les quantites du Plan : « j'ai de tres gros doutes sur tes quantites de
+plaquettes annuelles ». Il a raison : elles sont theoriques (production /
+(aretes x DDV classeur)), et l'historique de ses propres classeurs dit un
+reel ~7,5 fois plus gros (867 000 EUR/an contre 115 469). Le Plan peut
+desormais basculer sur la consommation REELLE.
+
+### Ajoute
+- **basculeur dans le Plan de conversion** : « theorie » ou « REELLE
+  extrapolée » — la reelle lit les feuilles « Pareto conso » de SES classeurs
+  (lecture locale, constitution 4.2), une semaine de consommation reelle par
+  article, x 52 ;
+- **consoDepuisFeuille()** (pure) : parse les sections EMAG n / PCI n /
+  HESSAPP, cumule un article vu sur plusieurs lignes, **refuse un pareto de
+  COUT** (jamais pris pour des quantites) et cherche la ligne d'en-tetes ;
+- **honnetete integree** : en mode reel, un article SANS consommation lue
+  PERD son gain (affiche « pas de conso reelle lue ») — jamais complete en
+  silence (§3.5) ; l'avertissement « une semaine x 52, regime suppose
+  constant » est affiche ; l'export CSV porte le mode utilise ;
+- **consoReelle est un etat de session** (comme la lecture Classeur Matis) :
+  jamais ecrit dans le suivi, a relire par session ;
+- 5 tests : parseur (sections, cumul multi-lignes), refus du pareto cout,
+  gain reel = semaine x 52 x ecart de prix, article sans donnee = gain null,
+  retour au theorique exact.
+
+### Verifie
+- 542 -> **547 tests** ; contre-regard a venir au prochain tour (la porte
+  « le reel retombe sur le theorique » est deja couverte par le test de
+  bascule retour) ;
+- ecart declare : verrou pris retroactivement (apres l'ecriture), comme le
+  tour 70 — la regle des patchs-fichiers est tenue, celle du verrou non.
+
 ## [4.87.0] — 2026-10-14 · Tour 70
 
 **Plein écran partout où ça compte.** Retour de Benjamin : « l'affichage de
