@@ -2143,6 +2143,7 @@ body.atelier-on{overflow:hidden;}
   <div class="panel panel-large" id="vueCppPanel" hidden></div>
   <div class="panel panel-large" id="simulPanel" hidden></div>
   <div class="panel panel-large" id="cataloguePanel" hidden></div>
+  <div class="panel panel-large" id="planPanel" hidden></div>
   <div class="panel panel-large" id="cartePanel" hidden></div>
   <div class="panel panel-large" id="matisPanel" hidden></div>
   <div class="panel panel-large" id="matisDetailPanel" hidden></div>
@@ -3420,6 +3421,7 @@ function migrerArbre(source){
     const fin = finaliserProjetsEtResponsables(projetsLus, source.responsables);
     return { lignes: lignesLues, projets: fin.projets, responsables: fin.responsables,
            catalogue: Array.isArray(source.catalogue) ? source.catalogue.map(normalizeArticleCat) : [],
+           plan: Array.isArray(source.plan) ? source.plan.map(normalizePlanEntry) : [],
            livraisons: Array.isArray(source.livraisons) ? source.livraisons.map(normalizeLivraison) : [] };
   }
 
@@ -3594,6 +3596,19 @@ let livraisons = [];
    validation operateur. Le catalogue voyage dans le suivi (payload, import) et
    se propage aux logements avec rapport — jamais en silence (§3.2). */
 let catalogue = [];
+
+/* v4.86 — LE PLAN DE CONVERSION : une ligne par article a basculer vers SPK.
+   Etat tenu par Benjamin, pas par l'outil : a proposer / proposee / en essai /
+   gagnee. Le total de la promesse ne compte que les lignes ou l'etat est pose. */
+let plan = [];
+
+function normalizePlanEntry(p){
+  return Object.assign({ mabec: "", isoCible: "", prixCible: "", etat: "" }, p,
+    { mabec: String((p && p.mabec) || "").trim().toUpperCase(),
+      isoCible: String((p && p.isoCible) || "").trim(),
+      prixCible: (p && p.prixCible) !== "" && p && p.prixCible != null ? Number(p.prixCible) : "",
+      etat: String((p && p.etat) || "") });
+}
 
 function normalizeArticleCat(a){
   return Object.assign({ mabec: "", iso: "", prix: "", aretes: "", ddv: "" }, a,
@@ -3878,6 +3893,8 @@ function loadAll(){
         specsUsine = normaliserSpecsUsine(parsed.specsUsine);
         synchroNote = parsed.synchroNote || null;
         catalogue = (parsed.catalogue || []).map(normalizeArticleCat);
+    plan = (parsed.plan || []).map(normalizePlanEntry);
+        plan = (parsed.plan || []).map(normalizePlanEntry);
         const l = lignes.find(x => x.id === parsed.activeLigneId) || lignes[0];
         activeLigneId = l.id;
         const r = l.references.find(x => x.id === parsed.activeReferenceId) || l.references[0];
@@ -4017,7 +4034,7 @@ function payloadSuivi(){
   // format 8 (v4.2) : `lignes` reste la racine, exactement comme les formats 5 et 7 -- une
   // version anterieure a la v4 lit ce fichier normalement, seuls `projets` et `responsables`
   // lui sont invisibles (elle ne les connait pas, elle ne les cherche pas).
-  return JSON.stringify({ format:8, lignes, projets, activeProjetId, responsables, backlog, revision, specsUsine, synchroNote, activeLigneId, activeReferenceId, activeOpId, activeScenarioId: activeId, livraisons, catalogue });
+  return JSON.stringify({ format:8, lignes, projets, activeProjetId, responsables, backlog, revision, specsUsine, synchroNote, activeLigneId, activeReferenceId, activeOpId, activeScenarioId: activeId, livraisons, catalogue, plan });
 }
 
 /* Ce qui pese vraiment, nomme, pour que l'utilisateur puisse agir plutot que subir. */
@@ -5064,6 +5081,7 @@ function preparerImportDepuis(parsed){
      migreImport ; le repli (anciens formats) n'en porte pas. */
   return { nouvellesLignes, nouveauxProjets, nouveauxResponsables, nouveauBacklog, revisionEntrante,
            catalogue: migreImport ? (migreImport.catalogue || []) : [],
+           plan: migreImport ? (migreImport.plan || []).map(normalizePlanEntry) : [],
            livraisons: migreImport ? (migreImport.livraisons || []) : [] };
 }
 
@@ -5178,6 +5196,12 @@ function appliquerImport(mode){
       catalogue.forEach(a => { parMabec[a.mabec] = a; });
       importEnAttente.catalogue.forEach(a => { parMabec[a.mabec] = a; });
       catalogue = Object.values(parMabec).map(normalizeArticleCat);
+    }
+    if(Array.isArray(importEnAttente.plan)){
+      const parMabecP = {};
+      plan.forEach(p => { parMabecP[p.mabec] = p; });
+      importEnAttente.plan.forEach(p => { parMabecP[p.mabec] = p; });
+      plan = Object.values(parMabecP).map(normalizePlanEntry);
     }
     // la fusion produit un etat qui n'existe dans aucun des deux fichiers : elle merite sa
     // propre revision, sinon deux postes croiraient detenir la meme
@@ -12042,6 +12066,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.86.0", date:"14/10/2026", points:[
+    "<b>⚔️ Le Plan de conversion : le pas-à-pas commercial.</b> Chaque article actuel avec sa consommation en production, la <b>cible SPK éditable</b> — les KY3500 se voient suggérer la même géométrie en LKT640 — et le <b>gain annuel</b> calculé en direct. Chaque ligne porte son état (à proposer / proposée / en essai / gagnée) : tu révèles au rythme que tu décides, le total ne compte que ce que tu as posé. Export CSV pour la réunion."
+  ]},
   { version:"4.85.0", date:"13/10/2026", points:[
     "<b>📚 Le catalogue plaquettes.</b> La vérité prix/article : un MABEC = un prix. Générez-le depuis l'outil (divergences signalées à faire vérifier par Matis), exportez-le en CSV pour l'éditer dans Excel, réimportez-le quand les prix bougent — puis <b>✅ Appliquez</b> : chaque logement concerné est mis à jour, avec le rapport de ce qui a changé."
   ]},
@@ -12588,7 +12615,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.85.0";
+const TOOL_VERSION = "4.86.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -15172,6 +15199,117 @@ function ouvrirCatalogue(){
   renderCatalogue();
 }
 
+/* ═══ v4.86 — LE PLAN DE CONVERSION : la vitrine commerciale ════════════════
+   La demande de Benjamin : montrer a Matis, article par article, ce que vaut
+   le passage sur les plaquettes SPK — progressivement, ligne par ligne, au
+   bon moment. Regles : la consommation est celle des scenarios EN PRODUCTION
+   (le meme calcul que partout) ; la cible est EDITABLE (auto-suggeree pour
+   les KY3500 : meme geometrie en LKT640 a 5 EUR, decision Benjamin) ; l'etat
+   de chaque ligne appartient a Benjamin (a proposer / proposee / en essai /
+   gagnee) ; le TOTAL de la promesse ne compte que les lignes ou l'etat est
+   pose. Les DDV d'essai n'entrent qu'apres validation operateur (decisions
+   du 13/10). Aucun K, aucun P dans cet ecran. */
+const PLAN_ETATS = ["à proposer", "proposée", "en essai", "gagnée"];
+
+function planLignes(){
+  const d = plaquettesCommunes();
+  const parMabec = {};
+  plan.forEach(p => { parMabec[p.mabec] = p; });
+  return d.groupes.map(g => {
+    const art = catalogue.find(a => a.mabec === g.mabec && a.prix !== "" && a.prix > 0);
+    const prixA = art ? art.prix : (g.usages[0] ? g.usages[0].prix : 0);
+    const piecesAn = prixA > 0 ? g.coutAnnuel / prixA : 0;
+    const isoKY = g.usages.map(u => u.iso).find(i => /KY3500/i.test(i || ""));
+    const sugg = isoKY ? { iso: String(isoKY).replace(/KY3500/gi, "LKT640"), prix: 5 } : null;
+    const p = parMabec[g.mabec] || {};
+    const ciblePrix = (p.prixCible !== "" && p.prixCible != null) ? Number(p.prixCible)
+                      : (sugg ? sugg.prix : "");
+    const cibleIso = p.isoCible || (sugg ? sugg.iso : "");
+    const actif = !!p.etat;
+    const gain = (actif && ciblePrix !== "" && ciblePrix !== null && prixA > 0)
+      ? piecesAn * (prixA - Number(ciblePrix)) : null;
+    return { mabec: g.mabec, isos: [...g.isos], prixA, coutAnnuel: g.coutAnnuel,
+             piecesAn, cibleIso, ciblePrix, etat: p.etat || "", actif, gain, auto: !!sugg };
+  });
+}
+
+function planHTML(){
+  const lignes = planLignes();
+  if(!lignes.length) return `<p class="panel-hint">Aucun article de production chiffré : le plan se nourrit des mêmes données que le simulateur (scénarios en production, prix + volume).</p>`;
+  const total = lignes.reduce((a, l) => a + (l.actif && l.gain ? l.gain : 0), 0);
+  const actives = lignes.filter(l => l.actif).length;
+  return `
+    <div class="simul-note">Le pas-à-pas commercial : chaque ligne est un article actuel, sa consommation en production, et la cible SPK — révélée quand TU décides de poser son état. Le total ne compte que les lignes étatées.</div>
+    <table class="simul-table">
+      <thead><tr><th>Article actuel</th><th>Libellés ISO</th><th>Prix actuel</th><th>Consommation</th><th>Cible SPK</th><th>Prix cible</th><th>État</th><th>Gain / an</th></tr></thead>
+      <tbody>
+      ${lignes.map((l, i) => {
+        const isoCible = l.cibleIso || l.isos[0] || "";
+        return `<tr>
+          <td class="mono">${escapeAttr(l.mabec)}</td>
+          <td style="font-size:11.5px; color:#888;">${l.isos.map(x => escapeAttr(x)).join("<br>")}</td>
+          <td class="mono">${fmt(l.prixA, 2)} €</td>
+          <td class="mono">${fmtEuroCourt(Math.round(l.coutAnnuel))}/an<br><span style="color:#888;">${fmt(l.piecesAn, 0)} plq/an</span></td>
+          <td><input class="cell" style="width:190px; font-size:12px;" data-plan="${l.mabec}" data-field="isoCible" value="${escapeAttr(l.cibleIso)}" placeholder="plaquette SPK${l.auto ? " (LKT640 suggérée)" : ""}"></td>
+          <td><input class="cell" style="width:74px; font-family:var(--font-mono);" type="number" step="0.01" data-plan="${l.mabec}" data-field="prixCible" value="${l.ciblePrix === "" ? "" : l.ciblePrix}" placeholder="5"></td>
+          <td><select class="cell small" data-plan="${l.mabec}" data-field="etat">
+            <option value="">—</option>
+            ${PLAN_ETATS.map(e => `<option value="${e}" ${l.etat === e ? "selected" : ""}>${e}</option>`).join("")}
+          </select></td>
+          <td class="mono" style="${l.gain ? "color:#1a7a3f; font-weight:600;" : "color:#888;"}">${l.gain != null ? "− " + fmtEuroCourt(Math.round(l.gain)) : "potentiel"}</td>
+        </tr>`;
+      }).join("")}
+      </tbody>
+    </table>
+    <div class="simul-resultat">${actives
+      ? `Promesse posée : <b>${actives} article(s)</b> en conversion — économie simulée <b>− ${fmtEuroCourt(Math.round(total))} / an</b>.`
+      : `Pose un état sur une ligne (même « à proposer ») pour l’ajouter à la promesse — le pas-à-pas t’appartient.`}</div>
+    <div class="simul-actions" style="margin-top:12px;">
+      <button class="ghost small" id="planExporter">⤵ Exporter le plan (CSV)</button>
+    </div>`;
+}
+
+function renderPlan(){
+  const wrap = document.getElementById("planPanel");
+  if(!wrap) return;
+  wrap.innerHTML = `<h3>⚔️ Plan de conversion — vers les plaquettes SPK</h3>` + planHTML();
+  wrap.querySelectorAll("[data-plan]").forEach(inp => inp.addEventListener("change", () => {
+    const mabec = inp.getAttribute("data-plan"), field = inp.getAttribute("data-field");
+    let e = plan.find(x => x.mabec === mabec);
+    if(!e){ e = normalizePlanEntry({ mabec }); plan.push(e); }
+    e[field] = field === "prixCible" ? (inp.value === "" ? "" : Number(inp.value)) : inp.value;
+    saveData(); renderPlan();
+  }));
+  const ex = document.getElementById("planExporter");
+  if(ex) ex.addEventListener("click", planExporter);
+}
+function ouvrirPlan(){
+  fermerPanneaux();
+  ouvrirPanneau("planPanel");
+  renderPlan();
+}
+
+function planCSV(){
+  const num = v => String(v === "" || v == null ? "" : Math.round(v * 10000) / 10000).replace(".", ",");
+  const cell = v => /[";\r\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : String(v);
+  const lignes = planLignes();
+  const L = ["sep=;", "Plan de conversion SPK - " + new Date().toLocaleDateString("fr-FR"), "",
+    "Article actuel (MABEC);Libelles ISO;Prix actuel (EUR);Consommation (EUR/an);Plaquettes/an;Cible SPK;Prix cible (EUR);Etat;Gain (EUR/an)"];
+  lignes.forEach(l => L.push([l.mabec, l.isos.join(" | "), num(l.prixA), num(l.coutAnnuel),
+    num(l.piecesAn), l.cibleIso, num(l.ciblePrix), l.etat, l.gain != null ? num(l.gain) : ""].map(cell).join(";")));
+  const total = lignes.reduce((a, l) => a + (l.actif && l.gain ? l.gain : 0), 0);
+  L.push(["TOTAL (etat pose)", "", "", "", "", "", "", "", num(total)].map(cell).join(";"));
+  return "\ufeff" + L.join("\r\n");
+}
+function planExporter(){
+  const blob = new Blob([planCSV()], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "Plan_conversion_SPK.csv";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
 function renderSimul(){
   const wrap = document.getElementById("simulPanel");
   if(!wrap) return;
@@ -15216,6 +15354,7 @@ function accueilPiedHTML(){
       <button class="primary small" id="pfVueCpp" title="Le CPP obtenu vs la référence Matis, décomposé OP par OP, outil par outil, logement par logement">🔍 Vue CPP</button>
       <button class="primary small" id="pfSimul" title="Que vaut une baisse de prix sur les plaquettes utilisées par plusieurs productions ? Économie annuelle € et % — SIMULATION, rien n'écrit">💰 Simulateur prix</button>
       <button class="primary small" id="pfCatalogue" title="La vérité prix/article : un MABEC = un prix. Export/import CSV, propagation aux logements avec rapport">📚 Catalogue</button>
+      <button class="primary small" id="pfPlan" title="Le pas-à-pas commercial : article par article, la cible SPK et le gain annuel — révélé ligne par ligne">⚔️ Plan de conversion</button>
     </div>
   </div>`;
 }
@@ -15306,6 +15445,8 @@ function renderAccueil(){
   if(cSimul) cSimul.addEventListener("click", ouvrirSimul);
   const cCat = document.getElementById("pfCatalogue");
   if(cCat) cCat.addEventListener("click", ouvrirCatalogue);
+  const cPlan = document.getElementById("pfPlan");
+  if(cPlan) cPlan.addEventListener("click", ouvrirPlan);
   const cCpp = document.getElementById("pfVueCpp");
   if(cCpp) cCpp.addEventListener("click", ouvrirVueCpp);
   /* la tuile hors périmètre déplie sa liste — le geste de Q12, pas la porte carte */
@@ -16750,6 +16891,7 @@ const PROMESSES_UI = [
   { porte:"💰 Simulateur prix (accueil)", fns:["ouvrirSimul", "renderSimul", "plaquettesCommunes", "simulHTML", "simulRecalcul"] },
   { porte:"⇄ Réattribuer un essai", fns:["reattribuerEssai"] },
   { porte:"📚 Catalogue (accueil)", fns:["ouvrirCatalogue", "renderCatalogue", "catalogueSeed", "catalogueAppliquer", "catalogueCSV", "catalogueDepuisCSV"] },
+  { porte:"⚔️ Plan de conversion (accueil)", fns:["ouvrirPlan", "renderPlan", "planLignes", "planHTML", "planCSV"] },
   { porte:"Carte atelier (barre, accueil, fiche)", fns:["ouvrirCarte", "renderCarte", "scenariosPostes", "renderFichePoste", "ouvrirPosteDepuisFiche"] },
   { porte:"Accueil (barre)", fns:["ouvrirAccueil"] },
   { porte:"Tableau de bord (barre)", fns:["renderDashboard"] },
@@ -18405,6 +18547,31 @@ function runTests(){
         ok("catalogue : un prix illisible est signalé, pas inventé (§3.5)",
            catalogueDepuisCSV("MABEC;Prix EUR\nIM02 137 021;nsp").erreurs.length > 0, true);
       } finally { lignes = lAvC; catalogue = []; }
+    }
+    {
+      /* v4.86 — LE PLAN DE CONVERSION : suggestion KY3500->LKT640 a 5 EUR,
+         gain = pieces/an x (prix actuel - prix cible), et l'etat gate le total. */
+      const lP = normalizeLigne({ id: "lPl", nom: "EMAG 1", references: [ normalizeReference({ id: "rPl", nom: "356x26", productionAnnuelle: 10000, ops: [
+        normalizeOp({ id: "oPl", nom: "OP20", scenarios: [ normalizeScenario({ id: "scPl", name: "Prod", baseline: true, outils: [
+          { id: "tP1", numero: "T521", logements: [
+            { id: "gP1", nom: "D1", ref: "SNMX120716T02020 KY3500", codeArticle: "IM02 137 021", prix: 7.96, aretes: 8, charniere: 150 } ] } ] }) ] }) ] }) ] });
+      const lAvP = lignes; lignes = [ lP ]; plan = [];
+      try {
+        const lignesPlan = planLignes();
+        const l0 = lignesPlan[0];
+        ok("plan : la cible KY3500 est auto-suggérée en LKT640 à 5 € (décision Benjamin)",
+           [l0.auto, l0.cibleIso, Number(l0.ciblePrix)], [true, "SNMX120716T02020 LKT640", 5]);
+        const plqAn = 10000 / (8 * 150);   /* 8,33 plaquettes/an : 10 000 disques, 150 pieces par arete, 8 aretes */
+        ok("plan : le gain d'une ligne non activee reste du POTENTIEL (null, pas un chiffre)",
+           [planLignes()[0].actif, planLignes()[0].gain], [false, null]);
+        plan = [ normalizePlanEntry({ mabec: "IM02 137 021", isoCible: "SNMX120716T02020 LKT640", prixCible: 5, etat: "proposée" }) ];
+        const g1 = planLignes()[0];
+        ok("plan : l'état posé active la ligne et son gain au centime près (plaquettes/an × écart de prix)",
+           [g1.actif, Math.abs(g1.gain - plqAn * (7.96 - 5)) < 1e-9], [true, true]);
+        const tout = planLignes().reduce((a, l) => a + (l.actif && l.gain ? l.gain : 0), 0);
+        ok("plan : le total de la promesse ne compte que les lignes étatées (le reste est du potentiel)",
+           Math.abs(tout - plqAn * 2.96) < 1e-9, true);
+      } finally { lignes = lAvP; plan = []; }
     }
       } finally { lignes = lAvS; }
     }
