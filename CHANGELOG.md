@@ -5,6 +5,70 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.87.0] — 2026-10-14 · Tour 70
+
+**Plein écran partout où ça compte.** Retour de Benjamin : « l'affichage de
+l'accueil et du plan de conversion sont vraiment trop petits et illisibles ».
+
+### Ajouté
+- **plein écran GÉNÉRIQUE** : la règle CSS passe de `#simulPanel` à **tout
+  `.panel`** — l'accueil, le Plan de conversion et le Simulateur passent en
+  vraie pleine surface (plus de colonne de 1120 px), le mode natif est tenté
+  par-dessus (projection) ;
+- **polices majorées en mode maxi** : table 16,5 px, titres 22 px, champs 14 px
+  — la lecture à distance de réunion ;
+- **basculerMaxi()** générique : un bouton ⛶ sur l'accueil (pied) et sur le
+  Plan ; le Simulateur délègue au même mécanisme ; Échap rend la main ;
+- porte hors-suite étendue : **6 règles** lues dans le fichier réel.
+
+## [4.87.0] — 2026-10-14 · Tour 70
+
+**Plein écran partout où ça compte.** Retour de Benjamin : « l'affichage de
+l'accueil et du plan de conversion sont vraiment trop petits et illisibles ».
+
+### Ajouté
+- **plein écran GÉNÉRIQUE** : la règle CSS passe de `#simulPanel` à **tout
+  `.panel`** — l'accueil, le Plan de conversion et le Simulateur passent en
+  vraie pleine surface (plus de colonne de 1120 px), le mode natif est tenté
+  par-dessus (projection) ;
+- **polices majorées en mode maxi** : table 16,5 px, titres 22 px, champs 14 px
+  — la lecture à distance de réunion ;
+- **basculerMaxi()** générique : un bouton ⛶ sur l'accueil (pied) et sur le
+  Plan ; le Simulateur délègue au même mécanisme ; Échap rend la main ;
+- porte hors-suite étendue : **6 règles** lues dans le fichier réel.
+
+## [4.87.0] — 2026-10-14 · Tour 70
+
+**Plein écran partout où ça compte.** Retour de Benjamin : « l'affichage de
+l'accueil et du plan de conversion sont vraiment trop petits et illisibles ».
+
+### Ajouté
+- **plein écran GÉNÉRIQUE** : la règle CSS passe de `#simulPanel` à **tout
+  `.panel`** — l'accueil, le Plan de conversion et le Simulateur passent en
+  vraie pleine surface (plus de colonne de 1120 px), le mode natif est tenté
+  par-dessus (projection) ;
+- **polices majorées en mode maxi** : table 16,5 px, titres 22 px, champs 14 px
+  — la lecture à distance de réunion ;
+- **basculerMaxi()** générique : un bouton ⛶ sur l'accueil (pied) et sur le
+  Plan ; le Simulateur délègue au même mécanisme ; Échap rend la main ;
+- porte hors-suite étendue : **6 règles** lues dans le fichier réel.
+
+## [4.87.0] — 2026-10-14 · Tour 70
+
+**Plein écran partout où ça compte.** Retour de Benjamin : « l'affichage de
+l'accueil et du plan de conversion sont vraiment trop petits et illisibles ».
+
+### Ajouté
+- **plein écran GÉNÉRIQUE** : la règle CSS passe de `#simulPanel` à **tout
+  `.panel`** — l'accueil, le Plan de conversion et le Simulateur passent en
+  vraie pleine surface (plus de colonne de 1120 px), le mode natif est tenté
+  par-dessus (projection) ;
+- **polices majorées en mode maxi** : table 16,5 px, titres 22 px, champs 14 px
+  — la lecture à distance de réunion ;
+- **basculerMaxi()** générique : un bouton ⛶ sur l'accueil (pied) et sur le
+  Plan ; le Simulateur délègue au même mécanisme ; Échap rend la main ;
+- porte hors-suite étendue : **6 règles** lues dans le fichier réel.
+
 ## [4.86.0] — 2026-10-14 · Tour 69
 
 **Le Plan de conversion — le pas-a-pas commercial.** La demande de Benjamin :

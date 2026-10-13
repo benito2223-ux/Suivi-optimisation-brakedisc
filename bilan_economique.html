@@ -214,7 +214,14 @@ table .num, table td.num{ text-align:right; font-variant-numeric:tabular-nums;
 .simul-table tfoot td { font-weight:600; border-top:2px solid #d6d9de; }
 .simul-actions { display:flex; gap:8px; margin-bottom:10px; }
 .simul-resultat { margin-top:16px; padding:13px 16px; background:#f0f7ee; border:1px solid #cfe3c8; border-radius:4px; font-size:15px; }
-#simulPanel.simul-maxi { position:fixed; inset:0; max-width:none; width:100vw; height:100vh; max-height:none; z-index:260; overflow:auto; border-radius:0; margin:0; }
+/* v4.87 — plein écran GÉNÉRIQUE : tout .panel peut passer maxi (accueil,
+   simulateur, plan, catalogue) — et les polices montent avec la surface. */
+.panel.simul-maxi { position:fixed; inset:0; max-width:none; width:100vw; height:100vh; max-height:none; z-index:260; overflow:auto; border-radius:0; margin:0; padding:26px clamp(20px, 4vw, 64px); font-size:15.5px; }
+.panel.simul-maxi .simul-table { font-size:16.5px; }
+.panel.simul-maxi .simul-table th { font-size:13px; }
+.panel.simul-maxi .panel-hint { font-size:14.5px; }
+.panel.simul-maxi h3 { font-size:22px; }
+.panel.simul-maxi .cell, .panel.simul-maxi select { font-size:14px; }
 </style>
 
 <style>
@@ -12066,6 +12073,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.87.0", date:"14/10/2026", points:[
+    "<b>⛶ Plein écran partout où ça compte.</b> L'accueil, le Plan de conversion et le Simulateur passent en <b>vraie pleine surface</b> — plus de colonne de 1120 px : tout l'écran, et les polices qui montent avec. Un bouton ⛶ sur chaque écran ; Échap ou le même bouton rend la main."
+  ]},
   { version:"4.86.0", date:"14/10/2026", points:[
     "<b>⚔️ Le Plan de conversion : le pas-à-pas commercial.</b> Chaque article actuel avec sa consommation en production, la <b>cible SPK éditable</b> — les KY3500 se voient suggérer la même géométrie en LKT640 — et le <b>gain annuel</b> calculé en direct. Chaque ligne porte son état (à proposer / proposée / en essai / gagnée) : tu révèles au rythme que tu décides, le total ne compte que ce que tu as posé. Export CSV pour la réunion."
   ]},
@@ -12615,7 +12625,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.86.0";
+const TOOL_VERSION = "4.87.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -14928,7 +14938,25 @@ function simulExporter(){
 
 /* v4.84 — plein ecran : le panneau passe par-dessus tout (CSS maxi), et le
    mode natif est tente par-dessus (reunion projetee). ESC rend la main. */
+/* v4.87 — bascule plein écran GÉNÉRIQUE : tout grand panneau passe maxi (CSS)
+   et le mode natif est tenté par-dessus (projection). Échap rend la main. */
+function basculerMaxi(idPanel, btn){
+  const p = document.getElementById(idPanel);
+  if(!p) return;
+  const on = !p.classList.contains("simul-maxi");
+  p.classList.toggle("simul-maxi", on);
+  try{
+    if(on && p.requestFullscreen) p.requestFullscreen().catch(() => {});
+    else if(!on && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+  }catch(e){}
+  if(btn) btn.textContent = on ? "⤢ Quitter le plein écran" : "⛶ Plein écran";
+}
+
 function simulMaxi(){
+  basculerMaxi("simulPanel", document.getElementById("simulMaxiBtn"));
+}
+
+function simulMaxi_legacy(){
   const p = document.getElementById("simulPanel");
   if(!p) return;
   const on = !p.classList.contains("simul-maxi");
@@ -15266,6 +15294,7 @@ function planHTML(){
       : `Pose un état sur une ligne (même « à proposer ») pour l’ajouter à la promesse — le pas-à-pas t’appartient.`}</div>
     <div class="simul-actions" style="margin-top:12px;">
       <button class="ghost small" id="planExporter">⤵ Exporter le plan (CSV)</button>
+      <button class="ghost small" id="planMaxiBtn" title="Projection en réunion">⛶ Plein écran</button>
     </div>`;
 }
 
@@ -15282,6 +15311,8 @@ function renderPlan(){
   }));
   const ex = document.getElementById("planExporter");
   if(ex) ex.addEventListener("click", planExporter);
+  const mx = document.getElementById("planMaxiBtn");
+  if(mx) mx.addEventListener("click", () => basculerMaxi("planPanel", mx));
 }
 function ouvrirPlan(){
   fermerPanneaux();
@@ -15355,6 +15386,7 @@ function accueilPiedHTML(){
       <button class="primary small" id="pfSimul" title="Que vaut une baisse de prix sur les plaquettes utilisées par plusieurs productions ? Économie annuelle € et % — SIMULATION, rien n'écrit">💰 Simulateur prix</button>
       <button class="primary small" id="pfCatalogue" title="La vérité prix/article : un MABEC = un prix. Export/import CSV, propagation aux logements avec rapport">📚 Catalogue</button>
       <button class="primary small" id="pfPlan" title="Le pas-à-pas commercial : article par article, la cible SPK et le gain annuel — révélé ligne par ligne">⚔️ Plan de conversion</button>
+      <button class="ghost small" id="pfAccueilMaxi" title="L'accueil en plein écran — pour projeter">⛶ Plein écran</button>
     </div>
   </div>`;
 }
@@ -15445,6 +15477,8 @@ function renderAccueil(){
   if(cSimul) cSimul.addEventListener("click", ouvrirSimul);
   const cCat = document.getElementById("pfCatalogue");
   if(cCat) cCat.addEventListener("click", ouvrirCatalogue);
+  const cMaxi = document.getElementById("pfAccueilMaxi");
+  if(cMaxi) cMaxi.addEventListener("click", () => basculerMaxi("accueilPanel", cMaxi));
   const cPlan = document.getElementById("pfPlan");
   if(cPlan) cPlan.addEventListener("click", ouvrirPlan);
   const cCpp = document.getElementById("pfVueCpp");

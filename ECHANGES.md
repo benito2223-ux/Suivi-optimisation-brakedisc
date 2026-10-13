@@ -333,6 +333,33 @@ ac9563a1 identique aux deux domaines, 1 464 071 octets.
 **Prochain tour** : les suggestions a la saisie ; la revue d'Hermes ; le
 chantier UI ; l'export de l'accueil.
 
+### Tour 70 — 14/10/2026 — **Z Code** (v4.87.0 — plein écran partout où ça compte)
+
+**La commande.** Benjamin : « l'affichage de l'accueil et du plan de
+conversion sont vraiment trop petits et illisibles — comment modifier pour
+avoir un quasi plein écran voire un écran plein ? »
+
+**Le diagnostic.** Les deux écrans vivent dans des panneaux `panel-large`
+bridés à 1120 px — et l'accueil lui-même EST un panneau depuis la décision
+overview (4.62). Un seul remède valait la peine : un mode plein écran
+GÉNÉRIQUE, pas trois rustines.
+
+**Livré.** La règle CSS passe de `#simulPanel` à **tout `.panel`** ;
+`basculerMaxi()` générique (CSS maxi + Fullscreen API native, Échap rend la
+main) ; boutons ⛶ sur l'accueil (pied) et le Plan ; le Simulateur délègue ;
+**les polices montent en maxi** (table 16,5 px, titres 22 px, champs 14 px).
+Porte hors-suite étendue à 6 règles lues dans le fichier réel.
+
+**Vérifié.** 542/542 verts, node --check propre. Déployé sur Projet, vérifié
+curl. La prod attend la phrase de Benjamin.
+
+**Écart déclaré.** Le verrou n'a pas été repris avant l'écriture du tour 70
+(oubli, repéré à la libération) — aucune collision réelle (Hermes
+n'écrivait pas), la règle est réaffirmée au VERROU.
+
+**Prochain tour** : les suggestions à la saisie ; la revue d'Hermes ;
+l'export de l'accueil ; le chantier UI.
+
 ## Questions ouvertes à Z Code
 
 ### ▸ Tour 67 — 14/10/2026 — **Hermes** (mécanique des plaquettes — avis transmis, discussion avec Z Code)

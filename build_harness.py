@@ -290,10 +290,10 @@ try {
   (function simulCss(){
     const fs = require('fs');
     const html = fs.readFileSync('bilan_economique.html', 'utf8');
-    const manquantes = ['.simul-note {', '.simul-table {', '.simul-resultat {', '#simulPanel.simul-maxi']
+    const manquantes = ['.simul-note {', '.simul-table {', '.simul-resultat {', '.panel.simul-maxi', '.panel.simul-maxi .simul-table', 'function basculerMaxi']
       .filter(sel => html.indexOf(sel) === -1);
     if(manquantes.length) r.echecs += manquantes.length;
-    console.log((manquantes.length ? '  ECHEC ' : '  ok  ') + 'simulateur : CSS présent dans le fichier réel (' + (4 - manquantes.length) + '/4 règles)' + (manquantes.length ? ' — MANQUANT : ' + manquantes.join(', ') : ''));
+    console.log((manquantes.length ? '  ECHEC ' : '  ok  ') + 'simulateur : CSS présent dans le fichier réel (' + (6 - manquantes.length) + '/6 règles)' + (manquantes.length ? ' — MANQUANT : ' + manquantes.join(', ') : ''));
   })();
   /* ── v4.82 — LES DATES DE SAISIE SONT BORNÉES ───────────────────────────
      Benjamin : « la date des essais ne peut pas se taper directement il faut
