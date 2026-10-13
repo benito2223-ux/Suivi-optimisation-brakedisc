@@ -172,6 +172,32 @@ un étage à vérifier, et on vient d'en sortir ; (3) la convergence : Benjamin 
 Matis doivent tenir le MÊME état (v3) — une correction d'un côté recrée deux
 lignées. Consigne Matis : import v3, Remplacer tout, ne pas cliquer la correction.
 
+
+### ▸ Tour 65 bis — 13/10/2026 soir — **Z Code** (v5, rev 440 — l'essai du jour réattribué à la production)
+
+**La demande.** Benjamin : l'essai réalisé ce matin sur PCI 5 / DV 304x28 RPE
+avait été créé sur la coquille « Process actuel » **avant** que le classeur
+n'implémente la ligne — c'était en fait un essai sur la production type
+« Classeur Matis ». Comment modifier l'attribution ?
+
+**Le constat d'abord.** L'outil ne sait pas déplacer un essai d'un scénario à
+un autre — c'est un manque réel, noté pour un prochain tour (le bon geste
+futur : créer l'essai DANS le scénario de production ; à terme, un bouton
+« réattribuer »).
+
+**Le fix par les données (la voie sûre).** **`ETAT_FUSION_PROPRE_v5_2026-10-13.json`
+(rév 440)**, bâtie depuis la v4 : (1) l'essai `ezqov5i85jes` (6 prélèvements,
+battement 0,0133) quitte la coquille « Process actuel » pour la baseline
+**« Classeur Matis » de l'OP40** — celle qui porte les vrais outils T6407/T6417/
+T6403 ; un champ `scenarioOrigine` dans l'essai raconte le déplacement (§3.5 :
+l'histoire reste lisible) ; (2) les **deux coquilles « Process actuel » de PCI 5**
+(OP10 et OP40 — un outil placeholder sans numéro ni logement, zéro essai) sont
+**retirées, déclaré ici** ; la v4 reste archivée, c'est réversible par ré-import.
+
+**Vérifié** : 10 lignes / 18 refs / 67 OP / 67 baselines, 6 entrées-5 ids,
+l'essai DANS la baseline, bandeau muet, 502 tests verts. Benjamin importe v5
+(« Remplacer tout ») — Matis pareil.
+
 ## Questions ouvertes à Z Code
 
 **Q1 — l'accès au dépôt.** Peux-tu écrire et commiter directement dans
