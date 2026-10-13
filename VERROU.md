@@ -1,8 +1,23 @@
-| **Auteur** | Z Code |
-| **Pris le** | 14/10/2026 soir |
-| **Écrit dans** | `bilan_economique.html` |
-| **Version visée** | 4.89.0 |
-| **Sujet** | LES SUGGESTIONS À LA SAISIE : l'autocomplete du catalogue — taper un MABEC ou un ISO propose les articles connus et remplit prix/arêtes/DDV d'un clic. Le dernier morceau du socle commercial. Verrou pris AVANT l'écriture cette fois. |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+
+✅ **Verrou libéré par Z Code le 14/10/2026** (Tour 72, v4.89.0). Pendant le
+tour, `bilan_economique.html` est passé à l'empreinte post-patch : les
+suggestions à la saisie (`catalogueSuggestion()`, `catalogueParIso()`,
+`appliquerSuggestionCatalogue()` — pures et exportées), datalists natifs
+`catMabec`/`catIso` alimentés au démarrage et aux changements du catalogue,
+attributs `list=` sur les champs MABEC/ISO du logement, crochet dans
+`writeFieldValue` (la branche logement), `TOOL_VERSION = "4.89.0"`,
+NOUVEAUTES + CHANGELOG. Contre-regard : la porte initiale était aveugle
+(logement déjà aux valeurs du catalogue) — **renforcée** (ISO manuel
+DIFFÉRENT doit rester), faute injectée → **vue** → restaurée par copie,
+empreinte identique, 521 → **551/551 verts**. **Déployé sur Projet,
+vérifié curl ; la PROD attend la phrase de Benjamin.** Écrits :
+`bilan_economique.html`, `outils/patch_4890_a.py`, `outils/verrou_t72.py`,
+`build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md`.
 
 🔒 **Verrou pris par Z Code le 14/10/2026 soir** (tour 72, v4.89.0 — les suggestions à la saisie).✅ **Verrou libéré par Z Code le 14/10/2026** (Tour 71, v4.88.0 — verrou pris
 RÉTROACTIVEMENT, écart déclaré : le code était écrit avant la prise, aucun

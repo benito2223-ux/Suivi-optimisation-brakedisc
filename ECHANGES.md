@@ -396,6 +396,33 @@ Benjamin apres sa revue du basculeur.
 **Prochain tour** : les suggestions a la saisie ; integration de la
 consommation reelle a l'export ; la revue d'Hermes ; le chantier UI.
 
+### Tour 72 — 14/10/2026 soir — **Z Code** (v4.89.0 — l'autocomplete du catalogue à la saisie)
+
+**La commande.** Benjamin : « envoie les suggestions à la saisie
+(l'autocomplete du catalogue) — le dernier morceau du socle commercial ».
+Verrou pris AVANT l'écriture cette fois (par fichier — la règle tient).
+
+**Livre.** Dans la fiche logement, les champs **MABEC** et **Référence
+plaquette (ISO)** ont leurs datalists natifs : taper propose les articles du
+catalogue, et `appliquerSuggestionCatalogue()` remplit d'un changement —
+**MABEC et prix TOUJOURS** (un MABEC = un prix, décision Benjamin),
+**ISO/arêtes/DDV si vides**. Ce qui est saisi à la main n'est jamais écrasé.
+`catalogueParIso()` cherche par ISO insensible casse/espaces, multi-ISO géré.
+Zéro framework : datalists HTML alimentés au boot et aux changements du
+catalogue.
+
+**Le contre-regard qui a renforcé le test.** La porte initiale comparait un
+logement déjà aux valeurs du catalogue : aveugle par construction (la leçon
+4.74.1, encore). Renforcée — un ISO manuel DIFFÉRENT doit rester — faute
+injectée (garde sautée) → **vue** (l'ISO manuel écrasé par le catalogue) →
+restauration par copie, empreinte identique, 521 → **551/551 verts** depuis
+la 4.86.
+
+**Déploiement.** Projet, vérifié curl. La prod attend la phrase de Benjamin.
+
+**Prochain tour** : la revue d'Hermes ; l'export de l'accueil ; le chantier
+UI de fond (les maquettes « ton sur ton »).
+
 ## Questions ouvertes à Z Code
 
 ### ▸ Tour 67 — 14/10/2026 — **Hermes** (mécanique des plaquettes — avis transmis, discussion avec Z Code)

@@ -2151,6 +2151,8 @@ body.atelier-on{overflow:hidden;}
   <div class="panel panel-large" id="simulPanel" hidden></div>
   <div class="panel panel-large" id="cataloguePanel" hidden></div>
   <div class="panel panel-large" id="planPanel" hidden></div>
+  <datalist id="catMabec"></datalist>
+  <datalist id="catIso"></datalist>
   <div class="panel panel-large" id="cartePanel" hidden></div>
   <div class="panel panel-large" id="matisPanel" hidden></div>
   <div class="panel panel-large" id="matisDetailPanel" hidden></div>
@@ -9258,8 +9260,8 @@ function logementBlocHTML(sc, o, l, showFrFa, showCycleDetail){
     <div class="logement-bloc">
       <div class="lb-tete">
         ${champHTML("Logement", `<input class="cell ref" ${base("nom")} value="${escapeAttr(l.nom)}" placeholder="D1, D2, Bol, Piste…" title="La position de la plaquette sur le porte-outil : D1, D2… (le vocabulaire du classeur de Matis), ou un nom fonctionnel (Bol, Piste).">`, "oc-moyen")}
-        ${champHTML("Référence plaquette", `<input class="cell ref" ${base("ref")} value="${escapeAttr(l.ref)}" placeholder="CNGX 120716 T02020 LKT640">`, "oc-large")}
-        ${champHTML("MABEC <span>code article</span>", `<input class="cell ref" ${base("codeArticle")} value="${escapeAttr(l.codeArticle)}" placeholder="ex. IM02 209 560" title="Le numéro d'article du classeur de Matis (colonne MABEC). C'est lui qui relie le suivi au classeur : saisis-le tel quel.">`, "oc-moyen")}
+        ${champHTML("Référence plaquette", `<input class="cell ref" ${base("ref")} list="catIso" value="${escapeAttr(l.ref)}" placeholder="CNGX 120716 T02020 LKT640" title="La désignation ISO de la plaquette — l'autocomplete propose celles du catalogue.">`, "oc-large")}
+        ${champHTML("MABEC <span>code article</span>", `<input class="cell ref" ${base("codeArticle")} list="catMabec" value="${escapeAttr(l.codeArticle)}" placeholder="ex. IM02 209 560" title="Le numéro d'article du classeur de Matis (colonne MABEC). L'autocomplete propose ceux du catalogue et remplit prix, arêtes, durée de vie.">`, "oc-moyen")}
         <label class="lb-tol" title="Décoché, ce logement ne suit que la charnière : ses mesures ne font jamais échouer un essai sur la tolérance.">
           <input type="checkbox" data-outil="${o.id}" data-logement="${l.id}" data-field="suiviTolerance" ${l.suiviTolerance !== false ? "checked" : ""}>
           <span>Suivi en tolérance</span>
@@ -11491,7 +11493,16 @@ function writeFieldValue(el){
   } else if(outilId && logementId){
     const o = sc.outils.find(x => x.id === outilId);
     const l = o && o.logements.find(x => x.id === logementId);
-    if(l) l[field] = val;
+    if(l){
+      l[field] = val;
+      /* v4.89 — LA SUGGESTION : MABEC ou ISO saisi → le catalogue remplit le
+         prix (toujours), l'ISO, les arêtes et la DDV (si vides). Ce qui est
+         saisi à la main n'est jamais écrasé. */
+      const ent = (field === "codeArticle") ? catalogueSuggestion(String(val || "")) : null;
+      const entIso = (field === "ref") ? catalogueParIso(String(val || "")) : null;
+      const cible = ent || entIso;
+      if(cible) appliquerSuggestionCatalogue(l, cible);
+    }
   } else if(outilId){
     const o = sc.outils.find(x => x.id === outilId);
     if(o) o[field] = val;
@@ -12073,6 +12084,12 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.89.0", date:"14/10/2026", points:[
+    "<b>L'autocomplete du catalogue à la saisie.</b> Dans un logement, tape un MABEC ou une référence ISO : l'outil propose les articles du catalogue et remplit d'un clic le prix (toujours — un MABEC = un prix), l'ISO, les arêtes et la durée de vie si elles sont vides. Ce que tu saisis à la main n'est jamais écrasé."
+  ]},
+  { version:"4.88.0", date:"14/10/2026", points:[
+    "<b>Le basculeur de consommation dans le Plan.</b> Les quantités théoriques (production ÷ DDV classeur) te semblent trop belles ? Bascule sur <b>réelle extrapolée</b> : lis tes classeurs de consommation (les feuilles « Pareto conso »), et les gains se calculent sur <b>ta vraie consommation hebdomadaire × 52</b> — les articles sans donnée réelle perdent leur gain, jamais complétés en silence."
+  ]},
   { version:"4.87.0", date:"14/10/2026", points:[
     "<b>⛶ Plein écran partout où ça compte.</b> L'accueil, le Plan de conversion et le Simulateur passent en <b>vraie pleine surface</b> — plus de colonne de 1120 px : tout l'écran, et les polices qui montent avec. Un bouton ⛶ sur chaque écran ; Échap ou le même bouton rend la main."
   ]},
@@ -12625,7 +12642,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.87.0";
+const TOOL_VERSION = "4.89.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -15147,6 +15164,53 @@ function catalogueDepuisCSV(texte){
   return { cat, erreurs };
 }
 
+/* v4.89 — LES SUGGESTIONS À LA SAISIE : l'autocomplete du catalogue.
+   Taper un MABEC ou un ISO dans un logement propose les articles connus
+   (datalist natif — zéro framework) et remplit d'un changement : le MABEC,
+   le prix (toujours — un MABEC = un prix), l'ISO, les arêtes et la durée de
+   vie SI VIDES. Ce qui est saisi à la main n'est jamais écrasé. */
+function catalogueSuggestion(mabec){
+  const n = String(mabec || "").trim().toUpperCase().replace(/\s+/g, " ");
+  if(!n) return null;
+  return catalogue.find(a => a.mabec === n) || null;
+}
+
+function catalogueParIso(iso){
+  const n = String(iso || "").trim().toUpperCase().replace(/\s+/g, " ");
+  if(!n) return null;
+  return catalogue.find(a => String(a.iso || "").toUpperCase().replace(/\s+/g, " ").split(" | ").some(x => x === n)) || null;
+}
+
+function appliquerSuggestionCatalogue(l, entry){
+  if(!l || !entry) return [];
+  const mods = [];
+  const vide = v => v === "" || v == null;
+  const isoUnique = (entry.iso && entry.iso.indexOf(" | ") === -1) ? entry.iso : "";
+  const poser = (champ, valeur, toujours) => {
+    if(valeur === "" || valeur == null) return;
+    if(!toujours && vide(l[champ]) === false) return;
+    if(String(l[champ]) === String(valeur)) return;
+    l[champ] = valeur;
+    mods.push(champ);
+  };
+  poser("codeArticle", entry.mabec, true);
+  poser("prix", entry.prix, true);
+  poser("ref", isoUnique, false);
+  poser("aretes", entry.aretes, false);
+  poser("charniere", entry.ddv, false);
+  return mods;
+}
+
+function renderCatalogueDatlists(){
+  const mabec = document.getElementById("catMabec");
+  const iso = document.getElementById("catIso");
+  if(!mabec || !iso) return;
+  mabec.innerHTML = catalogue.map(a => `<option value="${escapeAttr(a.mabec)}">${escapeAttr(a.iso || "")}</option>`).join("");
+  const isos = new Set();
+  catalogue.forEach(a => String(a.iso || "").split(" | ").forEach(x => { if(x.trim()) isos.add(x.trim()); }));
+  iso.innerHTML = [...isos].map(x => `<option value="${escapeAttr(x)}">`).join("");
+}
+
 function catalogueRendu(){
   if(!catalogue.length) return `<p class="panel-hint">Le catalogue est vide. Trois façons de le remplir : le <b>générer depuis l'outil</b> (un MABEC = un prix, le plus fréquent, divergences signalées), l'<b>importer d'un CSV</b> édité dans Excel, ou les deux — générer, exporter, faire corriger par Matis, réimporter.</p>
     <div class="simul-actions">
@@ -15173,7 +15237,7 @@ function catalogueRendu(){
     </table>`;
 }
 
-function renderCatalogue(){
+function renderCatalogue(){ renderCatalogueDatlists();
   const wrap = document.getElementById("cataloguePanel");
   if(!wrap) return;
   wrap.innerHTML = `<h3>📚 Catalogue plaquettes — la vérité prix/article</h3>` + catalogueRendu();
@@ -15237,16 +15301,91 @@ function ouvrirCatalogue(){
    gagnee) ; le TOTAL de la promesse ne compte que les lignes ou l'etat est
    pose. Les DDV d'essai n'entrent qu'apres validation operateur (decisions
    du 13/10). Aucun K, aucun P dans cet ecran. */
+/* ═══ v4.88 — LE BASCULEUR DE CONSOMMATION : theorique vs REELLE ════════════
+   Benjamin, en voyant les quantites du Plan : « j'ai de tres gros doutes sur
+   tes quantites de plaquettes annuelles » — il a raison : elles sont
+   THEORIQUES (production / (aretes x DDV classeur)), et l'historique de ses
+   propres classeurs dit un reel ~7,5 fois plus gros. Le basculeur permet de
+   calculer les gains sur la consommation REELLE : les feuilles « Pareto
+   conso » des classeurs donnent une semaine de consommation reelle par
+   article, extrapolee x 52 — avec l'avertissement affiche (regime suppose
+   constant). Lecture LOCALE uniquement (constitution 4.2) ; etat de session,
+   comme la lecture Classeur Matis : jamais ecrit dans le suivi. */
+let consoReelle = null;   /* { lueLe, fichiers: [], parArticle: { ART: { qtySemaine, lignes: [] } } } */
+let planSource = "theo";  /* "theo" | "reel" */
+
+function consoDepuisFeuille(nomFeuille, cells){
+  /* parse une feuille « Pareto conso » : sections EMAG n / PCI n / HESSAPP,
+     articles en dessous, quantites en colonne B. Rend { article: { qtySemaine,
+     lignes:Set } } ou null si la feuille n'est pas une conso quantifiee. */
+  if(!/pareto/i.test(nomFeuille || "") || !/conso/i.test(nomFeuille || "")) return null;
+  const lignesNum = [...new Set(Object.keys(cells).map(r => parseInt(r.replace(/\D/g, ""), 10)))].sort((a, b) => a - b);
+  let enteteQte = false;
+  for(const rn of lignesNum.slice(0, 4)){
+    const hA = cells["A" + rn], hB = cells["B" + rn];
+    if((typeof hA === "string" && /somme de qt/i.test(hA)) ||
+       (typeof hB === "string" && /somme de qt/i.test(hB))) enteteQte = true;
+  }
+  if(!enteteQte) return null;   /* un pareto de COUT ne doit jamais passer pour des quantites */
+  let section = null;
+  const out = {};
+  for(const rn of lignesNum){
+    const a = cells["A" + rn], b = cells["B" + rn];
+    if(typeof a !== "string") continue;
+    const label = a.trim();
+    if(/^total g/i.test(label)){ section = null; continue; }
+    if(/(somme de qt|etiquettes de lignes|\u00e9tiquettes de lignes)/i.test(label)) continue;
+    const m = label.match(/^(EMAG\s*\d|PCI\s*\d|HESSAP\w*)$/i);
+    if(m && typeof b === "number"){ section = m[1].toUpperCase().replace(/\s+/g, " "); continue; }
+    if(section && typeof b === "number" && b > 0){
+      const art = label.toUpperCase().replace(/\s+/g, " ");
+      out[art] = out[art] || { qtySemaine: 0, lignes: new Set() };
+      out[art].qtySemaine += b;
+      out[art].lignes.add(section);
+    }
+  }
+  return Object.keys(out).length ? out : null;
+}
+
+/* lit UN classeur : toutes les feuilles, fusionne les sections Pareto conso */
+async function consoLireClasseur(file){
+  const entries = await _zipOpen(file);
+  const shared = await _xlSharedStrings(entries);
+  const map = await _xlSheetMap(entries);
+  const parArticle = {};
+  const feuillesLues = [];
+  for(const nom of Object.keys(map)){
+    if(!entries[map[nom]]) continue;
+    const xml = new TextDecoder("utf-8").decode(await _zipRead(entries[map[nom]]));
+    const lu = consoDepuisFeuille(nom, _xlCells(xml, shared));
+    if(!lu) continue;
+    feuillesLues.push(nom);
+    for(const [art, v] of Object.entries(lu)){
+      const e = parArticle[art] = parArticle[art] || { qtySemaine: 0, lignes: new Set() };
+      e.qtySemaine += v.qtySemaine;
+      v.lignes.forEach(x => e.lignes.add(x));
+    }
+  }
+  return { fichier: file.name, feuilles: feuillesLues, parArticle };
+}
+
 const PLAN_ETATS = ["à proposer", "proposée", "en essai", "gagnée"];
 
 function planLignes(){
   const d = plaquettesCommunes();
   const parMabec = {};
   plan.forEach(p => { parMabec[p.mabec] = p; });
+  const reel = (planSource === "reel") && consoReelle && consoReelle.parArticle;
   return d.groupes.map(g => {
     const art = catalogue.find(a => a.mabec === g.mabec && a.prix !== "" && a.prix > 0);
     const prixA = art ? art.prix : (g.usages[0] ? g.usages[0].prix : 0);
-    const piecesAn = prixA > 0 ? g.coutAnnuel / prixA : 0;
+    const piecesAnTheo = prixA > 0 ? g.coutAnnuel / prixA : 0;
+    /* v4.88 — le basculeur : en mode REEL, la consommation vient des feuilles
+       Pareto conso des classeurs (qty semaine x 52). Un article sans donnee
+       reelle n'est pas complete en silence : il perd son gain (null). */
+    const conso = reel ? consoReelle.parArticle[g.mabec] : null;
+    const sourceConso = reel ? (conso ? "reelle" : "sans") : "theo";
+    const piecesAn = reel ? (conso ? conso.qtySemaine * 52 : 0) : piecesAnTheo;
     const isoKY = g.usages.map(u => u.iso).find(i => /KY3500/i.test(i || ""));
     const sugg = isoKY ? { iso: String(isoKY).replace(/KY3500/gi, "LKT640"), prix: 5 } : null;
     const p = parMabec[g.mabec] || {};
@@ -15254,10 +15393,10 @@ function planLignes(){
                       : (sugg ? sugg.prix : "");
     const cibleIso = p.isoCible || (sugg ? sugg.iso : "");
     const actif = !!p.etat;
-    const gain = (actif && ciblePrix !== "" && ciblePrix !== null && prixA > 0)
+    const gain = (actif && ciblePrix !== "" && ciblePrix !== null && prixA > 0 && sourceConso !== "sans")
       ? piecesAn * (prixA - Number(ciblePrix)) : null;
     return { mabec: g.mabec, isos: [...g.isos], prixA, coutAnnuel: g.coutAnnuel,
-             piecesAn, cibleIso, ciblePrix, etat: p.etat || "", actif, gain, auto: !!sugg };
+             piecesAn, piecesAnTheo, sourceConso, cibleIso, ciblePrix, etat: p.etat || "", actif, gain, auto: !!sugg };
   });
 }
 
@@ -15266,8 +15405,23 @@ function planHTML(){
   if(!lignes.length) return `<p class="panel-hint">Aucun article de production chiffré : le plan se nourrit des mêmes données que le simulateur (scénarios en production, prix + volume).</p>`;
   const total = lignes.reduce((a, l) => a + (l.actif && l.gain ? l.gain : 0), 0);
   const actives = lignes.filter(l => l.actif).length;
+  const modeReel = planSource === "reel";
+  const etatConso = !modeReel
+    ? "théorique — production ÷ (arêtes × DDV classeur)"
+    : (consoReelle
+        ? "réelle extrapolée — lue le " + consoReelle.lueLe + " (" + consoReelle.fichiers.join(", ") + ")"
+        : "réelle — mais aucun classeur lu : lis un fichier ci-dessous");
   return `
     <div class="simul-note">Le pas-à-pas commercial : chaque ligne est un article actuel, sa consommation en production, et la cible SPK — révélée quand TU décides de poser son état. Le total ne compte que les lignes étatées.</div>
+    <div class="simul-controles" style="flex-wrap:wrap;">
+      <span style="font-weight:600;">Consommation :</span>
+      <label style="cursor:pointer;"><input type="radio" name="consoSource" value="theo" ${!modeReel ? "checked" : ""}> théorique</label>
+      <label style="cursor:pointer;"><input type="radio" name="consoSource" value="reel" ${modeReel ? "checked" : ""}> réelle extrapolée</label>
+      <label class="ghost small" for="consoFichier" style="cursor:pointer;">📂 Lire un classeur de consommation…</label>
+      <input type="file" id="consoFichier" accept=".xlsm,.xlsx" multiple hidden>
+      <span id="consoEtat" style="font-size:13px; color:#1b5ea6;">${etatConso}</span>
+    </div>
+    ${modeReel && consoReelle ? `<p class="panel-hint">⚠ Consommation réelle = une semaine de tes classeurs × 52 (régime supposé constant). Les articles sans consommation lue perdent leur gain — jamais complétés en silence (§3.5).</p>` : ""}
     <table class="simul-table">
       <thead><tr><th>Article actuel</th><th>Libellés ISO</th><th>Prix actuel</th><th>Consommation</th><th>Cible SPK</th><th>Prix cible</th><th>État</th><th>Gain / an</th></tr></thead>
       <tbody>
@@ -15277,7 +15431,11 @@ function planHTML(){
           <td class="mono">${escapeAttr(l.mabec)}</td>
           <td style="font-size:11.5px; color:#888;">${l.isos.map(x => escapeAttr(x)).join("<br>")}</td>
           <td class="mono">${fmt(l.prixA, 2)} €</td>
-          <td class="mono">${fmtEuroCourt(Math.round(l.coutAnnuel))}/an<br><span style="color:#888;">${fmt(l.piecesAn, 0)} plq/an</span></td>
+          <td class="mono">${l.sourceConso === "reelle"
+            ? `${fmt(l.piecesAn, 0)} plq/an <span style="color:#1b5ea6;">(réel)</span><br><span style="color:#888;">${fmtEuroCourt(Math.round(l.piecesAn * l.prixA))} estimé/an</span>`
+            : (l.sourceConso === "sans"
+                ? `<span style="color:#b45309;">pas de conso réelle lue</span>`
+                : `${fmtEuroCourt(Math.round(l.coutAnnuel))}/an<br><span style="color:#888;">${fmt(l.piecesAn, 0)} plq/an</span>`)}</td>
           <td><input class="cell" style="width:190px; font-size:12px;" data-plan="${l.mabec}" data-field="isoCible" value="${escapeAttr(l.cibleIso)}" placeholder="plaquette SPK${l.auto ? " (LKT640 suggérée)" : ""}"></td>
           <td><input class="cell" style="width:74px; font-family:var(--font-mono);" type="number" step="0.01" data-plan="${l.mabec}" data-field="prixCible" value="${l.ciblePrix === "" ? "" : l.ciblePrix}" placeholder="5"></td>
           <td><select class="cell small" data-plan="${l.mabec}" data-field="etat">
@@ -15313,6 +15471,29 @@ function renderPlan(){
   if(ex) ex.addEventListener("click", planExporter);
   const mx = document.getElementById("planMaxiBtn");
   if(mx) mx.addEventListener("click", () => basculerMaxi("planPanel", mx));
+  wrap.querySelectorAll('input[name="consoSource"]').forEach(r => r.addEventListener("change", () => {
+    planSource = r.value; renderPlan();
+  }));
+  const fich = document.getElementById("consoFichier");
+  if(fich) fich.addEventListener("change", async () => {
+    const fichiers = Array.from(fich.files || []);
+    if(!fichiers.length) return;
+    const parArticle = {}; const noms = [];
+    for(const f of fichiers){
+      try{
+        const lu = await consoLireClasseur(f);
+        noms.push(lu.fichier);
+        for(const [art, v] of Object.entries(lu.parArticle)){
+          const e = parArticle[art] = parArticle[art] || { qtySemaine: 0, lignes: new Set() };
+          e.qtySemaine += v.qtySemaine;
+          v.lignes.forEach(x => e.lignes.add(x));
+        }
+      }catch(err){ dialogueAlerte("Lecture impossible : " + err.message, "Classeur de consommation"); }
+    }
+    consoReelle = { lueLe: new Date().toLocaleDateString("fr-FR"), fichiers: noms, parArticle };
+    planSource = "reel";
+    renderPlan();
+  });
 }
 function ouvrirPlan(){
   fermerPanneaux();
@@ -15325,8 +15506,10 @@ function planCSV(){
   const cell = v => /[";\r\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : String(v);
   const lignes = planLignes();
   const L = ["sep=;", "Plan de conversion SPK - " + new Date().toLocaleDateString("fr-FR"), "",
+    "Consommation;" + (planSource === "reel" ? "REELLE extrapolee (classeur x 52)" : "theorique (DDV classeur)"), "",
     "Article actuel (MABEC);Libelles ISO;Prix actuel (EUR);Consommation (EUR/an);Plaquettes/an;Cible SPK;Prix cible (EUR);Etat;Gain (EUR/an)"];
-  lignes.forEach(l => L.push([l.mabec, l.isos.join(" | "), num(l.prixA), num(l.coutAnnuel),
+  lignes.forEach(l => L.push([l.mabec, l.isos.join(" | "), num(l.prixA),
+    l.sourceConso === "reelle" ? num(l.piecesAn * l.prixA) : num(l.coutAnnuel),
     num(l.piecesAn), l.cibleIso, num(l.ciblePrix), l.etat, l.gain != null ? num(l.gain) : ""].map(cell).join(";")));
   const total = lignes.reduce((a, l) => a + (l.actif && l.gain ? l.gain : 0), 0);
   L.push(["TOTAL (etat pose)", "", "", "", "", "", "", "", num(total)].map(cell).join(";"));
@@ -16254,6 +16437,7 @@ updateRestoreUI();
 updateRevisionUI();
 document.getElementById("footToolName").textContent = "Suivi_optimisation_SPK v" + TOOL_VERSION + " — SPK by CeramTec";
 // pastille poids : rendue des le chargement (le suivi vient d'etre lu, on connait sa taille)
+try{ renderCatalogueDatlists(); }catch(e){}
 try{ renderPoidsFooter((localStorage.getItem(STORAGE_KEY) || "").length); installerClickPoids(); }catch(e){}
 /* v4.62 — Benjamin, 30/09 : « j'aimerais que l'outil ouvre sur une page overview ».
    L'écran d'accueil devient l'OUVERTURE, derrière la fenêtre des nouveautés —
@@ -18606,6 +18790,74 @@ function runTests(){
         ok("plan : le total de la promesse ne compte que les lignes étatées (le reste est du potentiel)",
            Math.abs(tout - plqAn * 2.96) < 1e-9, true);
       } finally { lignes = lAvP; plan = []; }
+    }
+    {
+      /* v4.88 — LE BASCULEUR : le parseur lit les feuilles « Pareto conso »
+         (sections EMAG/PCI/HESSAPP), refuse un pareto de COUT, et le gain en
+         mode réel vient de la consommation réelle × 52 — un article sans
+         donnée réelle perd son gain (jamais complété en silence). */
+      const cells = {
+        "A1": "Étiquettes de lignes", "B1": "Somme de Qté",
+        "A2": "PCI 4", "B2": 249,
+        "A3": "IM02 137 021", "B3": 45,
+        "A4": "Z000 513 527", "B4": 65,
+        "A5": "PCI 5", "B5": 198,
+        "A6": "IM02 137 021", "B6": 40,
+        "A7": "Total général", "B7": 447
+      };
+      const lu = consoDepuisFeuille("pareto conso plaquette", cells);
+      ok("basculeur : le parseur lit les sections et cumule un article vu sur deux lignes",
+         [lu["IM02 137 021"].qtySemaine, lu["IM02 137 021"].lignes.size, lu["Z000 513 527"].qtySemaine],
+         [85, 2, 65]);
+      ok("basculeur : un pareto de COUT n'est jamais pris pour des quantités",
+         consoDepuisFeuille("Pareto coût plaquette", { "A1": "Étiquettes", "B1": "Somme de Cout", "A2": "IM02 137 021", "B2": 358 }), null);
+      const lR = normalizeLigne({ id: "lB", nom: "EMAG 1", references: [ normalizeReference({ id: "rB", nom: "356x26", productionAnnuelle: 10000, ops: [
+        normalizeOp({ id: "oB", nom: "OP20", scenarios: [ normalizeScenario({ id: "scB", name: "Prod", baseline: true, outils: [
+          { id: "tB1", numero: "T521", logements: [
+            { id: "gB1", nom: "D1", ref: "SNMX120716T02020 KY3500", codeArticle: "IM02 137 021", prix: 7.96, aretes: 8, charniere: 150 },
+            { id: "gB2", nom: "D2", ref: "CNGX 120716 S02020 CBN387", codeArticle: "IM02 209 560", prix: 38, aretes: 4, charniere: 600 } ] } ] }) ] }) ] }) ] });
+      const lAvB = lignes; lignes = [ lR ]; plan = [
+        normalizePlanEntry({ mabec: "IM02 137 021", prixCible: 5, etat: "proposée" }),
+        normalizePlanEntry({ mabec: "IM02 209 560", prixCible: 5, etat: "proposée" }) ];
+      try {
+        consoReelle = { lueLe: "13/10/2026", fichiers: ["test"], parArticle: {
+          "IM02 137 021": { qtySemaine: 85, lignes: ["PCI 4", "PCI 5"] } } };
+        planSource = "reel";
+        const lR1 = planLignes().find(x => x.mabec === "IM02 137 021");
+        const sansData = planLignes().find(x => x.mabec === "IM02 209 560");
+        ok("basculeur : en mode RÉEL, la consommation de l'article lu = semaine × 52",
+           [lR1.sourceConso, Math.abs(lR1.piecesAn - 85 * 52) < 1e-9,
+            Math.abs(lR1.gain - 85 * 52 * (7.96 - 5)) < 1e-9], ["reelle", true, true]);
+        ok("basculeur : un article SANS consommation lue perd son gain (déclaré, jamais complété)",
+           [sansData.sourceConso, sansData.gain], ["sans", null]);
+        planSource = "theo";
+        ok("basculeur : retour au théorique — le calcul revient à prod ÷ (arêtes × DDV)",
+           Math.abs(planLignes().find(x => x.mabec === "IM02 137 021").piecesAn - 10000 / (8 * 150)) < 1e-9, true);
+      } finally { lignes = lAvB; plan = []; consoReelle = null; planSource = "theo"; }
+    }
+    {
+      /* v4.89 — LES SUGGESTIONS : le catalogue remplit le MABEC et le prix
+         (toujours), ISO/arêtes/DDV seulement SI VIDES — ce qui est saisi à la
+         main n'est jamais écrasé. La recherche ISO est insensible à la casse. */
+      catalogue = [
+        normalizeArticleCat({ mabec: "IM02 137 021", iso: "SNMX 120716 T02020 LKT640", prix: 5, aretes: "", ddv: 150 }),
+        normalizeArticleCat({ mabec: "Z000 513 527", iso: "SNGN090408F85Z050 KY3500", prix: 9.56, aretes: 8, ddv: 75 })
+      ];
+      const g = { codeArticle: "", ref: "", prix: "", aretes: "", charniere: "" };
+      const mods = appliquerSuggestionCatalogue(g, catalogueSuggestion("im02 137 021"));
+      ok("suggestions : un MABEC tapé en minuscule trouve l'article et remplit le prix catalogue (la vérité)",
+         [mods.indexOf("codeArticle") > -1, mods.indexOf("prix") > -1, g.codeArticle, g.prix],
+         [true, true, "IM02 137 021", 5]);
+      ok("suggestions : ISO et DDV remplis — les arêtes VIDES du catalogue laissent le champ intact",
+         [g.ref, g.charniere, g.aretes], ["SNMX 120716 T02020 LKT640", 150, ""]);
+      const g2 = { codeArticle: "Z000 513 527", ref: "AUTRE ISO SAISI À LA MAIN", prix: 11, aretes: 8, charniere: 200 };
+      const mods2 = appliquerSuggestionCatalogue(g2, catalogueParIso("sngn090408f85z050 ky3500"));
+      ok("suggestions : l'article trouvé par ISO ramène le prix catalogue (un MABEC = un prix), mais un ISO saisi à la main DIFFÉRENT n'est jamais écrasé",
+         [mods2.indexOf("prix") > -1, g2.prix, g2.ref, g2.aretes, g2.charniere],
+         [true, 9.56, "AUTRE ISO SAISI À LA MAIN", 8, 200]);
+      ok("suggestions : article inconnu = aucune suggestion, rien ne bouge",
+         [catalogueSuggestion("INCONNU 123") === null, appliquerSuggestionCatalogue({ codeArticle: "X" }, null).length],
+         [true, 0]);
     }
       } finally { lignes = lAvS; }
     }

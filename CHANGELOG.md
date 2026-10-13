@@ -5,6 +5,31 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.89.0] — 2026-10-14 · Tour 72
+
+**L'autocomplete du catalogue à la saisie — le dernier morceau du socle
+commercial.** Taper un MABEC ou un ISO dans un logement propose les articles
+du catalogue et remplit d'un clic.
+
+### Ajouté
+- **datalists natifs** (`catMabec`, `catIso`) : zéro framework, la règle
+  maison ; alimentés depuis le catalogue au démarrage, à l'ouverture du
+  panneau 📚 et après chaque changement du catalogue ;
+- **`appliquerSuggestionCatalogue()`** (pure) : un MABEC tapé (même en
+  minuscule) remplit **codeArticle et prix TOUJOURS** (un MABEC = un prix —
+  décision Benjamin), l'**ISO, les arêtes et la DDV seulement si vides** —
+  ce qui est saisi à la main n'est jamais écrasé ;
+- **`catalogueParIso()`** : recherche par désignation ISO, insensible à la
+  casse et aux espaces, multi-ISO gérée (le séparateur « | » du seed) ;
+- 5 tests.
+
+### Le contre-regard qui a renforcé le test
+La porte initiale comparait un logement DÉJÀ aux valeurs du catalogue —
+aveugle par construction. Renforcée : un ISO saisi à la main DIFFÉRENT doit
+rester intact. Faute injectée (garde « si vide » sautée) → **vue** (l'ISO
+manuel écrasé) → restaurée par copie, empreinte identique. 521 → **551/551
+verts** depuis la 4.86.
+
 ## [4.88.0] — 2026-10-14 · Tour 71
 
 **Le basculeur de consommation — theorique vs REELLE.** Benjamin, en voyant
