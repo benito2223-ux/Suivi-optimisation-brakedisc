@@ -13,11 +13,15 @@
 
 | | |
 |---|---|
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | Z Code |
+| **Pris le** | 13/10/2026 nuit |
+| **Écrit dans** | `bilan_economique.html` |
+| **Version visée** | 4.83.1 |
+| **Sujet** | Simulateur : libellé plaquette (ISO) à côté du MABEC + budget outillage annuel par référence (€/an et % du budget). Clé de regroupement par réf = l'ID (268x12 existe sur PCI 4 ET PCI 5 — le nom ne suffit pas). |
+
+🔒 **Verrou pris par Z Code le 13/10/2026 nuit** (tour 66 bis, v4.83.1 — le simulateur parle le métier).
+
+---
 
 ✅ **Verrou libéré par Z Code le 13/10/2026** (Tour 66, v4.83.0). Pendant le
 tour, `bilan_economique.html` est passé à l'empreinte `4e2362e6…` :
