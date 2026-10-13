@@ -423,6 +423,63 @@ la 4.86.
 **Prochain tour** : la revue d'Hermes ; l'export de l'accueil ; le chantier
 UI de fond (les maquettes « ton sur ton »).
 
+### Tour 73 — 14/10/2026 — **Z Code** (v4.90.0 — les trois lots de la revue Claude)
+
+**La commande.** Benjamin : « envoie tous les lots et décide pour moi » —
+les huit directives de la revue Claude Code, triées et appliquées.
+
+**Les décisions déléguées, prises.** P8 : **le monolithe est canonique**,
+les trois réécritures restent en archives (rien supprimé), l'assembleur est
+en file avec la contrainte de sortie identique à l'octet. Le cloud reste
+actif (les données sont déjà chez Stellantis, Matis et Benjamin s'en
+servent) — la **fermeture des inscriptions** au dashboard Supabase est
+recommandée à Benjamin (dashboard only). Le bloc **Cadence quitte
+l'accueil** (jamais mesuré — on ne projette pas un tiret). Les boutons
+suivent **l'ordre du récit commercial** : Catalogue → Plan → Simulateur.
+
+**Lot 1 — la crédibilité visible.** `data-plan` échappé, le signe du gain
+corrigé (jamais « − −X »), Cadence retiré, les styles inline du Plan passent
+en classes (`.simul-iso`, token `--ink-soft` ≥ 4,5:1) — le plein écran les
+corrige désormais réellement. Plancher de tailles : `.os-sim` 9,5 → 11 px,
+`.status-badge` 10,5 → 11,5 px, labels 11 → 12 px.
+
+**Lot 2 — l'honnêteté du Plan.** L'**hypothèse de durée de vie** affichée et
+réglable (« Durée de vie SPK : X % de l'actuelle » — le gain en dépend et le
+dit). Le **seuil de neutralité** sur chaque ligne : la durée minimale pour ne
+pas perdre — la réponse à « moins cher mais ça s'use plus vite ». Le **prix
+suggéré sort du code** (réglage « Prix SPK défaut »). La **case Confirmé** :
+une ligne non confirmée reste du potentiel (gain null), le total ne compte
+que le confirmé. « Promesse » renommé **« Potentiel engagé »**. Et **le
+Simulateur partage le basculeur** — une seule base de consommation sur tous
+les écrans, le réel alloué au prorata du théorique, étiqueté.
+
+**Lot 3 — les garde-fous.** L'accueil affiche la **date du dernier export**
+(« jamais exporté » nommé). L'usure plaquette passe en **grosses pastilles**
+(— / OK / Limite / À changer). La **conformité s'affiche EN DIRECT à la
+frappe** (✓ / ⚠ sous le champ). Les champs battement sont **bornés**
+(0 à 10× la tolérance — un 12 tapé pour 0,012 est bloqué). Le message de
+charnière tient en 8 mots.
+
+**P1 — l'audit du secret K, fait immédiatement.** La formule, ses points de
+production et les angles validés étaient dans l'aide affichée. Retirés
+(4.89.1, déployé prod), et la **porte hors-suite** du harnais les interdit
+définitivement (formule + points + angles + titre de section = absents).
+
+**Le tour des CRLF.** Le fichier portait **19 719 fins CRLF** qui faisaient
+échouer la moitié des ancres. Normalisé LF une fois pour toutes ;
+`build_harness.py` réparé (le même mal : `` cassait les continuations
+Python). Tous les patchs futurs passent par des fichiers, normalisation en
+tête.
+
+**Contre-regards vus.** Confirmation sautée → gain au centime près alors
+qu'il doit être null → **vu**. Potentiel compté comme promesse → **vue**.
+Restaurations par copie, empreintes identiques, 521 → **552/552 verts**.
+
+**Déploiement.** Projet, vérifié curl. La prod attend la phrase de Benjamin.
+
+**Prochain tour** : le test tablette avec gants (20 mesures chronométrées) ;
+la revue d'Hermes ; l'export de l'accueil ; le chantier UI de fond.
+
 ## Questions ouvertes à Z Code
 
 ### ▸ Tour 67 — 14/10/2026 — **Hermes** (mécanique des plaquettes — avis transmis, discussion avec Z Code)

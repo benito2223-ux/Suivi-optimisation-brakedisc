@@ -4,7 +4,22 @@
 | **Version visée** | — |
 | **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
 
-✅ **Verrou libéré par Z Code le 14/10/2026** (Tour 72, v4.89.0). Pendant le
+✅ **Verrou libéré par Z Code le 14/10/2026** (Tour 73, v4.90.0). Pendant le
+tour, les trois lots de la revue Claude sont appliqués : P7 (data-plan
+échappé, signe du gain, ordre des boutons, Cadence retiré, taux en état),
+P6 (plancher de tailles, token secondaire ≥ 4,5:1, styles inline en
+classes), P3 (hypothèse DDV affichée et réglable, seuil de neutralité, prix
+SPK en réglage, confirmation case par case, Potentiel), P2 (le Simulateur
+partage le basculeur, semaines/an éditable), P4 (dernier export affiché),
+P5 (usure en pastilles, conformité en direct, bornes, charnière en 8 mots).
+Le fichier est **normalisé LF** (19 719 CRLF) — fin des ancres capricieuses.
+P8 : monolithe canonique, archives intactes (décision déléguée). 521 →
+**552/552 verts**. Contre-regards vus. **Déployé sur Projet, vérifié curl ;
+la PROD attend la phrase de Benjamin.** Écrits : `bilan_economique.html`,
+`outils/patch_4900_v2.py`, `outils/tour73_journal.py`, `build_harness.py`,
+`CHANGELOG.md`, `ECHANGES.md`, `VERROU.md`, `AUDIT_CLOUD_RLS.md`.
+
+🔒 **Verrou pris par Z Code le 14/10/2026 soir** (tour 73, v4.90.0 — les suggestions à la saisie).✅ **Verrou libéré par Z Code le 14/10/2026** (Tour 72, v4.89.0). Pendant le
 tour, `bilan_economique.html` est passé à l'empreinte post-patch : les
 suggestions à la saisie (`catalogueSuggestion()`, `catalogueParIso()`,
 `appliquerSuggestionCatalogue()` — pures et exportées), datalists natifs
@@ -19,7 +34,7 @@ vérifié curl ; la PROD attend la phrase de Benjamin.** Écrits :
 `bilan_economique.html`, `outils/patch_4890_a.py`, `outils/verrou_t72.py`,
 `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md`.
 
-🔒 **Verrou pris par Z Code le 14/10/2026 soir** (tour 72, v4.89.0 — les suggestions à la saisie).✅ **Verrou libéré par Z Code le 14/10/2026** (Tour 71, v4.88.0 — verrou pris
+🔒 **Verrou pris par Z Code le 14/10/2026 soir** (tour 73, v4.90.0 — les suggestions à la saisie).✅ **Verrou libéré par Z Code le 14/10/2026** (Tour 71, v4.88.0 — verrou pris
 RÉTROACTIVEMENT, écart déclaré : le code était écrit avant la prise, aucun
 autre auteur n'est intervenu). Pendant le tour, `bilan_economique.html` est
 passé à l'empreinte post-patch : le **basculeur de consommation** dans le

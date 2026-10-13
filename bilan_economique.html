@@ -2036,12 +2036,9 @@ body.atelier-on{overflow:hidden;}
         <li>Vos saisies restent sur ce poste. <b>💾 Exporter le suivi</b> en fin de séance : c'est le fichier à archiver ou à envoyer.</li>
       </ul>
 
-      <h4 id="aideTitreK">Formules du widget K / Fr·Fa</h4>
+      <h4 id="aideTitreK">Widget K / Fr·Fa</h4>
       <ul>
-        <li class="aide-k"><b>K = Vc × f × sin(κr)</b> — indice thermique/charge spécifique, comparé aux deux points déjà validés en production (174 et 448). κr est l'angle de direction d'arête renseigné dans le tableau plaquettes.</li>
-        <li><b>Fr/Fa ≈ cot(κr)</b> — rapport effort radial / effort axial (modèle simplifié de décomposition en tournage : Fr = R·cos κr, Fa = R·sin κr). Plus κr se rapproche de 90°, plus l'effort radial diminue par rapport à l'axial — c'est ce qui limite le battement sur bruts peu matures. Comparé aux deux angles réels utilisés (75° habituel, 85° validé le 26/08).</li>
-        <li><b>Affinage par rayon de bec</b> (optionnel, champs "Rayon de bec rε" et "ap") — quand la profondeur de passe ap est plus petite que le rayon de bec rε, la coupe se fait uniquement sur la partie arrondie du bec, dont l'angle local passe progressivement de 0° à κr nominal. L'angle effectif utilisé alors pour Fr/Fa est <code>κr_eff = arccos(1 − ap/rε)</code> ; au-delà de cette profondeur de transition, l'arête droite domine et κr_eff revient à κr nominal. Sans rayon de bec ni ap renseignés, Fr/Fa utilise directement κr nominal.</li>
-        <li>Ces deux indices restent des <b>indices comparatifs</b>, pas un modèle physique absolu (pas de coefficients Kienzle, pas d'effet d'usure) — ils servent à situer un scénario par rapport aux points déjà éprouvés en production, pas à prédire un effort en Newtons ou une température en °C.</li>
+        <li>Cet indice est un <b>indice comparatif interne SPK</b> : sa formule, ses points de référence et ses conditions de validité restent <b>internes</b> et ne sont pas documentés dans l’outil. Il sert à situer un scénario par rapport aux points déjà éprouvés en production.</li>
       </ul>
 
       <h4>Sauvegarde</h4>
@@ -5979,16 +5976,18 @@ function atelierHTML(){
   // côtés vides, la donnée ne change pas de forme.
   const cotesAt = battCotesDe(sc);
   const on = atelierCtx.axesOn || {};
+  if(atelierCtx.usure === undefined) atelierCtx.usure = "";
   const chipAxes = (groupe, axes) => `<div class="at-groupe"><span class="at-groupe-label">${groupe}</span><span class="at-points-row">${axes.map(ax =>
     `<button class="at-pm ${axesActifs(axes, on[groupe]).includes(ax) ? "actif" : ""}" data-at-axe="${groupe}" data-at-axeval="${ax}">${AXE_LABELS[ax] || ax}</button>`).join("")}</span></div>`;
   const champs = [];
   if(sc.battActif !== false){
-    if(cotesAt === "mono") champs.push(`<div class="at-champ"><label>${escapeAttr(libelleDe(sc))}</label><input type="number" step="0.001" inputmode="decimal" id="atV" placeholder="0,000"></div>`);
+    const maxBatt = (Math.max(parseFloat(limiteDe(sc)) || 0.12, 0.12) * 10).toFixed(3);
+      if(cotesAt === "mono") champs.push(`<div class="at-champ"><label>${escapeAttr(libelleDe(sc))}</label><input type="number" step="0.001" inputmode="decimal" min="0" max="${maxBatt}" id="atV" placeholder="0,000"></div>`);
     else {
       if(cotesAt === "DG") champs.push(chipAxes("Côtés mesurés", ["D","G"]));
       const axesB = axesActifs(["D","G"], on.batt).filter(ax => cotesAt === "DG" ? true : ax === cotesAt);
-      if(axesB.includes("D")) champs.push(`<div class="at-champ"><label>Droite</label><input type="number" step="0.001" inputmode="decimal" id="atD" placeholder="0,000"></div>`);
-      if(axesB.includes("G")) champs.push(`<div class="at-champ"><label>Gauche</label><input type="number" step="0.001" inputmode="decimal" id="atG" placeholder="0,000"></div>`);
+      if(axesB.includes("D")) champs.push(`<div class="at-champ"><label>Droite</label><input type="number" step="0.001" inputmode="decimal" min="0" max="${maxBatt}" id="atD" placeholder="0,000"></div>`);
+      if(axesB.includes("G")) champs.push(`<div class="at-champ"><label>Gauche</label><input type="number" step="0.001" inputmode="decimal" min="0" max="${maxBatt}" id="atG" placeholder="0,000"></div>`);
     }
   }
   criteresSupActifs(sc).forEach(c => {
@@ -6000,8 +5999,13 @@ function atelierHTML(){
     });
   });
   const champUsure = `<div class="at-champ"><label>Usure plaquette</label>
-    <select id="atUsure"><option value="">—</option><option value="ok">OK</option><option value="limite">Usure limite</option><option value="changer">À changer</option></select>
-  </div>`;
+    <div class="at-points-row">
+      <button type="button" class="at-pm ${atelierCtx.usure === "" ? "actif" : ""}" data-at-usure="">—</button>
+      <button type="button" class="at-pm ${atelierCtx.usure === "ok" ? "actif" : ""}" data-at-usure="ok">OK</button>
+      <button type="button" class="at-pm ${atelierCtx.usure === "limite" ? "actif" : ""}" data-at-usure="limite">Limite</button>
+      <button type="button" class="at-pm ${atelierCtx.usure === "changer" ? "actif" : ""}" data-at-usure="changer">À changer</button>
+    </div></div>
+    <div class="at-champ"><label>En direct</label><span id="atLive" style="font-weight:700;">—</span></div>`;
 
   return `
     <div class="at-head">
@@ -6028,8 +6032,8 @@ function atelierHTML(){
       ${prog && prog.target ? `<div class="at-prog"><div class="at-prog-bar"><i style="width:${pct}%"></i></div>
         <span>${prog.lastPiece ?? 0} / ${prog.target} p — ${escapeAttr(prog.logementNom||"")}</span></div>` : ""}
       ${viseeAtteinte ? `<div class="at-charniere${piece > prog.target ? " depassee" : ""}">${piece > prog.target
-        ? `◎ Au-delà de la charnière visée (${prog.target} p) — la durée de vie dépasse l'objectif : prolongez tant que la cote tient, ou clôturez l'essai.`
-        : `◎ Cette pièce atteint la charnière visée (${prog.target} p) — resserrez le pas de mesure vers la fin, ou décidez : prolonger / arrêter.`}</div>` : ""}
+        ? `◎ Charnière dépassée (${prog.target} p) — prolonger ou clore ?`
+        : `◎ Charnière atteinte (${prog.target} p) — mesurez plus serré.`}</div>` : ""}
     </div>
 
     ${points.length ? `<div class="at-points">
@@ -6064,6 +6068,27 @@ function renderAtelier(){
   }));
   el.querySelectorAll("[data-at-pm]").forEach(b => b.addEventListener("click", () => {
     atelierCtx.pointMesure = b.getAttribute("data-at-pm"); renderAtelier();
+  }));
+  el.querySelectorAll("[data-at-usure]").forEach(b => b.addEventListener("click", () => {
+    atelierCtx.usure = b.getAttribute("data-at-usure"); renderAtelier();
+  }));
+  /* v4.90 — la conformité se juge À LA FRAPPE : le badge en direct lit la
+     valeur non encore enregistrée. Un 12 tapé pour 0,012 se voit tout de suite
+     — la borne max bloque déjà la saisie absurde. */
+  el.querySelectorAll("#atV, #atD, #atG").forEach(inp => inp.addEventListener("input", () => {
+    const scL = data.find(x => x.id === atelierCtx.scId);
+    const esL = scL && (scL.essais||[]).find(e => e.id === atelierCtx.essaiId);
+    const live = document.getElementById("atLive");
+    if(!live) return;
+    if(!scL || !esL){ live.textContent = "—"; return; }
+    const tentative = { batt:"", battD:"", battG:"" };
+    const v = document.getElementById("atV"), d = document.getElementById("atD"), g = document.getElementById("atG");
+    if(v) tentative.batt = v.value;
+    if(d) tentative.battD = d.value;
+    if(g) tentative.battG = g.value;
+    const c2 = checkConformPrincipal(scL, tentative);
+    live.textContent = c2 === true ? "✓ dans la tolérance" : c2 === false ? "⚠ hors tolérance" : "—";
+    live.style.color = c2 === false ? "var(--red)" : c2 === true ? "var(--green)" : "var(--ink-soft)";
   }));
   /* v4.82 — les pastilles d'axes : montrer/cacher un côté ou un axe POUR CET
      ESSAI. Le groupe garde toujours au moins un axe actif (sinon plus rien
@@ -6117,8 +6142,7 @@ function renderAtelier(){
       });
     });
     if(nbValeurs === 0){ dialogueAlerte("Saisissez au moins une valeur mesurée.", "Mesure incomplète"); return; }
-    const usureSel = document.getElementById("atUsure");
-    if(usureSel) row.usure = usureSel.value;
+    row.usure = atelierCtx.usure || "";
     essai.prelevements.push(row);
     toucherEssai(essai);
     essai.prelevements.sort((a,b)=>{
@@ -12084,6 +12108,12 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.90.0", date:"14/10/2026", points:[
+    "<b>Les retours de la revue extérieure, appliqués.</b> <b>Plan de conversion</b> : le prix cible se confirme case par case (le total ne compte que le confirmé), l'<b>hypothèse de durée de vie</b> est affichée et réglable, chaque ligne montre son <b>seuil de neutralité</b>, le prix suggéré est un réglage — et « Promesse » s'appelle « Potentiel ». <b>Le Simulateur partage le basculeur</b> du Plan : une seule base de consommation sur tous les écrans. <b>Saisie atelier</b> : usure en grosses pastilles, conformité affichée <b>en direct</b> à la frappe, bornes sur les champs. <b>Lisibilité</b> : plancher de tailles et contrastes remontés. L'accueil affiche la date du dernier export, le bloc Cadence (jamais mesuré) quitte la projection, et les boutons suivent l'ordre du récit : Catalogue → Plan → Simulateur."
+  ]},
+  { version:"4.89.1", date:"14/10/2026", points:[
+    "<b>Correction de confidentialité.</b> L'aide de l'outil affichait une formule thermique interne et ses points de référence production — ça n'avait rien à faire dans un fichier public. Retiré : l'indice reste affiché comme indice comparatif, sa méthode reste interne SPK."
+  ]},
   { version:"4.89.0", date:"14/10/2026", points:[
     "<b>L'autocomplete du catalogue à la saisie.</b> Dans un logement, tape un MABEC ou une référence ISO : l'outil propose les articles du catalogue et remplit d'un clic le prix (toujours — un MABEC = un prix), l'ISO, les arêtes et la durée de vie si elles sont vides. Ce que tu saisis à la main n'est jamais écrasé."
   ]},
@@ -12642,7 +12672,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.89.0";
+const TOOL_VERSION = "4.90.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -15311,6 +15341,8 @@ function ouvrirCatalogue(){
    article, extrapolee x 52 — avec l'avertissement affiche (regime suppose
    constant). Lecture LOCALE uniquement (constitution 4.2) ; etat de session,
    comme la lecture Classeur Matis : jamais ecrit dans le suivi. */
+let consoSemaines = 52;   /* v4.90 — l'extrapolation × 52 devient un réglage éditable */
+let planReglages = { prixSpk: 5, relSpk: 100 };  /* v4.90 — le prix SUGGÉRÉ et l'hypothèse de durée de vie sortent du code (revue Claude P3) */
 let consoReelle = null;   /* { lueLe, fichiers: [], parArticle: { ART: { qtySemaine, lignes: [] } } } */
 let planSource = "theo";  /* "theo" | "reel" */
 
@@ -15385,18 +15417,27 @@ function planLignes(){
        reelle n'est pas complete en silence : il perd son gain (null). */
     const conso = reel ? consoReelle.parArticle[g.mabec] : null;
     const sourceConso = reel ? (conso ? "reelle" : "sans") : "theo";
-    const piecesAn = reel ? (conso ? conso.qtySemaine * 52 : 0) : piecesAnTheo;
+    const piecesAn = reel ? (conso ? conso.qtySemaine * consoSemaines : 0) : piecesAnTheo;
     const isoKY = g.usages.map(u => u.iso).find(i => /KY3500/i.test(i || ""));
-    const sugg = isoKY ? { iso: String(isoKY).replace(/KY3500/gi, "LKT640"), prix: 5 } : null;
+    const sugg = isoKY ? { iso: String(isoKY).replace(/KY3500/gi, "LKT640"), prix: planReglages.prixSpk } : null;
     const p = parMabec[g.mabec] || {};
     const ciblePrix = (p.prixCible !== "" && p.prixCible != null) ? Number(p.prixCible)
                       : (sugg ? sugg.prix : "");
     const cibleIso = p.isoCible || (sugg ? sugg.iso : "");
     const actif = !!p.etat;
-    const gain = (actif && ciblePrix !== "" && ciblePrix !== null && prixA > 0 && sourceConso !== "sans")
-      ? piecesAn * (prixA - Number(ciblePrix)) : null;
-    return { mabec: g.mabec, isos: [...g.isos], prixA, coutAnnuel: g.coutAnnuel,
-             piecesAn, piecesAnTheo, sourceConso, cibleIso, ciblePrix, etat: p.etat || "", actif, gain, auto: !!sugg };
+    const confirme = !!p.confirme;
+    /* v4.90 — l'hypothèse de durée de vie est EXPLICITE : la cible SPK dure
+       rel % de l'actuelle -> il en faut piecesAn × 100/rel. Et le seuil de
+       neutralité dit la durée minimale pour ne pas perdre (revue Claude P3). */
+    const rel = (Number(planReglages.relSpk) > 0) ? Number(planReglages.relSpk) : 100;
+    const piecesCible = piecesAn * 100 / rel;
+    const coutActuel = (sourceConso === "reelle" && conso) ? conso.qtySemaine * consoSemaines * prixA : g.coutAnnuel;
+    const gain = (actif && confirme && ciblePrix !== "" && ciblePrix !== null && prixA > 0 && sourceConso !== "sans")
+      ? coutActuel - piecesCible * Number(ciblePrix) : null;
+    const seuil = (ciblePrix !== "" && ciblePrix !== null && prixA > 0) ? Number(ciblePrix) / prixA * 100 : null;
+    return { mabec: g.mabec, isos: [...g.isos], prixA, coutAnnuel: g.coutAnnuel, coutActuel,
+             piecesAn, piecesAnTheo, sourceConso, cibleIso, ciblePrix, etat: p.etat || "",
+             actif, confirme, gain, seuil, auto: !!sugg };
   });
 }
 
@@ -15420,10 +15461,13 @@ function planHTML(){
       <label class="ghost small" for="consoFichier" style="cursor:pointer;">📂 Lire un classeur de consommation…</label>
       <input type="file" id="consoFichier" accept=".xlsm,.xlsx" multiple hidden>
       <span id="consoEtat" style="font-size:13px; color:#1b5ea6;">${etatConso}</span>
+      <span style="font-weight:600;">Prix SPK défaut :</span> <input id="planPrixSpk" type="number" step="0.5" min="0.5" style="width:64px; font-family:var(--font-mono);" value="${planReglages.prixSpk}"> €
+      <span style="font-weight:600;">Durée de vie SPK :</span> <input id="planRelSpk" type="number" step="5" min="1" style="width:64px; font-family:var(--font-mono);" value="${planReglages.relSpk}"> % de l'actuelle
+      <span style="font-weight:600;">Semaines/an :</span> <input id="planSemaines" type="number" step="1" min="1" max="52" style="width:56px; font-family:var(--font-mono);" value="${consoSemaines}">
     </div>
     ${modeReel && consoReelle ? `<p class="panel-hint">⚠ Consommation réelle = une semaine de tes classeurs × 52 (régime supposé constant). Les articles sans consommation lue perdent leur gain — jamais complétés en silence (§3.5).</p>` : ""}
     <table class="simul-table">
-      <thead><tr><th>Article actuel</th><th>Libellés ISO</th><th>Prix actuel</th><th>Consommation</th><th>Cible SPK</th><th>Prix cible</th><th>État</th><th>Gain / an</th></tr></thead>
+      <thead><tr><th>Article actuel</th><th>Libellés ISO</th><th>Prix actuel</th><th>Consommation</th><th>Cible SPK</th><th>Prix cible</th><th>Confirmé</th><th>État</th><th>Gain / an</th></tr></thead>
       <tbody>
       ${lignes.map((l, i) => {
         const isoCible = l.cibleIso || l.isos[0] || "";
@@ -15436,9 +15480,10 @@ function planHTML(){
             : (l.sourceConso === "sans"
                 ? `<span style="color:#b45309;">pas de conso réelle lue</span>`
                 : `${fmtEuroCourt(Math.round(l.coutAnnuel))}/an<br><span style="color:#888;">${fmt(l.piecesAn, 0)} plq/an</span>`)}</td>
-          <td><input class="cell" style="width:190px; font-size:12px;" data-plan="${l.mabec}" data-field="isoCible" value="${escapeAttr(l.cibleIso)}" placeholder="plaquette SPK${l.auto ? " (LKT640 suggérée)" : ""}"></td>
-          <td><input class="cell" style="width:74px; font-family:var(--font-mono);" type="number" step="0.01" data-plan="${l.mabec}" data-field="prixCible" value="${l.ciblePrix === "" ? "" : l.ciblePrix}" placeholder="5"></td>
-          <td><select class="cell small" data-plan="${l.mabec}" data-field="etat">
+          <td><input class="cell" style="width:190px; font-size:12px;" data-plan="${escapeAttr(l.mabec)}" data-field="isoCible" value="${escapeAttr(l.cibleIso)}" placeholder="plaquette SPK${l.auto ? " (LKT640 suggérée)" : ""}"></td>
+          <td><input class="cell" style="width:74px; font-family:var(--font-mono);" type="number" step="0.01" data-plan="${escapeAttr(l.mabec)}" data-field="prixCible" value="${l.ciblePrix === "" ? "" : l.ciblePrix}" placeholder="5"><br><span class="simul-iso" title="Durée de vie minimale de la cible pour ne pas perdre : au-dessus de ce seuil, le passage gagne.">seuil ${l.seuil != null ? fmt(l.seuil, 0) : "—"} %</span></td>
+          <td><input type="checkbox" data-planconf="${escapeAttr(l.mabec)}" ${l.confirme ? "checked" : ""} title="Prix cible confirmé — la ligne compte dans le potentiel tant que cette case est cochée"></td>
+          <td><select class="cell small" data-plan="${escapeAttr(l.mabec)}" data-field="etat">
             <option value="">—</option>
             ${PLAN_ETATS.map(e => `<option value="${e}" ${l.etat === e ? "selected" : ""}>${e}</option>`).join("")}
           </select></td>
@@ -18783,6 +18828,10 @@ function runTests(){
         ok("plan : le gain d'une ligne non activee reste du POTENTIEL (null, pas un chiffre)",
            [planLignes()[0].actif, planLignes()[0].gain], [false, null]);
         plan = [ normalizePlanEntry({ mabec: "IM02 137 021", isoCible: "SNMX120716T02020 LKT640", prixCible: 5, etat: "proposée" }) ];
+        ok("plan : une ligne étatée mais NON confirmée ne produit pas de gain (le prix suggéré ne suffit pas)",
+           [planLignes()[0].etat, planLignes()[0].confirme, planLignes()[0].gain],
+           ["proposée", false, null]);
+        plan = [ normalizePlanEntry({ mabec: "IM02 137 021", isoCible: "SNMX120716T02020 LKT640", prixCible: 5, etat: "proposée", confirme: true }) ];
         const g1 = planLignes()[0];
         ok("plan : l'état posé active la ligne et son gain au centime près (plaquettes/an × écart de prix)",
            [g1.actif, Math.abs(g1.gain - plqAn * (7.96 - 5)) < 1e-9], [true, true]);
@@ -18817,8 +18866,8 @@ function runTests(){
             { id: "gB1", nom: "D1", ref: "SNMX120716T02020 KY3500", codeArticle: "IM02 137 021", prix: 7.96, aretes: 8, charniere: 150 },
             { id: "gB2", nom: "D2", ref: "CNGX 120716 S02020 CBN387", codeArticle: "IM02 209 560", prix: 38, aretes: 4, charniere: 600 } ] } ] }) ] }) ] }) ] });
       const lAvB = lignes; lignes = [ lR ]; plan = [
-        normalizePlanEntry({ mabec: "IM02 137 021", prixCible: 5, etat: "proposée" }),
-        normalizePlanEntry({ mabec: "IM02 209 560", prixCible: 5, etat: "proposée" }) ];
+        normalizePlanEntry({ mabec: "IM02 137 021", prixCible: 5, etat: "proposée", confirme: true }),
+        normalizePlanEntry({ mabec: "IM02 209 560", prixCible: 5, etat: "proposée", confirme: true }) ];
       try {
         consoReelle = { lueLe: "13/10/2026", fichiers: ["test"], parArticle: {
           "IM02 137 021": { qtySemaine: 85, lignes: ["PCI 4", "PCI 5"] } } };

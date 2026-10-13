@@ -5,6 +5,76 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.90.0] — 2026-10-14 · Tour 73
+
+**Les retours de la revue extérieure, appliqués.** Claude Code (version
+gratuite, par dossier extrait) a lu les écrans critiques et rendu 8
+directives priorisées. Les trois lots sont appliqués, les décisions
+déléguées sont prises.
+
+### Lot 1 — P7 (bugs visibles) + P6 (plancher de lisibilité)
+- `data-plan` **échappé** (un MABEC importé avec un guillemet ne casse plus la ligne) ;
+- le gain affiche le **bon signe** (négatif = + en rouge, jamais « − −X ») ;
+- les **styles inline du Plan passent en classes** (`.simul-iso`, token
+  `--ink-soft` ≥ 4,5:1) — le plein écran les corrige désormais vraiment ;
+- **plancher de tailles** : `.os-sim` 9,5 → 11 px, `.status-badge` 10,5 → 11,5 px,
+  labels d'accueil 11 → 12 px ;
+- **le bloc Cadence quitte l'accueil** (jamais mesuré — on ne projette pas un
+  tiret) et les **boutons suivent l'ordre du récit** : Catalogue → Plan →
+  Simulateur.
+
+### Lot 2 — P3 (l'honnêteté du Plan) + P2 (une seule base)
+- **l'hypothèse de durée de vie est affichée et réglable** (« Durée de vie SPK :
+  X % de l'actuelle ») — le gain = plaquettes/an × écart de prix, avec la
+  cible qui dure X % de l'actuelle, donc il en faut plus ;
+- **le seuil de neutralité** sur chaque ligne : la durée de vie minimale de la
+  cible pour ne pas perdre — la réponse directe à « moins cher mais ça s'use
+  plus vite » ;
+- **le prix suggéré (5 €) sort du code** : réglage « Prix SPK défaut » dans le
+  panneau — changer le prix change toutes les suggestions d'un coup ;
+- **la case « Confirmé »** : une ligne dont le prix n'est pas confirmé reste du
+  potentiel (le gain n'apparaît pas) — le total ne compte que le confirmé ;
+- **le Simulateur partage le basculeur du Plan** : une seule base de
+  consommation (théorique / réelle extrapolée) sur tous les écrans ; le réel
+  est alloué au prorata du théorique entre les usages d'un article, étiqueté ;
+- **les semaines/an sont éditables** (52 par défaut, borné 1-52) — la
+  constante était codée en dur dans le basculeur.
+
+### Lot 3 — P4 (dernier export) + P5 (atelier)
+- **l'accueil affiche la date du dernier export** (« jamais exporté » nommé) ;
+- **l'usure plaquette passe en pastilles** (— / OK / Limite / À changer) — le
+  select natif demandait deux taps avec des gants ;
+- **la conformité s'affiche EN DIRECT à la frappe** (✓ / ⚠ sous le champ),
+  avant même d'enregistrer ;
+- **les champs battement sont bornés** (0 à 10× la tolérance) — un 12 tapé pour
+  0,012 est bloqué à la saisie ;
+- **le message de charnière tient en 8 mots** — la version précédente était
+  une phrase de jargon à 17 px.
+
+### P1 — l'audit du secret K (fait immédiatement)
+Claude avait vu juste : l'aide de l'outil affichait la formule K, ses points
+de production et les angles validés. Retiré (4.89.1, déployé prod sur ordre),
+et la porte hors-suite du harnais l'interdit définitivement.
+
+### P8 — la décision (déléguée par Benjamin)
+**Le monolithe `bilan_economique.html` est l'outil canonique.** `proto/`,
+`projet3/` et `2resume/` restent dans le dépôt comme archives de recherche,
+hors périmètre de déploiement. Le découpage par assembleur (calcul pur, puis
+CSS/documents, puis cloud — chaque étape avec sortie identique à l'octet) est
+en file, pas engagé.
+
+### Le tour des CRLF
+Le fichier portait **19 719 fins CRLF** qui faisaient échouer la moitié des
+ancres de patch. Normalisé LF une fois pour toutes ; `build_harness.py`
+réparé (le même mal : `` cassait les continuations Python). Tous les
+patchs futurs passent par des fichiers et une normalisation en tête.
+
+### Vérification
+- 521 → **552 tests** (5 suggestion + 1 non-confirmée + 6 CSS/portes) ;
+- contre-regards : confirmation sautée → **vue** au centime près ; potentiel
+  compté comme promesse → **vue** ; restauration par copie, empreinte
+  identique à chaque fois.
+
 ## [4.89.0] — 2026-10-14 · Tour 72
 
 **L'autocomplete du catalogue à la saisie — le dernier morceau du socle
