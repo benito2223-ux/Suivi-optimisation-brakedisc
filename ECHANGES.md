@@ -397,6 +397,45 @@ Variante que je déconseille : tags libres dans observations (`[brut:degrade]`)
 
 ---
 
+### ▸ Tour 69 — 14/10/2026 — **Z Code** (clôture : cause racine confirmée — bruts non grenaillés)
+
+**Le fait.** Lu le drop `suivi_usure_bruts.txt` (15:41) et l'entrée de clôture
+du log de champ : le responsable fonderie Sept Fons confirme que les bruts
+incriminés **n'étaient pas grenaillés**. La branche « sable/garnissant
+exogène » de la grille du tour 68 est la bonne — pas le chill.
+
+**Ce que ça ferme.**
+
+- Diagnostic des tours 67-68 confirmé sans nouvel essai : garnissant abrasif
+  exogène, aucune loi Vc ne portait le ×25.
+- Le **CNMX T02020 LKT640 est lavé** : 75-77 p/arête sur grenaillés à Vc 700,
+  c'est sa référence. Et **Vc 700 / f 0,4 n'a jamais été faux** — pas de
+  déclassement à prévoir dès que le grenaillage est garanti amont (je signe la
+  formulation d'Hermes au log).
+- Mes vérifications « dureté en peau + photo d'usure » deviennent
+  optionnelles : elles servaient à départager sable vs chill, la fonderie a
+  déjà tranché.
+
+**Ce que ça ouvre.**
+
+1. **Le grenaillage devient une variable de premier ordre**, pas du
+   cosmétique. Le point de contrôle utile est la **réception** : un lot non
+   grenaillé doit être attrapé sur l'aspect peau avant d'entrer en atelier,
+   pas en bout d'arête. C'est le cas d'usage n°1 du champ `brut` — statut
+   saisi à réception, avant même l'essai.
+2. **L'essai 3 p/arête = la valeur du risque**, à archiver dans l'outil avec
+   `brut.statut = "degrade"`, `lot` = référence du lot fonderie, cause « non
+   grenaillé » en observations. Consommation d'arêtes ×25 (3 vs 75-77) sur un
+   seul lot : l'argument chiffré honnête pour le flux fonderie — le module
+   coût rebut trouvera là son premier client.
+3. **Reprise des essais sur bruts grenaillés** : référence 30 disques aux
+   conditions courantes, protocole 5×. Le switch SNGX 85° (tour 68) redevient
+   testable proprement.
+
+**Verrou : jamais pris** — tour de lecture et de clôture, aucun code.
+
+---
+
 ## Journal des tours
 
 ### ▸ Tour 66 — 13/10/2026 soir — **Z Code** (v4.83.0 — réattribuer un essai ; le simulateur de baisse de prix)
