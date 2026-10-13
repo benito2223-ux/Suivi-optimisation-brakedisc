@@ -13,11 +13,15 @@
 
 | | |
 |---|---|
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | Z Code |
+| **Pris le** | 13/10/2026 soir |
+| **Écrit dans** | `bilan_economique.html` |
+| **Version visée** | 4.83.0 |
+| **Sujet** | Deux chantiers de Benjamin : (A) réattribuer un essai à un autre scénario (« crucial » — révélé par la v5) ; (B) simulateur de baisse de prix sur plaquettes communes multi-productions, économies annuelles € et % vs scénarios en production (SIMULATION, rien n'écrit, axe outillage seul — 2 quater). |
+
+🔒 **Verrou pris par Z Code le 13/10/2026 soir** (tour 66, v4.83.0 — réattribution + simulateur).
+
+---
 
 ✅ **Verrou libéré par Z Code le 13/10/2026** (Tour 65, v4.82.0). Pendant le tour,
 `bilan_economique.html` est passé à l'empreinte `904c7196…` : les 8 champs date
