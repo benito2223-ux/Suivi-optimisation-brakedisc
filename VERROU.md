@@ -13,11 +13,15 @@
 
 | | |
 |---|---|
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | Z Code |
+| **Pris le** | 13/10/2026 matin |
+| **Écrit dans** | `bilan_economique.html` |
+| **Version visée** | 4.81.2 |
+| **Sujet** | Le bandeau « Corriger maintenant » apprend le modèle v3 : la branche « correcteur manquant » (4.74.3) sort du déclencheur — elle criait sur l'état PROPRE (logements D1/D2 nommés, correcteur porté par les logements). Ordre de Benjamin : « fonce ». |
+
+🔒 **Verrou pris par Z Code le 13/10/2026 matin** (tour 63, v4.81.2 — le bandeau et le modèle v3).
+
+---
 
 ✅ **Verrou libéré par Z Code le 12/10/2026** (Tour 62, v4.81.1). Pendant le tour,
 `bilan_economique.html` est passé de l'empreinte `c13417e9…` à `77340221…`
