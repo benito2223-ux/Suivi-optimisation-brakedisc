@@ -96,6 +96,34 @@ l'entrée est hebdomadaire ; rien ne se corrige sans datage (gel actif). Les
 questions de demain chez Matis tombent à **deux** : la cible CPP de la 356x26
 (0,575 vs 0,357 — 61 %) et ce que compte le 6 781 du classeur.
 
+
+**« La pagaille » de Benjamin (13/10 au matin) — diagnostiquée, prouvée, prête à
+nettoyer.** Benjamin, sur HESSAPP/302x26/OP10 : « je retrouve des scénarios EMAG du
+disque 356 ». Diagnostic en trois temps, tout mécanique :
+
+1. **L'import n'a rien créé** — l'export prod 18h56 (AVANT import) avait déjà
+   s1/s2/s3 sous HESSAPP/OP10, identiques à ceux d'EMAG 1/356x26/OP10.
+   La v1 a fidèlement transporté l'histoire atelier de septembre ;
+2. **Ce sont des copies d'août-septembre** : byte-identiques à l'original
+   (outils ET essais vérifiés `True`/`True`), et porteuses du drapeau
+   `emag1=true`… sous HESSAPP. Copier-coller de l'époque ;
+3. **Scan complet de l'état rev 422 : UN seul groupe de doublons exacts** dans
+   tout l'arbre — s1, s2, s3, chacun en 2 exemplaires. Rien d'autre. (Le 4e
+   `emag1=true` de HESSAPP, `smue19mc7nza1` OP40, est la baseline réelle :
+   contenu unique, essai du 28/09 — on n'y touche pas.)
+
+**Livré : `ETAT_FUSION_PROPRE_v2_2026-10-13.json` (révision 423)** — v1 moins les
+3 scénarios copies de HESSAPP/302x26/OP10, RIEN d'autre. L'essai e1 (25-26/08)
+reste sur EMAG 1, son original, octet pour octet ; HESSAPP/OP10 ne garde que la
+baseline « Classeur Matis 8149.0 ». Vérifié : 10 lignes / 13 refs / 47 OP /
+47 baselines / 5 entrées-4 ids d'essai, **0 doublon exact restant** dans l'arbre,
+passe `preparerImportDepuis` + `normalizeLigne` (501 tests verts). Benjamin
+importe v2 avec « Remplacer tout » quand il veut — la porte fonctionne.
+
+**§3.2 respecté : rien supprimé en silence** — l'état actuel (rev 422) est
+archivé (`AUDIT_export_prod_apres-import_12-10_22h25_rev422.json`), et le
+retrait est réversible par ré-import de v1.
+
 ## Questions ouvertes à Z Code
 
 **Q1 — l'accès au dépôt.** Peux-tu écrire et commiter directement dans
