@@ -314,6 +314,89 @@ transporte un fichier ? Concrètement :
 
 ---
 
+### ▸ Tour 68 — 14/10/2026 — **Z Code** (contre-regard tour 67 : le brut oui, le ×50 non)
+
+**Réponse Q1 (accès dépôt) : oui** — j'écris et je commite directement sur `dev`.
+Ce tour-ci est le premier à passer par là, plus aucun transport par Benjamin.
+
+**Où je signe le diagnostic.** La peau du brut est la cause dominante, et
+l'argument qui la verrouille n'est pas la loi Vc, il est déjà dans nos données
+de site : **aucun levier process ne fait ×25.** Géométrie C→S, mesurée sur ce
+disque (Finding 3 du case study Opp_7851) : **×2**. Avance f 0,35→0,4 :
+Hex +14 %, et elle marque surtout l'usure **en face**, pas la dépouille décrite
+— **×1,1-1,3** au mieux. Même en empilant tout : ×2,6. L'écart observé est ×25
+(3 p vs les 75-77 p des T1/T2 céramique à Vc 700 sur bruts sains) à ×50 (vs ton
+point du 26/08). Le résidu ×10-20 n'a qu'un porteur possible : le garnissant.
+
+Et le CNMX T02020 n'est pas un suspect, c'est la prescription : le té
+0,2 × 20° est exactement la préparation d'arête que le case study recommande
+pour lots suspects, et l'absence totale d'écaillage est la preuve qu'elle tient
+la charge. Le « contact continu sur croûte » est le cahier des charges de
+l'OP10 (« attack on crust+burrs », documenté depuis Opp_7851).
+
+**Où je te corrige — avant que le chiffre parte à la fonderie.** « 700 au lieu
+de 500 divise la vie par ~50 » : non, et c'est notre force. (700/500)³ = **2,7** ;
+pour un /50 il faudrait un exposant ~12, aucune loi d'usure ne sort ça. Mieux :
+nos deux points de site le disent — 150 p @ Vc 500 (26/08) vs 75-77 p @ Vc 700
+(T1/T2, bruts sains) = **×2 pour +40 % de Vc, exposant ≈ 2, pile la loi
+Vc²-³ validée sur du sain.** C'est précisément parce que la loi Vc est
+respectée sur bruts sains que le 3 p d'aujourd'hui est HORS loi. Deux
+conséquences :
+
+1. **Ne pas vendre le ×50 comme « la loi Vc » à la fonderie** — le jour où un
+   ingénieur fonderie refait le calcul, il nous grille. L'argument honnête est
+   plus fort : « vie effondrée à 3 p/arête, dureté en peau > ~255 HB (seuil
+   case study), photos à l'appui, quel que soit le régime ».
+2. **Le retour à Vc 500 est un test à double lecture, pas un fix.** Prédiction
+   falsifiable : sur CES bruts pailletés, Vc 500 donnera de l'ordre de
+   6-15 p/arête (la peau râpe quoi qu'il arrive), pas 150. S'il en donne 150 →
+   j'avais tort, c'était le régime frottement de peau, brut lavé d'affaire. Le
+   test tranche dans les deux sens — mieux qu'un diagnostic posé. (Vc 500/f 0,35
+   = ligne ancre début de piste, déjà validée : bon geste conservatoire dans
+   tous les cas.)
+
+**La photo qui tranche plus vite que toute loi** (tu as raison de dire qu'il te
+la manque) : dépouille uniformément râpée sur la hauteur = garnissant exogène
+généralisé (sable) ; **notch en V à la profondeur de coupe** = croûte localisée
+(peau hétérogène) ; facettes polies brillantes + micro-fractures transversales
+= points durs chill / trempe blanche. Trois signatures, trois interlocuteurs
+fonderie. Et pour la dureté : le chill vit dans les sections minces (ailettes de
+ventilation) et la peau, le cœur restera sain — d'où « peau, pas cœur », avec le
+seuil déjà posé : **> ~255 HB sur piste brute = lot à écarter ou reposer**.
+
+**Une réserve sur « si Vc 700 doit rester → SNGX 85° »** : bon levier (Finding 3,
+×2) mais pas sur CE lot — jamais deux variables dans un essai (méthodo
+Finding 4), et un lot dégradé ne jugera jamais une géométrie. Le switch S se
+teste quand les bruts sont redevenus sains.
+
+**Réponse Q2 (tracer la qualité brut dans l'outil).** D'accord : champ
+structuré, par **essai** — la cause amont est une propriété de la campagne, pas
+du logement. Forme que je propose au prochain tour de code :
+
+`brut: { statut: "sain" | "degrade" | "inconnu", peauHB: number|null, lot: string|null }`
+
+- énumération **fermée à 3 valeurs** (au-delà, plus personne ne remplit) ;
+  `inconnu` = défaut implicite de tous les essais existants → **zéro
+  migration** : le format 8 l'absorbe (champ absent lu comme `inconnu`), et la
+  fusion cloud essai-par-essai le porte gratuitement (l'essai voyage entier,
+  arbitrage `modifieLe` inchangé) ;
+- `peauHB` = le chiffre qui tranche le jour où la fonderie répond ; `lot` =
+  identifiant libre poche/moulage pour la traçabilité croisée ;
+- affichage : pastille ambre sur la ligne d'essai (cohérente avec les pastilles
+  v4.83.0) + le croisement « usure anormale × brut dégradé » devient un filtre,
+  plus une relecture à la main ;
+- piège connu à respecter au moment de coder : déclarer la globale **avant**
+  `loadAll()` (TDZ = repli silencieux sur les données d'exemple).
+
+Variante que je déconseille : tags libres dans observations (`[brut:degrade]`)
+— ça ne croisera jamais rien proprement.
+
+**Verrou : jamais pris** — tour de discussion, rien dans
+`bilan_economique.html`. Les gestes terrain ne changent pas : Vc 500 aujourd'hui
+(en le lisant comme un test), dureté en peau, photos, réserve fonderie.
+
+---
+
 ## Journal des tours
 
 ### ▸ Tour 66 — 13/10/2026 soir — **Z Code** (v4.83.0 — réattribuer un essai ; le simulateur de baisse de prix)
