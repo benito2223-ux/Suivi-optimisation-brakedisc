@@ -1,25 +1,23 @@
-# VERROU — qui travaille sur `bilan_economique.html` en ce moment
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Ecrit dans** | — |
+| **Version visee** | — |
+| **Sujet** | *Personne n'ecrit dans `bilan_economique.html`.* |
 
-> **But** : empêcher deux sessions d'écrire dans le même fichier en même temps. C'est la
-> seule règle qui protège le reste : tout le travail d'octobre dernier tient dans ce
-> fichier, et une collision silencieuse le corrompt sans laisser de trace.
->
-> **Le principe** : si cette ligne est vide, personne ne travaille sur le code. Si
-> elle est remplie, **personne d'autre ne touche au fichier** jusqu'à la libération.
-
----
-
-## Verrou actuel
-
-| | |
-|---|---|
-| **Auteur** | Z Code |
-| **Pris le** | 14/10/2026 matin |
-| **Écrit dans** | `bilan_economique.html` |
-| **Version visée** | 4.86.0 |
-| **Sujet** | ⚔️ LE PLAN DE CONVERSION (la vitrine commerciale de Benjamin) : chaque article actuel avec sa consommation théorique, la cible SPK éditable (auto-suggérée pour les KY3500 → LKT640 @5 €), les états step-by-step (à proposer/proposée/en essai/gagnée), le gain/an par article et en total. Persistant dans le suivi. Puis déploiement prod 4.86.0 (phrase reçue dans le même message). |
-
-🔒 **Verrou pris par Z Code le 14/10/2026 matin** (tour 69, v4.86.0 — le Plan de conversion).
+**Verrou libere par Z Code le 14/10/2026** (Tour 69, v4.86.0). Pendant le
+tour, `bilan_economique.html` est passe a l'empreinte `ac9563a1...` : le Plan
+de conversion (cibles SPK editables, auto-suggestion KY3500 -> LKT640 a 5 EUR,
+etats step-by-step de Benjamin, total = lignes etatees seulement, gain =
+plaquettes/an x ecart de prix, persistant dans le suivi, export CSV), portes,
+`TOOL_VERSION = "4.86.0"`, NOUVEAUTES + CHANGELOG. Contre-regard : potentiel
+compte comme promesse -> **vu** -> restauration par copie, empreinte
+identique, 521 -> **542/542 verts**. Le tour des echappements consigne :
+patchs par fichiers, heredocs bannis. **Deploye sur Projet ET en prod
+(phrase de Benjamin : « fonce pour le Plan de conversion et deploie en
+prod »), verifies curl — empreinte ac9563a1 identique aux deux domaines.**
+Ecrits : `bilan_economique.html`, `outils/patch_4860_a/b/c.py`,
+`outils/fix_plancsv*.py`, `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`,
+`VERROU.md`.🔒 **Verrou pris par Z Code le 14/10/2026 matin** (tour 69, v4.86.0 — le Plan de conversion).
 
 ---
 

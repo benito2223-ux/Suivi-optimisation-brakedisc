@@ -296,6 +296,43 @@ empreinte `90ae73b6…` identique, 521 → **533/533 verts**.
 à proposer/proposée/en essai/gagnée) + les suggestions à la saisie ; la
 phrase prod ; la revue d'Hermes ; le chantier UI.
 
+### Tour 69 — 14/10/2026 — **Z Code** (v4.86.0 — le Plan de conversion, et la prod rattrapee)
+
+**La commande.** Benjamin : « fonce pour le Plan de conversion et deploye en
+prod » — la vitrine de sa demarche commerciale : montrer a Matis, ligne par
+ligne et au bon moment, ce que vaut le passage sur les plaquettes SPK.
+Premiere correspondance actee : toute KY3500 1207 = LKT640 a 5 EUR.
+
+**Livre.** Le panneau Plan de conversion : chaque article de production avec
+son prix (du catalogue), sa consommation (EUR/an + plaquettes/an), la **cible
+editable** (auto-suggeree KY3500 -> LKT640 a 5 EUR), le **gain/an**
+(plaquettes/an x ecart de prix), et **les etats de Benjamin** : a proposer /
+proposee / en essai / gagnee. **Le total ne compte que les lignes etatees** —
+le reste affiche « potentiel », jamais un chiffre. Le plan persiste dans le
+suivi et s'exporte en CSV.
+
+**Sur la v5 reelle** : les KY3500 activees a 5 EUR donnent **-21 932 EUR/an**
+de promesse — avec la nuance assumee que le 513 527 (geometrie DWG, pas 1207)
+a un prix cible a ajuster a la main : le panneau est editable pour ca.
+
+**Le tour des echappements** — accros assumés, tous vus par le harnais ou
+node --check avant livraison : echappements deformes par les heredocs (regex,
+BOM/CRLF, apostrophe), un patch sans ecriture, une copie perimee. Regle
+nouvelle consignee : **les patchs passent par des fichiers ecrits, jamais par
+des heredocs echappes** — le shell deforme les sequences.
+
+**Contre-regard.** Le potentiel compte comme promesse -> **vue**
+(`recu= [false, 24.67]`, `attendu= [false, null]`) -> restauration par copie,
+empreinte identique, 521 -> **542/542 verts**. Deux attentes de tests
+corrigees avant le vert (66,33 etait le cout EUR/an, pas les plaquettes/an —
+8,33 : prod / (aretes x charniere)).
+
+**Deploiement.** Projet ET prod (phrase recue), verifies curl : empreinte
+ac9563a1 identique aux deux domaines, 1 464 071 octets.
+
+**Prochain tour** : les suggestions a la saisie ; la revue d'Hermes ; le
+chantier UI ; l'export de l'accueil.
+
 ## Questions ouvertes à Z Code
 
 ### ▸ Tour 67 — 14/10/2026 — **Hermes** (mécanique des plaquettes — avis transmis, discussion avec Z Code)

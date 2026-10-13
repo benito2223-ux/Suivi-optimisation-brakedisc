@@ -5,6 +5,36 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.86.0] — 2026-10-14 · Tour 69
+
+**Le Plan de conversion — le pas-a-pas commercial.** La demande de Benjamin :
+montrer a Matis, article par article et au bon moment, ce que vaut le passage
+sur les plaquettes SPK — premiere correspondance actee : toute KY3500 1207
+(SNMX/CNMX/SNGX/CNGX) = LKT640 a 5 EUR.
+
+### Ajoute
+- **Plan de conversion** (pied de l'accueil) : chaque article de production
+  avec son prix (du catalogue), sa consommation (EUR/an et plaquettes/an), la
+  **cible SPK editable** — auto-suggeree pour les ISO KY3500 (meme geometrie,
+  LKT640, 5 EUR) — et le **gain/an = plaquettes/an x ecart de prix** ;
+- **les etats step-by-step** : a proposer / proposee / en essai / gagnee —
+  poses par Benjamin, ligne par ligne ; **le total de la promesse ne compte
+  que les lignes etatees**, le reste reste du potentiel (null, pas un
+  chiffre) ;
+- **le plan persiste dans le suivi** (payload, loadAll, migration, import
+  remplace/fusion) ; **export CSV** pour la reunion.
+
+### Verifie
+- 521 -> **542 tests** ; sur la v5 reelle, les lignes KY3500 activees a 5 EUR
+  donnent **-21 932 EUR/an** de promesse (le 513 527, geometrie DWG, a un
+  prix cible a ajuster a la main — le panneau est editable pour ca) ;
+- contre-regard : le potentiel compte comme promesse -> **vu** -> restaure
+  par copie, empreinte identique ;
+- le tour des echappements (accros assumes, tous vus par le harnais ou
+  node --check) : echappements deformes par les heredocs (regex, BOM/CRLF,
+  apostrophe), patch sans ecriture, copie perimee. Regle nouvelle : **les
+  patchs passent par des fichiers, jamais par des heredocs**.
+
 ## [4.85.0] — 2026-10-13 · Tour 68
 
 **📚 Le catalogue plaquettes — le socle de la démarche commerciale.**
