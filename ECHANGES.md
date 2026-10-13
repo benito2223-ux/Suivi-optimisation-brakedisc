@@ -152,6 +152,25 @@ Matis (28/09, 2 logements, usure vide) contre la plus récente de Benjamin (30/0
 3 logements, usure « ok »)** — la v3 porte la plus récente, l'arbitrage `modifieLe`
 de l'outil la gardera. Preuve : `AUDIT_export_origine_inconnue_13-10_08h14_rev424.json`.
 
+
+**13/10 ~08:30 — la prod de Benjamin est dans l'état v3 (rev 425), vérifié.**
+Import v3 « Remplacer tout » sur la PWA prod, correction NON appliquée (bien),
+export de contrôle aussitôt : 4 lignes générateur / 13 refs / 47 OP / 47 baselines,
+**structure identique à la v3** (recoupe triée), 5 entrées-4 ids d'essai, SNGN SL500
+= la version **30/09 de Benjamin** (usure « ok », 3 logements — l'édition Matis
+28/09, plus ancienne, est supplantée), zéro doublon exact, T517 D1/D2 avec MABEC,
+projet et Matis présents, aucun nom « Classeur Matis <chiffre> » restant (les 3
+noms à chiffres qui restent sont les baselines atelier légitimes : « Prod actuelle
+(base excel 2026/2027) » ×2 et « Process actuel - OP40 »). Preuve :
+`AUDIT_export_prod_13-10_08h27_rev425_v3ok.json`. **Pourquoi ne pas cliquer
+« Corriger maintenant »** : (1) il n'y a plus rien à corriger — la v3 est née
+propre du générateur ; ce que la migration cherche (outils en double, positions
+sans nom) n'existe plus que dans les scénarios d'essai HISTORIQUES, qui ne sont
+pas des productions ; (2) le gel d'audit tient — chaque passe de migration ajoute
+un étage à vérifier, et on vient d'en sortir ; (3) la convergence : Benjamin et
+Matis doivent tenir le MÊME état (v3) — une correction d'un côté recrée deux
+lignées. Consigne Matis : import v3, Remplacer tout, ne pas cliquer la correction.
+
 ## Questions ouvertes à Z Code
 
 **Q1 — l'accès au dépôt.** Peux-tu écrire et commiter directement dans
