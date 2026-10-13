@@ -28,7 +28,7 @@ API = ("get TOOL_VERSION(){return TOOL_VERSION;}, normalizeLigne, normalizeRefer
        "matisPorteOutilPosition, matisClePorteOutil, reparerOutilsD1D2, reparerOutilsRapport, "
        "detecterOutilsD1D2, migrerOutilsD1D2, compterOutilsD1D2, detecterInversionMabec, migrerInversionMabec, compterInversionsMabec, "
        "_matisFeuille, "
-       "getActiveLigne, preparerImportDepuis, axesActifs, reattribuerEssai, plaquettesCommunes, get lignes(){return lignes}, set lignes(v){lignes=v}, "
+       "getActiveLigne, preparerImportDepuis, axesActifs, reattribuerEssai, plaquettesCommunes, simulCSV, get lignes(){return lignes}, set lignes(v){lignes=v}, "
        "get projets(){return projets}, set projets(v){projets=v}, "
        "get activeProjetId(){return activeProjetId}, set activeProjetId(v){activeProjetId=v}, "
        "get config(){return config}, set config(v){config=v}, "
@@ -281,6 +281,19 @@ try {
       console.log((la ? '  ok  ' : '  ECHEC ') + 'css impression : ' + pourquoi + ' — "' + a + '" ' + (la ? 'present' : 'ABSENT') + ' dans le head du document principal');
     }
     if (vus) console.log('  CSS IMPRESSION : ' + vus + ' regles verifiees dans le head reel du fichier');
+  })();
+  /* ── v4.84 — LE SIMULATEUR EST STYLE ET PLEIN ECRAN, DANS LE CSS RÉEL ──
+     L'accroc : le bloc CSS de la 4.83 n'avait JAMAIS été inséré — un garde
+     conditionnel trop malin avait sauté l'insertion en silence, et le panneau
+     a tourné deux versions non stylé (4.83.0 et 4.83.1, les deux domaines).
+     La porte lit le fichier réel : les classes du simulateur EXISTENT. */
+  (function simulCss(){
+    const fs = require('fs');
+    const html = fs.readFileSync('bilan_economique.html', 'utf8');
+    const manquantes = ['.simul-note {', '.simul-table {', '.simul-resultat {', '#simulPanel.simul-maxi']
+      .filter(sel => html.indexOf(sel) === -1);
+    if(manquantes.length) r.echecs += manquantes.length;
+    console.log((manquantes.length ? '  ECHEC ' : '  ok  ') + 'simulateur : CSS présent dans le fichier réel (' + (4 - manquantes.length) + '/4 règles)' + (manquantes.length ? ' — MANQUANT : ' + manquantes.join(', ') : ''));
   })();
   /* ── v4.82 — LES DATES DE SAISIE SONT BORNÉES ───────────────────────────
      Benjamin : « la date des essais ne peut pas se taper directement il faut

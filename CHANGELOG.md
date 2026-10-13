@@ -5,6 +5,37 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.84.0] — 2026-10-13 · Tour 67
+
+**Le simulateur sort de l'écran.** Export Excel + plein écran (demande de
+Benjamin : « la fenêtre simulateur de prix mérite un export excel et un
+affichage plein écran ! »).
+
+### Ajouté
+- **⤵ Exporter Excel (CSV)** : les deux tableaux (articles et budget par
+  référence) dans un fichier CSV-FR — BOM + `sep=;` en tête, décimales à
+  virgule — qui s'ouvre dans Excel sans avertissement ; taux courant et
+  articles cochés inclus ; zéro SDK (la règle maison) ; `simulCSV()` pure
+  et exportée ;
+- **⛶ Plein écran** : le panneau passe par-dessus tout (CSS maxi) et le mode
+  natif est tenté par-dessus (réunion projetée) ; Échap rend la main.
+
+### Corrigé — l'accroc assumé du tour
+- **le CSS du simulateur n'avait JAMAIS été inséré** : le garde conditionnel
+  de la 4.83 avait sauté l'insertion en silence, et le panneau a tourné
+  **deux versions non stylé** (4.83.0 et 4.83.1, sur les deux domaines).
+  Bloc complet inséré, et une **porte hors-suite** lit désormais le fichier
+  réel (4 règles, dont `.simul-maxi`) pour l'empêcher de re-disparaître ;
+- la restauration par copie du contre-regard avait rejoué une **copie
+  périmée** (la porte honnête du 66 bis était perdue) : réécrite à la main,
+  et la leçon est tracée — la copie de contre-regard se reprend APRÈS chaque
+  édition.
+
+### Vérification
+- 518 → **521 tests** ;
+- contre-regard : `sep=;` remplacé → la porte CSV **vue** ; restauration par
+  copie fraîche, empreinte identique, 521/521 verts.
+
 ## [4.83.1] — 2026-10-13 · Tour 66 bis
 
 **Le simulateur parle le métier.** Demandé par Benjamin dans la foulée de la

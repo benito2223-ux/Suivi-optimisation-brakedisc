@@ -203,6 +203,18 @@ table tbody tr:hover td{ background:var(--gray-50); }
 table td.neutre, table .cell-neutral{ color:var(--label); font-weight:400; }
 table .num, table td.num{ text-align:right; font-variant-numeric:tabular-nums;
   font-family:var(--font-mono); }
+/* v4.83/4.84 — le simulateur de baisse de prix (bloc CSS complet) */
+.simul-note { background:#eef4fb; border:1px solid #cfe0f3; border-radius:4px; padding:9px 13px; font-size:13px; color:#1b5ea6; margin-bottom:14px; }
+.simul-controles { display:flex; align-items:center; gap:10px; margin-bottom:12px; font-size:14px; }
+.simul-controles input { width:80px; font-family:var(--font-mono); }
+.simul-table { width:100%; border-collapse:collapse; font-size:13.5px; }
+.simul-table th, .simul-table td { padding:7px 9px; border-bottom:1px solid #e4e6ea; text-align:left; }
+.simul-table th { font-size:12px; color:#666; font-weight:600; text-transform:uppercase; letter-spacing:.03em; }
+.simul-table td.mono, .simul-table tfoot td { font-family:var(--font-mono); }
+.simul-table tfoot td { font-weight:600; border-top:2px solid #d6d9de; }
+.simul-actions { display:flex; gap:8px; margin-bottom:10px; }
+.simul-resultat { margin-top:16px; padding:13px 16px; background:#f0f7ee; border:1px solid #cfe3c8; border-radius:4px; font-size:15px; }
+#simulPanel.simul-maxi { position:fixed; inset:0; max-width:none; width:100vw; height:100vh; max-height:none; z-index:260; overflow:auto; border-radius:0; margin:0; }
 </style>
 
 <style>
@@ -12003,6 +12015,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.84.0", date:"13/10/2026", points:[
+    "<b>Le simulateur sort de l'écran.</b> <b>⤵ Exporter Excel (CSV)</b> : les deux tableaux (articles et budget par référence) partent dans un fichier qui s'ouvre dans Excel sans avertissement — taux et articles cochés inclus. <b>⛶ Plein écran</b> : le panneau passe par-dessus tout, pour projeter en réunion. Échap rend la main."
+  ]},
   { version:"4.83.1", date:"13/10/2026", points:[
     "<b>Le simulateur parle le métier.</b> Chaque article affiche désormais le <b>libellé de la plaquette</b> (la désignation ISO) en plus du code MABEC — et sous le tableau, le <b>budget outillage annuel par référence</b> : combien coûte chaque disque en plaquettes par an, en € et en % du budget."
   ]},
@@ -12543,7 +12558,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.83.1";
+const TOOL_VERSION = "4.84.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -14798,10 +14813,85 @@ function plaquettesCommunes(){
            totalAnnuel, refsSansVolume, sansVolume: Array.from(sansVolume) };
 }
 
+/* v4.83/4.84 — l'export : CSV-FR (BOM + sep=; + decimales a virgule) — Excel
+   francais l'ouvre sans avertissement, et la regle maison tient : zero SDK.
+   PURE : la donnee, le taux et les articles inclus passent en argument —
+   testable hors DOM. La chaine commence par le BOM ; la ligne sep=; force le
+   separateur quelle que soit la configuration d'Excel. */
+function simulCSV(d, tauxPct, inclus){
+  const num = v => String(Math.round(v * 10000) / 10000).replace(".", ",");
+  const cell = v => /[";\r\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : String(v);
+  const plagePrix = g => {
+    const mn = Math.min(...g.usages.map(u => u.prix)), mx = Math.max(...g.usages.map(u => u.prix));
+    return mn === mx ? num(mn) : num(mn) + " a " + num(mx);
+  };
+  const L = [];
+  L.push("sep=;");
+  L.push("Simulation prix plaquettes - " + new Date().toLocaleDateString("fr-FR"));
+  L.push("Taux de baisse applique;" + String(tauxPct).replace(".", ",") + " %");
+  L.push("");
+  L.push("Article (MABEC);Libelles ISO;Usages;Lignes;Prix constates (EUR);Cout annuel (EUR);Economie annuelle (EUR)");
+  let inclu = 0;
+  d.groupes.forEach(g => {
+    const actif = !inclus.size || inclus.has(g.mabec);
+    const ec = actif ? g.coutAnnuel * tauxPct / 100 : 0;
+    inclu += ec;
+    L.push([g.mabec, [...g.isos].join(" | "), g.usages.length,
+            [...new Set(g.usages.map(u => u.ligne))].join(" | "),
+            plagePrix(g), num(g.coutAnnuel), num(ec)].map(cell).join(";"));
+  });
+  L.push(["TOTAL", "", "", "", "", num(d.totalAnnuel), num(inclu)].map(cell).join(";"));
+  L.push("");
+  L.push("Budget outillage annuel par reference");
+  L.push("Ligne;Reference;Volume annuel;Cout annuel (EUR);% du budget");
+  d.parReference.forEach(x => L.push([x.ligne, x.ref, num(x.prod), num(x.coutAnnuel),
+    num(d.totalAnnuel ? x.coutAnnuel / d.totalAnnuel * 100 : 0)].map(cell).join(";")));
+  return "\uFEFF" + L.join("\r\n");
+}
+
+function simulExporter(){
+  const d = plaquettesCommunes();
+  const taux = parseFloat(document.getElementById("simulTaux")?.value) || 0;
+  const inclus = new Set(Array.from(document.querySelectorAll(".simul-inc"))
+    .filter(cb => cb.checked).map(cb => cb.getAttribute("data-mabec")));
+  const csv = simulCSV(d, taux, inclus);
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const t = new Date();
+  const stamp = t.getFullYear() + String(t.getMonth() + 1).padStart(2, "0") + String(t.getDate()).padStart(2, "0")
+              + "-" + String(t.getHours()).padStart(2, "0") + String(t.getMinutes()).padStart(2, "0");
+  a.href = url;
+  a.download = "Simulation_prix_plaquettes_" + stamp + ".csv";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+/* v4.84 — plein ecran : le panneau passe par-dessus tout (CSS maxi), et le
+   mode natif est tente par-dessus (reunion projetee). ESC rend la main. */
+function simulMaxi(){
+  const p = document.getElementById("simulPanel");
+  if(!p) return;
+  const on = !p.classList.contains("simul-maxi");
+  p.classList.toggle("simul-maxi", on);
+  try{
+    if(on && p.requestFullscreen) p.requestFullscreen().catch(() => {});
+    else if(!on && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+  }catch(e){}
+  const b = document.getElementById("simulMaxiBtn");
+  if(b) b.textContent = on ? "\u2922 Quitter le plein ecran" : "\u26f6 Plein ecran";
+}
+
 function simulHTML(){
   const d = plaquettesCommunes();
   if(!d.groupes.length) return `<p class="panel-hint">Aucun logement de production avec prix, arêtes et durée de vie chiffrés. Le simulateur se nourrit des scénarios en production (★) des références à volume annuel.</p>`;
   return `
+    <div class="simul-actions">
+      <button class="ghost small" id="simulExporterBtn" title="Télécharge les deux tableaux en CSV — s'ouvre dans Excel">⤵ Exporter Excel (CSV)</button>
+      <button class="ghost small" id="simulMaxiBtn" title="Projection en réunion">⛶ Plein écran</button>
+    </div>
     <div class="simul-note">SIMULATION — rien n'écrit dans le suivi. Source : les scénarios en production (★), axe outillage seul, prix ÷ (arêtes × durée de vie) × volume annuel.</div>
     <div class="simul-controles">
       <label>Baisse de prix générale <input type="number" id="simulTaux" min="0" max="90" step="0.5" value="10"> %</label>
@@ -14872,6 +14962,10 @@ function renderSimul(){
   const taux = document.getElementById("simulTaux");
   if(taux) taux.addEventListener("input", simulRecalcul);
   wrap.querySelectorAll(".simul-inc").forEach(cb => cb.addEventListener("change", simulRecalcul));
+  const ex = document.getElementById("simulExporterBtn");
+  if(ex) ex.addEventListener("click", simulExporter);
+  const mx = document.getElementById("simulMaxiBtn");
+  if(mx) mx.addEventListener("click", simulMaxi);
   simulRecalcul();
 }
 function ouvrirSimul(){
@@ -18035,8 +18129,27 @@ function runTests(){
         lignes.push(lHom);
         const d2 = plaquettesCommunes();
         lignes.pop();
-        ok("simulateur : deux références de MÊME NOM (deux lignes) restent deux lignes du budget — la clé est l'ID",
-           d2.parReference.length, 3);
+        ok("simulateur : deux références de MÊME NOM (deux lignes) restent attribuées à CHACUNE des machines — la clé est l'ID, pas le nom",
+           [d2.parReference.length, d2.parReference.filter(x => x.ref === "330x14").length,
+            (d2.parReference.find(x => x.ligne === "PCI 4") || {}).prod,
+            d2.parReference.find(x => x.ligne === "EMAG 2") === undefined],
+           [3, 1, 2000, true]);
+        /* v4.84 — l'export : un CSV qu'Excel FR ouvre SANS avertissement ni
+           colonnes cassées : BOM, sep=; en premiere ligne, decimales a virgule,
+           les deux tableaux. La porte lit la chaine PURE, pas le DOM. */
+        const csv = simulCSV(d, 10, new Set());
+        const lignesCsv = csv.split("\r\n");
+        ok("export simulateur : BOM en tête collé au sep=; — Excel FR ouvre sans avertissement",
+           [csv.charCodeAt(0), lignesCsv[0].replace(/^﻿/, ""), lignesCsv[1].indexOf("Simulation")],
+           [65279, "sep=;", 0]);
+        ok("export simulateur : décimales à virgule (jamais de point) et séparateur point-virgule partout",
+           [csv.indexOf(".5 ") === -1 && csv.indexOf(";0.") === -1, (csv.match(/;/g) || []).length > 30],
+           [true, true]);
+        ok("export simulateur : les deux tableaux sont là, avec TOTAL et économies",
+           [lignesCsv.some(x => x.indexOf("Budget outillage annuel par reference") === 0),
+            lignesCsv.some(x => x.indexOf("TOTAL;") === 0),
+            lignesCsv.some(x => x.indexOf("Economie annuelle (EUR)") > -1)],
+           [true, true, true]);
       } finally { lignes = lAvS; }
     }
     }

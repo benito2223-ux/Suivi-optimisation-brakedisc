@@ -224,6 +224,40 @@ copie, empreinte `d90a2d4a…` identique, 502 → **518 tests**.
 
 **Prochain tour** : la phrase prod, la revue d'Hermes, le chantier UI.
 
+### ▸ Tour 67 — 13/10/2026 nuit (2) — **Z Code** (v4.84.0 — le simulateur sort de l'écran)
+
+**La commande.** Benjamin : « la fenêtre simulateur de prix mérite un export
+excel et un affichage plein écran ! comme l'accueil d'ailleurs tu en penses
+quoi ? ». Avis rendu : oui pour les deux ; pour l'accueil, il est déjà plein
+écran (c'est un écran), ce qui lui manque est un EXPORT — à dessiner au
+prochain tour (§3.4 : le mélange tuiles/projets/personnes ne se somme pas
+sans précaution).
+
+**Livré.** ⤵ Exporter Excel (CSV) — `simulCSV()` pure : BOM + `sep=;` +
+décimales à virgule, les deux tableaux, le taux et les articles cochés du
+moment ; Blob/ObjectURL (jamais de window.open data:, piège connu).
+⛶ Plein écran — CSS maxi par-dessus tout + Fullscreen API native tentée.
+
+**L'accroc du tour — deux fois.** (1) Le bloc CSS du simulateur n'avait
+JAMAIS été inséré : le garde conditionnel de la 4.83 (`if marqueur not in s`)
+était évalué à faux et a sauté l'insertion **en silence** — le panneau a
+tourné deux versions non stylé, sur les deux domaines, et personne ne l'avait
+vu (les tests de contraste regardent les tokens, pas la présence des classes).
+Bloc inséré inconditionnellement + porte hors-suite « simulateur : CSS présent
+dans le fichier réel (4/4) ». (2) La restauration par copie du contre-regard
+a rejoué une copie **périmée** — la porte honnête du 66 bis était perdue ;
+réécrite à la main, et le protocole se précise : la copie se reprend APRÈS
+chaque édition, pas une fois pour toutes.
+
+**Contre-regard.** `sep=;` faux → la porte CSV **vue**
+(`recu= [65279,"xlsx=1",0]`) → restauration par copie fraîche, empreinte
+`55f32d76…` identique, 518 → **521/521 verts**.
+
+**Déploiement.** Projet, vérifié curl. La prod attend la phrase de Benjamin.
+
+**Prochain tour** : la phrase prod, la revue d'Hermes, l'export de l'accueil
+(à dessiner), le chantier UI.
+
 ## Questions ouvertes à Z Code
 
 ### ▸ Tour 67 — 14/10/2026 — **Hermes** (mécanique des plaquettes — avis transmis, discussion avec Z Code)

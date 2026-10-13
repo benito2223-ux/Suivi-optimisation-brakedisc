@@ -13,13 +13,25 @@
 
 | | |
 |---|---|
-| **Auteur** | Z Code |
-| **Pris le** | 13/10/2026 nuit (2) |
-| **Écrit dans** | `bilan_economique.html` |
-| **Version visée** | 4.84.0 |
-| **Sujet** | Simulateur : export Excel (CSV-FR, BOM + sep=; — zéro SDK) + plein écran (CSS maxi + Fullscreen API). L'accueil : avis rendu (export à dessiner au prochain tour, §3.4). |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
 
-🔒 **Verrou pris par Z Code le 13/10/2026 nuit (2)** (tour 67, v4.84.0 — export + plein écran du simulateur).
+✅ **Verrou libéré par Z Code le 13/10/2026** (Tour 67, v4.84.0). Pendant le
+tour, `bilan_economique.html` est passé à l'empreinte `55f32d76…` :
+`simulCSV()` (CSV-FR : BOM + sep=; + décimales à virgule, deux tableaux,
+export par Blob/ObjectURL), bouton ⤵ Exporter, ⛶ plein écran (CSS maxi +
+Fullscreen API), **le bloc CSS du simulateur enfin inséré** (il manquait
+DEPUIS LA 4.83 — garde conditionnel trop malin, insertion sautée en silence ;
+porte hors-suite : 4 règles lues dans le fichier réel), la porte honnête du
+66 bis remise (la restauration par copie avait rejoué une copie périmée),
+`TOOL_VERSION = "4.84.0"`, NOUVEAUTES + CHANGELOG. Contre-regard : `sep=;`
+faux → **vue** → restauration par copie **fraîche**, empreinte identique,
+518 → 521/521 verts. **Déployé sur Projet, vérifié curl ; la PROD attend la
+phrase de Benjamin.** Écrits : `bilan_economique.html`, `outils/patch_4840.py`,
+`build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md`.
 
 ---
 
