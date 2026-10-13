@@ -11917,6 +11917,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.81.2", date:"13/10/2026", points:[
+    "<b>Le bandeau « Corriger maintenant » ne crie plus sur un état propre.</b> Il proposait une correction dès qu'un outil portait des logements D1/D2 sans champ « correcteur » rempli — or c'est précisément la forme CORRECTE depuis la nouvelle base : les positions vivent sur les logements, qui sont les correcteurs. Le bandeau ne se déclenche plus que pour de vrais doublons (le même porte-outil saisi en deux outils séparés). Si vous le voyiez s'afficher en permanence, c'était ce faux positif : il est parti, et la correction n'y change strictement rien."
+  ]},
   { version:"4.81.1", date:"12/10/2026", points:[
     "<b>Le bouton « 📂 Importer » fonctionne de nouveau.</b> Depuis le 29 septembre, choisir un fichier ne faisait <b>rien du tout</b> : aucune fenêtre, aucun message — la panne mourait en silence. Si vous avez essayé d'importer un fichier reçu et que « rien ne se passait », c'était ça : rechargez cette version et recommencez, le fichier sera proposé à l'import comme avant. Aucune donnée n'a pu être perdue par cette panne (rien n'était écrit) — le seul dommage était l'impossibilité d'en charger une."
   ]},
@@ -12445,7 +12448,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.81.1";
+const TOOL_VERSION = "4.81.2";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -13331,29 +13334,16 @@ function detecterOutilsD1D2(scenarios){
       touches.push({ sc, fusions, apres, completOnly: false });
       return;
     }
-    /* v4.74.3 — les outils DÉJÀ fusionnés avant la 4.74.2 portent des logements
-       nommés par position (D1, D2…) mais PAS de correcteur : détectés aussi,
-       pour remplir le champ manquant. La correction est idempotente. */
-    const aCompleter = avant.filter(o => {
-      const c = String(o.correcteur || "").trim();
-      const positions = (o.logements || []).map(l => String(l.nom || "").trim().toUpperCase())
-        .filter(n => n.match(/^D\d+$/));
-      return !c && positions.length >= 1;
-    });
-    if(aCompleter.length){
-      touches.push({ sc,
-        fusions: [{ numero: aCompleter[0].numero, nbOutils: aCompleter.length,
-                    logements: aCompleter.flatMap(o => o.logements || []) }],
-        apres: avant.map(o => {
-          const c = String(o.correcteur || "").trim();
-          if(c) return o;
-          const positions = (o.logements || []).map(l => String(l.nom || "").trim().toUpperCase())
-            .filter(n => n.match(/^D\d+$/));
-          if(!positions.length) return o;
-          return Object.assign({}, o, { correcteur: positions.join(", ") });
-        }),
-        completOnly: true });
-    }
+    /* v4.81.2 — la branche « correcteur manquant » (4.74.3) est RETIRÉE du
+       déclencheur. Elle détectait tout outil à logements D1/D2 dont le champ
+       `correcteur` est vide : c'était le cas de TOUTE la base propre — le
+       générateur laisse ce champ vide VOLONTAIREMENT, les positions vivent sur
+       les logements (un logement = un correcteur, constitution 2 ter). Le
+       bandeau criait donc sur un état sain, et Benjamin (13/10) : « c'est
+       source de problème ! ». La détection ne voit plus que les VRAIS
+       regroupements : des outils distincts qui fusionneraient. Le champ
+       `correcteur` d'un outil reste rempli par la réparation elle-même
+       (renseignerCorrecteur, 4.77) quand un vrai regroupement a lieu. */
   });
   return touches;
 }
@@ -13376,11 +13366,8 @@ function migrerOutilsD1D2(){
         return copie;
       });
       lignesModifiees.add(l.nom || "?");
-      if(touches[0].completOnly){
-        rapport.push((l.nom || "?") + " · " + (r.nom || "?") + " · " + (op.nom || "?") + " : "
-          + "correcteur rempli (" + touches[0].fusions.map(f => f.numero + " → " + (f.logements || []).map(l => l.nom).filter(n => n.match(/^D\d+$/i)).join(", ")).join(", ") + ")");
-        return;
-      }
+      /* v4.81.2 — plus de branche « correcteur rempli » : la détection ne voit
+         plus que des regroupements réels (voir detecterOutilsD1D2). */
       touches[0].fusions.forEach(f => rapport.push(
         (l.nom || "?") + " · " + (r.nom || "?") + " · " + (op.nom || "?") + " : "
         + f.nbOutils + " outils « " + f.numero + " » regroupés en 1, avec "
@@ -13487,14 +13474,11 @@ function compterOutilsD1D2(){
 /* v4.74.3 — les outils déjà regroupés dont le correcteur manque (corrigés avant
    la 4.74.2) : comptés à part, le bandeau ne dira pas « en outils séparés »
    pour un outil qui ne l'est plus. */
-function compterCorrecteursManquants(){
-  let n = 0;
-  lignes.forEach(l => (l.references || []).forEach(r => (r.ops || []).forEach(op =>
-    (op.scenarios || []).forEach(sc => {
-      n += detecterOutilsD1D2([ sc ]).reduce((a, t) => a + (t.completOnly ? t.fusions.length : 0), 0);
-    }))));
-  return n;
-}
+/* v4.81.2 — compterCorrecteursManquants est retiré : il comptait la branche
+   « correcteur manquant » du détecteur, elle-même retirée (le champ est porté
+   par les logements dans le modèle v3 — le compter, c'était annoncer un défaut
+   là où il n'y en a pas). Le bandeau ne compte plus que les regroupements et
+   les inversions ISO/MABEC. */
 
 /* v4.58 — le porte-outil et sa position, lus du numéro du classeur (Q4).
    « T517 D2 » = le porte-outil T517, position D2 ; « T533 » = porte-outil seul,
@@ -15513,13 +15497,11 @@ function renduMigrBandeau(){
   const wrap = document.getElementById("migrBandeau");
   if(!wrap) return;
   const n = compterOutilsD1D2();
-  const nCorr = compterCorrecteursManquants();
   const nInv = compterInversionsMabec();
-  wrap.hidden = (n === 0 && nCorr === 0 && nInv === 0);
-  if(n === 0 && nCorr === 0 && nInv === 0) { wrap.innerHTML = ""; return; }
+  wrap.hidden = (n === 0 && nInv === 0);
+  if(n === 0 && nInv === 0) { wrap.innerHTML = ""; return; }
   const parties = [];
   if(n) parties.push(`🔧 <b>${n} porte-outil${n > 1 ? "s" : ""}</b> saisi${n > 1 ? "s" : ""} en outils séparés (T543 D1 + T543 D2…) : la règle atelier dit <b>un porte-outil = un outil à logements</b>`);
-  if(nCorr) parties.push(`✏️ <b>${nCorr} outil${nCorr > 1 ? "s" : ""} déjà regroupé${nCorr > 1 ? "s" : ""}</b> sans correcteur — la correction remplit le champ depuis les logements (D1, D2…)`);
   if(nInv) parties.push(`🏷️ <b>${nInv} logement${nInv > 1 ? "s" : ""}</b> attendent leur référence plaquette — l'ISO est complété depuis le classeur quand il y est connu`);
   wrap.innerHTML = `
     <div class="migr-bandeau">
@@ -17722,6 +17704,14 @@ function runTests(){
        La détection rattrape ce cas : logements nommés D1/D2 + correcteur vide. */
     {
       const lAv3 = lignes;
+      /* v4.81.2 — L'ÉTAT PROPRE DU MODÈLE v3 NE DÉCLENCHE RIEN. Benjamin, 13/10 :
+         « pourquoi l'outil me propose de corriger alors ? c'est source de
+         problème ! ». Réponse : la branche 4.74.3 voyait un défaut là où le
+         générateur (et la constitution 2 ter) voient l'état correct — un outil
+         dont les logements SONT les correcteurs, champ outil vide. Le test
+         inverse l'attente : la même forme qu'hier est désormais SILENCIEUSE,
+         et la migration n'y change strictement rien. (Le vrai regroupement,
+         lui, reste détecté — voir le bloc T543 D1/T543 D2 ci-dessus.) */
       const scJ = normalizeScenario({ id: "scJ", name: "Prod", baseline: true, outils: [
         { id: "uJ1", numero: "T543", correcteur: "", logements: [
           { id: "gJ1", nom: "D1", mabec: "Z000 519 285", prix: 11.87, aretes: 6, charniere: 30 },
@@ -17730,19 +17720,14 @@ function runTests(){
       lignes = [ normalizeLigne({ id: "lJ", nom: "EMAG 1", references: [ refJ ] }) ];
       try {
         const scCible = lignes[0].references[0].ops[0].scenarios[0];
-        const touches = detecterOutilsD1D2([ scCible ]);
-        ok("correcteur : un outil DÉJÀ fusionné sans correcteur est détecté (le cas de Benjamin)",
-           [touches.length, touches[0].completOnly], [1, true]);
+        ok("migration v3 : un outil propre (logements D1/D2, correcteur vide) ne déclenche AUCUNE proposition",
+           detecterOutilsD1D2([ scCible ]).length, 0);
         const resJ = migrerOutilsD1D2();
         const corrige = lignes[0].references[0].ops[0].scenarios[0].outils[0];
-        ok("correcteur : la migration remplit « D1, D2 » sans rien changer d'autre",
-           [corrige.correcteur, corrige.numero, corrige.logements.length],
-           ["D1, D2", "T543", 2]);
-        ok("correcteur : le rapport le dit en toutes lettres",
-           resJ.rapport.some(x => x.includes("correcteur rempli")), true);
-        /* idempotence : une fois rempli, plus rien à détecter (le bandeau s'éteint) */
-        ok("correcteur : une fois rempli, plus rien à détecter",
-           detecterOutilsD1D2([ lignes[0].references[0].ops[0].scenarios[0] ]).length, 0);
+        ok("migration v3 : la correction n'y change STRICTEMENT rien (champ, outils, logements, données)",
+           [resJ.rapport.length, corrige.correcteur, corrige.numero, corrige.logements.length,
+            corrige.logements[0].mabec, corrige.logements[1].prix],
+           [0, "", "T543", 2, "Z000 519 285", 10.97]);
       } finally { lignes = lAv3; }
     }
 

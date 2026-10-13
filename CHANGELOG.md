@@ -5,6 +5,33 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.81.2] — 2026-10-13 · Tour 63
+
+**Le bandeau « Corriger maintenant » ne crie plus sur un état propre.**
+Benjamin, sur la prod fraîchement importée : « pourquoi l'outil me propose de
+corriger alors ? c'est source de problème ! ». Cause : la branche « correcteur
+manquant » (4.74.3) détectait tout outil à logements D1/D2 dont le champ
+`correcteur` est vide — or c'est la forme **correcte** depuis le générateur v3 :
+les positions vivent sur les logements, qui SONT les correcteurs (constitution
+2 ter, Tour 58). Le bandeau annonçait donc un défaut sur TOUTE la base propre.
+
+### Corrigé
+- `detecterOutilsD1D2` : la branche completOnly est **retirée du déclencheur** —
+  la détection ne voit plus que de vrais regroupements (outils distincts qui
+  fusionneraient) ; `compterCorrecteursManquants` supprimé, le bandeau ne
+  compte plus que regroupements + inversions ISO/MABEC ;
+- le champ `correcteur` d'un outil reste rempli par la réparation elle-même
+  (`renseignerCorrecteur`, 4.77) quand un vrai regroupement a lieu ;
+- le test 4.74.3 qui verrouillait l'ancien comportement est **inversé** : la
+  même forme d'état est désormais attendue SILENCIEUSE, migration sans effet.
+
+### Vérification
+- 501 → **499 tests** (4 tests 4.74.3 remplacés par 2 portes inverses) ;
+- contre-regard : faute ré-injectée **avec assert** → les deux portes v3
+  tombent (`recu= 1, attendu= 0`) → restaurée par copie, empreinte identique ;
+- **le fichier v3 réel** (56 scénarios) passé par la logique du bandeau :
+  0 regroupement, 0 inversion → **bandeau muet**.
+
 ## [4.81.1] — 2026-10-12 · Tour 62
 
 **La porte de l'import réparée — elle était muette depuis 14 versions.**

@@ -185,6 +185,45 @@ transporte un fichier ? Concrètement :
 
 ## Journal des tours
 
+### ▸ Tour 63 — 13/10/2026 — **Z Code** (v4.81.2 — le bandeau apprend le modèle v3)
+
+**La commande.** Benjamin, la prod à peine importée : « pourquoi l'outil me
+propose de corriger alors ? c'est source de problème ! » — puis « fonce ».
+
+**Le mécanisme.** Le bandeau de migration avait deux déclencheurs. Le vrai
+(des outils distincts qui fusionneraient) ne voyait plus rien sur la v3. Le
+faux (4.74.3 : un outil à logements D1/D2 dont le champ `correcteur` est vide)
+voyait TOUT — parce que le générateur laisse ce champ vide VOLONTAIREMENT :
+les positions vivent sur les logements, qui sont les correcteurs (constitution
+2 ter, Tour 58). Le détecteur regardait l'ancien modèle ; la donnée avait
+changé de monde. Un avertissement qui crie sur ce qui va bien finit ignoré le
+jour où il crierait pour de bon.
+
+**Le fix.** La branche sort du déclencheur ; `compterCorrecteursManquants`
+disparaît ; le bandeau ne compte plus que regroupements + inversions
+ISO/MABEC. Le champ `correcteur` reste rempli par la réparation elle-même
+(`renseignerCorrecteur`, 4.77) quand un vrai regroupement a lieu. Le test
+4.74.3 qui verrouillait l'ancien comportement est **inversé** : la même forme
+d'état est désormais attendue silencieuse, migration sans effet (« STRICTEMENT
+rien » : champ, outils, logements, MABEC, prix).
+
+**Contre-regard.** Faute ré-injectée **avec assert** (la leçon du Tour 62
+appliquée dès l'écriture) → les deux portes v3 tombent (`recu= 1, attendu= 0`)
+→ restauration par copie, empreinte `37e72ddb…` identique, 499/499 verts.
+**Preuve finale** : le fichier v3 réel, 56 scénarios passés par la logique du
+bandeau → 0 regroupement, 0 inversion → **bandeau muet**.
+
+**Déploiement.** Projet, vérifié curl. La prod attend la phrase de Benjamin —
+d'ici là, chez Matis, la consigne reste : ne pas cliquer (sur 4.81.1 le bandeau
+est le faux positif décrit ici ; y cliquer ne casse rien mais pollue la
+convergence des deux machines avec l'état v3).
+
+**Prochain tour** : retour de session Matis (les 2 questions : cible 0,357 sur
+la 356x26, que compte le 6 781), la revue d'Hermes, et le chantier UI
+(« ton sur ton », Chronologie, Point hiérarchie).
+
+
+
 ### ▸ Tour 63 — 12/10/2026, soir — **Hermes** (revue de la revue globale — executee, pas lue)
 
 Z Code a rendu la main avec un document auto-contenu et les preuves en local. **J'ai tout

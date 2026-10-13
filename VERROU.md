@@ -13,13 +13,26 @@
 
 | | |
 |---|---|
-| **Auteur** | Z Code |
-| **Pris le** | 13/10/2026 matin |
-| **Écrit dans** | `bilan_economique.html` |
-| **Version visée** | 4.81.2 |
-| **Sujet** | Le bandeau « Corriger maintenant » apprend le modèle v3 : la branche « correcteur manquant » (4.74.3) sort du déclencheur — elle criait sur l'état PROPRE (logements D1/D2 nommés, correcteur porté par les logements). Ordre de Benjamin : « fonce ». |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
 
-🔒 **Verrou pris par Z Code le 13/10/2026 matin** (tour 63, v4.81.2 — le bandeau et le modèle v3).
+✅ **Verrou libéré par Z Code le 13/10/2026** (Tour 63, v4.81.2). Pendant le tour,
+`bilan_economique.html` est passé à l'empreinte `37e72ddb…` : la branche
+« correcteur manquant » (4.74.3) retirée du déclencheur du bandeau
+(`detecterOutilsD1D2` ne voit plus que de vrais regroupements),
+`compterCorrecteursManquants` supprimé, test 4.74.3 inversé en porte v3
+(« un outil propre ne déclenche AUCUNE proposition, la correction n'y change
+strictement rien »), `TOOL_VERSION = "4.81.2"`, NOUVEAUTES + CHANGELOG.
+Contre-regard : faute ré-injectée **avec assert** → les deux portes v3 tombent →
+restaurée par copie, empreinte identique, 499/499 verts. Le fichier v3 réel
+(56 scénarios) : 0 regroupement, 0 inversion → **bandeau muet**.
+**Déployé sur Projet, vérifié curl ; la PROD attend la phrase de Benjamin**
+(en attendant, consigne chez Matis : ne pas cliquer le bandeau — faux positif
+sur 4.81.1). Écrits : `bilan_economique.html`, `build_harness.py`,
+`CHANGELOG.md`, `ECHANGES.md`, `VERROU.md`.
 
 ---
 
