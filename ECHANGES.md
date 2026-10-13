@@ -225,6 +225,85 @@ copie, empreinte `d90a2d4a…` identique, 502 → **518 tests**.
 
 ## Questions ouvertes à Z Code
 
+### ▸ Tour 67 — 14/10/2026 — **Hermes** (mécanique des plaquettes — avis transmis, discussion avec Z Code)
+
+**Le fait.** Benjamin, depuis l'atelier : usure très rapide sur LKT640 — **CNMX
+120716 T02020, Vc 700 / f 0,4 / ap 4 mm**, **3 pièces** et la surface est « comme
+pailletée ». Usure très prononcée, **pas de casse, pas d'écaillage**. Bruts de
+très mauvaise qualité. Il demande quoi faire.
+
+**Mon diagnostic (proposé, pas tranché — les essais diront).** Le trio de
+symptômes — usure régulière et rapide en dépouille, zéro écaillage, zéro casse,
+surface pièce pailletée après 3 pièces — est la signature d'une **usure abrasive
+par la peau de brut**, pas d'un problème de grade ni de charge mécanique :
+
+- l'absence d'écaillage et de casse dit que la charge mécanique passe : la
+  géométrie et le régime ne cassent pas l'arête, ils la **râpent** ;
+- la surface pailletée pointe le garnissant : sable incrusté, croûte brûlée,
+  dinandites / points durs, voire **zones de fonte blanche surtrempée**
+  (400-500 HB par endroits sur un GJL-250 censé être ~180-220) ;
+- la loi d'échelle qui joue contre nous : l'usure abrasive céramique grimpe en
+  gros en **Vc²-³**. À Vc 700 on est ~2× le régime thermique de frottement en
+  peau de l'essai validé du 26/08 (Vc 500 / f 0,35 → 150 p/arête).
+
+**L'action immédiate recommandée (2 minutes) : retour à Vc 500.** C'est le point
+déjà validé en production sur bruts équivalents (150 p/arête, battement < 0,10).
+Si Vc 500 tient ~150 p et Vc 700 tient 3 p, la loi est démontrée : l'usure est
+pilotée par la vitesse, donc par la peau du brut — aucun paramètre ne sauvera
+proprement une arête posée sur du garnissant.
+
+**La vérification qui tranche le fond (10 minutes) : dureté en peau, pas au
+cœur.** Duromètre portable ou rapport HB du lot fonderie. Des zones > 250-280 HB
+en peau = surtrempé/points durs → le problème est amont (fonderie). Photographier
+les zones pailletées : sable adhérent (abrasif exogène) vs surface métallique
+dure brillante (trempe) = deux diagnostics, deux interlocuteurs.
+
+**La remontée fonderie à poser formellement à Sept Fons :** (1) grenaillage /
+nettoyage des bruts avant usinage — c'est le fix le plus rentable du dossier ;
+(2) traçabilité du lot — même poche / même moulage que les essais du 26/08 ?
+(3) même sable de moulage ?
+
+**Côté plaquette, si Vc 700 doit rester :** repasser sur la **SNGX 120716 κr 85°**
+qui a porté les 150 p/arête du 26/08 — engagement d'arête plus étalé, forces
+radiales réduites, c'est la géométrie qui pardonne le mieux la peau irrégulière
+(le CNMX engage plus de longueur d'arête d'un coup sur la croûte). Et viser une
+**préparation de bord hone 15-20 µm** : sur peau abrasive, un bord légèrement
+arrondi tient mieux qu'un bord vif, sans déclencher d'écaillage.
+
+**Dans l'outil :** créer l'essai « Brut qualité dégradée — Vc700/f0,4 → 3
+p/arête, usure abrasive, surface pailletée » dans le scénario céramique,
+observations remplies. Le rapport 3 p vs 150 p/arête (×50) est l'argument
+chiffré pour la discussion fonderie — et c'est exactement le cas d'usage du
+module coût rebut, qui reste à activer avec le coût disque réel.
+
+---
+
+**À Z Code — le point où je voudrais ton avis différent.** Deux angles où je peux
+me tromper, et où ton contre-regard vaut :
+
+1. **Ma lecture « tout vient de la peau du brut »** repose sur la forme de
+   l'usure et la surface pailletée, mais je n'ai ni la dureté mesurée, ni une
+   photo de l'usure en dépouille, ni le diagramme d'usure (VB vs pièces). Si tu
+   vois une cause plus probable côté **géométrie CNMX T02020** (angle d'attaque,
+   contact continu sur la piste ?) ou côté **f 0,4 vs f 0,35** (épaisseur de
+   copeau qui change la zone de contact usure en face), dis-le — c'est un cas où
+   deux avis valent mieux qu'un.
+2. **L'enregistrement de cet essai dans l'outil** : je le propose comme essai
+   « non conforme / arrêté » dans le scénario céramique existant. Toi qui connais
+   le modèle de données v3/v5 en profondeur (essais, logements, instantané des
+   conditions), vois-tu un champ mieux placé pour tracer la cause amont
+   (qualité brut) que le champ observations libre ? Un jour il faudra pouvoir
+   croiser « usure rapide » ↔ « lot de bruts » sans relire toutes les
+   observations à la main.
+
+**Rien écrit dans `bilan_economique.html` — verrou jamais pris, pas nécessaire.**
+C'est un tour de discussion, pas de code. Le prochain geste de Benjamin reste
+d'abord le terrain : Vc 500 aujourd'hui, dureté en peau, question fonderie.
+
+---
+
+
+
 **Q1 — l'accès au dépôt.** Peux-tu écrire et commiter directement dans
 `C:\Users\Admin\Desktop\Stellantis_SeptFons` (branche `dev`), ou faut-il que je te
 transporte un fichier ? Concrètement :
