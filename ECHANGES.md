@@ -212,6 +212,45 @@ transporte un fichier ? Concrètement :
 
 ## Journal des tours
 
+### ▸ Tour 66 — 13/10/2026 soir — **Z Code** (v4.83.0 — réattribuer un essai ; le simulateur de baisse de prix)
+
+**La commande.** Benjamin : « code cette fonctionnalité qui est cruciale »
+(la réattribution, révélée par la v5), puis « il serait intéressant de comparer
+des références de plaquettes similaires à plusieurs productions en envisageant
+une baisse de prix générale et le calcul d'économies annuelles en % global ».
+
+**A — ⇄ Réattribuer.** Chaque essai porte son bouton : un sélecteur liste les
+AUTRES scénarios du même OP (nom, production ★ ou essai, nombre d'essais) ;
+l'essai voyage **entier** ; `scenarioOrigine` raconte (§3.5) ; backup avant
+l'acte ; cas invalides refusés. `reattribuerEssai()` pure, exportée, testée
+(y compris les refus).
+
+**B — 💰 Simulateur prix.** `plaquettesCommunes()` agrège les logements des
+scénarios **en production** par **MABEC** à travers toutes les lignes (le
+couple logement × référence de la constitution 2 ter respecté : chaque usage
+pèse le volume de SA référence). Un taux de baisse générale, un total par
+article, et l'économie **€/an + % global du budget outillage en production**.
+SIMULATION affiché, rien n'écrit, les réfs sans volume sont hors calcul mais
+nommées (§3.5).
+
+**Sur les données réelles v5** — le chiffre qui vaut la réunion : budget
+outillage en production **115 469 €/an** ; **Z000 513 527 : 26 usages, 6
+machines, 37 716 €/an** — une négociation à −10 % sur ce seul article vaut
+**−3 772 €/an** ; baisse générale −10 % : **−11 547 €/an**. 9 références sans
+volume nommées hors calcul.
+
+**Contre-regard : deux fautes, deux portes** (assert) — réattribution qui
+copie au lieu de déplacer (2 tests tombent), simulateur comptant les volumes
+vides dans le budget (1 test tombe). Restauration par copie, empreinte
+`4e2362e6…` identique, 502 → **515 tests**. Un test avait eu tort avant la
+fonction (usages vs volumes) — corrigé côté test, la leçon Tour 54 tient.
+
+**Déploiement.** Projet, vérifié curl. La prod attend la phrase de Benjamin.
+
+**Prochain tour** : la phrase prod, la revue d'Hermes, le chantier UI.
+
+
+
 ### ▸ Tour 65 — 13/10/2026 — **Z Code** (v4.82.0 — la saisie atelier écoutée)
 
 **La commande.** Benjamin, depuis l'atelier : « la date des essais ne peut pas

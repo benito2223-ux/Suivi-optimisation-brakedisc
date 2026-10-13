@@ -13,13 +13,23 @@
 
 | | |
 |---|---|
-| **Auteur** | Z Code |
-| **Pris le** | 13/10/2026 soir |
-| **Écrit dans** | `bilan_economique.html` |
-| **Version visée** | 4.83.0 |
-| **Sujet** | Deux chantiers de Benjamin : (A) réattribuer un essai à un autre scénario (« crucial » — révélé par la v5) ; (B) simulateur de baisse de prix sur plaquettes communes multi-productions, économies annuelles € et % vs scénarios en production (SIMULATION, rien n'écrit, axe outillage seul — 2 quater). |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
 
-🔒 **Verrou pris par Z Code le 13/10/2026 soir** (tour 66, v4.83.0 — réattribution + simulateur).
+✅ **Verrou libéré par Z Code le 13/10/2026** (Tour 66, v4.83.0). Pendant le
+tour, `bilan_economique.html` est passé à l'empreinte `4e2362e6…` :
+`reattribuerEssai()` (bouton ⇄, même OP, essai entier, origine tracée, backup)
+et le simulateur `plaquettesCommunes()` (panneau 💰 Simulateur prix, MABEC
+regroupés multi-lignes, baisse %, économie €/an et % global, SIMULATION,
+réfs sans volume nommées), portes de clic, `TOOL_VERSION = "4.83.0"`,
+NOUVEAUTES + CHANGELOG. Contre-regard **deux fautes, deux portes** (assert) :
+vues toutes les deux, restauration par copie, empreinte identique, 515/515
+verts. **Déployé sur Projet, vérifié curl ; la PROD attend la phrase de
+Benjamin.** Écrits : `bilan_economique.html`, `build_harness.py`,
+`CHANGELOG.md`, `ECHANGES.md`, `VERROU.md`.
 
 ---
 

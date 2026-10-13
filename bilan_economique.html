@@ -2129,6 +2129,7 @@ body.atelier-on{overflow:hidden;}
   <div class="panel panel-large" id="dashboardPanel" hidden></div>
   <div class="panel panel-large" id="accueilPanel" hidden></div>
   <div class="panel panel-large" id="vueCppPanel" hidden></div>
+  <div class="panel panel-large" id="simulPanel" hidden></div>
   <div class="panel panel-large" id="cartePanel" hidden></div>
   <div class="panel panel-large" id="matisPanel" hidden></div>
   <div class="panel panel-large" id="matisDetailPanel" hidden></div>
@@ -8745,6 +8746,24 @@ function equipeOptions(selected){
     `<option value="${o}" ${selected === o ? "selected" : ""}>${o || "—"}</option>`).join("");
 }
 
+/* v4.83 — RÉATTRIBUER UN ESSAI à un autre scénario du même OP. Révélé par le
+   terrain (Benjamin, 13/10) : l'essai PCI 5 du matin avait été créé sur la
+   coquille « Process actuel » avant que le classeur n'implémente la ligne —
+   et l'outil ne savait pas le déplacer. L'objet essai voyage ENTIER
+   (prélèvements, Marposs, photos, but, observations) ; un champ
+   `scenarioOrigine` raconte le déplacement (§3.5 : l'histoire reste lisible).
+   Rend l'essai déplacé, ou null si le ciblage est invalide. */
+function reattribuerEssai(scSource, essaiId, scCible){
+  if(!scSource || !scCible || scSource.id === scCible.id) return null;
+  const i = (scSource.essais || []).findIndex(e => e.id === essaiId);
+  if(i === -1) return null;
+  const essai = scSource.essais.splice(i, 1)[0];
+  essai.scenarioOrigine = "« " + (scSource.name || scSource.nom || "sans nom") + " » (réattribué le " + new Date().toISOString().slice(0, 10) + ")";
+  scCible.essais = scCible.essais || [];
+  scCible.essais.push(essai);
+  return essai;
+}
+
 function essaiCardHTML(sc, essai, interactive){
   const es = essaiStats(sc, essai);
   const badgeClass = es.status === "ok" ? "ok" : es.status === "bad" ? "risk" : es.status === "arrete" ? "arrete" : "pending";
@@ -8760,6 +8779,7 @@ function essaiCardHTML(sc, essai, interactive){
     <input class="cell ref" data-id="${sc.id}" data-essai="${essai.id}" data-field="operateur" value="${escapeAttr(essai.operateur)}" placeholder="Opérateur">
     <span class="status-badge ${badgeClass}">${badgeText}</span>
     <button class="ghost small essai-cloture" data-id="${sc.id}" data-essai="${essai.id}" title="${essai.cloture ? "Modifier le motif ou réouvrir cet essai arrêté" : "Clôturer cet essai — arrêt anticipé avant la charnière (casse, brut, incident...)"}">${essai.cloture ? "⏹ Arrêté" : "⏹ Clôturer"}</button>
+    <button class="ghost small essai-reattribue" data-id="${sc.id}" data-essai="${essai.id}" title="Déplacer cet essai vers un autre scénario du même OP — l'essai voyage entier, l'origine reste tracée">⇄ Réattribuer</button>
     <button class="log-del essai-del" data-id="${sc.id}" data-essai="${essai.id}">✕ Essai</button>
   ` : `
     <span class="sc-name-print" style="font-size:14px;">${escapeAttr(essai.titre)}</span>
@@ -11070,6 +11090,34 @@ function attachDetailHandlers(sc){
       if(det) det.scrollIntoView({block:"center", behavior:"smooth"});
     });
   });
+  /* v4.83 — réattribuer : un sélecteur des AUTRES scénarios du même OP. L'essai
+     voyage entier ; les mesures liées à un logement de l'ancien scénario sont
+     conservées telles quelles (logementId devient suspensible, l'outil le
+     tolère déjà). Un backup avant l'acte : « ↺ Restaurer » couvre le geste. */
+  root.querySelectorAll(".essai-reattribue").forEach(el => {
+    el.addEventListener("click", () => {
+      const essaiId = el.getAttribute("data-essai");
+      const es = sc.essais.find(e => e.id === essaiId);
+      if(!es) return;
+      const autres = (op.scenarios || []).filter(x => x.id !== sc.id);
+      if(!autres.length){ dialogueAlerte("Aucun autre scénario sur cette opération.", "Réattribuer"); return; }
+      const html = autres.map(x => `<label class="opt-row" style="cursor:pointer;">
+        <input type="radio" name="reattribCible" value="${x.id}">
+        <span>« <b>${escapeAttr(x.name || x.nom || "sans nom")}</b> » — ${x.baseline ? "production (★)" : (x.statut === "valide" ? "validé" : "essai")}, ${(x.essais || []).length} essai(s)</span></label>`).join("");
+      dialogueConfirmer({ titre: "Réattribuer « " + (es.titre || "essai") + " »", okLabel: "Déplacer",
+        html: `<p class="panel-hint">L'essai voyage entier (${(es.prelevements || []).length} prélèvement(s)). Son origine reste tracée dans l'essai.</p>` + html })
+        .then(ok => {
+          if(!ok) return;
+          const cibleId = (document.querySelector('input[name="reattribCible"]:checked') || {}).value;
+          const cible = autres.find(x => x.id === cibleId);
+          if(!cible) return;
+          backupSnapshot("Réattribution d'essai");
+          if(reattribuerEssai(sc, essaiId, cible)){
+            saveData(); render();
+          }
+        });
+    });
+  });
   root.querySelectorAll(".essai-del").forEach(el => {
     el.addEventListener("click", () => {
       const essaiId = el.getAttribute("data-essai");
@@ -11955,6 +12003,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.83.0", date:"13/10/2026", points:[
+    "<b>Deux outils demandés par le terrain.</b> (1) <b>⇄ Réattribuer</b> — chaque essai a son bouton : il déménage vers un autre scénario du même OP, entier (prélèvements, Marposs, photos), et son origine reste tracée dans l'essai. (2) <b>💰 Simulateur prix</b> (accueil) : les plaquettes utilisées par plusieurs productions se regroupent par article — choisissez une baisse de prix générale et lisez l'économie annuelle en € et en % du budget outillage en production. SIMULATION : rien n'écrit, axe outillage seul."
+  ]},
   { version:"4.82.0", date:"13/10/2026", points:[
     "<b>La saisie des essais n'exige plus ce qu'on ne mesure pas.</b> Les champs Droite/Gauche et Inter/Exter s'affichaient toujours ensembles : un essai qui ne portait que sur un côté obligeait à ignorer l'autre. Désormais chaque groupe a ses <b>pastilles</b> — touche « Droite » seul et le champ Gauche disparaît, pour cet essai, sans toucher la configuration. Et <b>les dates se règlent enfin</b> : le sélecteur démarre à une année utile au lieu de défiler depuis l'an 1."
   ]},
@@ -12489,7 +12540,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.82.0";
+const TOOL_VERSION = "4.83.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -14699,6 +14750,115 @@ function vueCppHTML(){
     <p class="panel-hint" style="margin-top:10px;">Lecture seule : cette vue n'écrit rien. Dépliez une pièce pour ses OP, une OP pour ses outils.</p>`;
 }
 
+/* ═══ v4.83 — LE SIMULATEUR DE BAISSE DE PRIX PLAQUETTES ═══════════════════
+   La demande de Benjamin (13/10) : « comparer des références de plaquettes
+   similaires à plusieurs productions en envisageant une baisse de prix
+   générale et le calcul d'économies annuelles en % global, par rapport aux
+   scénarios en production ». C'est l'argument fournisseur : que vaut -10 %
+   sur une plaquette qui équipe TOUTE l'usine ?
+
+   Règles constitutionnelles : axe OUTILLAGE seul (2 quater — le temps machine
+   n'entre pas) ; seuls les scénarios EN PRODUCTION (baseline) comptent ; une
+   référence sans volume annuel est exclue du calcul mais NOMMÉE (§3.5) ;
+   SIMULATION affiché en toutes lettres — rien n'écrit dans les données. */
+function plaquettesCommunes(){
+  const groupes = {};
+  let totalAnnuel = 0, refsSansVolume = 0;
+  const sansVolume = new Set();
+  lignes.forEach(l => (l.references || []).forEach(r => {
+    const prod = parseFloat(r.productionAnnuelle);
+    const aVolume = !isNaN(prod) && prod > 0;
+    if(!aVolume){ refsSansVolume++; sansVolume.add((l.nom || "?") + " · " + (r.nom || "?")); }
+    (r.ops || []).forEach(o => (o.scenarios || []).forEach(sc => {
+      if(!sc.baseline) return;
+      (sc.outils || []).forEach(ou => (ou.logements || []).forEach(g => {
+        const mabec = String(g.codeArticle || g.mabec || "").trim().toUpperCase();
+        const prix = parseFloat(g.prix), aretes = parseFloat(g.aretes), ddv = parseFloat(g.charniere);
+        if(!mabec || isNaN(prix) || prix <= 0 || !isFinite(aretes) || aretes <= 0 || !isFinite(ddv) || ddv <= 0) return;
+        const coutPiece = prix / (aretes * ddv);
+        const coutAnnuel = aVolume ? coutPiece * prod : 0;
+        totalAnnuel += coutAnnuel;
+        const G = groupes[mabec] = groupes[mabec] || { mabec, usages: [], coutAnnuel: 0 };
+        G.usages.push({ ligne: l.nom, ref: r.nom, op: o.opCode || o.nom || "?", outil: ou.numero || "?",
+                        prix, aretes, ddv, coutPiece, coutAnnuel, aVolume });
+        G.coutAnnuel += coutAnnuel;
+      }));
+    }));
+  }));
+  return { groupes: Object.values(groupes).sort((a, b) => b.coutAnnuel - a.coutAnnuel),
+           totalAnnuel, refsSansVolume, sansVolume: Array.from(sansVolume) };
+}
+
+function simulHTML(){
+  const d = plaquettesCommunes();
+  if(!d.groupes.length) return `<p class="panel-hint">Aucun logement de production avec prix, arêtes et durée de vie chiffrés. Le simulateur se nourrit des scénarios en production (★) des références à volume annuel.</p>`;
+  return `
+    <div class="simul-note">SIMULATION — rien n'écrit dans le suivi. Source : les scénarios en production (★), axe outillage seul, prix ÷ (arêtes × durée de vie) × volume annuel.</div>
+    <div class="simul-controles">
+      <label>Baisse de prix générale <input type="number" id="simulTaux" min="0" max="90" step="0.5" value="10"> %</label>
+      <span>sur les articles cochés</span>
+    </div>
+    <table class="simul-table">
+      <thead><tr><th></th><th>Article (MABEC)</th><th>Usages</th><th>Prix constatés</th><th>Coût / an</th><th>Économie / an</th></tr></thead>
+      <tbody>
+      ${d.groupes.map(g => {
+        const prixMin = Math.min(...g.usages.map(u => u.prix)), prixMax = Math.max(...g.usages.map(u => u.prix));
+        const ec = g.coutAnnuel * (parseFloat(document.getElementById("simulTaux")?.value) || 0) / 100;
+        return `<tr>
+          <td><input type="checkbox" class="simul-inc" data-mabec="${escapeAttr(g.mabec)}" checked></td>
+          <td class="mono">${escapeAttr(g.mabec)}</td>
+          <td>${g.usages.length} · ${escapeAttr([...new Set(g.usages.map(u => u.ligne))].join(", "))}</td>
+          <td class="mono">${fmt(prixMin, 2)}${prixMin !== prixMax ? " – " + fmt(prixMax, 2) : ""} €</td>
+          <td class="mono">${fmtEuroCourt(Math.round(g.coutAnnuel))}</td>
+          <td class="mono simul-ec" data-cout="${g.coutAnnuel}">—</td>
+        </tr>`;
+      }).join("")}
+      </tbody>
+      <tfoot><tr><td colspan="4">Total outillage annuel en production</td><td class="mono">${fmtEuroCourt(Math.round(d.totalAnnuel))}</td><td class="mono" id="simulTotal">—</td></tr></tfoot>
+    </table>
+    ${d.refsWithoutVolumeNote || ""}
+    ${d.refsSansVolume ? `<p class="panel-hint">⚠ ${d.refsSansVolume} référence(s) sans volume annuel — hors calcul : ${d.sansVolume.map(x => escapeAttr(x)).join(" · ")}</p>` : ""}
+    <div class="simul-resultat" id="simulResultat"></div>`;
+}
+
+function simulRecalcul(){
+  const taux = (parseFloat(document.getElementById("simulTaux")?.value) || 0) / 100;
+  const d = plaquettesCommunes();
+  let inclu = 0;
+  const cbs = Array.from(document.querySelectorAll(".simul-inc"));
+  const tds = Array.from(document.querySelectorAll(".simul-ec"));
+  d.groupes.forEach((g, i) => {
+    const actif = cbs[i] && cbs[i].checked;
+    const ec = actif ? g.coutAnnuel * taux : 0;
+    inclu += ec;
+    if(tds[i]) tds[i].textContent = ec ? "− " + fmtEuroCourt(Math.round(ec)) : "—";
+  });
+  const total = document.getElementById("simulTotal");
+  if(total) total.textContent = inclu ? "− " + fmtEuroCourt(Math.round(inclu)) : "—";
+  const res = document.getElementById("simulResultat");
+  if(res){
+    const pct = d.totalAnnuel ? (inclu / d.totalAnnuel) * 100 : 0;
+    res.innerHTML = inclu
+      ? `Économie annuelle simulée : <b>${fmtEuroCourt(Math.round(inclu))} / an</b> — <b>${fmt(pct, 1)} %</b> du budget outillage en production (${fmtEuroCourt(Math.round(d.totalAnnuel))}).`
+      : `Cochez des articles et choisissez un taux : l'économie se calcule sur le budget outillage des scénarios en production.`;
+  }
+}
+
+function renderSimul(){
+  const wrap = document.getElementById("simulPanel");
+  if(!wrap) return;
+  wrap.innerHTML = `<h3>Simulateur — baisse de prix plaquettes</h3>` + simulHTML();
+  const taux = document.getElementById("simulTaux");
+  if(taux) taux.addEventListener("input", simulRecalcul);
+  wrap.querySelectorAll(".simul-inc").forEach(cb => cb.addEventListener("change", simulRecalcul));
+  simulRecalcul();
+}
+function ouvrirSimul(){
+  fermerPanneaux();
+  ouvrirPanneau("simulPanel");
+  renderSimul();
+}
+
 function renderVueCpp(){
   const wrap = document.getElementById("vueCppPanel");
   if(!wrap) return;
@@ -14722,6 +14882,7 @@ function accueilPiedHTML(){
       <button class="ghost small" id="pfExport" title="Enregistre un fichier .json à archiver ou à envoyer">Exporter</button>
       <button class="ghost small" id="pfHisto" title="Les sauvegardes automatiques précédentes">Historique</button>
       <button class="primary small" id="pfVueCpp" title="Le CPP obtenu vs la référence Matis, décomposé OP par OP, outil par outil, logement par logement">🔍 Vue CPP</button>
+      <button class="primary small" id="pfSimul" title="Que vaut une baisse de prix sur les plaquettes utilisées par plusieurs productions ? Économie annuelle € et % — SIMULATION, rien n'écrit">💰 Simulateur prix</button>
     </div>
   </div>`;
 }
@@ -14808,6 +14969,8 @@ function renderAccueil(){
   const cHisto = document.getElementById("pfHisto");
   if(cHisto) cHisto.addEventListener("click", () => { const b = document.getElementById("historyBtn"); if(b) b.click(); });
   /* v4.78 — la vue CPP : la porte depuis l'accueil, là où la hiérarchie regarde */
+  const cSimul = document.getElementById("pfSimul");
+  if(cSimul) cSimul.addEventListener("click", ouvrirSimul);
   const cCpp = document.getElementById("pfVueCpp");
   if(cCpp) cCpp.addEventListener("click", ouvrirVueCpp);
   /* la tuile hors périmètre déplie sa liste — le geste de Q12, pas la porte carte */
@@ -16249,6 +16412,8 @@ const PROMESSES_UI = [
   { porte:"📦 Nouvelle livraison (carte atelier)", fns:["creerLivraison", "dialogueDemander"] },
   { porte:"🖨 d'une livraison (dossier hiérarchie)", fns:["livraisonImpressionHTML"] },
   { porte:"🔍 Vue CPP (accueil et fiche poste)", fns:["ouvrirVueCpp", "renderVueCpp"] },
+  { porte:"💰 Simulateur prix (accueil)", fns:["ouvrirSimul", "renderSimul", "plaquettesCommunes", "simulHTML", "simulRecalcul"] },
+  { porte:"⇄ Réattribuer un essai", fns:["reattribuerEssai"] },
   { porte:"Carte atelier (barre, accueil, fiche)", fns:["ouvrirCarte", "renderCarte", "scenariosPostes", "renderFichePoste", "ouvrirPosteDepuisFiche"] },
   { porte:"Accueil (barre)", fns:["ouvrirAccueil"] },
   { porte:"Tableau de bord (barre)", fns:["renderDashboard"] },
@@ -17787,6 +17952,55 @@ function runTests(){
        ["D", 0]);
     ok("saisie v4.82 : la donnée ne change pas de forme — un côté caché est un champ absent, pas un zéro",
        axesActifs(["D","G"], {D:false,G:false}).length, 0);
+
+    /* ---- v4.83.0 — RÉATTRIBUER UN ESSAI + SIMULATEUR PRIX PLAQUETTES ---------- */
+    {
+      /* la réattribution : l'essai voyage entier, l'origine reste tracée, et les
+         cas invalides (même scénario, essai absent) ne touchent rien. */
+      const scA2 = normalizeScenario({ id: "scR1", name: "Process actuel", essais: [
+        { id: "eR1", titre: "Essai 1", prelevements: [ { id: "pR1", piece: 1, batt: 0.013 } ] } ] });
+      const scB2 = normalizeScenario({ id: "scR2", name: "Classeur Matis", baseline: true, outils: [
+        { id: "tR1", numero: "T6407", logements: [ { id: "gR1", nom: "D1", codeArticle: "Z000 513 527", prix: 9.56, aretes: 8, charniere: 50 } ] } ] });
+      const resR = reattribuerEssai(scA2, "eR1", scB2);
+      ok("réattribution : l'essai change de scénario — entier (prélèvements compris)",
+         [resR !== null, scA2.essais.length, scB2.essais.length, (resR.prelevements || []).length],
+         [true, 0, 1, 1]);
+      ok("réattribution : l'origine reste tracée dans l'essai (§3.5 — l'histoire se lit)",
+         (resR.scenarioOrigine || "").includes("Process actuel"), true);
+      ok("réattribution : même scénario cible = refusé, essai absent = refusé, rien ne bouge",
+         [reattribuerEssai(scA2, "eR1", scA2) === null,
+          reattribuerEssai(scA2, "inconnu", scB2) === null,
+          scA2.essais.length, scB2.essais.length],
+         [true, true, 0, 1]);
+    }
+    {
+      /* le simulateur : agrégation par MABEC depuis les baselines de production,
+         volume obligatoire pour peser (sinon déclaré hors calcul), axe outillage seul. */
+      const mkLog = (id, ca, prix, ar, ddv) => ({ id, nom: "D1", ref: "ISO " + id, codeArticle: ca, mabec: ca, prix, aretes: ar, charniere: ddv });
+      const lVol = normalizeLigne({ id: "lS1", nom: "EMAG 1", references: [ normalizeReference({ id: "rS1", nom: "356x26", productionAnnuelle: 10000, ops: [
+        normalizeOp({ id: "oS1", nom: "OP10", scenarios: [ normalizeScenario({ id: "scS1", name: "Prod", baseline: true, outils: [
+          { id: "tS1", numero: "T517", logements: [ mkLog("gS1", "IM02 137 021", 7.96, 8, 150), mkLog("gS2", "Z000 513 527", 9.56, 8, 50) ] } ] }) ] }) ] }) ] });
+      const lVol2 = normalizeLigne({ id: "lS2", nom: "HESSAPP", references: [ normalizeReference({ id: "rS2", nom: "302x26", productionAnnuelle: 5000, ops: [
+        normalizeOp({ id: "oS2", nom: "OP40", scenarios: [ normalizeScenario({ id: "scS2", name: "Prod", baseline: true, outils: [
+          { id: "tS2", numero: "T5", logements: [ mkLog("gS3", "IM02 137 021", 7.96, 8, 150) ] } ] }) ] }) ] }) ] });
+      const lSans = normalizeLigne({ id: "lS3", nom: "EMAG 2", references: [ normalizeReference({ id: "rS3", nom: "330x14", productionAnnuelle: "", ops: [
+        normalizeOp({ id: "oS3", nom: "OP10", scenarios: [ normalizeScenario({ id: "scS3", name: "Prod", baseline: true, outils: [
+          { id: "tS3", numero: "T519", logements: [ mkLog("gS4", "IM02 137 021", 7.96, 8, 150) ] } ] }) ] }) ] }) ] });
+      const lAvS = lignes; lignes = [ lVol, lVol2, lSans ];
+      try {
+        const d = plaquettesCommunes();
+        const g = d.groupes.find(x => x.mabec === "IM02 137 021");
+        ok("simulateur : les plaquettes communes se regroupent par MABEC à travers les lignes (3 usages : les 2 volumes + la réf sans volume, coût nul mais présence réelle)",
+           [d.groupes.length, g.usages.length], [2, 3]);
+        ok("simulateur : le coût annuel d'un usage = prix ÷ (arêtes × DDV) × volume — le même calcul partout",
+           Math.abs(g.coutAnnuel - (7.96 / (8 * 150)) * (10000 + 5000)) < 1e-9, true);
+        ok("simulateur : la référence sans volume est HORS calcul mais NOMMÉE (§3.5 — jamais un zéro silencieux)",
+           [d.refsSansVolume, d.sansVolume[0], Math.abs(d.totalAnnuel - (9.56 / (8 * 50)) * 10000 - g.coutAnnuel) < 1e-9],
+           [1, "EMAG 2 · 330x14", true]);
+        ok("simulateur : le deuxième MABEC pèse de son propre coût (un seul usage, un seul volume)",
+           Math.abs(d.groupes.find(x => x.mabec === "Z000 513 527").coutAnnuel - (9.56 / (8 * 50)) * 10000) < 1e-9, true);
+      } finally { lignes = lAvS; }
+    }
     }
 
     /* ---- v4.74.1 — l'inversion ISO / MABEC : détectée, permutée, JAMAIS sur les sains ----

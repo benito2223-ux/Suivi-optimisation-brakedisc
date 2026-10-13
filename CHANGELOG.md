@@ -5,6 +5,38 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.83.0] — 2026-10-13 · Tour 66
+
+**Deux outils demandés par le terrain.** (1) la réattribution d'essai — révélée
+par la v5 : l'essai PCI 5 du matin était né sur la coquille « Process actuel »
+et l'outil ne savait pas le déplacer ; (2) le simulateur de baisse de prix —
+« comparer des références de plaquettes similaires à plusieurs productions en
+envisageant une baisse de prix générale et le calcul d'économies annuelles ».
+
+### Ajouté
+- **⇄ Réattribuer** — bouton sur chaque essai : déplacement vers un autre
+  scénario du **même OP**, l'essai voyage **entier** (prélèvements, Marposs,
+  photos, but, observations) ; `scenarioOrigine` trace le déplacement (§3.5) ;
+  backup avant l'acte (« ↺ Restaurer » couvre) ; cas invalides refusés
+  (même scénario, essai absent) ; `reattribuerEssai()` pure et exportée ;
+- **💰 Simulateur prix** (pied de l'accueil) : `plaquettesCommunes()` agrège
+  les logements des scénarios **en production (★)** par **article (MABEC)** à
+  travers toutes les lignes ; baisse de prix générale en % ; économie annuelle
+  par article et **% global du budget outillage en production** ;
+  SIMULATION en toutes lettres, rien n'écrit ; axe outillage seul (2 quater) ;
+  les références **sans volume annuel sont hors calcul mais nommées** (§3.5) ;
+- portes de clic : simulateur + réattribution.
+
+### Vérification
+- 502 → **515 tests** ; sur les données réelles v5 : budget outillage en
+  production **115 469 €/an**, Z000 513 527 = 37 716 €/an sur 26 usages et
+  **6 machines** ; 9 références sans volume nommées ;
+- contre-regard **deux fautes, deux portes** (assert) : réattribution qui
+  copie au lieu de déplacer → 2 tests tombent ; simulateur comptant les
+  volumes vides → 1 test tombe ; restauration par copie, empreinte identique ;
+- un test avait eu tord avant la fonction (3 usages attendus à 2 : la réf
+  sans volume est un usage à coût nul, présence réelle) — corrigé côté test.
+
 ## [4.82.0] — 2026-10-13 · Tour 65
 
 **La saisie des essais n'exige plus ce qu'on ne mesure pas.** Retours d'usage
