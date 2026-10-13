@@ -12003,6 +12003,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.83.1", date:"13/10/2026", points:[
+    "<b>Le simulateur parle le métier.</b> Chaque article affiche désormais le <b>libellé de la plaquette</b> (la désignation ISO) en plus du code MABEC — et sous le tableau, le <b>budget outillage annuel par référence</b> : combien coûte chaque disque en plaquettes par an, en € et en % du budget."
+  ]},
   { version:"4.83.0", date:"13/10/2026", points:[
     "<b>Deux outils demandés par le terrain.</b> (1) <b>⇄ Réattribuer</b> — chaque essai a son bouton : il déménage vers un autre scénario du même OP, entier (prélèvements, Marposs, photos), et son origine reste tracée dans l'essai. (2) <b>💰 Simulateur prix</b> (accueil) : les plaquettes utilisées par plusieurs productions se regroupent par article — choisissez une baisse de prix générale et lisez l'économie annuelle en € et en % du budget outillage en production. SIMULATION : rien n'écrit, axe outillage seul."
   ]},
@@ -12540,7 +12543,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.83.0";
+const TOOL_VERSION = "4.83.1";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -14763,12 +14766,14 @@ function vueCppHTML(){
    SIMULATION affiché en toutes lettres — rien n'écrit dans les données. */
 function plaquettesCommunes(){
   const groupes = {};
+  const parRef = {};   /* v4.83.1 — cle = l'ID de la ref : « 268x12 » existe sur PCI 4 ET PCI 5, le nom ne suffit pas */
   let totalAnnuel = 0, refsSansVolume = 0;
   const sansVolume = new Set();
   lignes.forEach(l => (l.references || []).forEach(r => {
     const prod = parseFloat(r.productionAnnuelle);
     const aVolume = !isNaN(prod) && prod > 0;
     if(!aVolume){ refsSansVolume++; sansVolume.add((l.nom || "?") + " · " + (r.nom || "?")); }
+    const PR = parRef[r.id] = parRef[r.id] || { ligne: l.nom, ref: r.nom, prod: aVolume ? prod : 0, coutAnnuel: 0 };
     (r.ops || []).forEach(o => (o.scenarios || []).forEach(sc => {
       if(!sc.baseline) return;
       (sc.outils || []).forEach(ou => (ou.logements || []).forEach(g => {
@@ -14778,14 +14783,18 @@ function plaquettesCommunes(){
         const coutPiece = prix / (aretes * ddv);
         const coutAnnuel = aVolume ? coutPiece * prod : 0;
         totalAnnuel += coutAnnuel;
-        const G = groupes[mabec] = groupes[mabec] || { mabec, usages: [], coutAnnuel: 0 };
+        PR.coutAnnuel += coutAnnuel;
+        const G = groupes[mabec] = groupes[mabec] || { mabec, usages: [], isos: new Set(), coutAnnuel: 0 };
+        const iso = String(g.ref || "").trim();
+        if(iso) G.isos.add(iso);
         G.usages.push({ ligne: l.nom, ref: r.nom, op: o.opCode || o.nom || "?", outil: ou.numero || "?",
-                        prix, aretes, ddv, coutPiece, coutAnnuel, aVolume });
+                        iso, prix, aretes, ddv, coutPiece, coutAnnuel, aVolume });
         G.coutAnnuel += coutAnnuel;
       }));
     }));
   }));
   return { groupes: Object.values(groupes).sort((a, b) => b.coutAnnuel - a.coutAnnuel),
+           parReference: Object.values(parRef).filter(x => x.coutAnnuel > 0).sort((a, b) => b.coutAnnuel - a.coutAnnuel),
            totalAnnuel, refsSansVolume, sansVolume: Array.from(sansVolume) };
 }
 
@@ -14806,7 +14815,7 @@ function simulHTML(){
         const ec = g.coutAnnuel * (parseFloat(document.getElementById("simulTaux")?.value) || 0) / 100;
         return `<tr>
           <td><input type="checkbox" class="simul-inc" data-mabec="${escapeAttr(g.mabec)}" checked></td>
-          <td class="mono">${escapeAttr(g.mabec)}</td>
+          <td class="mono">${escapeAttr(g.mabec)}${g.isos.size ? `<br><span style="font-size:11.5px; color:#888;">${[...g.isos].map(x => escapeAttr(x)).join("<br>")}</span>` : ""}</td>
           <td>${g.usages.length} · ${escapeAttr([...new Set(g.usages.map(u => u.ligne))].join(", "))}</td>
           <td class="mono">${fmt(prixMin, 2)}${prixMin !== prixMax ? " – " + fmt(prixMax, 2) : ""} €</td>
           <td class="mono">${fmtEuroCourt(Math.round(g.coutAnnuel))}</td>
@@ -14817,6 +14826,18 @@ function simulHTML(){
       <tfoot><tr><td colspan="4">Total outillage annuel en production</td><td class="mono">${fmtEuroCourt(Math.round(d.totalAnnuel))}</td><td class="mono" id="simulTotal">—</td></tr></tfoot>
     </table>
     ${d.refsWithoutVolumeNote || ""}
+    ${d.parReference.length ? `
+    <h4 style="margin:22px 0 8px; font-size:14px;">Budget outillage annuel par référence</h4>
+    <table class="simul-table">
+      <thead><tr><th>Ligne</th><th>Référence</th><th>Volume annuel</th><th>Coût / an</th><th>% du budget</th></tr></thead>
+      <tbody>${d.parReference.map(x => `<tr>
+        <td>${escapeAttr(x.ligne)}</td>
+        <td>${escapeAttr(x.ref)}</td>
+        <td class="mono">${fmt(x.prod, 0)}</td>
+        <td class="mono">${fmtEuroCourt(Math.round(x.coutAnnuel))}</td>
+        <td class="mono">${d.totalAnnuel ? fmt(x.coutAnnuel / d.totalAnnuel * 100, 1) : "—"} %</td>
+      </tr>`).join("")}</tbody>
+    </table>` : ""}
     ${d.refsSansVolume ? `<p class="panel-hint">⚠ ${d.refsSansVolume} référence(s) sans volume annuel — hors calcul : ${d.sansVolume.map(x => escapeAttr(x)).join(" · ")}</p>` : ""}
     <div class="simul-resultat" id="simulResultat"></div>`;
 }
@@ -17999,6 +18020,23 @@ function runTests(){
            [1, "EMAG 2 · 330x14", true]);
         ok("simulateur : le deuxième MABEC pèse de son propre coût (un seul usage, un seul volume)",
            Math.abs(d.groupes.find(x => x.mabec === "Z000 513 527").coutAnnuel - (9.56 / (8 * 50)) * 10000) < 1e-9, true);
+        ok("simulateur : le groupe porte les libellés ISO de la plaquette, pas le MABEC seul (3 usages = 3 ISO, même pour la réf sans volume : présence réelle, coût nul)",
+           [...g.isos].sort().join("|"), ["ISO gS1", "ISO gS3", "ISO gS4"].sort().join("|"));
+        ok("simulateur : budget annuel par référence — chaque référence pèse le volume de SA production",
+           [d.parReference.length,
+            Math.abs(d.parReference[0].coutAnnuel - ((7.96 / (8 * 150)) * 10000 + (9.56 / (8 * 50)) * 10000)) < 1e-9,
+            Math.abs(d.parReference[1].coutAnnuel - (7.96 / (8 * 150)) * 5000) < 1e-9],
+           [2, true, true]);
+        /* la clé de regroupement par référence est l'ID : « 268x12 » existe sur
+           PCI 4 ET PCI 5 — regrouper par nom fusionnerait deux machines. */
+        const lHom = normalizeLigne({ id: "lS4", nom: "PCI 4", references: [ normalizeReference({ id: "rS4", nom: "330x14", productionAnnuelle: 2000, ops: [
+          normalizeOp({ id: "oS4", nom: "OP10", scenarios: [ normalizeScenario({ id: "scS4", name: "Prod", baseline: true, outils: [
+            { id: "tS4", numero: "T529", logements: [ mkLog("gS5", "IM02 137 021", 7.96, 8, 150) ] } ] }) ] }) ] }) ] });
+        lignes.push(lHom);
+        const d2 = plaquettesCommunes();
+        lignes.pop();
+        ok("simulateur : deux références de MÊME NOM (deux lignes) restent deux lignes du budget — la clé est l'ID",
+           d2.parReference.length, 3);
       } finally { lignes = lAvS; }
     }
     }

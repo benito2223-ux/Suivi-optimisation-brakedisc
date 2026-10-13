@@ -5,6 +5,31 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.83.1] — 2026-10-13 · Tour 66 bis
+
+**Le simulateur parle le métier.** Demandé par Benjamin dans la foulée de la
+4.83.0 : le libellé de la plaquette, et le montant annuel par référence.
+
+### Ajouté
+- chaque article du simulateur affiche ses **libellés ISO** (la désignation
+  plaquette) sous le code MABEC — un MABEC peut porter plusieurs ISO selon les
+  références (constitution 2 ter), ils sont tous listés ;
+- **budget outillage annuel par référence** : chaque disque (ligne × référence)
+  avec son volume, son €/an et son % du budget — trié par poids.
+
+### Détail qui compte
+- la clé de regroupement par référence est **l'ID**, pas le nom : « 268x12 »
+  existe sur PCI 4 ET PCI 5 — regrouper par nom aurait mis le coût des deux
+  machines sous une seule ligne. Porte de test dédiée ;
+
+### Vérification
+- 515 → **518 tests** ;
+- contre-regard : clé par nom ré-injectée → **vue** (l'entrée 330x14 rend
+  « PCI 4 : null, EMAG 2 : présent » au lieu de l'inverse) → restaurée par
+  copie, empreinte identique ;
+- deux attentes de tests corrigées AVANT le vert (les réfs sans volume sont
+  des usages réels à coût nul : 3 ISO, pas 2) — la leçon Tour 54, encore.
+
 ## [4.83.0] — 2026-10-13 · Tour 66
 
 **Deux outils demandés par le terrain.** (1) la réattribution d'essai — révélée

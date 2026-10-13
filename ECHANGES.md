@@ -199,6 +199,30 @@ l'histoire reste lisible) ; (2) les **deux coquilles « Process actuel » de PCI
 l'essai DANS la baseline, bandeau muet, 502 tests verts. Benjamin importe v5
 (« Remplacer tout ») — Matis pareil.
 
+### ▸ Tour 66 bis — 13/10/2026 nuit — **Z Code** (v4.83.1 — le simulateur parle le métier)
+
+**La commande.** Benjamin, dans la foulée : « je veux aussi le libellé de la
+plaquette pas le mabec uniquement et avoir le montant total annuel par
+reference en euros ».
+
+**Livré.** (1) Chaque article du simulateur affiche ses **libellés ISO** —
+un MABEC peut porter plusieurs désignations selon les références (2 ter),
+toutes listées. (2) **Budget outillage annuel par référence** : ligne,
+référence, volume, €/an, % du budget, trié par poids. (3) Le détail qui a
+failli mordre : la clé de regroupement par référence est **l'ID** — « 268x12 »
+existe sur PCI 4 ET PCI 5, la clé par nom aurait mis le coût des deux machines
+sous une seule ligne (attribution mentie : ligne et volume de la première).
+
+**La porte qui a appris deux fois.** Premier test : comptait les entrées —
+aveugle à la faute (la jumelle sans volume était filtrée de toute façon).
+Réécrit avec deux jumelles **volumées** (comme les vrais 268x12) : a rejeté le
+code propre (mon attendu comptait la réf filtrée). Corrigé : l'assertion porte
+sur **l'attribution** (PCI 4 : volume 2000 ; EMAG 2 : absente). Faute
+ré-injectée → **vue** (`PCI 4: null, EMAG 2: présent`) → restauration par
+copie, empreinte `d90a2d4a…` identique, 502 → **518 tests**.
+
+**Prochain tour** : la phrase prod, la revue d'Hermes, le chantier UI.
+
 ## Questions ouvertes à Z Code
 
 **Q1 — l'accès au dépôt.** Peux-tu écrire et commiter directement dans

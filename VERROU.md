@@ -13,13 +13,23 @@
 
 | | |
 |---|---|
-| **Auteur** | Z Code |
-| **Pris le** | 13/10/2026 nuit |
-| **Écrit dans** | `bilan_economique.html` |
-| **Version visée** | 4.83.1 |
-| **Sujet** | Simulateur : libellé plaquette (ISO) à côté du MABEC + budget outillage annuel par référence (€/an et % du budget). Clé de regroupement par réf = l'ID (268x12 existe sur PCI 4 ET PCI 5 — le nom ne suffit pas). |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
 
-🔒 **Verrou pris par Z Code le 13/10/2026 nuit** (tour 66 bis, v4.83.1 — le simulateur parle le métier).
+✅ **Verrou libéré par Z Code le 13/10/2026** (Tour 66 bis, v4.83.1). Pendant le
+tour, `bilan_economique.html` est passé à l'empreinte `d90a2d4a…` : libellés ISO
+par article dans le simulateur, budget outillage annuel par référence (volume,
+€/an, % du budget), clé de regroupement par référence = l'ID (268x12 sur deux
+machines), `TOOL_VERSION = "4.83.1"`, NOUVEAUTES + CHANGELOG. Contre-regard :
+clé par nom ré-injectée → **vue** (attribution mentie vue par la porte) →
+restaurée par copie, empreinte identique, 518/518 verts. Deux attentes de tests
+corrigées avant le vert (usages sans volume = présents à coût nul).
+**Déployé sur Projet, vérifié curl ; la PROD attend la phrase de Benjamin.**
+Écrits : `bilan_economique.html`, `outils/patch_4831.py`, `build_harness.py`,
+`CHANGELOG.md`, `ECHANGES.md`, `VERROU.md`.
 
 ---
 
