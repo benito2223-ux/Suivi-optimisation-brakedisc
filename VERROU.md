@@ -13,11 +13,15 @@
 
 | | |
 |---|---|
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | Z Code |
+| **Pris le** | 13/10/2026 nuit (2) |
+| **Écrit dans** | `bilan_economique.html` |
+| **Version visée** | 4.84.0 |
+| **Sujet** | Simulateur : export Excel (CSV-FR, BOM + sep=; — zéro SDK) + plein écran (CSS maxi + Fullscreen API). L'accueil : avis rendu (export à dessiner au prochain tour, §3.4). |
+
+🔒 **Verrou pris par Z Code le 13/10/2026 nuit (2)** (tour 67, v4.84.0 — export + plein écran du simulateur).
+
+---
 
 ✅ **Verrou libéré par Z Code le 13/10/2026** (Tour 66 bis, v4.83.1). Pendant le
 tour, `bilan_economique.html` est passé à l'empreinte `d90a2d4a…` : libellés ISO
