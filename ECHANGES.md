@@ -49,6 +49,7 @@
 | Date | Acte | Où | Vérifié |
 |---|---|---|---|
 | 12/10 ~20:15 | **Fichier d'état fusionné préparé pour Benjamin (aucun déploiement)** — `ETAT_FUSION_PROPRE_2026-10-12.json` au racine du repo. Contexte : Benjamin voit Matis le 13/10 ; ses deux origines (prod 18:56, projet 18:41) contiennent les **4 mêmes essais** (e1, eskw8m14tcw, e2f86m77put4, ekl4bllbc97), zéro exclusif de part et d'autre — la lignée prod est la meilleure (réparations d'octobre appliquées, sans les copies contaminées EMAG 3/OP30 encore présentes dans l'état projet, où la panne signalée par Benjamin vit en clair). Fusion : base = IMPORT_MATIS.json (outils propres, MABEC sur codeArticle — 185 logements corrigés, name/opCode posés — 44+44) ; greffe = tout ce qui vient de l'atelier dans l'état prod (7 entrées d'essai dans leurs scénarios historiques avec plans, projet « Cout et qualité Emag 1 », responsable Matis, 14 configs OP réelles, saisie atelier productionAnnuelle/cibleCPP qui PRIME — 7 divergences avec le classeur listées pour l'audit, aucune tranchée). La couche générée sale (sc-x « Prod actuelle (base excel) » aux logements « Plaquette ») est remplacée par la couche générée propre, sauf DP 290x12 sans contrepartie (gardée telle quelle, signalée). | local uniquement | ✅ harnais : 500 tests \| 0 échec + smoke par `normalizeLigne` (la vraie fonction) : 10 lignes acceptées, T517 EMAG1/356x26/OP10 baseline « Classeur Matis 6781.0 » = D2 IM02 209 560 38 €/4ar + D1 IM02 198 054 38 €/8ar, 47 OP à exactement 1 baseline, 7 entrées d'essai / 4 ids, 0 scénario sans nom. **L'import chez Benjamin reste son geste** (« Remplacer tout »), ses deux exports restent le filet (Z Code) |
+| 13/10 ~15:00 | **PROD 4.81.2** — le bandeau apprend le modèle v3, ordre explicite de Benjamin : « déploie la 4.81.2 en prod » (demandé depuis la session Matis — la PWA de Matis vit sur l'origine prod). | suivi-optimisation-septfons.surge.sh | ✅ 499 tests \| 0 échecs relancés avant l'acte ; curl HTTP 200, **1 426 028 o**, `TOOL_VERSION = "4.81.2"`, SW 200 ; empreinte **identique octet pour octet** au local (`37e72ddb…`) ; Projet re-vérifié 4.81.2 inchangé (Z Code, Tour 64) |
 | 12/10 ~22:00 | **PROD 4.81.1** — la porte de l'import en prod, ordre de Benjamin : « deploie en prod et prepare un message pour qu'hermes repasse tout ». Sans ce déploiement, l'import du fichier fusionné chez Matis (13/10) serait mort en silence comme celui de la veille. | suivi-optimisation-septfons.surge.sh | ✅ 501 tests \| 0 échecs relancés avant l'acte ; curl HTTP 200, **1 425 878 o**, `TOOL_VERSION = "4.81.1"`, SW 200 ; fichier publié **identique octet pour octet** au local (`77340221…`) ; Projet re-vérifié 4.81.1 inchangé (Z Code, Tour 62) |
 | 12/10 ~soir | **PROD 4.81.0** — le patch egress passe en prod, ordre de Benjamin : « deploie 4.81 en prod ». Contexte : Benjamin voit Matis demain ; le laptop de Matis vit sur l'origine prod, et dès la restauration du quota Supabase une 4.80 encore ouverte y reprendrait le pull aveugle (~3,43 Mo/90 s) et recreuserait le quota. Avec la 4.81, la synchro de routine ne lit plus que le tampon horaire. | suivi-optimisation-septfons.surge.sh | ✅ 500 tests \| 0 échecs relancés **avant** déploiement ; curl HTTP 200, **1 404 978 o**, `TOOL_VERSION = "4.81.0"`, SW 200 ; fichier publié **identique octet pour octet** au local (`20212862…` md5 local = md5 prod) ; pas le « Success! » de surge (règle du Tour 12). Projet re-vérifié inchangé : 4.81.0 (Z Code) |
 | 12/10 ~10:40 | **Projet 4.81.0** — le pull aveugle est remplacé par le tampon léger (Tour 61), ordre de Benjamin : « on attend la réinitialisation et remplace le pull aveugle ». La prod reste en 4.80.0 et ne bougera que sur sa phrase. | suivi-optimisation-projet.surge.sh | ✅ 500 tests \| 0 échecs (497 + 3 portes cloud), contre-regard protocole (règle cassée → 1 test la voit → restauration par copie, empreinte identique) **avant** déploiement ; curl HTTP 200, **1 404 978 o**, `TOOL_VERSION = "4.81.0"`, `cloudLireTampon` présente (9 occurrences), `select=modifie_le,modifie_par` en ligne, fichier publié **identique octet pour octet** au local (`c13417e9…`) ; **prod re-vérifiée : 4.80.0 inchangée** (Z Code, Tour 61) |
@@ -184,6 +185,51 @@ transporte un fichier ? Concrètement :
 ---
 
 ## Journal des tours
+
+### ▸ Tour 64 — 13/10/2026 — **Z Code** (les lignes PCI 4/5 entrent dans l'outil — v4, rev 430)
+
+**La commande.** Benjamin, depuis chez Matis : le classeur PCI (25-09 → 02-10) en
+pièce jointe, « peux tu me créer l'implémentation de ces données malgré le fait
+que nous ayons déjà fait des essais sur cette ligne aujourd'hui », « mets tout ça
+au propre », et l'ordre explicite : « déploie la 4.81.2 en prod ». Précision
+métier au passage : **PCI 1 et 2 n'existent pas — il n'y a que PCI 4 et PCI 5**
+(les deux lignes vides de l'outil étaient donc les bonnes, mal nommées nulle part).
+
+**Ce que dit le classeur.** Cinq feuilles « Coût pièce » : PCI 4 porte 302x26 RPI
+(production vide — jamais travaillée), 283x26 (2 026), 268x12 (9 333) ; PCI 5
+porte 304x28 RPE (2 311) et 268x12 (6 157). Les cibles CPP viennent de la feuille
+« Evolution coût pièce » : 0,319 / 0,329 / 0,216 / 0,338 / 0,216. Même format
+d'outils que le classeur EMAG — avec deux nouveautés : des correcteurs à **code T**
+(« T6103 T0303/T0313 », le « T » nu de « T6304 T » est du bruit) et des
+porte-outils à **deux articles** (T6304 = EMBOUT D13,3 + Plaquette chanfrein → un
+outil, deux logements). Prix/arêtes/DDV vérifiés contre la formule du classeur
+lui-même (CPP = prix ÷ (arêtes × DDV), contrôlé à la génération).
+
+**L'essai du jour, preserved.** L'export de Matis (rev 426) contenait l'essai
+`ezqov5i85jes` — PCI 5 / DV 304x28 RPE / OP40, créé **aujourd'hui** avec lui :
+6 prélèvements, battement 0,0133 mm. v4 est bâtie **depuis son export** (le plus
+récent : v3 + le travail du jour), pas depuis la mienne. Ses deux scénarios
+« Process actuel » sont conservés tels quels ; celui de l'OP40, coquille vide qui
+portait la baseline, est **dégravé au profit du « Classeur Matis »** (la règle v1 :
+le classeur est la référence de production) — l'essai reste attaché, octet pour
+octet, et le fait est déclaré ici (§3.2), pas fait en silence.
+
+**Livré.** `generer_import_pci.py` (les règles, écrites une fois) →
+`IMPORT_PCI.json` (local, jamais commité, le classeur ne quitte pas la machine) →
+**`ETAT_FUSION_PROPRE_v4_2026-10-13.json` (rev 430)** : 10 lignes, **18 références,
+67 OP, 67 baselines** (une exacte par OP), 6 entrées d'essai / 5 ids, zéro
+regroupement réel, **bandeau muet**. Vérifié par les fonctions réelles
+(`preparerImportDepuis` + `normalizeLigne`), 499 tests verts. Benjamin et Matis
+importent tous les deux v4 avec « Remplacer tout » — leurs machines convergent.
+
+**À faire dire par Matis** : le « Production 2026 » de la feuille 283 — une
+production de 2 026 pièces ou l'année écrite par erreur ? Le chiffre est posé tel
+quel, la divergence est tracée pour l'audit.
+
+**Prochain tour** : import v4 des deux machines, retour d'Hermes (la revue
+globale l'attend avec les preuves), et le chantier UI.
+
+
 
 ### ▸ Tour 63 — 13/10/2026 — **Z Code** (v4.81.2 — le bandeau apprend le modèle v3)
 
