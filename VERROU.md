@@ -13,11 +13,15 @@
 
 | | |
 |---|---|
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | Z Code |
+| **Pris le** | 13/10/2026 nuit (3) |
+| **Écrit dans** | `bilan_economique.html` |
+| **Version visée** | 4.85.0 |
+| **Sujet** | LE CATALOGUE PLAQUETTES (décisions Benjamin : un MABEC = un prix, 209 560 = 38 € ; CSV standalone ; DDV d'essai seulement après validation opérateur) : socle persistant dans le suivi, seed depuis l'outil, propagation avec rapport, export/import CSV standalone. La vitrine (Plan de conversion KY3500→LKT640 @5 €) et les suggestions : tour suivant. |
+
+🔒 **Verrou pris par Z Code le 13/10/2026 nuit (3)** (tour 68, v4.85.0 — le catalogue plaquettes).
+
+---
 
 ✅ **Verrou libéré par Z Code le 13/10/2026** (Tour 67, v4.84.0). Pendant le
 tour, `bilan_economique.html` est passé à l'empreinte `55f32d76…` :
