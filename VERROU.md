@@ -13,11 +13,15 @@
 
 | | |
 |---|---|
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | Z Code |
+| **Pris le** | 13/10/2026 après-midi |
+| **Écrit dans** | `bilan_economique.html` |
+| **Version visée** | 4.82.0 |
+| **Sujet** | Retours d'usage saisie atelier : (1) dates d'essai — sélecteur qui démarre à l'an 1 → min/max sur tous les champs date ; (2) saisie D/G + Inter/Exter imposée en 4 champs → pastilles de côté PAR ESSAI au moment de la saisie (état de session, config du scénario intacte). Ordre : « Bug de l'outil ». |
+
+🔒 **Verrou pris par Z Code le 13/10/2026 après-midi** (tour 65, v4.82.0 — la saisie atelier écoutée).
+
+---
 
 ✅ **Verrou libéré par Z Code le 13/10/2026** (Tour 63, v4.81.2). Pendant le tour,
 `bilan_economique.html` est passé à l'empreinte `37e72ddb…` : la branche
