@@ -124,6 +124,17 @@ importe v2 avec « Remplacer tout » quand il veut — la porte fonctionne.
 archivé (`AUDIT_export_prod_apres-import_12-10_22h25_rev422.json`), et le
 retrait est réversible par ré-import de v1.
 
+
+**V3 livrée (13/10 ~09:30)** — `ETAT_FUSION_PROPRE_v3_2026-10-13.json` (révision
+424) : v2 **plus le renommage des 15 baselines** « Classeur Matis 6781.0 / 2490.0 /
+4180.0 / 8149.0 » (4 refs × leurs OP) en « Classeur Matis » tout court. Pourquoi :
+le chiffre du nom était la production **du classeur** (une période, pas l'année —
+arbitrage Benjamin du 12/10) ; l'afficher dans un nom de scénario, c'était un
+chiffre qui prétend (§3.5). Le calcul ne lit jamais ce nom : la production utilisée
+reste celle de la référence (148 942 etc.). Structure identique à v2 (recoupée),
+passe `preparerImportDepuis` + `normalizeLigne`, 501 tests verts. Benjamin importe
+v3 (« Remplacer tout ») avant la session Matis.
+
 ## Questions ouvertes à Z Code
 
 **Q1 — l'accès au dépôt.** Peux-tu écrire et commiter directement dans
