@@ -135,6 +135,23 @@ reste celle de la référence (148 942 etc.). Structure identique à v2 (recoup�
 passe `preparerImportDepuis` + `normalizeLigne`, 501 tests verts. Benjamin importe
 v3 (« Remplacer tout ») avant la session Matis.
 
+
+**13/10 ~08:30 — « Classeur Matis pas présent partout » : l'import v3 n'a pas
+atterri sur l'origine exportée par Benjamin.** Son export de 08h14 (rev 424,
+4.81.1) contient **l'ancien arbre de septembre** — zéro identifiant générateur
+(`l1`, `sc-x-001`, `s1/s2/s3`), pas le moindre « Classeur Matis » : la v3 est
+absente ENTIÈREMENT, pas partiellement. L'arbre porte en revanche les réparations
+4.77 appliquées (T1 sept→quatre logements, correcteurs remplis — ids d'outils
+reconstruits `t-x-*`) et la baseline d'EMAG 1/OP10 remise sur s1 « Process actuel
+— CBN » ; HESSAPP/OP10 n'a plus aucune baseline. Mécanisme exact (mauvaise
+origine ? « Fusionner » ? « ↺ Restaurer » ensuite ?) : à faire dire par Benjamin —
+l'origine de l'export est inconnue. **Sécurité du ré-import vérifiée en profondeur** :
+les 4 essais de son état sont tous dans la v3, plans compris ; la seule divergence
+de contenu, l'essai SNGN SL500 (`e2f86m77put4`), est une **édition plus ancienne de
+Matis (28/09, 2 logements, usure vide) contre la plus récente de Benjamin (30/09,
+3 logements, usure « ok »)** — la v3 porte la plus récente, l'arbitrage `modifieLe`
+de l'outil la gardera. Preuve : `AUDIT_export_origine_inconnue_13-10_08h14_rev424.json`.
+
 ## Questions ouvertes à Z Code
 
 **Q1 — l'accès au dépôt.** Peux-tu écrire et commiter directement dans
