@@ -205,6 +205,14 @@ table .num, table td.num{ text-align:right; font-variant-numeric:tabular-nums;
   font-family:var(--font-mono); }
 /* v4.83/4.84 — le simulateur de baisse de prix (bloc CSS complet) */
 .simul-note { background:#eef4fb; border:1px solid #cfe0f3; border-radius:4px; padding:9px 13px; font-size:13px; color:#1b5ea6; margin-bottom:14px; }
+.simul-iso { font-size:12.5px; color:var(--ink-soft); }
+.panel.simul-maxi .simul-iso { font-size:14.5px; }
+#planPanel .simul-table { font-size:14.5px; }
+#planPanel .simul-table th { font-size:12px; }
+#planPanel .simul-table td { padding:9px 11px; }
+#planPanel .cell { font-size:13.5px; }
+.panel.simul-maxi #planPanel .simul-table { font-size:16px; }
+.panel.simul-maxi #planPanel .cell { font-size:15px; }
 .simul-controles { display:flex; align-items:center; gap:10px; margin-bottom:12px; font-size:14px; }
 .simul-controles input { width:80px; font-family:var(--font-mono); }
 .simul-table { width:100%; border-collapse:collapse; font-size:13.5px; }
@@ -15432,7 +15440,7 @@ function planLignes(){
     const rel = (Number(planReglages.relSpk) > 0) ? Number(planReglages.relSpk) : 100;
     const piecesCible = piecesAn * 100 / rel;
     const coutActuel = (sourceConso === "reelle" && conso) ? conso.qtySemaine * consoSemaines * prixA : g.coutAnnuel;
-    const gain = (actif && confirme && ciblePrix !== "" && ciblePrix !== null && prixA > 0 && sourceConso !== "sans")
+    const gain = (actif && ciblePrix !== "" && ciblePrix !== null && prixA > 0 && sourceConso !== "sans")
       ? coutActuel - piecesCible * Number(ciblePrix) : null;
     const seuil = (ciblePrix !== "" && ciblePrix !== null && prixA > 0) ? Number(ciblePrix) / prixA * 100 : null;
     return { mabec: g.mabec, isos: [...g.isos], prixA, coutAnnuel: g.coutAnnuel, coutActuel,
@@ -15446,6 +15454,8 @@ function planHTML(){
   if(!lignes.length) return `<p class="panel-hint">Aucun article de production chiffré : le plan se nourrit des mêmes données que le simulateur (scénarios en production, prix + volume).</p>`;
   const total = lignes.reduce((a, l) => a + (l.actif && l.gain ? l.gain : 0), 0);
   const actives = lignes.filter(l => l.actif).length;
+  const confirmes = lignes.filter(l => l.actif && l.confirme && l.gain).length;
+  const totalConfirme = lignes.reduce((a, l) => a + (l.actif && l.confirme && l.gain ? l.gain : 0), 0);
   const modeReel = planSource === "reel";
   const etatConso = !modeReel
     ? "théorique — production ÷ (arêtes × DDV classeur)"
@@ -15467,7 +15477,7 @@ function planHTML(){
     </div>
     ${modeReel && consoReelle ? `<p class="panel-hint">⚠ Consommation réelle = une semaine de tes classeurs × 52 (régime supposé constant). Les articles sans consommation lue perdent leur gain — jamais complétés en silence (§3.5).</p>` : ""}
     <table class="simul-table">
-      <thead><tr><th>Article actuel</th><th>Libellés ISO</th><th>Prix actuel</th><th>Consommation</th><th>Cible SPK</th><th>Prix cible</th><th>Confirmé</th><th>État</th><th>Gain / an</th></tr></thead>
+      <thead><tr><th>Article</th><th>Référence plaquette</th><th>Prix actuel</th><th>Consommation</th><th>Cible SPK</th><th>Prix cible</th><th>OK ?</th><th>Étape</th><th>Gain / an</th></tr></thead>
       <tbody>
       ${lignes.map((l, i) => {
         const isoCible = l.cibleIso || l.isos[0] || "";
@@ -15487,14 +15497,14 @@ function planHTML(){
             <option value="">—</option>
             ${PLAN_ETATS.map(e => `<option value="${e}" ${l.etat === e ? "selected" : ""}>${e}</option>`).join("")}
           </select></td>
-          <td class="mono" style="${l.gain ? "color:#1a7a3f; font-weight:600;" : "color:#888;"}">${l.gain != null ? "− " + fmtEuroCourt(Math.round(l.gain)) : "potentiel"}</td>
+          <td class="mono" style="${l.gain != null ? (l.gain > 0 ? "color:#1a7a3f; font-weight:600; font-size:15px;" : "color:var(--red); font-weight:600;") : "color:#888;"}">${l.gain == null ? "—" : (l.gain >= 0 ? "− " + fmtEuroCourt(Math.round(l.gain)) : "+ " + fmtEuroCourt(Math.round(-l.gain)))}${l.gain != null && !l.confirme ? ' <span style="font-size:10.5px; color:#888;">à confirmer</span>' : ""}</td>
         </tr>`;
       }).join("")}
       </tbody>
     </table>
     <div class="simul-resultat">${actives
-      ? `Promesse posée : <b>${actives} article(s)</b> en conversion — économie simulée <b>− ${fmtEuroCourt(Math.round(total))} / an</b>.`
-      : `Pose un état sur une ligne (même « à proposer ») pour l’ajouter à la promesse — le pas-à-pas t’appartient.`}</div>
+      ? `<b>${actives} article(s)</b> en conversion — économie simulée : <b>− ${fmtEuroCourt(Math.round(total))} / an</b>${confirmes < actives ? ` <span style="font-size:13px; color:var(--ink-soft);">(dont ${confirmes} confirmé(s) : ${fmtEuroCourt(Math.round(totalConfirme))} / an)</span>` : ""} — durée de vie SPK : ${Math.round(planReglages.relSpk)} % de l'actuelle.`
+      : `Coche les lignes à convertir pour voir le potentiel.`}</div>
     <div class="simul-actions" style="margin-top:12px;">
       <button class="ghost small" id="planExporter">⤵ Exporter le plan (CSV)</button>
       <button class="ghost small" id="planMaxiBtn" title="Projection en réunion">⛶ Plein écran</button>
@@ -18828,9 +18838,9 @@ function runTests(){
         ok("plan : le gain d'une ligne non activee reste du POTENTIEL (null, pas un chiffre)",
            [planLignes()[0].actif, planLignes()[0].gain], [false, null]);
         plan = [ normalizePlanEntry({ mabec: "IM02 137 021", isoCible: "SNMX120716T02020 LKT640", prixCible: 5, etat: "proposée" }) ];
-        ok("plan : une ligne étatée mais NON confirmée ne produit pas de gain (le prix suggéré ne suffit pas)",
-           [planLignes()[0].etat, planLignes()[0].confirme, planLignes()[0].gain],
-           ["proposée", false, null]);
+        ok("plan : une ligne étatée mais NON confirmée affiche son gain (la lecture est libre, seule le total gate)",
+           [planLignes()[0].gain != null, planLignes()[0].confirme, planLignes()[0].gain > 0],
+           [true, false, true]);
         plan = [ normalizePlanEntry({ mabec: "IM02 137 021", isoCible: "SNMX120716T02020 LKT640", prixCible: 5, etat: "proposée", confirme: true }) ];
         const g1 = planLignes()[0];
         ok("plan : l'état posé active la ligne et son gain au centime près (plaquettes/an × écart de prix)",
