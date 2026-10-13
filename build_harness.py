@@ -28,7 +28,7 @@ API = ("get TOOL_VERSION(){return TOOL_VERSION;}, normalizeLigne, normalizeRefer
        "matisPorteOutilPosition, matisClePorteOutil, reparerOutilsD1D2, reparerOutilsRapport, "
        "detecterOutilsD1D2, migrerOutilsD1D2, compterOutilsD1D2, detecterInversionMabec, migrerInversionMabec, compterInversionsMabec, "
        "_matisFeuille, "
-       "getActiveLigne, preparerImportDepuis, axesActifs, reattribuerEssai, plaquettesCommunes, simulCSV, get lignes(){return lignes}, set lignes(v){lignes=v}, "
+       "getActiveLigne, preparerImportDepuis, axesActifs, reattribuerEssai, plaquettesCommunes, simulCSV, catalogueSeed, catalogueAppliquer, catalogueCSV, catalogueDepuisCSV, get lignes(){return lignes}, set lignes(v){lignes=v}, "
        "get projets(){return projets}, set projets(v){projets=v}, "
        "get activeProjetId(){return activeProjetId}, set activeProjetId(v){activeProjetId=v}, "
        "get config(){return config}, set config(v){config=v}, "

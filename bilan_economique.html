@@ -2142,6 +2142,7 @@ body.atelier-on{overflow:hidden;}
   <div class="panel panel-large" id="accueilPanel" hidden></div>
   <div class="panel panel-large" id="vueCppPanel" hidden></div>
   <div class="panel panel-large" id="simulPanel" hidden></div>
+  <div class="panel panel-large" id="cataloguePanel" hidden></div>
   <div class="panel panel-large" id="cartePanel" hidden></div>
   <div class="panel panel-large" id="matisPanel" hidden></div>
   <div class="panel panel-large" id="matisDetailPanel" hidden></div>
@@ -3417,7 +3418,9 @@ function migrerArbre(source){
       projetsLus = source.projets.map(normalizeProjet);
     }
     const fin = finaliserProjetsEtResponsables(projetsLus, source.responsables);
-    return { lignes: lignesLues, projets: fin.projets, responsables: fin.responsables, livraisons: Array.isArray(source.livraisons) ? source.livraisons.map(normalizeLivraison) : [] };
+    return { lignes: lignesLues, projets: fin.projets, responsables: fin.responsables,
+           catalogue: Array.isArray(source.catalogue) ? source.catalogue.map(normalizeArticleCat) : [],
+           livraisons: Array.isArray(source.livraisons) ? source.livraisons.map(normalizeLivraison) : [] };
   }
 
   // format 6 (v4.0, projets PROPRIETAIRES des lignes -- deployee moins d'une journee) :
@@ -3584,6 +3587,20 @@ let synchroNote = null;
    poste par poste, cibles). Elle ne bouge plus : les chiffres vivent dans l'objet, pas
    dans les scénarios. Déclarée AVANT loadAll() (rituel anti-TDZ). */
 let livraisons = [];
+/* v4.85 — LE CATALOGUE PLAQUETTES. Une ligne = UN article : { mabec, iso, prix,
+   aretes, ddv }. Decisions Benjamin (13/10) : un MABEC = UN prix (Matis verifie
+   le fichier prix ; 209 560 = 38 EUR) ; le fichier est un CSV standalone edite
+   dans Excel ; les DDV d'essai n'entrent dans le tableau commercial qu'apres
+   validation operateur. Le catalogue voyage dans le suivi (payload, import) et
+   se propage aux logements avec rapport — jamais en silence (§3.2). */
+let catalogue = [];
+
+function normalizeArticleCat(a){
+  return Object.assign({ mabec: "", iso: "", prix: "", aretes: "", ddv: "" }, a,
+    { mabec: String((a && a.mabec) || "").trim().toUpperCase(),
+      iso: String((a && a.iso) || "").trim(),
+      prix: (a && a.prix) !== "" && a && a.prix != null ? Number(a.prix) : "" });
+}
 loadAll();
 recomputeCycles();
 
@@ -3860,6 +3877,7 @@ function loadAll(){
         revision = parsed.revision || 0;
         specsUsine = normaliserSpecsUsine(parsed.specsUsine);
         synchroNote = parsed.synchroNote || null;
+        catalogue = (parsed.catalogue || []).map(normalizeArticleCat);
         const l = lignes.find(x => x.id === parsed.activeLigneId) || lignes[0];
         activeLigneId = l.id;
         const r = l.references.find(x => x.id === parsed.activeReferenceId) || l.references[0];
@@ -3999,7 +4017,7 @@ function payloadSuivi(){
   // format 8 (v4.2) : `lignes` reste la racine, exactement comme les formats 5 et 7 -- une
   // version anterieure a la v4 lit ce fichier normalement, seuls `projets` et `responsables`
   // lui sont invisibles (elle ne les connait pas, elle ne les cherche pas).
-  return JSON.stringify({ format:8, lignes, projets, activeProjetId, responsables, backlog, revision, specsUsine, synchroNote, activeLigneId, activeReferenceId, activeOpId, activeScenarioId: activeId, livraisons });
+  return JSON.stringify({ format:8, lignes, projets, activeProjetId, responsables, backlog, revision, specsUsine, synchroNote, activeLigneId, activeReferenceId, activeOpId, activeScenarioId: activeId, livraisons, catalogue });
 }
 
 /* Ce qui pese vraiment, nomme, pour que l'utilisateur puisse agir plutot que subir. */
@@ -5045,6 +5063,7 @@ function preparerImportDepuis(parsed){
      aucun import, depuis la 4.53.0. Les livraisons normalisées existent déjà dans
      migreImport ; le repli (anciens formats) n'en porte pas. */
   return { nouvellesLignes, nouveauxProjets, nouveauxResponsables, nouveauBacklog, revisionEntrante,
+           catalogue: migreImport ? (migreImport.catalogue || []) : [],
            livraisons: migreImport ? (migreImport.livraisons || []) : [] };
 }
 
@@ -5153,6 +5172,13 @@ function appliquerImport(mode){
     bilan.backlog = fusionnerBacklog(backlog, nouveauBacklog);
     const nouvellesLivraisons = (importEnAttente && importEnAttente.livraisons) || [];
     livraisons = (livraisons || []).concat(nouvellesLivraisons.filter(nl => !(livraisons || []).some(x => x.id === nl.id)));
+    /* fusion du catalogue : un MABEC = une entree, l'entrant gagne sur conflit */
+    if(Array.isArray(importEnAttente.catalogue)){
+      const parMabec = {};
+      catalogue.forEach(a => { parMabec[a.mabec] = a; });
+      importEnAttente.catalogue.forEach(a => { parMabec[a.mabec] = a; });
+      catalogue = Object.values(parMabec).map(normalizeArticleCat);
+    }
     // la fusion produit un etat qui n'existe dans aucun des deux fichiers : elle merite sa
     // propre revision, sinon deux postes croiraient detenir la meme
     revision = Math.max(revision, revisionEntrante || 0) + 1;
@@ -5167,6 +5193,7 @@ function appliquerImport(mode){
     // le fichier reçu fait autorité : ses specs usine et sa note de synchro remplacent les locales
     specsUsine = normaliserSpecsUsine(parsed.specsUsine);
     synchroNote = parsed.synchroNote || null;
+    catalogue = (parsed.catalogue || []).map(normalizeArticleCat);
   }
   projets.forEach(purgerTagsMorts);
 
@@ -12015,6 +12042,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.85.0", date:"13/10/2026", points:[
+    "<b>📚 Le catalogue plaquettes.</b> La vérité prix/article : un MABEC = un prix. Générez-le depuis l'outil (divergences signalées à faire vérifier par Matis), exportez-le en CSV pour l'éditer dans Excel, réimportez-le quand les prix bougent — puis <b>✅ Appliquez</b> : chaque logement concerné est mis à jour, avec le rapport de ce qui a changé."
+  ]},
   { version:"4.84.0", date:"13/10/2026", points:[
     "<b>Le simulateur sort de l'écran.</b> <b>⤵ Exporter Excel (CSV)</b> : les deux tableaux (articles et budget par référence) partent dans un fichier qui s'ouvre dans Excel sans avertissement — taux et articles cochés inclus. <b>⛶ Plein écran</b> : le panneau passe par-dessus tout, pour projeter en réunion. Échap rend la main."
   ]},
@@ -12558,7 +12588,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.84.0";
+const TOOL_VERSION = "4.85.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -14955,6 +14985,193 @@ function simulRecalcul(){
   }
 }
 
+/* ═══ v4.85 — LE CATALOGUE PLAQUETTES : socle, seed, propagation, CSV ═══════
+   La vérité prix/article : une ligne = UN MABEC = UN prix (décision Benjamin —
+   Matis vérifie le fichier ; 209 560 = 38 €). Le fichier d'échange est un CSV
+   standalone édité dans Excel. La propagation aux logements se fait AVEC
+   rapport et consentement — jamais en silence (§3.2). */
+
+function catalogueSeed(){
+  /* regroupe TOUS les logements de l'outil par MABEC : le prix retenu est le
+     plus FRÉQUENT (à égalité, le plus élevé — décision Benjamin pour 209 560),
+     et chaque divergence est signalée, pas aplatie. Les ISO vus se cumulent. */
+  const parMabec = {};
+  lignes.forEach(l => (l.references || []).forEach(r => (r.ops || []).forEach(o =>
+    (o.scenarios || []).forEach(sc => (sc.outils || []).forEach(ou => (ou.logements || []).forEach(g => {
+      const mabec = String(g.codeArticle || g.mabec || "").trim().toUpperCase();
+      const prix = parseFloat(g.prix);
+      if(!mabec || isNaN(prix) || prix <= 0) return;
+      const e = parMabec[mabec] = parMabec[mabec] || { mabec, iso: new Set(), prixVus: {} };
+      if(String(g.ref || "").trim()) e.iso.add(String(g.ref).trim());
+      e.prixVus[prix] = (e.prixVus[prix] || 0) + 1;
+    }))))));
+  return Object.values(parMabec).map(e => {
+    const entrees = Object.entries(e.prixVus);
+    entrees.sort((a, b) => (b[1] - a[1]) || (b[0] - a[0]));
+    const prix = Number(entrees[0][0]);
+    const divergent = entrees.length > 1;
+    return normalizeArticleCat({ mabec: e.mabec, iso: [...e.iso].join(" | "),
+      prix, aretes: "", ddv: "", divergent,
+      prixVus: entrees.map(e2 => Number(e2[0])) });
+  }).sort((a, b) => a.mabec.localeCompare(b.mabec));
+}
+
+function catalogueAppliquer(cat){
+  /* propage les prix du catalogue dans TOUS les logements correspondants.
+     Rend le rapport : MABEC changés, logements touchés, avant/après. */
+  const parMabec = {};
+  (cat || catalogue).forEach(a => { if(a.prix !== "" && a.prix > 0) parMabec[a.mabec] = a.prix; });
+  const rapport = { logementsTouches: 0, mabecs: [] };
+  lignes.forEach(l => (l.references || []).forEach(r => (r.ops || []).forEach(o =>
+    (o.scenarios || []).forEach(sc => (sc.outils || []).forEach(ou => (ou.logements || []).forEach(g => {
+      const mabec = String(g.codeArticle || g.mabec || "").trim().toUpperCase();
+      const nouveau = parMabec[mabec];
+      if(nouveau === undefined) return;
+      const avant = parseFloat(g.prix);
+      if(!isNaN(avant) && Math.abs(avant - nouveau) < 1e-9) return;
+      g.prix = nouveau;
+      rapport.logementsTouches++;
+      const deja = rapport.mabecs.find(x => x.mabec === mabec);
+      if(deja) deja.n++;
+      else rapport.mabecs.push({ mabec, avant, apres: nouveau, n: 1 });
+    }))))));
+  return rapport;
+}
+
+function catalogueCSV(cat){
+  const num = v => String(v === "" || v == null ? "" : v).replace(".", ",");
+  const cell = v => /[";\r\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : String(v);
+  const L = ["sep=;", "Catalogue plaquettes - " + new Date().toLocaleDateString("fr-FR"), "",
+    "MABEC;Libelle ISO;Prix EUR;Aretes;DDV (pieces)"];
+  (cat || catalogue).forEach(a => L.push([a.mabec, a.iso, num(a.prix), num(a.aretes), num(a.ddv)].map(cell).join(";")));
+  return "\uFEFF" + L.join("\r\n");
+}
+
+function catalogueDepuisCSV(texte){
+  /* tolérant : BOM, ligne sep=; optionnelle, ; ou , en séparateur, décimales
+     point ou virgule, en-têtes reconnus par mot-clé. Rend { cat, erreurs }. */
+  const brut = String(texte || "").replace(/^\uFEFF/, "").replace(/^sep=;\r?\n/i, "").replace(/^sep=,\r?\n/i, "");
+  const lignesTxt = brut.split(/\r?\n/).filter(x => x.trim());
+  if(!lignesTxt.length) return { cat: [], erreurs: ["Fichier vide."] };
+  /* v4.85.1 — le CSV exporté porte un titre et une ligne sep=; : la ligne
+     d'en-têtes se CHERCHE (celle qui contient MABEC), elle n'est pas supposée
+     première. Sans ça, l'export de l'outil ne se ré-importait pas lui-même. */
+  const iEntete = lignesTxt.findIndex(x => /mabec/i.test(x));
+  if(iEntete === -1) return { cat: [], erreurs: ["Ligne d'en-têtes introuvable (il faut une colonne MABEC)."] };
+  const sep = (lignesTxt[iEntete].split(";").length >= lignesTxt[iEntete].split(",").length) ? ";" : ",";
+  const entetes = lignesTxt[iEntete].split(sep).map(x => x.trim().toLowerCase());
+  const col = cles => entetes.findIndex(h => cles.some(k => h.includes(k)));
+  const iM = col(["mabec", "article"]), iI = col(["iso", "libell"]), iP = col(["prix"]),
+        iA = col(["arête", "arete"]), iD = col(["ddv", "charniè", "durée", "duree"]);
+  if(iM === -1 || iP === -1) return { cat: [], erreurs: ["Colonnes MABEC et Prix introuvables. En-têtes attendus : MABEC ; Libelle ISO ; Prix EUR ; Aretes ; DDV (pieces)."] };
+  const cat = [], erreurs = [];
+  /* v4.85.1 — le d\u00e9coupeur respecte les guillemets : une virgule d\u00e9cimale
+     dans un champ quot\u00e9 (\u00ab "7,96" \u00bb, la mani\u00e8re d'Excel FR) n'est pas un
+     s\u00e9parateur. Un split na\u00effe coupait le prix en deux. */
+  const couper = (ligne) => {
+    const out = []; let cur = "", enQuote = false;
+    for(const ch of ligne){
+      if(ch === '"'){ enQuote = !enQuote; continue; }
+      if(ch === sep && !enQuote){ out.push(cur.trim()); cur = ""; continue; }
+      cur += ch;
+    }
+    out.push(cur.trim());
+    return out.map(x => x.replace(/""/g, '"'));
+  };
+  lignesTxt.slice(iEntete + 1).forEach((ligne, idx) => {
+    const c = couper(ligne);
+    const mabec = (c[iM] || "").toUpperCase().replace(/\s+/g, " ").trim();
+    const prix = parseFloat(String(c[iP] || "").replace(",", "."));
+    if(!mabec) return;
+    if(isNaN(prix) || prix <= 0){ erreurs.push("Ligne " + (idx + 2) + " : prix illisible (" + (c[iP] || "vide") + ")"); return; }
+    const n = v => { const f = parseFloat(String(v || "").replace(",", ".")); return isNaN(f) ? "" : f; };
+    cat.push(normalizeArticleCat({ mabec, iso: iI > -1 ? (c[iI] || "") : "", prix,
+      aretes: iA > -1 ? n(c[iA]) : "", ddv: iD > -1 ? n(c[iD]) : "" }));
+  });
+  if(!cat.length && !erreurs.length) erreurs.push("Aucune ligne exploitable.");
+  return { cat, erreurs };
+}
+
+function catalogueRendu(){
+  if(!catalogue.length) return `<p class="panel-hint">Le catalogue est vide. Trois façons de le remplir : le <b>générer depuis l'outil</b> (un MABEC = un prix, le plus fréquent, divergences signalées), l'<b>importer d'un CSV</b> édité dans Excel, ou les deux — générer, exporter, faire corriger par Matis, réimporter.</p>
+    <div class="simul-actions">
+      <button class="ghost small" id="catSeed">🌱 Générer depuis l'outil</button>
+      <label class="ghost small" for="catFichier" style="cursor:pointer;">⤴ Importer un CSV…</label>
+      <input type="file" id="catFichier" accept=".csv,.txt" hidden>
+    </div>`;
+  return `
+    <div class="simul-actions">
+      <button class="primary small" id="catAppliquer" title="Propage les prix du catalogue dans tous les logements correspondants — avec rapport">✅ Appliquer les prix aux logements</button>
+      <button class="ghost small" id="catExporter">⤵ Exporter le CSV</button>
+      <label class="ghost small" for="catFichier" style="cursor:pointer;">⤴ Importer un CSV…</label>
+      <input type="file" id="catFichier" accept=".csv,.txt" hidden>
+      <button class="ghost small" id="catSeed">🌱 Regénérer depuis l'outil</button>
+    </div>
+    <p class="panel-hint">${catalogue.length} article(s). Un MABEC = un prix — la propagation remplace les prix des logements correspondants, avec rapport. <b>SIMULATION jusqu'à « Appliquer ».</b></p>
+    <table class="simul-table">
+      <thead><tr><th>Article (MABEC)</th><th>Libellés ISO vus</th><th>Prix</th></tr></thead>
+      <tbody>${catalogue.map(a => `<tr>
+        <td class="mono">${escapeAttr(a.mabec)}</td>
+        <td style="font-size:12px; color:#888;">${escapeAttr(a.iso || "—")}</td>
+        <td class="mono">${a.prix !== "" ? fmt(a.prix, 2) + " €" : "—"}${a.divergent ? ' <span style="color:#b45309;">(prix divergents dans l\'outil — Matis vérifie)</span>' : ""}</td>
+      </tr>`).join("")}</tbody>
+    </table>`;
+}
+
+function renderCatalogue(){
+  const wrap = document.getElementById("cataloguePanel");
+  if(!wrap) return;
+  wrap.innerHTML = `<h3>📚 Catalogue plaquettes — la vérité prix/article</h3>` + catalogueRendu();
+  const seed = document.getElementById("catSeed");
+  if(seed) seed.addEventListener("click", () => {
+    backupSnapshot("Catalogue : génération depuis l'outil");
+    catalogue = catalogueSeed();
+    saveData(); renderCatalogue();
+  });
+  const fich = document.getElementById("catFichier");
+  if(fich) fich.addEventListener("change", () => {
+    const f = fich.files[0];
+    if(!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const { cat, erreurs } = catalogueDepuisCSV(reader.result);
+      if(erreurs.length){ dialogueAlerte(erreurs.join("<br>"), "Import catalogue"); return; }
+      backupSnapshot("Catalogue : import CSV");
+      const parMabec = {};
+      catalogue.forEach(a => { parMabec[a.mabec] = a; });
+      cat.forEach(a => { parMabec[a.mabec] = a; });
+      catalogue = Object.values(parMabec).map(normalizeArticleCat);
+      saveData(); renderCatalogue();
+    };
+    reader.readAsText(f, "utf-8");
+  });
+  const exp = document.getElementById("catExporter");
+  if(exp) exp.addEventListener("click", () => {
+    const blob = new Blob([catalogueCSV()], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "Catalogue_plaquettes.csv";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  });
+  const appl = document.getElementById("catAppliquer");
+  if(appl) appl.addEventListener("click", () => {
+    const avant = JSON.stringify(catalogue);
+    const rapport = catalogueAppliquer();
+    if(!rapport.logementsTouches){ dialogueAlerte("Tous les logements correspondants portent déjà le prix du catalogue.", "Rien à mettre à jour"); return; }
+    backupSnapshot("Catalogue : propagation des prix");
+    saveData(); render();
+    dialogueAlerte(`<b>${rapport.logementsTouches} logement(s) mis(s) à jour.</b><br>` +
+      rapport.mabecs.slice(0, 12).map(x => `${escapeAttr(x.mabec)} : ${escapeAttr(String(x.avant))} → ${escapeAttr(String(x.apres))} € (${x.n})`).join("<br>") +
+      (rapport.mabecs.length > 12 ? "<br>…" : ""), "Prix propagés");
+  });
+}
+function ouvrirCatalogue(){
+  fermerPanneaux();
+  ouvrirPanneau("cataloguePanel");
+  renderCatalogue();
+}
+
 function renderSimul(){
   const wrap = document.getElementById("simulPanel");
   if(!wrap) return;
@@ -14998,6 +15215,7 @@ function accueilPiedHTML(){
       <button class="ghost small" id="pfHisto" title="Les sauvegardes automatiques précédentes">Historique</button>
       <button class="primary small" id="pfVueCpp" title="Le CPP obtenu vs la référence Matis, décomposé OP par OP, outil par outil, logement par logement">🔍 Vue CPP</button>
       <button class="primary small" id="pfSimul" title="Que vaut une baisse de prix sur les plaquettes utilisées par plusieurs productions ? Économie annuelle € et % — SIMULATION, rien n'écrit">💰 Simulateur prix</button>
+      <button class="primary small" id="pfCatalogue" title="La vérité prix/article : un MABEC = un prix. Export/import CSV, propagation aux logements avec rapport">📚 Catalogue</button>
     </div>
   </div>`;
 }
@@ -15086,6 +15304,8 @@ function renderAccueil(){
   /* v4.78 — la vue CPP : la porte depuis l'accueil, là où la hiérarchie regarde */
   const cSimul = document.getElementById("pfSimul");
   if(cSimul) cSimul.addEventListener("click", ouvrirSimul);
+  const cCat = document.getElementById("pfCatalogue");
+  if(cCat) cCat.addEventListener("click", ouvrirCatalogue);
   const cCpp = document.getElementById("pfVueCpp");
   if(cCpp) cCpp.addEventListener("click", ouvrirVueCpp);
   /* la tuile hors périmètre déplie sa liste — le geste de Q12, pas la porte carte */
@@ -16529,6 +16749,7 @@ const PROMESSES_UI = [
   { porte:"🔍 Vue CPP (accueil et fiche poste)", fns:["ouvrirVueCpp", "renderVueCpp"] },
   { porte:"💰 Simulateur prix (accueil)", fns:["ouvrirSimul", "renderSimul", "plaquettesCommunes", "simulHTML", "simulRecalcul"] },
   { porte:"⇄ Réattribuer un essai", fns:["reattribuerEssai"] },
+  { porte:"📚 Catalogue (accueil)", fns:["ouvrirCatalogue", "renderCatalogue", "catalogueSeed", "catalogueAppliquer", "catalogueCSV", "catalogueDepuisCSV"] },
   { porte:"Carte atelier (barre, accueil, fiche)", fns:["ouvrirCarte", "renderCarte", "scenariosPostes", "renderFichePoste", "ouvrirPosteDepuisFiche"] },
   { porte:"Accueil (barre)", fns:["ouvrirAccueil"] },
   { porte:"Tableau de bord (barre)", fns:["renderDashboard"] },
@@ -18150,6 +18371,41 @@ function runTests(){
             lignesCsv.some(x => x.indexOf("TOTAL;") === 0),
             lignesCsv.some(x => x.indexOf("Economie annuelle (EUR)") > -1)],
            [true, true, true]);
+
+    /* ---- v4.85.0 — LE CATALOGUE PLAQUETTES : seed, propagation, CSV ---------- */
+    {
+      const lC = normalizeLigne({ id: "lCat", nom: "EMAG 1", references: [ normalizeReference({ id: "rCat", nom: "356x26", productionAnnuelle: 1000, ops: [
+        normalizeOp({ id: "oCat", nom: "OP10", scenarios: [ normalizeScenario({ id: "scCat", name: "Prod", baseline: true, outils: [
+          { id: "tC1", numero: "T517", logements: [
+            { id: "gC1", nom: "D1", ref: "SNGX 120716 S02020 CBN387", codeArticle: "IM02 209 560", prix: 38, aretes: 4, charniere: 600 },
+            { id: "gC2", nom: "D2", ref: "CNGX 120716 S02020 CBN387", codeArticle: "IM02 137 021", prix: 7.96, aretes: 8, charniere: 150 } ] } ] }) ] }) ] }) ] });
+      const lAvC = lignes; lignes = [ lC ];
+      try {
+        const seed = catalogueSeed();
+        const e209 = seed.find(a => a.mabec === "IM02 209 560");
+        ok("catalogue : le seed regroupe par MABEC et retient le prix le plus fréquent",
+           [seed.length, e209.prix, e209.iso.indexOf("SNGX") === 0], [2, 38, true]);
+        catalogue = [ normalizeArticleCat({ mabec: "IM02 209 560", iso: e209.iso, prix: 42 }),
+                      normalizeArticleCat({ mabec: "IM02 137 021", prix: 7.96 }) ];
+        const rapport = catalogueAppliquer();
+        const g1 = lignes[0].references[0].ops[0].scenarios[0].outils[0].logements[0];
+        ok("catalogue : la propagation change le prix du logement et rend le rapport avant/après",
+           [rapport.logementsTouches, g1.prix, rapport.mabecs[0].avant, rapport.mabecs[0].apres],
+           [1, 42, 38, 42]);
+        ok("catalogue : un logement déjà au bon prix n'est pas « touché » (le rapport ne ment pas)",
+           catalogueAppliquer().logementsTouches, 0);
+        catalogue = seed.map(a => normalizeArticleCat(a));
+        const csv = catalogueCSV();
+        const rere = catalogueDepuisCSV(csv);
+        ok("catalogue : le CSV standalone fait l'aller-retour sans perte (BOM, sep=;)",
+           [rere.erreurs.length, rere.cat.length, rere.cat.find(x => x.mabec === "IM02 137 021").prix],
+           [0, 2, 7.96]);
+        ok("catalogue : l'import tolère virgule décimale et séparateur virgule (Excel FR)",
+           catalogueDepuisCSV("MABEC,Prix EUR\nIM02 137 021,\"7,96\"").cat[0].prix, 7.96);
+        ok("catalogue : un prix illisible est signalé, pas inventé (§3.5)",
+           catalogueDepuisCSV("MABEC;Prix EUR\nIM02 137 021;nsp").erreurs.length > 0, true);
+      } finally { lignes = lAvC; catalogue = []; }
+    }
       } finally { lignes = lAvS; }
     }
     }

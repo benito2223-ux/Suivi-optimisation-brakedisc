@@ -5,6 +5,43 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.85.0] — 2026-10-13 · Tour 68
+
+**📚 Le catalogue plaquettes — le socle de la démarche commerciale.**
+Décisions Benjamin actées : **un MABEC = un prix** (Matis vérifie le fichier ;
+209 560 = 38 €) ; le fichier d'échange est un **CSV standalone** édité dans
+Excel ; les DDV d'essai n'entrent dans le tableau commercial qu'après
+validation opérateur (protocole 5×).
+
+### Ajouté
+- **le catalogue voyage dans le suivi** : payload, loadAll, migration,
+  import « Remplacer » (fait autorité) et « Fusionner » (par MABEC, l'entrant
+  gagne) ;
+- **🌱 Générer depuis l'outil** : tous les logements regroupés par MABEC, le
+  prix le plus **fréquent** retenu (à égalité, le plus élevé), chaque
+  divergence **signalée** (pas aplatie) ;
+- **⤵/⤴ CSV** : export/import standalone, parseur tolérant (BOM, ligne sep=;,
+  titre, décimales point **ou virgule**, champs quotés à la Excel FR, ligne
+  d'en-têtes **cherchée**) ;
+- **✅ Appliquer les prix aux logements** : propagation avec **rapport**
+  avant/après par MABEC — un logement déjà au bon prix n'est pas « touché » ;
+- porte de clic + 6 tests (seed, propagation, rapport idempotent,
+  aller-retour CSV, virgule décimale, prix illisible signalé).
+
+### Sur les données réelles v5
+**25 articles**, **9 à prix divergents** pour Matis (EMBOUT D13,3 :
+46,95/50/46,96 ; IM02 137 021 : 7,96/7,12…) ; aller-retour CSV OK. Trouvaille
+au passage : le MABEC **IM02 137 021 porte déjà les deux grades** —
+`SNMX 120716 T02020 LKT640` **et** `SNMX120716T02020 KY3500` : le switch est
+physiquement commencé, la négociation porte sur le prix.
+
+### Le tour des guillemets (accros assumés)
+Trois défauts attrapés par le harnais avant livraison : apostrophe française
+non échappée dans une chaîne JS (`l'outil`), parseur CSV lisant la ligne de
+titre comme en-têtes (l'export ne se ré-importait pas lui-même), split naïf
+cassant les champs quotés à virgule (`"7,96"` → prix coupé en deux). Chacun
+a son test. 521 → **533 tests** ; contre-regard propagation muette → **vue**.
+
 ## [4.84.0] — 2026-10-13 · Tour 67
 
 **Le simulateur sort de l'écran.** Export Excel + plein écran (demande de

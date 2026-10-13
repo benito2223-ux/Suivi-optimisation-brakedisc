@@ -258,6 +258,44 @@ chaque édition, pas une fois pour toutes.
 **Prochain tour** : la phrase prod, la revue d'Hermes, l'export de l'accueil
 (à dessiner), le chantier UI.
 
+### ▸ Tour 68 — 13/10/2026 nuit (3) — **Z Code** (v4.85.0 — le catalogue plaquettes)
+
+**La commande.** Benjamin valide les trois décisions (un MABEC = un prix,
+209 560 = 38 € ; CSV standalone ; DDV d'essai après validation opérateur) et
+donne la première correspondance : **toute KY3500 1207 (SNMX/CNMX/SNGX/CNGX)
+= LKT640 à 5 €**. Le socle d'abord, la vitrine (Plan de conversion) et les
+suggestions à la saisie ensuite.
+
+**Livré.** Le catalogue **persiste dans le suivi** (payload, loadAll,
+migration, import remplace/fusion) ; **🌱 seed** depuis l'outil (prix le plus
+fréquent, à égalité le plus élevé — la règle 209 560 de Benjamin ; divergences
+signalées) ; **⤵/⤴ CSV standalone** tolérant ; **✅ propagation** aux
+logements avec rapport avant/après. Panneau 📚 dans le pied de l'accueil.
+
+**Le tour des guillemets** — trois défauts attrapés par le harnais avant
+livraison : (1) l'apostrophe française `l'outil` non échappée dans une chaîne
+JS — le SyntaxError n'avait ni ligne ni colonne, localisé par `node --check`
+sur le bloc extrait ; (2) le parseur CSV lisait la ligne de TITRE comme
+en-têtes — l'export de l'outil ne se ré-importait pas lui-même (la ligne
+d'en-têtes se cherche maintenant) ; (3) le split naïf cassait les champs
+quotés — `"7,96"` devenait prix 7 puis 96. Chacun a son test.
+
+**Sur les données réelles v5** : 25 articles, **9 divergences de prix pour
+Matis**, aller-retour CSV OK — et la trouvaille : le MABEC IM02 137 021 porte
+déjà `SNMX 120716 T02020 LKT640` **et** `SNMX120716T02020 KY3500` — le switch
+est physiquement commencé, la négociation porte sur le prix (7,96 → 5 €).
+
+**Contre-regard.** Propagation muette (écrit sans rapport) → **vue**
+(`logementsTouches: 0` alors que le prix a bougé) → restauration par copie,
+empreinte `90ae73b6…` identique, 521 → **533/533 verts**.
+
+**Déploiement.** Projet, vérifié curl. La prod attend la phrase de Benjamin.
+
+**Prochain tour** : la vitrine — le **Plan de conversion** (KY3500 → LKT640
+@5 €, consommation réelle extrapolée, gain/an par article, états
+à proposer/proposée/en essai/gagnée) + les suggestions à la saisie ; la
+phrase prod ; la revue d'Hermes ; le chantier UI.
+
 ## Questions ouvertes à Z Code
 
 ### ▸ Tour 67 — 14/10/2026 — **Hermes** (mécanique des plaquettes — avis transmis, discussion avec Z Code)

@@ -13,13 +13,26 @@
 
 | | |
 |---|---|
-| **Auteur** | Z Code |
-| **Pris le** | 13/10/2026 nuit (3) |
-| **Écrit dans** | `bilan_economique.html` |
-| **Version visée** | 4.85.0 |
-| **Sujet** | LE CATALOGUE PLAQUETTES (décisions Benjamin : un MABEC = un prix, 209 560 = 38 € ; CSV standalone ; DDV d'essai seulement après validation opérateur) : socle persistant dans le suivi, seed depuis l'outil, propagation avec rapport, export/import CSV standalone. La vitrine (Plan de conversion KY3500→LKT640 @5 €) et les suggestions : tour suivant. |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
 
-🔒 **Verrou pris par Z Code le 13/10/2026 nuit (3)** (tour 68, v4.85.0 — le catalogue plaquettes).
+✅ **Verrou libéré par Z Code le 13/10/2026** (Tour 68, v4.85.0). Pendant le
+tour, `bilan_economique.html` est passé à l'empreinte `90ae73b6…` : le
+catalogue plaquettes (persistant dans le suivi, seed par MABEC avec prix
+fréquent et divergences signalées, propagation avec rapport, CSV standalone
+aller-retour tolérant), panneau 📚 + porte de clic, `TOOL_VERSION = "4.85.0"`,
+NOUVEAUTES + CHANGELOG. Le tour des guillemets : trois défauts attrapés par
+le harnais avant livraison (apostrophe JS, ligne d'en-têtes cherchée, champs
+quotés découpés proprement). Contre-regard : propagation muette → **vue** →
+restauration par copie, empreinte identique, 521 → **533/533 verts**. Sur la
+v5 réelle : 25 articles, 9 divergences pour Matis, le 137 021 porte déjà
+LKT640 ET KY3500. **Déployé sur Projet, vérifié curl ; la PROD attend la
+phrase de Benjamin.** Écrits : `bilan_economique.html`,
+`outils/patch_4850_a/b/c.py`, `outils/fix_apostrophe.py`,
+`build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md`.
 
 ---
 
