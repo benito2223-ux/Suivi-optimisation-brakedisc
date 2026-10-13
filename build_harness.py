@@ -28,7 +28,7 @@ API = ("get TOOL_VERSION(){return TOOL_VERSION;}, normalizeLigne, normalizeRefer
        "matisPorteOutilPosition, matisClePorteOutil, reparerOutilsD1D2, reparerOutilsRapport, "
        "detecterOutilsD1D2, migrerOutilsD1D2, compterOutilsD1D2, detecterInversionMabec, migrerInversionMabec, compterInversionsMabec, "
        "_matisFeuille, "
-       "getActiveLigne, preparerImportDepuis, get lignes(){return lignes}, set lignes(v){lignes=v}, "
+       "getActiveLigne, preparerImportDepuis, axesActifs, get lignes(){return lignes}, set lignes(v){lignes=v}, "
        "get projets(){return projets}, set projets(v){projets=v}, "
        "get activeProjetId(){return activeProjetId}, set activeProjetId(v){activeProjetId=v}, "
        "get config(){return config}, set config(v){config=v}, "
@@ -281,6 +281,19 @@ try {
       console.log((la ? '  ok  ' : '  ECHEC ') + 'css impression : ' + pourquoi + ' — "' + a + '" ' + (la ? 'present' : 'ABSENT') + ' dans le head du document principal');
     }
     if (vus) console.log('  CSS IMPRESSION : ' + vus + ' regles verifiees dans le head reel du fichier');
+  })();
+  /* ── v4.82 — LES DATES DE SAISIE SONT BORNÉES ───────────────────────────
+     Benjamin : « la date des essais ne peut pas se taper directement il faut
+     faire défiler… depuis l'an 1 ». Un input date sans min voit son sélecteur
+     d'année démarrer à l'an 1. Le contrôle lit le fichier réel : CHAQUE champ
+     date porte ses bornes. Une question de saisie atelier, posée au document. */
+  (function datesBornees(){
+    const fs = require('fs');
+    const html = fs.readFileSync('bilan_economique.html', 'utf8');
+    const inputs = html.match(/<input[^>]*type="date"[^>]*>/g) || [];
+    const nues = inputs.filter(t => !t.includes('min="') || !t.includes('max="'));
+    if(nues.length) r.echecs += nues.length;
+    console.log((nues.length ? '  ECHEC ' : '  ok  ') + 'dates de saisie : ' + inputs.length + ' champs, ' + (inputs.length - nues.length) + ' bornés (min/max) — le sélecteur démarre à une année utile');
   })();
   if (typeof (__DIAG__) !== 'undefined') (__DIAG__)(A);
   /* v4.80 — LE VERDICT FINAL TIENT COMPTE DES GARDE-FOUS.

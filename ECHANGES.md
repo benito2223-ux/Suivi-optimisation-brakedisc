@@ -186,6 +186,47 @@ transporte un fichier ? Concrètement :
 
 ## Journal des tours
 
+### ▸ Tour 65 — 13/10/2026 — **Z Code** (v4.82.0 — la saisie atelier écoutée)
+
+**La commande.** Benjamin, depuis l'atelier : « la date des essais ne peut pas
+se taper directement il faut faire défiler… depuis l'an 1 » et « j'ai inter et
+exter et droite et gauche à rentrer pour la même référence, ce qui n'est pas
+logique » — « Bug de l'outil ».
+
+**Le diagnostic avant le fix.** (1) Les champs date étaient nus : un sélecteur
+sans `min` démarre l'année à l'an 1. (2) Le formulaire rendait TOUS les axes
+toujours — alors que la conformité (`checkConformPrincipal`, 4.9) filtrait déjà
+les côtés vides et que les graphiques les écartaient : l'obligation était
+**visuelle**, pas sémantique. Le réglage « Côtés mesurés » existait au scénario
+mais vit dans la configuration, pas au moment de la saisie.
+
+**Le fix.** (1) Les 8 champs date portent min 2025 / max 2035. (2) Les pastilles
+d'axes PAR ESSAI : chaque groupe multi-axes porte ses pastilles (le style des
+points de mesure), toucher un axe montre/cache son champ, état de session
+(`atelierCtx.axesOn`), `axesActifs()` pure et exportée. La config du scénario
+restera intacte ; la donnée ne change pas de forme.
+
+**L'accroc assumé.** Le remplacement global des bornes a corrompu un sélecteur
+CSS (`input[type="date" min=…` — les attributs dans les crochets). Détecté au
+contre-regard B (l'assert a refusé l'injection, le compte ne tombait pas),
+réparé, et la porte hors-suite « dates de saisie » lit désormais le fichier
+réel : huit champs, huit bornés, sinon échec.
+
+**Contre-regard : deux fautes, deux portes.** `axesActifs` aveugle → 2 tests
+tombent (`recu= ["D,G",2]`, `attendu= ["D",0]`) ; bornes retirées → la porte
+dates tombe (`0 bornés`). Restauration par copie, empreinte `904c7196…`
+identique, 502/502 verts.
+
+**Déploiement.** Projet, vérifié curl. La prod attend la phrase de Benjamin.
+En attendant : le rev 432 de Benjamin (13:39) = **exactement la v4** — structure
+identique, 5 essais octet pour octet, l'essai PCI 5 du jour en place. Les
+machines convergent.
+
+**Prochain tour** : phrase prod, l'import v4 de la deuxième machine, la revue
+d'Hermes, et le chantier UI (« ton sur ton » → deux maquettes à préparer).
+
+
+
 ### ▸ Tour 64 — 13/10/2026 — **Z Code** (les lignes PCI 4/5 entrent dans l'outil — v4, rev 430)
 
 **La commande.** Benjamin, depuis chez Matis : le classeur PCI (25-09 → 02-10) en

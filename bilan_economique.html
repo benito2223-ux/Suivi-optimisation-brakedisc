@@ -2167,7 +2167,7 @@ body.atelier-on{overflow:hidden;}
     </div>
     <div class="opt-field on" style="padding-left:0;">
       <label for="projetDateCible">Échéance visée (facultatif)</label>
-      <input type="date" id="projetDateCible" style="width:170px; text-align:left; font-family:var(--font-body);">
+      <input type="date" min="2025-01-01" max="2035-12-31" id="projetDateCible" style="width:170px; text-align:left; font-family:var(--font-body);">
       <span class="opt-note">Affichée à titre indicatif sur la carte. L'outil ne déclare jamais un projet « en retard » : dans un atelier, un essai glisse pour des raisons subies.</span>
     </div>
     <p class="panel-hint" id="projetMeta" style="margin-top:14px;"></p>
@@ -2207,7 +2207,7 @@ body.atelier-on{overflow:hidden;}
     <div class="opt-field on" style="padding-left:0;">
       <label for="ligneMaintenanceDate">Dernière maintenance</label>
       <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <input type="date" id="ligneMaintenanceDate" style="width:150px; text-align:left; font-family:var(--font-body);">
+        <input type="date" min="2025-01-01" max="2035-12-31" id="ligneMaintenanceDate" style="width:150px; text-align:left; font-family:var(--font-body);">
         <input type="text" id="ligneMaintenanceType" style="flex:1; min-width:180px; width:auto; text-align:left; font-family:var(--font-body);" placeholder="Type d'intervention (ex. changement broche, révision générale...)">
       </div>
     </div>
@@ -5503,6 +5503,12 @@ function criteresSupActifs(sc){
 }
 function axesDe(c){ return (c.axes && c.axes.length) ? c.axes : ["v"]; }
 const AXE_LABELS = { D:"Droite", G:"Gauche", I:"Inter", E:"Exter", v:"" };
+/* v4.82 — les axes ACTIFS d'un groupe au moment de la saisie : tous par défaut,
+   filtrés par les pastilles de l'essai (état de session atelierCtx.axesOn,
+   JAMAIS la configuration du scénario). Retour de Benjamin : « j'ai inter et
+   exter et droite et gauche à rentrer pour la même référence, ce qui n'est pas
+   logique » — on ne rend que les champs de ce qui est réellement mesuré. */
+function axesActifs(axes, on){ return (axes || []).filter(a => !on || on[a] !== false); }
 /* les colonnes affichées pour les critères supplémentaires : une par critère actif × axe */
 function csupColonnes(sc){
   const cols = [];
@@ -5891,17 +5897,31 @@ function atelierHTML(){
   // v4.9 : champs de saisie construits depuis les critères actifs du scénario —
   // battement (respecte les côtés choisis, peut être désactivé) puis critères
   // supplémentaires (Ra, VE, libres) avec une case par axe.
+  // v4.82 — les axes se CHOISISSENT au moment de la saisie (retour de Benjamin :
+  // « j'ai inter et exter et droite et gauche à rentrer pour la même référence,
+  // ce qui n'est pas logique »). Les pastilles (même style que les points de
+  // mesure) montrent ou cache un axe POUR CET ESSAI — état de session
+  // (atelierCtx.axesOn), la configuration du scénario reste intacte. Un axe
+  // caché ne rend pas de champ ; le contrôle de conformité filtrait déjà les
+  // côtés vides, la donnée ne change pas de forme.
   const cotesAt = battCotesDe(sc);
+  const on = atelierCtx.axesOn || {};
+  const chipAxes = (groupe, axes) => `<div class="at-groupe"><span class="at-groupe-label">${groupe}</span><span class="at-points-row">${axes.map(ax =>
+    `<button class="at-pm ${axesActifs(axes, on[groupe]).includes(ax) ? "actif" : ""}" data-at-axe="${groupe}" data-at-axeval="${ax}">${AXE_LABELS[ax] || ax}</button>`).join("")}</span></div>`;
   const champs = [];
   if(sc.battActif !== false){
     if(cotesAt === "mono") champs.push(`<div class="at-champ"><label>${escapeAttr(libelleDe(sc))}</label><input type="number" step="0.001" inputmode="decimal" id="atV" placeholder="0,000"></div>`);
     else {
-      if(cotesAt !== "G") champs.push(`<div class="at-champ"><label>Droite</label><input type="number" step="0.001" inputmode="decimal" id="atD" placeholder="0,000"></div>`);
-      if(cotesAt !== "D") champs.push(`<div class="at-champ"><label>Gauche</label><input type="number" step="0.001" inputmode="decimal" id="atG" placeholder="0,000"></div>`);
+      if(cotesAt === "DG") champs.push(chipAxes("Côtés mesurés", ["D","G"]));
+      const axesB = axesActifs(["D","G"], on.batt).filter(ax => cotesAt === "DG" ? true : ax === cotesAt);
+      if(axesB.includes("D")) champs.push(`<div class="at-champ"><label>Droite</label><input type="number" step="0.001" inputmode="decimal" id="atD" placeholder="0,000"></div>`);
+      if(axesB.includes("G")) champs.push(`<div class="at-champ"><label>Gauche</label><input type="number" step="0.001" inputmode="decimal" id="atG" placeholder="0,000"></div>`);
     }
   }
   criteresSupActifs(sc).forEach(c => {
-    axesDe(c).forEach(ax => {
+    const axes = axesDe(c);
+    if(axes.length > 1) champs.push(chipAxes(`${escapeAttr(c.label || "critère")} — axes mesurés`, axes));
+    axesActifs(axes, on["cs_" + c.id]).forEach(ax => {
       const suf = ax === "v" ? "" : " " + (AXE_LABELS[ax] || ax);
       champs.push(`<div class="at-champ"><label>${escapeAttr(c.label || "critère")}${suf}</label><input type="number" step="0.001" inputmode="decimal" id="atCs_${c.id}_${ax}" placeholder="0,000"></div>`);
     });
@@ -5972,6 +5992,24 @@ function renderAtelier(){
   el.querySelectorAll("[data-at-pm]").forEach(b => b.addEventListener("click", () => {
     atelierCtx.pointMesure = b.getAttribute("data-at-pm"); renderAtelier();
   }));
+  /* v4.82 — les pastilles d'axes : montrer/cacher un côté ou un axe POUR CET
+     ESSAI. Le groupe garde toujours au moins un axe actif (sinon plus rien
+     n'est saisissable) ; cacher un axe ne supprime aucune donnée — le champ
+     n'est simplement pas rendu, et la conformité filtrait déjà les vides. */
+  el.querySelectorAll("[data-at-axe]").forEach(b => b.addEventListener("click", () => {
+    const g = b.getAttribute("data-at-axe"), ax = b.getAttribute("data-at-axeval");
+    const on = atelierCtx.axesOn = atelierCtx.axesOn || {};
+    const etat = on[g] = on[g] || {};
+    if(etat[ax] !== false){
+      const freres = Array.from(el.querySelectorAll('[data-at-axe="' + g + '"]'))
+        .map(x => x.getAttribute("data-at-axeval")).filter(a => a !== ax);
+      if(freres.every(a => etat[a] === false)) return;   /* au moins un axe reste */
+      etat[ax] = false;
+    } else {
+      etat[ax] = true;
+    }
+    renderAtelier();
+  }));
   el.querySelectorAll("[data-at-piece]").forEach(b => b.addEventListener("click", () => {
     const inp = document.getElementById("atPiece");
     const v = parseFloat(inp.value); if(isNaN(v)) return;
@@ -6034,7 +6072,7 @@ function renderAtelier(){
   if(premier) premier.focus();
 }
 function ouvrirAtelier(scId, essaiId){
-  atelierCtx = { scId, essaiId, logementId:"", pointMesure:"" };
+  atelierCtx = { scId, essaiId, logementId:"", pointMesure:"", axesOn:{} };
   const el = document.getElementById("atelierPanel");
   el.hidden = false;
   document.body.classList.add("atelier-on");
@@ -7906,7 +7944,7 @@ function scrapRowHTML(sc, row, interactive){
       `<option value="${o}" ${row.equipe === o ? "selected" : ""}>${o || "—"}</option>`).join("");
     return `
       <tr>
-        <td><input class="cell" data-id="${sc.id}" data-scrap="${row.id}" data-field="date" type="date" value="${row.date ?? ""}"></td>
+        <td><input class="cell" data-id="${sc.id}" data-scrap="${row.id}" data-field="date" type="date" min="2025-01-01" max="2035-12-31" value="${row.date ?? ""}"></td>
         <td><select class="cell log-equipe" data-id="${sc.id}" data-scrap="${row.id}" data-field="equipe">${equipeOpts}</select></td>
         <td class="num"><input class="cell" data-id="${sc.id}" data-scrap="${row.id}" data-field="produites" type="number" step="1" value="${row.produites ?? ""}"></td>
         <td class="num"><input class="cell" data-id="${sc.id}" data-scrap="${row.id}" data-field="rebutees" type="number" step="1" value="${row.rebutees ?? ""}"></td>
@@ -8027,7 +8065,7 @@ function marpossBlocExHTML(sc, essai, ex, i){
     <div class="marposs-ex" style="border-top:2px solid var(--border); margin-top:14px; padding-top:10px;">
       <div class="marposs-window">
         <b style="color:var(--teal);">${titre}</b>
-        <label>Jour <input type="date" class="cell" data-marposs-ex="${ex.id}" data-marposs-field="jour" value="${escapeAttr(ex.jour || "")}" title="Jour de cette extraction (un essai peut s'étendre sur plusieurs jours)"></label>
+        <label>Jour <input type="date" min="2025-01-01" max="2035-12-31" class="cell" data-marposs-ex="${ex.id}" data-marposs-field="jour" value="${escapeAttr(ex.jour || "")}" title="Jour de cette extraction (un essai peut s'étendre sur plusieurs jours)"></label>
         <label>Début <input type="time" class="cell" data-marposs-ex="${ex.id}" data-marposs-field="debut" value="${escapeAttr(ex.debut)}"></label>
         <label>Fin <input type="time" class="cell" data-marposs-ex="${ex.id}" data-marposs-field="fin" value="${escapeAttr(ex.fin)}"></label>
         ${(i > 0 || essai.marpossListe.length > 1) ? `<button class="ghost danger marposs-ex-del" data-essai="${essai.id}" data-marposs-ex="${ex.id}" title="Supprimer cette extraction">✕</button>` : ""}
@@ -8717,7 +8755,7 @@ function essaiCardHTML(sc, essai, interactive){
 
   const head = interactive ? `
     <input class="cell ref essai-titre" data-id="${sc.id}" data-essai="${essai.id}" data-field="titre" value="${escapeAttr(essai.titre)}">
-    <input class="cell" data-id="${sc.id}" data-essai="${essai.id}" data-field="date" type="date" value="${essai.date ?? ""}">
+    <input class="cell" data-id="${sc.id}" data-essai="${essai.id}" data-field="date" type="date" min="2025-01-01" max="2035-12-31" value="${essai.date ?? ""}">
     <select class="cell log-equipe" data-id="${sc.id}" data-essai="${essai.id}" data-field="equipe">${equipeOptions(essai.equipe)}</select>
     <input class="cell ref" data-id="${sc.id}" data-essai="${essai.id}" data-field="operateur" value="${escapeAttr(essai.operateur)}" placeholder="Opérateur">
     <span class="status-badge ${badgeClass}">${badgeText}</span>
@@ -8749,7 +8787,7 @@ function essaiCardHTML(sc, essai, interactive){
          <span style="margin-left:10px;">Début essai —</span>
          <input class="cell" style="width:95px; min-width:80px;" type="time" data-id="${sc.id}" data-essai="${essai.id}" data-field="heureDebut" value="${essai.heureDebut ?? ""}" title="Pré-remplit la fenêtre horaire du suivi Marposs (si elle est encore vide)">
          <span style="margin-left:10px;">Fin d'essai —</span>
-         <input class="cell" style="width:135px; min-width:120px;" type="date" data-id="${sc.id}" data-essai="${essai.id}" data-field="dateFin" value="${essai.dateFin ?? ""}">
+         <input class="cell" style="width:135px; min-width:120px;" type="date" min="2025-01-01" max="2035-12-31" data-id="${sc.id}" data-essai="${essai.id}" data-field="dateFin" value="${essai.dateFin ?? ""}">
          <input class="cell" style="width:95px; min-width:80px;" type="time" data-id="${sc.id}" data-essai="${essai.id}" data-field="heureFin" value="${essai.heureFin ?? ""}" title="Pré-remplit la fenêtre horaire du suivi Marposs (si elle est encore vide)">
        </div>`
     : ((essai.redigePar || essai.dateFin || essai.heureDebut) ? `<div class="essai-obs-print">${essai.redigePar ? "Rédigé par : " + escapeAttr(essai.redigePar) : ""}${essai.dateFin ? (essai.redigePar ? " · " : "") + "Fin d'essai : " + essai.dateFin + (essai.heureFin ? " à " + essai.heureFin : "") : ""}${essai.heureDebut ? (essai.dateFin || essai.redigePar ? " · " : "") + "Début : " + essai.heureDebut : ""}</div>` : "");
@@ -10349,7 +10387,7 @@ function backlogHTML(){
   const cards = backlog.map(b => `
     <div class="backlog-card">
       <div class="backlog-card-head">
-        <input class="cell" data-backlog="${b.id}" data-field="date" type="date" value="${b.date ?? ""}">
+        <input class="cell" data-backlog="${b.id}" data-field="date" type="date" min="2025-01-01" max="2035-12-31" value="${b.date ?? ""}">
         <input class="cell ref" data-backlog="${b.id}" data-field="auteur" value="${escapeAttr(b.auteur)}" placeholder="Nom" style="max-width:120px;">
         <select class="backlog-type" data-backlog="${b.id}" data-field="type">
           <option value="bug" ${b.type==="bug"?"selected":""}>Bug</option>
@@ -11917,6 +11955,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.82.0", date:"13/10/2026", points:[
+    "<b>La saisie des essais n'exige plus ce qu'on ne mesure pas.</b> Les champs Droite/Gauche et Inter/Exter s'affichaient toujours ensembles : un essai qui ne portait que sur un côté obligeait à ignorer l'autre. Désormais chaque groupe a ses <b>pastilles</b> — touche « Droite » seul et le champ Gauche disparaît, pour cet essai, sans toucher la configuration. Et <b>les dates se règlent enfin</b> : le sélecteur démarre à une année utile au lieu de défiler depuis l'an 1."
+  ]},
   { version:"4.81.2", date:"13/10/2026", points:[
     "<b>Le bandeau « Corriger maintenant » ne crie plus sur un état propre.</b> Il proposait une correction dès qu'un outil portait des logements D1/D2 sans champ « correcteur » rempli — or c'est précisément la forme CORRECTE depuis la nouvelle base : les positions vivent sur les logements, qui sont les correcteurs. Le bandeau ne se déclenche plus que pour de vrais doublons (le même porte-outil saisi en deux outils séparés). Si vous le voyiez s'afficher en permanence, c'était ce faux positif : il est parti, et la correction n'y change strictement rien."
   ]},
@@ -12448,7 +12489,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.81.2";
+const TOOL_VERSION = "4.82.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -15344,7 +15385,7 @@ function renderCloturePanel(){
     <label class="cloture-champ">Précision
       <input id="clotureDetail" class="cell ref" value="${escapeAttr(c.detail || "")}" placeholder="ex. éclat d'arête Inter à la pièce 37"></label>
     <label class="cloture-champ">Date d'arrêt
-      <input id="clotureDate" type="date" class="cell" value="${escapeAttr(c.date || new Date().toISOString().slice(0,10))}"></label>
+      <input id="clotureDate" type="date" min="2025-01-01" max="2035-12-31" class="cell" value="${escapeAttr(c.date || new Date().toISOString().slice(0,10))}"></label>
     <div class="panel-actions">
       <button class="ghost" id="clotureAnnuler">Annuler</button>
       ${c.motif ? `<button class="ghost" id="clotureReouvrir">Réouvrir l'essai</button>` : ""}
@@ -17729,6 +17770,23 @@ function runTests(){
             corrige.logements[0].mabec, corrige.logements[1].prix],
            [0, "", "T543", 2, "Z000 519 285", 10.97]);
       } finally { lignes = lAv3; }
+
+    /* ---- v4.82.0 — LA SAISIE N'EXIGE PLUS CE QU'ON NE MESURE PAS ----------------
+       Retours d'usage de Benjamin (13/10, depuis l'atelier) : (1) les dates
+       d'essai ne se tapent pas — le sélecteur défile depuis l'an 1 ; (2) le
+       formulaire impose Droite+Gauche et Inter+Exter même quand l'essai ne
+       porte que sur un côté. (1) est réglé par des bornes min/max sur tous les
+       champs date (contrôle hors-suite dans le harnais). (2) par des pastilles
+       de côté PAR ESSAI : axesActifs est la fonction pure qui décide quels
+       champs se rendent — tous par défaut, filtrés par l'état de session,
+       JAMAIS par la configuration du scénario. */
+    ok("saisie v4.82 : sans pastille, tous les axes se rendent (le défaut ne change pas)",
+       axesActifs(["D","G"], undefined), ["D","G"]);
+    ok("saisie v4.82 : une pastille cache son axe, l'autre reste saisissable",
+       [axesActifs(["D","G"], {G:false}).join(","), axesActifs(["I","E"], {I:false,E:false}).length],
+       ["D", 0]);
+    ok("saisie v4.82 : la donnée ne change pas de forme — un côté caché est un champ absent, pas un zéro",
+       axesActifs(["D","G"], {D:false,G:false}).length, 0);
     }
 
     /* ---- v4.74.1 — l'inversion ISO / MABEC : détectée, permutée, JAMAIS sur les sains ----

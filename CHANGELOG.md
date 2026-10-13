@@ -5,6 +5,36 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.82.0] — 2026-10-13 · Tour 65
+
+**La saisie des essais n'exige plus ce qu'on ne mesure pas.** Retours d'usage
+de Benjamin depuis l'atelier : (1) « la date des essais ne peut pas se taper
+directement il faut faire défiler… depuis l'an 1 » ; (2) « j'ai inter et exter
+et droite et gauche à rentrer pour la même référence, ce qui n'est pas
+logique ».
+
+### Ajouté
+- **pastilles d'axes PAR ESSAI** dans le panneau de saisie atelier : chaque
+  groupe multi-axes (battement Droite/Gauche, critères Inter/Exter…) porte ses
+  pastilles — toucher un axe le montre ou le cache, pour cet essai seulement
+  (état de session `atelierCtx.axesOn`, `axesActifs()` pure). La configuration
+  du scénario reste intacte ; la donnée ne change pas de forme (un côté caché
+  est un champ absent, pas un zéro — la conformité filtrait déjà les vides) ;
+- **portes de test** : 3 sur `axesActifs`, 1 hors-suite sur les dates.
+
+### Corrigé
+- **les 8 champs date sont bornés** (min 2025, max 2035) : le sélecteur
+  démarre à une année utile au lieu de défiler depuis l'an 1. Au passage, le
+  remplacement global avait corrompu un sélecteur CSS
+  (`input[type="date" min=…]` — les attributs dans les crochets) : réparé, et
+  la porte hors-suite lit le fichier réel pour l'empêcher de revenir.
+
+### Vérification
+- 499 → **502 tests** ;
+- contre-regard **deux fautes, deux portes** (avec assert) : `axesActifs`
+  aveugle → 2 tests tombent ; bornes retirées → la porte dates tombe
+  (« 0 bornés ») ; restauration par copie, empreinte identique.
+
 ## [4.81.2] — 2026-10-13 · Tour 63
 
 **Le bandeau « Corriger maintenant » ne crie plus sur un état propre.**

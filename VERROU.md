@@ -13,13 +13,24 @@
 
 | | |
 |---|---|
-| **Auteur** | Z Code |
-| **Pris le** | 13/10/2026 après-midi |
-| **Écrit dans** | `bilan_economique.html` |
-| **Version visée** | 4.82.0 |
-| **Sujet** | Retours d'usage saisie atelier : (1) dates d'essai — sélecteur qui démarre à l'an 1 → min/max sur tous les champs date ; (2) saisie D/G + Inter/Exter imposée en 4 champs → pastilles de côté PAR ESSAI au moment de la saisie (état de session, config du scénario intacte). Ordre : « Bug de l'outil ». |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
 
-🔒 **Verrou pris par Z Code le 13/10/2026 après-midi** (tour 65, v4.82.0 — la saisie atelier écoutée).
+✅ **Verrou libéré par Z Code le 13/10/2026** (Tour 65, v4.82.0). Pendant le tour,
+`bilan_economique.html` est passé à l'empreinte `904c7196…` : les 8 champs date
+bornés (min 2025 / max 2035), les pastilles d'axes PAR ESSAI dans le panneau
+atelier (`axesActifs()` pure + état de session, config du scénario intacte),
+`TOOL_VERSION = "4.82.0"`, NOUVEAUTES + CHANGELOG. Un accroc assumé : le
+remplacement global des bornes avait corrompu le sélecteur CSS
+(`input[type="date" min=…]`) — réparé, et la porte hors-suite lit désormais le
+fichier réel pour l'empêcher de revenir. Contre-regard **deux fautes, deux
+portes** (assert) : vues toutes les deux, restauration par copie, empreinte
+identique, 502/502 verts. **Déployé sur Projet, vérifié curl ; la PROD attend
+la phrase de Benjamin.** Écrits : `bilan_economique.html`, `build_harness.py`,
+`CHANGELOG.md`, `ECHANGES.md`, `VERROU.md`.
 
 ---
 
