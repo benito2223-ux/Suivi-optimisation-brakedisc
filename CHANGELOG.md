@@ -5,6 +5,36 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.97.1] — 2026-10-17 · La barre d'outils tient sur une ligne
+
+**La demande.** Benjamin : « la barre a trop de fonctions affichées, sur
+2 lignes tellement les pictos sont gros et moches — réduis et rends beau ».
+
+**Mesuré avant.** 180 px de haut, 3 rangées ; boutons de 131 à 188 px de
+large ; icônes 15 px. Après : **62 px, une seule ligne** (46 px de boutons).
+
+**Le lot.** Icônes 15→13 px, trait 1.6→1.7 (plus net à petite taille),
+padding boutons 8/14→5/10, texte 13→12.5 px, gaps serrés (16/8/8→8/5/4).
+Les cinq écrans deviennent un **segmented control** (boutons collés, un
+contour pour le groupe — le geste Apple pour une navigation groupée ;
+l'onglet actif garde son souligné rouge). Libellés raccourcis (Tableau de
+bord→Tableau, Vue de synthèse→Synthèse, Classeur Matis→Matis, Carte
+atelier→Atelier, + Ajouter un scénario→+ Scénario ; le title complet reste
+au survol). Exporter / Importer / Verrouiller passent en **icône seule**
+(actions rares, tooltip complet). Le `#moreBtn` (•••) prend une largeur
+fixe 31 px.
+
+**Piège rencontré** : le décompte de largeur tenait (33 px de marge) mais
+le menu ••• wrappait encore — un parent `div.toolbar-more-wrap` suivait
+une largeur fantôme de 77 px (box-sizing + inline-flex). Contraint à
+31 px, plus 4 px gagnés sur le padding du groupe écrans : tout tient.
+
+**Non-régression vérifiée** : harnais 582/0, `node --check` 5/5, capture
+visuelle validée (une ligne, alignement médian, icônes fines, aucun
+chevauchement). Mobile 420 px : boutons 44 px tactiles, wraps attendus ;
+le débord horizontal constaté vient de `.hd` et d'une table (préexistant
+sur 4.97.0, vérifié au stash — hors périmètre de ce lot).
+
 ## [4.97.0] — 2026-10-16 · UI lot 4 « signature Apple » : la barre en verre
 
 **La demande.** Benjamin : « rendre l'outil parfait et beau, genre Apple ou

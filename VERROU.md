@@ -1,8 +1,22 @@
 | **Auteur** | Hermes |
-| **Pris le** | 16/10/2026 (soir 2) |
+| **Pris le** | 17/10/2026 |
 | **Écrit dans** | bilan_economique.html, CHANGELOG.md, VERROU.md |
-| **Version visée** | 4.97.0 |
-| **Sujet** | UI lot 4 « signature Apple » — toolbar collante translucide, ombres unifiées 2 étages, motion 180 ms. Light par défaut acté. Direct prod après vérification. |
+| **Version visée** | 4.97.1 |
+| **Sujet** | UI : toolbar compactée — mesurée à 180px/3 rangées (boutons 131-188px), objectif 1 ligne à ~1180px. |
+
+✅ **Verrou libéré par Hermes le 16/10/2026 (soir 2)** (UI 4.97.0, lot 4
+« signature Apple » + PROD). Pendant le tour : toolbar sticky translucide
+(verre `blur(14px)` + fond 78 %, classe `.is-sticky` au scroll, fallback
+`@supports`, print statique — verre sur CETTE barre uniquement), motion
+120→180 ms `cubic-bezier(.4,0,.2,1)`, ombres repliées sur `--shadow-card` /
+`--shadow-hover` (23 valeurs héritées → 2 étages ; focus/insets/accents
+légitimes conservés). Diagnostic documenté : les polices n'étaient pas le
+problème. Piège rencontré et contourné : Chrome headless virtual-time gèle
+la transition `background` — contre-vérifié sans transition (computed style
+`0.78` alpha + `backdrop-filter` actif). 582/0, `node --check` 5/5.
+**PROD** : Success!, md5 `54b0bea2…` identique octet pour octet,
+TOOL_VERSION 4.97.0 servi. Écrits : `bilan_economique.html`,
+`CHANGELOG.md`, `VERROU.md`.
 
 ✅ **Verrou libéré par Hermes le 16/10/2026 (soir)** (UI 4.96.1, lots 2+3 +
 PROD). Pendant le tour : 20 déclarations `.var(--motion)` invalides réparées
