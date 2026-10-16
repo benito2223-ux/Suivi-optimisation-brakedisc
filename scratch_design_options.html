@@ -1,0 +1,287 @@
+<title>Palettes SPK — round 2</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Work+Sans:wght@400;500;600;700&family=Archivo+Black&family=IBM+Plex+Sans:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600&family=Sora:wght@600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap">
+<style>
+:root{
+  --font-mono:'IBM Plex Mono',Consolas,monospace;
+  --radius-lg:16px; --radius:9px; --radius-sm:6px;
+}
+*{box-sizing:border-box;}
+body{margin:0; background:#dfe2e6; font-family:'Work Sans',Arial,sans-serif; color:#1a1a1a;}
+
+.page{max-width:1180px; margin:0 auto; padding:28px 24px 90px;}
+.intro{display:flex; align-items:flex-start; justify-content:space-between; gap:24px; flex-wrap:wrap; margin-bottom:20px;}
+.intro h1{font-family:'Manrope',Arial,sans-serif; font-weight:800; font-size:26px; margin:0 0 6px; color:#14171a; letter-spacing:-.015em;}
+.intro p{margin:0; max-width:62ch; font-size:14px; line-height:1.55; color:#4b5158;}
+.switcher{display:inline-flex; gap:4px; background:#c9ced6; padding:4px; border-radius:999px; flex:0 0 auto; flex-wrap:wrap;}
+.switcher button{font-family:var(--font-mono); font-size:11px; font-weight:600; letter-spacing:.03em; text-transform:uppercase;
+  padding:9px 14px; border:none; border-radius:999px; background:transparent; color:#4b5158; cursor:pointer; white-space:nowrap;}
+.switcher button.active{background:#14171a; color:#fff;}
+.switcher button:hover:not(.active){background:rgba(255,255,255,.55);}
+.opt-caption{font-family:var(--font-mono); font-size:11.5px; line-height:1.6; letter-spacing:.02em; color:#5a6069; margin:0 0 20px; padding:12px 16px;
+  background:#eceef1; border-radius:var(--radius); border-left:3px solid #14171a;}
+.opt-caption b{color:#14171a;}
+
+/* ============ conteneur bascule ============ */
+.mock{position:relative; border-radius:20px; padding:28px; overflow:hidden; transition:background .2s;}
+
+/* ---------- E : verre atelier ---------- */
+.mock[data-opt="E"]{background:
+    radial-gradient(600px 400px at 15% 10%, rgba(56,142,220,.35), transparent 60%),
+    radial-gradient(500px 380px at 90% 85%, rgba(14,144,140,.3), transparent 60%),
+    linear-gradient(160deg,#0f1720,#1a2430 60%,#101820);
+  font-family:'Work Sans',Arial,sans-serif;
+}
+.mock[data-opt="E"] .hd{border-bottom:1px solid rgba(255,255,255,.14);}
+.mock[data-opt="E"] .mark{background:linear-gradient(135deg,#4fa8f0,#1e6fc7); box-shadow:0 0 22px rgba(79,168,240,.55);}
+.mock[data-opt="E"] .crumb{color:rgba(255,255,255,.55);}
+.mock[data-opt="E"] h2{font-family:'Manrope',Arial,sans-serif; font-weight:800; color:#fff; letter-spacing:-.01em;}
+.mock[data-opt="E"] .btn{background:linear-gradient(135deg,#4fa8f0,#1e6fc7); border:none; color:#fff; box-shadow:0 6px 20px rgba(30,111,199,.45);}
+.mock[data-opt="E"] .card, .mock[data-opt="E"] .stat, .mock[data-opt="E"] .tbl-wrap{
+  background:rgba(255,255,255,.08); backdrop-filter:blur(18px) saturate(140%); -webkit-backdrop-filter:blur(18px) saturate(140%);
+  border:1px solid rgba(255,255,255,.16); box-shadow:0 8px 30px rgba(0,0,0,.35);}
+.mock[data-opt="E"] .card.active{border-color:rgba(79,168,240,.7); box-shadow:0 0 0 1px rgba(79,168,240,.5), 0 10px 34px rgba(79,168,240,.25);}
+.mock[data-opt="E"] .card:hover{transform:translateY(-2px); box-shadow:0 12px 34px rgba(0,0,0,.4);}
+.mock[data-opt="E"] .card-name, .mock[data-opt="E"] .v, .mock[data-opt="E"] td{color:#f2f5f8;}
+.mock[data-opt="E"] .l, .mock[data-opt="E"] th{color:rgba(255,255,255,.5);}
+.mock[data-opt="E"] .num{background:rgba(255,255,255,.14); color:rgba(255,255,255,.75);}
+.mock[data-opt="E"] .pill.ref{background:linear-gradient(135deg,#4fa8f0,#1e6fc7); color:#fff;}
+.mock[data-opt="E"] .pill.serie{background:rgba(30,150,140,.35); color:#7fe3d6; border:1px solid rgba(127,227,214,.4);}
+.mock[data-opt="E"] .pill.essai{background:rgba(255,176,32,.18); color:#ffc460; border:1px solid rgba(255,196,96,.4);}
+.mock[data-opt="E"] .stat.accent .v{color:#7fc4ff; text-shadow:0 0 18px rgba(79,168,240,.5);}
+.mock[data-opt="E"] .stat.gain .v{color:#7fe3d6;}
+.mock[data-opt="E"] th{background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.12);}
+.mock[data-opt="E"] td{border-color:rgba(255,255,255,.1);}
+.mock[data-opt="E"] .tbl-head{border-color:rgba(255,255,255,.12); color:#f2f5f8;}
+.mock[data-opt="E"] .card-delta.pos{color:#ff8f8f;} .mock[data-opt="E"] .card-delta.neg{color:#7fe3d6;}
+.mock[data-opt="E"] .v.perte{color:#ff8f8f;}
+
+/* ---------- F : signaletique atelier ---------- */
+.mock[data-opt="F"]{background:#f2c400; font-family:'IBM Plex Sans',Arial,sans-serif;}
+.mock[data-opt="F"] .hd{border-bottom:4px solid #14171a; padding-bottom:14px;}
+.mock[data-opt="F"] .mark{background:#14171a; color:#f2c400; border-radius:4px; font-family:'Archivo Black',Arial,sans-serif;}
+.mock[data-opt="F"] .crumb{color:#3a3200; font-weight:700;}
+.mock[data-opt="F"] h2{font-family:'Archivo Black',Arial,sans-serif; font-weight:400; color:#14171a; text-transform:uppercase; letter-spacing:0;}
+.mock[data-opt="F"] .btn{background:#14171a; border:3px solid #14171a; color:#f2c400; border-radius:4px; font-weight:700;}
+.mock[data-opt="F"] .card, .mock[data-opt="F"] .stat, .mock[data-opt="F"] .tbl-wrap{
+  background:#fffbe8; border:3px solid #14171a; border-radius:4px; box-shadow:none;}
+.mock[data-opt="F"] .card.active{box-shadow:6px 6px 0 #14171a;}
+.mock[data-opt="F"] .card-name{font-weight:700; color:#14171a;}
+.mock[data-opt="F"] .v{font-family:'Archivo Black',Arial,sans-serif; font-weight:400; color:#14171a;}
+.mock[data-opt="F"] .l, .mock[data-opt="F"] th{color:#5c5200; font-weight:700;}
+.mock[data-opt="F"] .num{background:#14171a; color:#f2c400; border-radius:4px;}
+.mock[data-opt="F"] .pill{border-radius:4px;}
+.mock[data-opt="F"] .pill.ref{background:#14171a; color:#f2c400;}
+.mock[data-opt="F"] .pill.serie{background:#1b6e4c; color:#fff;}
+.mock[data-opt="F"] .pill.essai{background:#c74400; color:#fff;}
+.mock[data-opt="F"] .stat.accent{background:#14171a;} .mock[data-opt="F"] .stat.accent .l{color:#f2c400;} .mock[data-opt="F"] .stat.accent .v{color:#f2c400;}
+.mock[data-opt="F"] .stat.gain{background:#1b6e4c;} .mock[data-opt="F"] .stat.gain .l, .mock[data-opt="F"] .stat.gain .v{color:#fff;}
+.mock[data-opt="F"] th{background:#f2e28a; border-bottom:3px solid #14171a; border-radius:0;}
+.mock[data-opt="F"] td{border-bottom:2px solid #eee0a8; color:#14171a; font-weight:600;}
+.mock[data-opt="F"] tr.outil1{border-left:5px solid #c74400;}
+.mock[data-opt="F"] tr.outil2{border-left:5px solid #1b6e4c;}
+.mock[data-opt="F"] .badge{border-radius:4px;}
+.mock[data-opt="F"] .badge.ok{background:#1b6e4c;} .mock[data-opt="F"] .badge.risk{background:#c1002a;}
+.mock[data-opt="F"] .tbl-head{border-bottom:3px solid #14171a; font-weight:700; color:#14171a;}
+.mock[data-opt="F"] .card-delta.pos{color:#c1002a;} .mock[data-opt="F"] .card-delta.neg{color:#1b6e4c;}
+.mock[data-opt="F"] .v.perte{color:#c1002a; font-family:'Archivo Black',Arial,sans-serif; font-weight:400;}
+
+/* ---------- G : neon ceramique ---------- */
+.mock[data-opt="G"]{
+  background-color:#0c0f12;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.025) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.02) 0 1px, transparent 1px 3px);
+  font-family:'Work Sans',Arial,sans-serif;
+}
+.mock[data-opt="G"] .hd{border-bottom:1px solid rgba(255,176,32,.25);}
+.mock[data-opt="G"] .mark{background:#141a1f; color:#ffb020; border:1px solid rgba(255,176,32,.5); box-shadow:0 0 24px rgba(255,176,32,.35); font-family:'Sora',Arial,sans-serif;}
+.mock[data-opt="G"] .crumb{color:#6b7580;}
+.mock[data-opt="G"] h2{font-family:'Sora',Arial,sans-serif; font-weight:700; color:#f4f1ea; letter-spacing:-.005em;}
+.mock[data-opt="G"] .btn{background:#141a1f; border:1px solid #ffb020; color:#ffb020; box-shadow:0 0 0 rgba(255,176,32,0); transition:box-shadow .2s;}
+.mock[data-opt="G"] .btn:hover{box-shadow:0 0 18px rgba(255,176,32,.45);}
+.mock[data-opt="G"] .card, .mock[data-opt="G"] .stat, .mock[data-opt="G"] .tbl-wrap{
+  background:#12161a; border:1px solid #262c33; box-shadow:none;}
+.mock[data-opt="G"] .card.active{border-color:#2fd6c0; box-shadow:0 0 0 1px rgba(47,214,192,.5), 0 0 28px rgba(47,214,192,.18);}
+.mock[data-opt="G"] .card:hover{border-color:#3a4148;}
+.mock[data-opt="G"] .card-name{font-family:'Sora',Arial,sans-serif; font-weight:600; color:#f4f1ea;}
+.mock[data-opt="G"] .v{font-family:'Sora',Arial,sans-serif; font-weight:700; color:#f4f1ea;}
+.mock[data-opt="G"] .l, .mock[data-opt="G"] th{color:#6b7580;}
+.mock[data-opt="G"] .num{background:#1c2126; color:#9aa2ab;}
+.mock[data-opt="G"] .pill.ref{background:transparent; border:1px solid #ffb020; color:#ffb020;}
+.mock[data-opt="G"] .pill.serie{background:rgba(47,214,192,.12); color:#2fd6c0; border:1px solid rgba(47,214,192,.4);}
+.mock[data-opt="G"] .pill.essai{background:rgba(255,176,32,.12); color:#ffb020; border:1px solid rgba(255,176,32,.4);}
+.mock[data-opt="G"] .stat.accent .v{color:#ffb020; text-shadow:0 0 20px rgba(255,176,32,.4);}
+.mock[data-opt="G"] .stat.gain .v{color:#2fd6c0; text-shadow:0 0 20px rgba(47,214,192,.35);}
+.mock[data-opt="G"] th{background:#15191d; border-color:#262c33;}
+.mock[data-opt="G"] td{border-color:#1e2328; color:#e3e6e9;}
+.mock[data-opt="G"] .tbl-head{border-color:#262c33; color:#f4f1ea;}
+.mock[data-opt="G"] tr.outil1{border-left:2px solid #ffb020;} .mock[data-opt="G"] tr.outil2{border-left:2px solid #2fd6c0;}
+.mock[data-opt="G"] .card-delta.pos{color:#ff6b6b;} .mock[data-opt="G"] .card-delta.neg{color:#2fd6c0;}
+.mock[data-opt="G"] .v.perte{color:#ff6b6b;}
+.mock[data-opt="G"] .badge.ok{background:rgba(47,214,192,.16); color:#2fd6c0; box-shadow:none;}
+.mock[data-opt="G"] .badge.risk{background:rgba(255,107,107,.16); color:#ff6b6b;}
+@keyframes pulseDot{0%,100%{opacity:1;} 50%{opacity:.35;}}
+.mock[data-opt="G"] .card.active .card-name::before{content:""; display:inline-block; width:6px; height:6px; border-radius:50%; background:#2fd6c0; margin-right:7px; animation:pulseDot 2s ease-in-out infinite;}
+
+/* ---------- H : minimal editorial ---------- */
+.mock[data-opt="H"]{background:#faf8f4; font-family:'IBM Plex Sans',Arial,sans-serif;}
+.mock[data-opt="H"] .hd{border-bottom:1px solid #e2ddd0;}
+.mock[data-opt="H"] .mark{background:transparent; color:#1a1a1a; border:1.5px solid #1a1a1a; font-family:'Fraunces',Georgia,serif; font-weight:600;}
+.mock[data-opt="H"] .crumb{color:#9a9284;}
+.mock[data-opt="H"] h2{font-family:'Fraunces',Georgia,serif; font-weight:600; color:#221f1a; font-size:24px;}
+.mock[data-opt="H"] .btn{background:transparent; border:1.5px solid #1a1a1a; color:#1a1a1a; border-radius:3px; box-shadow:none;}
+.mock[data-opt="H"] .card, .mock[data-opt="H"] .stat, .mock[data-opt="H"] .tbl-wrap{
+  background:transparent; border:none; border-bottom:1px solid #e2ddd0; border-radius:0; box-shadow:none; padding-bottom:16px;}
+.mock[data-opt="H"] .card.active{border-bottom:1px solid #b5442e;}
+.mock[data-opt="H"] .card-name{font-family:'IBM Plex Sans',Arial,sans-serif; font-weight:600; color:#221f1a;}
+.mock[data-opt="H"] .v{font-family:'Fraunces',Georgia,serif; font-weight:500; color:#221f1a; font-size:22px;}
+.mock[data-opt="H"] .l, .mock[data-opt="H"] th{color:#9a9284;}
+.mock[data-opt="H"] .num{background:transparent; border:1px solid #d8d2c4; color:#6b6558;}
+.mock[data-opt="H"] .pill{border-radius:2px; text-transform:none; font-family:'IBM Plex Sans',Arial,sans-serif;}
+.mock[data-opt="H"] .pill.ref{background:#221f1a; color:#faf8f4;}
+.mock[data-opt="H"] .pill.serie{background:transparent; color:#b5442e; border:1px solid #b5442e;}
+.mock[data-opt="H"] .pill.essai{background:transparent; color:#9a9284; border:1px solid #d8d2c4;}
+.mock[data-opt="H"] .stats{border-top:1px solid #e2ddd0; padding-top:18px;}
+.mock[data-opt="H"] .stat{border-bottom:none;}
+.mock[data-opt="H"] .stat.accent .v{color:#b5442e;}
+.mock[data-opt="H"] .stat.gain .v{color:#3f6b4c;}
+.mock[data-opt="H"] th{background:transparent; border-bottom:1px solid #221f1a; color:#6b6558;}
+.mock[data-opt="H"] td{border-bottom:1px solid #ede9dd; color:#221f1a; font-family:'IBM Plex Sans',Arial,sans-serif;}
+.mock[data-opt="H"] .tbl-head{border-bottom:none; color:#221f1a;}
+.mock[data-opt="H"] tr.outil1, .mock[data-opt="H"] tr.outil2{border-left:none;}
+.mock[data-opt="H"] .badge{border-radius:2px;}
+.mock[data-opt="H"] .badge.ok{background:transparent; color:#3f6b4c; border:1px solid #3f6b4c;}
+.mock[data-opt="H"] .badge.risk{background:transparent; color:#b5442e; border:1px solid #b5442e;}
+.mock[data-opt="H"] .card-delta.pos{color:#b5442e;} .mock[data-opt="H"] .card-delta.neg{color:#3f6b4c;}
+.mock[data-opt="H"] .v.perte{color:#b5442e;}
+
+/* ============ structure commune (contenu identique d'une option a l'autre) ============ */
+.hd{display:flex; align-items:center; gap:14px; padding-bottom:16px; margin-bottom:22px;}
+.mark{width:36px; height:36px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px; flex:0 0 auto;}
+.crumb{font-family:var(--font-mono); font-size:10.5px; letter-spacing:.09em; text-transform:uppercase;}
+h2{margin:2px 0 0; font-size:22px;}
+.spacer{flex:1;}
+.btn{font-size:12.5px; font-weight:700; padding:10px 18px; border-radius:999px; cursor:pointer; transition:transform .15s, box-shadow .2s;}
+.btn:hover{transform:translateY(-1px);}
+
+.cards{display:grid; grid-template-columns:1.3fr 1fr 1fr; gap:14px; margin-bottom:22px;}
+.card{border-radius:var(--radius-lg); padding:17px; transition:transform .18s, box-shadow .18s, border-color .18s;}
+.card-top{display:flex; align-items:center; gap:8px; margin-bottom:9px; flex-wrap:wrap;}
+.num{width:20px; height:20px; border-radius:50%; font-family:var(--font-mono); font-size:10.5px; font-weight:700; display:flex; align-items:center; justify-content:center; flex:0 0 auto;}
+.card-name{font-size:15px; flex:1;}
+.pill{font-family:var(--font-mono); font-size:9.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:3px 9px; border-radius:999px; white-space:nowrap;}
+.card-metrics{display:flex; gap:18px; font-family:var(--font-mono); margin-top:11px;}
+.card-metrics div .l{font-size:9px; text-transform:uppercase; letter-spacing:.06em;}
+.card-metrics div .v{font-size:17px; font-weight:700; font-variant-numeric:tabular-nums;}
+.card-delta{font-size:10.5px; font-weight:600; margin-top:1px;}
+
+.stats{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px;}
+.stat{border-radius:var(--radius-lg); padding:15px 17px; transition:transform .18s;}
+.stat .l{font-family:var(--font-mono); font-size:9.5px; letter-spacing:.07em; text-transform:uppercase; margin-bottom:5px;}
+.stat .v{font-size:25px; font-variant-numeric:tabular-nums;}
+.stat .v small{font-family:'Work Sans',Arial,sans-serif; font-weight:600; font-size:12px; margin-left:3px; opacity:.65;}
+
+.tbl-wrap{border-radius:var(--radius-lg); overflow:hidden;}
+.tbl-head{padding:13px 17px; font-weight:700; font-size:13px; display:flex; align-items:center; gap:10px;}
+.tbl-head span{font-weight:400; font-size:12px; opacity:.65;}
+table{width:100%; border-collapse:collapse; font-size:12.5px;}
+th{font-family:var(--font-mono); font-size:9.5px; letter-spacing:.05em; text-transform:uppercase; text-align:left; padding:10px 13px;}
+th.num, td.num{text-align:right; font-variant-numeric:tabular-nums;}
+td{padding:11px 13px; font-family:var(--font-mono);}
+td.txt{font-family:'Work Sans',Arial,sans-serif;}
+tr:last-child td{border-bottom:none !important;}
+.badge{display:inline-flex; align-items:center; gap:3px; font-family:var(--font-mono); font-size:10px; font-weight:700; padding:3px 8px; border-radius:20px;}
+</style>
+
+<div class="page">
+  <div class="intro">
+    <div>
+      <h1>Round 2 — typographie + effets</h1>
+      <p>Quatre directions plus tranchées : chacune change la police (pas la même partout), et introduit un vrai parti pris d'effet — verre dépoli, aplat façon signalétique, lueur néon, minimal éditorial. Toujours les mêmes composants réels pour comparer à l'identique.</p>
+    </div>
+    <div class="switcher" id="switcher">
+      <button data-opt="E" class="active">E — Verre</button>
+      <button data-opt="F">F — Signalétique</button>
+      <button data-opt="G">G — Néon céramique</button>
+      <button data-opt="H">H — Minimal éditorial</button>
+    </div>
+  </div>
+
+  <p class="opt-caption" id="caption"></p>
+
+  <div class="mock" data-opt="E" id="mock">
+    <div class="hd">
+      <div class="mark">S</div>
+      <div>
+        <div class="crumb">EMAG 1 — OP10</div>
+        <h2>DV 356x26 RPI</h2>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn">+ Ajouter un scénario</button>
+    </div>
+
+    <div class="cards">
+      <div class="card active">
+        <div class="card-top"><span class="num">1</span><span class="card-name">Process actuel — CBN</span><span class="pill ref">★ Scénario réf.</span><span class="pill serie">En série</span></div>
+        <div class="card-metrics">
+          <div><div class="l">€ / pièce</div><div class="v">1,0333</div></div>
+          <div><div class="l">Temps cycle</div><div class="v">100</div></div>
+          <div><div class="l">Essais</div><div class="v">1</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-top"><span class="num">2</span><span class="card-name">Mixte T50013</span><span class="pill essai">Essai</span></div>
+        <div class="card-metrics">
+          <div><div class="l">€ / pièce</div><div class="v">1,4342</div><div class="card-delta pos">+38,8 %</div></div>
+          <div><div class="l">Perte/an</div><div class="v perte">-14,9 k€</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-top"><span class="num">3</span><span class="card-name">Céramique intégrale</span><span class="pill essai">Essai</span></div>
+        <div class="card-metrics">
+          <div><div class="l">€ / pièce</div><div class="v">1,6739</div><div class="card-delta pos">+62,0 %</div></div>
+          <div><div class="l">Perte/an</div><div class="v perte">-23,8 k€</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="l">Coût total / pièce</div><div class="v">1,0333<small>€</small></div></div>
+      <div class="stat"><div class="l">Coût annuel</div><div class="v">38,4<small>k€</small></div></div>
+      <div class="stat accent"><div class="l">Temps de cycle</div><div class="v">100<small>· 54,4 s</small></div></div>
+      <div class="stat gain"><div class="l">Validation scénario</div><div class="v">1<small>/ 5 essais</small></div></div>
+    </div>
+
+    <div class="tbl-wrap">
+      <div class="tbl-head">Composition du scénario <span>T513.1 · Bol · Piste — 0,0633 €/pièce</span></div>
+      <table>
+        <thead><tr><th>N° Outil</th><th>Logement</th><th>Référence plaquette</th><th class="num">Prix</th><th class="num">Charnière</th><th>Critère</th><th class="num">Vc</th><th class="num">f</th><th class="num">€ / pièce</th></tr></thead>
+        <tbody>
+          <tr class="outil1"><td>T513.1</td><td class="txt">Bol</td><td class="txt">Plaquette exemple A</td><td class="num">30</td><td class="num">100</td><td><span class="badge ok">OK</span></td><td class="num">—</td><td class="num">—</td><td class="num">0,0375</td></tr>
+          <tr class="outil1"><td>T513.1</td><td class="txt">Piste</td><td class="txt">Plaquette exemple A</td><td class="num">30</td><td class="num">100</td><td><span class="badge risk">Hors tol.</span></td><td class="num">800</td><td class="num">0,40</td><td class="num">0,0375</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const captions = {
+  E: '<b>E — Verre atelier :</b> fond en dégradé bleu/teal diffus, panneaux en verre dépoli (blur), lueur bleutée sur les éléments actifs, léger soulèvement au survol. Police <b>Manrope</b> (titres) + <b>Work Sans</b> (texte) — plus contemporain qu\'Archivo/Open Sans, meilleure lisibilité des chiffres serrés. Effet le plus « logiciel SaaS 2026 ».',
+  F: '<b>F — Signalétique atelier :</b> aplats francs, bordures noires épaisses, ombre portée façon autocollant, aucun flou. Fond jaune sécurité + noir, façon panneau d\'atelier. Police <b>Archivo Black</b> (titres/chiffres, très dense) + <b>IBM Plex Sans</b> (texte, conçu pour l\'ingénierie). Le plus lisible de loin, le plus clivant visuellement.',
+  G: '<b>G — Néon céramique :</b> fond quasi noir avec trame fine, halo lumineux ambré/teal sur les statuts et le scénario actif, point pulsant sur le scénario actif. Police <b>Sora</b> (titres, geometrique, tres bonne lisibilite en petite taille) + <b>Work Sans</b> (texte). Pensé pour un atelier sombre ou un second écran.',
+  H: '<b>H — Minimal éditorial :</b> aucune carte, aucune ombre — juste des filets fins et un vrai empilement typographique. Chiffres clés en <b>Fraunces</b> (serif contemporaine, souvent utilisée pour donner du poids éditorial à un gros chiffre) + <b>IBM Plex Sans</b> pour tout le reste. Le plus radicalement différent de l\'existant : zéro carte, zéro boîte.'
+};
+const mock = document.getElementById('mock');
+const caption = document.getElementById('caption');
+function setOpt(opt){
+  document.querySelectorAll('#switcher button').forEach(b => b.classList.toggle('active', b.dataset.opt === opt));
+  mock.setAttribute('data-opt', opt);
+  caption.innerHTML = captions[opt];
+}
+document.getElementById('switcher').addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-opt]');
+  if(btn) setOpt(btn.getAttribute('data-opt'));
+});
+setOpt('E');
+</script>

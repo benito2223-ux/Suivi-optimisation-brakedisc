@@ -1,0 +1,10 @@
+OP10 - USURE LKT640 - CAUSE RACINE CONFIRMÉE - 14/10/2026
+=========================================================
+DIAGNOSTIC FINAL (confirmé par le responsable fonderie Sept Fons) :
+Les bruts incriminés n'étaient PAS GRENAILLÉS.
+
+Contexte : CNMX 120716 T02020 LKT640, Vc 700 / f 0,4 / ap 4 mm
+-> 3 pièces/arête, usure abrasive prononcée, surface pailletée, zéro écaillage.
+Sur bruts sains (grenaillés) : 150 p/arête à Vc 500, 75-77 p à Vc 700 (loi Vc^2).
+Le fix est AMONT : grenaillage systématique avant usinage.
+Champ structuré 'brut' {statut/peauHB/lot} prévu dans l'outil (Z Code Tour 68).

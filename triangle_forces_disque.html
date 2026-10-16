@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>SPK® — Le triangle des forces · de l'orientation de l'arête au voile du disque</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Open+Sans+Condensed:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --spk-blue:#1B5EA6; --spk-blue-dark:#154d8a; --spk-blue-light:#e8f0fb;
+  --ct-red:#E2001A; --ct-gray-900:#222; --ct-gray-700:#555; --ct-gray-500:#888;
+  --ct-gray-300:#ccc; --ct-gray-200:#e5e5e5; --ct-gray-100:#f4f4f4; --ct-gray-50:#fafafa;
+  --ct-green:#1a7a3f; --ct-green-bg:#edf7f1;
+  --font:'Open Sans',Arial,sans-serif; --font-cond:'Open Sans Condensed','Open Sans',Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+@page{size:A4 landscape;margin:6mm}
+@media print{
+  html,body{width:297mm;background:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .slide{width:285mm !important;height:197mm !important;overflow:hidden !important;margin:0 auto !important;
+    box-shadow:none !important;border-radius:0 !important}
+}
+body{font-family:var(--font);background:#e8eaed;color:var(--ct-gray-700);font-size:12px}
+.slide{max-width:1100px;margin:12px auto;background:#fff;border-radius:3px;padding:24px 40px 46px;
+  position:relative;box-shadow:0 1px 6px rgba(0,0,0,.1);min-height:760px}
+.slide::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:var(--spk-blue)}
+
+.brandbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.brand{font-family:var(--font-cond);font-size:16px;font-weight:700;color:var(--spk-blue);letter-spacing:.04em}
+.brand small{color:var(--ct-gray-500);font-family:var(--font);font-weight:400;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;margin-left:8px}
+.logo-slot{border:1px dashed var(--ct-gray-300);border-radius:2px;color:var(--ct-gray-500);font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:7px 16px}
+
+.eyebrow{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.22em;color:var(--spk-blue);display:inline-flex;align-items:center;gap:10px;margin-bottom:3px}
+.eyebrow::after{content:"";width:26px;height:2px;background:var(--ct-red);display:inline-block}
+h1{font-family:var(--font-cond);font-size:27px;font-weight:700;line-height:1.05;color:var(--ct-gray-900);margin-bottom:3px}
+h1 em{color:var(--ct-red);font-style:normal}
+.subtitle{font-size:11.5px;color:var(--ct-gray-500);margin-bottom:12px}
+
+.grid{display:grid;grid-template-columns:1.08fr .92fr;gap:20px;align-items:stretch}
+.box{border:1px solid var(--ct-gray-200);border-radius:2px;background:var(--ct-gray-50);padding:10px 12px}
+.stitle{font-family:var(--font-cond);font-size:15px;font-weight:700;color:var(--ct-gray-900);margin-bottom:6px}
+.figcap{font-size:9.5px;color:var(--ct-gray-500);font-style:italic;margin-top:4px;text-align:center}
+
+.formula{font-family:Georgia,'Times New Roman',serif;font-size:14.5px;color:var(--spk-blue);text-align:center;margin:3px 0}
+.fml-box{border:1px solid var(--ct-gray-200);border-top:3px solid var(--spk-blue);border-radius:2px;padding:6px 10px;margin:8px 0;background:#fff}
+.legend{font-size:10.5px;color:var(--ct-gray-700);line-height:1.55}
+
+.keynote{border-left:4px solid var(--ct-red);background:#fce8ea;padding:8px 12px;border-radius:2px;font-size:10.8px;line-height:1.5;color:var(--ct-gray-900)}
+.check{display:inline-block;background:var(--ct-green-bg);color:var(--ct-green);border:1px solid var(--ct-green);
+  border-radius:999px;font-size:10px;font-weight:700;padding:3px 12px;letter-spacing:.04em;margin-top:8px}
+
+.foot{position:absolute;left:40px;right:40px;bottom:12px;display:flex;justify-content:space-between;
+  border-top:1px solid var(--ct-gray-200);padding-top:7px;font-size:9px;color:var(--ct-gray-500)}
+</style>
+</head>
+<body>
+<section class="slide">
+  <div class="brandbar">
+    <div class="brand">SPK® <small>The Productivity Experts — by CeramTec</small></div>
+    <div class="logo-slot">[logo client]</div>
+  </div>
+
+  <div class="eyebrow">Stellantis Sept Fons · OP10 ébauche piste intérieure · DV 356x26 RPI · EN-GJL-250</div>
+  <h1>Le triangle des forces : de l'<em>orientation de l'arête</em> au voile du disque</h1>
+  <div class="subtitle">Une seule force de coupe, deux directions d'effet — l'angle d'attaque κr décide de la part qui plie le disque. Présenté par B. Rouquette — SPK by CeramTec</div>
+
+  <div class="grid">
+    <!-- ══ Colonne gauche : mise en situation réelle ══ -->
+    <div>
+      <div class="box" style="margin-bottom:12px">
+        <div class="stitle">Où naît la force ? — coupe du disque, outil en position</div>
+        <svg viewBox="0 0 470 208" width="100%">
+          <!-- piste usinée (rouge) -->
+          <line x1="96" y1="86" x2="384" y2="86" stroke="#E2001A" stroke-width="5"/>
+          <text x="98" y="78" font-size="9.5" fill="#E2001A" font-weight="bold">piste (usinée)</text>
+          <!-- paroi supérieure -->
+          <rect x="92" y="86" width="296" height="10" fill="#c9d6e8" stroke="#1B5EA6" stroke-width="1"/>
+          <!-- ailettes de ventilation -->
+          <path d="M 150 96 L 160 146 M 205 96 L 215 146 M 260 96 L 270 146 M 315 96 L 325 146 M 370 96 L 380 146"
+                stroke="#8aa8cc" stroke-width="3"/>
+          <!-- paroi inférieure -->
+          <rect x="92" y="146" width="296" height="10" fill="#c9d6e8" stroke="#1B5EA6" stroke-width="1"/>
+          <!-- moyeu -->
+          <rect x="70" y="60" width="26" height="122" fill="#8aa8cc" stroke="#1B5EA6" stroke-width="1"/>
+          <text x="42" y="126" font-size="8.5" fill="#555">moyeu</text>
+          <text x="150" y="175" font-size="8.5" fill="#888">disque ventilé en coupe (échelle non contractuelle)</text>
+          <!-- outil -->
+          <g transform="translate(322,86)">
+            <rect x="-6" y="-44" width="40" height="30" fill="#1B5EA6" transform="rotate(-15 0 0)"/>
+            <polygon points="0,0 -12,-16 6,-24 12,-8" fill="#154d8a" stroke="#0e3560" stroke-width="1"/>
+            <text x="36" y="-28" font-size="9.5" fill="#1B5EA6" font-weight="bold">outil κr 85°</text>
+          </g>
+          <!-- Fr -->
+          <line x1="300" y1="80" x2="300" y2="28" stroke="#E2001A" stroke-width="4.5"/>
+          <polygon points="300,18 293,32 307,32" fill="#E2001A"/>
+          <text x="272" y="28" font-size="12" fill="#E2001A" font-weight="bold">Fr</text>
+          <text x="198" y="28" font-size="8.5" fill="#E2001A">plie le disque</text>
+          <!-- Fc -->
+          <line x1="288" y1="60" x2="238" y2="60" stroke="#1B5EA6" stroke-width="4"/>
+          <polygon points="228,60 242,54 242,66" fill="#1B5EA6"/>
+          <text x="228" y="74" font-size="11" fill="#1B5EA6" font-weight="bold">Fc</text>
+          <text x="236" y="52" font-size="8" fill="#1B5EA6">rotation</text>
+          <!-- avance -->
+          <line x1="290" y1="96" x2="360" y2="96" stroke="#555" stroke-width="3" stroke-dasharray="6,3"/>
+          <polygon points="370,96 356,90 356,102" fill="#555"/>
+          <text x="348" y="110" font-size="9" fill="#555" font-weight="bold">avance</text>
+        </svg>
+        <div class="figcap">La matière réclame Fc. L'orientation de l'arête décide de la part transmise perpendiculairement à la piste.</div>
+      </div>
+
+      <div class="box">
+        <div class="stitle">L'outil réel — porte-plaquette ébauche (vue de dessus)</div>
+        <svg viewBox="0 0 470 168" width="100%">
+          <!-- corps -->
+          <rect x="20" y="18" width="250" height="108" rx="6" fill="#dde6f2" stroke="#1B5EA6" stroke-width="1.5"/>
+          <!-- queue -->
+          <rect x="270" y="44" width="120" height="56" fill="#c9d6e8" stroke="#1B5EA6" stroke-width="1.5"/>
+          <text x="298" y="76" font-size="9" fill="#555">porte-outil Ø50</text>
+          <!-- plaquette haute (75°) -->
+          <g transform="translate(70,40) rotate(-15)">
+            <polygon points="-26,-14 26,-14 18,14 -34,14" fill="#1B5EA6" stroke="#0e3560" stroke-width="1.2"/>
+            <circle cx="0" cy="0" r="7" fill="#fff" stroke="#0e3560" stroke-width="1"/>
+          </g>
+          <path d="M 22 96 L 44 52" stroke="#E2001A" stroke-width="2"/>
+          <text x="10" y="40" font-size="11" fill="#E2001A" font-weight="bold">75°</text>
+          <!-- plaquette basse (95°) -->
+          <g transform="translate(96,102) rotate(5)">
+            <polygon points="-26,-14 26,-14 18,14 -34,14" fill="#1B5EA6" stroke="#0e3560" stroke-width="1.2"/>
+            <circle cx="0" cy="0" r="7" fill="#fff" stroke="#0e3560" stroke-width="1"/>
+          </g>
+          <path d="M 22 122 L 42 118" stroke="#E2001A" stroke-width="2"/>
+          <text x="6" y="130" font-size="11" fill="#E2001A" font-weight="bold">95°</text>
+          <text x="20" y="146" font-size="9.5" fill="#555">CNMX 120716 — arête perdue, angle de pointe 100°</text>
+          <text x="20" y="160" font-size="9" fill="#888">montée au porte-outil : κr effectif 75° et 95°</text>
+        </svg>
+        <div class="figcap">D'après plan outil — même plaquette, deux positions d'attaque sur le porte-plaquette.</div>
+      </div>
+    </div>
+
+    <!-- ══ Colonne droite : le triangle ══ -->
+    <div>
+      <div class="box" style="margin-bottom:12px">
+        <div class="stitle">Même force de coupe, deux triangles — échelle commune</div>
+        <svg viewBox="0 0 500 240" width="100%">
+          <!-- ═ Triangle 75° ═ -->
+          <g>
+            <text x="52" y="20" font-size="13" fill="#555" font-weight="bold">κr = 75° (config. actuelle)</text>
+            <!-- Fr -->
+            <line x1="250" y1="206" x2="200" y2="206" stroke="#E2001A" stroke-width="5"/>
+            <polygon points="190,206 204,199 204,213" fill="#E2001A"/>
+            <text x="146" y="224" font-size="12" fill="#E2001A" font-weight="bold">Fr 199 N</text>
+            <!-- Fa -->
+            <line x1="188" y1="204" x2="188" y2="28" stroke="#1B5EA6" stroke-width="5"/>
+            <polygon points="188,18 181,32 195,32" fill="#1B5EA6"/>
+            <text x="126" y="46" font-size="12" fill="#1B5EA6" font-weight="bold">Fa 744 N</text>
+            <!-- Fc -->
+            <line x1="246" y1="202" x2="194" y2="34" stroke="#222" stroke-width="3"/>
+            <polygon points="192,26 189,41 200,38" fill="#222"/>
+            <text x="212" y="98" font-size="12" fill="#222" font-weight="bold">Fc 770 N</text>
+            <!-- angle -->
+            <path d="M 222 206 A 28 28 0 0 0 238 179" fill="none" stroke="#E2001A" stroke-width="1.6"/>
+            <text x="240" y="178" font-size="11" fill="#E2001A" font-weight="bold">75°</text>
+            <line x1="176" y1="206" x2="256" y2="206" stroke="#ccc" stroke-width="1"/>
+            <line x1="188" y1="16" x2="188" y2="212" stroke="#ccc" stroke-width="1"/>
+          </g>
+          <!-- ═ Triangle 85° ═ -->
+          <g>
+            <text x="296" y="20" font-size="13" fill="#1B5EA6" font-weight="bold">κr = 85° (SPK)</text>
+            <!-- Fr -->
+            <line x1="440" y1="206" x2="425" y2="206" stroke="#E2001A" stroke-width="5"/>
+            <polygon points="415,206 429,199 429,213" fill="#E2001A"/>
+            <text x="372" y="224" font-size="12" fill="#E2001A" font-weight="bold">Fr 67 N</text>
+            <!-- Fa -->
+            <line x1="421" y1="204" x2="421" y2="12" stroke="#1B5EA6" stroke-width="5"/>
+            <polygon points="421,2 414,16 428,16" fill="#1B5EA6"/>
+            <text x="350" y="48" font-size="12" fill="#1B5EA6" font-weight="bold">Fa 767 N</text>
+            <!-- Fc -->
+            <line x1="436" y1="202" x2="418" y2="22" stroke="#222" stroke-width="3"/>
+            <polygon points="417,14 413,29 424,27" fill="#222"/>
+            <text x="428" y="120" font-size="12" fill="#222" font-weight="bold">Fc 770 N</text>
+            <!-- angle -->
+            <path d="M 420 206 A 20 20 0 0 0 437 186" fill="none" stroke="#E2001A" stroke-width="1.6"/>
+            <text x="396" y="194" font-size="11" fill="#E2001A" font-weight="bold">85°</text>
+            <line x1="404" y1="206" x2="468" y2="206" stroke="#ccc" stroke-width="1"/>
+            <line x1="421" y1="10" x2="421" y2="212" stroke="#ccc" stroke-width="1"/>
+          </g>
+          <text x="286" y="132" font-size="15" fill="#555" font-weight="bold">→</text>
+          <text x="16" y="234" font-size="9" fill="#888">Fr et Fa à l'échelle — l'hypoténuse Fc est identique dans les deux cas</text>
+        </svg>
+
+        <div class="fml-box" style="margin-top:6px">
+          <div class="formula">Fr = F<sub>c</sub> × cos(κr) &nbsp;&nbsp;·&nbsp;&nbsp; Fa = F<sub>c</sub> × sin(κr)</div>
+          <div class="legend" style="text-align:center">Cas ébauche OP10 : Fc = 1100 × 2,0 × 0,35 = 770 N</div>
+        </div>
+        <div style="text-align:center"><span class="check">Pythagore : √(744² + 199²) ≈ 770 N ✓ — le triangle se referme</span></div>
+      </div>
+
+      <div class="keynote" style="margin-top:12px">
+        <b>Le piège classique :</b> Fr n'est pas « le reste » par soustraction — 770 − 199 = 571 N est <b>faux</b>
+        (la vraie Fa vaut 744 N). La force se projette, elle ne se partage pas : les deux côtés se recomposent
+        en Fc par Pythagore, pas par une somme.
+        <br><b>Le levier :</b> l'hypoténuse ne bouge pas (la matière demande toujours ~770 N). Passer l'arête
+        de 75° à 85° déverse presque toute la part de flexion dans l'avance : <b>Fr 199 → 67 N, soit ÷ 3</b>,
+        sans que la machine s'en aperçoive — et le disque mince ne subit plus la poussée qui fabrique le voile.
+      </div>
+    </div>
+  </div>
+
+  <div class="foot"><span>SPK® by CeramTec — Confidential · kc fonte grise ≈ 1100 N/mm² · modèle de projection géométrique (sans frottement)</span><span>1 / 1</span></div>
+</section>
+</body>
+</html>

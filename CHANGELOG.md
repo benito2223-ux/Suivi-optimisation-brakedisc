@@ -5,6 +5,282 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.96.0] — 2026-10-16 · UI lot 1 : les panneaux reprennent leur vraie taille
+
+**La demande.** Benjamin : « l'interface est trop monocouleur, les polices
+trop fades, certains boutons sont mal proportionnés, les fenêtres pop-up
+trop petites et peu ergonomiques ». Direction actée : renforcement de la
+v3.15 (pas de nouveau design system). Premier des trois lots convenus :
+le système de panneaux.
+
+**Le défaut trouvé.** `.panel.panel-large` ne posait qu'un
+`max-width:1120px` sur une base `.panel` figée à `width:min(520px,…)` — un
+`max-width` ne peut pas élargir. Tous les grands panneaux (accueil, tableau
+de bord, carte atelier, vue CPP, simulateur, catalogue, plan, Matis) tournaient
+réellement à 520 px. La plainte « pop-up trop petites » était un bug, pas un choix.
+
+**Le lot.** Base `.panel` 520 → 560 px (dialogues). `.panel-large` reçoit son
+vrai `width:min(1120px, calc(100vw - 32px))`. Titre `h3` sticky en haut du
+scroll (marges négatives, le padding du panneau est conservé pour le corps —
+aucun HTML restructuré), `.panel-actions` sticky en bas : les boutons Fermer /
+Enregistrer restent visibles sans descendre tout le contenu. Exceptions nommées
+conservées (annot 880, backlog 920, compare 880).
+
+**Garde-fou ajouté** (build_harness.py) : la porte lit le fichier réel et
+échoue si `panel-large` retombe à un `max-width` seul, si la base repasse
+sous 540 px, ou si le sticky titre/footer disparaît.
+
+Vérifié : harnais 582/0, `node --check` 4/4 blocs, capture headless avant/après
+(tableau de bord 520 → 1120 px, footer collé). Capture d'écran : l'accueil force
+le pop-up « Bienvenue » natif qui n'est pas pilotable hors navigateur.
+
+## [4.95.1] — 2026-10-15 · Rattachement des mesures aux logements de la cible
+
+**La demande.** Complément direct du transfert cross-OP (4.95.0) : HESSAPP
+OP40 → OP30 disque 302, outils **T5 et T6 identiques** des deux côtés —
+« les mesures doivent être rattachées aux logements de l'OP et des outils
+cibles (ce sont les mêmes T5 et T6), il ne faut pas que cela crée de
+nouveaux outils:logements ».
+
+**Implémentation.** `remapperLogementsEssai(essai, scSource, scCible)` :
+l'instantané de l'essai (`params.logements`) porte les ids **et** les clés
+humaines (`outilNumero` + `logementNom`) — le pont existe toujours. Clé de
+rattachement = `n° d'outil | nom de logement` normalisés (casse/espaces
+tolérés). Remappe `params.logements[].outilId/logementId` et
+`prelevements[].logementId` vers les logements **existants** de la cible.
+**Rien n'est créé** (ni outil, ni logement) ; une clé sans correspondance
+reste telle quelle et sort dans `sansCorrespondance`. Les conditions figées
+de l'essai (Vc, f, charnière de l'instantané) ne sont pas touchées. Un
+logement exclu du suivi (`suivi:false`) est remappé en silence (il est
+re-suivable), sans polluer le rapport. Le rapport s'affiche à l'opérateur
+après le déplacement (« Mesures rattachées… — N prélèvement(s) remappé(s) » /
+« Sans correspondance… »). Appelé depuis `reattribuerEssai`, donc actif sur
+tous les transferts (même OP, cross-OP, cross-référence).
+
+Harnais : +4 assertions (remappage avec casse tolérée + conditions intactes +
+prélèvements, non-création, rapport, orphelines déclarées, suivi:false).
+
+## [4.95.0] — 2026-10-15 · La réattribution d'essai traverse les OP
+
+**La demande.** Benjamin : sur HESSAPP, une OP40 avait été créée avec Matis
+ alors que la machine n'a que OP10/15/20/25 + finition OP30. Un essai vit
+ dans cette OP40 et doit rejoindre **l'OP30 du disque 302** (autre
+ référence, même machine — outils T5/T6 en simultané) avant que l'OP40 ne
+ soit supprimée. Or le sélecteur ⇄ ne proposait que **le même OP**.
+
+**Implémentation.**
+- `brancheDeScenario(scenarioId)` : la branche complète (ligne + référence +
+  OP) d'un scénario, même parcours résilient que `opContenantScenario`
+  (orphelin → null, jamais d'exception).
+- `destinationsEssai(scenarioId)` : tous les AUTRES scénarios de la **même
+  ligne** (la machine), toutes références et OP confondues. Un essai est une
+  campagne physique menée sur une machine : il ne change pas de ligne —
+  traverser les OP et les références de sa machine, oui.
+- Le dialogue de réattribution groupe les destinations par
+  **« Référence › OP »** ; la résolution de la cible balaie tout l'arbre
+  (les uids sont uniques). `reattribuerEssai` est resté inchangé : il
+  opère sur des objets scénarios, donc le cross-OP et le cross-référence
+  marchent tels quels — y compris le voyage des critères de mesure (4.91.1).
+- Libellé du bouton mis à jour (« vers n'importe quel scénario de la même
+  machine »).
+
+Harnais : +3 assertions (destinations cross-OP/cross-référence sans
+soi-même ; transfert entier avec origine lisible et source vidée ;
+orphelin sans destination). API : `brancheDeScenario`, `destinationsEssai`.
+
+**Marche à suivre terrain (HESSAPP)** : ouvrir l'essai dans l'OP40 →
+⇄ Réattribuer → groupe « 302x26 › OP30 » → le scénario du disque 302
+(T5/T6) → Déplacer → vérifier l'essai et ses Ra dans l'OP30 → ensuite
+seulement supprimer l'OP40 (les scénarios restants de cette OP seront
+perdus — vérifier qu'elle ne porte plus rien d'utile).
+
+## [4.94.0] — 2026-10-15 · Compression des images + dump hebdomadaire du cloud
+
+**La demande.** Avis croisé Hermes/Z Code après la migration 4.93.0 : le
+bucket photos et les pièces jointes étaient les derniers postes de
+consommation d'egress non maîtrisés, et aucune sauvegarde froide des
+données cloud n'existait (la table `reports` du Field App ne vit QUE dans
+Supabase).
+
+**Compression des images (côté client, avant toute écriture) :**
+- Pièces jointes images (`attacherPieceJointe` — plan de l'outil, photos
+  de fiche) : passées dans `compressImageFile` (1600 px / 82 %) avant la
+  règle de stockage. Extension et mime basculent en .jpg / image/jpeg ; un
+  échec de compression retombe sur le fichier brut (jamais de perte sèche).
+  Les PDF ne sont pas touchés.
+- Photos d'essai : le seuil dépend désormais du stockage — dossier local
+  garde 1600 px / 82 % (qualité rapport, zéro egress), cloud passe à
+  1280 px / 75 % (une photo cloud est retéléchargée par l'autre poste à
+  chaque consultation hors cache).
+
+**Dump hebdomadaire (hors app, machine Benjamin) :**
+- `SPK-Backups/supabase-dumps/dump_supabase.py` : via l'API de management
+  (token `~/.supabase/access-token`, aucun secret dans les dumps), exporte
+  TOUTES les tables du schéma public (etat, etat_historique, reports,
+  activity_log, zya_*) en JSON daté, vérifie la validité, rétention 8
+  versions, log `dump_log.txt`.
+- Automatisation Z Code : tous les lundis 07:00, premier run testé le
+  15/10 (17 rapports Field App sauvés, 312 ko).
+- Restauration : le schéma est régénérable (DDL en 4.93.0) ; les données se
+  réinjectent depuis les JSON (`json_agg` → INSERT).
+
+## [4.93.0] — 2026-10-15 · Migration cloud : suivi-septfons → spk-field-app-plus
+
+**Ce qui s'est passé.** Le projet Supabase « suivi-septfons »
+(`cxjfyaorkkxemjnollnj`) a disparu du DNS après sa restriction de quota :
+purge côté Supabase, données cloud perdues. Les données de référence restent
+les copies locales + exports (fusion propre v5 du 13/10, rev426).
+
+**La migration (faite par Z Code via l'API de management, schéma reconstruit
+depuis le code de synchro de l'outil) :**
+- `etat` (id=1, `donnees` jsonb, `modifie_par`, `modifie_le` par trigger
+  before-update), `etat_historique` (identité, trim 20 versions par trigger
+  after-insert), RLS activé + policies `authenticated` (all), GRANT
+  select/insert/update/delete — modèle identique à l'audit RLS d'origine.
+- Bucket privé `photos` + 4 policies `authenticated` (select/insert/update/
+  delete).
+- `bilan_economique.html` : `CLOUD_URL`/`CLOUD_KEY` re-pointés vers
+  `xlpfwvipdmgslwpbbfxs` (projet `spk-field-app-plus`, qui héberge déjà
+  l'app Fellow — tables séparées, aucune collision).
+
+**Points d'attention :**
+- Le projet hôte est LUI AUSSI sous restriction `exceed_egress_quota` (REST
+  en 402) : la synchro restera « cloud injoignable » jusqu'à la levée du
+  blocage (dashboard → levée des spend caps ou attente de la réinitialisation
+  du cycle de facturation, projet créé le 20/07).
+- Comptes Benjamin/Matis à recréer dans le dashboard (Authentication → Users) ;
+  le dépôt initial repasse par le rituel « Déposer ce suivi » (Matis en
+  premier).
+- Le signup du projet hôte est ouvert (2 comptes de test
+  `@production-fellow.com` existent) — ouvrir le cloisonnement RLS
+  (liste d'emails) si ces comptes ne doivent pas voir le suivi.
+
+## [4.92.0] — 2026-10-14 · La base économique : consommations annuelles 2025 réelles
+
+**La demande.** Benjamin livre le fichier officiel (« Pareto conso annuelles
+2025.xlsx ») : « ce sera la base de calcul pour le plan de conversion et
+données économiques » — et veut un visuel qui montre **immédiatement** les
+économies quand on travaille sur le **prix** ou sur la **charnière**.
+
+**Ce que contient le fichier.** Quatre tableaux croisés posés côte à côte
+(A/B, E/F, I/J, M/N) : « Étiquettes de lignes / **Somme de Cout** » — un coût
+annuel 2025 en € par article et par poste (PCI 4/5, WEISSER 1/2, OP 10→40,
+HESSAPP), sections empilées verticalement, avec ou sans « Total général » entre
+elles ; plus un bloc de valeurs collées **sans entête** à droite (T/U), qui
+répète des postes déjà comptés.
+
+**Implémentation.**
+- **Parseur** `conso2025DepuisFeuille` : repère chaque paire de colonnes
+  « Étiquettes/Somme de Cout », ouvre une section au vocabulaire poste
+  (PCI n, WEISSER n, OP n, EMAG n, HESSAPP), somme les articles par poste.
+  Un bloc sans entête n'est **jamais** parsé (aucun double compte). Lecteur
+  `conso2025LireClasseur` (.xlsx/.xlsm, lecture locale).
+- **Persistance** : `conso2025` voyage dans le suivi (payload, export, import,
+  cloud) — c'est LA base, pas un état de session. Normalisée au chargement.
+  Import : l'entrant gagne en bloc (mélanger deux fichiers créerait des
+  recoupements). Déclarée **avant `loadAll()`** (piège TDZ documenté).
+- **Plan** : troisième source « **annuelle 2025** », devenue le défaut de
+  session dès que la base existe. Les lignes viennent de la base réelle
+  (triées par coût décroissant — le pareto pilote la lecture), rejoints par le
+  prix du catalogue puis des logements. Cases à cocher par poste : Benjamin
+  tranche le périmètre (vue OP vs vue machine peuvent se recouper).
+- **Les deux leviers, en €** : `planCoutCible = coût 2025 × (100/vie %) ×
+  (prix cible / prix actuel)`. Prix seul, **charnière seule** (prix final =
+  prix actuel — la vie seule chiffre son gain), ou combinés. Un article sans
+  prix connu (embouts...) reste dans la base mais n'est **jamais simulé en
+  silence** (gain null).
+- **Le visuel** : par ligne, barre grise (coût 2025) face à barre verte
+  (coût simulé, rouge si la combinaison coûte plus cher) + gain €/an et % ;
+  total en tête (« Coût 2025 → simulé − X €/an (P %), N articles simulés »).
+  Recalcul **à chaque frappe** (`majEcoPlan`, zéro re-render), largeurs
+  normalisées sur le coût max du tableau.
+- **Correctif au passage** : les réglages globaux du Plan (prix SPK défaut,
+  durée de vie SPK, semaines/an) étaient **affichés sans aucun listener** depuis
+  la 4.90 — câblés, et le levier vie global pilote le visuel en direct.
+
+Harnais : +9 assertions (parseur multi-pivots + bloc ignoré, normalisation,
+source 2025 dans planLignes, levier prix / charnière seule / combiné, article
+hors simulation, garde-fous planCoutCible). API exportée pour le diagnostic.
+
+## [4.91.1] — 2026-10-14 · Retour terrain : les Ra « perdues » au transfert d'essai
+
+**Cause.** Les VALEURS Ra vivent dans `prelevement.valeurs[critere.id][axe]`
+(mesures de l'essai), mais la DÉFINITION du critère — label, borne maxi,
+axes I/E — vit sur le scénario (`sc.criteresSup`). `reattribuerEssai` déplace
+l'essai entier, donc les valeurs référencent l'ID du critère du scénario
+d'origine ; sans ce critère, le scénario cible n'a pas de colonne et n'évalue
+rien : les Ra du PCI5 devenaient invisibles en arrivant sur « Classeur Matis ».
+**Aucune donnée n'avait été supprimée** — elles dormaient dans les
+prélèvements.
+
+**Correctif.** `reattribuerEssai` collecte les IDs de critères utilisés par les
+prélèvements de l'essai et copie les définitions manquantes depuis le scénario
+source (copie profonde des axes, jamais de doublon par id). Si la source ne
+connaît plus le critère, reconstruction depuis les axes réellement mesurés,
+bornes vides — on n'invente pas une limite. Les mesures restent évaluées
+contre leurs bornes d'origine, jamais contre celles d'un critère homonyme de
+la cible. Le dialogue de réattribution le dit désormais.
+
+**Réparation d'un essai déjà transféré** (procédure, pas de code) : les
+critères d'un essai déjà déplacé avant le correctif se rattachent par un
+aller-retour — réattribuer vers le scénario d'origine, puis vers la
+destination — **avant** de supprimer le scénario d'origine (sinon les bornes
+sont perdues, seuls les axes sont reconstruits).
+
+Harnais : +4 assertions (voyage du critère avec bornes/axes/valeurs, copie
+profonde, pas de doublon par id, reconstruction depuis les axes vus).
+
+## [4.91.0] — 2026-10-14 · Retours terrain Benjamin (4 blocs bloquants)
+
+**Quatre gestes qui ne répondaient pas, réparés et couverts par tests.**
+Chacun reproduit au navigateur avant correction (`http.server` + jeu
+d'exemple), chacun re-testé après.
+
+- **⇄ Réattribuer un essai** : `ReferenceError: op is not defined` à chaque
+  clic — le handler lisait une variable `op` inexistante dans sa portée
+  (`attachDetailHandlers`). Nouveau helper `opContenantScenario(scenarioId)`
+  qui retrouve l'OP dans l'arbre (null si orphelin, jamais d'exception),
+  repli `getActiveOp()`.
+- **Plein écran (accueil, Plan, Simulateur, Catalogue)** : le panneau passait
+  `simul-maxi` mais restait décalé de `translate(-50%,-50%)` (constat : rect à
+  x:-560 y:-360 — un quart de l'accueil visible) ET `max-width:1120px` de
+  `.panel-large`, posé plus tard dans la feuille à même spécificité, écrasait
+  `max-width:none`. Correctif : règle `.panel.simul-maxi.simul-maxi` en fin de
+  head (spécificité triple), `transform:none; inset:0; width:100vw…`.
+  **Sortie du plein écran, second volet du retour** : Échap, « Fermer » ou le
+  clic sur le fond laissaient la classe `.simul-maxi` collée au panneau (Échap
+  sort du plein écran natif sans prévenir la page — aucun écouteur
+  `fullscreenchange`). La réouverture repartait plein écran, désynchronisée de
+  son bouton reconstruit (« ⛶ Plein écran » affiché alors qu'il EST maxi) :
+  « obligé de la fermer pour ouvrir à nouveau », qui ne réparait rien.
+  Correctif : `poserMaxi`/`quitterMaxi`/`quitterMaxiPartout` — un seul état,
+  resynchronisé sur TOUS les chemins de sortie (bouton, Échap, Fermer, fond,
+  sortie native), vérifié au navigateur sur chaque chemin.
+- **Double clic pour saisir** : le render différé de v4.17 (mouseup) répare les
+  clics sur boutons mais remplaçait quand même les nœuds après le focus — le
+  focus tombait sur body, il fallait recliquer. `render()` mémorise maintenant
+  l'élément focalisé (signature tag + `data-*`/id), rend le focus et le curseur
+  après reconstruction, et ne touche à rien si le focus a survécu.
+- **Suggestion de plaquettes** : sur les données réelles, le catalogue n'a
+  JAMAIS existé (aucun export ne porte la clé) — la suggestion v4.89 était un
+  no-op silencieux ; et même générée, `catalogueSeed()` jetait arêtes et
+  charnière (`aretes:""`, `ddv:""`), donc la promesse « remplit prix, arêtes,
+  durée de vie » ne pouvait jamais se réaliser que pour le prix. Correctifs :
+  (1) repli `suggestionDepuisArbre(mabec, iso)` — lecture seule de l'arbre,
+  valeurs modales, branché après le catalogue dans `writeFieldValue` ;
+  (2) `catalogueSeed()` capture arêtes et charnière modales.
+  209/264 logements du suivi réel portent un MABEC : la suggestion devient
+  opérante sans aucune étape préalable.
+
+### Tests
+- Harnais : +6 assertions (opContenantScenario, suggestionDepuisArbre
+  MABEC/ISO/inconnu, remplissage logement vierge, non-écrasement du saisi à la
+  main, catalogueSeed arêtes+DDV). `build_harness.py` exporte les trois
+  nouvelles fonctions.
+- Navigateur : clic Réattribuer (plus d'erreur, dialogue ouvert), plein écran
+  accueil/Plan (rect = viewport), navigation Vc→f sans perte de focus,
+  suggestion MABEC avec catalogue vide sur jeu réel.
+
 ## [4.90.0] — 2026-10-14 · Tour 73
 
 **Les retours de la revue extérieure, appliqués.** Claude Code (version
@@ -66,7 +342,7 @@ en file, pas engagé.
 ### Le tour des CRLF
 Le fichier portait **19 719 fins CRLF** qui faisaient échouer la moitié des
 ancres de patch. Normalisé LF une fois pour toutes ; `build_harness.py`
-réparé (le même mal : `` cassait les continuations Python). Tous les
+réparé (le même mal : `\r\r` cassait les continuations Python). Tous les
 patchs futurs passent par des fichiers et une normalisation en tête.
 
 ### Vérification

@@ -58,7 +58,7 @@ API = ("get TOOL_VERSION(){return TOOL_VERSION;}, normalizeLigne, normalizeRefer
 
        "_matisFeuille, "
 
-       "getActiveLigne, preparerImportDepuis, axesActifs, reattribuerEssai, plaquettesCommunes, simulCSV, catalogueSeed, catalogueAppliquer, catalogueCSV, catalogueDepuisCSV, planLignes, catalogueSuggestion, catalogueParIso, appliquerSuggestionCatalogue, get plan(){return plan}, set plan(v){plan=v}, get lignes(){return lignes}, set lignes(v){lignes=v}, "
+       "getActiveLigne, preparerImportDepuis, axesActifs, reattribuerEssai, opContenantScenario, brancheDeScenario, destinationsEssai, remapperLogementsEssai, normeCleLogement, plaquettesCommunes, simulCSV, catalogueSeed, catalogueAppliquer, catalogueCSV, catalogueDepuisCSV, planLignes, catalogueSuggestion, catalogueParIso, suggestionDepuisArbre, valeurModale, appliquerSuggestionCatalogue, conso2025DepuisFeuille, normalizeConso2025, conso2025SectionsActives, conso2025Somme, planCoutCible, get conso2025(){return conso2025}, set conso2025(v){conso2025=v}, get conso2025SectionsOn(){return conso2025SectionsOn}, set conso2025SectionsOn(v){conso2025SectionsOn=v}, get planSource(){return planSource}, set planSource(v){planSource=v}, get plan(){return plan}, set plan(v){plan=v}, get lignes(){return lignes}, set lignes(v){lignes=v}, "
 
        "get projets(){return projets}, set projets(v){projets=v}, "
 
@@ -604,6 +604,28 @@ try {
 
     console.log((manquantes.length ? '  ECHEC ' : '  ok  ') + 'simulateur : CSS présent dans le fichier réel (' + (6 - manquantes.length) + '/6 règles)' + (manquantes.length ? ' — MANQUANT : ' + manquantes.join(', ') : ''));
 
+  })();
+
+  /* ── v4.96 — LE SYSTÈME DE PANNEAUX NE RETOMBE PAS ──────────────────────
+     Le défaut du lot 1 : .panel.panel-large ne posait qu'un max-width:1120px
+     sur une base .panel figée à width:520px — un max-width n'élargit pas, tous
+     les grands panneaux tournaient à 520 px. La porte lit le fichier réel :
+     (1) panel-large porte un VRAI width min(1120px…), pas un max-width seul ;
+     (2) la base .panel ne redescend pas sous 540 px ; (3) le sticky du titre
+     et du footer d'actions existe. Sinon échec de la suite. */
+  (function panneauxSysteme(){
+    const fs = require('fs');
+    const html = fs.readFileSync('bilan_economique.html', 'utf8');
+    const echecs = [];
+    if(!/\.panel\.panel-large\{\s*width:\s*min\(1120px/.test(html))
+      echecs.push('panel-large sans vrai width 1120 (max-width seul = panneaux figés)');
+    const base = html.match(/\.panel\{[^}]*width:\s*min\((\d+)px/);
+    if(!base || parseInt(base[1], 10) < 540)
+      echecs.push('base .panel sous 540 px ou introuvable (trouvé : ' + (base ? base[1] : '?') + ')');
+    if(html.indexOf('.panel-large > h3{') === -1 || html.indexOf('position:sticky') === -1)
+      echecs.push('sticky titre/footer absent');
+    if(echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'panneaux 4.96 : largeurs et sticky présents dans le fichier réel' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
   /* ── v4.82 — LES DATES DE SAISIE SONT BORNÉES ───────────────────────────

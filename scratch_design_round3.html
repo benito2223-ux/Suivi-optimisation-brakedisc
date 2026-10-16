@@ -1,0 +1,261 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SPK — round 3 : contraste &amp; lisibilite</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+*{box-sizing:border-box;}
+body{margin:0; background:#111417; color:#e8ebee; font-family:'Inter',Arial,sans-serif;}
+.page{max-width:1240px; margin:0 auto; padding:26px 22px 90px;}
+.intro h1{font-family:'Archivo',Arial,sans-serif; font-weight:800; font-size:25px; margin:0 0 6px; letter-spacing:-.02em;}
+.intro p{margin:0 0 18px; max-width:78ch; font-size:14px; line-height:1.6; color:#a9b1b9;}
+.switcher{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px;}
+.switcher button{font-family:'IBM Plex Mono',monospace; font-size:11.5px; font-weight:600; letter-spacing:.04em; text-transform:uppercase;
+  padding:10px 15px; border:1px solid #333a41; border-radius:8px; background:#1b2126; color:#c3cad1; cursor:pointer;}
+.switcher button:hover{background:#242c33; color:#fff;}
+.switcher button.active{background:#fff; color:#111417; border-color:#fff;}
+.cap{font-size:13.5px; line-height:1.65; color:#c3cad1; margin:0 0 8px; padding:14px 16px; background:#1b2126; border-radius:10px; border-left:4px solid #4da3ff;}
+.cap b{color:#fff;}
+.ratios{font-family:'IBM Plex Mono',monospace; font-size:11px; color:#8e979f; margin:0 0 20px; padding:0 4px; line-height:1.9;}
+.ratios span{display:inline-block; margin-right:18px;}
+.ratios b{color:#7fdca0;}
+
+/* ============================================================
+   Chaque option = un jeu de tokens. La structure ne bouge pas.
+   ============================================================ */
+.mock{
+  --radius:10px; --radius-sm:6px;
+  --card-shadow:none;
+  --font-disp:'Inter',Arial,sans-serif; --font-body:'Inter',Arial,sans-serif; --font-mono:'IBM Plex Mono',monospace;
+  --label-size:11px; --label-track:.08em; --label-weight:600;
+  background:var(--bg); color:var(--ink); font-family:var(--font-body);
+  border-radius:16px; padding:26px 24px 28px; overflow:hidden;
+}
+
+/* ---------- I : contraste net (evolution du design actuel) ---------- */
+.mock[data-opt="I"]{
+  --bg:#dfe3e8; --surf:#ffffff; --surf2:#f1f3f6; --head:#ffffff;
+  --line:#c3cad3; --line-soft:#dde2e8; --line-strong:#0e1216;
+  --ink:#0e1216; --ink2:#465061; --ink3:#5d6878;
+  --accent:#0b4a8f; --accent-ink:#ffffff; --accent-soft:#dce8f7;
+  --ok:#186b39; --ok-soft:#d9efe1; --warn:#8a4b06; --warn-soft:#fbe9d2; --bad:#b4001a; --bad-soft:#fadcdf;
+  --font-disp:'Archivo',Arial,sans-serif; --font-body:'Inter',Arial,sans-serif;
+  --card-shadow:0 1px 0 var(--line);
+}
+/* ---------- J : listing atelier (densite + tableaux francs) ---------- */
+.mock[data-opt="J"]{
+  --bg:#e6e3dc; --surf:#ffffff; --surf2:#f4f2ed; --head:#1c2126;
+  --line:#b9b4a8; --line-soft:#ddd8cc; --line-strong:#1c2126;
+  --ink:#14181c; --ink2:#4a5158; --ink3:#5d6670;
+  --accent:#0f4f7a; --accent-ink:#ffffff; --accent-soft:#d9e7f1;
+  --ok:#155e34; --ok-soft:#d8eadd; --warn:#7d4405; --warn-soft:#f6e5cd; --bad:#a80016; --bad-soft:#f6d9dc;
+  --font-disp:'IBM Plex Sans',Arial,sans-serif; --font-body:'IBM Plex Sans',Arial,sans-serif;
+  --radius:4px; --radius-sm:3px;
+}
+/* ---------- K : blocs pleins (hierarchie par aplats) ---------- */
+.mock[data-opt="K"]{
+  --bg:#eceef1; --surf:#ffffff; --surf2:#f5f6f8; --head:#12161b;
+  --line:#ccd1d8; --line-soft:#e2e6ea; --line-strong:#12161b;
+  --ink:#12161b; --ink2:#454e59; --ink3:#5a6470;
+  --accent:#0d47a1; --accent-ink:#ffffff; --accent-soft:#dbe6f7;
+  --ok:#12653a; --ok-soft:#d5eddf; --warn:#8a4300; --warn-soft:#fbe4cd; --bad:#b00018; --bad-soft:#f9d9dd;
+  --font-disp:'Manrope',Arial,sans-serif; --font-body:'Public Sans',Arial,sans-serif;
+  --radius:12px; --radius-sm:8px;
+}
+/* ---------- L : atelier sombre ---------- */
+.mock[data-opt="L"]{
+  --bg:#0d1114; --surf:#191f24; --surf2:#212930; --head:#191f24;
+  --line:#39434c; --line-soft:#2b333a; --line-strong:#6f7c88;
+  --ink:#f2f5f7; --ink2:#b4bec7; --ink3:#96a2ac;
+  --accent:#59a9ff; --accent-ink:#0d1114; --accent-soft:#16324f;
+  --ok:#4fd18b; --ok-soft:#12331f; --warn:#f0ad4d; --warn-soft:#3a2a0f; --bad:#ff7183; --bad-soft:#3d1720;
+  --font-disp:'Inter',Arial,sans-serif; --font-body:'Inter',Arial,sans-serif;
+}
+
+/* ============================ structure commune ============================ */
+.hd{display:flex; align-items:center; gap:16px; padding:0 0 14px; margin-bottom:18px; border-bottom:2px solid var(--line-strong);}
+.mark{width:44px; height:44px; border-radius:var(--radius-sm); background:var(--line-strong); color:var(--bg);
+  display:flex; align-items:center; justify-content:center; font-family:var(--font-disp); font-weight:800; font-size:15px; flex:0 0 auto; letter-spacing:-.02em;}
+.crumb{font-family:var(--font-mono); font-size:11px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--ink2);}
+.hd h2{margin:3px 0 0; font-family:var(--font-disp); font-weight:800; font-size:23px; letter-spacing:-.02em; color:var(--ink);}
+.spacer{flex:1;}
+.btn{font-family:var(--font-body); font-size:13px; font-weight:700; padding:10px 16px; border-radius:var(--radius-sm); cursor:pointer;
+  background:var(--accent); color:var(--accent-ink); border:1px solid var(--accent);}
+.btn.ghost{background:transparent; color:var(--ink); border:1.5px solid var(--line-strong);}
+
+.toolbar{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:18px;}
+.chip{font-family:var(--font-mono); font-size:11.5px; font-weight:600; padding:7px 12px; border-radius:var(--radius-sm);
+  background:var(--surf); border:1px solid var(--line); color:var(--ink2);}
+.chip.on{background:var(--line-strong); border-color:var(--line-strong); color:var(--bg);}
+
+.cards{display:grid; grid-template-columns:1.25fr 1fr 1fr; gap:12px; margin-bottom:18px;}
+.card{background:var(--surf); border:1px solid var(--line); border-radius:var(--radius); padding:15px 16px; box-shadow:var(--card-shadow);}
+.card.active{border:2px solid var(--accent); padding:14px 15px;}
+.card-top{display:flex; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap;}
+.idx{width:22px; height:22px; border-radius:var(--radius-sm); background:var(--surf2); border:1px solid var(--line);
+  font-family:var(--font-mono); font-size:11px; font-weight:700; color:var(--ink2); display:flex; align-items:center; justify-content:center; flex:0 0 auto;}
+.card.active .idx{background:var(--accent); border-color:var(--accent); color:var(--accent-ink);}
+.card-name{font-weight:700; font-size:15px; color:var(--ink); flex:1; letter-spacing:-.01em;}
+.pill{font-family:var(--font-mono); font-size:10.5px; font-weight:700; letter-spacing:.03em; text-transform:uppercase; padding:4px 9px; border-radius:var(--radius-sm); white-space:nowrap;}
+.pill.ref{background:var(--accent); color:var(--accent-ink);}
+.pill.serie{background:var(--ok); color:#fff;}
+.pill.essai{background:var(--warn); color:#fff;}
+.mock[data-opt="L"] .pill.serie, .mock[data-opt="L"] .pill.essai{color:#0d1114;}
+.card-metrics{display:flex; gap:22px; margin-top:12px;}
+.card-metrics .l{font-family:var(--font-mono); font-size:var(--label-size); font-weight:var(--label-weight); letter-spacing:var(--label-track); text-transform:uppercase; color:var(--ink2); margin-bottom:3px;}
+.card-metrics .v{font-family:var(--font-disp); font-size:19px; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; letter-spacing:-.02em;}
+.card-delta{font-family:var(--font-mono); font-size:11.5px; font-weight:700; margin-top:2px;}
+.card-delta.pos{color:var(--bad);} .card-delta.neg{color:var(--ok);}
+.v.perte{color:var(--bad);}
+
+.stats{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:18px;}
+.stat{background:var(--surf); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; box-shadow:var(--card-shadow);}
+.stat .l{font-family:var(--font-mono); font-size:var(--label-size); font-weight:var(--label-weight); letter-spacing:var(--label-track); text-transform:uppercase; color:var(--ink2); margin-bottom:6px;}
+.stat .v{font-family:var(--font-disp); font-size:27px; font-weight:800; color:var(--ink); font-variant-numeric:tabular-nums; letter-spacing:-.03em; line-height:1.05;}
+.stat .v small{font-family:var(--font-body); font-size:13px; font-weight:600; color:var(--ink2); margin-left:4px; letter-spacing:0;}
+.stat.accent{border-left:4px solid var(--accent);}
+.stat.gain .v{color:var(--ok);}
+
+.tbl-wrap{background:var(--surf); border:1px solid var(--line); border-radius:var(--radius); overflow-x:auto; box-shadow:var(--card-shadow);}
+.tbl-head{padding:12px 16px; font-weight:700; font-size:13.5px; color:var(--ink); border-bottom:1px solid var(--line); display:flex; gap:10px; align-items:baseline; flex-wrap:wrap;}
+.tbl-head span{font-family:var(--font-mono); font-weight:500; font-size:11.5px; color:var(--ink2);}
+table{width:100%; min-width:940px; border-collapse:collapse; font-size:13px;}
+th{font-family:var(--font-mono); font-size:var(--label-size); font-weight:700; letter-spacing:var(--label-track); text-transform:uppercase; text-align:left;
+  padding:10px 13px; color:var(--ink2); background:var(--surf2); border-bottom:2px solid var(--line);}
+th{white-space:nowrap;}
+th.num, td.num{text-align:right; font-variant-numeric:tabular-nums;}
+td{padding:11px 13px; font-family:var(--font-mono); font-size:12.5px; color:var(--ink); border-bottom:1px solid var(--line-soft);}
+td.txt{font-family:var(--font-body); font-size:13px;}
+tr:last-child td{border-bottom:none;}
+.badge{display:inline-block; font-family:var(--font-mono); font-size:11px; font-weight:700; padding:3px 8px; border-radius:var(--radius-sm);}
+.badge.ok{background:var(--ok-soft); color:var(--ok); box-shadow:inset 0 0 0 1px var(--ok);}
+.badge.risk{background:var(--bad-soft); color:var(--bad); box-shadow:inset 0 0 0 1px var(--bad);}
+
+/* --- specificites J : bandeau sombre, tableau zebre, colonnes separees --- */
+.mock[data-opt="J"] .hd{background:var(--head); margin:-26px -24px 18px; padding:18px 24px; border-bottom:none;}
+.mock[data-opt="J"] .hd h2{color:#f2f4f6;}
+.mock[data-opt="J"] .crumb{color:#a9b3bc;}
+.mock[data-opt="J"] .mark{background:#f2f4f6; color:#1c2126;}
+.mock[data-opt="J"] .btn.ghost{color:#f2f4f6; border-color:#7d8892;}
+.mock[data-opt="J"] th{background:var(--line-strong); color:#e9ecef; border-bottom:none;}
+.mock[data-opt="J"] tbody tr:nth-child(even) td{background:var(--surf2);}
+.mock[data-opt="J"] td{border-right:1px solid var(--line-soft);}
+.mock[data-opt="J"] td:last-child{border-right:none;}
+.mock[data-opt="J"] .stat{border-top:3px solid var(--line-strong);}
+
+/* --- specificites K : KPI en aplats, bandeau sombre --- */
+.mock[data-opt="K"] .hd{background:var(--head); margin:-26px -24px 18px; padding:20px 24px; border-bottom:none; border-radius:16px 16px 0 0;}
+.mock[data-opt="K"] .hd h2{color:#fff;} .mock[data-opt="K"] .crumb{color:#9fb4d0;}
+.mock[data-opt="K"] .mark{background:var(--accent); color:#fff;}
+.mock[data-opt="K"] .btn.ghost{color:#fff; border-color:rgba(255,255,255,.45);}
+.mock[data-opt="K"] .stat{background:var(--accent); border-color:var(--accent);}
+.mock[data-opt="K"] .stat .l{color:#cfe0f7;} .mock[data-opt="K"] .stat .v{color:#fff; letter-spacing:-.035em;} .mock[data-opt="K"] .stat .v small{color:#cfe0f7;}
+.mock[data-opt="K"] .stat.gain{background:var(--ok); border-color:var(--ok);}
+.mock[data-opt="K"] .stat.gain .l{color:#d3ecdd;} .mock[data-opt="K"] .stat.gain .v{color:#fff;} .mock[data-opt="K"] .stat.gain .v small{color:#d3ecdd;}
+.mock[data-opt="K"] .stat.accent{border-left:1px solid var(--accent);}
+.mock[data-opt="K"] .card.active{background:var(--accent-soft); border-color:var(--accent);}
+
+/* --- specificites I : soulignement du scenario actif --- */
+.mock[data-opt="I"] .card.active{box-shadow:0 3px 0 var(--accent);}
+</style>
+
+<div class="page">
+  <div class="intro">
+    <h1>Round 3 — contraste et lisibilite</h1>
+    <p>Quatre calibrages, memes composants qu'en vrai (bandeau, chips de navigation, cartes scenario, KPI, tableau outil). Le sujet ici n'est pas l'effet mais la lisibilite : encre plus foncee, labels remontes du gris #888 actuel a un gris reellement lisible, bordures franches au lieu d'ombres floues, badges cernes. Chaque option affiche ses ratios de contraste WCAG.</p>
+    <div class="switcher" id="sw">
+      <button data-opt="I" class="active">I — Contraste net</button>
+      <button data-opt="J">J — Listing atelier</button>
+      <button data-opt="K">K — Blocs pleins</button>
+      <button data-opt="L">L — Atelier sombre</button>
+    </div>
+  </div>
+  <p class="cap" id="cap"></p>
+  <p class="ratios" id="ratios"></p>
+
+  <div class="mock" data-opt="I" id="mock">
+    <div class="hd">
+      <div class="mark">SPK</div>
+      <div>
+        <div class="crumb">EMAG 1 — OP10</div>
+        <h2>DV 356x26 RPI</h2>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn ghost">Exporter le suivi</button>
+      <button class="btn">+ Ajouter un scenario</button>
+    </div>
+
+    <div class="toolbar">
+      <span class="chip on">EMAG 1</span>
+      <span class="chip">+ Ligne de production</span>
+      <span class="chip on">DV 356x26 RPI</span>
+      <span class="chip">+ Reference disque</span>
+      <span class="chip on">OP10</span>
+      <span class="chip">+ OP</span>
+    </div>
+
+    <div class="cards">
+      <div class="card active">
+        <div class="card-top"><span class="idx">1</span><span class="card-name">Process actuel — CBN</span><span class="pill ref">Scenario ref.</span><span class="pill serie">En serie</span></div>
+        <div class="card-metrics">
+          <div><div class="l">&euro; / piece</div><div class="v">1,0333</div></div>
+          <div><div class="l">Temps cycle</div><div class="v">100</div></div>
+          <div><div class="l">Essais</div><div class="v">1</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-top"><span class="idx">2</span><span class="card-name">Mixte T50013</span><span class="pill essai">Essai</span></div>
+        <div class="card-metrics">
+          <div><div class="l">&euro; / piece</div><div class="v">1,4342</div><div class="card-delta pos">+38,8 %</div></div>
+          <div><div class="l">Perte / an</div><div class="v perte">-14,9 k&euro;</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-top"><span class="idx">3</span><span class="card-name">Ceramique integrale</span><span class="pill essai">Essai</span></div>
+        <div class="card-metrics">
+          <div><div class="l">&euro; / piece</div><div class="v">1,6739</div><div class="card-delta pos">+62,0 %</div></div>
+          <div><div class="l">Perte / an</div><div class="v perte">-23,8 k&euro;</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="l">Cout outil / piece</div><div class="v">0,0750<small>&euro;</small></div></div>
+      <div class="stat"><div class="l">&euro; / arete (bol + piste)</div><div class="v">7,500<small>&euro;</small></div></div>
+      <div class="stat accent"><div class="l">Temps de cycle — indice</div><div class="v">100<small>· 54,4 s</small></div></div>
+      <div class="stat gain"><div class="l">Validation scenario</div><div class="v">1<small>/ 5 essais</small></div></div>
+    </div>
+
+    <div class="tbl-wrap">
+      <div class="tbl-head">Composition du scenario <span>T513.1 · Bol · Plaquette exemple A · 0,0375 &euro;/piece</span></div>
+      <table>
+        <thead><tr><th>N&deg; outil</th><th>Logement</th><th>Reference plaquette</th><th class="num">Prix (&euro;)</th><th class="num">Aretes</th><th class="num">Charniere</th><th>Critere valide</th><th class="num">Vc</th><th class="num">fn</th><th class="num">&euro; / piece</th></tr></thead>
+        <tbody>
+          <tr><td>T513.1</td><td class="txt">Bol</td><td class="txt">Plaquette exemple A</td><td class="num">30,00</td><td class="num">6</td><td class="num">100</td><td><span class="badge ok">Conforme</span></td><td class="num">—</td><td class="num">—</td><td class="num">0,0375</td></tr>
+          <tr><td>T513.1</td><td class="txt">Piste</td><td class="txt">Plaquette exemple A</td><td class="num">30,00</td><td class="num">6</td><td class="num">100</td><td><span class="badge risk">Hors tol.</span></td><td class="num">800</td><td class="num">0,40</td><td class="num">0,0375</td></tr>
+          <tr><td>T520.4</td><td class="txt">Chanfrein</td><td class="txt">Plaquette exemple B</td><td class="num">24,50</td><td class="num">4</td><td class="num">80</td><td><span class="badge ok">Conforme</span></td><td class="num">650</td><td class="num">0,32</td><td class="num">0,0306</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const data = {
+  I: {cap:"<b>I — Contraste net (ma recommandation).</b> Meme squelette qu'aujourd'hui, entierement recalibre. Le vrai point noir actuel, ce sont les libelles en #888 sur blanc : <b>3,5:1</b>, sous le seuil AA de 4,5 — c'est exactement ce qui donne cette impression de delave. Ils passent ici a #465061, soit 8,1:1. Encre #0e1216 au lieu de #1a1a1a, bordures franches #c3cad3 au lieu de #e5e5e5 (1,3:1 : invisible) noye dans une ombre floue, fond de page assombri pour que les cartes blanches se detachent, bleu durci de #1b5ea6 (6,6) a #0b4a8f (8,8), badges cernes plutot que pastel. Typo : <b>Inter</b> pour le corps et l'UI (dessine pour les petites tailles a l'ecran, chiffres tabulaires nets la ou Open Sans se brouille sous 12 px), <b>Archivo</b> conserve en titres et gros chiffres. Aucun changement de structure : migration sans risque.",
+       r:"texte principal <b>18,8:1</b> (actuel 17,4) · labels <b>8,1:1</b> (actuel 3,5) · bleu <b>8,8:1</b> (actuel 6,6) · rouge <b>7,1:1</b> · vert <b>6,6:1</b>"},
+  J: {cap:"<b>J — Listing atelier.</b> Le tableau redevient le heros : bandeau sombre pleine largeur, en-tetes de colonnes en inverse (fond #1c2126, texte clair), lignes zebrees, filets verticaux entre colonnes, rayons quasi nuls (4 px). Fond ivoire-gris legerement chaud, plus reposant qu'un gris bleute sous neon d'atelier. Typo : <b>IBM Plex Sans</b> partout — dessinee pour la documentation technique, elle s'accorde nativement avec IBM Plex Mono deja embarquee dans le fichier (donc une seule famille a ajouter au lieu de deux). C'est l'option qui lit le mieux un tableau de 12 colonnes.",
+       r:"texte principal <b>17,8:1</b> · en-tetes inverses <b>13,7:1</b> · labels <b>8,0:1</b> · filets de colonne <b>1,6:1</b> (visibles)"},
+  K: {cap:"<b>K — Blocs pleins.</b> Hierarchie par aplats plutot que par nuances de gris : bandeau noir, KPI en cartouches de couleur saturee a chiffres blancs, scenario actif sur fond bleu clair, badges pleins. On voit d'un coup d'oeil, a deux metres, ou sont les chiffres cles — utile quand tu montres l'ecran a un client ou en salle. Contrepartie : beaucoup plus de couleur, moins « rapport technique sobre », et il faut discipliner l'usage (un bleu, un vert, jamais plus de quatre cartouches). Typo : <b>Manrope</b> en titres et chiffres (geometrique, tres presente en 800) + <b>Public Sans</b> en texte courant.",
+       r:"chiffres sur bleu <b>8,6:1</b> · chiffres sur vert <b>7,1:1</b> · texte principal <b>18,2:1</b> · labels <b>8,4:1</b>"},
+  L: {cap:"<b>L — Atelier sombre.</b> Un vrai theme sombre, pas l'inversion approximative d'aujourd'hui : fond #0d1114, surfaces #191f24, texte #f2f5f7, accents remontes en tons clairs (bleu #59a9ff, vert #4fd18b, rouge #ff7183) qui tiennent le contraste sur fond sombre. Interet reel : ecran a cote de la machine, lumiere rasante, moins d'eblouissement et les traces sur un ecran sale se voient moins. A retenir surtout comme <i>refonte du mode sombre existant</i>, combine a I ou J en mode clair — pas comme theme unique, l'impression et le PDF client restant clairs.",
+       r:"texte principal <b>15,2:1</b> · labels <b>8,8:1</b> · bleu accent <b>6,8:1</b> · rouge alerte <b>6,3:1</b>"}
+};
+const mock=document.getElementById('mock'), cap=document.getElementById('cap'), ratios=document.getElementById('ratios');
+function set(o){
+  document.querySelectorAll('#sw button').forEach(b=>b.classList.toggle('active', b.dataset.opt===o));
+  mock.setAttribute('data-opt',o); cap.innerHTML=data[o].cap;
+  ratios.innerHTML = data[o].r.split(' · ').map(x=>'<span>'+x+'</span>').join('');
+}
+document.getElementById('sw').addEventListener('click',e=>{const b=e.target.closest('button[data-opt]'); if(b) set(b.dataset.opt);});
+set('I');
+</script>

@@ -230,6 +230,13 @@ table .num, table td.num{ text-align:right; font-variant-numeric:tabular-nums;
 .panel.simul-maxi .panel-hint { font-size:14.5px; }
 .panel.simul-maxi h3 { font-size:22px; }
 .panel.simul-maxi .cell, .panel.simul-maxi select { font-size:14px; }
+/* v4.92 — le visuel économies du Plan : coût 2025 (gris) face au coût simulé
+   (vert, rouge si la combinaison prix × vie coûte plus cher), mis à jour à la frappe. */
+.eco-bar{ position:relative; height:17px; width:170px; }
+.eco-av{ position:absolute; left:0; top:2px; height:6px; width:0; background:var(--gray-300); border-radius:3px; transition:width .12s var(--ease); }
+.eco-ap{ position:absolute; left:0; top:10px; height:6px; width:0; background:var(--green); border-radius:3px; transition:width .12s var(--ease); }
+.eco-ap.perd{ background:var(--red); }
+.eco-gain{ display:block; font-size:12.5px; font-weight:600; margin-top:1px; white-space:nowrap; }
 </style>
 
 <style>
@@ -1133,7 +1140,7 @@ tr.row-bad td{background:var(--gray-50);}
 .panel-backdrop{position:fixed; inset:0; background:rgba(20,24,22,.45); z-index:40;}
 .panel{
   position:fixed; z-index:50; top:50%; left:50%; transform:translate(-50%,-50%);
-  width:min(520px, calc(100vw - 32px)); max-height:calc(100vh - 48px); overflow-y:auto;
+  width:min(560px, calc(100vw - 32px)); max-height:calc(100vh - 48px); overflow-y:auto;
   background:var(--surface); border:1px solid var(--border); border-top:3px solid var(--blue);
   border-radius:var(--radius-lg); padding:22px 24px; box-shadow:var(--shadow-pop);
 }
@@ -1493,7 +1500,27 @@ select.log-equipe:focus{border-color:var(--blue); outline:none; background:var(-
 .nv-bloc li{margin:4px 0; line-height:1.5; font-size:13px; color:var(--ink-soft);}
 
 /* --- tableau de bord multi-lignes --- */
-.panel.panel-large{max-width:1120px;}
+/* v4.96 — système de panneaux. Trois échelons : base 560 (dialogues),
+   panel-large 1120 (accueil, tableau de bord, vue CPP…), et les exceptions
+   nommées (annot 880, backlog 920, compare 880) qui restent. Avant la 4.96,
+   panel-large ne posait qu'un max-width : la base à 520 figeait la largeur —
+   tous les grands panneaux tournaient en réalité à 520 px.
+   Titre et footer d'actions : sticky dans le scroll du panneau, tirés aux
+   bords par marges négatives (le padding du .panel est conservé pour le
+   corps — aucun HTML à restructurer). */
+.panel.panel-large{ width:min(1120px, calc(100vw - 32px)); }
+.panel-large > h3{
+  position:sticky; top:0; z-index:2;
+  margin:-22px -24px 12px; padding:16px 24px 10px;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+}
+.panel-large > .panel-actions{
+  position:sticky; bottom:0; z-index:2;
+  margin:16px -24px -22px; padding:12px 24px;
+  background:var(--surface);
+  border-top:1px solid var(--border);
+}
 /* v4.15 : la comparaison a besoin de la largeur du tableau à deux colonnes + graphe */
 .panel-compare.panel{width:min(880px, calc(100vw - 32px));}
 .db-filtre{display:flex; align-items:center; gap:8px; margin:2px 0 10px;}
@@ -2773,6 +2800,17 @@ body.print-livraison #livraisonImpression .m4-proto, body.print-mission #mission
   body.print-livraison, body.print-mission{ background:#fff; }
   body.print-livraison > #livraisonImpression, body.print-mission > #missionA4{ break-inside:avoid; }
 }
+/* v4.91 — le plein écran doit battre les largeurs spécifiques des grands panneaux
+   (.panel-large 1120 px, .backlog-wrap 920 px…) : posées PLUS TARD dans la feuille
+   et à même spécificité, c'est l'ordre qui gagnait — le panneau restait à 1120 px.
+   Et le transform de centrage du .panel (translate(-50%,-50%)) doit sauter, sinon
+   le panneau maxi part de moitié hors écran (constat navigateur 14/10 : rect à
+   x:-560 y:-360, un quart de l'accueil visible). Le triple .simul-maxi l'emporte
+   sur tout sélecteur à deux classes, où qu'il soit dans la feuille. */
+.panel.simul-maxi.simul-maxi{
+  transform:none; inset:0; width:100vw; height:100vh;
+  max-width:none; max-height:none; margin:0; border-radius:0;
+}
 </style>
 
 <script>
@@ -3297,6 +3335,40 @@ function resoudreTag(tag){
   const sc = (op.scenarios || []).find(x => x.id === tag.scenarioId); if(!sc) return null;
   return { ligne:l, reference:r, op, scenario:sc };
 }
+/* v4.91 — l'OP qui contient un scenario donne, cherche dans l'arbre. La
+   réattribution d'essai lisait une variable `op` qui n'existait pas dans sa
+   portée : chaque clic levait « ReferenceError: op is not defined » et le
+   bouton paraissait mort (constat navigateur 14/10). Même règle que
+   resoudreTag : un scenario orphelin rend null, jamais une exception. */
+function opContenantScenario(scenarioId){
+  for(const l of lignes) for(const r of (l.references || [])) for(const o of (r.ops || [])){
+    if((o.scenarios || []).some(x => x.id === scenarioId)) return o;
+  }
+  return null;
+}
+/* v4.93 — la BRANCHE complète d'un scénario (ligne + référence + OP). Même
+   parcours que opContenantScenario avec tout le contexte : la réattribution
+   d'essai doit traverser les OP d'une même machine (retour terrain 15/10 :
+   un essai créé dans une OP40 HESSAPP qui n'aurait jamais dû exister doit
+   pouvoir rejoindre l'OP30 d'une autre référence de la même ligne). */
+function brancheDeScenario(scenarioId){
+  for(const l of lignes) for(const r of (l.references || [])) for(const o of (r.ops || [])){
+    if((o.scenarios || []).some(x => x.id === scenarioId)) return { ligne: l, reference: r, op: o };
+  }
+  return null;
+}
+/* v4.93 — toutes les destinations possibles d'un essai : les AUTRES scénarios
+   de la MÊME LIGNE (la machine), toutes références et OP confondues. Un essai
+   est une campagne physique menée sur une machine : il ne change pas de ligne. */
+function destinationsEssai(scenarioId){
+  const origine = brancheDeScenario(scenarioId);
+  if(!origine) return [];
+  const out = [];
+  origine.ligne.references.forEach(r => (r.ops || []).forEach(o => (o.scenarios || []).forEach(sc => {
+    if(sc.id !== scenarioId) out.push({ ligne: origine.ligne, reference: r, op: o, scenario: sc });
+  })));
+  return out;
+}
 function scenariosResolusDuProjet(pj){
   return pj.tags.map(resoudreTag).filter(Boolean);
 }
@@ -3436,7 +3508,8 @@ function migrerArbre(source){
     return { lignes: lignesLues, projets: fin.projets, responsables: fin.responsables,
            catalogue: Array.isArray(source.catalogue) ? source.catalogue.map(normalizeArticleCat) : [],
            plan: Array.isArray(source.plan) ? source.plan.map(normalizePlanEntry) : [],
-           livraisons: Array.isArray(source.livraisons) ? source.livraisons.map(normalizeLivraison) : [] };
+           livraisons: Array.isArray(source.livraisons) ? source.livraisons.map(normalizeLivraison) : [],
+           conso2025: normalizeConso2025(source.conso2025) };
   }
 
   // format 6 (v4.0, projets PROPRIETAIRES des lignes -- deployee moins d'une journee) :
@@ -3616,12 +3689,22 @@ let catalogue = [];
    gagnee. Le total de la promesse ne compte que les lignes ou l'etat est pose. */
 let plan = [];
 
+/* v4.92 — la consommation annuelle 2025 (fichier Pareto de Matis) : la base de
+   calcul du Plan et des données économiques. Déclarée AVANT loadAll() — piège
+   TDZ documenté : une globale lue au chargement déclarée après l'appel levait
+   un ReferenceError avalé par le try/catch (repli silencieux sur l'exemple). */
+let conso2025 = null;
+let conso2025SectionsOn = null; /* Set des postes retenus — null = tous (état de session) */
+
 function normalizePlanEntry(p){
-  return Object.assign({ mabec: "", isoCible: "", prixCible: "", etat: "" }, p,
+  const vie = (p && p.vieCible !== "" && p.vieCible != null) ? Number(p.vieCible) : "";
+  return Object.assign({ mabec: "", isoCible: "", prixCible: "", etat: "", vieCible: "" }, p,
     { mabec: String((p && p.mabec) || "").trim().toUpperCase(),
       isoCible: String((p && p.isoCible) || "").trim(),
       prixCible: (p && p.prixCible) !== "" && p && p.prixCible != null ? Number(p.prixCible) : "",
-      etat: String((p && p.etat) || "") });
+      etat: String((p && p.etat) || ""),
+      /* v4.92 — la durée de vie cible PAR LIGNE (% de l'actuelle) ; vide = le réglage global */
+      vieCible: (vie !== "" && !isNaN(vie) && vie > 0) ? vie : "" });
 }
 
 function normalizeArticleCat(a){
@@ -3909,6 +3992,7 @@ function loadAll(){
         catalogue = (parsed.catalogue || []).map(normalizeArticleCat);
     plan = (parsed.plan || []).map(normalizePlanEntry);
         plan = (parsed.plan || []).map(normalizePlanEntry);
+        conso2025 = normalizeConso2025(parsed.conso2025);   /* v4.92 : la base économique annuelle voyage avec le suivi */
         const l = lignes.find(x => x.id === parsed.activeLigneId) || lignes[0];
         activeLigneId = l.id;
         const r = l.references.find(x => x.id === parsed.activeReferenceId) || l.references[0];
@@ -4048,7 +4132,7 @@ function payloadSuivi(){
   // format 8 (v4.2) : `lignes` reste la racine, exactement comme les formats 5 et 7 -- une
   // version anterieure a la v4 lit ce fichier normalement, seuls `projets` et `responsables`
   // lui sont invisibles (elle ne les connait pas, elle ne les cherche pas).
-  return JSON.stringify({ format:8, lignes, projets, activeProjetId, responsables, backlog, revision, specsUsine, synchroNote, activeLigneId, activeReferenceId, activeOpId, activeScenarioId: activeId, livraisons, catalogue, plan });
+  return JSON.stringify({ format:8, lignes, projets, activeProjetId, responsables, backlog, revision, specsUsine, synchroNote, activeLigneId, activeReferenceId, activeOpId, activeScenarioId: activeId, livraisons, catalogue, plan, conso2025 });
 }
 
 /* Ce qui pese vraiment, nomme, pour que l'utilisateur puisse agir plutot que subir. */
@@ -5096,7 +5180,8 @@ function preparerImportDepuis(parsed){
   return { nouvellesLignes, nouveauxProjets, nouveauxResponsables, nouveauBacklog, revisionEntrante,
            catalogue: migreImport ? (migreImport.catalogue || []) : [],
            plan: migreImport ? (migreImport.plan || []).map(normalizePlanEntry) : [],
-           livraisons: migreImport ? (migreImport.livraisons || []) : [] };
+           livraisons: migreImport ? (migreImport.livraisons || []) : [],
+           conso2025: migreImport ? (migreImport.conso2025 || null) : null };
 }
 
 function importData(file){
@@ -5217,6 +5302,10 @@ function appliquerImport(mode){
       importEnAttente.plan.forEach(p => { parMabecP[p.mabec] = p; });
       plan = Object.values(parMabecP).map(normalizePlanEntry);
     }
+    /* v4.92 — la base annuelle : un fichier de consommation est UN ensemble cohérent,
+       pas une fusion par article (mélanger deux fichiers créerait des postes doublement
+       comptés). L'entrant gagne s'il en porte une ; sinon la locale reste. */
+    conso2025 = normalizeConso2025(importEnAttente.conso2025) || conso2025;
     // la fusion produit un etat qui n'existe dans aucun des deux fichiers : elle merite sa
     // propre revision, sinon deux postes croiraient detenir la meme
     revision = Math.max(revision, revisionEntrante || 0) + 1;
@@ -5232,6 +5321,7 @@ function appliquerImport(mode){
     specsUsine = normaliserSpecsUsine(parsed.specsUsine);
     synchroNote = parsed.synchroNote || null;
     catalogue = (parsed.catalogue || []).map(normalizeArticleCat);
+    conso2025 = normalizeConso2025(parsed.conso2025);   /* v4.92 : le reçu fait autorité, comme le catalogue */
   }
   projets.forEach(purgerTagsMorts);
 
@@ -8857,6 +8947,50 @@ function equipeOptions(selected){
    (prélèvements, Marposs, photos, but, observations) ; un champ
    `scenarioOrigine` raconte le déplacement (§3.5 : l'histoire reste lisible).
    Rend l'essai déplacé, ou null si le ciblage est invalide. */
+/* v4.95.1 — le rapport du dernier rattachement de logements (lecture juste
+   après reattribuerEssai, pour le dire à l'opérateur). */
+let rapportReattribution = null;
+function normeCleLogement(numero, nom){
+  return String(numero || "").trim().toUpperCase().replace(/\s+/g, " ") + "|" +
+         String(nom || "").trim().toUpperCase().replace(/\s+/g, " ");
+}
+function remapperLogementsEssai(essai, scSource, scCible){
+  /* Rattache les références logements d'un essai aux logements EXISTANTS du
+     scénario cible : clé = n° d'outil + nom de logement (casse/espaces
+     tolérés — « t5 · d1 » retrouve « T5 · D1 »). L'instantané de l'essai
+     porte les deux (ids et clés humaines) : le pont est toujours possible.
+     RIEN n'est créé côté cible ; ce qui ne trouve pas de correspondance
+     reste tel quel et sort dans le rapport (sansCorrespondance). Les
+     conditions figées de l'essai (Vc, f, charnière de l'instantané) ne sont
+     pas touchées : ce sont les conditions qui étaient vraies ce jour-là. */
+  const cleSource = {};   /* logementId de l'essai -> clé humaine */
+  ((essai.params || {}).logements || []).forEach(lp => {
+    if(lp.logementId) cleSource[lp.logementId] = normeCleLogement(lp.outilNumero, lp.logementNom);
+  });
+  const cible = {};       /* clé humaine -> ids des logements EXISTANTS de la cible */
+  (scCible.outils || []).forEach(o => (o.logements || []).forEach(l => {
+    const k = normeCleLogement(o.numero, l.nom);
+    if(!(k in cible)) cible[k] = { outilId: o.id, logementId: l.id };
+  }));
+  const rapport = { remappees: [], sansCorrespondance: [], prelevementsRemappes: 0 };
+  const vu = {};
+  ((essai.params || {}).logements || []).forEach(lp => {
+    const k = cleSource[lp.logementId] || normeCleLogement(lp.outilNumero, lp.logementNom);
+    const c = cible[k];
+    const suivi = lp.suivi !== false;
+    if(c){
+      lp.outilId = c.outilId; lp.logementId = c.logementId;
+      if(suivi && !vu[k]){ vu[k] = true; rapport.remappees.push({ numero: lp.outilNumero, nom: lp.logementNom }); }
+    } else if(suivi && !vu[k]){
+      vu[k] = true; rapport.sansCorrespondance.push({ numero: lp.outilNumero, nom: lp.logementNom });
+    }
+  });
+  (essai.prelevements || []).forEach(r => {
+    const k = cleSource[r.logementId];
+    if(k && cible[k]){ r.logementId = cible[k].logementId; rapport.prelevementsRemappes++; }
+  });
+  return rapport;
+}
 function reattribuerEssai(scSource, essaiId, scCible){
   if(!scSource || !scCible || scSource.id === scCible.id) return null;
   const i = (scSource.essais || []).findIndex(e => e.id === essaiId);
@@ -8865,6 +8999,37 @@ function reattribuerEssai(scSource, essaiId, scCible){
   essai.scenarioOrigine = "« " + (scSource.name || scSource.nom || "sans nom") + " » (réattribué le " + new Date().toISOString().slice(0, 10) + ")";
   scCible.essais = scCible.essais || [];
   scCible.essais.push(essai);
+  /* v4.95.1 — les mesures se rattachent aux logements du scénario cible.
+     L'instantané de l'essai (params.logements) porte les ids ET les clés
+     humaines (outilNumero + logementNom) : on remmappe les références
+     (params.logements[].outilId/logementId, prelevements[].logementId) vers
+     les logements EXISTANTS de la cible quand la clé T5 · D1 s'y retrouve —
+     jamais de création d'outil ni de logement, et ce qui ne trouve pas de
+     correspondance reste tel quel, déclaré dans le rapport. */
+  rapportReattribution = remapperLogementsEssai(essai, scSource, scCible);
+  /* v4.92 — les critères de mesure voyagent avec l'essai. Les VALEURS vivent dans
+     prelevement.valeurs[critere.id][axe], mais les DÉFINITIONS (label, bornes, axes)
+     vivent sur le scénario : sans le critère correspondant, le scénario cible n'a pas
+     de colonne et les Ra saisies semblaient perdues au transfert (PCI5, retour
+     terrain 14/10). On copie les définitions manquantes depuis la source — copie
+     PROFONDE des axes, jamais un doublon par id — et si la source ne les connaît
+     plus, on les reconstruit depuis les axes réellement mesurés (bornes vides :
+     on n'invente pas une limite). Les mesures restent évaluées contre leurs bornes
+     d'ORIGINE, jamais contre celles d'un critère homonyme de la cible. */
+  const idsUtilises = new Set();
+  (essai.prelevements || []).forEach(r => Object.keys(r.valeurs || {}).forEach(k => idsUtilises.add(k)));
+  scCible.criteresSup = scCible.criteresSup || [];
+  idsUtilises.forEach(id => {
+    if(scCible.criteresSup.some(c => c.id === id)) return;
+    const def = (scSource.criteresSup || []).find(c => c.id === id);
+    if(def){
+      scCible.criteresSup.push(Object.assign({}, def, { axes: [...(def.axes || [])] }));
+      return;
+    }
+    const axes = new Set();
+    (essai.prelevements || []).forEach(r => Object.keys((r.valeurs || {})[id] || {}).forEach(ax => axes.add(ax)));
+    scCible.criteresSup.push({ id, label: "Critère importé", maxi: "", miniActif: false, mini: "", axes: [...axes], actif: true });
+  });
   return essai;
 }
 
@@ -8883,7 +9048,7 @@ function essaiCardHTML(sc, essai, interactive){
     <input class="cell ref" data-id="${sc.id}" data-essai="${essai.id}" data-field="operateur" value="${escapeAttr(essai.operateur)}" placeholder="Opérateur">
     <span class="status-badge ${badgeClass}">${badgeText}</span>
     <button class="ghost small essai-cloture" data-id="${sc.id}" data-essai="${essai.id}" title="${essai.cloture ? "Modifier le motif ou réouvrir cet essai arrêté" : "Clôturer cet essai — arrêt anticipé avant la charnière (casse, brut, incident...)"}">${essai.cloture ? "⏹ Arrêté" : "⏹ Clôturer"}</button>
-    <button class="ghost small essai-reattribue" data-id="${sc.id}" data-essai="${essai.id}" title="Déplacer cet essai vers un autre scénario du même OP — l'essai voyage entier, l'origine reste tracée">⇄ Réattribuer</button>
+    <button class="ghost small essai-reattribue" data-id="${sc.id}" data-essai="${essai.id}" title="Déplacer cet essai vers n'importe quel scénario de la même machine (autre OP ou autre référence compris) — l'essai voyage entier, l'origine reste tracée">⇄ Réattribuer</button>
     <button class="log-del essai-del" data-id="${sc.id}" data-essai="${essai.id}">✕ Essai</button>
   ` : `
     <span class="sc-name-print" style="font-size:14px;">${escapeAttr(essai.titre)}</span>
@@ -9480,20 +9645,32 @@ function compositionApercuHTML(sc){
    Renvoie le descriptif a stocker, ou null si l'utilisateur doit d'abord agir. */
 const PJ_MAX_SANS_DOSSIER = 500 * 1024;
 
+/* v4.94 — une image jointe (plan scanné, photo d'outil) est compressée comme une photo
+   d'essai AVANT la règle de stockage : une photo de téléphone brute (3-5 Mo) était écrite
+   telle quelle dans le dossier local, ou refusée en mode fichier parce qu'elle dépassait
+   les 500 ko — alors qu'une compression légère la fait tenir et reste lisible à l'écran.
+   Les PDF ne bougent pas (pas compressibles côté client). */
 async function attacherPieceJointe(file, prefixe){
-  const ext = (file.name.match(/\.[a-z0-9]+$/i) || [""])[0].toLowerCase();
-  const mime = file.type || (ext === ".pdf" ? "application/pdf" : "application/octet-stream");
+  let ext = (file.name.match(/\.[a-z0-9]+$/i) || [""])[0].toLowerCase();
+  let mime = file.type || (ext === ".pdf" ? "application/pdf" : "application/octet-stream");
+  let contenu = file;
+  if((mime || "").startsWith("image/") && mime !== "image/gif"){
+    try{
+      contenu = await compressImageFile(file, 1600, 0.82);
+      ext = ".jpg"; mime = "image/jpeg";
+    }catch(e){ contenu = file; /* compression impossible : on tente le fichier brut */ }
+  }
   if(photosDirHandle){
     try{
       const nom = prefixe + "_" + Date.now() + ext;
-      await writePhotoBlob(nom, file);
+      await writePhotoBlob(nom, contenu);
       return { filename: nom, nomOrigine: file.name, mime, addedAt: new Date().toISOString(), stockage: "dossier" };
     }catch(err){
       dialogueAlerte("Échec de l'enregistrement dans le dossier local : " + err.message, "Échec d'enregistrement");
       return null;
     }
   }
-  if(file.size > PJ_MAX_SANS_DOSSIER){
+  if(contenu.size > PJ_MAX_SANS_DOSSIER){
     dialogueAlerte(`Ce fichier pèse ${Math.round(file.size/1024)} ko.
 
 Sans dossier local connecté, il devrait être intégré au fichier de suivi, dont la capacité totale est d'environ 5 Mo pour TOUT le suivi, mesures comprises. Deux pièces jointes de cette taille suffiraient à le saturer — et une sauvegarde qui échoue bloque l'enregistrement de vos relevés. On ne perd pas des mesures à cause d'un plan.
@@ -9505,7 +9682,7 @@ Connectez le dossier local (menu ••• → Dossier photos) : le fichier y se
     const reader = new FileReader();
     reader.onload = () => resolve({ filename: file.name, mime, addedAt: new Date().toISOString(), stockage: "fichier", dataUrl: reader.result });
     reader.onerror = () => { dialogueAlerte("Lecture du fichier impossible.", "Lecture impossible"); resolve(null); };
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(contenu);
   });
 }
 
@@ -10677,7 +10854,46 @@ function toggleLock(){
   applyLockState();
 }
 
+/* v4.91 — le render reconstruit #scenarioDetail (entre autres) : l'element focalise
+   etait remplace et le focus tombait sur body. Comme le `change` du blur declenche
+   justement ce render, passer d'un champ au suivant perdait le focus a chaque fois :
+   « il faut cliquer deux fois sur le champ pour saisir » (retour terrain 14/10).
+   On memorise l'element focalise sous forme de selecteur stable (balise + attributs
+   data-* et id — les valeurs saisies ne comptent pas, le render les restitue), puis
+   on rend le focus et le curseur apres coup. Si le focus a survecu (panneau non
+   reconstruit, dialogue), on ne deplace rien. */
+function focusSigne(){
+  const el = document.activeElement;
+  if(!el || el === document.body || el === document.documentElement || !el.tagName) return null;
+  const attrs = [];
+  const at = el.attributes;
+  if(at) for(let i = 0; i < at.length; i++){
+    const a = at[i];
+    if(a.name === "id" || a.name.indexOf("data-") === 0)
+      attrs.push("[" + a.name + '="' + String(a.value).replace(/[\\"]/g, "\\$&") + '"]');
+  }
+  if(!attrs.length) return null;
+  return { selecteur: el.tagName.toLowerCase() + attrs.join("") };
+}
+function plagesSelection(el){
+  try{ if(el && typeof el.selectionStart === "number") return [el.selectionStart, el.selectionEnd]; }catch(e){}
+  return null; // input number, select, checkbox : pas de curseur a restituer
+}
+function restaurerFocusSigne(signe, sel){
+  try{
+    if(!signe || !signe.selecteur) return;
+    if(document.activeElement && document.activeElement !== document.body
+       && document.activeElement !== document.documentElement) return; // le focus a survecu : ne rien deranger
+    const el = document.querySelector(signe.selecteur);
+    if(!el) return;
+    el.focus({ preventScroll: true });
+    if(sel && typeof el.selectionStart === "number" && el.setSelectionRange) el.setSelectionRange(sel[0], sel[1]);
+  }catch(e){}
+}
+
 function render(){
+  const signe = focusSigne();
+  const sel = plagesSelection(document.activeElement);
   if(!data.find(s => s.id === activeId)) activeId = data[0] ? data[0].id : null;
   // le filtre de projet (v4.3) peut masquer le scenario actuellement ouvert : on retombe
   // sur le premier scenario encore visible, comme s'il avait ete supprime -- jamais un
@@ -10702,6 +10918,7 @@ function render(){
   renderBandeauStockage();
   if(typeof renduMigrBandeau === "function") renduMigrBandeau(); // v4.74 : le bandeau de migration suit l'etat des donnees
   appliquerFondLigne(); // v4.27 : teinte + filigrane de la ligne affichée
+  restaurerFocusSigne(signe, sel); // v4.91 : le focus survit a la reconstruction de l'ecran
 }
 
 function attachDetailHandlers(sc){
@@ -10941,7 +11158,11 @@ function attachDetailHandlers(sc){
       const files = [...inp.files];
       for(const file of files){
         try{
-          const blob = await compressImageFile(file, 1600, 0.82);
+          /* v4.94 — une photo cloud est téléchargée par l'autre poste à chaque consultation
+             hors cache : elle part plus légère (1280 px / 75 %) qu'une photo de dossier
+             local, qui ne quitte jamais la machine. Leçon du 12/10 : l'egress est la
+             ressource rare du plan gratuit. */
+          const blob = await compressImageFile(file, photosDirHandle ? 1600 : 1280, photosDirHandle ? 0.82 : 0.75);
           const stamp = Date.now() + "-" + Math.random().toString(36).slice(2,6);
           let filename, photo;
           if(photosDirHandle){
@@ -11203,21 +11424,54 @@ function attachDetailHandlers(sc){
       const essaiId = el.getAttribute("data-essai");
       const es = sc.essais.find(e => e.id === essaiId);
       if(!es) return;
-      const autres = (op.scenarios || []).filter(x => x.id !== sc.id);
-      if(!autres.length){ dialogueAlerte("Aucun autre scénario sur cette opération.", "Réattribuer"); return; }
-      const html = autres.map(x => `<label class="opt-row" style="cursor:pointer;">
+      /* v4.93 — les destinations = tous les scénarios de la MÊME LIGNE (la
+         machine), toutes références et OP confondues, groupés Réf › OP dans le
+         dialogue. Avant : le même OP seulement — l'essai PCI5 de l'OP40 HESSAPP
+         (un OP qui n'aurait jamais dû exister) ne pouvait pas rejoindre l'OP30. */
+      const dests = destinationsEssai(sc.id);
+      if(!dests.length){ dialogueAlerte("Aucun autre scénario sur cette ligne.", "Réattribuer"); return; }
+      const groupes = [];
+      dests.forEach(d => {
+        let g = groupes.find(x => x.cle === d.reference.id + "|" + d.op.id);
+        if(!g){ g = { cle: d.reference.id + "|" + d.op.id, reference: d.reference, op: d.op, scenarios: [] }; groupes.push(g); }
+        g.scenarios.push(d.scenario);
+      });
+      const html = groupes.map(g => `
+        <div style="margin:12px 0 2px; font-family:var(--font-mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-faint);">${escapeAttr(g.reference.nom || "—")} › ${escapeAttr(g.op.nom || "OP")}</div>
+        ${g.scenarios.map(x => `<label class="opt-row" style="cursor:pointer;">
         <input type="radio" name="reattribCible" value="${x.id}">
-        <span>« <b>${escapeAttr(x.name || x.nom || "sans nom")}</b> » — ${x.baseline ? "production (★)" : (x.statut === "valide" ? "validé" : "essai")}, ${(x.essais || []).length} essai(s)</span></label>`).join("");
-      dialogueConfirmer({ titre: "Réattribuer « " + (es.titre || "essai") + " »", okLabel: "Déplacer",
-        html: `<p class="panel-hint">L'essai voyage entier (${(es.prelevements || []).length} prélèvement(s)). Son origine reste tracée dans l'essai.</p>` + html })
+        <span>« <b>${escapeAttr(x.name || x.nom || "sans nom")}</b> » — ${x.baseline ? "production (★)" : (x.statut === "valide" ? "validé" : "essai")}, ${(x.essais || []).length} essai(s)</span></label>`).join("")}`).join("");
+      /* v4.91 — signature de dialogueConfirmer : (texte, options). L'appel
+         initial passait l'objet d'options en premier argument : le dialogue
+         s'ouvrait titré « Confirmer ? » avec « [object Object] » en corps —
+         les radios de choix n'étaient jamais rendus, et Déplacer ne savait
+         pas où aller. */
+      dialogueConfirmer("", { titre: "Réattribuer « " + (es.titre || "essai") + " »", okLabel: "Déplacer",
+        html: `<p class="panel-hint">L'essai voyage entier (${(es.prelevements || []).length} prélèvement(s)), vers n'importe quel scénario de la même machine. Son origine reste tracée dans l'essai, et ses critères de mesure (Ra…) voyagent avec lui s'ils manquent au scénario cible — les valeurs saisies restent évaluées contre leurs bornes d'origine.</p>` + html })
         .then(ok => {
           if(!ok) return;
           const cibleId = (document.querySelector('input[name="reattribCible"]:checked') || {}).value;
-          const cible = autres.find(x => x.id === cibleId);
+          let cible = null;
+          for(const l of lignes) for(const r of (l.references || [])) for(const o of (r.ops || [])){
+            const f = (o.scenarios || []).find(x => x.id === cibleId);
+            if(f){ cible = f; break; }
+          }
           if(!cible) return;
           backupSnapshot("Réattribution d'essai");
           if(reattribuerEssai(sc, essaiId, cible)){
             saveData(); render();
+            /* v4.95.1 — dire ce qui a été rattaché aux logements de la cible,
+               et ce qui est resté sans correspondance (jamais inventé). */
+            const rap = rapportReattribution;
+            if(rap && (rap.remappees.length || rap.sansCorrespondance.length)){
+              const okTxt = rap.remappees.length
+                ? `Mesures rattachées aux logements <b>existants</b> du scénario cible (aucune création) : ${rap.remappees.map(x => escapeAttr((x.numero || "?") + " · " + (x.nom || "?"))).join(", ")}${rap.prelevementsRemappes ? ` — ${rap.prelevementsRemappes} prélèvement(s) remappé(s).` : "."}`
+                : "";
+              const koTxt = rap.sansCorrespondance.length
+                ? `Sans correspondance dans la cible (laissées telles quelles) : ${rap.sansCorrespondance.map(x => escapeAttr((x.numero || "?") + " · " + (x.nom || "?"))).join(", ")}.`
+                : "";
+              dialogueAlerte([okTxt, koTxt].filter(Boolean).join("<br>"), "Rattachement des logements");
+            }
           }
         });
     });
@@ -11529,9 +11783,17 @@ function writeFieldValue(el){
       l[field] = val;
       /* v4.89 — LA SUGGESTION : MABEC ou ISO saisi → le catalogue remplit le
          prix (toujours), l'ISO, les arêtes et la DDV (si vides). Ce qui est
-         saisi à la main n'est jamais écrasé. */
-      const ent = (field === "codeArticle") ? catalogueSuggestion(String(val || "")) : null;
-      const entIso = (field === "ref") ? catalogueParIso(String(val || "")) : null;
+         saisi à la main n'est jamais écrasé.
+         v4.91 — catalogue vide ou article absent : le repli lit l'arbre du
+         suivi (plaquettes saisies ailleurs), sinon la suggestion restait
+         muette sur les données réelles tant que personne n'avait généré le
+         catalogue. */
+      const ent = (field === "codeArticle")
+        ? (catalogueSuggestion(String(val || "")) || suggestionDepuisArbre(String(val || ""), null))
+        : null;
+      const entIso = (field === "ref")
+        ? (catalogueParIso(String(val || "")) || suggestionDepuisArbre(null, String(val || "")))
+        : null;
       const cible = ent || entIso;
       if(cible) appliquerSuggestionCatalogue(l, cible);
     }
@@ -11725,6 +11987,7 @@ function ouvrirPanneau(id){
 }
 function fermerPanneaux(){
   fermerDialogue();
+  quitterMaxiPartout(); // v4.91 : fermer un panneau maxi ne doit pas lui laisser la classe collée
   document.getElementById("panelBackdrop").hidden = true;
   // tous les panneaux, sans liste en dur : projetCreatePanel oublie ici restait ouvert
   // apres la creation d'un projet, empile sous le panneau d'info (et un 2e clic sur
@@ -12116,6 +12379,30 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.96.0", date:"16/10/2026", points:[
+    "<b>Les grandes fenêtres ont repris leur vraie taille.</b> Un défaut de style figeait l'accueil, le tableau de bord, la carte atelier et les autres grands écrans à 520 px de large — ils tournent désormais à 1120 px. Le titre reste en haut quand on fait défiler, et les boutons d'action (Fermer, Enregistrer…) restent visibles en bas : plus besoin de descendre tout le contenu pour fermer une fenêtre. Les petites fenêtres de dialogue gagnent un peu d'air (520 → 560 px)."
+  ]},
+  { version:"4.95.1", date:"15/10/2026", points:[
+    "<b>Les mesures se rattachent aux logements du scénario d'arrivée.</b> Quand un essai change de scénario (⇄ Réattribuer), ses prélèvements et ses conditions figées pointent désormais les logements <b>existants</b> du scénario cible — retrouvés par <b>n° d'outil + nom de logement</b> (T5 · D1, T6 · Piste…, casse et espaces tolérés). <b>Rien n'est jamais créé</b> : pas d'outil ni de logement en double. Ce qui ne retrouve pas sa clé reste tel quel et est annoncé dans le rapport qui s'affiche après le déplacement. Les conditions figées de l'essai (Vc, f, charnière du jour) ne sont pas touchées."
+  ]},
+  { version:"4.95.0", date:"15/10/2026", points:[
+    "<b>⇄ Réattribuer traverse maintenant les OP.</b> Un essai pouvait seulement changer de scénario <b>au sein du même OP</b> — impossible, par exemple, de sortir un essai d'une OP40 HESSAPP qui n'aurait jamais dû exister pour le poser dans l'OP30 du disque 302. Le dialogue liste désormais <b>tous les scénarios de la même machine</b>, groupés par <b>Référence › OP</b> : l'essai voyage entier (prélèvements, Ra, photos), son origine reste tracée, et ses critères de mesure voyagent s'ils manquent à l'arrivée. Un essai reste attaché à sa ligne : il ne change pas de machine."
+  ]},
+  { version:"4.94.0", date:"15/10/2026", points:[
+    "<b>Les images ne gonflent plus le suivi ni le quota.</b> Une <b>image jointe</b> (plan scanné, photo d'outil) est désormais <b>compressée à l'entrée</b> comme une photo d'essai (1600 px, ~300 ko) — avant, une photo de téléphone brute (3-5 Mo) était écrite telle quelle dans le dossier local, ou refusée en mode fichier. Et les <b>photos d'essai qui voyagent par le cloud</b> partent plus légères (1280 px / 75 %) que celles du dossier local : une photo cloud est retéléchargée par l'autre poste à chaque consultation hors cache, et l'egress est la ressource rare du plan gratuit (leçon du 12/10). Côté backup : un <b>dump hebdomadaire automatique</b> des données cloud (suivi + rapports Field App) est posé dans <b>SPK-Backups\\supabase-dumps</b>, tous les lundis à 7 h, 8 versions conservées."
+  ]},
+  { version:"4.93.0", date:"15/10/2026", points:[
+    "<b>Nouvelle maison pour le cloud.</b> L'ancien projet Supabase « suivi-septfons » a été purgé (quota épuisé puis disparition) : la synchro pointe désormais vers le projet <b>spk-field-app-plus</b> (schéma reconstruit à l'identique : état partagé, historique 20 versions, photos, accès réservé aux comptes authentifiés). <b>Le cloud repart VIDE</b> : au premier contact, dépose tes données avec le bouton « Déposer ce suivi » (Matis dépose les siennes en premier, comme au tout premier jour), et les comptes Benjamin/Matis sont à recréer dans le dashboard (Authentication → Users). Note : le projet est encore sous restriction de quota côté Supabase — « cloud injoignable » jusqu'à la levée du blocage, l'outil reste 100 % utilisable hors ligne."
+  ]},
+  { version:"4.92.0", date:"14/10/2026", points:[
+    "<b>La base de calcul économique : vos consommations annuelles 2025 réelles.</b> Lis le fichier Pareto de Matis (les tableaux « Somme de Cout » par poste — PCI, WEISSER, OP, HESSAPP) depuis le Plan de conversion : chaque article porte son <b>coût 2025 réel</b>, poste par poste, et c'est <b>cette base qui pilote le plan</b> (elle voyage avec le suivi — export, import, cloud). Le <b>visuel</b> : sur chaque ligne, touche le <b>prix cible</b> ou la <b>durée de vie</b> — la barre grise (coût 2025) face à la verte (coût simulé) et le total en tête bougent à la frappe, en €/an et en %. Choisis les postes comptés (vue OP vs vue machine : vérifie le périmètre). Les réglages globaux du Plan (prix SPK, durée de vie) marchent enfin — ils étaient affichés sans effet depuis la 4.90."
+  ]},
+  { version:"4.91.1", date:"14/10/2026", points:[
+    "<b>Les Ra ne se perdent plus au transfert d'essai.</b> Les valeurs Ra vivent dans les prélèvements, mais la <b>définition du critère</b> (label, borne, axes) vit sur le scénario : en réattribuant le PCI5 vers « Classeur Matis », les Ra devenaient invisibles — elles dormaient dans les mesures. Désormais les critères de mesure <b>voyagent avec l'essai</b> (mêmes bornes qu'à la saisie, jamais de doublon). Un essai déjà transféré : réattribue-le une fois vers son scénario d'origine puis une fois vers sa destination, les Ra réapparaissent — <b>avant de supprimer le scénario d'origine</b>."
+  ]},
+  { version:"4.91.0", date:"14/10/2026", points:[
+    "<b>Quatre boutons et champs qui bloquaient, réparés.</b> <b>⇄ Réattribuer un essai</b> ne faisait rien (une variable hors de portée — chaque clic levait une erreur silencieuse). Le <b>plein écran</b> de l'accueil, du Plan et du Simulateur partait de moitié hors de l'écran : c'est réparé, il couvre la page — et <b>en sortir</b> (Échap, Fermer, le fond) ne colle plus l'état : la réouverture redonne un panneau normal, sans devoir fermer-réouvrir. <b>La saisie</b> n'exige plus deux clics : passer d'un champ au suivant ne perd plus le focus. Et la <b>suggestion de plaquettes</b> fonctionne enfin sur tes vraies données — tape un MABEC ou un ISO déjà saisi ailleurs dans le suivi : prix, arêtes et durée de vie se remplissent, même sans catalogue généré (et « Générer depuis l'outil » capture maintenant arêtes et charnière, qu'elle jetait)."
+  ]},
   { version:"4.90.0", date:"14/10/2026", points:[
     "<b>Les retours de la revue extérieure, appliqués.</b> <b>Plan de conversion</b> : le prix cible se confirme case par case (le total ne compte que le confirmé), l'<b>hypothèse de durée de vie</b> est affichée et réglable, chaque ligne montre son <b>seuil de neutralité</b>, le prix suggéré est un réglage — et « Promesse » s'appelle « Potentiel ». <b>Le Simulateur partage le basculeur</b> du Plan : une seule base de consommation sur tous les écrans. <b>Saisie atelier</b> : usure en grosses pastilles, conformité affichée <b>en direct</b> à la frappe, bornes sur les champs. <b>Lisibilité</b> : plancher de tailles et contrastes remontés. L'accueil affiche la date du dernier export, le bloc Cadence (jamais mesuré) quitte la projection, et les boutons suivent l'ordre du récit : Catalogue → Plan → Simulateur."
   ]},
@@ -12680,7 +12967,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.90.0";
+const TOOL_VERSION = "4.96.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -14995,16 +15282,43 @@ function simulExporter(){
    mode natif est tente par-dessus (reunion projetee). ESC rend la main. */
 /* v4.87 — bascule plein écran GÉNÉRIQUE : tout grand panneau passe maxi (CSS)
    et le mode natif est tenté par-dessus (projection). Échap rend la main. */
+/* v4.91 — LA SORTIE DU MODE MAXI, quel que soit le chemin. Le bouton ⤢, Échap,
+   « Fermer », le clic sur le fond : l'état maxi (la classe CSS) doit repartir
+   avec le panneau et le libellé du bouton doit redevenir « ⛶ Plein écran ».
+   Avant, Échap (qui sort du plein écran NATIF sans prévenir la page) ou une
+   fermeture laissaient la classe collée : la réouverture repartait plein écran,
+   désynchronisée du bouton reconstruit par le render — « obligé de la fermer
+   pour ouvrir à nouveau », qui ne réparait rien puisque l'état restait. */
+const MAXI_BOUTONS = { accueilPanel: "pfAccueilMaxi", simulPanel: "simulMaxiBtn", planPanel: "planMaxiBtn" };
+function poserMaxi(idPanel, on){
+  const p = document.getElementById(idPanel);
+  if(!p) return;
+  p.classList.toggle("simul-maxi", on);
+  const b = document.getElementById(MAXI_BOUTONS[idPanel] || "");
+  if(b) b.textContent = on ? "⤢ Quitter le plein écran" : "⛶ Plein écran";
+}
+function quitterMaxi(idPanel){
+  poserMaxi(idPanel, false);
+  try{ if(document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {}); }catch(e){}
+}
+function quitterMaxiPartout(){
+  document.querySelectorAll(".panel.simul-maxi").forEach(p => quitterMaxi(p.id));
+}
+/* Échap sort du plein écran natif SANS passer par le bouton : on resynchronise
+   l'état maxi sur ce que le navigateur vient de faire — « Échap rend la main ». */
+document.addEventListener("fullscreenchange", () => {
+  if(!document.fullscreenElement) quitterMaxiPartout();
+});
+
 function basculerMaxi(idPanel, btn){
   const p = document.getElementById(idPanel);
   if(!p) return;
   const on = !p.classList.contains("simul-maxi");
-  p.classList.toggle("simul-maxi", on);
+  poserMaxi(idPanel, on);
   try{
     if(on && p.requestFullscreen) p.requestFullscreen().catch(() => {});
     else if(!on && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
   }catch(e){}
-  if(btn) btn.textContent = on ? "⤢ Quitter le plein écran" : "⛶ Plein écran";
 }
 
 function simulMaxi(){
@@ -15111,9 +15425,14 @@ function catalogueSeed(){
       const mabec = String(g.codeArticle || g.mabec || "").trim().toUpperCase();
       const prix = parseFloat(g.prix);
       if(!mabec || isNaN(prix) || prix <= 0) return;
-      const e = parMabec[mabec] = parMabec[mabec] || { mabec, iso: new Set(), prixVus: {} };
+      const e = parMabec[mabec] = parMabec[mabec] || { mabec, iso: new Set(), prixVus: {}, aretesVus: {}, ddvVus: {} };
       if(String(g.ref || "").trim()) e.iso.add(String(g.ref).trim());
       e.prixVus[prix] = (e.prixVus[prix] || 0) + 1;
+      /* v4.91 — arêtes et charnière voyagent avec l'article : la suggestion promet
+         « remplit prix, arêtes, durée de vie », mais la génération les jetait
+         (aretes:"" / ddv:"") — ces deux champs ne se remplissaient JAMAIS. */
+      const ar = parseInt(g.aretes, 10); if(!isNaN(ar) && ar > 0) e.aretesVus[ar] = (e.aretesVus[ar] || 0) + 1;
+      const dd = parseFloat(g.charniere); if(!isNaN(dd) && dd > 0) e.ddvVus[dd] = (e.ddvVus[dd] || 0) + 1;
     }))))));
   return Object.values(parMabec).map(e => {
     const entrees = Object.entries(e.prixVus);
@@ -15121,7 +15440,7 @@ function catalogueSeed(){
     const prix = Number(entrees[0][0]);
     const divergent = entrees.length > 1;
     return normalizeArticleCat({ mabec: e.mabec, iso: [...e.iso].join(" | "),
-      prix, aretes: "", ddv: "", divergent,
+      prix, aretes: valeurModale(e.aretesVus), ddv: valeurModale(e.ddvVus), divergent,
       prixVus: entrees.map(e2 => Number(e2[0])) });
   }).sort((a, b) => a.mabec.localeCompare(b.mabec));
 }
@@ -15202,7 +15521,16 @@ function catalogueDepuisCSV(texte){
   return { cat, erreurs };
 }
 
-/* v4.89 — LES SUGGESTIONS À LA SAISIE : l'autocomplete du catalogue.
+/* v4.91 — la valeur la plus frequente d'un comptage {valeur: n}. Departage a la
+   valeur la plus haute (meme regle que le prix dans catalogueSeed). */
+function valeurModale(vus){
+  const ent = Object.entries(vus || {});
+  if(!ent.length) return "";
+  ent.sort((a, b) => (b[1] - a[1]) || (Number(b[0]) - Number(a[0])));
+  return Number(ent[0][0]);
+}
+
+/* v4.91 — LES SUGGESTIONS À LA SAISIE : l'autocomplete du catalogue.
    Taper un MABEC ou un ISO dans un logement propose les articles connus
    (datalist natif — zéro framework) et remplit d'un changement : le MABEC,
    le prix (toujours — un MABEC = un prix), l'ISO, les arêtes et la durée de
@@ -15211,6 +15539,40 @@ function catalogueSuggestion(mabec){
   const n = String(mabec || "").trim().toUpperCase().replace(/\s+/g, " ");
   if(!n) return null;
   return catalogue.find(a => a.mabec === n) || null;
+}
+
+/* v4.91 — le repli qui manque : une plaquette SAISIE AILLEURS dans le suivi fait
+   foi, même sans catalogue généré (le suivi réel de Benjamin n'a JAMAIS eu de
+   catalogue — les exports n'ont pas la clé — et la suggestion était donc un
+   no-op silencieux). On dérive l'article de l'arbre, valeurs modales, lecture
+   seule : rien n'est écrit dans le suivi, le panneau Catalogue reste l'endroit
+   qui persiste. Recherche par MABEC (string, insensible casse/espaces) quand
+   `mabec` est fourni, par ISO exact sinon. Renvoie une entree catalogue ou null. */
+function suggestionDepuisArbre(mabec, iso){
+  const nm = String(mabec || "").trim().toUpperCase().replace(/\s+/g, " ");
+  const ni = String(iso || "").trim().toUpperCase().replace(/\s+/g, " ");
+  if(!nm && !ni) return null;
+  const vus = {};
+  lignes.forEach(l => (l.references || []).forEach(r => (r.ops || []).forEach(o =>
+    (o.scenarios || []).forEach(sc => (sc.outils || []).forEach(ou => (ou.logements || []).forEach(g => {
+      const gm = String(g.codeArticle || g.mabec || "").trim().toUpperCase().replace(/\s+/g, " ");
+      const gi = String(g.ref || "").trim().toUpperCase().replace(/\s+/g, " ");
+      if(nm ? (gm !== nm) : (gi !== ni)) return;
+      const e = vus[gm || gi] = vus[gm || gi] ||
+        { mabecs: new Set(), isos: new Set(), prixVus: {}, aretesVus: {}, ddvVus: {}, n: 0 };
+      e.n++;
+      if(gm) e.mabecs.add(gm);
+      if(String(g.ref || "").trim()) e.isos.add(String(g.ref).trim());
+      const p = parseFloat(g.prix); if(!isNaN(p) && p > 0) e.prixVus[p] = (e.prixVus[p] || 0) + 1;
+      const ar = parseInt(g.aretes, 10); if(!isNaN(ar) && ar > 0) e.aretesVus[ar] = (e.aretesVus[ar] || 0) + 1;
+      const dd = parseFloat(g.charniere); if(!isNaN(dd) && dd > 0) e.ddvVus[dd] = (e.ddvVus[dd] || 0) + 1;
+    }))))));
+  const cles = Object.keys(vus).sort((a, b) => vus[b].n - vus[a].n);
+  if(!cles.length) return null;
+  const e = vus[cles[0]];
+  return normalizeArticleCat({ mabec: [...e.mabecs][0] || nm || "",
+    iso: [...e.isos].join(" | "),
+    prix: valeurModale(e.prixVus), aretes: valeurModale(e.aretesVus), ddv: valeurModale(e.ddvVus) });
 }
 
 function catalogueParIso(iso){
@@ -15352,7 +15714,116 @@ function ouvrirCatalogue(){
 let consoSemaines = 52;   /* v4.90 — l'extrapolation × 52 devient un réglage éditable */
 let planReglages = { prixSpk: 5, relSpk: 100 };  /* v4.90 — le prix SUGGÉRÉ et l'hypothèse de durée de vie sortent du code (revue Claude P3) */
 let consoReelle = null;   /* { lueLe, fichiers: [], parArticle: { ART: { qtySemaine, lignes: [] } } } */
-let planSource = "theo";  /* "theo" | "reel" */
+let planSource = "theo";  /* "theo" | "reel" | "annuel" */
+
+/* ═══ v4.92 — LA CONSOMMATION ANNUELLE 2025 : la base de calcul économique ═══
+   Le fichier de Benjamin (« Pareto conso annuelles 2025 ») pose côte à côte des
+   tableaux croisés « Étiquettes de lignes / Somme de Cout » : un € annuel par
+   article et par poste (PCI 4/5, WEISSER 1/2, OP 10→40, HESSAPP). C'est du COÛT
+   réel, pas des quantités — exactement ce qu'il faut aux deux leviers du Plan :
+   prix (le coût suit le ratio de prix) et charnière (le coût suit le ratio de
+   durée de vie). Contrairement au classeur hebdo (état de session, jamais
+   écrit), celle-ci EST la base de calcul : elle voyage dans le suivi.
+   (conso2025 et conso2025SectionsOn sont déclarés EN TÊTE de script — piège TDZ
+   documenté : loadAll() s'exécute avant ce bloc.) */
+
+function normalizeConso2025(c){
+  if(!c || typeof c !== "object") return null;
+  const parMabec = {};
+  const src = (c.parMabec && typeof c.parMabec === "object") ? c.parMabec : {};
+  Object.keys(src).forEach(mabec => {
+    const e = src[mabec];
+    if(!e || typeof e !== "object") return;
+    const parSection = {};
+    Object.keys(e.parSection || {}).forEach(s => {
+      const v = parseFloat(e.parSection[s]);
+      if(!isNaN(v) && v > 0) parSection[String(s).toUpperCase().replace(/\s+/g, " ")] = v;
+    });
+    if(Object.keys(parSection).length) parMabec[String(mabec).toUpperCase().replace(/\s+/g, " ")] = { parSection };
+  });
+  if(!Object.keys(parMabec).length) return null;
+  const sections = [...new Set(Object.values(parMabec).flatMap(e => Object.keys(e.parSection)))].sort();
+  return { lueLe: String(c.lueLe || ""), fichier: String(c.fichier || ""), sections, parMabec };
+}
+function conso2025SectionsActives(){
+  if(!conso2025) return [];
+  return conso2025SectionsOn
+    ? conso2025.sections.filter(s => conso2025SectionsOn.has(s))
+    : conso2025.sections.slice();
+}
+function conso2025Somme(e){
+  const actives = conso2025SectionsActives();
+  return actives.reduce((a, s) => a + (e.parSection[s] || 0), 0);
+}
+
+function conso2025DepuisFeuille(nomFeuille, cells){
+  /* parse une feuille de pivots « Étiquettes de lignes / Somme de Cout » posés
+     côte à côte (A/B, E/F, I/J, M/N...) : chaque poste (PCI 4, WEISSER 2,
+     OP 10, HESSAPP...) ouvre sa section, les articles suivent. Un bloc sans
+     entête (copies de valeurs collées à droite du fichier 2025) n'est JAMAIS
+     parsé — il répéterait des postes déjà comptés. Rend
+     { sections:Set, parMabec:{ ART: { parSection:{ POSTE: cout } } } } ou null. */
+  if(!cells || !Object.keys(cells).length) return null;
+  const colSuivante = l => {           /* A->B ... Z->AA (le fichier tient en 21 colonnes) */
+    let cs = l.split(""), i = cs.length - 1;
+    do { cs[i] = String.fromCharCode(cs[i].charCodeAt(0) + 1); if(cs[i].charCodeAt(0) <= 90) break; cs[i] = "A"; i--; } while(i >= 0);
+    if(i < 0) cs.unshift("A");
+    return cs.join("");
+  };
+  const entetes = Object.keys(cells).filter(k => /^[A-Z]+\d+$/.test(k) && /étiquettes de lign/i.test(String(cells[k])));
+  const paires = [];
+  entetes.forEach(k => {
+    const col = k.replace(/\d+$/, "");
+    const voisin = colSuivante(col);
+    if(typeof cells[voisin + k.replace(/^[A-Z]+/, "")] === "string" && /somme de cout/i.test(cells[voisin + k.replace(/^[A-Z]+/, "")]))
+      paires.push([col, voisin]);
+  });
+  if(!paires.length) return null;
+  const lignesNum = [...new Set(Object.keys(cells).map(r => parseInt(r.replace(/\D/g, ""), 10)))].sort((a, b) => a - b);
+  const sections = new Set(), parMabec = {};
+  paires.forEach(([col, colV]) => {
+    let section = null;
+    for(const rn of lignesNum){
+      const a = cells[col + rn], b = cells[colV + rn];
+      if(typeof a !== "string") continue;
+      const label = a.trim();
+      if(!label || /(étiquettes de lign|etiquettes de lign|somme de cout)/i.test(label)) continue;
+      if(/^total g/i.test(label)){ continue; }
+      const m = label.match(/^(PCI\s*\d+|WEISSER\s*\d+|OP\s*\d+|EMAG\s*\d+|HESSAP\w*)$/i);
+      if(m){ section = m[1].toUpperCase().replace(/\s+/g, " "); sections.add(section); continue; }
+      if(section && typeof b === "number" && b > 0){
+        const art = label.toUpperCase().replace(/\s+/g, " ");
+        parMabec[art] = parMabec[art] || { parSection: {} };
+        parMabec[art].parSection[section] = (parMabec[art].parSection[section] || 0) + b;
+      }
+    }
+  });
+  return sections.size ? { sections, parMabec } : null;
+}
+
+/* lit UN classeur de consommations annuelles : toutes les feuilles, tous les pivots */
+async function conso2025LireClasseur(file){
+  const entries = await _zipOpen(file);
+  const shared = await _xlSharedStrings(entries);
+  const map = await _xlSheetMap(entries);
+  const sections = new Set(), parMabec = {};
+  let feuillesLues = 0;
+  for(const nom of Object.keys(map)){
+    if(!entries[map[nom]]) continue;
+    const xml = new TextDecoder("utf-8").decode(await _zipRead(entries[map[nom]]));
+    const lu = conso2025DepuisFeuille(nom, _xlCells(xml, shared));
+    if(!lu) continue;
+    feuillesLues++;
+    lu.sections.forEach(s => sections.add(s));
+    for(const [art, e] of Object.entries(lu.parMabec)){
+      parMabec[art] = parMabec[art] || { parSection: {} };
+      for(const [s, v] of Object.entries(e.parSection))
+        parMabec[art].parSection[s] = (parMabec[art].parSection[s] || 0) + v;
+    }
+  }
+  if(!sections.size) throw new Error("Aucun tableau « Étiquettes de lignes / Somme de Cout » reconnu dans ce fichier.");
+  return { fichier: file.name, sections: [...sections].sort(), parMabec, feuilles: feuillesLues };
+}
 
 function consoDepuisFeuille(nomFeuille, cells){
   /* parse une feuille « Pareto conso » : sections EMAG n / PCI n / HESSAPP,
@@ -15411,8 +15882,31 @@ async function consoLireClasseur(file){
 
 const PLAN_ETATS = ["à proposer", "proposée", "en essai", "gagnée"];
 
+/* v4.92 — les lignes du Plan en base annuelle 2025 : CE QUE L'ATELIER A VRAIMENT
+   CONSOMMÉ (fichier Pareto de Matis, € par article et par poste). Le prix de
+   repli vient du catalogue puis des logements ; les ISO, du catalogue et des
+   usages. Les articles hors plaquettes (embouts, rondelles...) restent dans la
+   base économique mais sans prix unitaire : leur gain n'est pas chiffré (null),
+   jamais estimé en silence. Tri décroissant : le pareto pilote la lecture. */
+function groupes2025(){
+  const pc = plaquettesCommunes();
+  const parUsage = {};
+  pc.groupes.forEach(g => { parUsage[g.mabec] = g; });
+  return Object.keys(conso2025.parMabec).map(mabec => {
+    const e = conso2025.parMabec[mabec];
+    const g = parUsage[mabec];
+    const art = catalogue.find(a => a.mabec === mabec && a.prix !== "" && a.prix > 0);
+    const prixA = art ? art.prix : (g && g.usages[0] ? g.usages[0].prix : 0);
+    const isos = new Set(g ? g.isos : []);
+    catalogue.forEach(a => { if(a.mabec === mabec && a.iso)
+      String(a.iso).split(" | ").forEach(x => { if(x.trim()) isos.add(x.trim()); }); });
+    return { mabec, coutAnnuel: conso2025Somme(e), usages: g ? g.usages : [], isos, parSection: e.parSection };
+  }).sort((a, b) => b.coutAnnuel - a.coutAnnuel);
+}
+
 function planLignes(){
-  const d = plaquettesCommunes();
+  const annuel = (planSource === "annuel") && conso2025;
+  const d = annuel ? { groupes: groupes2025() } : plaquettesCommunes();
   const parMabec = {};
   plan.forEach(p => { parMabec[p.mabec] = p; });
   const reel = (planSource === "reel") && consoReelle && consoReelle.parArticle;
@@ -15424,7 +15918,7 @@ function planLignes(){
        Pareto conso des classeurs (qty semaine x 52). Un article sans donnee
        reelle n'est pas complete en silence : il perd son gain (null). */
     const conso = reel ? consoReelle.parArticle[g.mabec] : null;
-    const sourceConso = reel ? (conso ? "reelle" : "sans") : "theo";
+    const sourceConso = reel ? (conso ? "reelle" : "sans") : (annuel ? "2025" : "theo");
     const piecesAn = reel ? (conso ? conso.qtySemaine * consoSemaines : 0) : piecesAnTheo;
     const isoKY = g.usages.map(u => u.iso).find(i => /KY3500/i.test(i || ""));
     const sugg = isoKY ? { iso: String(isoKY).replace(/KY3500/gi, "LKT640"), prix: planReglages.prixSpk } : null;
@@ -15436,62 +15930,104 @@ function planLignes(){
     const confirme = !!p.confirme;
     /* v4.90 — l'hypothèse de durée de vie est EXPLICITE : la cible SPK dure
        rel % de l'actuelle -> il en faut piecesAn × 100/rel. Et le seuil de
-       neutralité dit la durée minimale pour ne pas perdre (revue Claude P3). */
-    const rel = (Number(planReglages.relSpk) > 0) ? Number(planReglages.relSpk) : 100;
+       neutralité dit la durée minimale pour ne pas perdre (revue Claude P3).
+       v4.92 — la vie PAR LIGNE (levier charnière du visuel) : vide = global. */
+    const vieLigne = (p.vieCible !== "" && p.vieCible != null) ? Number(p.vieCible) : "";
+    const rel = (vieLigne !== "" && vieLigne > 0) ? vieLigne
+              : ((Number(planReglages.relSpk) > 0) ? Number(planReglages.relSpk) : 100);
     const piecesCible = piecesAn * 100 / rel;
     const coutActuel = (sourceConso === "reelle" && conso) ? conso.qtySemaine * consoSemaines * prixA : g.coutAnnuel;
-    const gain = (actif && ciblePrix !== "" && ciblePrix !== null && prixA > 0 && sourceConso !== "sans")
-      ? coutActuel - piecesCible * Number(ciblePrix) : null;
+    /* v4.92 — deux leviers, seul ou combiné : PRIX (cible différente) et/ou
+       CHARNIÈRE (vie différente à prix égal). Sans prix cible, le prix final
+       est le prix actuel : la vie seule chiffre son gain. */
+    const prixFin = (ciblePrix !== "" && ciblePrix !== null) ? Number(ciblePrix) : prixA;
+    const levier = (ciblePrix !== "" && ciblePrix !== null) || (vieLigne !== "" && vieLigne > 0);
+    const gain = (actif && prixA > 0 && sourceConso !== "sans" && levier)
+      ? coutActuel - piecesCible * prixFin : null;
     const seuil = (ciblePrix !== "" && ciblePrix !== null && prixA > 0) ? Number(ciblePrix) / prixA * 100 : null;
     return { mabec: g.mabec, isos: [...g.isos], prixA, coutAnnuel: g.coutAnnuel, coutActuel,
              piecesAn, piecesAnTheo, sourceConso, cibleIso, ciblePrix, etat: p.etat || "",
-             actif, confirme, gain, seuil, auto: !!sugg };
+             actif, confirme, gain, seuil, auto: !!sugg, vieCible: vieLigne, rel,
+             parSection: g.parSection || null };
   });
 }
 
+/* v4.92 — le calcul des économies : deux leviers, un seul résultat en €.
+   PRIX : le coût suit le ratio de prix (même quantité). CHARNIÈRE : vie ×V %
+   -> quantités ÷(V/100) -> coût ×(100/V). Combinables. null si non chiffrable
+   (pas de prix actuel connu, pas de coût, prix cible vide). */
+function planCoutCible(coutActuel, prixA, prixCible, viePct){
+  if(!(coutActuel > 0) || !(prixA > 0) || prixCible === "" || prixCible == null) return null;
+  const vie = (Number(viePct) > 0) ? Number(viePct) : 100;
+  return coutActuel * (100 / vie) * (Number(prixCible) / prixA);
+}
 function planHTML(){
   const lignes = planLignes();
-  if(!lignes.length) return `<p class="panel-hint">Aucun article de production chiffré : le plan se nourrit des mêmes données que le simulateur (scénarios en production, prix + volume).</p>`;
+  if(!lignes.length) return `<p class="panel-hint">Aucun article de production chiffré : le plan se nourrit des mêmes données que le simulateur (scénarios en production, prix + volume), ou d'une consommation annuelle lue ci-dessous.</p>`;
   const total = lignes.reduce((a, l) => a + (l.actif && l.gain ? l.gain : 0), 0);
   const actives = lignes.filter(l => l.actif).length;
   const confirmes = lignes.filter(l => l.actif && l.confirme && l.gain).length;
   const totalConfirme = lignes.reduce((a, l) => a + (l.actif && l.confirme && l.gain ? l.gain : 0), 0);
   const modeReel = planSource === "reel";
-  const etatConso = !modeReel
-    ? "théorique — production ÷ (arêtes × DDV classeur)"
-    : (consoReelle
-        ? "réelle extrapolée — lue le " + consoReelle.lueLe + " (" + consoReelle.fichiers.join(", ") + ")"
-        : "réelle — mais aucun classeur lu : lis un fichier ci-dessous");
+  const modeAnnuel = planSource === "annuel";
+  const sectionsTot = (conso2025 || {}).sections ? conso2025.sections.map(s =>
+    [s, Object.values(conso2025.parMabec).reduce((a, e) => a + (e.parSection[s] || 0), 0)]) : [];
+  const etatConso = modeAnnuel
+    ? (conso2025
+        ? `annuelle 2025 — <b>${escapeAttr(conso2025.fichier)}</b>, lue le ${conso2025.lueLe}`
+        : "annuelle 2025 — mais aucun fichier lu : lis un fichier ci-dessous")
+    : (!modeReel
+        ? "théorique — production ÷ (arêtes × DDV classeur)"
+        : (consoReelle
+            ? "réelle extrapolée — lue le " + consoReelle.lueLe + " (" + consoReelle.fichiers.join(", ") + ")"
+            : "réelle — mais aucun classeur lu : lis un fichier ci-dessous"));
   return `
-    <div class="simul-note">Le pas-à-pas commercial : chaque ligne est un article actuel, sa consommation en production, et la cible SPK — révélée quand TU décides de poser son état. Le total ne compte que les lignes étatées.</div>
+    <div class="simul-note">Le pas-à-pas commercial : chaque ligne est un article actuel, sa consommation en production, et la cible SPK — révélée quand TU décides de poser son état. Le total ne compte que les lignes étatées. Le <b>visuel</b> travaille en direct : touche le prix ou la vie, la barre suit.</div>
     <div class="simul-controles" style="flex-wrap:wrap;">
       <span style="font-weight:600;">Consommation :</span>
-      <label style="cursor:pointer;"><input type="radio" name="consoSource" value="theo" ${!modeReel ? "checked" : ""}> théorique</label>
+      <label style="cursor:pointer;"><input type="radio" name="consoSource" value="annuel" ${modeAnnuel ? "checked" : ""} ${!conso2025 ? "disabled" : ""}> annuelle 2025</label>
+      <label style="cursor:pointer;"><input type="radio" name="consoSource" value="theo" ${(!modeReel && !modeAnnuel) ? "checked" : ""}> théorique</label>
       <label style="cursor:pointer;"><input type="radio" name="consoSource" value="reel" ${modeReel ? "checked" : ""}> réelle extrapolée</label>
-      <label class="ghost small" for="consoFichier" style="cursor:pointer;">📂 Lire un classeur de consommation…</label>
+      <label class="ghost small" for="consoFichier2025" style="cursor:pointer;">📂 Lire les consommations annuelles (Pareto)…</label>
+      <input type="file" id="consoFichier2025" accept=".xlsm,.xlsx" hidden>
+      <label class="ghost small" for="consoFichier" style="cursor:pointer;">📂 Lire un classeur hebdo…</label>
       <input type="file" id="consoFichier" accept=".xlsm,.xlsx" multiple hidden>
       <span id="consoEtat" style="font-size:13px; color:#1b5ea6;">${etatConso}</span>
       <span style="font-weight:600;">Prix SPK défaut :</span> <input id="planPrixSpk" type="number" step="0.5" min="0.5" style="width:64px; font-family:var(--font-mono);" value="${planReglages.prixSpk}"> €
       <span style="font-weight:600;">Durée de vie SPK :</span> <input id="planRelSpk" type="number" step="5" min="1" style="width:64px; font-family:var(--font-mono);" value="${planReglages.relSpk}"> % de l'actuelle
       <span style="font-weight:600;">Semaines/an :</span> <input id="planSemaines" type="number" step="1" min="1" max="52" style="width:56px; font-family:var(--font-mono);" value="${consoSemaines}">
     </div>
+    ${modeAnnuel && conso2025 ? `
+    <div class="simul-controles" style="flex-wrap:wrap; gap:6px 14px;">
+      <span style="font-weight:600;">Postes comptés :</span>
+      ${sectionsTot.map(([s, tot]) => `<label style="cursor:pointer; font-size:13px;" title="Décoche un poste pour le sortir de la base (vue OP vs vue machine : vérifie qu'aucun poste ne se recoupe)."><input type="checkbox" data-sec2025="${escapeAttr(s)}" ${!conso2025SectionsOn || conso2025SectionsOn.has(s) ? "checked" : ""}> ${escapeAttr(s)} <span style="color:#888;">${fmtEuroCourt(Math.round(tot))} €</span></label>`).join("")}
+    </div>
+    <p class="panel-hint">Base réelle : le coût 2025 de chaque article. Joue sur le <b>prix cible</b> ou la <b>durée de vie</b> de chaque ligne : la barre grise (coût 2025) face à la verte (coût simulé) et le total en tête bougent à la frappe. Un article sans prix actuel connu (hors catalogue) n'est pas simulé.</p>` : ""}
     ${modeReel && consoReelle ? `<p class="panel-hint">⚠ Consommation réelle = une semaine de tes classeurs × 52 (régime supposé constant). Les articles sans consommation lue perdent leur gain — jamais complétés en silence (§3.5).</p>` : ""}
+    ${modeAnnuel && conso2025 ? `
+    <div id="ecoTotal" class="simul-resultat" style="margin:0 0 10px;"></div>` : ""}
     <table class="simul-table">
-      <thead><tr><th>Article</th><th>Référence plaquette</th><th>Prix actuel</th><th>Consommation</th><th>Cible SPK</th><th>Prix cible</th><th>OK ?</th><th>Étape</th><th>Gain / an</th></tr></thead>
+      <thead><tr><th>Article</th><th>Référence plaquette</th><th>Prix actuel</th><th>Consommation</th><th>Cible SPK</th><th>Prix cible</th><th>Vie %</th><th>Coût / an — 2025 face à simulé</th><th>OK ?</th><th>Étape</th><th>Gain / an</th></tr></thead>
       <tbody>
       ${lignes.map((l, i) => {
         const isoCible = l.cibleIso || l.isos[0] || "";
-        return `<tr>
-          <td class="mono">${escapeAttr(l.mabec)}</td>
-          <td style="font-size:11.5px; color:#888;">${l.isos.map(x => escapeAttr(x)).join("<br>")}</td>
-          <td class="mono">${fmt(l.prixA, 2)} €</td>
-          <td class="mono">${l.sourceConso === "reelle"
+        const detailSection = l.parSection ? " · " + Object.entries(l.parSection).map(([s, v]) => s + " " + fmtEuroCourt(Math.round(v)) + " €").join(" · ") : "";
+        const consoCell = l.sourceConso === "2025"
+          ? `${fmtEuroCourt(Math.round(l.coutActuel))}/an <span style="color:#1b5ea6;">(2025 réel)</span>${l.prixA > 0 ? `<br><span style="color:#888;">≈ ${fmt(l.piecesAn, 0)} plq/an au prix actuel</span>` : `<br><span style="color:#b45309;">prix actuel inconnu — hors simulation</span>`}`
+          : (l.sourceConso === "reelle"
             ? `${fmt(l.piecesAn, 0)} plq/an <span style="color:#1b5ea6;">(réel)</span><br><span style="color:#888;">${fmtEuroCourt(Math.round(l.piecesAn * l.prixA))} estimé/an</span>`
             : (l.sourceConso === "sans"
                 ? `<span style="color:#b45309;">pas de conso réelle lue</span>`
-                : `${fmtEuroCourt(Math.round(l.coutAnnuel))}/an<br><span style="color:#888;">${fmt(l.piecesAn, 0)} plq/an</span>`)}</td>
+                : `${fmtEuroCourt(Math.round(l.coutAnnuel))}/an<br><span style="color:#888;">${fmt(l.piecesAn, 0)} plq/an</span>`));
+        return `<tr data-mabec="${escapeAttr(l.mabec)}" data-cout="${l.sourceConso === "2025" ? l.coutActuel : ""}" data-prixa="${l.prixA}">
+          <td class="mono">${escapeAttr(l.mabec)}<br><span style="font-size:10.5px; color:#888;" title="${escapeAttr(detailSection)}">${l.parSection ? fmtEuroCourt(Math.round(l.coutActuel)) + " · 2025" : ""}</span></td>
+          <td style="font-size:11.5px; color:#888;">${l.isos.map(x => escapeAttr(x)).join("<br>")}</td>
+          <td class="mono">${l.prixA ? fmt(l.prixA, 2) + " €" : "—"}</td>
+          <td class="mono">${consoCell}</td>
           <td><input class="cell" style="width:190px; font-size:12px;" data-plan="${escapeAttr(l.mabec)}" data-field="isoCible" value="${escapeAttr(l.cibleIso)}" placeholder="plaquette SPK${l.auto ? " (LKT640 suggérée)" : ""}"></td>
-          <td><input class="cell" style="width:74px; font-family:var(--font-mono);" type="number" step="0.01" data-plan="${escapeAttr(l.mabec)}" data-field="prixCible" value="${l.ciblePrix === "" ? "" : l.ciblePrix}" placeholder="5"><br><span class="simul-iso" title="Durée de vie minimale de la cible pour ne pas perdre : au-dessus de ce seuil, le passage gagne.">seuil ${l.seuil != null ? fmt(l.seuil, 0) : "—"} %</span></td>
+          <td><input class="cell" style="width:74px; font-family:var(--font-mono);" type="number" step="0.01" min="0" data-plan="${escapeAttr(l.mabec)}" data-field="prixCible" data-eco="1" value="${l.ciblePrix === "" ? "" : l.ciblePrix}" placeholder="5"><br><span class="simul-iso" title="Durée de vie minimale de la cible pour ne pas perdre : au-dessus de ce seuil, le passage gagne.">seuil ${l.seuil != null ? fmt(l.seuil, 0) : "—"} %</span></td>
+          <td><input class="cell" style="width:58px; font-family:var(--font-mono);" type="number" step="5" min="1" data-plan="${escapeAttr(l.mabec)}" data-field="vieCible" data-eco="1" value="${l.vieCible === "" ? "" : l.vieCible}" placeholder="${planReglages.relSpk}" title="Durée de vie cible en % de l'actuelle — vide = le réglage global (${planReglages.relSpk} %). 200 = deux fois plus longue : deux fois moins de plaquettes."></td>
+          <td><div class="eco-bar" title="Gris : coût actuel. Vert : coût simulé (prix × vie cibles). Rouge : la combinaison coûte plus cher."><div class="eco-av"></div><div class="eco-ap"></div></div><span class="eco-gain mono">—</span></td>
           <td><input type="checkbox" data-planconf="${escapeAttr(l.mabec)}" ${l.confirme ? "checked" : ""} title="Prix cible confirmé — la ligne compte dans le potentiel tant que cette case est cochée"></td>
           <td><select class="cell small" data-plan="${escapeAttr(l.mabec)}" data-field="etat">
             <option value="">—</option>
@@ -15511,6 +16047,63 @@ function planHTML(){
     </div>`;
 }
 
+/* v4.92 — le visuel live : recalcule les barres et le total SANS re-rendre l'écran.
+   Appelé à chaque frappe sur prix cible / vie % (et aux réglages globaux) : c'est
+   lui qui rend l'économie immédiate. Deux passes — la largeur des barres dépend
+   du coût max de TOUTES les lignes, connu seulement après lecture des champs. */
+function majEcoPlan(wrap){
+  if(!wrap) wrap = document.getElementById("planPanel");
+  if(!wrap) return;
+  const rows = [...wrap.querySelectorAll("tr[data-cout]")].filter(tr => tr.getAttribute("data-cout") !== "");
+  let totAv = 0, totAp = 0, travail = 0, coutMax = 0;
+  const vals = rows.map(tr => {
+    const cout = parseFloat(tr.getAttribute("data-cout")) || 0;
+    const prixA = parseFloat(tr.getAttribute("data-prixa")) || 0;
+    const pin = tr.querySelector('input[data-field="prixCible"]');
+    const vin = tr.querySelector('input[data-field="vieCible"]');
+    const p2 = (pin && pin.value !== "") ? Number(pin.value) : null;
+    const vie = (vin && vin.value !== "") ? Number(vin.value) : planReglages.relSpk;
+    /* vie seule : le prix final est le prix actuel — le levier charnière chiffre son gain */
+    const p2Eff = (p2 === null && prixA > 0) ? prixA : p2;
+    const ap = planCoutCible(cout, prixA, p2Eff, vie);
+    const apEff = (ap === null) ? cout : ap;
+    coutMax = Math.max(coutMax, cout, apEff);
+    return { tr, cout, ap: apEff, chiffre: ap !== null };
+  });
+  vals.forEach(v => {
+    if(v.chiffre){ totAv += v.cout; totAp += v.ap; travail++; }
+    else { totAv += v.cout; totAp += v.cout; }
+    const av = v.tr.querySelector(".eco-av"), ap = v.tr.querySelector(".eco-ap");
+    if(av) av.style.width = (coutMax ? (v.cout / coutMax * 100) : 0) + "%";
+    if(ap){
+      ap.style.width = (coutMax ? (v.ap / coutMax * 100) : 0) + "%";
+      ap.classList.toggle("perd", v.ap > v.cout + 0.005);
+      ap.style.background = "";
+    }
+    const g = v.tr.querySelector(".eco-gain");
+    if(g){
+      if(!v.chiffre){ g.textContent = "—"; g.style.color = "#888"; }
+      else {
+        const eco = v.cout - v.ap;
+        const pct = v.cout > 0 ? Math.round(eco / v.cout * 100) : 0;
+        g.textContent = eco >= 0 ? "− " + fmtEuroCourt(Math.round(eco)) + " /an (" + pct + " %)"
+                                 : "+ " + fmtEuroCourt(Math.round(-eco)) + " /an (+" + (-pct) + " %)";
+        g.style.color = eco >= 0 ? "var(--green)" : "var(--red)";
+      }
+    }
+  });
+  const tot = document.getElementById("ecoTotal");
+  if(tot){
+    const eco = totAv - totAp;
+    const pct = totAv > 0 ? Math.round(eco / totAv * 100) : 0;
+    tot.innerHTML = travail
+      ? `<span style="font-size:15px;">Coût 2025 : <b>${fmtEuroCourt(Math.round(totAv))}</b> /an → simulé : <b>${fmtEuroCourt(Math.round(totAp))}</b> /an</span>
+         <span style="margin-left:16px; font-size:19px; font-weight:800; color:${eco >= 0 ? "var(--green)" : "var(--red)"};">${eco >= 0 ? "− " : "+ "}${fmtEuroCourt(Math.abs(Math.round(eco)))} /an (${eco >= 0 ? "−" : "+"}${Math.abs(pct)} %)</span>
+         <span style="margin-left:12px; font-size:12.5px; color:var(--ink-soft);">${travail} article(s) simulé(s) — prix et/ou vie cibles posés</span>`
+      : `Coût 2025 : <b>${fmtEuroCourt(Math.round(totAv))}</b> /an — pose un prix cible ou une vie sur une ligne pour voir l'économie.`;
+  }
+}
+
 function renderPlan(){
   const wrap = document.getElementById("planPanel");
   if(!wrap) return;
@@ -15519,9 +16112,12 @@ function renderPlan(){
     const mabec = inp.getAttribute("data-plan"), field = inp.getAttribute("data-field");
     let e = plan.find(x => x.mabec === mabec);
     if(!e){ e = normalizePlanEntry({ mabec }); plan.push(e); }
-    e[field] = field === "prixCible" ? (inp.value === "" ? "" : Number(inp.value)) : inp.value;
+    e[field] = (field === "prixCible" || field === "vieCible") ? (inp.value === "" ? "" : Number(inp.value)) : inp.value;
     saveData(); renderPlan();
   }));
+  /* le live : chaque frappe recalcule barres + total, sans reconstruire l'écran */
+  wrap.querySelectorAll('input[data-eco="1"]').forEach(inp => inp.addEventListener("input", () => majEcoPlan(wrap)));
+  majEcoPlan(wrap);
   const ex = document.getElementById("planExporter");
   if(ex) ex.addEventListener("click", planExporter);
   const mx = document.getElementById("planMaxiBtn");
@@ -15529,6 +16125,53 @@ function renderPlan(){
   wrap.querySelectorAll('input[name="consoSource"]').forEach(r => r.addEventListener("change", () => {
     planSource = r.value; renderPlan();
   }));
+  /* v4.92 — les réglages globaux, ENFIN câblés : la v4.90 les affichait sans aucun
+     listener — éditables en apparence, sans le moindre effet (constat 14/10). */
+  const gPrix = document.getElementById("planPrixSpk");
+  const gVie = document.getElementById("planRelSpk");
+  const gSem = document.getElementById("planSemaines");
+  if(gPrix) gPrix.addEventListener("change", () => {
+    if(Number(gPrix.value) > 0) planReglages.prixSpk = Number(gPrix.value);
+    renderPlan();
+  });
+  if(gVie){
+    gVie.addEventListener("input", () => {
+      const v = Number(gVie.value);
+      if(v > 0){ planReglages.relSpk = v; majEcoPlan(wrap); }
+    });
+    gVie.addEventListener("change", () => {
+      const v = Number(gVie.value);
+      planReglages.relSpk = (v > 0) ? v : 100;
+      renderPlan();
+    });
+  }
+  if(gSem) gSem.addEventListener("change", () => {
+    consoSemaines = (Number(gSem.value) >= 1) ? Math.min(52, Math.floor(Number(gSem.value))) : 52;
+    renderPlan();
+  });
+  /* v4.92 — le périmètre 2025 : quels postes entrent dans la base (vue OP vs vue
+     machine : le fichier peut les recouper, c'est Benjamin qui tranche) */
+  wrap.querySelectorAll('input[data-sec2025]').forEach(cb => cb.addEventListener("change", () => {
+    const on = new Set([...wrap.querySelectorAll('input[data-sec2025]:checked')].map(x => x.getAttribute("data-sec2025")));
+    conso2025SectionsOn = (on.size === conso2025.sections.length) ? null : on;
+    renderPlan();
+  }));
+  const fich25 = document.getElementById("consoFichier2025");
+  if(fich25) fich25.addEventListener("change", async () => {
+    const f = fich25.files[0];
+    if(!f) return;
+    try{
+      const lu = await conso2025LireClasseur(f);
+      backupSnapshot("Base consommation annuelle 2025");
+      conso2025 = { lueLe: new Date().toLocaleDateString("fr-FR"), fichier: lu.fichier,
+                    sections: lu.sections, parMabec: lu.parMabec };
+      conso2025SectionsOn = null;
+      planSource = "annuel";
+      saveData();
+      dialogueAlerte(`${Object.keys(lu.parMabec).length} article(s) sur ${lu.sections.length} poste(s) : ${lu.sections.join(", ")}.<br><br>Le Plan de conversion calcule maintenant sur cette base réelle — elle voyage avec le suivi (exports, import, cloud).`, "Consommations 2025 lues");
+    }catch(err){ dialogueAlerte("Lecture impossible : " + err.message, "Consommations annuelles"); }
+    renderPlan();
+  });
   const fich = document.getElementById("consoFichier");
   if(fich) fich.addEventListener("change", async () => {
     const fichiers = Array.from(fich.files || []);
@@ -15561,7 +16204,7 @@ function planCSV(){
   const cell = v => /[";\r\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : String(v);
   const lignes = planLignes();
   const L = ["sep=;", "Plan de conversion SPK - " + new Date().toLocaleDateString("fr-FR"), "",
-    "Consommation;" + (planSource === "reel" ? "REELLE extrapolee (classeur x 52)" : "theorique (DDV classeur)"), "",
+    "Consommation;" + (planSource === "reel" ? "REELLE extrapolee (classeur x 52)" : (planSource === "annuel" ? "REELLE annuelle 2025 (Pareto Matis)" : "theorique (DDV classeur)")), "",
     "Article actuel (MABEC);Libelles ISO;Prix actuel (EUR);Consommation (EUR/an);Plaquettes/an;Cible SPK;Prix cible (EUR);Etat;Gain (EUR/an)"];
   lignes.forEach(l => L.push([l.mabec, l.isos.join(" | "), num(l.prixA),
     l.sourceConso === "reelle" ? num(l.piecesAn * l.prixA) : num(l.coutAnnuel),
@@ -16493,6 +17136,9 @@ updateRevisionUI();
 document.getElementById("footToolName").textContent = "Suivi_optimisation_SPK v" + TOOL_VERSION + " — SPK by CeramTec";
 // pastille poids : rendue des le chargement (le suivi vient d'etre lu, on connait sa taille)
 try{ renderCatalogueDatlists(); }catch(e){}
+/* v4.92 — la base annuelle 2025 est LA consommation du Plan dès qu'elle existe :
+   la session s'ouvre dessus plutôt que sur la théorique (décision Benjamin). */
+try{ if(conso2025 && planSource === "theo") planSource = "annuel"; }catch(e){}
 try{ renderPoidsFooter((localStorage.getItem(STORAGE_KEY) || "").length); installerClickPoids(); }catch(e){}
 /* v4.62 — Benjamin, 30/09 : « j'aimerais que l'outil ouvre sur une page overview ».
    L'écran d'accueil devient l'OUVERTURE, derrière la fenêtre des nouveautés —
@@ -16536,8 +17182,8 @@ verifierNouveautes();
    Client écrit à la main en fetch() : pas de SDK, le fichier unique et
    l'usage hors ligne (clé USB, proxy d'usine) restent la règle.
    ============================================================ */
-const CLOUD_URL  = "https://cxjfyaorkkxemjnollnj.supabase.co";
-const CLOUD_KEY  = "sb_publishable_TQySmct-8qg3qMiS2WodbA_gQCcPp9Z";
+const CLOUD_URL  = "https://xlpfwvipdmgslwpbbfxs.supabase.co";
+const CLOUD_KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhscGZ3dmlwZG1nc2x3cGJiZnhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1NzEwNTgsImV4cCI6MjEwMDE0NzA1OH0.aTnjLh9whnNZG1HQSTyD1gVqUJZLGzfuTarvLdm-t6E";
 const CLOUD_SESSION_KEY = STORAGE_KEY + "_cloud_session";
 const CLOUD_STAMP_KEY   = STORAGE_KEY + "_cloud_stamp";
 const CLOUD_VU_KEY      = STORAGE_KEY + "_cloud_vu";
@@ -18725,6 +19371,184 @@ function runTests(){
          [true, true, 0, 1]);
     }
     {
+      /* v4.91 — le bouton « ⇄ Réattribuer » levait « ReferenceError: op is not
+         defined » à chaque clic : il lisait une variable `op` hors de portée.
+         Le helper qui le répare est testé ici : l'OP retrouvé dans l'arbre,
+         null si le scénario est orphelin — jamais d'exception. */
+      const lOp = normalizeLigne({ id: "lOp", nom: "EMAG 1", references: [ normalizeReference({ id: "rOp", nom: "356x26", ops: [
+        normalizeOp({ id: "oOpA", nom: "OP10", scenarios: [ normalizeScenario({ id: "scOpA", name: "Prod", outils: [] }) ] }),
+        normalizeOp({ id: "oOpB", nom: "OP20", scenarios: [ normalizeScenario({ id: "scOpB", name: "Autre", outils: [] }) ] })
+      ] }) ] });
+      const lAvOp = lignes; lignes = [ lOp ];
+      try {
+        ok("réattribution v4.91 : l'OP qui contient le scénario est retrouvé dans l'arbre, un orphelin rend null",
+           [(opContenantScenario("scOpB") || {}).id, opContenantScenario("scFantome")],
+           ["oOpB", null]);
+      } finally { lignes = lAvOp; }
+    }
+    {
+      /* v4.92 — les critères de mesure voyagent avec l'essai réattribué : les
+         VALEURS vivent dans prelevement.valeurs[id][axe] mais les DÉFINITIONS
+         (label, bornes, axes) sur le scénario. Retour terrain (PCI5, 14/10) :
+         les Ra devenaient invisibles au transfert vers un scénario qui n'a
+         pas le critère — les valeurs dormaient dans les prélèvements. */
+      const defRa = { id: "csRa1", label: "Ra (µm)", maxi: 12, miniActif: false, mini: "", axes: ["I", "E"], actif: true };
+      const scRaA = normalizeScenario({ id: "scRaA", name: "Source", criteresSup: [defRa], essais: [
+        { id: "eRa1", titre: "PCI5", prelevements: [ { id: "pRa1", piece: 1, batt: 0.05, valeurs: { csRa1: { I: "3.2", E: "4.1" } } } ] },
+        { id: "eRa2", titre: "critère orphelin", prelevements: [ { id: "pRa2", piece: 2, batt: 0.05, valeurs: { csInconnu: { I: "9", E: "9.5" } } } ] } ] });
+      const scRaB = normalizeScenario({ id: "scRaB", name: "Cible", criteresSup: [] });
+      reattribuerEssai(scRaA, "eRa1", scRaB);
+      const cB = (scRaB.criteresSup || []).find(c => c.id === "csRa1");
+      ok("réattribution v4.92 : le critère Ra voyage avec l'essai (mêmes bornes, axes copiés, valeurs intactes)",
+         [cB ? cB.label : null, cB ? cB.maxi : null, JSON.stringify(cB ? cB.axes : null),
+          (scRaB.essais[0].prelevements[0].valeurs.csRa1 || {}).I, (scRaB.essais[0].prelevements[0].valeurs.csRa1 || {}).E],
+         ["Ra (µm)", 12, JSON.stringify(["I", "E"]), "3.2", "4.1"]);
+      ok("réattribution v4.92 : la copie des axes est PROFONDE (éditer les axes d'un scénario ne touche pas l'autre)",
+         scRaB.criteresSup[0].axes !== scRaA.criteresSup[0].axes, true);
+      const scRaC = normalizeScenario({ id: "scRaC", name: "Déjà équipée", criteresSup: [Object.assign({}, defRa)] });
+      reattribuerEssai(scRaA, "eRa1", scRaC);
+      ok("réattribution v4.92 : un critère déjà présent par id n'est jamais doublé",
+         [scRaC.criteresSup.length, scRaC.criteresSup[0].id], [1, "csRa1"]);
+      const scRaD = normalizeScenario({ id: "scRaD", name: "Sans définition", criteresSup: [] });
+      reattribuerEssai(scRaA, "eRa2", scRaD);
+      const cD = (scRaD.criteresSup || []).find(c => c.id === "csInconnu");
+      ok("réattribution v4.92 : un critère que la source ne connaît plus est reconstruit depuis les axes mesurés, bornes vides (on n'invente pas une limite)",
+         [cD ? cD.label : null, JSON.stringify(cD ? cD.axes : null), cD ? cD.maxi : null],
+         ["Critère importé", JSON.stringify(["I", "E"]), ""]);
+    }
+    {
+      /* v4.92 — LA BASE ANNUELLE 2025 : le parseur des pivots « Somme de Cout »
+         posés côte à côte (le fichier de Matis), puis les DEUX LEVIERS du Plan
+         — prix et charnière — en euros réels, seul ou combiné. */
+      const cells = {
+        "A1": "Étiquettes de lignes", "B1": "Somme de Cout ",
+        "A2": "PCI 4", "B2": 300,
+        "A3": "IM02 137 021", "B3": 200,
+        "A4": "Z000 513 527", "B4": 100,
+        "A5": "Total général", "B5": 300,
+        "A6": "PCI 5", "B6": 250,
+        "A7": "IM02 137 021", "B7": 250,
+        "E1": "Étiquettes de lignes", "F1": "Somme de Cout ",
+        "E2": "HESSAPP", "F2": 60,
+        "E3": "Z000 513 527", "F3": 60,
+        "T7": "IM02 137 021", "U7": 99999
+      };
+      const lu = conso2025DepuisFeuille("Feuil1", cells);
+      ok("base 2025 : le parseur lit les pivots « Somme de Cout » poste par poste (PCI 4/5, HESSAPP), même sans Total général entre deux sections",
+         [lu.sections.has("PCI 4"), lu.sections.has("PCI 5"), lu.sections.has("HESSAPP")],
+         [true, true, true]);
+      ok("base 2025 : un article est sommé PAR POSTE (IM02 137 021 = 200 en PCI 4 + 250 en PCI 5)",
+         [lu.parMabec["IM02 137 021"].parSection["PCI 4"], lu.parMabec["IM02 137 021"].parSection["PCI 5"]],
+         [200, 250]);
+      ok("base 2025 : le bloc de valeurs collé SANS entête n'est jamais compté (aucun double compte)",
+         lu.parMabec["IM02 137 021"].parSection["PCI 4"], 200);
+      const base = normalizeConso2025({ lueLe: "14/10/2026", fichier: "Pareto conso annuelles 2025.xlsx", parMabec: lu.parMabec });
+      ok("base 2025 : normalisation — sections triées et dédupliquées ; une base sans coût est rejetée",
+         [JSON.stringify(base.sections), normalizeConso2025({ parMabec: { X: { parSection: {} } } })],
+         [JSON.stringify(["HESSAPP", "PCI 4", "PCI 5"]), null]);
+      const catAv92 = catalogue; catalogue = [ normalizeArticleCat({ mabec: "IM02 137 021", iso: "SNMX 120716 T02020 LKT640", prix: 10, aretes: 8, ddv: 150 }) ];
+      const planAv92 = plan; plan = [];
+      const srcAv92 = planSource; planSource = "annuel";
+      const cAv92 = conso2025; conso2025 = base;
+      const regAv92 = Object.assign({}, planReglages); planReglages.relSpk = 100;
+      try {
+        const l0 = planLignes().find(x => x.mabec === "IM02 137 021");
+        ok("plan 2025 : le coût RÉEL 2025 devient la consommation de la ligne (450 € sur tous postes, prix catalogue 10 €)",
+           [l0.sourceConso, l0.coutActuel, l0.prixA, l0.piecesAn], ["2025", 450, 10, 45]);
+        plan = [ normalizePlanEntry({ mabec: "IM02 137 021", prixCible: 5, etat: "proposée", confirme: true }) ];
+        ok("plan 2025 : levier PRIX — plaquette moitié prix = coût 2025 divisé par deux (450 → 225)",
+           planLignes().find(x => x.mabec === "IM02 137 021").gain, 225);
+        plan = [ normalizePlanEntry({ mabec: "IM02 137 021", vieCible: 200, etat: "proposée", confirme: true }) ];
+        const g2 = planLignes().find(x => x.mabec === "IM02 137 021");
+        ok("plan 2025 : levier CHARNIÈRE SEUL — vie doublée à prix égal = coût divisé par deux (gain 225 €/an)",
+           [g2.gain, g2.ciblePrix, g2.rel], [225, "", 200]);
+        plan = [ normalizePlanEntry({ mabec: "IM02 137 021", prixCible: 5, vieCible: 200, etat: "proposée", confirme: true }) ];
+        ok("plan 2025 : leviers COMBINÉS — prix ÷2 et vie ×2 = coût ÷4 (450 → 112,5, gain 337,5 €/an)",
+           planLignes().find(x => x.mabec === "IM02 137 021").gain, 337.5);
+        ok("plan 2025 : un article sans prix connu (hors catalogue) reste dans la base mais n'est jamais simulé en silence",
+           [planLignes().find(x => x.mabec === "Z000 513 527").coutActuel, planLignes().find(x => x.mabec === "Z000 513 527").gain],
+           [160, null]);
+        ok("base 2025 : planCoutCible refuse de chiffrer sans prix actuel (null, pas zéro)",
+           [planCoutCible(450, 0, 5, 100), planCoutCible(450, 10, "", 100), planCoutCible(450, 10, 5, 200)],
+           [null, null, 112.5]);
+      } finally { catalogue = catAv92; plan = planAv92; planSource = srcAv92; conso2025 = cAv92; planReglages = regAv92; }
+    }
+    {
+      /* v4.93 — la réattribution TRAVERSE LES OP de la même ligne. Retour
+         terrain (15/10) : un essai créé dans une OP40 HESSAPP qui n'existe
+         pas doit rejoindre l'OP30 du disque 302 (autre référence, même
+         machine) — l'ancien sélecteur ne proposait que le même OP. */
+      const lX = normalizeLigne({ id: "lX", nom: "HESSAPP", references: [
+        normalizeReference({ id: "rX1", nom: "302x26", ops: [
+          normalizeOp({ id: "oX30", nom: "OP30", scenarios: [ normalizeScenario({ id: "scX30", name: "Disque 302 — T5+T6", essais: [] }) ] }) ] }),
+        normalizeReference({ id: "rX2", nom: "304x28", ops: [
+          normalizeOp({ id: "oX40", nom: "OP40", scenarios: [ normalizeScenario({ id: "scX40", name: "coquille OP40", essais: [ { id: "eX1", titre: "Essai OP40", prelevements: [] } ] }) ] }) ] })
+      ] });
+      const lAvX = lignes; lignes = [ lX ];
+      try {
+        const dests = destinationsEssai("scX40");
+        ok("réattribution v4.93 : les destinations couvrent les AUTRES OP/références de la même ligne, sans se proposer soi-même",
+           [dests.length, dests.some(d => d.op.id === "oX30" && d.scenario.id === "scX30"), dests.some(d => d.scenario.id === "scX40")],
+           [1, true, false]);
+        const cible = dests[0].scenario;
+        const es = reattribuerEssai(lX.references[1].ops[0].scenarios[0], "eX1", cible);
+        ok("réattribution v4.93 : le transfert cross-OP et cross-référence déplace l'essai entier, l'origine reste lisible",
+           [es && es.titre, (cible.essais || []).length, (cible.essais[0].scenarioOrigine || "").indexOf("coquille") > -1,
+            (lX.references[1].ops[0].scenarios[0].essais || []).length],
+           ["Essai OP40", 1, true, 0]);
+        ok("réattribution v4.93 : un scénario orphelin n'a aucune destination et ne lève rien",
+           destinationsEssai("scFantome"), []);
+        ok("réattribution v4.93 : brancheDeScenario rend la ligne, la référence et l'OP",
+           (() => { const b = brancheDeScenario("scX30"); return [b.ligne.id, b.reference.id, b.op.id]; })(),
+           ["lX", "rX1", "oX30"]);
+      } finally { lignes = lAvX; }
+    }
+    {
+      /* v4.95.1 — LE RATTACHEMENT DES MESURES : un essai transféré vers un
+         scénario qui porte les MÊMES outils (T5/T6 en simultané) voit ses
+         références logements remappées vers les logements EXISTANTS de la
+         cible — jamais de création, et ce qui ne retrouve pas sa clé reste
+         tel quel, déclaré dans le rapport. */
+      const src = normalizeScenario({ id: "scRA", name: "OP40", outils: [
+        { id: "tA5", numero: "T5", logements: [ { id: "gA1", nom: "D1" }, { id: "gA2", nom: "D2" } ] },
+        { id: "tA6", numero: "T6", logements: [ { id: "gA3", nom: "Piste" } ] } ], essais: [
+        { id: "eRA", titre: "essai T5+T6", params: { logements: [
+          { outilId: "tA5", logementId: "gA1", outilNumero: "T5", logementNom: "D1", vc: 200, suivi: true },
+          { outilId: "tA6", logementId: "gA3", outilNumero: "T6", logementNom: "Piste", vc: 300, suivi: true },
+          { outilId: "tA5", logementId: "gA2", outilNumero: "T5", logementNom: "D2", vc: 100, suivi: true } ] },
+          prelevements: [ { id: "pRA1", piece: 1, batt: 0.05, logementId: "gA1" }, { id: "pRA2", piece: 2, batt: 0.06, logementId: "gA2" } ] } ] });
+      const dst = normalizeScenario({ id: "scRB", name: "OP30 disque 302 — T5+T6", outils: [
+        { id: "tB5", numero: "T5", logements: [ { id: "gB1", nom: "d1" }, { id: "gB2", nom: "D2" } ] },
+        { id: "tB6", numero: "T6", logements: [ { id: "gB3", nom: "PISTE" } ] },
+        { id: "tB9", numero: "T9", logements: [ { id: "gB9", nom: "Autre" } ] } ] });
+      const rap = remapperLogementsEssai(src.essais[0], src, dst);
+      ok("rattachement v4.95.1 : les références pointent les logements EXISTANTS de la cible (T5·D1→T5·d1 casse tolérée, T6·Piste→T6·PISTE), conditions figées intactes",
+         [src.essais[0].params.logements[0].logementId, src.essais[0].params.logements[0].outilId,
+          src.essais[0].params.logements[1].logementId, src.essais[0].params.logements[0].vc,
+          src.essais[0].prelevements[0].logementId, src.essais[0].prelevements[1].logementId],
+         ["gB1", "tB5", "gB3", 200, "gB1", "gB2"]);
+      ok("rattachement v4.95.1 : RIEN n'est créé côté cible (3 outils, 4 logements, T9 intact)",
+         [dst.outils.length, dst.outils.reduce((a, o) => a + o.logements.length, 0),
+          dst.outils.find(o => o.numero === "T9").logements[0].id], [3, 4, "gB9"]);
+      ok("rattachement v4.95.1 : le rapport compte 3 logements remappés et 2 prélèvements remappés, aucune orpheline ici",
+         [rap.remappees.length, rap.prelevementsRemappes, rap.sansCorrespondance.length], [3, 2, 0]);
+      const src2 = normalizeScenario({ id: "scRC", name: "src2", outils: [ { id: "tC", numero: "T7", logements: [ { id: "gC1", nom: "D9" } ] } ], essais: [
+        { id: "eRC", titre: "e2", params: { logements: [ { outilId: "tC", logementId: "gC1", outilNumero: "T7", logementNom: "D9", suivi: true } ] },
+          prelevements: [ { id: "pRC1", piece: 1, batt: 0.05, logementId: "gC1" } ] } ] });
+      const rap2 = remapperLogementsEssai(src2.essais[0], src2, dst);
+      ok("rattachement v4.95.1 : sans correspondance, la référence reste telle quelle (jamais inventée) et le rapport le dit",
+         [src2.essais[0].params.logements[0].logementId, src2.essais[0].prelevements[0].logementId, rap2.sansCorrespondance.length],
+         ["gC1", "gC1", 1]);
+      const dstAv = normalizeScenario({ id: "scRD", name: "sans suivi", outils: [ { id: "tD", numero: "T5", logements: [ { id: "gD1", nom: "D1" } ] } ] });
+      const src3 = normalizeScenario({ id: "scRE", name: "src3", outils: [], essais: [
+        { id: "eRE", titre: "logement exclu du suivi", params: { logements: [ { outilId: "tZ", logementId: "gZ1", outilNumero: "T5", logementNom: "D1", suivi: false } ] },
+          prelevements: [] } ] });
+      const rap3 = remapperLogementsEssai(src3.essais[0], src3, dstAv);
+      ok("rattachement v4.95.1 : un logement exclu du suivi (suivi:false) voit quand même son id remappé (il est re-suivable) mais ne pollue pas le rapport",
+         [src3.essais[0].params.logements[0].logementId, rap3.remappees.length, rap3.sansCorrespondance.length],
+         ["gD1", 0, 0]);
+    }
+    {
       /* le simulateur : agrégation par MABEC depuis les baselines de production,
          volume obligatoire pour peser (sinon déclaré hors calcul), axe outillage seul. */
       const mkLog = (id, ca, prix, ar, ddv) => ({ id, nom: "D1", ref: "ISO " + id, codeArticle: ca, mabec: ca, prix, aretes: ar, charniere: ddv });
@@ -18820,6 +19644,44 @@ function runTests(){
         ok("catalogue : un prix illisible est signalé, pas inventé (§3.5)",
            catalogueDepuisCSV("MABEC;Prix EUR\nIM02 137 021;nsp").erreurs.length > 0, true);
       } finally { lignes = lAvC; catalogue = []; }
+    }
+    {
+      /* v4.91 — la suggestion sans catalogue : une plaquette saisie ailleurs dans
+         le suivi fait foi (le suivi réel n'a jamais eu de catalogue — la
+         suggestion était un no-op silencieux). Et la génération ne jette plus
+         arêtes/charnière : la promesse « remplit prix, arêtes, durée de vie »
+         devient vraie. Lecture seule : rien n'est écrit dans le suivi. */
+      const lSg = normalizeLigne({ id: "lSg", nom: "EMAG 1", references: [ normalizeReference({ id: "rSg", nom: "356x26", ops: [
+        normalizeOp({ id: "oSg", nom: "OP10", scenarios: [ normalizeScenario({ id: "scSg", name: "Prod", baseline: true, outils: [
+          { id: "tSg", numero: "T521", logements: [
+            { id: "gSg1", nom: "D1", ref: "SNMX 120716 T02020 LKT640", codeArticle: "im02 137 021", prix: 7.96, aretes: 8, charniere: 150 },
+            { id: "gSg2", nom: "D2", ref: "SNMX 120716 T02020 LKT640", codeArticle: "IM02 137 021", prix: 7.96, aretes: 8, charniere: 140 } ] } ] }) ] }) ] }) ] });
+      const lAvSg = lignes; lignes = [ lSg ]; catalogue = [];
+      try {
+        const sMabec = suggestionDepuisArbre("IM02 137 021", null);
+        ok("suggestions v4.91 : un MABEC trouvé dans l'arbre propose l'article même catalogue VIDE (valeurs modales, départage à la plus haute)",
+           [sMabec ? sMabec.mabec : null, sMabec ? sMabec.prix : null, sMabec ? sMabec.aretes : null, sMabec ? sMabec.ddv : null],
+           ["IM02 137 021", 7.96, 8, 150]);
+        const sIso = suggestionDepuisArbre(null, "snmx 120716 t02020 lkt640");
+        ok("suggestions v4.91 : l'ISO passe par le même repli (casse/espaces tolérés)",
+           [sIso ? sIso.mabec : null, sIso ? sIso.prix : null], ["IM02 137 021", 7.96]);
+        ok("suggestions v4.91 : une plaquette inconnue partout ne propose rien, ne lève rien",
+           [suggestionDepuisArbre("INCONNU 999", null), suggestionDepuisArbre(null, ""), suggestionDepuisArbre("", "")],
+           [null, null, null]);
+        const gVide = { codeArticle: "", ref: "", prix: "", aretes: "", charniere: "" };
+        appliquerSuggestionCatalogue(gVide, sMabec);
+        ok("suggestions v4.91 : l'entrée d'arbre remplit tout un logement vierge — prix, arêtes ET charnière",
+           [gVide.codeArticle, gVide.prix, Number(gVide.aretes), Number(gVide.charniere)],
+           ["IM02 137 021", 7.96, 8, 150]);
+        const gPris = { codeArticle: "IM02 137 021", ref: "ISO SAISI À LA MAIN", prix: 11, aretes: 8, charniere: 200 };
+        appliquerSuggestionCatalogue(gPris, sMabec);
+        ok("suggestions v4.91 : l'ISO et la DDV saisis à la main ne sont jamais écrasés ; le prix suit la règle « un MABEC = un prix » (comme le catalogue, règle 4.89)",
+           [gPris.ref, gPris.aretes, gPris.charniere, gPris.prix],
+           ["ISO SAISI À LA MAIN", 8, 200, 7.96]);
+        ok("catalogue v4.91 : la génération capture arêtes et charnière (elles valaient \"\" — la suggestion ne les remplissait JAMAIS)",
+           (() => { const a = catalogueSeed().find(x => x.mabec === "IM02 137 021") || {}; return [a.aretes, a.ddv]; })(),
+           [8, 150]);
+      } finally { lignes = lAvSg; catalogue = []; }
     }
     {
       /* v4.86 — LE PLAN DE CONVERSION : suggestion KY3500->LKT640 a 5 EUR,

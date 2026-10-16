@@ -1,8 +1,8 @@
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | Hermes |
+| **Pris le** | 16/10/2026 (matin) |
+| **Écrit dans** | bilan_economique.html, CHANGELOG.md, VERROU.md |
+| **Version visée** | 4.96.0 |
+| **Sujet** | UI lot 1 — système de panneaux (largeurs 560/880/1120, titre sticky, footer d'actions sticky). Direction actée : renforcement v3.15, PAS de nouveau design system. |
 
 ✅ **Verrou libéré par Z Code le 14/10/2026** (Tour 73, v4.90.0). Pendant le
 tour, les trois lots de la revue Claude sont appliqués : P7 (data-plan

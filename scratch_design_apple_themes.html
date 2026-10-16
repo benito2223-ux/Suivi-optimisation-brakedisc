@@ -1,0 +1,441 @@
+<!doctype html>
+<!-- ======================================================================
+  SPK — design system inspiré Apple, 3 variantes : Normal / Dark / Pro.
+  Mêmes composants réels que bilan_economique.html (bandeau, toolbar,
+  tuiles scénario, KPI, tableau composition, badges, notes) pour comparer
+  à l'identique. Un seul fichier, hors ligne, comme l'outil.
+  © 2026 Benjamin Rouquette.
+======================================================================= -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SPK — design system Apple (Normal · Dark · Pro)</title>
+<style>
+/* ============================================================
+   TOKENS COMMUNS (structure, typo, motion, focus)
+   ============================================================ */
+:root{
+  --font-disp:'SF Pro Display',-apple-system,'Manrope','Segoe UI',Arial,sans-serif;
+  --font-body:'SF Pro Text',-apple-system,'Public Sans','Segoe UI',Arial,sans-serif;
+  --font-mono:'SF Mono',ui-monospace,'IBM Plex Mono',Consolas,monospace;
+
+  --step--2:11px; --step--1:12.5px; --step-0:14px; --step-1:16px;
+  --step-2:19px; --step-3:24px; --step-4:30px; --step-5:38px;
+
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px;
+  --sp-6:24px; --sp-8:32px;
+
+  --radius-sm:6px; --radius:10px; --radius-lg:14px; --radius-pill:999px;
+
+  --dur-fast:120ms; --dur-base:200ms; --dur-slow:320ms;
+  --ease:cubic-bezier(.25,.46,.45,.94);
+  --ease-spring:cubic-bezier(.34,1.4,.64,1);
+}
+
+/* ============================================================
+   VARIANTE 1 — NORMAL (clair, papier, haute lisibilité)
+   ============================================================ */
+:root, :root[data-variant="normal"]{
+  color-scheme:light;
+  --canvas:#FAFAFA;
+  --surface:#FFFFFF;
+  --surface-alt:#F5F5F7;
+  --surface-dim:#E8E8ED;
+  --ink:#1D1D1F;
+  --ink-soft:#515154;
+  --ink-faint:#86868B;
+  --accent:#0066CC;
+  --accent-hover:#0071E3;
+  --accent-soft:#E8F1FB;
+  --success:#1D7A3E;
+  --success-soft:#E4F3E9;
+  --warning:#9A6A00;
+  --warning-soft:#FBF2DC;
+  --danger:#C41E25;
+  --danger-soft:#FBE9EA;
+  --border:#D2D2D7;
+  --border-soft:#E5E5EA;
+  --border-strong:#8E8E93;
+  --on-accent:#FFFFFF;
+  --shadow-1:0 1px 2px rgba(0,0,0,.05), 0 1px 1px rgba(0,0,0,.03);
+  --shadow-2:0 3px 10px rgba(0,0,0,.07), 0 1px 3px rgba(0,0,0,.05);
+  --shadow-3:0 12px 32px rgba(0,0,0,.10), 0 4px 12px rgba(0,0,0,.06);
+  --focus:0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+/* ============================================================
+   VARIANTE 2 — DARK (vrai sombre, OLED, anti-éblouissement atelier)
+   ============================================================ */
+:root[data-variant="dark"]{
+  color-scheme:dark;
+  --canvas:#0A0A0C;
+  --surface:#1C1C1E;
+  --surface-alt:#2A2A2E;
+  --surface-dim:#3A3A3E;
+  --ink:#F5F5F7;
+  --ink-soft:#B8B8BD;
+  --ink-faint:#7C7C82;
+  --accent:#0A84FF;
+  --accent-hover:#409CFF;
+  --accent-soft:rgba(10,132,255,.16);
+  --success:#30D158;
+  --success-soft:rgba(48,209,88,.15);
+  --warning:#FFD60A;
+  --warning-soft:rgba(255,214,10,.13);
+  --danger:#FF453A;
+  --danger-soft:rgba(255,69,58,.15);
+  --border:#38383C;
+  --border-soft:#2C2C30;
+  --border-strong:#5E5E63;
+  --on-accent:#0A0A0C;
+  --shadow-1:0 1px 2px rgba(0,0,0,.5);
+  --shadow-2:0 4px 14px rgba(0,0,0,.55);
+  --shadow-3:0 14px 40px rgba(0,0,0,.65);
+}
+
+/* ============================================================
+   VARIANTE 3 — PRO (haute densité, zéro chrome, tout mono)
+   ============================================================ */
+:root[data-variant="pro"]{
+  color-scheme:light;
+  --canvas:#F2F2F4;
+  --surface:#FFFFFF;
+  --surface-alt:#F7F7F8;
+  --surface-dim:#E3E3E6;
+  --ink:#111114;
+  --ink-soft:#4A4A4E;
+  --ink-faint:#7A7A80;
+  --accent:#0053B3;
+  --accent-hover:#0066CC;
+  --accent-soft:#E3EDF8;
+  --success:#166A33;
+  --success-soft:#E0EFE5;
+  --warning:#7D5600;
+  --warning-soft:#F5EDD8;
+  --danger:#B0161C;
+  --danger-soft:#F8E6E7;
+  --border:#C8C8CD;
+  --border-soft:#E0E0E4;
+  --border-strong:#6E6E74;
+  --on-accent:#FFFFFF;
+
+  /* densité : tout est resserré */
+  --sp-1:2px; --sp-2:4px; --sp-3:6px; --sp-4:8px; --sp-5:10px; --sp-6:12px; --sp-8:16px;
+  --radius-sm:3px; --radius:5px; --radius-lg:6px;
+
+  /* zéro ombre, zéro halo — la hiérarchie vient des filets */
+  --shadow-1:none; --shadow-2:none; --shadow-3:none;
+  --step-0:12.5px; --step-1:14px; --step-2:16px; --step-3:19px; --step-4:24px; --step-5:30px;
+  --font-body:var(--font-mono);
+}
+
+*{box-sizing:border-box;}
+body{
+  margin:0; background:var(--canvas); color:var(--ink);
+  font-family:var(--font-body); font-size:var(--step-0); line-height:1.55;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  transition:background var(--dur-base) var(--ease), color var(--dur-base) var(--ease);
+}
+.wrap{max-width:1180px; margin:0 auto; padding:28px 22px 90px;}
+
+/* ============================================================
+   BARRE DE BASCULE (hors design system — elle-même 100% tokens)
+   ============================================================ */
+.switcher-bar{
+  position:sticky; top:0; z-index:100; backdrop-filter:blur(20px) saturate(180%);
+  -webkit-backdrop-filter:blur(20px) saturate(180%);
+  background:color-mix(in srgb, var(--canvas) 78%, transparent);
+  border-bottom:1px solid var(--border-soft);
+  padding:10px 0; margin-bottom:22px;
+}
+.switcher-inner{max-width:1180px; margin:0 auto; padding:0 22px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;}
+.switcher-title{font-family:var(--font-mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-faint); font-weight:600;}
+.seg{
+  display:inline-flex; gap:2px; background:var(--surface-dim); padding:3px;
+  border-radius:var(--radius-pill);
+}
+.seg button{
+  font-family:var(--font-body); font-size:12.5px; font-weight:600; border:none;
+  padding:6px 16px; border-radius:var(--radius-pill); cursor:pointer;
+  background:transparent; color:var(--ink-soft);
+  transition:all var(--dur-fast) var(--ease);
+}
+.seg button:hover{color:var(--ink);}
+.seg button.on{
+  background:var(--surface); color:var(--ink);
+  box-shadow:var(--shadow-1), 0 2px 6px rgba(0,0,0,.08);
+}
+.seg button:focus-visible{outline:none; box-shadow:var(--focus);}
+.variant-note{font-size:12px; color:var(--ink-faint); margin:0; flex:1 1 240px;}
+
+/* ============================================================
+   BANDEAU TITRE
+   ============================================================ */
+.hd{
+  display:flex; justify-content:space-between; align-items:flex-end; gap:20px; flex-wrap:wrap;
+  background:var(--surface); color:var(--ink);
+  border:1px solid var(--border-soft); border-radius:var(--radius-lg);
+  padding:20px 24px; margin-bottom:18px; box-shadow:var(--shadow-1);
+}
+.hd-left{display:flex; align-items:center; gap:16px;}
+.mark{
+  width:46px; height:46px; border-radius:var(--radius);
+  background:var(--accent); color:var(--on-accent);
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--font-mono); font-weight:700; font-size:13px; letter-spacing:-.02em;
+}
+.hd-eyebrow{font-family:var(--font-mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-faint); font-weight:600; margin:0 0 3px;}
+.hd h1{font-family:var(--font-disp); font-weight:700; font-size:var(--step-3); margin:0; line-height:1.1; letter-spacing:-.02em;}
+.hd-meta{font-family:var(--font-mono); font-size:11.5px; color:var(--ink-faint); text-align:right; line-height:1.7;}
+.hd-meta b{color:var(--ink);}
+
+/* ============================================================
+   TOOLBAR — une seule action pleine, le reste discret (déjà l'esprit Apple)
+   ============================================================ */
+.toolbar{display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:18px;}
+.toolbar-actions{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+button{font-family:var(--font-body); font-weight:600; font-size:13px;
+  border-radius:var(--radius); border:1px solid transparent;
+  background:var(--surface); color:var(--ink-soft); padding:8px 15px; cursor:pointer;
+  transition:all var(--dur-fast) var(--ease);
+}
+button:hover{color:var(--ink); border-color:var(--border); box-shadow:var(--shadow-1); transform:translateY(-1px);}
+button:active{transform:translateY(0); box-shadow:none;}
+button:focus-visible{outline:none; box-shadow:var(--focus);}
+button.primary{background:var(--accent); color:var(--on-accent); border-color:transparent;}
+button.primary:hover{background:var(--accent-hover); transform:translateY(-1px); box-shadow:var(--shadow-2);}
+button.ghost{background:transparent;}
+button.ghost:hover{background:var(--surface-alt); border-color:transparent;}
+button.danger{background:transparent; color:var(--ink-faint);}
+button.danger:hover{color:var(--danger); background:var(--danger-soft); border-color:transparent;}
+button.save{background:var(--success); color:#fff;}
+button.save:hover{background:color-mix(in srgb, var(--success) 88%, #000); color:#fff; border-color:transparent;}
+.icon{width:15px;height:15px;display:inline-block;vertical-align:-3px;margin-right:6px;fill:none;stroke:currentColor;stroke-width:1.6;}
+.save-status{font-family:var(--font-mono); font-size:11px; color:var(--success); white-space:nowrap;}
+
+/* ============================================================
+   TUILES SCÉNARIO (les tab-card du vrai outil)
+   ============================================================ */
+.tabs-strip{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:10px; margin-bottom:18px;}
+.tab-card{
+  position:relative; overflow:hidden; text-align:left; cursor:pointer;
+  background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius-lg);
+  padding:16px 18px 16px 22px; box-shadow:var(--shadow-1);
+  display:flex; flex-direction:column; gap:8px; font-family:var(--font-body);
+  transition:all var(--dur-base) var(--ease);
+}
+.tab-card:hover{transform:translateY(-2px); box-shadow:var(--shadow-2);}
+.tab-card::before{content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--ink-faint);}
+.tab-card.st-essai::before{background:var(--warning);}
+.tab-card.st-valide::before{background:var(--success);}
+.tab-card.st-serie::before{background:var(--accent);}
+.tab-card.active{border-color:var(--accent); box-shadow:0 0 0 2px var(--accent), var(--shadow-2);}
+.tc-head{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+.tc-num{font-family:var(--font-mono); font-size:10.5px; font-weight:600; color:var(--ink-faint);
+  border:1px solid var(--border); border-radius:var(--radius-sm); padding:1px 7px;}
+.tc-name{font-family:var(--font-disp); font-weight:700; font-size:var(--step-2); letter-spacing:-.015em; color:var(--ink);}
+.pill{font-family:var(--font-mono); font-size:9.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
+  padding:2px 8px; border-radius:var(--radius-pill); white-space:nowrap;}
+.pill.serie{background:var(--accent-soft); color:var(--accent);}
+.pill.essai{background:var(--warning-soft); color:var(--warning);}
+.pill.valide{background:var(--success-soft); color:var(--success);}
+.tc-row{display:flex; align-items:baseline; gap:16px; flex-wrap:wrap;}
+.tc-cell{display:flex; flex-direction:column; gap:1px;}
+.tc-label{font-family:var(--font-mono); font-size:9.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-faint); font-weight:600;}
+.tc-val{font-family:var(--font-mono); font-weight:700; font-size:15px; font-variant-numeric:tabular-nums; color:var(--ink);}
+.tc-delta{font-family:var(--font-mono); font-size:10.5px; font-weight:600;}
+.tc-delta.pos{color:var(--danger);}
+.tc-delta.neg{color:var(--success);}
+
+/* ============================================================
+   KPI — chiffre en display, label mono discret, pas d'aplat criard
+   ============================================================ */
+.stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(185px,1fr)); gap:10px; margin-bottom:18px;}
+.stat{background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius-lg);
+  padding:14px 17px; box-shadow:var(--shadow-1); transition:all var(--dur-base) var(--ease);}
+.stat:hover{box-shadow:var(--shadow-2);}
+.stat .l{font-family:var(--font-mono); font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint); font-weight:600; margin-bottom:6px;}
+.stat .v{font-family:var(--font-disp); font-weight:700; font-size:var(--step-5); line-height:1.05;
+  letter-spacing:-.03em; color:var(--ink); font-variant-numeric:tabular-nums;}
+.stat .v small{font-family:var(--font-body); font-size:12px; font-weight:500; color:var(--ink-faint); margin-left:4px; letter-spacing:0;}
+.stat.gain .v{color:var(--success);}
+.stat.accent{border-left:3px solid var(--accent);}
+
+/* ============================================================
+   TABLEAU COMPOSITION
+   ============================================================ */
+.tbl-wrap{background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius-lg);
+  overflow-x:auto; box-shadow:var(--shadow-1); margin-bottom:18px;}
+.tbl-head{padding:13px 17px; font-family:var(--font-disp); font-weight:700; font-size:14px;
+  display:flex; gap:10px; align-items:baseline; flex-wrap:wrap; border-bottom:1px solid var(--border-soft);}
+.tbl-head span{font-family:var(--font-mono); font-weight:500; font-size:11.5px; color:var(--ink-faint);}
+table{width:100%; min-width:860px; border-collapse:collapse; font-size:12.5px;}
+th{font-family:var(--font-mono); font-size:9.5px; letter-spacing:.07em; text-transform:uppercase;
+  text-align:left; padding:9px 13px; color:var(--ink-faint); background:var(--surface-alt);
+  border-bottom:1px solid var(--border-soft); font-weight:600; white-space:nowrap;}
+th.num, td.num{text-align:right; font-variant-numeric:tabular-nums;}
+td{padding:10px 13px; border-bottom:1px solid var(--border-soft); color:var(--ink);
+  font-family:var(--font-mono); font-size:12px;}
+td.txt{font-family:var(--font-body); font-size:12.5px;}
+tr:last-child td{border-bottom:none;}
+.badge{display:inline-flex; align-items:center; gap:4px; font-family:var(--font-mono); font-size:10px;
+  font-weight:700; padding:2px 9px; border-radius:var(--radius-pill); letter-spacing:.03em;}
+.badge.ok{background:var(--success-soft); color:var(--success);}
+.badge.ok::before{content:"✓"; font-size:9px;}
+.badge.risk{background:var(--danger-soft); color:var(--danger);}
+.badge.risk::before{content:"!"; font-size:9px;}
+
+/* ============================================================
+   NOTE (alerte ambre) — style Apple : capsule douce, pas un pavé rouge
+   ============================================================ */
+.note{display:flex; gap:10px; align-items:flex-start;
+  background:var(--warning-soft); border:1px solid color-mix(in srgb, var(--warning) 30%, transparent);
+  border-radius:var(--radius); padding:12px 16px; margin-bottom:18px; font-size:12.5px; color:var(--ink-soft); line-height:1.5;}
+.note b{color:var(--warning);}
+.note-ico{flex:0 0 auto; width:18px; height:18px; border-radius:50%; background:var(--warning); color:#fff;
+  font-family:var(--font-mono); font-weight:700; font-size:11px; display:flex; align-items:center; justify-content:center; margin-top:1px;}
+
+/* ============================================================
+   CHAMPS (apercu saisie)
+   ============================================================ */
+.fields-row{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px;}
+.field{display:flex; flex-direction:column; gap:4px; min-width:0;}
+.field label{font-family:var(--font-mono); font-size:9.5px; font-weight:600; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--ink-faint);}
+.field input{font-family:var(--font-mono); font-size:13.5px; padding:8px 10px;
+  border:1px solid var(--border); border-radius:var(--radius); background:var(--surface);
+  color:var(--ink); width:160px; transition:all var(--dur-fast) var(--ease);}
+.field input:focus{outline:none; border-color:var(--accent); box-shadow:var(--focus);}
+.field input:hover{border-color:var(--border-strong);}
+
+:root[data-variant="pro"] .tab-card{padding:10px 12px 10px 14px;}
+:root[data-variant="pro"] .stat{padding:8px 12px;}
+:root[data-variant="pro"] td{padding:5px 10px;}
+:root[data-variant="pro"] th{padding:5px 10px;}
+
+.foot{margin-top:44px; padding-top:14px; border-top:1px solid var(--border-soft);
+  font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint);
+  display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;}
+kbd{font-family:var(--font-mono); font-size:10px; border:1px solid var(--border); border-bottom-width:2px;
+  border-radius:4px; padding:1px 5px; background:var(--surface); color:var(--ink-soft);}
+</style>
+
+<div class="switcher-bar">
+  <div class="switcher-inner">
+    <span class="switcher-title">Variante</span>
+    <div class="seg" id="seg" role="radiogroup" aria-label="Variante du design system">
+      <button data-v="normal" class="on">Normal</button>
+      <button data-v="dark">Dark</button>
+      <button data-v="pro">Pro</button>
+    </div>
+    <p class="variant-note" id="note"></p>
+    <span class="save-status" style="color:var(--ink-faint);"><kbd>N</kbd> <kbd>D</kbd> <kbd>P</kbd></span>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="hd">
+    <div class="hd-left">
+      <div class="mark">SPK</div>
+      <div>
+        <p class="hd-eyebrow">Suivi_optimisation_SPK — Amélioration Process</p>
+        <h1>DV 356×26 RPI — EMAG 1 · OP10</h1>
+      </div>
+    </div>
+    <div class="hd-meta">
+      Volume annuel <b>200 000 disques</b><br>
+      3 scénarios · campagne en cours
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <div class="toolbar-actions">
+      <button class="save">Exporter le suivi</button>
+      <button class="ghost">Importer</button>
+      <button class="primary">+ Ajouter un scénario</button>
+      <button class="ghost">Verrouiller</button>
+    </div>
+  </div>
+
+  <div class="tabs-strip">
+    <div class="tab-card st-serie active">
+      <div class="tc-head"><span class="tc-num">1</span><span class="tc-name">Process actuel — CBN</span><span class="pill serie">En série</span></div>
+      <div class="tc-row">
+        <div class="tc-cell"><span class="tc-label">€ / pièce</span><span class="tc-val">1,0333</span></div>
+        <div class="tc-cell"><span class="tc-label">Cycle</span><span class="tc-val">100 <span style="font-size:10px;color:var(--ink-faint)">· 54,4 s</span></span></div>
+        <div class="tc-cell"><span class="tc-label">Essais</span><span class="tc-val">1</span></div>
+      </div>
+    </div>
+    <div class="tab-card st-essai">
+      <div class="tc-head"><span class="tc-num">2</span><span class="tc-name">Mixte T50013</span><span class="pill essai">Essai</span></div>
+      <div class="tc-row">
+        <div class="tc-cell"><span class="tc-label">€ / pièce</span><span class="tc-val">1,4342</span></div>
+        <div class="tc-cell"><span class="tc-label">Perte / an</span><span class="tc-delta pos">−14,9 k€</span></div>
+      </div>
+    </div>
+    <div class="tab-card st-valide">
+      <div class="tc-head"><span class="tc-num">3</span><span class="tc-name">Céramique intégrale</span><span class="pill valide">Validé</span></div>
+      <div class="tc-row">
+        <div class="tc-cell"><span class="tc-label">€ / pièce</span><span class="tc-val">1,6739</span></div>
+        <div class="tc-cell"><span class="tc-label">Perte / an</span><span class="tc-delta pos">−23,8 k€</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="l">Coût outil / pièce</div><div class="v">0,0750<small>€</small></div></div>
+    <div class="stat"><div class="l">€ / arête</div><div class="v">7,500<small>€</small></div></div>
+    <div class="stat accent"><div class="l">Temps de cycle</div><div class="v">100<small>· 54,4 s</small></div></div>
+    <div class="stat gain"><div class="l">Gain annuel</div><div class="v">+12,4<small>k€</small></div></div>
+  </div>
+
+  <div class="note"><span class="note-ico">i</span><span><b>Charnière T513.1 piste :</b> durée de vie réelle mesurée à 82 pièces sous la cible saisie. Vérifier les conditions de coupe avant de conclure sur la plaquette.</span></div>
+
+  <div class="tbl-wrap">
+    <div class="tbl-head">Composition du scénario <span>T513.1 · Bol · Plaquette exemple A · 0,0375 €/pièce</span></div>
+    <table>
+      <thead><tr><th>N° outil</th><th>Logement</th><th>Référence plaquette</th><th class="num">Prix (€)</th><th class="num">Arêtes</th><th class="num">Charnière</th><th>Critère</th><th class="num">Vc</th><th class="num">f</th><th class="num">€ / pièce</th></tr></thead>
+      <tbody>
+        <tr><td>T513.1</td><td class="txt">Bol</td><td class="txt">Plaquette exemple A</td><td class="num">30,00</td><td class="num">6</td><td class="num">100</td><td><span class="badge ok">Conforme</span></td><td class="num">—</td><td class="num">—</td><td class="num">0,0375</td></tr>
+        <tr><td>T513.1</td><td class="txt">Piste</td><td class="txt">Plaquette exemple A</td><td class="num">30,00</td><td class="num">6</td><td class="num">100</td><td><span class="badge risk">Hors tol.</span></td><td class="num">800</td><td class="num">0,40</td><td class="num">0,0375</td></tr>
+        <tr><td>T520.4</td><td class="txt">Chanfrein</td><td class="txt">Plaquette exemple B</td><td class="num">24,50</td><td class="num">4</td><td class="num">80</td><td><span class="badge ok">Conforme</span></td><td class="num">650</td><td class="num">0,32</td><td class="num">0,0306</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="fields-row">
+    <div class="field"><label>Battement (mm)</label><input value="0,08"></div>
+    <div class="field"><label>Tolérance ≤</label><input value="0,12"></div>
+    <div class="field"><label>Disques / an</label><input value="200000"></div>
+    <div class="field"><label>Coût horaire ligne</label><input value="68"></div>
+  </div>
+
+  <div class="foot">
+    <span>© 2026 Benjamin Rouquette — design system Apple · Normal / Dark / Pro</span>
+    <span>v0 · aperçu hors ligne</span>
+  </div>
+</div>
+
+<script>
+const NOTES = {
+  normal:"Clair « papier » : encre #1D1D1F, accent bleu #0066CC, hiérarchie par poids typographique et ombres douces. Référence de lisibilité, comme l'impression.",
+  dark:"Vrai sombre (pas une inversion) : fond #0A0A0C, surfaces #1C1C1E, accents remontés et saturés. Anti-éblouissement sur écran d'atelier, ombres plus profondes.",
+  pro:"Haute densité : tout en mono, tailles réduites, rayons 3-6 px, zéro ombre, espacements divisés par deux. Pour l'usage quotidien expert, au clavier."
+};
+const seg = document.getElementById('seg');
+const note = document.getElementById('note');
+function setV(v){
+  document.documentElement.dataset.variant = v;
+  seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  note.textContent = NOTES[v];
+  try{ localStorage.setItem('spk-design-variant', v); }catch(e){}
+}
+seg.addEventListener('click', e => { const b = e.target.closest('button[data-v]'); if(b) setV(b.dataset.v); });
+document.addEventListener('keydown', e => {
+  if(e.target.matches('input, textarea')) return;
+  if(e.key === 'n' || e.key === 'N') setV('normal');
+  if(e.key === 'd' || e.key === 'D') setV('dark');
+  if(e.key === 'p' || e.key === 'P') setV('pro');
+});
+let saved = null; try{ saved = localStorage.getItem('spk-design-variant'); }catch(e){}
+setV(saved || 'normal');
+</script>
