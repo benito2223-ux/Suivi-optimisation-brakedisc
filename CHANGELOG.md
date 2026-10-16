@@ -5,6 +5,37 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.96.1] — 2026-10-16 · UI lots 2+3 : le mouvement répare, l'accent se voit
+
+**La demande.** Même tour que le lot 1 : « monocouleur, polices fades,
+boutons mal proportionnés ». Les lots 2 et 3 se rejoignent parce que la
+mesure a révélé que le mouvement ÉTAIT le problème de « fade ».
+
+**Le défaut trouvé (lot 2, mouvement).** Neuf déclarations `transition:` et
+une `animation:` portaient la syntaxe **invalide** `.var(--motion)` (un point
+devant `var()`). Le parser CSS rejette la déclaration entière : le hover
+conçu pour les boutons (lift −1px + ombre, v4.70) **ne s'est jamais animé**.
+Corrigé partout (` .var(--motion)` → ` var(--motion)`, 20 occurrences) —
+les hovers conçus fonctionnent enfin, sans rien redessiner.
+
+**Le lot 3 (hiérarchie).** Socle de mouvement commun pour les surfaces qui
+n'avaient aucune transition (`ca-tuile`, `scenario`, `essai-card`/`outil-carte`
+> summary) : mêmes 120 ms, même `--ease`. Hover lift + ombre aligné sur ce que
+`pj-carte`/`tab-card` avaient déjà. Gain annuel acté (`.ca-acte`) passe en
+gras — c'est le chiffre phare de chaque ligne, il se voit avant le reste.
+`prefers-reduced-motion: reduce` tombe tout le socle (transition et lift).
+
+**Ce qui a été regardé et REFUSÉ (honnêteté du diagnostic) :** les 19
+`border-radius:999px` sont des pastilles de statut et micro-badges (pill =
+badge, légitime), pas des boutons ; les 42 styles `button.*` locaux partagent
+tous la règle globale — une classe `.btn` supplémentaire n'aurait rien changé
+à l'écran. Les proportions de boutons (44px tactile, paddings) étaient déjà
+cohérentes. Le « mal proportionné » perçu était la conséquence des pop-ups
+520px (lot 1) et de l'absence de mouvement (ce lot), pas des géométries.
+
+Vérifié : harnais 582/0, `node --check` 4/4, `outils/verif_lot23.js` 5/5
+(incl. zéro `.var(` restant), capture headless identique au repos.
+
 ## [4.96.0] — 2026-10-16 · UI lot 1 : les panneaux reprennent leur vraie taille
 
 **La demande.** Benjamin : « l'interface est trop monocouleur, les polices
