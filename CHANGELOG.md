@@ -5,6 +5,39 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.97.0] — 2026-10-16 · UI lot 4 « signature Apple » : la barre en verre
+
+**La demande.** Benjamin : « rendre l'outil parfait et beau, genre Apple ou
+Tesla ». Décisions actées : light par défaut (pas de dark-first), angles
+3 px atelier conservés, livraison directe en prod après vérification.
+
+**Le diagnostic avant d'écrire.** Les polices n'étaient PAS le problème
+(Roboto + Manrope + IBM Plex Mono embarquées, tracking négatif sur titres,
+tailles phares 20-40 px en place). Les vrais écarts mesurés : 23 valeurs
+d'ombre héritées de 40 versions, zéro `backdrop-filter` dans le fichier,
+et un mouvement 120 ms qui lit « réactif mais sec ».
+
+**Le lot.** (1) `.toolbar` devient `position:sticky` : transparente en haut
+de page, verre (`blur(14px) saturate(1.4)` + fond 78 %) dès qu'on défile —
+classe `.is-sticky` posée par un écouteur `scroll` passif unique. Fallback
+`@supports not` = fond plein ; `@media print` = statique et opaque. Le verre
+ne s'applique qu'à cette barre, jamais aux surfaces de travail. (2) Motion
+120 → **180 ms**, courbe `cubic-bezier(.4,0,.2,1)` — la respiration Apple.
+(3) Ombres repliées sur deux étages : `--shadow-card` (repos, inchangé) +
+nouveau `--shadow-hover` (survol). Les hovers de cartes/boutons qui
+répliquaient l'ombre en dur passent sur le token ; focus rings, insets
+d'état, ombres d'accent et lightbox restent (légitimes). Restent en dur :
+`0 1px 3px` du canvas d'annotation et `0 12px 40px` de la lightbox (depth
+réelle, pas un état de carte).
+
+**Vérification du verre.** Headless + virtual-time gèle la transition
+`background` à mi-course (computed style « transparent » alors que la
+cascade est correcte) — contre-vérifié SANS transition : `color(srgb 0.91
+0.92 0.93 / 0.78)` servi, `backdrop-filter:blur(14px) saturate(1.4)` actif,
+`top:0` au scroll. Capture scrollée : barre collée, boutons présents.
+
+Vérifié : harnais 582/0, `node --check` 5/5 blocs.
+
 ## [4.96.1] — 2026-10-16 · UI lots 2+3 : le mouvement répare, l'accent se voit
 
 **La demande.** Même tour que le lot 1 : « monocouleur, polices fades,

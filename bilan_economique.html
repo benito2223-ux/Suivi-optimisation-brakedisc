@@ -100,12 +100,35 @@ button.primary:hover::before, .btn-serie:hover::before{ background:var(--blue); 
    La charte, §4.1 : la barre porte un filet de 2 px — rouge sous l'onglet
    actif, bleu sur tout le reste. Ce n'est pas une décoration : c'est ce qui dit
    « tu es ici » sans ajouter une couleur de fond. */
-.toolbar{ position:relative; }
+
 .toolbar::after{
   content:""; position:absolute; left:0; right:0; bottom:-1px; height:2px;
   background:linear-gradient(to right, var(--red) 0 18%, var(--blue) 18% 100%);
   pointer-events:none;
 }
+/* ── v4.97 · lot 4 — LA BARRE EN VERRE ────────────────────────────────────
+   Le geste Apple le plus visible : la barre d'outils colle au scroll et
+   devient translucide — on lit ce qui défile DERRIÈRE elle, flouté. Le
+   verre ne s'applique qu'à cette barre (jamais aux surfaces de travail :
+   un écran de production reste opaque et dense). Deux états : transparente
+   en haut de page, verre + liseré dès qu'on a défilé (classe .is-sticky
+   posée par JS). Fallback : sans backdrop-filter, fond plein. */
+.toolbar{
+  position:sticky; top:0; z-index:30;
+  margin:0 -24px 18px; padding:10px 24px;
+  background:transparent;
+  transition:background var(--motion) var(--ease), box-shadow var(--motion) var(--ease);
+}
+.toolbar.is-sticky{
+  background:color-mix(in srgb, var(--bg) 78%, transparent);
+  -webkit-backdrop-filter:blur(14px) saturate(1.4);
+  backdrop-filter:blur(14px) saturate(1.4);
+  box-shadow:0 1px 0 var(--border);
+}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .toolbar.is-sticky{ background:var(--bg); }
+}
+@media print{ .toolbar{ position:static; background:transparent; -webkit-backdrop-filter:none; backdrop-filter:none; box-shadow:none; } }
 /* l'onglet actif : un SOUlIGNÉ rouge sous le texte, jamais un fond */
 .toolbar-ecrans button.is-actif{ color:var(--ink); font-weight:500; }
 .toolbar-ecrans button.is-actif::after{
@@ -266,7 +289,13 @@ table .num, table td.num{ text-align:right; font-variant-numeric:tabular-nums;
   --amber:#b45309; --amber-bg:#fff8ed;
   --radius:3px;
   /* C3' : une seule duree, une seule courbe -- jamais sur un chiffre, jamais width/height */
-  --motion:120ms; --ease:cubic-bezier(.2,.6,.2,1);
+  /* v4.97 : 120 ms se lisait « reactive » mais seche — Apple respire en 180-220 ms
+     avec une courbe qui finit douce. Une seule valeur, partout, comme avant. */
+  --motion:180ms; --ease:cubic-bezier(.4,0,.2,1);
+  /* v4.97 : ombres a DEUX etages seulement. Repos et survol, une teinte
+     (18,22,27) — les 23 valeurs heritees des 40 versions se replient sur
+     ces deux-la. L'ancienne --shadow-card (0 1px 2px .06) reste le repos. */
+  --shadow-hover:0 2px 4px rgba(18,22,27,.06), 0 10px 24px rgba(18,22,27,.10);
 
   /* ── vocabulaire de l'outil, dérivé du DS B (aucune seconde source) ── */
   --photo-overlay:rgba(20,24,22,.55); /* fond des badges sur photos, indépendant du thème */
@@ -367,13 +396,13 @@ body{ -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
 .hd-meta{font-family:var(--font-mono); font-size:12px; color:var(--head-ink-soft); text-align:right; line-height:1.7;}
 .hd-meta b{color:var(--head-ink);}
 
-.toolbar{display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:18px; flex-wrap:wrap;}
+.toolbar{display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;}
 .toolbar p{margin:0; max-width:60ch; color:var(--ink-soft); font-size:13.5px;}
 /* boutons — la couleur pleine (bleu) reste reservee a UNE seule action a la fois (primary) ;
    tout le reste part discret (fond neutre, pas de bordure dure) et ne se revele qu'au survol,
    plutot que d'afficher des dizaines de rectangles bordes en permanence dans la barre d'outils */
 button{font-family:var(--font-body); font-weight:500; font-size:13px; border-radius:var(--radius); border:1px solid transparent; background:var(--surface-alt); color:var(--ink-soft); padding:8px 14px; cursor:pointer; transition:transform var(--motion) var(--ease), box-shadow var(--motion) var(--ease), background var(--motion) var(--ease), border-color var(--motion) var(--ease), color var(--motion) var(--ease);}
-button:hover{background:var(--surface); border-color:var(--border); color:var(--ink); transform:translateY(-1px); box-shadow:0 3px 10px rgba(20,24,22,.07);}
+button:hover{background:var(--surface); border-color:var(--border); color:var(--ink); transform:translateY(-1px); box-shadow:var(--shadow-hover);}
 button:active{transform:translateY(0); box-shadow:none;}
 button.primary{background:var(--white); color:var(--blue-dark); border-color:var(--blue-dark); box-shadow:0 2px 6px rgba(27,94,166,.25);}
 button.primary:hover{background:var(--blue-dark); border-color:var(--blue-dark); color:var(--on-accent); box-shadow:0 4px 14px rgba(27,94,166,.3);}
@@ -444,7 +473,7 @@ button:focus-visible{outline:2px solid var(--blue); outline-offset:2px;}
 
 /* scenario cards */
 .scenarios{display:flex; flex-direction:column; gap:18px;}
-.scenario{background:var(--surface); border:1px solid var(--border); border-top:3px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; box-shadow:0 1px 2px rgba(20,24,22,.05), 0 2px 8px rgba(20,24,22,.04); transition:box-shadow var(--motion) var(--ease);}
+.scenario{background:var(--surface); border:1px solid var(--border); border-top:3px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; box-shadow:var(--shadow-card); transition:box-shadow var(--motion) var(--ease);}
 
 /* ── v4.96 · lot 3 — MOUVEMENT + HIÉRARCHIE D'ACCENT ─────────────────────
    Le diagnostic : les hover lift existaient (pj-carte, tab-card) mais la
@@ -462,7 +491,7 @@ button:focus-visible{outline:2px solid var(--blue); outline-offset:2px;}
 .ca-tuile:hover, .scenario:hover, .essai-card > summary:hover,
 .outil-carte > summary:hover{
   transform:translateY(-1px);
-  box-shadow:0 2px 4px rgba(20,24,22,.06), 0 10px 24px rgba(20,24,22,.08);
+  box-shadow:var(--shadow-hover);
 }
 @media (prefers-reduced-motion: reduce){
   .ca-tuile, .scenario, .essai-card > summary, .outil-carte > summary, .pj-carte, .tab-card{
@@ -932,7 +961,7 @@ input.cell.sub{font-size:10.5px; color:var(--ink-faint);}
 .tabs-strip{display:flex; flex-direction:column; gap:10px; margin-bottom:18px;}
 .tabs-rest{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:10px;}
 .tab-card{text-align:left; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px 18px; cursor:pointer; display:flex; flex-direction:column; gap:8px; font-family:var(--font-body); box-shadow:var(--shadow-card); transition:box-shadow var(--motion) var(--ease), transform var(--motion) var(--ease);}
-.tab-card:hover{transform:translateY(-1px); box-shadow:0 2px 4px rgba(20,24,22,.06), 0 10px 24px rgba(20,24,22,.08);}
+.tab-card:hover{transform:translateY(-1px); box-shadow:var(--shadow-hover);}
 .tab-card.is-baseline .tc-name{color:var(--blue-dark);}
 .tc-name{font-family:var(--font-disp); font-weight:800; font-size:19px; color:var(--ink); text-wrap:balance;}
 
@@ -12407,6 +12436,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.97.0", date:"16/10/2026", points:[
+    "<b>La barre d'outils flotte.</b> Quand on fait défiler, elle reste collée en haut de l'écran et devient translucide : on lit ce qui passe derrière, légèrement flouté — les gestes « Apple », appliqués à une seule surface (l'écran de travail reste opaque et dense). Le survol des cartes gagne une ombre unique, plus douce, et le mouvement ralentit de 120 à 180 ms : l'outil respire au lieu de claquer."
+  ]},
   { version:"4.96.1", date:"16/10/2026", points:[
     "<b>L'outil répond au doigt.</b> Les boutons, tuiles et cartes ont retrouvé leur animation de survol — elle existait dans le style mais était cassée par une erreur de syntaxe (9 déclarations invalides : le mouvement ne se jouait jamais). Les tuiles de la carte atelier gagnent le même survol que le reste de l'outil (léger soulèvement + ombre), et le gain annuel acté se lit maintenant en gras — c'est LE chiffre de chaque ligne. Qui refuse le mouvement (réglage système « réduire les animations ») ne reçoit aucun mouvement."
   ]},
@@ -12998,7 +13030,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.96.1";
+const TOOL_VERSION = "4.97.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -20615,6 +20647,21 @@ function runTests(){
   if(titre && !ok) titre.textContent = "Formules du widget Fr·Fa";
 })();
 if(location.hash === "#tests") runTests();
+</script>
+
+<script>
+/* ── v4.97 · lot 4 — LA BARRE EN VERRE, ÉTAT ──────────────────────────────
+   La barre est sticky (CSS) mais reste transparente en haut de page : le
+   verre ne se mérite qu'en défilant. Un seul écouteur passif, une seule
+   classe .is-sticky — le CSS fait le reste. Pas de threshold magique :
+   la barre change d'état quand elle quitte le haut, c'est tout. */
+(function(){
+  const barre = document.getElementById("toolbarWrap");
+  if(!barre) return;
+  const maj = () => barre.classList.toggle("is-sticky", window.scrollY > 8);
+  window.addEventListener("scroll", maj, { passive:true });
+  maj();
+})();
 </script>
 
 <script>

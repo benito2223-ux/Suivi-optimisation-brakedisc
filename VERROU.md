@@ -1,8 +1,8 @@
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | Hermes |
+| **Pris le** | 16/10/2026 (soir 2) |
+| **Écrit dans** | bilan_economique.html, CHANGELOG.md, VERROU.md |
+| **Version visée** | 4.97.0 |
+| **Sujet** | UI lot 4 « signature Apple » — toolbar collante translucide, ombres unifiées 2 étages, motion 180 ms. Light par défaut acté. Direct prod après vérification. |
 
 ✅ **Verrou libéré par Hermes le 16/10/2026 (soir)** (UI 4.96.1, lots 2+3 +
 PROD). Pendant le tour : 20 déclarations `.var(--motion)` invalides réparées
