@@ -4,19 +4,19 @@
 | **Version visée** | — |
 | **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
 
-✅ **Verrou libéré par Hermes le 16/10/2026** (UI 4.96.0, lot 1 — système de
-panneaux). Pendant le tour : le vrai défaut trouvé et corrigé
-(`.panel.panel-large` en `max-width` seul figeait TOUS les grands panneaux —
-accueil, tableau de bord, carte atelier, vue CPP, simulateur, catalogue,
-plan, Matis — à 520 px ; vrai `width:min(1120px,…)` + titre `h3` sticky +
-footer d'actions sticky + base dialogues 520→560). Porte harnais
-anti-régression, contre-regard double (casse A max-width seul, casse B base
-520 : les deux échouent ; restauration octet-pour-octet). 582/0 verts,
-`node --check` 4/4, capture headless avant/après. Commit `fcde23b`.
-**NON déployé sur Surge** — les lots 2 (boutons unifiés) et 3 (mouvement +
-hiérarchie d'accent) suivent ; le déploiement attendra le feu vert de
-Benjamin sur l'ensemble. écrits : `bilan_economique.html`,
-`build_harness.py`, `CHANGELOG.md`, `VERROU.md`.
+✅ **Verrou libéré par Hermes le 16/10/2026 (soir)** (UI 4.96.1, lots 2+3 +
+PROD). Pendant le tour : 20 déclarations `.var(--motion)` invalides réparées
+(les hovers conçus v4.70 ne se sont jamais animés — le parser CSS rejetait
+la déclaration entière) ; socle de mouvement commun tuiles/scénarios/cartes
+avec `prefers-reduced-motion` ; gain annuel acté en gras (chiffre phare
+carte atelier) ; refus documenté du cosmetic inutile (999px = pastilles
+légitimes, `.btn` n'aurait rien changé). `outils/verif_lot23.js` 5/5,
+harnais 582/0, `node --check` 4/4. **PROD sur ordre de Benjamin** :
+`suivi-optimisation-septfons.surge.sh` — Success!, HTTP 200, md5
+`dc5fe0e2…` identique octet pour octet, TOOL_VERSION 4.96.1 servi,
+SW + manifest 200. Écrits : `bilan_economique.html`,
+`build_harness.py` (porte 4.96), `outils/verif_lot23.js`, `CHANGELOG.md`,
+`VERROU.md`.
 
 ✅ **Verrou libéré par Z Code le 14/10/2026** (Tour 73, v4.90.0). Pendant le
 tour, les trois lots de la revue Claude sont appliqués : P7 (data-plan

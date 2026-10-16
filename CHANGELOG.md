@@ -36,6 +36,11 @@ cohérentes. Le « mal proportionné » perçu était la conséquence des pop-up
 Vérifié : harnais 582/0, `node --check` 4/4, `outils/verif_lot23.js` 5/5
 (incl. zéro `.var(` restant), capture headless identique au repos.
 
+**Déploiement (ordre de Benjamin, même tour).** `surge --domain
+suivi-optimisation-septfons.surge.sh ./` — Success! ; vérifié : HTTP 200,
+md5 `dc5fe0e2…` identique octet pour octet au local,
+`TOOL_VERSION = "4.96.1"` servi, service-worker 200, manifest 200.
+
 ## [4.96.0] — 2026-10-16 · UI lot 1 : les panneaux reprennent leur vraie taille
 
 **La demande.** Benjamin : « l'interface est trop monocouleur, les polices
