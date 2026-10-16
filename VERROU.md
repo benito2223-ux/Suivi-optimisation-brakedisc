@@ -1,8 +1,19 @@
-| **Auteur** | Hermes |
-| **Pris le** | 17/10/2026 |
-| **Écrit dans** | bilan_economique.html, CHANGELOG.md, VERROU.md |
-| **Version visée** | 4.97.1 |
-| **Sujet** | UI : toolbar compactée — mesurée à 180px/3 rangées (boutons 131-188px), objectif 1 ligne à ~1180px. |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+
+✅ **Verrou libéré par Hermes le 17/10/2026** (UI 4.97.1 + PROD). Pendant le
+tour : la barre d'outils passe de 180 px/3 rangées à **62 px/une ligne** —
+icônes 13 px trait 1.7, segmented control pour les 5 écrans, libellés
+courts, Exporter/Importer/Verrouiller en icône seule (title au survol),
+moreBtn largeur fixe. Piège : wrap fantôme de 77 px sur le parent inline-flex
+du ••• (contraint à 31 px). Mobile : boutons 44 px intacts ; débord
+horizontal 420 px préexistant (.hd + table, hors périmètre, vérifié stash).
+582/0, `node --check` 5/5, capture validée. **PROD** : Success!, md5
+`18e46ebe…` identique octet pour octet, TOOL_VERSION 4.97.1 servi.
+Écrits : `bilan_economique.html`, `CHANGELOG.md`, `VERROU.md`.
 
 ✅ **Verrou libéré par Hermes le 16/10/2026 (soir 2)** (UI 4.97.0, lot 4
 « signature Apple » + PROD). Pendant le tour : toolbar sticky translucide
