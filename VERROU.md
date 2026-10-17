@@ -1,8 +1,17 @@
-| **Auteur** | Hermes |
-| **Pris le** | 17/10/2026 (2) |
-| **Écrit dans** | bilan_economique.html, CHANGELOG.md, VERROU.md |
-| **Version visée** | 4.97.2 |
-| **Sujet** | UI : débord horizontal mobile 420px (.hd + tables) — bug préexistant identifié au lot 5. |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+
+✅ **Verrou libéré par Hermes le 17/10/2026 (2)** (UI 4.97.2 + PROD).
+Pendant le tour : fin du débord horizontal mobile — le fautif était
+`.hd-left` (flex sans min-width:0 ni wrap, eyebrow insécable), PAS les
+tables (déjà scrollables via .tbl-wrap). Correctif : flex-wrap, break-word
+sur eyebrow/h1, logo max-width:40vw. Vérifié scrollW 495 ≤ 500 au viewport
+étroit. 582/0, `node --check` 5/5. **PROD** : Success!, md5 `fe652969…`
+identique octet pour octet, TOOL_VERSION 4.97.2 servi. Écrits :
+`bilan_economique.html`, `CHANGELOG.md`, `VERROU.md`.
 
 ✅ **Verrou libéré par Hermes le 17/10/2026** (UI 4.97.1 + PROD). Pendant le
 tour : la barre d'outils passe de 180 px/3 rangées à **62 px/une ligne** —
