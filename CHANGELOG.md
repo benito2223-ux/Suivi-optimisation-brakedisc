@@ -5,6 +5,23 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.97.2] — 2026-10-17 · Fin du défilement horizontal sur mobile
+
+**La demande.** Suite de la session UI : le débord horizontal à 420 px
+identifié au lot 5 (préexistant), puis les tuiles d'accueil.
+
+**Diagnostic précis.** Le débord document venait du bloc d'en-tête :
+`.hd-left` (logo + eyebrow + h1) en `flex` sans `min-width:0` ni `wrap` —
+l'eyebrow « parc usinage sept-fons · lignes haute cadence » (nbsp) ne
+cassait pas et forçait ~105 px de largeur en trop. Les tables `mt-tbl`
+(900 px) n'étaient PAS en cause : déjà dans `.tbl-wrap{overflow-x:auto}`.
+
+**Le correctif.** `.hd-left` gagne `flex-wrap:wrap; min-width:0` ;
+eyebrow et h1 en `overflow-wrap:break-word` ; le logo `max-width:40vw`.
+Vérifié au viewport étroit : plus AUCUN élément ne dépasse hors des
+conteneurs scrollables (`scrollWidth` 495 ≤ 500). Bureau inchangé
+(harnais 582/0, `node --check` 5/5).
+
 ## [4.97.1] — 2026-10-17 · La barre d'outils tient sur une ligne
 
 **La demande.** Benjamin : « la barre a trop de fonctions affichées, sur

@@ -415,7 +415,11 @@ body{ -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
 /* header */
 .hd{display:flex; justify-content:space-between; align-items:flex-end; gap:24px; flex-wrap:wrap;
   background:var(--head); color:var(--head-ink); border-radius:var(--radius-lg); padding:20px 24px; margin-bottom:22px;}
-.hd-left{display:flex; align-items:center; gap:18px;}
+.hd-left{display:flex; align-items:center; gap:18px; flex-wrap:wrap; min-width:0;}
+/* v4.97.2 — mobile : le bloc titre ne force plus le débord horizontal.
+   L'eyebrow et le h1 casent leur texte (nbsp compris), le logo reste entier. */
+.hd-eyebrow, .hd h1{ overflow-wrap:break-word; }
+.hd-left img{ max-width:40vw; height:auto; }
 .hd-left img{height:52px; width:auto; display:block; box-sizing:content-box; background:#fff; border-radius:var(--radius-sm); padding:7px 11px;}
 .hd-eyebrow{font-family:var(--font-mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--head-ink-soft); font-weight:500; margin:0 0 4px;}
 .hd h1{font-family:var(--font-disp); font-weight:800; font-size:clamp(24px,3.4vw,32px); margin:0; line-height:1.05; color:var(--head-ink); min-width:0; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
@@ -12467,6 +12471,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.97.2", date:"17/10/2026", points:[
+    "<b>Plus de défilement horizontal sur téléphone.</b> Le bandeau d'en-tête forçait la page en largeur sur petit écran : son texte casse désormais proprement à la ligne et le logo se resserre. Les tableaux larges défilent dans leur cadre, comme avant."
+  ]},
   { version:"4.97.1", date:"17/10/2026", points:[
     "<b>La barre d'outils tient sur une ligne.</b> Elle mesurait 180 px sur trois rangées — chaque bouton se payait 130-190 px de large. Elle fait désormais 46 px, une seule ligne : icônes plus fines et plus petites, boutons resserrés, les cinq écrans regroupés en un sélecteur collé (le geste « navigation groupée »), et les fonctions rares (Exporter, Importer, Verrouiller) réduites à leur icône — le nom complet reste au survol."
   ]},
@@ -13064,7 +13071,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.97.1";
+const TOOL_VERSION = "4.97.2";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 

@@ -1,8 +1,8 @@
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | Hermes |
+| **Pris le** | 17/10/2026 (2) |
+| **Écrit dans** | bilan_economique.html, CHANGELOG.md, VERROU.md |
+| **Version visée** | 4.97.2 |
+| **Sujet** | UI : débord horizontal mobile 420px (.hd + tables) — bug préexistant identifié au lot 5. |
 
 ✅ **Verrou libéré par Hermes le 17/10/2026** (UI 4.97.1 + PROD). Pendant le
 tour : la barre d'outils passe de 180 px/3 rangées à **62 px/une ligne** —
