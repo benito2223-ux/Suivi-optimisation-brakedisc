@@ -49,6 +49,7 @@
 
 | Date | Acte | Où | Vérifié |
 |---|---|---|---|
+| 20/10 ~23:10 | **DEV 4.100.2 — la mise à jour à chaud : un correctif ne peut plus rester invisible en cache.** Benjamin : « Problème toujours présent bro » — alors que la 4.100.1 était déployée, publiée et vérifiée sur l'URL publique. Cause : le correctif était dans `spk-shell.js`, servi **cache d'abord** par le service worker ; le cache ne se purge que si le SW change, or c'est le shell qui changeait — l'ancien restait en cache, invisible. Le profil de test (Chrome neuf à chaque fois) n'avait **jamais de cache** : il testait le code, pas ce que l'utilisateur voit. Corrections : le shell passe en réseau d'abord ; `addAll` (tout ou rien) remplacé par une mise en cache entrée par entrée ; enregistrement avec `updateViaCache: "none"` ; le SW signale sa prise de main ; la page compare la version servie et se recharge si elle est en retard. **Vérifié sur un profil « déjà visité »** : le cache est passé à la bonne version **seul**, le shell exécuté portait la nouvelle version, bouton Retour affiché. Porte `maj a chaud 4.100.2` (8 points), 8 contre-regards, 8 détectés. **PROD : rien** | suivi-optimisation-projet.surge.sh | ✅ curl : 4.100.2 servie, md5 `3162a60a…` identique au `dist/` local ; prod 4.97.2 md5 `fe652969…` inchangée |
 | 20/10 ~22:05 | **DEV 4.100.1 — le bouton « Retour » ne disparaît plus quand un dialogue se pose.** Benjamin : « dans le plan de conversion quand on lis un classeur le bouton retour disparait bro ». La lecture d'un classeur appelle `dialogueAlerte` (« Consommations 2025 lues »), qui ouvre `dialogPanel` — un `.panel` **sans** `panel-large`. La coque comptait tout petit `.panel` visible comme un remplacement d'espace de travail : le dialogue annulait donc l'état d'espace ouvert, le bouton Retour disparaissait au milieu du Plan et le rail redevenait « non repliable » alors que le Plan était toujours ouvert derrière. Correction : les surcouches (dialogue, recherche, annotation photo) sont exclues du calcul — elles se posent par-dessus, elles ne remplacent pas. Porte `bouton retour 4.100.1` (3 points), 3 contre-regards, 3 détectés. **PROD : rien** | suivi-optimisation-projet.surge.sh | ✅ curl : 4.100.1 servie, md5 `6fc1c769…` identique au `dist/` local, comportement vérifié depuis l'URL publique (retour affiché avec le dialogue ouvert) ; prod 4.97.2 md5 `fe652969…` inchangée |
 | 20/10 ~21:30 | **DEV 4.100.0 — la coque est dans le repo git, et le rail ne disparaît plus.** La coque de navigation du jour (rail graphite, barre d'onglets mobile, écrans plein écran, direction « Console d'atelier ») est **portée dans le repo git** : `spk-app.css` + `spk-shell.js` + les 8 polices locales, assemblés au déploiement par `outils/build-coque.mjs` dans `dist/`. Option A (Benjamin). Corrige en passant : les écrans plein écran (`z-index: 80 !important`) passaient **au-dessus** du rail (60) et le recouvraient entièrement — le rail était dans le DOM, mesuré à 248 px, et **invisible à l'écran**. Rail remonté en z-index 90, écrans arrêtés au bord du rail (`left: 248px` + `right: 0` + `width: auto`). Poignée de repli **active en plein écran** (Benjamin, sur remarque de la revue). Porte hors-suite `coque 4.100` (12 points), **10 contre-regards injectés, 10 détectés**. **PROD : rien** | suivi-optimisation-projet.surge.sh | ✅ curl : 4.100.0 servie, md5 `6080137b73d038e4bbc2b0f9de8fde89` identique au `dist/` local, CSS+shell+polices en 200, fichiers sensibles en 404, rendu vérifié depuis l'URL publique (rail visible, 0 débord) ; prod 4.97.2 md5 `fe652969…` inchangée |
 | 20/10 ~20:12 | **DEV — restauration de la refonte UI du jour.** La 4.98.0 deployee a 19:45 avait remplace la refonte (rail graphite, barre d'onglets mobile, ecrans plein ecran) construite le jour meme par l'agent auto-designer dans son workspace `.openclaw-autoclaw/agents/auto-designer/workspace/dev-build` (md5 `a25a4950…`). Les deux workflow deployaient sur le meme domaine. Restauration deployee et verifiee par curl (md5 servi identique au `dev-build`). **PROD jamais touchee** : 4.97.2, md5 `fe652969…`. Defaut constant de la refonte constate au passage : le rail (z-index 60) passe **sous** les panneaux plein ecran (z-index 80 !important) — il n'est donc pas visible a l'ecran. Benjamin : « pourquoi on est revenu sur l'ancien design » | suivi-optimisation-projet.surge.sh | ✅ curl : md5 `a25a4950ae0045c1d6eda0e7fafd0cfc` = dev-build ; prod 4.97.2 md5 `fe652969…` |
@@ -703,6 +704,75 @@ exogène » de la grille du tour 68 est la bonne — pas le chill.
 ---
 
 ## Journal des tours
+
+### ▸ Tour 79 — 20/10/2026, soir — **Hermes** (v4.100.2 — la mise à jour à chaud : le correctif était invisible chez Benjamin)
+
+**« Problème toujours présent bro. »** La 4.100.1 était déployée, vérifiée sur
+l'URL publique, et mesurée correcte. Elle ne se voyait pas chez lui.
+
+**La cause, et c'est grave : c'est le test qui était faux, pas le code.** Le
+correctif était dans `spk-shell.js` — et `spk-shell.js` était servi **cache
+d'abord** par le service worker. Le cache ne se purge que si le *service
+worker* change ; or c'est le shell qui changeait, pas le SW. Le nouveau SW ne
+se réinstallait donc pas, l'ancien shell restait en cache, et la correction
+était déployée, publiée, vérifiée — et invisible.
+
+**Le trou du test.** J'avais vérifié sur un profil Chrome **neuf** à chaque
+mesure : jamais de cache, donc toujours la dernière version. Je testais le
+code, pas ce que l'utilisateur voit. Le profil « déjà visité » a été
+reconstruit après coup : cache `v5`, shell ancien — et c'est ce profil qui
+révèle le défaut.
+
+**Trois corrections structurelles.**
+1. **`spk-shell.js` passe en réseau d'abord**, avec le HTML et le CSS. Tout ce
+   qui porte le comportement est servi à jour dès qu'il y a du réseau. Le
+   commentaire d'en-tête du SW promettait déjà ça — le code ne le faisait pas.
+2. **`caches.addAll` est tout ou rien** : si une seule des 17 entrées manque
+   (une police pas encore publiée), l'installation du SW **échoue**, le
+   nouveau SW ne prend jamais la main, et l'ancien continue de servir l'ancien
+   shell. Même piège, en plus sournois. Remplacé par une mise en cache
+   entrée par entrée.
+3. **Mise à jour à chaud explicite** : enregistrement avec
+   `updateViaCache: "none"`, vérification toutes les 60 s et à chaque retour
+   sur l'onglet, et — filet de sécurité — la page compare la version qu'elle a
+   chargée à celle qui est servie : si elles diffèrent, les caches sont purgés
+   et la page se recharge. Le SW signale aussi sa prise de main aux pages
+   ouvertes.
+
+**Vérifié sur un profil teinté** (cache `v5` + shell ancien, donc exactement
+ton cas) : après le déploiement, le cache est passé à `v6` **seul**, sans
+rechargement manuel ; version servie 4.100.2 ; shell chargé porteur de la
+correction ; **Plan + dialogue → bouton Retour affiché**. `node --check` 5/5,
+harnais **583/0**. **DEV** : 4.100.2 servie, md5 `3162a60a…` identique au
+local. **PROD : rien**.
+
+**La règle qui en sort, et elle est générale.** « Vérifié sur l'URL publique »
+n'est **pas** une preuve de visibilité : c'est une preuve que le serveur sert
+la bonne chose. La question à poser est « qu'est-ce que le poste de
+l'utilisateur a réellement sous les yeux ? » — et pour une PWA, la réponse
+passe par le cache, pas par le réseau. Un test de correction d'interface doit
+donc se faire **sur un profil qui a déjà visité le site**, sinon il vérifie une
+chose qui n'existe que dans le laboratoire.
+
+**La preuve, faite dans les conditions réelles.** Un profil Chrome a été
+préparé comme « navigateur déjà visité » (cache `v6`, version 4.100.2 en
+mémoire), puis une 4.100.3 a été déployée **par-dessus**, sans toucher au
+profil. Résultat : la page a vu 4.100.3 au chargement, le **shell exécuté**
+portait le marqueur de la 4.100.3 (donc il était bien arrivé à jour, sans
+rechargement manuel), et le bouton **Retour** restait affiché avec un dialogue
+ouvert sur le Plan. Puis la 4.100.3 de test a été retirée et redéployée en
+4.100.2.
+
+
+**Ce qui reste en suspens, honnêtement.** Le test qui reproduit *ton* cas
+exact — un poste où la version 4.100.1 était déjà en cache — a été reconstitué
+ici (profil teinté, cache `v5`), et il passe. Mais si tu constates encore le
+problème après un **rechargement franc** (Ctrl+Maj+R, ou en fermant l'onglet
+puis en le rouvrant), alors le défaut est ailleurs que dans le cache, et il
+faudrait que je le cherche sur ton poste lui-même.
+
+---
+
 
 ### ▸ Tour 78 — 20/10/2026, soir — **Hermes** (v4.100.1 — le bouton Retour ne disparaît plus sous un dialogue)
 

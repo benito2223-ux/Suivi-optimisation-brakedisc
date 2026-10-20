@@ -4,6 +4,30 @@
 | **Version visée** | — |
 | **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
 
+✅ **Verrou libéré par Hermes le 20/10/2026, soir (5)** (4.100.2 — la mise à
+jour à chaud : un correctif ne peut plus rester invisible en cache).
+`spk-shell.js` passe en **réseau d'abord** (comme le HTML et le CSS) ; le
+service worker s'enregistre avec `updateViaCache: "none"`, met chaque entrée
+en cache séparément (`addAll` est tout ou rien : une police manquante
+empêchait le nouveau SW de prendre la main), signale sa prise de main aux
+pages ouvertes, et la page compare la version qu'elle a chargée à celle qui
+est servie : si elles diffèrent, les caches sont purgés et la page se
+recharge. Porte `maj a chaud 4.100.2` (8 points), **8 contre-regards, 8
+détectés**. **Vérifié sur un profil « déjà visité »** : le cache est passé de
+`v5`/`v6` à la bonne version **seul**, sans rechargement manuel, et le bouton
+**Retour** reste affiché avec un dialogue ouvert sur le Plan. **DEV** :
+4.100.2 servie, md5 `3162a60a…`. **PROD : rien** — 4.97.2, md5 `fe652969…`.| **Auteur** | **Hermes** |
+| **Pris le** | 20/10/2026, soir (~22:40) |
+| **Écrit dans** | `service-worker.js`, `bilan_economique.html` (version + enregistrement SW), `CHANGELOG.md`, `ECHANGES.md` |
+| **Version visée** | 4.100.2 |
+| **Sujet** | Mise à jour à chaud : le shell est servi en réseau d'abord, le cache ne peut plus retenir un correctif, et la page se recharge seule si elle est en retard. |
+
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+
 ✅ **Verrou libéré par Hermes le 20/10/2026, soir (4)** (4.100.1 — le bouton
 Retour ne disparaît plus sous un dialogue). Correction dans `spk-shell.js` : un
 dialogue, une recherche ou l'annotation d'une photo se posent **par-dessus** un

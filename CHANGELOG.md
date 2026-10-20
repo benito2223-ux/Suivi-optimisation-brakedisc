@@ -54,6 +54,45 @@ déploiement · mesures à 1440 (rail 248 px, panneaux x=248→1418), 1024
 captures à l'œil : rail visible, contenu après le rail, poignée active en
 plein écran. **PROD : rien** — la prod reste en 4.97.2.
 
+## [4.100.2] — 2026-10-20 · Les corrections arrivent maintenant, même sur un poste déjà ouvert
+
+**Le défaut, vu par Benjamin.** « Problème toujours présent bro. » — alors que
+la 4.100.1 était déployée, vérifiée sur l'URL publique, et mesurée correcte.
+
+**Pourquoi la 4.100.1 ne se voyait pas chez lui.** Le correctif était dans
+`spk-shell.js` — et `spk-shell.js` était servi **cache d'abord** par le
+service worker. Le cache ne se purge que si le *service worker* change ; or
+c'est le shell qui changeait, pas le SW. Le nouveau SW ne se réinstallait donc
+pas, l'ancien shell restait en cache, et la correction était déployée,publiée,
+vérifiée — et invisible. Le profil de test utilisé pour vérifier (un profil
+Chrome neuf à chaque fois) n'avait **jamais de cache** : il voyait toujours la
+dernière version. C'est le trou du test, pas du code.
+
+**Trois corrections structurelles.**
+1. **`spk-shell.js` passe en réseau d'abord**, avec le HTML et le CSS. Tout ce
+   qui porte le comportement est donc servi à jour dès qu'il y a du réseau ; le
+   cache ne sert qu'en repli hors ligne. Le commentaire d'en-tête du SW
+   promettait déjà ça — le code ne le faisait pas.
+2. **`caches.addAll(SHELL)` est remplacé par une mise en cache entrée par
+   entrée.** `addAll` est **tout ou rien** : si une seule des 17 entrées
+   manque (une police pas encore publiée), l'installation du SW **échoue**, le
+   nouveau SW ne prend jamais la main, et l'ancien continue de servir
+   l'ancien shell. Même piège, en plus sournois.
+3. **Mise à jour à chaud explicite** : le SW est enregistré avec
+   `updateViaCache: "none"`, une vérification toutes les 60 s et à chaque
+   retour sur l'onglet, et — filet de sécurité — la page compare la version
+   qu'elle a chargée à celle qui est servie : si elles diffèrent, les caches
+   sont purgés et la page se recharge. Le SW signale aussi la prise de main
+   aux pages ouvertes.
+
+**Ce qu'il fallait tester.** Pas « la version est-elle bonne sur une URL
+publique » — c'est vrai et ça ne prouve rien. Il fallait **un profil qui a
+déjà visité le site** (donc avec un cache et un SW actif), déployé par-dessus,
+puis rechargé. Fait : le profil avait le cache `v5` avec l'ancien shell ; après
+le déploiement, le cache est passé à `v6` **seul**, la version servie est
+4.100.2, et le bouton **Retour** reste affiché avec un dialogue ouvert sur le
+Plan.
+
 ## [4.100.1] — 2026-10-20 · Le bouton Retour ne disparaît plus quand un dialogue se pose
 
 **Le défaut, vu par Benjamin.** « Dans le plan de conversion, quand on lit un

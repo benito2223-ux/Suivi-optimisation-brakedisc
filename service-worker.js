@@ -1,5 +1,5 @@
 /* ============================================================================
-   Suivi_optimisation_SPK — service worker (v4.100.0 — coque « Console d'atelier »)
+   Suivi_optimisation_SPK — service worker (v4.100.2 — mise a jour a chaud)
    ----------------------------------------------------------------------------
    Rend l'outil INSTALLABLE (PWA) et pousse les mises à jour sans jamais
    désinstaller/réinstaller : l'app installée se relance avec la dernière
@@ -25,8 +25,23 @@
      cloud et offline-first existant reste exactement le même.
    Le nom de cache ne change QUE si ce fichier lui-même change (il n'embarque
    pas la version de l'app : c'est la clé qui purge les vieux caches).
+
+   Ce qui a changé en v4.100.2 : la MISE À JOUR À CHAUD. Le 20/10, une
+   correction du shell (le bouton « Retour » qui disparaissait sous un
+   dialogue) est restée INVISIBLE sur les navigateurs déjà visités, alors
+   qu'elle était déployée et vérifiée sur une URL publique. Deux raisons,
+   qui se cumulaient :
+   - `spk-shell.js` était servi CACHE D'ABORD : le cache ne se purge que si
+     le service worker change, or c'est le shell qui changeait, pas le SW.
+   - `caches.addAll(SHELL)` est TOUT OU RIEN : une seule police manquante
+     faisait échouer l'installation, donc le nouveau SW ne prenait jamais
+     la main et l'ancien continuait de servir l'ancien shell.
+   D'où : le shell passe en réseau d'abord comme le HTML et le CSS, et
+   l'installation met chaque entrée séparément (une entrée ratée n'annule
+   pas les autres). Le cache passe en `v6` : l'ancien `v5` est purgé à
+   l'activation.
    ============================================================================ */
-const CACHE = "spk-suivi-shell-v5";
+const CACHE = "spk-suivi-shell-v6";
 const SHELL = [
   "./",
   "./index.html",
@@ -48,10 +63,20 @@ const SHELL = [
 ];
 
 self.addEventListener("install", (e) => {
+  /* v4.100.2 — `addAll` est TOUT OU RIEN : si un seul des 17 fichiers manque
+     (une police pas encore publiee, un 404), l'installation ECHOUE, le
+     nouveau service worker n'est jamais active, et l'ancien continue de
+     servir le vieux shell — le meme piege qu'avant, en plus sournois.
+     On met donc chaque entree separement, et l'echec de l'une n'annule pas
+     les autres. Le cache est de toute facon rafraichi a chaque requete
+     reseau (voir le bloc fetch), donc une entree manquante se rattrape
+     d'elle-meme. */
   e.waitUntil(
     caches.open(CACHE)
-      .then((c) => c.addAll(SHELL))
-      .then(() => self.skipWaiting()) // la nouvelle version prend la main immédiatement
+      .then((c) => Promise.all(
+        SHELL.map((url) => c.add(url).catch(() => null))
+      ))
+      .then(() => self.skipWaiting()) // la nouvelle version prend la main immediatement
   );
 });
 
@@ -60,7 +85,21 @@ self.addEventListener("activate", (e) => {
     caches.keys()
       .then((cles) => Promise.all(cles.filter((c) => c !== CACHE).map((c) => caches.delete(c))))
       .then(() => self.clients.claim())
+      /* v4.100.2 — le nouveau service worker prend la main : on PREVIENT les
+         pages ouvertes, sinon elles continuent de tourner avec l'ancien shell
+         jusqu'au rechargement. `skipWaiting` seul ne suffit pas : la page
+         déjà chargée garde le script qu'elle a exécuté. */
+      .then(() => self.clients.matchAll({ type: "window" }))
+      .then((pages) => pages.forEach((p) => p.postMessage({ type: "SPK_MAJ", cache: CACHE })))
   );
+});
+
+/* v4.100.2 — la page demande : « y a-t-il du neuf ? ». On compare la version
+   du service worker à celle qu'il a servie, et on répond. */
+self.addEventListener("message", (e) => {
+  if (!e.data || e.data.type !== "SPK_VERIF_MAJ") return;
+  const rep = { type: "SPK_VERSION_SW", cache: CACHE, version: self.__spkVersion || null };
+  if (e.source && e.source.postMessage) e.source.postMessage(rep);
 });
 
 self.addEventListener("fetch", (e) => {
@@ -71,14 +110,21 @@ self.addEventListener("fetch", (e) => {
 
   const estHtml = url.pathname.endsWith("bilan_economique.html") || url.pathname.endsWith("index.html");
   const estCss = url.pathname.endsWith("spk-app.css");
-  if (estHtml || estCss) {
+  const estJs = url.pathname.endsWith("spk-shell.js");
+  if (estHtml || estCss || estJs) {
     // réseau d'abord : mise à jour automatique à chaque ouverture en ligne ;
     // hors ligne, on sert la dernière version connue. cache:"no-cache" garantit que
     // le contrôle réseau n'est jamais répondu par le cache HTTP du navigateur (304)
     // — sinon une version neuve pourrait rester invisible derrière un 304.
-    // Le CSS de la coque est dans ce lot : sans cela, une retouche de thème
-    // resterait invisible sur les navigateurs déjà visités (le shell est
-    // servi cache-first, la version servie resterait celle d'avant).
+    //
+    // v4.100.1 — `spk-shell.js` rejoint le HTML et le CSS. AVANT, il tombait
+    // dans le bloc « cache d'abord » ci-dessous : le shell étant servi depuis
+    // le cache, une correction du shell (le bouton Retour qui disparaissait
+    // sous un dialogue) restait INVISIBLE sur les navigateurs déjà visités —
+    // et le SW ne se réinstallait pas, puisque le fichier SW lui-même
+    // n'avait pas changé. Le cache ne se purge que si le SW change ; or
+    // c'est le shell qui change, pas le SW. D'où la correction structurelle :
+    // tout ce qui porte le comportement passe par le réseau d'abord.
     e.respondWith(
       fetch(req, { cache: "no-cache" }).then((rep) => {
         if (rep && rep.ok) {

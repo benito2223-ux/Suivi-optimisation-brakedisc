@@ -836,6 +836,125 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'bouton retour 4.100.1 : un dialogue par-dessus un espace de travail ne fait plus disparaitre le bouton Retour' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  /* ── v4.100.2 — LE SHELL EST SERVI EN RÉSEAU D'ABORD ──
+     Benjamin, 20/10 : « Problème toujours présent bro » — alors que le
+     correctif du bouton Retour était déployé, publié et vérifié sur l'URL
+     publique. Cause : `spk-shell.js` était servi CACHE D'ABORD. Le cache ne
+     se purge que si le service worker change, or c'est le shell qui changeait,
+     pas le SW : l'ancien shell restait en cache, invisible et intouchable.
+     Le profil de test (Chrome neuf à chaque fois) n'avait jamais de cache —
+     il vérifiait le code, pas ce que l'utilisateur voit. */
+  (function majAToudPourShell(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const lire = (rel) => { try { return fs.readFileSync(path.join(REPO, rel), 'utf8'); } catch (e) { return ''; } };
+    const sw = lire('service-worker.js');
+    const html = lire('bilan_economique.html');
+
+    if (!sw) echecs.push('service-worker.js introuvable : la porte ne peut rien verifier');
+
+    if (sw) {
+      /* (1) le shell doit etre dans le lot "reseau d'abord" */
+      const iEst = sw.indexOf('const estJs = url.pathname.endsWith');
+      if (iEst < 0) echecs.push('le shell n est pas reconnu comme ressource du lot reseau-dabord');
+      else {
+        const bloc = sw.slice(iEst, iEst + 900);
+        const iIf = bloc.indexOf('if (estHtml || estCss');
+        if (iIf < 0) echecs.push('impossible de lire la condition reseau-dabord');
+        else if (bloc.slice(iIf, iIf + 80).indexOf('estJs') === -1) echecs.push('le shell n est PAS dans le lot reseau-dabord : un correctif du shell peut rester invisible');
+      }
+
+      /* (2) addAll est tout ou rien : un 404 sur une police fait echouer
+             l'installation du SW, et l'ancien continue de servir l'ancien
+             shell. Il faut une mise en cache entree par entree. */
+      if (sw.indexOf('c.addAll(SHELL)') !== -1) echecs.push('addAll est tout ou rien : une entree manquante empeche le nouveau service worker de prendre la main');
+      if (sw.indexOf('SHELL.map') === -1) echecs.push('la mise en cache n est pas entree par entree');
+
+      /* (3) le SW doit signaler sa prise de main aux pages ouvertes */
+      if (sw.indexOf('SPK_MAJ') === -1) echecs.push('le service worker ne previent pas les pages ouvertes de sa prise de main');
+    }
+
+    if (html) {
+      /* (4) l'enregistrement doit forcer la mise a jour et surveiller la
+             version. ATTENTION : on cherche dans le CODE ACTIF, pas dans le
+             fichier entier — les chaines apparaissent aussi dans les
+             COMMENTAIRES (qui expliquent justement la correction), et un
+             test « la chaine est presente » passerait donc meme si le code
+             avait disparu. C'est ce piege que la porte a deja laisse passer
+             deux fois dans ce tour. On retire les commentaires avant. */
+      const NL2 = String.fromCharCode(10);
+      const htmlCode = html
+        .split(NL2).map(function(l){ return l.replace(/\/\/.*$/, ''); }).join(NL2)
+        .split(NL2).filter(function(l){ return l.indexOf('*') < 0; }).join(NL2);
+
+      /* On cherche l'OCCURRENCE EXACTE dans une LIGNE DE CODE, pas la
+         presence de la chaine. Sans cela, le commentaire de la correction
+         (qui cite `updateViaCache` dans une liste a puces) faisait passer
+         la porte meme quand le code avait disparu — c'est exactement ce
+         qui est arrive : la porte disait verte avec le code mort.
+         On exige donc que la ligne contienne ET le mot-cle ET un signe
+         d'appel (`(`, `{`, `=`, `;`) — un commentaire ne les a pas. */
+      function ligneActive(src, motCle, doitEtreAppel){
+        const ls = src.split(NL2);
+        for (let i = 0; i < ls.length; i++) {
+          if (ls[i].indexOf(motCle) === -1) continue;
+          if (ls[i].trim().indexOf('*') === 0) continue;      // ligne de commentaire
+          if (ls[i].trim().indexOf('//') === 0) continue;      // ligne de commentaire
+          if (doitEtreAppel && ls[i].indexOf(doitEtreAppel) === -1) continue;
+          return true;
+        }
+        return false;
+      }
+      if (!ligneActive(htmlCode, 'updateViaCache', 'register')) echecs.push('le service worker n est pas enregistre avec updateViaCache : sa nouvelle version peut rester invisible');
+      if (!ligneActive(htmlCode, 'navigator.serviceWorker.register', '(')) echecs.push('le service worker n est plus enregistre');
+      /* la verification doit etre DECLAREE *et APPELEE : la declaration
+         seule ne prouve rien (une fonction jamais appele ne verifie
+         jamais rien). On compte les occurrences hors declaration. */
+      if (!ligneActive(htmlCode, '_spkVerifierVersion', '(')) echecs.push('la page ne verifie pas si une version plus recente est servie : elle peut rester en retard indefiniment');
+      else {
+        const lsHtml = htmlCode.split(NL2);
+        let appels = 0;
+        for (let i = 0; i < lsHtml.length; i++) {
+          const t = lsHtml[i].trim();
+          if (t.indexOf('*') === 0 || t.indexOf('//') === 0) continue;
+          if (lsHtml[i].indexOf('_spkVerifierVersion') === -1) continue;
+          if (t.indexOf('function _spkVerifierVersion') !== -1) continue; // la declaration
+          appels++;
+        }
+        if (appels === 0) echecs.push('la verification de version n est jamais APPELEE : la page peut rester en retard indefiniment');
+      }
+      if (!ligneActive(htmlCode, 'SPK_MAJ', 'type')) echecs.push('la page n ecoute pas le signal de mise a jour du service worker');
+      /* la purge des caches doit vraiment avoir lieu, ET partout ou elle est
+         prevue. Une seule occurrence saine ne suffit pas : si la purge
+         disparait du gestionnaire SPK_MAJ mais reste dans la verification de
+         version, le chemin le plus utilise (rechargement par le signal du
+         service worker) ne purge plus rien. On verifie donc que CHAQUE
+         occurrence utile est presente. */
+      function toutesLesOccurrencesUtiles(src, motCle, contexte){
+        const ls = src.split(NL2);
+        let trouvees = 0, utiles = 0;
+        for (let i = 0; i < ls.length; i++) {
+          const t = ls[i].trim();
+          if (t.indexOf('*') === 0 || t.indexOf('//') === 0) continue;
+          if (ls[i].indexOf(motCle) === -1) continue;
+          if (contexte && ls[i].indexOf(contexte) === -1) continue;
+          trouvees++;
+          if (ls[i].indexOf(motCle + '(') !== -1 || ls[i].indexOf('.' + motCle + '(') !== -1) utiles++;
+        }
+        return { trouvees: trouvees, utiles: utiles };
+      }
+      const purge = toutesLesOccurrencesUtiles(htmlCode, 'delete', 'caches');
+      if (purge.utiles === 0) echecs.push('la page ne purge pas les caches : elle peut rester sur un shell perime');
+      const reload = toutesLesOccurrencesUtiles(htmlCode, 'location.reload', 'location');
+      if (reload.utiles === 0) echecs.push('la page ne se recharge pas : une version plus recente reste invisible');
+    }
+
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'maj a chaud 4.100.2 : le shell est servi en reseau d abord, un correctif ne peut plus rester invisible en cache (8 points)' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   (function coqueDansLeRepoGit(){
     const fs = require('fs');
     const path = require('path');
