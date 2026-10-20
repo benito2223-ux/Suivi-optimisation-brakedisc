@@ -1,8 +1,8 @@
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | **Hermes** |
+| **Pris le** | 20/10/2026 19:05 |
+| **Écrit dans** | `bilan_economique.html` |
+| **Version visée** | 4.98.0 |
+| **Sujet** | Corrections d'affichage vues à l'écran : superposition du libellé photo dans les tuiles d'accueil, retrait de l'aide flottante `.pj-aide` (§3.5 du cahier UX) |
 
 ✅ **Verrou libéré par Hermes le 17/10/2026 (2)** (UI 4.97.2 + PROD).
 Pendant le tour : fin du débord horizontal mobile — le fautif était
