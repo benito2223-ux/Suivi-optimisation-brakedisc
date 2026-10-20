@@ -5,6 +5,55 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.100.0] — 2026-10-20 · La coque est dans le repo git, et le rail ne disparaît plus
+
+**Ce que fait ce tour.** La coque de navigation construite le 20/10 par l'agent
+`auto-designer` (rail graphite, barre d'onglets mobile, écrans plein écran, Plan
+de conversion en page de travail, direction « Console d'atelier ») est **portée
+dans le repo git**. Elle n'y était pas : le `dev-build` de l'auto-designer
+vit hors git, construit depuis un snapshot de la prod 4.97.2, et le repo git
+déployait **aussi** sur le même domaine dev. Le 20/10 à 19h45, le repo git a
+**écrasé** cette coque (Benjamin : « pourquoi on est revenu sur l'ancien design
+!!!! sans la barre latérale etc »), restaurée à 20h12. Option A (Benjamin) :
+le repo git redevient l'unique source.
+
+**L'architecture, pour que le repo reste utilisable.** La coque vit dans des
+fichiers à part — `spk-app.css` (thème) et `spk-shell.js` (comportement) —
+et `outils/build-coque.mjs` l'assemble au **déploiement**, dans `dist/`. Le
+monolithe versionné reste le logiciel métier **seul** : un tour de Z Code ne
+doit pas se retrouver avec un diff de 1,5 Mo parce que la coque a été
+réinjectée. Le build est **idempotent** (0 transformation au second passage,
+fichier inchangé) et **échoue bruyamment** si une ancre manque : pas de
+transformation silencieusement sautée.
+
+**Le défaut que le portage a mis au jour : le rail était invisible.** Le rail
+est en `position: fixed` (z-index 60), mais les surfaces plein écran
+(`.panel.panel-large`, `#backlogWrap`) sont en `inset: 0` avec
+`z-index: 80 !important` : elles passent **au-dessus** et le recouvrent
+entièrement. Le rail était dans le DOM, mesuré à 248 px, avec son fond
+graphite appliqué… et invisible à l'écran. C'est ce que Benjamin a vu.
+
+Le correctif a deux volets, parce que les deux doivent être vrais : le rail
+passe en `z-index: 90`, et les écrans plein écran **s'arrêtent au bord du
+rail** (`left: 248px` + `right: 0` + `width: auto` — le `width: auto` est
+indispensable, un `left` seul produisait un panneau de 248 + 100 % qui
+débordait de 248 px).
+
+**La poignée de repli reste active en plein écran** (Benjamin, 20/10). La
+refonte la masquait (`opacity: 0; pointer-events: none`) : le rail était donc
+visible mais non repliable depuis un écran de travail — changer d'écran
+imposait de refermer l'écran, ce qui est un détour. La poignée reste
+cliquable, le bouton **Retour** reste disponible à côté : les deux gestes
+coexistent.
+
+**Vérifié** : `node --check` 5/5 · harnais **583/0** sur le fichier de
+déploiement · mesures à 1440 (rail 248 px, panneaux x=248→1418), 1024
+(rail 84 px, panneaux x=84→1002) et 390 (barre basse, panneaux x=0) :
+**0 débord horizontal** aux trois largeurs · repli en plein écran testé
+(rail caché, panneau et contenu repassent à x=0/1418, sans débord) ·
+captures à l'œil : rail visible, contenu après le rail, poignée active en
+plein écran. **PROD : rien** — la prod reste en 4.97.2.
+
 ## [4.99.0] — 2026-10-20 · Le suivi partagé est débranché sur l'adresse de dev
 
 **La demande.** Benjamin : « si j'ai bien compris le cloud est branché sur la

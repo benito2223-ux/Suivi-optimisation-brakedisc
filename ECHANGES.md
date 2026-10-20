@@ -35,7 +35,7 @@
 | Q14 | ~~l'écran de saisie~~ → **tranché (Benjamin) : sur l'écran de saisie, 3 blocs sur 4 : (a) barre de contexte 4 etapes, (b) conditions de coupe en cartes par poste, (c) historique des essais en tableau. La métrologie en cartes reste à trancher. VOCABULAIRE : la constitution dit « DTV, Ra, voile » — Benjamin : « battement, Ra, épaisseur piste » + ajouter convexité, face, appui** | ✅ | 
 | Q13 | ~~la taille des chiffres sur tuile~~ → **tranché (Benjamin) : on garde les DEUX chiffres par tuile (règle §3.4), mais on les grossit — gain acté 28-32 pt, en cours 20-22 pt. C'est C4′.** | ✅ | 
 | Q13 | Les sélecteurs de la barre de l'accueil (spec C5 §1.2) : le champ « campagne / période » n'existe pas dans le modèle. Options : (a) le champ disparaît, (b) remplacé par un filtre existant (projet ou statut). La spec §4 renvoie la décision à Benjamin — construire les sélecteurs sans elle eût été une porte morte | Z Code (4.65.0) | ⏳ à trancher |
-| Q16 | **Qui possède le domaine dev ?** Deux workflow le deployent en parallele depuis le 20/10 : le repo git `Desktop\Stellantis_SeptFons` (les tours Hermes <-> Z Code) et le build de refonte `.openclaw-autoclaw/.../auto-designer/workspace/dev-build` (hors git, source : snapshot prod 4.97.2). Ils reconstruisent le meme fichier a partir de la meme base : le domaine ne peut en servir qu'un, et le 20/10 Hermes a ecrase la refonte par accident (restauree a 20:12). Options : (a) l'auto-designer garde le dev et le repo git n'y deploie plus sans accord ; (b) le repo git reprend le dev et la coque du jour est portee dans le repo git avant tout deploiement ; (c) un troisieme domaine pour le build de refonte, le dev restant au repo git | Hermes (Tour 76) | ⏳ a trancher — **en attendant, rien ne sort sur le domaine dev** |
+| Q16 | ~~qui possède le domaine dev ?~~ → **tranché (Benjamin, 20/10) : le repo git.** Le `dev-build` de l'auto-designer reste une **référence** (manuel de design, notes de build), pas un déployable concurrent : il est construit depuis un snapshot de prod 4.97.2, il ne voit jamais les tours du repo, et le 20/10 il a coûté l'écrasement de la refonte puis une restauration. La coque est **portée dans le repo git** (v4.100.0) et `dist/` est le seul déployable. Tour 77 | Hermes (Tour 76) | ✅ tranché (20/10, Benjamin) |
 | Q12 | ~~lignes hors périmètre~~ → **tranché (Benjamin) : UNE tuile regroupée grise, « 6 lignes hors périmètre : Weisser 1-4, PCI 4-5 », un clic ouvre la liste. La vérité visible en une tuile.** | ✅ |
 
 ---
@@ -49,6 +49,7 @@
 
 | Date | Acte | Où | Vérifié |
 |---|---|---|---|
+| 20/10 ~21:30 | **DEV 4.100.0 — la coque est dans le repo git, et le rail ne disparaît plus.** La coque de navigation du jour (rail graphite, barre d'onglets mobile, écrans plein écran, direction « Console d'atelier ») est **portée dans le repo git** : `spk-app.css` + `spk-shell.js` + les 8 polices locales, assemblés au déploiement par `outils/build-coque.mjs` dans `dist/`. Option A (Benjamin). Corrige en passant : les écrans plein écran (`z-index: 80 !important`) passaient **au-dessus** du rail (60) et le recouvraient entièrement — le rail était dans le DOM, mesuré à 248 px, et **invisible à l'écran**. Rail remonté en z-index 90, écrans arrêtés au bord du rail (`left: 248px` + `right: 0` + `width: auto`). Poignée de repli **active en plein écran** (Benjamin, sur remarque de la revue). Porte hors-suite `coque 4.100` (12 points), **10 contre-regards injectés, 10 détectés**. **PROD : rien** | suivi-optimisation-projet.surge.sh | ✅ curl : 4.100.0 servie, md5 `6080137b73d038e4bbc2b0f9de8fde89` identique au `dist/` local, CSS+shell+polices en 200, fichiers sensibles en 404, rendu vérifié depuis l'URL publique (rail visible, 0 débord) ; prod 4.97.2 md5 `fe652969…` inchangée |
 | 20/10 ~20:12 | **DEV — restauration de la refonte UI du jour.** La 4.98.0 deployee a 19:45 avait remplace la refonte (rail graphite, barre d'onglets mobile, ecrans plein ecran) construite le jour meme par l'agent auto-designer dans son workspace `.openclaw-autoclaw/agents/auto-designer/workspace/dev-build` (md5 `a25a4950…`). Les deux workflow deployaient sur le meme domaine. Restauration deployee et verifiee par curl (md5 servi identique au `dev-build`). **PROD jamais touchee** : 4.97.2, md5 `fe652969…`. Defaut constant de la refonte constate au passage : le rail (z-index 60) passe **sous** les panneaux plein ecran (z-index 80 !important) — il n'est donc pas visible a l'ecran. Benjamin : « pourquoi on est revenu sur l'ancien design » | suivi-optimisation-projet.surge.sh | ✅ curl : md5 `a25a4950ae0045c1d6eda0e7fafd0cfc` = dev-build ; prod 4.97.2 md5 `fe652969…` |
 | 20/10 ~soir | **DEV 4.98.0** — les tuiles d'accueil ne s'emmêlent plus ; l'aide des projets se consulte. Benjamin : « deploie sur l'adresse dev, dans ce cas tu n'as pas besoin de mon aval, uniquement pour deployer en prod » — donc l'**adresse dev se deploye seul**, seule la prod garde son accord (Q8-A). Contenu : libelle photo court + `overflow:hidden` sur le cadre (la superposition « PHOTO MACHINE A FOURNIR » / « aucune reference declaree » disparait) ; `.pj-aide` devient consultable derriere un bouton (i), masque par defaut (§3.5 du cahier UX). | suivi-optimisation-projet.surge.sh | ✅ harnais **583/0** + 2 portes hors-suite contre-regardees **avant** l'acte ; curl HTTP 200, **1 581 554 o**, `TOOL_VERSION = 4.98.0`, SW 200 ; fichier publie **identique octet pour octet** au local (`10ea87fb…`, cmp OK) ; les **11 fichiers sensibles testes en 404** (CHANGELOG, ECHANGES, VERROU, build_harness.py, cloud_courant.json, archive Pareto .xlsx, outils/, proto/, .git/config, ETAT_FUSION_PROPRE_v2, AUDIT_export_matis) ; **rendu verifie depuis l'URL publique** (CDP) : version 4.98.0 servie, libelle « photo a fournir », cadre 56 × 42 en `overflow:hidden`, aide rendue a **0 px**, bouton (i), 5 tuiles ; **PROD re-verifiee inchangee : 4.97.2, md5 `fe652969…`** (Hermes, Tour 75) |
 | 12/10 ~20:15 | **Fichier d'état fusionné préparé pour Benjamin (aucun déploiement)** — `ETAT_FUSION_PROPRE_2026-10-12.json` au racine du repo. Contexte : Benjamin voit Matis le 13/10 ; ses deux origines (prod 18:56, projet 18:41) contiennent les **4 mêmes essais** (e1, eskw8m14tcw, e2f86m77put4, ekl4bllbc97), zéro exclusif de part et d'autre — la lignée prod est la meilleure (réparations d'octobre appliquées, sans les copies contaminées EMAG 3/OP30 encore présentes dans l'état projet, où la panne signalée par Benjamin vit en clair). Fusion : base = IMPORT_MATIS.json (outils propres, MABEC sur codeArticle — 185 logements corrigés, name/opCode posés — 44+44) ; greffe = tout ce qui vient de l'atelier dans l'état prod (7 entrées d'essai dans leurs scénarios historiques avec plans, projet « Cout et qualité Emag 1 », responsable Matis, 14 configs OP réelles, saisie atelier productionAnnuelle/cibleCPP qui PRIME — 7 divergences avec le classeur listées pour l'audit, aucune tranchée). La couche générée sale (sc-x « Prod actuelle (base excel) » aux logements « Plaquette ») est remplacée par la couche générée propre, sauf DP 290x12 sans contrepartie (gardée telle quelle, signalée). | local uniquement | ✅ harnais : 500 tests \| 0 échec + smoke par `normalizeLigne` (la vraie fonction) : 10 lignes acceptées, T517 EMAG1/356x26/OP10 baseline « Classeur Matis 6781.0 » = D2 IM02 209 560 38 €/4ar + D1 IM02 198 054 38 €/8ar, 47 OP à exactement 1 baseline, 7 entrées d'essai / 4 ids, 0 scénario sans nom. **L'import chez Benjamin reste son geste** (« Remplacer tout »), ses deux exports restent le filet (Z Code) |
@@ -701,6 +702,101 @@ exogène » de la grille du tour 68 est la bonne — pas le chill.
 ---
 
 ## Journal des tours
+
+### ▸ Tour 77 — 20/10/2026, soir — **Hermes** (v4.100.0 — la coque est dans le repo git, et le rail ne disparaît plus)
+
+**Ce que ce tour tranche.** Option A (Benjamin, sur ma proposition) : la coque
+de navigation du jour est **portée dans le repo git**, qui redevient l'unique
+source. Rappel de l'incident consigné au Tour 76 : le `dev-build` de l'agent
+`auto-designer` vivait hors git, construit depuis un snapshot de la prod
+4.97.2, et le repo git déployait **aussi** sur le même domaine dev — le repo
+git avait donc écrasé la refonte, et la restauration avait rendu le rail
+visible… mais **cassé** (z-index). C'est ce que le Tour 76 dit en une ligne :
+la restauration avait rendu le rail visible, mais il était dessous.
+
+**L'architecture, pour que le repo reste utilisable.** La coque vit dans des
+fichiers à part — `spk-app.css` (le thème) et `spk-shell.js` (le
+comportement) — et `outils/build-coque.mjs` l'assemble au **déploiement**, dans
+`dist/`. Le monolithe versionné reste le logiciel métier **seul** : un tour de
+Z Code ne doit pas se retrouver avec un diff de 1,5 Mo parce que la coque a
+été réinjectée. Le build est **idempotent** (0 transformation au second
+passage, fichier inchangé) et **échoue bruyamment** si une ancre manque : pas
+de transformation silencieusement sautée. `spk-shell.js` est identique **au
+bit près** à celui de l'auto-designer (md5 `a033a16d…`) ; `spk-app.css` ne
+diffère que par les règles ajoutées ici.
+
+**Le défaut que le portage a mis au jour : le rail était invisible.** Le rail
+est en `position: fixed` (z-index 60), mais les surfaces plein écran
+(`.panel.panel-large`, `#backlogWrap`) sont en `inset: 0` avec
+`z-index: 80 !important` : elles passent **au-dessus** et le recouvrent
+entièrement. Le rail était dans le DOM, mesuré à 248 px, avec son fond
+graphite appliqué… et invisible à l'écran. C'est exactement ce que Benjamin
+a vu. Le correctif a deux volets : le rail passe en `z-index: 90`, et les
+écrans plein écran **s'arrêtent au bord du rail** (`left: 248px` + `right: 0`
++ `width: auto` — le `width: auto` est indispensable : un `left` seul
+produisait un panneau de 248 + 100 % qui débordait de 248 px).
+
+**La poignée de repli reste active en plein écran** (Benjamin, 20/10, sur
+remarque de la revue). La refonte la masquait (`opacity: 0; pointer-events:
+none`) : le rail était visible mais non repliable depuis un écran de travail —
+changer d'écran imposait de refermer, ce qui est un détour. La poignée reste
+cliquable et le bouton **Retour** reste disponible à côté : les deux gestes
+coexistent.
+
+**Les 8 polices locales** (Barlow Condensed, Public Sans, IBM Plex Mono) sont
+portées avec la coque, et le service worker les met en cache — sans police
+distante : l'outil doit rester utilisable hors ligne. Le nom du cache passe à
+`spk-suivi-shell-v5` pour purger l'ancien, et le CSS de la coque passe en
+réseau-d'abord (le shell est servi cache-first : sans cela, une retouche de
+thème resterait invisible sur les navigateurs déjà visités).
+
+**Le harnais, et ses trous.** Porte hors-suite `coque 4.100` (12 points lus
+dans les **fichiers réels** du repo) : le monolithe versionné ne porte pas la
+coque ; le build assemble dans `dist/` et branche CSS + shell + polices ; le
+service worker met la coque et les 8 polices en cache ; le rail a un
+z-index **supérieur** à celui des panneaux ; les écrans plein écran
+s'arrêtent au bord du rail ; la poignée n'est ni masquée ni neutralisée en
+espace de travail.
+
+**Contre-regards : 10 régressions injectées, 10 détectées** (restauration
+vérifiée par md5 à chaque fois) : monolithe pollué · rail sous les
+panneaux · poignée neutralisée · décalage retiré · `width: auto` retiré ·
+coque absente du cache du SW · police absente du cache · build sans `dist/` ·
+build sans injection du CSS · build sans injection du shell.
+
+**Le passage qu'il a fallu franchir** — la porte a été **fausse au vert**
+trois fois de suite avant d'être juste, et c'est le cœur de ce tour. (1) La
+lecture du z-index par regex ne matchait plus rien : le harnais est du JS
+dans une chaîne Python **non-raw**, et `\s` y arrive en `\s` — un
+« backslash optionnel » qui ne matche aucun espace. (2) Le `Number()` sur
+une chaîne mal nettoyée renvoyait **NaN** : `NaN === null` est faux et
+`NaN <= 80` est faux, donc la porte passait au vert **sans rien voir** — la
+défense la plus silencieuse. (3) Une chaîne de code écrite `\n` dans la
+source Python devenait un **vrai saut de ligne** dans le JS : le harnais
+ne compilait plus du tout. Chaque fois, le symptôme (un ECHEC, un « tout est
+vert », un `SyntaxError`) ne disait jamais la cause. La règle qui en sort :
+**une porte qui n'a pas été contre-regardée ne protège rien**, et une porte
+qui renvoie `NaN` ne protège **plus rien du tout** — il faut traiter `NaN`
+comme une lecture impossible.
+
+**Vérifié** : `node --check` 5/5 · harnais **583/0** sur le fichier de
+déploiement · mesures à 1440 (rail 248 px, panneaux x=248→1418), 1024 (rail
+84 px, panneaux x=84→1002) et 390 (barre basse, panneaux x=0) : **0 débord
+horizontal** aux trois largeurs · repli en plein écran testé (rail caché,
+panneau et contenu repassent à x=0/1418, sans débord) · captures à l'œil :
+rail visible, contenu après le rail, poignée active en plein écran.
+**PROD : rien** — la prod reste en 4.97.2.
+
+**Décision revenue à Benjamin (Q16, close).** Qui possède le domaine dev ?
+**Réponse : le repo git.** Le `dev-build` de l'auto-designer reste une
+**référence** (le manuel de design `spk-design-system/`, les notes de build),
+pas un déployable concurrent : il est construit depuis un snapshot de prod
+4.97.2, il ne verra jamais les tours du repo, et le 20/10 il a coûté une
+restauration. Z Code et moi écrivons dans le même fichier, la coque est dans
+le repo, et le domaine dev sert ce que le repo git produit.
+
+---
+
 
 ### ▸ Tour 76 — 20/10/2026, soir — **Hermes** (INCIDENT : la refonte UI du 20/10 a été écrasée sur le domaine dev, puis restaurée)
 

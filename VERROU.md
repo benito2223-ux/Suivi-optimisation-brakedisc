@@ -4,6 +4,40 @@
 | **Version visée** | — |
 | **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
 
+✅ **Verrou libéré par Hermes le 20/10/2026, soir (3)** (4.100.0 — la coque
+est dans le repo git ; **DEV déployé**, PAS de prod).
+Option A (Benjamin) : la coque de navigation du jour est portée dans le repo
+git. `spk-app.css` + `spk-shell.js` + les 8 polices locales, assemblés au
+déploiement par `outils/build-coque.mjs` dans `dist/` — le monolithe versionné
+reste le logiciel métier **seul** (un tour de Z Code ne doit pas hériter d'un
+diff de 1,5 Mo). Le build est **idempotent** et **échoue bruyamment** si une
+ancre manque. `spk-shell.js` est identique au bit près à celui de l'auto-designer.
+
+**Le défaut trouvé au passage : le rail était invisible.** Les écrans plein
+écran (`z-index: 80 !important`, `inset: 0`) passaient **au-dessus** du rail
+(60) et le recouvraient entièrement : il était dans le DOM, mesuré à 248 px,
+avec son fond graphite appliqué — et invisible à l'écran. Rail remonté en
+z-index 90 ; les écrans s'arrêtent au bord du rail (`left: 248px` + `right: 0`
++ `width: auto` — le `width: auto` est indispensable, un `left` seul
+débordait de 248 px). **Poignée de repli active en plein écran** (Benjamin,
+sur remarque de la revue).
+
+**Vérifié** : `node --check` 5/5 · harnais **583/0** sur le fichier de
+déploiement · porte hors-suite `coque 4.100` (12 points, fichiers réels) ·
+**10 contre-regards injectés, 10 détectés** (restauration vérifiée par md5) ·
+mesures à 1440 / 1024 / 390 : **0 débord horizontal** · repli en plein écran
+testé · **DEV** : 4.100.0 servie, md5 `6080137b…` identique au `dist/`,
+coque + polices en 200, fichiers sensibles en 404, rendu vérifié depuis l'URL
+publique. **PROD : rien** — 4.97.2, md5 `fe652969…`, inchangée, sans coque et
+sans la coupure cloud.
+
+**Le passage qu'il a fallu franchir** : la porte a été **fausse au vert** trois
+fois avant d'être juste — regex cassée par l'échappement Python→JS, `Number()`
+renvoyant **NaN** (donc jamais comparable, donc toujours « vert »), et un
+`\n` devenu un vrai saut de ligne qui empêchait le harnais de compiler. La
+règle qui en sort : **une porte qui n'a pas été contre-regardée ne protège
+rien**, et une porte qui renvoie `NaN` ne protège plus rien du tout.
+
 ✅ **Verrou libéré par Hermes le 20/10/2026, soir (2)** (4.99.0 — cloud
 débranché sur le dev — **ÉCRIT ET TESTÉ, NON DÉPLOYÉ**).
 Benjamin : « si j'ai bien compris le cloud est branché sur la branche dev alors

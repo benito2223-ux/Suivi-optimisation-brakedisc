@@ -761,6 +761,157 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'cloud 4.99 : le cloud est debranche sur l adresse de dev (11/11 points verifies dans le fichier reel)' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  /* ── v4.100 — LA COQUE EST DANS LE REPO GIT ──────────────────────────────
+     Le 20/10/2026, deux workflow deployaient sur le meme domaine dev : le
+     repo git et le build de refonte de l'agent auto-designer (hors git). Le
+     repo git a ecrase la coque (Benjamin : « pourquoi on est revenu sur
+     l'ancien design !!!!! sans la barre laterale etc »). Option A (Benjamin)
+     : la coque est portee dans le repo git.
+
+     Ces portes garentissent que la coque ne peut plus disparaitre du build :
+     - le monolithe VERSIONNE ne doit PAS porter la coque (sinon chaque tour
+       de Z Code se retrouve avec un diff de 1,5 Mo) ;
+     - le build doit l'assembler dans dist/ ;
+     - la coque doit etre complete (CSS + shell + les 8 polices) ;
+     - le rail doit rester VISIBLE : le bug dorigine etait un z-index, pas
+       une regle manquante — un test « la regle existe » ne prouve rien. */
+  (function coqueDansLeRepoGit(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const lire = (rel) => { try { return fs.readFileSync(path.join(REPO, rel), 'utf8'); } catch (e) { return ''; } };
+
+    const monolithe = lire('bilan_economique.html');
+    const css = lire('spk-app.css');
+    const shell = lire('spk-shell.js');
+    const build = lire(path.join('outils', 'build-coque.mjs'));
+    const sw = lire('service-worker.js');
+
+    // (1) le monolithe versionne ne porte PAS la coque
+    const monolithePropre = monolithe.indexOf('spk-app.css') === -1
+      && monolithe.indexOf('spk-shell.js') === -1;
+    if (!monolithePropre) echecs.push('le monolithe versionne porte la coque : chaque tour aurait un diff de 1,5 Mo');
+
+    // (2) le build assemble dans dist/ ET branche la coque.
+    //     ATTENTION : on ne cherche pas la chaine n'importe ou dans le
+    //     fichier — elle apparait aussi dans les COMMENTAIRES et dans
+    //     l'en-tete, ou un build devenu inutile passerait quand meme.
+    //     On retire donc les commentaires avant de chercher.
+    /* ATTENTION : pas de '\n' litteral ici — le harnais est du JS dans une
+       chaine Python NON-raw, un '\n' y devient un vrai saut de ligne et le
+       fichier JS ne compile plus. On construit la separation par code. */
+    const NL = String.fromCharCode(10);
+    const buildCode = build
+      .split(NL).map(function(l){ return l.replace(/\/\/.*$/, ''); }).join(NL)
+      .split(NL).filter(function(l){ return l.indexOf('*') < 0; }).join(NL);
+    if (buildCode.indexOf("path.join(RACINE, 'dist')") === -1) echecs.push('le build n assemble pas dans dist/');
+    if (buildCode.indexOf('spk-app.css') === -1) echecs.push('le build ne branche pas le CSS de la coque');
+    /* l'injection reelle : le lien doit etre INSERE dans le HTML, pas
+       seulement nomme. On cherche le fragment qui construit la balise. */
+    /* l'injection reelle : on cherche la ligne qui CONSTRUIT la balise
+       (celle qui assemble le HTML), pas la ligne qui la teste. Une
+       construction disparue = plus de coque dans le deploiement. */
+    if (buildCode.indexOf("html = html.slice(0, insert) +") === -1) echecs.push('le build n insere plus le lien vers le CSS de la coque');
+    /* Le shell : on ne cherche pas une chaine dans le source (elle
+       apparait aussi dans le test d idempotence) — on verifie que le build
+       CONSTRUIT la balise, sur une ligne d affectation. */
+    const lignesBuild = buildCode.split(NL);
+    const construitShell = lignesBuild.some(function(l){
+      const t = l.trim();
+      return t.indexOf('+ ') === 0 && t.indexOf('defer></script>') !== -1;
+    });
+    if (!construitShell) echecs.push('le build n insere plus le shell de la coque');
+    if (buildCode.indexOf('spk-shell.js') === -1) echecs.push('le build ne branche pas le shell de la coque');
+    if (buildCode.indexOf('fonts') === -1) echecs.push('le build ne copie pas les polices');
+
+    // (3) la coque est complete
+    if (css.indexOf('.spk-rail') === -1) echecs.push('spk-app.css ne definit pas le rail');
+    if (shell.indexOf('spk-rail') === -1) echecs.push('spk-shell.js ne construit pas le rail');
+    if (css.indexOf('Barlow Condensed') === -1) echecs.push('les polices de la coque ne sont pas declarees');
+    /* le SW : on verifie le TABLEAU SHELL, pas le fichier entier — la
+       chaine peut apparaitre dans un commentaire sans etre en cache. */
+    const iShell = sw.indexOf('const SHELL = [');
+    const shellSw = iShell < 0 ? '' : sw.slice(iShell, iShell + 900);
+    if (shellSw.indexOf('spk-app.css') === -1) echecs.push('le service worker ne met pas la coque en cache');
+    if (shellSw.indexOf('spk-shell.js') === -1) echecs.push('le service worker ne met pas le shell en cache');
+    /* les polices : on compte les entrees reelles du tableau, pas la
+       simple presence de la chaine 'fonts/' (le SW peut la nommer dans un
+       commentaire sans jamais la mettre en cache). */
+    const policesAttendues = ['barlow-condensed-600', 'barlow-condensed-700',
+      'public-sans-400', 'public-sans-500', 'public-sans-600', 'public-sans-700',
+      'ibm-plex-mono-400', 'ibm-plex-mono-500'];
+    const policesManquantes = policesAttendues.filter(function(f){
+      return shellSw.indexOf(f) === -1;
+    });
+    if (policesManquantes.length) echecs.push('le service worker ne met pas en cache ' + policesManquantes.length + ' police(s) : ' + policesManquantes.join(', '));
+
+    // (4) le rail reste VISIBLE : z-index superieur aux surfaces plein ecran.
+    //     C est LE point du bug d origine : le rail (60) passait sous les
+    //     panneaux (80) et disparaitait de l ecran.
+    /* On lit le z-index du rail DANS la regle qui le remonte (celle qui
+       suit le repere « LE RAIL DOIT RESTER VISIBLE »), pas la premiere
+       occurrence du fichier : le CSS de la coque contient plusieurs
+       `.spk-rail { z-index: 60 }` (le rail de base, le rail mobile), et
+       lire la premiere ferait passer une regression du z-index de la
+       correction. On prend donc la valeur la plus HAUTE appliquee au rail
+       dans un media query bureau — c'est elle qui compte a l'ecran. */
+    const blocCorrection = css.split('LE RAIL DOIT RESTER VISIBLE')[1] || '';
+    /* PAS DE REGEX : le harnais est du JS dans une chaine Python non-raw,
+       chaque backslash y est reinterprete. Une regex de z-index ecrit
+       ici arrive en JS avec un double backslash et ne matche jamais -
+       la porte passerait donc toujours au vert. On lit la valeur par
+       decoupage de chaine, qui ne depend d'aucun echappement. */
+    function lireZIndexApres(texte, apres, fenetre){
+      const i = texte.indexOf(apres);
+      if (i < 0) return null;
+      const tranche = texte.slice(i, i + (fenetre || 200));
+      const j = tranche.indexOf('z-index:');
+      if (j < 0) return null;
+      /* apres 'z-index:' il y a des espaces puis le nombre : on saute les
+         espaces, sinon le nettoyage des non-chiffres ne laisse rien. */
+      const reste = tranche.slice(j + 9).replace(/^[^0-9]+/, '');
+      /* on ne garde QUE les chiffres : le reste peut contenir un ';' ou
+         un retour ligne, et Number() renverrait alors NaN — qui ne vaut ni
+         null ni comparable, et la porte passerait au vert sans rien voir. */
+      const chiffres = (reste.match(/[0-9]+/) || [''])[0];
+      return chiffres ? Number(chiffres) : null;
+    }
+    /* le rail : on part de la REGLE `.spk-rail {` du bloc de correction, pas
+       du premier `z-index:` du bloc (celui-la est dans le commentaire). */
+    const zRailMax = lireZIndexApres(blocCorrection, '.spk-rail {', 120);
+    /* le panneau : la regle de la coque est longue (position, inset, top,
+       left, transform, width, max-width, height...) avant le z-index — on
+       ouvre la fenetre largement. */
+    const zPanneau = lireZIndexApres(css, '.panel.panel-large,', 700);
+    /* un NaN ne vaut ni null ni comparable : il passerait au vert. On le
+       traite donc comme une lecture impossible. */
+    if (zRailMax === null || zPanneau === null || isNaN(zRailMax) || isNaN(zPanneau)) echecs.push('impossible de lire les z-index du rail et des panneaux');
+    else if (zRailMax <= zPanneau) echecs.push('le rail (z ' + zRailMax + ') passe sous les panneaux (z ' + zPanneau + ') : il disparait de l ecran');
+    /* le decalage : on le cherche DANS le bloc de correction. La chaine
+       'left: 248px !important' existe aussi dans la regle `.wrap` (le
+       contenu decale de la meme facon) : chercher dans tout le fichier
+       laisserait passer un bloc de correction vide. */
+    if (blocCorrection.indexOf('left: 248px !important') === -1) echecs.push('les ecrans plein ecran ne s arretent pas au bord du rail');
+    if (blocCorrection.indexOf('width: auto !important') === -1) echecs.push('les ecrans plein ecran gardent width 100% : ils deborderaient');
+
+    // (5) la poignee de repli reste ACTIVE en plein ecran (Benjamin, 20/10) :
+    //     le rail est le repere de navigation, un espace de travail ne doit
+    //     pas le figer. La regle inverse (poignee masquee) a ete retiree.
+    /* meme contrainte : decoupage de chaine, pas de regex (les backslash
+       sont reinterpretes par la chaine Python du harnais). */
+    const iPoignee = css.indexOf('body.spk-workspace-open #spkRailToggle');
+    const poignee = iPoignee < 0 ? '' : css.slice(iPoignee, iPoignee + 260);
+    if (!poignee) echecs.push('plus de regle pour la poignee en espace de travail');
+    else {
+      if (poignee.indexOf('pointer-events: none') !== -1) echecs.push('la poignee est encore neutralisee en espace de travail');
+      if (poignee.indexOf('opacity: 0') !== -1) echecs.push('la poignee est encore masquee en espace de travail');
+    }
+
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'coque 4.100 : la coque est dans le repo git, le rail reste visible et repliable (12 points verifies dans les fichiers reels)' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   if (typeof (__DIAG__) !== 'undefined') (__DIAG__)(A);
 
   /* v4.80 — LE VERDICT FINAL TIENT COMPTE DES GARDE-FOUS.
@@ -815,6 +966,7 @@ try {
 
 HARNESS = HARNESS.replace('__CODE__', json.dumps(code)) \
                .replace('__API__', API) \
+               .replace('__REPO__', json.dumps(REPO.replace('\\', '/'))) \
                .replace('__DIAG__', os.environ.get('HARNESS_DIAG', 'undefined'))
 
 io.open(OUT, 'w', encoding='utf-8').write(HARNESS)

@@ -4,3 +4,5 @@
 compte_rendu_OP10.html
 # journal de suivi projet : contient des donnees d'essais reelles (Vc, f, battement...)
 README.txt
+# Build de deploiement (reconstruit par outils/build-coque.mjs) : jamais versionne
+dist/
