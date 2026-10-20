@@ -1,8 +1,8 @@
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | **Hermes** |
+| **Pris le** | 20/10/2026 20:05 |
+| **Écrit dans** | `bilan_economique.html` |
+| **Version visée** | 4.99.0 |
+| **Sujet** | Débrancher le cloud sur l'adresse dev : plus aucune écriture vers le projet Supabase partagé avec la prod (Benjamin : « le cloud est branché sur la branche dev alors oui on le débranche ») |
 
 ✅ **Verrou libéré par Hermes le 20/10/2026, soir** (UI 4.98.0 — PAS de prod).
 Pendant le tour : deux défauts **visibles à l'écran**, que ni les 582 tests ni le
