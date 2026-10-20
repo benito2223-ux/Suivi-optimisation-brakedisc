@@ -1,9 +1,31 @@
-| **Auteur** | **Hermes** |
-| **Pris le** | 20/10/2026 20:05 |
-| **Écrit dans** | `bilan_economique.html` |
-| **Version visée** | 4.99.0 |
-| **Sujet** | Débrancher le cloud sur l'adresse dev : plus aucune écriture vers le projet Supabase partagé avec la prod (Benjamin : « le cloud est branché sur la branche dev alors oui on le débranche ») |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
 
+✅ **Verrou libéré par Hermes le 20/10/2026, soir (2)** (4.99.0 — cloud
+débranché sur le dev — **ÉCRIT ET TESTÉ, NON DÉPLOYÉ**).
+Benjamin : « si j'ai bien compris le cloud est branché sur la branche dev alors
+oui on le débranche ». Le cloud n'est pas branché sur une branche : il est
+branché sur le **projet Supabase** dont la clé anon est dans le fichier livré —
+dev et prod servaient donc le MÊME projet (`xlpfwvipdmgslwpbbfxs`). La coupure
+est posée dans le **code livré** (test d'hôte), pas dans une configuration de
+poste : c'est la seule façon que la règle soit vraie pour tout le monde. Six
+points d'écriture coupés (dépôt d'état, envoi de photo, archivage, retrait du
+bucket, connexion, cycle de synchro — ce dernier parce que la boucle de 90 s
+continuait de LIRE le cloud de la prod et pouvait y fusionner l'état de Matis
+par surprise). Visible : pastille « ☁ débranché » + panneau Options.
+**Vérifié** : `node --check` 5/5 · harnais **583/0** · porte hors-suite
+`cloud 4.99` (11 points lus dans le fichier réel) · **3 contre-regards**
+(suppression d'une coupure → ECHEC ; coupure inconditionnelle, prod bloquée
+→ ECHEC ; mode muet → ECHEC) · le stub `location` du harnais porte désormais
+`hostname` (avant : `undefined`, la branche « débranché » n'était jamais testée).
+**NON DÉPLOYÉ** : le domaine dev sert la refonte UI du jour (rail graphite),
+construite hors du repo git par l'auto-designer ; deploying ce fichier le
+remettrait à plat et j'ai déjà fait l'erreur une fois ce soir (Tour 76). La
+4.99.0 attend que la coque du jour soit dans le repo git. **PROD : rien** —
+4.97.2, md5 `fe652969…`.
 ✅ **Verrou libéré par Hermes le 20/10/2026, soir** (UI 4.98.0 — PAS de prod).
 Pendant le tour : deux défauts **visibles à l'écran**, que ni les 582 tests ni le
 journal ne voyaient. (1) Le libellé « PHOTO MACHINE À FOURNIR » (majuscules

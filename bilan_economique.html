@@ -12490,6 +12490,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.99.0", date:"20/10/2026", points:[
+    "<b>Le suivi partagé est débranché sur cette adresse.</b> Sur l'adresse de développement, ce que vous saisissez reste sur votre poste : plus rien n'est déposé dans le suivi partagé de Matis, et plus rien n'en est lu. Le suivi partagé reste sur l'adresse de production. Un bandeau l'indique en bas de l'écran."
+  ]},
   { version:"4.98.0", date:"20/10/2026", points:[
     "<b>Les tuiles de l'accueil ne s'emmêlent plus.</b> Sur les lignes sans référence, le libellé de l'emplacement photo passait sur le texte d'à côté et les deux devenaient illisibles. Le libellé est plus court, tient dans son cadre, et le texte complet reste disponible au survol.",
     "<b>L'aide des projets ne s'affiche plus en permanence.</b> Elle reste disponible, mais elle se consulte d'un clic au lieu de flotter à côté du bouton « + Créer un projet » en permanence."
@@ -13094,7 +13097,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.98.0";
+const TOOL_VERSION = "4.99.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -17318,6 +17321,42 @@ const CLOUD_SESSION_KEY = STORAGE_KEY + "_cloud_session";
 const CLOUD_STAMP_KEY   = STORAGE_KEY + "_cloud_stamp";
 const CLOUD_VU_KEY      = STORAGE_KEY + "_cloud_vu";
 
+/* ═══ v4.99.0 — LE CLOUD EST DÉBRANCHÉ SUR L'ADRESSE DE DÉVELOPPEMENT ═══════
+   Le fait : depuis le 20/10/2026, l'adresse de dev et la prod servent le MÊME
+   projet Supabase (`xlpfwvipdmgslwpbbfxs` — vérifié dans le code servi des deux
+   côtés). Conséquence : un poste qui ouvre l'URL de dev et y saisit quelque
+   chose dépose son état dans le cloud de la PROD. Benjamin : « le cloud est
+   branché sur la branche dev alors on le débranche ».
+
+   Ce que fait cette coupure, et pourquoi c'est ici :
+   · elle porte sur le CODE LIVRÉ, pas sur une configuration de poste : c'est
+     la seule façon que « le dev ne touche plus le cloud » soit vrai pour tout
+     le monde, y compris le poste de Matis qui ouvre un lien de dev ;
+   · elle coupe l'ÉCRITURE (dépôt d'état, envoi de photo), pas la LECTURE :
+     on peut encore consulter ce que le cloud contient, on ne peut plus y
+     déposer ;
+   · elle est VISIBLE : la pastille du pied de page et le panneau Options
+     disent « cloud débranché » au lieu de laisser croire que la synchro
+     fonctionne. Un mode silencieux serait pire que le problème.
+
+   L'envoyer en prod ferait couper le cloud de Matis — c'est exactement ce que
+   Benjamin ne veut pas. La liste des adresses autorisées est donc explicite,
+   et l'adresse de dev en est ABSENTE. */
+const CLOUD_ECRITURE_AUTORISEE = !/^suivi-optimisation-projet\.surge\.sh$/.test(location.hostname);
+const CLOUD_HOTE = location.hostname;
+const CLOUD_ECRITURE_BLOQUEE = !CLOUD_ECRITURE_AUTORISEE;
+const CLOUD_MSG_BLOQUE = "Cloud débranché sur cette adresse (développement) — votre saisie reste sur ce poste, elle n'est pas déposée dans le suivi partagé.";
+
+/* une écriture refusée doit se voir, pas passer inaperçu : on trace l'appel
+   et on lève une erreur explicite. L'appelant la rattrape et l'affiche. */
+function cloudRefuserEcriture(quoi){
+  cloudErreur = CLOUD_MSG_BLOQUE;
+  try{ console.warn("[cloud] écriture refusée (" + quoi + ") — " + CLOUD_HOTE); }catch(e){}
+  const err = new Error(CLOUD_MSG_BLOQUE);
+  err.code = "CLOUD_ECRITURE_BLOQUEE";
+  throw err;
+}
+
 /* cloudSession est déclarée dans le script principal (v4.16, anti-TDZ : la zone photos
    la lit au premier rendu). Ici on ne fait que restaurer la session persistée. */
 let cloudStamp = null;     // modifie_le du cloud tel que CE poste le connait
@@ -17395,6 +17434,9 @@ async function cloudRequeteAuth(grant, body){
   return j;
 }
 async function cloudConnexion(email, motDePasse){
+  /* v4.99.0 — adresse de dev : on ne se connecte PAS. Le cloud est débranché
+     ici ; demander un mot de passe pour un dépôt refusé n'aurait aucun sens. */
+  if(CLOUD_ECRITURE_BLOQUEE) cloudRefuserEcriture("connexion");
   const j = await cloudRequeteAuth("password", { email, password: motDePasse });
   cloudSession = {
     access_token: j.access_token, refresh_token: j.refresh_token,
@@ -17505,6 +17547,9 @@ async function cloudPhotoBlob(chemin){
   return blob;
 }
 async function cloudPhotoEnvoyer(chemin, blob){
+  /* v4.99.0 — sur l'adresse de dev, l'envoi de photo est REFUSÉ comme le dépôt
+     d'état : le stockage des photos est le même projet que celui de la prod. */
+  if(CLOUD_ECRITURE_BLOQUEE) cloudRefuserEcriture("envoi de photo");
   if(!await cloudRafraichirSession()) throw new Error("non connecté au cloud (Options → Cloud)");
   const rep = await fetch(CLOUD_URL + "/storage/v1/object/" + CLOUD_PHOTOS_BUCKET + "/" + chemin, {
     method: "POST",
@@ -17520,6 +17565,10 @@ async function cloudPhotoEnvoyer(chemin, blob){
 }
 async function cloudPhotoSupprimer(chemin){
   await photoCacheEffacer(chemin);
+  /* v4.99.0 — le retrait du bucket est une ÉCRITURE : coupée sur l'adresse de dev
+     comme le dépôt et l'envoi. Le cache local est déjà vidé au-dessus : le
+     retrait local, lui, se fait toujours. */
+  if(CLOUD_ECRITURE_BLOQUEE) return;
   if(!await cloudRafraichirSession()) return; // le retrait du JSON suffit ; nettoyage du bucket à la prochaine suppression
   await fetch(CLOUD_URL + "/storage/v1/object/" + CLOUD_PHOTOS_BUCKET + "/" + chemin, {
     method: "DELETE",
@@ -17567,6 +17616,9 @@ async function cloudLireTampon(){
 /* Dépose la version locale : archive l'ancienne (historique 20 versions), écrit la
    nouvelle, retient le tampon horaire renvoyé par la base (jamais calculé côté client). */
 async function cloudEcrireEtat(){
+  /* v4.99.0 — sur l'adresse de dev, le dépôt est REFUSÉ. Sans cette ligne, un poste
+     qui ouvre le dev et saisit dépose dans le cloud de la prod. */
+  if(CLOUD_ECRITURE_BLOQUEE) cloudRefuserEcriture("depot d'etat");
   syncActiveOp();
   const donnees = JSON.parse(payloadSuivi());
   const avant = await cloudLireEtat();
@@ -17598,6 +17650,9 @@ async function cloudEcrireEtat(){
   cloudInfo = { vide:false, modifie_le: cloudStamp, modifie_par: corps.modifie_par };
 }
 async function cloudArchiverLeCloudActuel(row){
+  /* v4.99.0 — l'archive est une ÉCRITURE (POST dans etat_historique) : elle est
+     coupée sur l'adresse de dev comme le dépôt. */
+  if(CLOUD_ECRITURE_BLOQUEE) cloudRefuserEcriture("archivage");
   await cloudFetch(CLOUD_URL + "/rest/v1/etat_historique", {
     method:"POST", headers: cloudEntetes({ "Prefer":"return=minimal" }),
     body: JSON.stringify({ donnees: row.donnees, sauve_par: row.modifie_par || "" })
@@ -17717,6 +17772,11 @@ async function cloudConflit(row){
 
 /* ---- le moteur : un aller-retour qui décrit tout ce qui peut se rencontrer ---- */
 async function cloudSync(raison){
+  /* v4.99.0 — adresse de dev : le cloud est DÉBRANCHÉ, donc le cycle ne fait
+     RIEN du tout. Sans cette sortie, la boucle périodique (90 s) continuerait de
+     lire le cloud de la prod et pourrait y FUSIONNER l'état de Matis par
+     surprise, sans que personne l'ait demandé. Sur dev : zéro appel cloud. */
+  if(CLOUD_ECRITURE_BLOQUEE) return;
   if(!cloudSession || cloudEnCours) return;
   if(!(await cloudRafraichirSession())) return;
   cloudEnCours = true;
@@ -17810,6 +17870,16 @@ async function cloudDeposerManuel(){
 function cloudRenduPastille(){
   const el = document.getElementById("footCloud");
   if(!el) return;
+  /* v4.99.0 — sur l'adresse de dev, le cloud est DÉBRANCHÉ : on le dit, sinon la
+     pastille laisserait croire que la synchro fonctionne. */
+  if(CLOUD_ECRITURE_BLOQUEE){
+    el.hidden = false;
+    el.classList.remove("alerte","critique");
+    el.classList.add("alerte");
+    el.textContent = "☁ débranché";
+    el.title = CLOUD_MSG_BLOQUE;
+    return;
+  }
   if(!cloudSession){ el.hidden = true; return; }
   el.hidden = false;
   el.classList.remove("alerte","critique");
@@ -17833,6 +17903,21 @@ function cloudRenduPastille(){
 function cloudRenduOptions(){
   const z = document.getElementById("cloudZone");
   if(!z) return;
+  /* v4.99.0 — adresse de dev : le cloud est DÉBRANCHÉ. On le dit EN TÊTE du
+     panneau, avant le formulaire de connexion : inutile de demander un mot de
+     passe pour un dépôt qui serait refusé. Le panneau reste visible (l'onglet
+     Cloud de Options doit toujours exister), il annonce simplement la règle. */
+  if(CLOUD_ECRITURE_BLOQUEE){
+    z.innerHTML = `
+      <label>Synchro entre postes <i class="opt-scope">Tous</i></label>
+      <div class="opt-statut ko" style="margin-top:6px;">
+        <b>Cloud débranché sur cette adresse.</b> ${CLOUD_MSG_BLOQUE}<br>
+        Le suivi partagé (Matis) reste sur l'adresse de production. Sur cette adresse
+        de développement, l'outil fonctionne normalement mais tout reste sur ce poste :
+        rien n'est déposé, rien n'est lu depuis le suivi partagé.
+      </div>`;
+    return;
+  }
   if(!cloudSession){
     z.innerHTML = `
       <label>Synchro entre postes <i class="opt-scope">Tous</i></label>

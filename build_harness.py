@@ -120,6 +120,19 @@ global.localStorage = global.window.localStorage;
 
 global.location = global.window.location; global.navigator = global.window.navigator;
 
+/* v4.99.0 — le stub `location` porte maintenant un `hostname` explicite.
+   Le code livré teste l'hôte pour savoir s'il est sur l'adresse de dev
+   (cloud débranché). Sans `hostname` dans le stub, `location.hostname` valait
+   `undefined` : le test passait par accident (undefined ne correspond à
+   aucun nom) et la branche « cloud débranché » n'était JAMAIS testée en node.
+   Ici l'hôte du harnais est explicitement celui de la PRODUCTION : le
+   harnais vérifie donc le chemin normal, et la porte dédiée vérifie le
+   chemin « débranché » en simulant l'hôte de dev. */
+global.window.location.hostname = "suivi-optimisation-septfons.surge.sh";
+global.window.location.host = "suivi-optimisation-septfons.surge.sh";
+global.location.hostname = "suivi-optimisation-septfons.surge.sh";
+global.location.host = "suivi-optimisation-septfons.surge.sh";
+
 global.matchMedia = global.window.matchMedia; global.getComputedStyle = global.window.getComputedStyle;
 
 global.addEventListener = ()=>{}; global.removeEventListener = ()=>{};
@@ -698,6 +711,54 @@ try {
     if(html.indexOf('id="pjAideBtn"') === -1) echecs.push('le bouton d aide n est pas relie au texte');
     if(echecs.length) r.echecs += echecs.length;
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'aide 4.98 : le texte d aide se consulte, il ne flotte plus a cote du bouton (§3.5)' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
+  /* ── v4.99 — LE CLOUD EST DÉBRANCHÉ SUR L'ADRESSE DE DEV ─────────────────
+     Le fait : depuis le 20/10/2026, dev et prod servent le MÊME projet Supabase
+     (`xlpfwvipdmgslwpbbfxs`). Benjamin : « le cloud est branché sur la branche
+     dev alors on le débranche ». Le débranchement porte sur le CODE LIVRÉ, pas
+     sur une configuration de poste : c'est la seule façon que la règle soit
+     vraie pour tout le monde, y compris pour un lien de dev envoyé à Matis.
+
+     La porte lit le fichier RÉEL et vérifie les SIX points :
+     (1) le test d'hôte existe et cite l'adresse de dev ;
+     (2) l'écriture d'état est coupée ;
+     (3) l'envoi de photo est coupé ;
+     (4) l'archivage est coupé ;
+     (5) le retrait du bucket est coupé ;
+     (6) la connexion est coupée ET le cycle de synchro sort — sans (6), la
+         boucle périodique (90 s) continuerait de LIRE le cloud de la prod et
+         pourrait y fusionner l'état de Matis par surprise.
+     Elle vérifie aussi que la PASTILLE et le PANNEAU Options l'annoncent :
+     un débranchement muet laisserait croire que la synchro fonctionne. */
+  (function cloudDe_brancheSurDev(){
+    const fs = require('fs');
+    const html = fs.readFileSync('bilan_economique.html', 'utf8');
+    const echecs = [];
+    const blocs = {
+      test_hote: html.indexOf('CLOUD_ECRITURE_AUTORISEE') !== -1
+        && html.indexOf('suivi-optimisation-projet') !== -1
+        && html.indexOf('location.hostname') !== -1,
+      depot_etat: /async function cloudEcrireEtat\(\)\{[\s\S]{0,400}?CLOUD_ECRITURE_BLOQUEE/.test(html),
+      envoi_photo: /async function cloudPhotoEnvoyer\([^)]*\)\{[\s\S]{0,300}?CLOUD_ECRITURE_BLOQUEE/.test(html),
+      archivage: /async function cloudArchiverLeCloudActuel\([^)]*\)\{[\s\S]{0,300}?CLOUD_ECRITURE_BLOQUEE/.test(html),
+      retrait_bucket: /async function cloudPhotoSupprimer\([^)]*\)\{[\s\S]{0,300}?CLOUD_ECRITURE_BLOQUEE/.test(html),
+      connexion: /async function cloudConnexion\([^)]*\)\{[\s\S]{0,300}?CLOUD_ECRITURE_BLOQUEE/.test(html),
+      cycle_sort: /async function cloudSync\([^)]*\)\{[\s\S]{0,400}?CLOUD_ECRITURE_BLOQUEE/.test(html),
+      pastille_visible: /cloudRenduPastille\(\)\{[\s\S]{0,600}?CLOUD_ECRITURE_BLOQUEE/.test(html) && /☁ débranché/.test(html),
+      panneau_visible: /cloudRenduOptions\(\)\{[\s\S]{0,800}?CLOUD_ECRITURE_BLOQUEE/.test(html) && /Cloud débranché/.test(html),
+      /* la coupure doit etre CONDITIONNELLE : la prod et le poste local ne
+         doivent PAS etre bloques. On verifie que le nom de la prod n'apparait
+         jamais dans une liste d'interdits, et que la condition est bien un
+         test d'hote (pas une constante « toujours bloque »). */
+      prod_pas_bloquee: (html.indexOf('INTERDITS') === -1 || html.indexOf('INTERDITS') > html.indexOf('suivi-optimisation-septfons'))
+        && /CLOUD_ECRITURE_AUTORISEE\s*=\s*!/.test(html),
+      poste_local_pas_bloque: html.indexOf('suivi-optimisation-septfons') === -1
+        || html.indexOf('CLOUD_ECRITURE_AUTORISEE') !== -1
+    };
+    Object.keys(blocs).forEach(k => { if(!blocs[k]) echecs.push('coupure absente : ' + k); });
+    if(echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'cloud 4.99 : le cloud est debranche sur l adresse de dev (11/11 points verifies dans le fichier reel)' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
   if (typeof (__DIAG__) !== 'undefined') (__DIAG__)(A);

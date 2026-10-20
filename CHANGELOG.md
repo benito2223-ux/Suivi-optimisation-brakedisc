@@ -5,6 +5,59 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.99.0] — 2026-10-20 · Le suivi partagé est débranché sur l'adresse de dev
+
+**La demande.** Benjamin : « si j'ai bien compris le cloud est branché sur la
+branche dev alors oui on le débranche ». Il a bien compris — avec une nuance
+que le tour a corrigée : le cloud n'est pas branché sur une *branche* git, il
+est branché sur le **projet Supabase** dont la clé anon est dans le fichier
+livré. Dev et prod servaient donc le MÊME projet
+(`xlpfwvipdmgslwpbbfxs`, vérifié dans le code servi des deux côtés). Conséquence
+réelle : un poste qui ouvre l'URL de dev et y saisit dépose son état dans le
+cloud de la **prod**.
+
+**Où la coupure est posée, et pourquoi là.** Dans le **code livré**, pas dans
+une configuration de poste : c'est la seule façon que « le dev ne touche plus
+le cloud » soit vrai pour tout le monde, y compris pour un lien de dev envoyé
+à Matis ou ouvert sur un poste qu'on ne contrôle pas. Un réglage par poste
+laisserait la faille ouverte exactement là où elle est dangereuse.
+
+Le test porte sur le nom d'hôte servi :
+`CLOUD_ECRITURE_AUTORISEE = !/^suivi-optimisation-projet\.surge\.sh$/.test(location.hostname)`.
+L'adresse de prod n'est **pas** dans la liste : le cloud de Matis continue de
+marcher exactement comme avant.
+
+**Ce qui est coupé (six points d'écriture, tous vérifiés) :**
+1. `cloudEcrireEtat` — le dépôt de l'état (PATCH/POST sur `etat`) ;
+2. `cloudPhotoEnvoyer` — l'envoi de photo dans le bucket ;
+3. `cloudArchiverLeCloudActuel` — l'archive (POST sur `etat_historique`) ;
+4. `cloudPhotoSupprimer` — le retrait d'une photo du bucket (DELETE) ;
+5. `cloudConnexion` — on ne se connecte plus (inutile de demander un mot de
+   passe pour un dépôt refusé) ;
+6. `cloudSync` — le cycle sort en tête : sans ce point, la boucle périodique
+   (90 s) continuerait de **lire** le cloud de la prod et pourrait y **fusionner**
+   l'état de Matis par surprise, sans que personne l'ait demandé. C'était le
+   risque le plus sournois : la coupure d'écriture ne suffisait pas.
+
+La lecture seule (consulter ce que le cloud contient) est coupée aussi, par le
+point 6 : sur dev, l'outil ne touche pas du tout au cloud.
+
+**Ce qui reste visible.** Un débranchement muet serait pire que le problème :
+la pastille du pied de page affiche « ☁ débranché » (au lieu de « ☁ à jour »)
+et le panneau Options → Cloud annonce la règle **avant** le formulaire de
+connexion. L'utilisateur sait que sa saisie reste locale.
+
+**La porte.** Une porte hors-suite lit le fichier réel et vérifie les 11
+points : les six coupures, le test d'hôte, la pastille, le panneau, et surtout
+que la **prod n'est pas bloquée** et que le poste local non plus (une coupure
+inconditionnelle aurait cassé Matis). Contre-regard à faire.
+
+**Le harnais.** Le stub `location` ne portait pas de `hostname` : le test
+d'hôte passait par accident (`undefined` ne correspond à aucun nom) et la
+branche « débranché » n'était jamais exercée en node. Le stub porte maintenant
+explicitement l'hôte de la **production** — le harnais vérifie donc le chemin
+normal — et la porte vérifie le chemin « débranché ».
+
 ## [4.98.0] — 2026-10-20 · Les tuiles s'emmêlent plus, l'aide se consulte
 
 **La demande.** Reprise de la session desktop après 3 jours : « on y va », puis

@@ -35,6 +35,7 @@
 | Q14 | ~~l'écran de saisie~~ → **tranché (Benjamin) : sur l'écran de saisie, 3 blocs sur 4 : (a) barre de contexte 4 etapes, (b) conditions de coupe en cartes par poste, (c) historique des essais en tableau. La métrologie en cartes reste à trancher. VOCABULAIRE : la constitution dit « DTV, Ra, voile » — Benjamin : « battement, Ra, épaisseur piste » + ajouter convexité, face, appui** | ✅ | 
 | Q13 | ~~la taille des chiffres sur tuile~~ → **tranché (Benjamin) : on garde les DEUX chiffres par tuile (règle §3.4), mais on les grossit — gain acté 28-32 pt, en cours 20-22 pt. C'est C4′.** | ✅ | 
 | Q13 | Les sélecteurs de la barre de l'accueil (spec C5 §1.2) : le champ « campagne / période » n'existe pas dans le modèle. Options : (a) le champ disparaît, (b) remplacé par un filtre existant (projet ou statut). La spec §4 renvoie la décision à Benjamin — construire les sélecteurs sans elle eût été une porte morte | Z Code (4.65.0) | ⏳ à trancher |
+| Q16 | **Qui possède le domaine dev ?** Deux workflow le deployent en parallele depuis le 20/10 : le repo git `Desktop\Stellantis_SeptFons` (les tours Hermes <-> Z Code) et le build de refonte `.openclaw-autoclaw/.../auto-designer/workspace/dev-build` (hors git, source : snapshot prod 4.97.2). Ils reconstruisent le meme fichier a partir de la meme base : le domaine ne peut en servir qu'un, et le 20/10 Hermes a ecrase la refonte par accident (restauree a 20:12). Options : (a) l'auto-designer garde le dev et le repo git n'y deploie plus sans accord ; (b) le repo git reprend le dev et la coque du jour est portee dans le repo git avant tout deploiement ; (c) un troisieme domaine pour le build de refonte, le dev restant au repo git | Hermes (Tour 76) | ⏳ a trancher — **en attendant, rien ne sort sur le domaine dev** |
 | Q12 | ~~lignes hors périmètre~~ → **tranché (Benjamin) : UNE tuile regroupée grise, « 6 lignes hors périmètre : Weisser 1-4, PCI 4-5 », un clic ouvre la liste. La vérité visible en une tuile.** | ✅ |
 
 ---
@@ -48,6 +49,7 @@
 
 | Date | Acte | Où | Vérifié |
 |---|---|---|---|
+| 20/10 ~20:12 | **DEV — restauration de la refonte UI du jour.** La 4.98.0 deployee a 19:45 avait remplace la refonte (rail graphite, barre d'onglets mobile, ecrans plein ecran) construite le jour meme par l'agent auto-designer dans son workspace `.openclaw-autoclaw/agents/auto-designer/workspace/dev-build` (md5 `a25a4950…`). Les deux workflow deployaient sur le meme domaine. Restauration deployee et verifiee par curl (md5 servi identique au `dev-build`). **PROD jamais touchee** : 4.97.2, md5 `fe652969…`. Defaut constant de la refonte constate au passage : le rail (z-index 60) passe **sous** les panneaux plein ecran (z-index 80 !important) — il n'est donc pas visible a l'ecran. Benjamin : « pourquoi on est revenu sur l'ancien design » | suivi-optimisation-projet.surge.sh | ✅ curl : md5 `a25a4950ae0045c1d6eda0e7fafd0cfc` = dev-build ; prod 4.97.2 md5 `fe652969…` |
 | 20/10 ~soir | **DEV 4.98.0** — les tuiles d'accueil ne s'emmêlent plus ; l'aide des projets se consulte. Benjamin : « deploie sur l'adresse dev, dans ce cas tu n'as pas besoin de mon aval, uniquement pour deployer en prod » — donc l'**adresse dev se deploye seul**, seule la prod garde son accord (Q8-A). Contenu : libelle photo court + `overflow:hidden` sur le cadre (la superposition « PHOTO MACHINE A FOURNIR » / « aucune reference declaree » disparait) ; `.pj-aide` devient consultable derriere un bouton (i), masque par defaut (§3.5 du cahier UX). | suivi-optimisation-projet.surge.sh | ✅ harnais **583/0** + 2 portes hors-suite contre-regardees **avant** l'acte ; curl HTTP 200, **1 581 554 o**, `TOOL_VERSION = 4.98.0`, SW 200 ; fichier publie **identique octet pour octet** au local (`10ea87fb…`, cmp OK) ; les **11 fichiers sensibles testes en 404** (CHANGELOG, ECHANGES, VERROU, build_harness.py, cloud_courant.json, archive Pareto .xlsx, outils/, proto/, .git/config, ETAT_FUSION_PROPRE_v2, AUDIT_export_matis) ; **rendu verifie depuis l'URL publique** (CDP) : version 4.98.0 servie, libelle « photo a fournir », cadre 56 × 42 en `overflow:hidden`, aide rendue a **0 px**, bouton (i), 5 tuiles ; **PROD re-verifiee inchangee : 4.97.2, md5 `fe652969…`** (Hermes, Tour 75) |
 | 12/10 ~20:15 | **Fichier d'état fusionné préparé pour Benjamin (aucun déploiement)** — `ETAT_FUSION_PROPRE_2026-10-12.json` au racine du repo. Contexte : Benjamin voit Matis le 13/10 ; ses deux origines (prod 18:56, projet 18:41) contiennent les **4 mêmes essais** (e1, eskw8m14tcw, e2f86m77put4, ekl4bllbc97), zéro exclusif de part et d'autre — la lignée prod est la meilleure (réparations d'octobre appliquées, sans les copies contaminées EMAG 3/OP30 encore présentes dans l'état projet, où la panne signalée par Benjamin vit en clair). Fusion : base = IMPORT_MATIS.json (outils propres, MABEC sur codeArticle — 185 logements corrigés, name/opCode posés — 44+44) ; greffe = tout ce qui vient de l'atelier dans l'état prod (7 entrées d'essai dans leurs scénarios historiques avec plans, projet « Cout et qualité Emag 1 », responsable Matis, 14 configs OP réelles, saisie atelier productionAnnuelle/cibleCPP qui PRIME — 7 divergences avec le classeur listées pour l'audit, aucune tranchée). La couche générée sale (sc-x « Prod actuelle (base excel) » aux logements « Plaquette ») est remplacée par la couche générée propre, sauf DP 290x12 sans contrepartie (gardée telle quelle, signalée). | local uniquement | ✅ harnais : 500 tests \| 0 échec + smoke par `normalizeLigne` (la vraie fonction) : 10 lignes acceptées, T517 EMAG1/356x26/OP10 baseline « Classeur Matis 6781.0 » = D2 IM02 209 560 38 €/4ar + D1 IM02 198 054 38 €/8ar, 47 OP à exactement 1 baseline, 7 entrées d'essai / 4 ids, 0 scénario sans nom. **L'import chez Benjamin reste son geste** (« Remplacer tout »), ses deux exports restent le filet (Z Code) |
 | 14/10 ~nuit | **PROD 4.90.0 (fix UX)** — le Plan de conversion montre les gains dès l’ouverture (la confirmation ne gate que le total, pas la lecture), entêtes atelier, CSS lisibilité, ordre de Benjamin : « passe en prod ». | suivi-optimisation-septfons.surge.sh | ✅ 552 tests | 0 échecs relancés avant l’acte ; curl HTTP 200, **1 487 018 o**, TOOL_VERSION = 4.90.0, SW 200 ; empreinte **identique octet pour octet** au local (a9d626c7...) ; Projet re-vérifié 4.90.0 inchangé (Z Code, Tour 73 bis) |
@@ -699,6 +701,81 @@ exogène » de la grille du tour 68 est la bonne — pas le chill.
 ---
 
 ## Journal des tours
+
+### ▸ Tour 76 — 20/10/2026, soir — **Hermes** (INCIDENT : la refonte UI du 20/10 a été écrasée sur le domaine dev, puis restaurée)
+
+**Ce que j'ai fait.** À 19h45, sur l'ordre de Benjamin (« deploie sur l'adresse dev »),
+j'ai déployé la 4.98.0 depuis `Desktop\Stellantis_SeptFons` sur
+`suivi-optimisation-projet.surge.sh`. **Ce domaine servait déjà une autre
+chose** : la refonte UI construite le jour même par l'agent `auto-designer`
+(rail graphite, barre d'onglets mobile, écrans plein écran, Plan de conversion en
+page de travail, direction « Console d'atelier »), dans
+`C:\Users\Admin\.openclaw-autoclaw\agents\auto-designer\workspace\dev-build\`.
+Mon déploiement a **remplacé** cette refonte par le monolithe du repo git.
+
+Benjamin s'en aperçoit à 20h08 : « problème !!!! pourquoi on est revenu sur l'ancien
+design !!!!! sans la barre latérale etc ! ».
+
+**Le temps de la faute.** Le `dev-build` de l'auto-designer porte le md5
+`a25a4950ae0045c1d6eda0e7fafd0cfc` — c'est exactement l'empreinte que j'avais
+capturée comme « dev avant déploiement » à 19h40, et que j'avais lue comme « la
+version du repo git ». Elle ne l'était pas. Le signal existait, il n'a pas été lu.
+
+**Le faux diagnostic que j'ai d'abord donné.** J'ai répondu que la barre latérale
+(le « rail sombre ») datait du 29/08 (v3.3.0) et avait été abandonnée le 02/09
+(commit `6a952c8`, « retour à l'habillage d'origine »). C'était **faux**, et
+faux de la façon la plus coûteuse : j'avais cherché dans le repo git, où ce
+rail n'existe pas, et j'ai conclu à une décision produit qui ne portait pas sur
+le rail d'aujourd'hui. La vraie réponse était dans
+`...\auto-designer\workspace\zcode-handoff.md` (daté du 20/10 à 13:43) que
+Benjamin m'a fait lire : la refonte du jour. **Je ne l'avais pas lu parce que
+je ne savais pas qu'il existait.**
+
+**La restauration (20h12).** Déploiement de `dev-build` sur le domaine dev.
+Vérifié par curl, pas par le « Success! » de surge :
+- md5 servi = `a25a4950ae0045c1d6eda0e7fafd0cfc` = le `dev-build` **exactement** ;
+- la 4.98.0 que j'avais posée : 0 occurrence sur le domaine ;
+- **prod intacte** : 4.97.2, md5 `fe652969570274da05eddd9ca147a5f2` — jamais touchée.
+
+**Le défaut que la restauration a mis au jour.** Le rail est bien là dans le DOM
+(`aside.spk-rail`, `position: fixed`, 248 px, 5 modules Accueil / Atelier /
+Tableau / Synthèse / Matis, fond graphite appliqué) — mais il est **recouvert par
+les panneaux plein écran** : `.panel.panel-large` est en `z-index: 80 !important`
+avec `inset: 0`, le rail est en `z-index: 60`. Sur l'Accueil comme sur l'Atelier,
+le panneau passe au-dessus et le rail disparaît à l'écran. C'est ce qui explique
+qu'aucune de mes captures ne montrait de barre latérale alors que la mesure DOM
+la décrivait parfaitement. **Ce défaut est né dans la refonte du jour, pas dans
+mon déploiement** — mais il est visible, et c'est le reproche que Benjamin
+adresse.
+
+**La cause racine, qui n'est pas un oubli mais une organisation.** Deux
+workflows parallèles déploient sur le **même domaine dev** :
+- `Desktop\Stellantis_SeptFons` — le repo git du suivi (Hermes ↔ Z Code, les tours) ;
+- `...\auto-designer\workspace\dev-build` — le build de la refonte UI, hors git,
+  avec son propre script (`build-dev-497.mjs`) et sa propre source de vérité
+  (`.openclaw/tmp/prod-497`).
+
+Le second construit à partir d'un **snapshot de la prod 4.97.2** (md5
+`fe652969…`) et non depuis le repo git. Les deux creen donc des fichiers
+différents à partir de la même base, et le domaine dev ne peut en servir qu'un.
+`find` sur le bureau et les documents : **aucun fichier modifié aujourd'hui hors
+du repo principal** — la refonte vit bien hors de mes périmètres de recherche.
+
+**Ce que je fais de ce tour.** Rien n'est committé côté code : la 4.99.0
+(débranchement du cloud) est écrite et testée dans le repo git, mais **elle ne
+sera pas déployée** tant que la coque du jour n'est pas dans le repo git —
+sinon je remettrai un fichier sans rail, exactement comme ce soir. Ce tour
+consigne l'incident et pose la règle ; il ne livre pas de code.
+
+**Décision revenue à Benjamin (Q16).** Qui possède le domaine dev ?
+(a) l'auto-designer garde le dev, et le repo git n'y déploie plus que sur
+    accord explicite ; (b) le repo git reprend le dev, et la coque du jour est
+    portée dans le repo git avant tout nouveau déploiement ; (c) un troisième
+    domaine pour le build de refonte, le domain dev restant au repo git.
+Tant que ce n'est pas tranché, **je ne déploie plus rien sur le domaine dev**.
+
+---
+
 
 ### ▸ Tour 75 — 20/10/2026, soir — **Hermes** (v4.98.0 — les tuiles s'emmêlent plus ; l'aide se consulte)
 
