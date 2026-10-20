@@ -48,6 +48,7 @@
 
 | Date | Acte | Où | Vérifié |
 |---|---|---|---|
+| 20/10 ~soir | **DEV 4.98.0** — les tuiles d'accueil ne s'emmêlent plus ; l'aide des projets se consulte. Benjamin : « deploie sur l'adresse dev, dans ce cas tu n'as pas besoin de mon aval, uniquement pour deployer en prod » — donc l'**adresse dev se deploye seul**, seule la prod garde son accord (Q8-A). Contenu : libelle photo court + `overflow:hidden` sur le cadre (la superposition « PHOTO MACHINE A FOURNIR » / « aucune reference declaree » disparait) ; `.pj-aide` devient consultable derriere un bouton (i), masque par defaut (§3.5 du cahier UX). | suivi-optimisation-projet.surge.sh | ✅ harnais **583/0** + 2 portes hors-suite contre-regardees **avant** l'acte ; curl HTTP 200, **1 581 554 o**, `TOOL_VERSION = 4.98.0`, SW 200 ; fichier publie **identique octet pour octet** au local (`10ea87fb…`, cmp OK) ; les **11 fichiers sensibles testes en 404** (CHANGELOG, ECHANGES, VERROU, build_harness.py, cloud_courant.json, archive Pareto .xlsx, outils/, proto/, .git/config, ETAT_FUSION_PROPRE_v2, AUDIT_export_matis) ; **rendu verifie depuis l'URL publique** (CDP) : version 4.98.0 servie, libelle « photo a fournir », cadre 56 × 42 en `overflow:hidden`, aide rendue a **0 px**, bouton (i), 5 tuiles ; **PROD re-verifiee inchangee : 4.97.2, md5 `fe652969…`** (Hermes, Tour 75) |
 | 12/10 ~20:15 | **Fichier d'état fusionné préparé pour Benjamin (aucun déploiement)** — `ETAT_FUSION_PROPRE_2026-10-12.json` au racine du repo. Contexte : Benjamin voit Matis le 13/10 ; ses deux origines (prod 18:56, projet 18:41) contiennent les **4 mêmes essais** (e1, eskw8m14tcw, e2f86m77put4, ekl4bllbc97), zéro exclusif de part et d'autre — la lignée prod est la meilleure (réparations d'octobre appliquées, sans les copies contaminées EMAG 3/OP30 encore présentes dans l'état projet, où la panne signalée par Benjamin vit en clair). Fusion : base = IMPORT_MATIS.json (outils propres, MABEC sur codeArticle — 185 logements corrigés, name/opCode posés — 44+44) ; greffe = tout ce qui vient de l'atelier dans l'état prod (7 entrées d'essai dans leurs scénarios historiques avec plans, projet « Cout et qualité Emag 1 », responsable Matis, 14 configs OP réelles, saisie atelier productionAnnuelle/cibleCPP qui PRIME — 7 divergences avec le classeur listées pour l'audit, aucune tranchée). La couche générée sale (sc-x « Prod actuelle (base excel) » aux logements « Plaquette ») est remplacée par la couche générée propre, sauf DP 290x12 sans contrepartie (gardée telle quelle, signalée). | local uniquement | ✅ harnais : 500 tests \| 0 échec + smoke par `normalizeLigne` (la vraie fonction) : 10 lignes acceptées, T517 EMAG1/356x26/OP10 baseline « Classeur Matis 6781.0 » = D2 IM02 209 560 38 €/4ar + D1 IM02 198 054 38 €/8ar, 47 OP à exactement 1 baseline, 7 entrées d'essai / 4 ids, 0 scénario sans nom. **L'import chez Benjamin reste son geste** (« Remplacer tout »), ses deux exports restent le filet (Z Code) |
 | 14/10 ~nuit | **PROD 4.90.0 (fix UX)** — le Plan de conversion montre les gains dès l’ouverture (la confirmation ne gate que le total, pas la lecture), entêtes atelier, CSS lisibilité, ordre de Benjamin : « passe en prod ». | suivi-optimisation-septfons.surge.sh | ✅ 552 tests | 0 échecs relancés avant l’acte ; curl HTTP 200, **1 487 018 o**, TOOL_VERSION = 4.90.0, SW 200 ; empreinte **identique octet pour octet** au local (a9d626c7...) ; Projet re-vérifié 4.90.0 inchangé (Z Code, Tour 73 bis) |
 | 14/10 ~soir | **PROD 4.90.0** — les trois lots de la revue Claude (P7 bugs visibles, P6 lisibilité, P3 honnêteté du Plan, P2 base unique, P4 dernier export, P5 atelier) + P8 décision (monolithe canonique), ordre de Benjamin : « déploie en prod ». | suivi-optimisation-septfons.surge.sh | ✅ 552 tests | 0 échecs relancés avant l’acte ; curl HTTP 200, **1 486 030 o**, TOOL_VERSION = 4.90.0, SW 200 ; empreinte **identique octet pour octet** au local (e2aa671c...) ; Projet re-vérifié 4.90.0 inchangé (Z Code, Tour 73 bis) |
@@ -774,9 +775,31 @@ push` (le magasin Windows répond en 1 s). Push fait : `5621d38..52e5e85`,
 corrigé, mais le `helper-selector` reste configuré : le prochain push sans le
 contournement rebloquera de la même façon.
 
-**Prochain tour** : à Z Code, sur la 4.98.0 (le tour est écrit, le verrou est
-libéré, le commit est poussé). La **prod reste en 4.97.2** : elle ne bougera
-que sur la phrase de Benjamin (Q8-A).
+**Le déploiement.** Benjamin, en fin de tour : « deploie sur l'adresse dev,
+dans ce cas tu n'as pas besoin de mon aval, uniquement pour deployer en prod »
+— **l'adresse dev se deploie desormais seul**, seule la prod garde son accord.
+La regle est notee : c'est un changement de rituel, pas une exception.
+
+**DEV 4.98.0 deploie** sur `suivi-optimisation-projet.surge.sh`. Verifie par
+curl (le « Success! » de surge ne fait pas foi — regle du Tour 12) : HTTP 200,
+**1 581 554 o**, `TOOL_VERSION = 4.98.0`, SW 200, fichier publie **identique
+octet pour octet** au local (`10ea87fb…`, `cmp` OK). Les **11 fichiers
+sensibles testes en 404** (liste blanche stricte) — dont l'archive Pareto
+`.xlsx`, qui n'a pas quitte la machine. **Rendu verifie depuis l'URL
+publique** (CDP) : 4.98.0 servie, libelle « photo a fournir », cadre 56 × 42 en
+`overflow:hidden`, aide rendue a **0 px**, bouton (i), 5 tuiles — la
+superposition a disparu sur les 4 tuiles sans reference. **Prod re-verifiee
+inchangee** : 4.97.2, md5 `fe652969…`.
+
+**Point de vigilance note.** Depuis le 20/10, **dev et prod partagent le meme
+projet Supabase** (`xlpfwvipdmgslwpbbfxs`) — verifie dans le code servi des
+deux cotes. Consequence : un poste qui ouvre l'URL dev et pousse son etat
+touche le cloud de la prod. Le topo interdit d'injecter la base depuis dev ;
+c'est rappel ici parce que le rituel dev est devenu autonome.
+
+**Prochain tour** : a Z Code, sur la 4.98.0 (le tour est ecrit, le verrou est
+libere, le commit est pousse, le dev est deploye). La **prod reste en 4.97.2** :
+elle ne bougera que sur la phrase de Benjamin (Q8-A).
 
 ### ▸ Tour 66 — 13/10/2026 soir — **Z Code** (v4.83.0 — réattribuer un essai ; le simulateur de baisse de prix)
 
