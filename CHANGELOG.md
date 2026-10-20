@@ -5,6 +5,48 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.98.0] — 2026-10-20 · Les tuiles s'emmêlent plus, l'aide se consulte
+
+**La demande.** Reprise de la session desktop après 3 jours : « on y va », puis
+la validation du topo Pareto (le fichier corrigé de Matis n'est toujours pas
+arrivé — le fichier du 20/10 est identique à celui du 14/10, 0 différence).
+En ouvrant l'outil pour vérifier l'écran, deux défauts **visibles** sont
+apparus, que ni les tests ni le journal ne voyaient.
+
+**Défaut 1 — le libellé photo recouvre le texte voisin.** Dans les tuiles de
+l'accueil, sur les lignes sans référence (HESSAPP, EMAG 3…), le libellé
+« PHOTO MACHINE À FOURNIR » en majuscules 7,5 px demandait **4 lignes** dans un
+cadre de 56 × 42 px. Le texte en sortait et passait sur « aucune référence
+déclarée » : les deux devenaient illisibles, superposés. Reproductible en
+1440 px comme en 900 px.
+
+La cause n'était pas la taille du cadre mais la longueur du texte. Le cadre
+reste (l'emplacement photo est attendu de Matis, spec C5 §1.4) ; le libellé
+devient **« photo à fournir »** (2 lignes, lisible à 8 px), et le cadre passe
+en `overflow:hidden` — un texte qui déborde ne peut plus recouvrir son voisin,
+même si le libellé change encore. La formulation complète reste dans le
+`title` (survol) : rien ne se perd.
+
+**Défaut 2 — l'aide flotte en permanence à côté d'une action.** Le cahier UX
+`CAHIER_DES_CHARGES_UX_REFONTE.md` §3.5 : « le texte explicatif à côté de
+« + Créer un projet » passe en info-bulle ou dans le panneau, pas affiché en
+permanence en corps de texte flottant à côté d'un bouton d'action. » C'était
+fait pour `.pj-aide` (ligne 10 245) et pas fait. L'aide se **consulte** désormais :
+un bouton (i) l'ouvre, le texte est masqué par défaut. Rien n'est perdu — le
+texte est identique, il est simplement consulté au lieu d'être subi. Les deux
+autres occurrences de la même phrase vivent dans des **panneaux modaux** (création
+et fiche projet) : le §3.5 vise l'affichage permanent à côté d'une action, pas
+le texte d'un panneau qu'on a ouvert exprès — elles sont laissées.
+
+**Les portes.** Deux portes hors-suite **lisent le fichier réel** :
+- `tuile 4.98` : `.al-photo` porte `overflow:hidden`, sa taille de police est
+  ≥ 8 px, le libellé long a disparu, le libellé court est présent ;
+- `aide 4.98` : le bouton d'aide existe, le texte porte `hidden`, le bouton est
+  relié.
+
+Un test `runTests` a été adapté (il exigeait l'ancien libellé) et un second
+ajouté : le libellé long ne doit plus revenir.
+
 ## [4.97.2] — 2026-10-17 · Fin du défilement horizontal sur mobile
 
 **La demande.** Suite de la session UI : le débord horizontal à 420 px

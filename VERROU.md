@@ -1,8 +1,30 @@
-| **Auteur** | **Hermes** |
-| **Pris le** | 20/10/2026 19:05 |
-| **Écrit dans** | `bilan_economique.html` |
-| **Version visée** | 4.98.0 |
-| **Sujet** | Corrections d'affichage vues à l'écran : superposition du libellé photo dans les tuiles d'accueil, retrait de l'aide flottante `.pj-aide` (§3.5 du cahier UX) |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+
+✅ **Verrou libéré par Hermes le 20/10/2026, soir** (UI 4.98.0 — PAS de prod).
+Pendant le tour : deux défauts **visibles à l'écran**, que ni les 582 tests ni le
+journal ne voyaient. (1) Le libellé « PHOTO MACHINE À FOURNIR » (majuscules
+7,5 px) demandait 4 lignes dans un cadre de 56 × 42 px : il en sortait et
+passait sur « aucune référence déclarée ». Cause = la longueur du texte, pas le
+cadre. Correctif : libellé court « photo à fournir » (8 px) + `overflow:hidden`
+sur le cadre (un texte qui déborde ne peut plus recouvrir son voisin) ; la
+formulation complète reste dans le `title`. (2) §3.5 du cahier UX : l'aide
+`.pj-aide` flottait en permanence à côté de « + Créer un projet » — elle se
+consulte désormais derrière un bouton (ⓘ), masquée par défaut ; mesuré : aide
+rendue à 0 px, bouton 26 × 26, bandeau 44 px de haut. Les deux occurrences de
+la même phrase dans les panneaux modaux sont laissées (§3.5 vise l'affichage
+permanent à côté d'une action).
+**Vérifié** : `node --check` 5/5 blocs · harnais **583/0** · 2 portes hors-suite
+nouvelles (`tuile 4.98`, `aide 4.98`) qui lisent le fichier réel, **contre-regard
+fait** sur chacune (régression injectée → ECHEC ; restauration → vert) ·
+captures 1440 px et 900 px : superposition corrigée, les deux textes lisibles
+et séparés · bandeau projets vérifié par le DOM (`+ Créer un projet ⓘ`).
+Écrits : `bilan_economique.html`, `build_harness.py`, `CHANGELOG.md`,
+`ECHANGES.md`, `VERROU.md`. **PROD : rien** — la prod reste en 4.97.2, elle ne
+bouge que sur la phrase de Benjamin (Q8-A).
 
 ✅ **Verrou libéré par Hermes le 17/10/2026 (2)** (UI 4.97.2 + PROD).
 Pendant le tour : fin du débord horizontal mobile — le fautif était

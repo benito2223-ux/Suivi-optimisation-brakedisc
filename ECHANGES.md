@@ -469,7 +469,9 @@ définitivement (formule + points + angles + titre de section = absents).
 
 **Le tour des CRLF.** Le fichier portait **19 719 fins CRLF** qui faisaient
 échouer la moitié des ancres. Normalisé LF une fois pour toutes ;
-`build_harness.py` réparé (le même mal : `` cassait les continuations
+`build_harness.py` réparé (le même mal : `
+
+` cassait les continuations
 Python). Tous les patchs futurs passent par des fichiers, normalisation en
 tête.
 
@@ -696,6 +698,85 @@ exogène » de la grille du tour 68 est la bonne — pas le chill.
 ---
 
 ## Journal des tours
+
+### ▸ Tour 75 — 20/10/2026, soir — **Hermes** (v4.98.0 — les tuiles s'emmêlent plus ; l'aide se consulte)
+
+**La reprise.** Benjamin rouvre la session desktop après trois jours : « on y va »,
+puis « resume ». Avant toute chose, le **topo Pareto de Z Code** (validé le
+20/10 à 18:07) : le fichier corrigé de Matis **n'est toujours pas arrivé** — le
+« (1) » du 20/10 est identique cellule par cellule à celui du 14/10 (0
+différence). Rien à ingérer, la base du 14/10 reste en vigueur. Z Code a raison
+d'attendre Matis. Ce tour ne touche donc pas à la base.
+
+**Le trou que le topo n'a pas vu.** En ouvrant l'outil pour vérifier l'écran —
+parce que c'est le seul juge qui tranche en matière d'UI — **deux défauts
+visibles** sont apparus. Ni les 582 tests, ni le journal, ni la revue ne les
+voyaient : ils ne sont pas dans le HTML, ils sont dans le RENDU.
+
+**Défaut 1 — le libellé photo recouvre le texte voisin.** Dans les tuiles de
+l'accueil, sur les lignes sans référence (HESSAPP, EMAG 2, EMAG 3…), le
+libellé « PHOTO MACHINE À FOURNIR » en majuscules 7,5 px demandait **4 lignes**
+dans un cadre de 56 × 42 px. Le texte en sortait et passait sur « aucune
+référence déclarée » : les deux devenaient illisibles, superposés, à 1440 px
+comme à 900 px.
+
+La cause n'était pas la taille du cadre mais la longueur du texte. Le cadre
+reste — l'emplacement photo est attendu de Matis (spec C5 §1.4). Le libellé
+devient **« photo à fournir »** (2 lignes, 8 px), et le cadre passe en
+`overflow:hidden` : un texte qui déborde ne peut plus recouvrir son voisin,
+même si le libellé change encore. La formulation complète reste dans le
+`title` (survol) — rien ne se perd.
+
+**Défaut 2 — l'aide flotte en permanence à côté d'une action.** Le cahier UX
+`CAHIER_DES_CHARGES_UX_REFONTE.md` §3.5 : « le texte explicatif à côté de
+« + Créer un projet » passe en info-bulle ou dans le panneau, pas affiché en
+permanence en corps de texte flottant à côté d'un bouton d'action. » C'était
+fait pour `.pj-aide` et pas fait. L'aide se **consulte** désormais : un bouton
+(ⓘ) l'ouvre, le texte est masqué par défaut. Même texte, même contenu — il est
+simplement consulté au lieu d'être subi. Mesuré après : bandeau de 44 px de
+haut, aide rendue à **0 px de largeur**, bouton 26 × 26.
+
+Les deux autres occurrences de la même phrase vivent dans des **panneaux
+modaux** (création de projet, fiche projet) : le §3.5 vise l'affichage
+permanent à côté d'une action, pas le texte d'un panneau qu'on a ouvert
+exprès — elles sont laissées.
+
+**Les portes.** Deux portes hors-suite **lisent le fichier réel** :
+`tuile 4.98` (`.al-photo` porte `overflow:hidden`, police ≥ 8 px, libellé long
+absent, libellé court présent) et `aide 4.98` (bouton présent, texte `hidden`,
+bouton relié). Un test `runTests` a été adapté (il exigeait l'ancien libellé)
+et un second ajouté (le libellé long ne doit plus revenir). **Contre-regard
+fait sur les deux** : régression injectée → ECHEC avec le bon message ;
+restauration → tout vert. Sans ça, une porte qui ne voit rien est une porte
+qui ne protège rien.
+
+**Le piège du harnais, consigné.** Mes trois premières portes cassaient la
+syntaxe JS à cause des apostrophes dans les messages (`l'ecran`, `d'aide`) :
+`SyntaxError: missing ) after argument list`. Un harnais qui casse n'est pas
+un harnais qui protège — il a fallu trois allers-retours pour le voir, et le
+symptôme (l'erreur de syntaxe) ne dit pas la cause (une apostrophe dans une
+chaîne). Les messages de porte sont désormais sans apostrophe.
+
+**Vérifié.** `node --check` 5/5 blocs · harnais **583/0** (582 + 1 nouveau) ·
+les 2 portes hors-suite vertes · captures 1440 px et 900 px : superposition
+corrigée, les deux textes lisibles et séparés · bandeau projets vérifié par le
+DOM (`+ Créer un projet ⓘ`, aide à 0 px) et à l'œil.
+
+**Le fait extérieur du tour : le dépôt GitHub était en retard de 9 commits.** Les
+versions 4.96.0 → 4.97.2 étaient **en production** depuis le 16/10 mais
+**jamais poussées** sur `origin/dev` (dernier commit distant : 4.90.0, du
+14/10). Le push a bloqué 9 minutes sans rien produire : le `credential.helper`
+configuré est `helper-selector`, qui lance `git-credential-helper-selector.exe`
+en attente d'une fenêtre GUI invisible dans une session sans tête. Le
+contournement est `git -c credential.helper= -c credential.helper=wincred
+push` (le magasin Windows répond en 1 s). Push fait : `5621d38..52e5e85`,
+9 commits, `0 0`. **Le dépôt n'était plus une source de vérité** — c'est
+corrigé, mais le `helper-selector` reste configuré : le prochain push sans le
+contournement rebloquera de la même façon.
+
+**Prochain tour** : à Z Code, sur la 4.98.0 (le tour est écrit, le verrou est
+libéré, le commit est poussé). La **prod reste en 4.97.2** : elle ne bougera
+que sur la phrase de Benjamin (Q8-A).
 
 ### ▸ Tour 66 — 13/10/2026 soir — **Z Code** (v4.83.0 — réattribuer un essai ; le simulateur de baisse de prix)
 

@@ -875,6 +875,11 @@ input.cell.sub{font-size:10.5px; color:var(--ink-faint);}
    ligne/reference/OP juste en dessous, qui reste toujours entierement visible. */
 .projets-bandeau{margin-bottom:16px;}
 .pj-aide{font-size:12px; color:var(--ink-faint); margin-left:10px;}
+/* 4.98.0 (§3.5) : le bouton d'aide qui OUVRE le texte. L'aide ne flotte plus
+   en permanence a cote du bouton « + Creer un projet » — elle se consulte. */
+.pj-aide-btn{ width:26px; height:26px; padding:0; display:inline-flex; align-items:center;
+  justify-content:center; font-size:13px; line-height:1; flex:0 0 auto; }
+.pj-aide[hidden]{ display:none; }
 .pj-entete{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:9px;}
 .pj-entete h4{margin:0; font-family:var(--font-disp); font-weight:800; font-size:15px;
   letter-spacing:-.01em; color:var(--ink);}
@@ -2597,10 +2602,17 @@ body.atelier-on{overflow:hidden;}
 /* 4.65.1 (C5' bloc 2) — la tuile enrichie */
 .al-taux{ font-family:var(--font-mono); font-size:10px; font-weight:500; color:var(--label); letter-spacing:0; }
 .al-corps{ display:flex; gap:8px; align-items:flex-start; }
+/* 4.98.0 — la tuile : le libellé photo ne doit PLUS déborder sur le texte voisin.
+   Le cadre fait 56 x 42 px, mais « photo machine à fournir » en majuscules 7,5 px
+   demandait 4 lignes (~45 px) : le texte SORTAIT du cadre et passait sur
+   « aucune référence déclarée ». Le défaut n'était pas la taille du cadre mais
+   le texte : trop long pour 56 px. On garde le cadre (l'emplacement photo est
+   attendu de Matis) et on met un libellé COURT, lisible, sur 2 lignes, avec le
+   texte long conservé en infobulle (title) — rien ne se perd. */
 .al-photo{ flex:0 0 56px; height:42px; border:1px dashed var(--gray-300); border-radius:var(--radius);
   display:flex; align-items:center; justify-content:center; text-align:center;
-  font-family:var(--font-mono); font-size:7.5px; letter-spacing:.08em; text-transform:uppercase;
-  color:var(--label); line-height:1.5; padding:2px; }
+  font-family:var(--font-mono); font-size:8px; font-weight:500; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--label); line-height:1.35; padding:2px; overflow:hidden; }
 .al-flux{ flex:1; min-width:0; }
 .al-delta{ font-family:var(--font-mono); font-size:11px; font-weight:500; color:var(--green); margin-left:8px; white-space:nowrap; }
 /* 4.65.2 (C5' bloc 3) — la matrice des opérations et le pied */
@@ -10241,9 +10253,16 @@ function renderProjets(){
   if(!projets.length){
     // aucun projet cree : pas la peine d'occuper l'ecran avec un bandeau vide, un simple
     // lien suffit -- les projets sont facultatifs, l'outil marche identiquement sans eux
+    // 4.98.0 (§3.5 du cahier UX) : l'aide ne s'affiche PLUS en permanence a cote du
+    // bouton -- elle se CONSULTE. Un bouton (i) l'ouvre ; le texte long reste
+    // disponible, mais il ne pese plus sur la lecture d'un ecran d'atelier.
     el.innerHTML = `<button class="primary" id="addProjetBtn">+ Créer un projet</button>
-      <span class="pj-aide">Un projet regroupe les scénarios qui répondent à une même problématique, sans changer où ils vivent physiquement.</span>`;
+      <button class="ghost small pj-aide-btn" id="pjAideBtn" title="À quoi sert un projet ?"
+        aria-label="À quoi sert un projet ?">ⓘ</button>
+      <span class="pj-aide" id="pjAide" hidden>Un projet regroupe des scénarios qui répondent à une même problématique, sans changer où ils vivent physiquement.</span>`;
     document.getElementById("addProjetBtn").addEventListener("click", creerProjet);
+    const aide = document.getElementById("pjAide");
+    document.getElementById("pjAideBtn").addEventListener("click", () => { aide.hidden = !aide.hidden; });
     return;
   }
 
@@ -12471,6 +12490,10 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.98.0", date:"20/10/2026", points:[
+    "<b>Les tuiles de l'accueil ne s'emmêlent plus.</b> Sur les lignes sans référence, le libellé de l'emplacement photo passait sur le texte d'à côté et les deux devenaient illisibles. Le libellé est plus court, tient dans son cadre, et le texte complet reste disponible au survol.",
+    "<b>L'aide des projets ne s'affiche plus en permanence.</b> Elle reste disponible, mais elle se consulte d'un clic au lieu de flotter à côté du bouton « + Créer un projet » en permanence."
+  ]},
   { version:"4.97.2", date:"17/10/2026", points:[
     "<b>Plus de défilement horizontal sur téléphone.</b> Le bandeau d'en-tête forçait la page en largeur sur petit écran : son texte casse désormais proprement à la ligne et le logo se resserre. Les tableaux larges défilent dans leur cadre, comme avant."
   ]},
@@ -13071,7 +13094,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.97.2";
+const TOOL_VERSION = "4.98.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -15097,9 +15120,12 @@ function accueilTuileHTML(gl){
   const deltaTxt = delta !== null
     ? `<span class="al-delta" title="Écart de coût pièce déjà réalisé sur la référence dominante">Δ ${fmt(delta, 4)} €/pce</span>` : "";
 
-  /* l'emplacement photo : PRÉVU, VIDE — pas de photo fictive (spec C5 §1.4,
-     on attend Matis). Un cadre discret qui dit ce qu'il attend. */
-  const photo = `<div class="al-photo" title="Emplacement prévu pour la photo de la machine — aucune photo fictive">photo machine à fournir</div>`;
+  /* 4.98.0 — l'emplacement photo : PRÉVU, VIDE — pas de photo fictive (spec C5 §1.4,
+     on attend Matis). Un cadre discret qui dit ce qu'il attend. Le libellé est
+     COURT (« photo à fournir ») : l'ancien « photo machine à fournir » en
+     majuscules ne tenait pas dans 56 px et déborderait sur le texte voisin.
+     La formulation complète reste dans le title (survol) — rien ne se perd. */
+  const photo = `<div class="al-photo" title="Emplacement prévu pour la photo de la machine — aucune photo fictive">photo à fournir</div>`;
 
   return `<div class="ca-tuile ${e.classe} al-tuile" data-ligne="${escapeAttr(l.id)}" tabindex="0" role="button" title="Voir cette ligne sur la carte atelier">
     <div class="ca-tete"><span class="ca-titre">${escapeAttr(l.nom || "Ligne sans nom")}${thTxt}</span><span class="ca-etat">${escapeAttr(badge)}</span></div>
@@ -20116,7 +20142,9 @@ function runTests(){
       ok("tuile enrichie : le contexte en italique est un fait VÉRIFIABLE — la première étape en attente ou le maintien",
          [hT.includes("al-contexte")], [true]);
       ok("tuile enrichie : l'emplacement photo est VIDE et dit ce qu'il attend — aucune photo fictive",
-         [hT.includes("al-photo"), hT.includes("photo machine")], [true, true]);
+         [hT.includes("al-photo"), hT.includes("photo à fournir")], [true, true]);
+      ok("tuile enrichie : le libellé photo est COURT — il tient dans le cadre de 56 px (4.98.0)",
+         hT.includes("photo machine à fournir"), false);
       const glT2 = gainLigne(normalizeLigne({ id: "lT2", nom: "EMAG 3", coutHoraire: "50",
           references: [ normalizeReference({ id: "rT2", nom: "302x26", productionAnnuelle: "50000", cibleCPP: "",
             ops: [ { id: "oT2", nom: "OP10", config: opCfgB, scenarios: [

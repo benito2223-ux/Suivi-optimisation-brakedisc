@@ -654,6 +654,52 @@ try {
 
   })();
 
+  /* ── v4.98 — LA TUILE D'ACCUEIL N'EMBROUILLE PLUS SON TEXTE ───────────────
+     Le défaut, vu a l'ecran le 20/10 : dans les tuiles de ligne, le libelle
+     « PHOTO MACHINE A FOURNIR » (majuscules, 7,5 px) demandait 4 lignes dans
+     un cadre de 56 x 42 px — il en SORTAIT et passait sur « aucune reference
+     declaree » juste a cote. Deux causes, deux corrections :
+     (1) le libelle est court (« photo a fournir ») et tient dans le cadre ;
+     (2) le cadre ne deborde plus (overflow:hidden) — un texte qui deborde ne
+         peut plus recouvrir le voisin, meme si le libelle change encore.
+     La porte lit le fichier REEL et verifie les DEUX. */
+  (function tuileAccueilNEmbrouille(){
+    const fs = require('fs');
+    const html = fs.readFileSync('bilan_economique.html', 'utf8');
+    const echecs = [];
+    const bloc = html.match(/\.al-photo\{[^}]*\}/);
+    if(!bloc) echecs.push('.al-photo introuvable dans le fichier reel');
+    else {
+      if(!/overflow:hidden/.test(bloc[0])) echecs.push('.al-photo sans overflow:hidden (le libelle peut deborder sur le voisin)');
+      const fs2 = parseFloat((bloc[0].match(/font-size:([\d.]+)px/) || [])[1]);
+      if(!(fs2 >= 8)) echecs.push('.al-photo en dessous de 8 px (illisible a l ecran) : ' + fs2);
+    }
+    if(html.indexOf('photo machine à fournir') !== -1 && /<div class="al-photo"[^>]*>[^<]*machine/i.test(html))
+      echecs.push('libelle photo long encore present dans la balise (« photo machine à fournir ») — il deborde dans 56 px');
+    if(html.indexOf('photo à fournir') === -1)
+      echecs.push('libelle photo court (« photo à fournir ») absent');
+    if(echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'tuile 4.98 : le libelle photo tient dans son cadre et ne recouvre plus le texte voisin' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
+  /* ── v4.98 — L'AIDE NE FLOUTE PLUS A COTE D'UNE ACTION (§3.5) ────────────
+     Le cahier UX (§3.5) : « le texte explicatif a cote de « + Creer un
+     projet » passe en info-bulle ou dans le panneau, pas affiche en
+     permanence en corps de texte a cote d'un bouton d'action. » Le texte
+     existe toujours (rien ne se perd) mais il est MASQUE par defaut et
+     ouvert par un bouton (i). La porte lit le fichier REEL. */
+  (function aideProjetConsultee(){
+    const fs = require('fs');
+    const html = fs.readFileSync('bilan_economique.html', 'utf8');
+    const echecs = [];
+    if(html.indexOf('pj-aide-btn') === -1) echecs.push('bouton d aide (i) absent — l aide ne peut plus etre consultee');
+    if(!/<span class="pj-aide" id="pjAide" hidden>/.test(html))
+      echecs.push('le texte d aide n est plus masque par defaut (hidden manquant)');
+    if(html.indexOf('id="pjAideBtn"') === -1) echecs.push('le bouton d aide n est pas relie au texte');
+    if(echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'aide 4.98 : le texte d aide se consulte, il ne flotte plus a cote du bouton (§3.5)' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   if (typeof (__DIAG__) !== 'undefined') (__DIAG__)(A);
 
   /* v4.80 — LE VERDICT FINAL TIENT COMPTE DES GARDE-FOUS.
