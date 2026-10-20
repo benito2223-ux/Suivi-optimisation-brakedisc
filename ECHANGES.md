@@ -703,6 +703,46 @@ exogène » de la grille du tour 68 est la bonne — pas le chill.
 
 ## Journal des tours
 
+### ▸ Tour 78 — 20/10/2026, soir — **Hermes** (v4.100.1 — le bouton Retour ne disparaît plus sous un dialogue)
+
+**Le défaut, vu par Benjamin.** « Dans le plan de conversion, quand on lit un
+classeur, le bouton Retour disparaît bro. »
+
+**La cause, mesurée.** La lecture d'un classeur appelle `dialogueAlerte`
+(Plan de conversion, ligne ~16307 : « Consommations 2025 lues »). Un dialogue
+ouvre `dialogPanel`, un `.panel` **sans** `panel-large`. Or la coque calculait
+l'espace de travail ainsi : ouvert si un `.panel-large` est visible **et** si
+aucun petit `.panel` ne l'est. Le dialogue comptait donc comme petit panneau →
+l'espace était jugé fermé → le bouton **Retour disparaissait** au milieu du
+Plan, et le rail redevenait « non repliable » alors que le Plan était
+toujours ouvert derrière. Mesuré : Plan ouvert → retour visible ; Plan +
+dialogue → **retour disparu** ; dialogue fermé → retour revenu. Le bouton
+partait et revenait tout seul, au rythme d'un message.
+
+**La correction.** Un dialogue, une recherche ou l'annotation d'une photo se
+posent **par-dessus** un espace de travail : ils ne le remplacent pas. Seuls
+les vrais petits panneaux (Options, Import, Nouveau projet…) le remplacent. La
+coque distingue les deux — et le balayage porte sur **tous** les petits
+panneaux, pas sur le premier : dans le document, le dialogue précède souvent
+le vrai panneau, et `querySelector` l'aurait laissé passer.
+
+**Vérifié par la mesure** : Plan ouvert → retour visible · Plan + dialogue →
+**retour visible** (le défaut) · dialogue fermé → retour visible · Plan +
+Options → retour masqué (le vrai panneau masque toujours) · tout fermé → retour
+masqué. Porte anti-régression `bouton retour 4.100.1` (3 points), **3
+contre-regards injectés, 3 détectés**. Harnais **583/0**.
+
+**Pourquoi c'était si facile à rater.** Le défaut ne se voit pas sur une
+capture : il faut **deux états** dans le même écran, et le second est un
+dialogue transitoire. Une vérification « le bouton Retour est là » passe
+quand on ouvre le Plan ; elle échoue quand on ouvre le Plan **puis** un
+dialogue. C'est le même piège que le rail invisible sous les panneaux : ce qui
+manque n'est pas dans le DOM, il est **caché par l'état**, et il faut
+mesurer l'état, pas la présence.
+
+---
+
+
 ### ▸ Tour 77 — 20/10/2026, soir — **Hermes** (v4.100.0 — la coque est dans le repo git, et le rail ne disparaît plus)
 
 **Ce que ce tour tranche.** Option A (Benjamin, sur ma proposition) : la coque

@@ -775,6 +775,67 @@ try {
      - la coque doit etre complete (CSS + shell + les 8 polices) ;
      - le rail doit rester VISIBLE : le bug dorigine etait un z-index, pas
        une regle manquante — un test « la regle existe » ne prouve rien. */
+  /* ── v4.100.1 — LE BOUTON RETOUR NE DISPARAIT PLUS SOUS UN DIALOGUE ──
+     Benjamin, 20/10 : « dans le plan de conversion quand on lis un classeur
+     le bouton retour disparait bro ». La lecture d'un classeur appelle
+     dialogueAlerte (bilan_economique.html, ligne ~16307), qui ouvre
+     dialogPanel — un `.panel` SANS `panel-large`. La regle calculait
+     smallOpen sur TOUT `.panel` non-panel-large visible : le dialogue
+     annulait donc l'etat d'espace de travail, le bouton Retour disparaissait
+     au milieu du Plan, et le rail redevenait « non repliable » alors que le
+     Plan etait toujours ouvert.
+
+     La correction : un surcouche (dialogue, recherche, annotation photo) se
+     pose PAR-DESSUS un espace de travail, il ne le remplace pas. Seuls les
+     vrais petits panneaux (Options, Import, Nouveau projet...) le remplacent. */
+  (function boutonRetourSousDialogue(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const shell = (function(){
+      try { return fs.readFileSync(path.join(REPO, 'spk-shell.js'), 'utf8'); } catch (e) { return ''; }
+    })();
+
+    if (!shell) echecs.push('spk-shell.js introuvable : la porte ne peut rien verifier');
+
+    if (shell) {
+      /* (1) les surcouches doivent etre declarees */
+      const iSur = shell.indexOf('const SURCOUCHES = [');
+      if (iSur < 0) echecs.push('les surcouches ne sont pas declarees : le dialogue annule encore l espace de travail');
+      else {
+        const bloc = shell.slice(iSur, iSur + 200);
+        ['dialogPanel', 'searchPanel'].forEach(function(id){
+          if (bloc.indexOf(id) === -1) echecs.push('la surcouche ' + id + ' n est pas exclue du calcul d espace de travail');
+        });
+      }
+
+      /* (2) le calcul ne doit PLUS compter tout .panel non-panel-large */
+      const iSync = shell.indexOf('function syncWorkspace(');
+      if (iSync < 0) echecs.push('syncWorkspace introuvable');
+      else {
+        const bloc = shell.slice(iSync, iSync + 600);
+        if (bloc.indexOf('petitPanneauAuPremierPlan()') === -1)
+          echecs.push('syncWorkspace ne passe plus par le filtre des surcouches');
+        if (bloc.indexOf('.panel:not(.panel-large):not(#backlogWrap):not([hidden])') !== -1)
+          echecs.push('syncWorkspace recompte tout .panel non-panel-large : le dialogue refait disparaitre le bouton');
+      }
+
+      /* (3) la liste des petits panneaux doit etre balayee en entier :
+             un surcouche peut preceder un vrai panneau dans le document */
+      const iFiltre = shell.indexOf('function petitPanneauAuPremierPlan(');
+      if (iFiltre < 0) echecs.push('le filtre des surcouches est absent');
+      else {
+        const bloc = shell.slice(iFiltre, iFiltre + 700);
+        if (bloc.indexOf('querySelectorAll') === -1)
+          echecs.push('le filtre ne balaie qu un seul panneau : un surcouche peut masquer un vrai panneau');
+      }
+    }
+
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'bouton retour 4.100.1 : un dialogue par-dessus un espace de travail ne fait plus disparaitre le bouton Retour' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   (function coqueDansLeRepoGit(){
     const fs = require('fs');
     const path = require('path');

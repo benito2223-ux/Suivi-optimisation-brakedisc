@@ -1,3 +1,9 @@
+| **Auteur** | **Hermes** |
+| **Pris le** | 20/10/2026, soir (~21:50) |
+| **Écrit dans** | `spk-shell.js`, `bilan_economique.html` (version), `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md` |
+| **Version visée** | 4.100.1 |
+| **Sujet** | Le bouton Retour ne disparaît plus quand un dialogue se pose par-dessus un espace de travail. |
+
 | **Auteur** | *(libre)* |
 | **Pris le** | — |
 | **Écrit dans** | — |

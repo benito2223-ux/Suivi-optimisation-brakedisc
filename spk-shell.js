@@ -140,8 +140,35 @@
     return !!document.querySelector(".panel-large:not([hidden]), #backlogWrap:not([hidden])");
   }
 
+  /* Un dialogue (ou la recherche) se pose PAR-DESSUS un espace de travail :
+     il ne le remplace pas. Il faut donc le distinguer d'un petit panneau qui,
+     lui, remplace vraiment l'espace (Options, Import, Nouveau projet...).
+
+     AVANT, on comptait tout `.panel` non-`panel-large` visible. Conséquence :
+     la lecture d'un classeur (qui ouvre un dialogue) faisait disparaitre le
+     bouton Retour au milieu du Plan de conversion, et le rail redevenait
+     « non repliable » alors que le Plan etait toujours ouvert. Mesure :
+     Plan ouvert -> retour visible ; Plan + dialogue -> retour disparu ;
+     dialogue ferme -> retour revenu.
+
+     On ne garde donc que les petits panneaux qui sont de VRAIS panneaux
+     (pas les surcouches). */
+  const SURCOUCHES = ["dialogPanel", "searchPanel", "photoAnnotWrap"];
+  function petitPanneauAuPremierPlan() {
+    /* Tous les petits panneaux visibles, pas seulement le premier : un
+       surcouche (dialogue) peut preceder dans le document un vrai panneau
+       (Options, Import...), et le dialogue ne doit pas le masquer. */
+    const petits = document.querySelectorAll(
+      ".panel:not(.panel-large):not(#backlogWrap):not([hidden])"
+    );
+    for (let i = 0; i < petits.length; i++) {
+      if (SURCOUCHES.indexOf(petits[i].id) === -1) return true;
+    }
+    return false;
+  }
+
   function syncWorkspace() {
-    const smallOpen = !!document.querySelector(".panel:not(.panel-large):not(#backlogWrap):not([hidden])");
+    const smallOpen = petitPanneauAuPremierPlan();
     const open = workspaceOpen() && !smallOpen;
     const shouldHide = !open;
     if (close.hidden !== shouldHide) close.hidden = shouldHide;

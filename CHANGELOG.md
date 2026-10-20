@@ -54,6 +54,38 @@ déploiement · mesures à 1440 (rail 248 px, panneaux x=248→1418), 1024
 captures à l'œil : rail visible, contenu après le rail, poignée active en
 plein écran. **PROD : rien** — la prod reste en 4.97.2.
 
+## [4.100.1] — 2026-10-20 · Le bouton Retour ne disparaît plus quand un dialogue se pose
+
+**Le défaut, vu par Benjamin.** « Dans le plan de conversion, quand on lit un
+classeur, le bouton Retour disparaît. »
+
+**La cause.** La lecture d'un classeur appelle `dialogueAlerte` (Plan de
+conversion, ligne ~16307) : « Consommations 2025 lues ». Un dialogue ouvre
+`dialogPanel`, qui est un `.panel` **sans** `panel-large`. Or la coque
+calculait l'état d'espace de travail ainsi : un espace est ouvert si un
+`.panel-large` est visible, **et** si aucun petit `.panel` ne l'est. Le
+dialogue comptait donc comme un petit panneau → l'espace était considéré
+fermé → le bouton **Retour disparaissait** au milieu du Plan, et le rail
+redevenait « non repliable » alors que le Plan était toujours ouvert derrière.
+
+Mesuré : Plan ouvert → retour visible ; Plan + dialogue → **retour
+disparu** ; dialogue fermé → retour revenu. Le bouton partait donc et
+revenait tout seul, au rythme d'un message.
+
+**La correction.** Un dialogue, une recherche ou l'annotation d'une photo se
+posent **par-dessus** un espace de travail : ils ne le remplacent pas. Seuls
+les vrais petits panneaux (Options, Import, Nouveau projet…) le remplacent.
+La coque distingue désormais les deux, et un vrai petit panneau opened par
+-dessus un dialogue continue d'être pris en compte (le balayage porte sur
+**tous** les petits panneaux, pas sur le premier : dans le document, le
+dialogue précède souvent le vrai panneau).
+
+**Vérifié par la mesure** : Plan ouvert → retour visible · Plan + dialogue →
+**retour visible** (le défaut) · dialogue fermé → retour visible · Plan +
+Options → retour masqué (le vrai panneau masque toujours, comme avant) ·
+tout fermé → retour masqué. Porte anti-régression `bouton retour 4.100.1`
+(3 points), **3 contre-regards injectés, 3 détectés**. Harnais **583/0**.
+
 ## [4.99.0] — 2026-10-20 · Le suivi partagé est débranché sur l'adresse de dev
 
 **La demande.** Benjamin : « si j'ai bien compris le cloud est branché sur la
