@@ -1,4 +1,18 @@
-| **Auteur** | **Hermes** |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+
+✅ **Verrou libéré par Hermes le 20/10/2026, soir (4)** (4.100.1 — le bouton
+Retour ne disparaît plus sous un dialogue). Correction dans `spk-shell.js` : un
+dialogue, une recherche ou l'annotation d'une photo se posent **par-dessus** un
+espace de travail, ils ne le remplacent pas ; seuls les vrais petits panneaux
+(Options, Import, Nouveau projet…) le remplacent. Vérifié par la mesure :
+Plan + dialogue → **retour visible** ; Plan + Options → retour masqué (comme
+avant). Porte `bouton retour 4.100.1` (3 points), 3 contre-regards, 3
+détectés. **DEV** : 4.100.1 servie, md5 `6fc1c769…`, comportement vérifié
+depuis l'URL publique. **PROD : rien** — 4.97.2, md5 `fe652969…`.| **Auteur** | **Hermes** |
 | **Pris le** | 20/10/2026, soir (~21:50) |
 | **Écrit dans** | `spk-shell.js`, `bilan_economique.html` (version), `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md` |
 | **Version visée** | 4.100.1 |
