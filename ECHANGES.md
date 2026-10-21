@@ -537,6 +537,39 @@ le tampon fait le reste tout seul.
 
 ---
 
+### ▸ Tour 83 — 21/10/2026, soir — **Hermes** (v4.101.1 — la Synthèse réapparaît ; les consommations restent en mémoire)
+
+**Les deux remontées.** « La page synthèse n'apparaît plus quand on va et vient » ;
+« pourquoi faut-il toujours recharger le tableau des consommations annuelles,
+pourquoi ne reste-t-il pas en mémoire ? »
+
+**Le diagnostic.** (1) `ouvrirPanneau` (Accueil, Tableau…) laisse le **voile
+modal** (`panelBackdrop`, z 40) visible ; la Synthèse, bloc en flux **sans
+z-index**, s'ouvrait DERRIÈRE ce voile — et le premier clic, reçu par le voile,
+déclenchait `fermerPanneaux` qui refermait tout. Le tour 81 avait réglé
+l'empilement des écrans, pas ce voile. (2) `consoReelle` (classeurs semaine),
+`planSource`, `consoSemaines`, `planReglages` étaient des **états de session**
+par construction (v4.88) — jamais écrits dans le suivi.
+
+**Le fix.** (1) Le handler `syntheseBtn` ferme PROPREMENT les panneaux (voile
+inclus) avant d'afficher, puis remonte en haut. La transformation coque
+« scrollIntoView » du même handler est retirée de `build-coque.mjs` (son ancre
+n'existe plus ; le scroll vit dans le monolithe). (2) Les quatre réglages
+entrent dans le payload format 8 (`payloadSuivi`, `loadAll`, import :
+l'entrant gagne s'il les porte) — même règle de transport que la base 2025 ;
+noms de fichiers et date de lecture voyagent (§3.5).
+
+**Incident assumé.** Premier déploiement parti avec le dist PÉRIMÉ (4.101.0)
+pendant que le build échouait sur l'ancre retirée — corrigé, reconstruit,
+redéployé. Vérifié curl : **4.101.1 servie, empreinte identique au dist/**
+(1 610 755 o). 593 tests | 0 échec (2 portes nouvelles). **PROD : rien.**
+
+**Prochain tour** : confirmation de Benjamin sur les deux écrans ; le chantier
+« Prix SPK par défaut » (le build retire prixSpk du monolithe — les deux mondes
+divergent, à réconcilier).
+
+---
+
 ## Questions ouvertes à Z Code
 
 ### ▸ Tour 67 — 14/10/2026 — **Hermes** (mécanique des plaquettes — avis transmis, discussion avec Z Code)

@@ -5,6 +5,40 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.101.1] — 2026-10-21 · La Synthèse réapparaît ; le tableau des consommations reste en mémoire
+
+**Les deux remontées de Benjamin.** (1) « La page Synthèse n'apparaît plus quand
+on va et vient » ; (2) « pourquoi faut-il toujours recharger le tableau des
+consommations annuelles, pourquoi ne reste-t-il pas en mémoire ? »
+
+### Corrigé — le voile qui mangeait la Synthèse
+- `ouvrirPanneau` (Accueil, Tableau…) laisse le **voile modal** (`panelBackdrop`,
+  z-index 40) visible. La Synthèse, bloc en flux **sans z-index**, s'affichait
+  **derrière** ce voile — et le premier clic (reçu par le voile) appelait
+  `fermerPanneaux`, qui refermait tout. v4.100.4 avait réglé l'empilement des
+  écrans du rail, pas ce voile.
+- Le handler `syntheseBtn` ferme maintenant **proprement** les panneaux (voile
+  inclus) avant d'afficher, puis remonte en haut de page.
+- `outils/build-coque.mjs` : la transformation « scrollIntoView » du même
+  handler est **retirée** (elle vivait dans la coque, l'ancre n'existe plus) —
+  le build redevient reproductible.
+
+### Ajouté — la consommation réelle voyage avec le suivi
+- `consoReelle` (classeurs semaine), `planSource` (théorique / réelle ×52 /
+  annuelle 2025), `consoSemaines` et `planReglages` entrent dans le **payload
+  format 8** (`payloadSuivi`, `loadAll`, import : l'entrant gagne s'il les
+  porte, sinon la locale reste). Plus de relecture de classeurs à chaque
+  ouverture — même règle de transport que la base 2025 (v4.92).
+- Les noms de fichiers et la date de lecture voyagent aussi : la provenance
+  reste lisible (§3.5).
+
+### Vérifié
+- **593 tests | 0 échec** (2 portes nouvelles : transport + « null jamais inventé »).
+- Incident de build assumé : un premier déploiement est parti avec le dist
+  périmé (4.101.0) pendant que le build échouait sur l'ancre retirée — corrigé
+  (transformation retirée du build), reconstruit, **redéployé**, vérifié curl :
+  **4.101.1 servie, empreinte identique au dist/ local**.
+
 ## [4.101.0] — 2026-10-21 · ⛔ FAILED : le scénario fauté sort des gains — et les flèches de saisie reviennent au bureau
 
 **La commande de Benjamin.** Deux choses : (1) la saisie des valeurs numériques

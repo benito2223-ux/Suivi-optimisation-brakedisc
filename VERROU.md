@@ -6,6 +6,25 @@
 
 ---
 
+✅ **Verrou libéré par Hermes le 21/10/2026, soir** (4.101.1 — la Synthèse
+réapparaît ; les consommations restent en mémoire). Diagnostic : le voile modal
+(`panelBackdrop`, z 40) laissé ouvert par `ouvrirPanneau` recouvrait la Synthèse
+(bloc en flux, sans z-index) et le premier clic sur le voile refermait tout —
+le tour 81 avait réglé l'empilement des écrans, pas ce voile. Handler corrigé
+(fermer → rouvrir), transformation « scrollIntoView » retirée de
+`outils/build-coque.mjs` (son ancre n'existait plus : le build échouait).
+`consoReelle` / `planSource` / `consoSemaines` / `planReglages` voyagent
+désormais dans le payload format 8 (loadAll + import : l'entrant gagne s'il les
+porte) — plus de relecture de classeurs à chaque ouverture.
+**Incident assumé** : un premier déploiement est parti avec le `dist/` PÉRIMÉ
+(4.101.0) pendant que le build échouait — corrigé, reconstruit, redéployé,
+vérifié curl : **4.101.1 servie, empreinte identique au `dist/` local**
+(1 610 755 o). 593/0 (2 portes nouvelles). **PROD : rien** — 4.97.2.
+Écrits : `bilan_economique.html`, `outils/build-coque.mjs`, `build_harness.py`,
+`CHANGELOG.md`, `ECHANGES.md`, `VERROU.md`.
+
+---
+
 ✅ **Verrou libéré par Z Code le 21/10/2026** (Tour 82, v4.101.0 — libération
 à la demande de Benjamin, vérification du tour d'Hermes). Le bilan d'Hermes
 a été **vérifié point par point, rien pris sur parole** : 591/0 rejoués sur
