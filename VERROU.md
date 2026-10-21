@@ -1,3 +1,11 @@
+| **Auteur** | **Hermes** |
+| **Pris le** | 21/10/2026, soir (après le Tour 83) |
+| **Écrit dans** | `bilan_economique.html` (Plan de conversion), `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md` |
+| **Version visée** | 4.102.0 |
+| **Sujet** | Plan de conversion = tableau de bord live : gains actés (scénarios en série) + gains possibles (essais en cours positifs) + vues graphiques consommations vs scénarios de base + chronologie des essais depuis le premier (auteur/date) ; la case « PRIX CONFIRME » est clarifiée. |
+
+---
+
 | **Auteur** | *(libre)* |
 | **Pris le** | — |
 | **Écrit dans** | — |
