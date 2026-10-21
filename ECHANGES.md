@@ -705,6 +705,44 @@ exogène » de la grille du tour 68 est la bonne — pas le chill.
 
 ## Journal des tours
 
+### ▸ Tour 80 — 20/10/2026, soir — **Hermes** (v4.100.3 — « je ne retrouve pas tous les essais réalisés (PCI 5 OP40) »)
+
+**Le diagnostic, par reproduction avec les vrais fichiers du 13/10.** Importer
+`rev431` (7 essais) avec « Remplacer tout » → **7 essais présents**, PCI 5 /
+OP 40 / Process actuel compris : **le code d'import et la fusion sont sains**.
+Importer ensuite `rev425` (5 essais) avec « Remplacer tout » → **5 essais, PCI 5
+disparu**. La perte vient du geste : **plusieurs JSON importés à la suite avec
+« Remplacer tout » (le bouton par défaut) ne laissent que le dernier.**
+
+**Deux pièges aggravants, constatés dans les fichiers.**
+1. **La révision ne dit pas quel fichier est le plus complet** : `rev432`
+   (6 essais, PCI 5 du 09:22) porte un numéro plus grand que `rev431` (7 essais,
+   PCI 5 du 10:11) — deux postes incrémentent chacun leur compteur. « Prendre le
+   numéro le plus haut » a pris le mauvais fichier.
+2. **`ETAT_FUSION_PROPRE_v5` a perdu le scénario « Process actuel » de PCI 5 /
+   OP 40** : l'essai y est posé sur le scénario « Classeur Matis »
+   (le placeholder de l'import Matis). Entre v4 (12:02) et v5 (14:05), le vrai
+   scénario a disparu de l'arbre. Chercher sur « Process actuel » dans v5 = ne
+   rien trouver. `rev431` est le fichier de référence le plus sain.
+
+**Le correctif (v4.100.3).** L'écran de choix d'import compare le **nombre
+d'essais** reçu et local — la révision ne suffit pas, le contenu est le seul
+garde honnête — et affiche l'écart **avant les boutons** : « ⚠ Ce fichier
+contient N essais de MOINS que vos données actuelles (X reçus contre Y ici).
+« Remplacer tout » les retirerait. « Fusionner » les garde. »
+
+**Vérifié dans l'outil** : rev431 → pas d'avertissement · rev425 → « 2 essais
+de MOINS (5 reçus contre 7) » · Fusionner → 7 essais · re-import rev431 → pas
+d'avertissement. Porte `import 4.100.3` (3 points), contre-regards détectés.
+Harnais **583/0**. **DEV déployé** : 4.100.3 servie. **PROD : rien**.
+
+**Pour récupérer les essais aujourd'hui** : importer
+`Downloads/SuiviOptimisation_rev431_20261013-1627.json` — « Remplacer tout » ou
+« Fusionner », les deux restaurent tout, PCI 5 compris.
+
+---
+
+
 ### ▸ Tour 79 — 20/10/2026, soir — **Hermes** (v4.100.2 — la mise à jour à chaud : le correctif était invisible chez Benjamin)
 
 **« Problème toujours présent bro. »** La 4.100.1 était déployée, vérifiée sur

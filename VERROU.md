@@ -1,3 +1,9 @@
+| **Auteur** | **Hermes** |
+| **Pris le** | 20/10/2026, soir (~23:55) |
+| **Écrit dans** | `bilan_economique.html` (écran d'import, version), `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md` |
+| **Version visée** | 4.100.3 |
+| **Sujet** | L'écran d'import prévient quand le fichier reçu porte moins d'essais que les données locales. |
+
 | **Auteur** | *(libre)* |
 | **Pris le** | — |
 | **Écrit dans** | — |

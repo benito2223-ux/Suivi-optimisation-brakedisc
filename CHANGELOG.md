@@ -54,6 +54,49 @@ déploiement · mesures à 1440 (rail 248 px, panneaux x=248→1418), 1024
 captures à l'œil : rail visible, contenu après le rail, poignée active en
 plein écran. **PROD : rien** — la prod reste en 4.97.2.
 
+## [4.100.3] — 2026-10-20 · L'import prévient avant de retirer des essais
+
+**Le défaut, vu par Benjamin.** « Je ne retrouve pas tous les essais réalisés
+(exemple PCI 5 OP40) quand j'importe les JSON dans l'outil sur la branche
+DEV. »
+
+**Le diagnostic, par reproduction.** J'ai rejoué l'import avec les VRAIS
+fichiers du 13/10 sur le build dev. Résultat : importer `rev431` (7 essais,
+dont PCI 5 / OP 40 / Process actuel) avec « Remplacer tout » garde les
+**7 essais** — le code d'import et la fusion sont **sains**. Puis importer
+`rev425` (5 essais) avec « Remplacer tout » → **5 essais, PCI 5 disparu**.
+La perte vient du geste, pas du code : **plusieurs JSON importés à la suite
+avec « Remplacer tout » (le bouton par défaut) ne laissent que le dernier.**
+
+**Deux pièges aggravants, constatés dans les fichiers.**
+1. **Le numéro de révision ne dit pas quel fichier est le plus complet.**
+   `rev432` (6 essais, essai PCI 5 du 09:22) porte un numéro PLUS GRAND que
+   `rev431` (7 essais, essai PCI 5 du 10:11) : deux postes incrémentent chacun
+   leur compteur. Prendre « le numéro le plus haut » a pris le mauvais fichier.
+2. **`ETAT_FUSION_PROPRE_v5` (le fichier qui « fait référence ») a perdu le
+   scénario « Process actuel » de PCI 5 / OP 40** : son essai y est posé sur le
+   scénario « Classeur Matis » (le scénaro-placeholder de l'import Matis). Entre
+   v4 (12:02) et v5 (14:05), le vrai scénario a disparu de l'arbre. Chercher
+   l'essai sur « Process actuel » dans v5 = ne rien trouver.
+
+**Le correctif.** L'écran de choix d'import compare désormais le **nombre
+d'essais** reçu et local — la révision ne suffit pas, le contenu est le seul
+garde honnête. Si le fichier reçu en porte moins, un avertissement chiffré
+s'affiche **avant les boutons** : « Ce fichier contient N essais de MOINS que
+vos données actuelles (X reçus contre Y ici). « Remplacer tout » les
+retirerait. « Fusionner » les garde. »
+
+**Vérifié dans l'outil** : import rev431 → pas d'avertissement · import
+rev425 → « 2 essais de MOINS (5 reçus contre 7) » · Fusionner → 7 essais
+retrouvés · re-import rev431 → pas d'avertissement. Porte `import 4.100.3`
+(3 points), contre-regards : compteur retiré, comparaison retirée —
+détectés. Harnais **583/0**.
+
+**Pour récupérer les essais aujourd'hui** : importer
+`Downloads/SuiviOptimisation_rev431_20261013-1627.json` (le fichier le plus
+complet : 7 essais) — avec « Remplacer tout » ou « Fusionner », les deux
+restaurent tout, PCI 5 / OP 40 / Process actuel compris.
+
 ## [4.100.2] — 2026-10-20 · Les corrections arrivent maintenant, même sur un poste déjà ouvert
 
 **Le défaut, vu par Benjamin.** « Problème toujours présent bro. » — alors que

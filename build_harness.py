@@ -955,6 +955,55 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'maj a chaud 4.100.2 : le shell est servi en reseau d abord, un correctif ne peut plus rester invisible en cache (8 points)' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  /* ── v4.100.3 — L'IMPORT PRÉVIENT QUAND LE FICHIER REÇU RETIRE DES ESSAIS ──
+     Benjamin, 20/10 : « je ne retrouve pas tous les essais réalisés (exemple
+     PCI 5 OP40) quand j'importe les JSON ». Reproduction : importer plusieurs
+     fichiers à la suite avec « Remplacer tout » (le bouton par défaut) ne
+     garde que le DERNIER — rev425 après rev431 = 5 essais au lieu de 7, PCI 5
+     OP40 disparu. Et le numéro de révision ne protège pas : deux postes
+     incrémentent chacun le leur (rev432 recevait MOINS d'essais que rev431).
+     Le garde : l'écran de choix compare le NOMBRE D'ESSAIS reçu et local, et
+     affiche l'écart AVANT le clic. */
+  (function importPrevientSiMoinsDEssais(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const html = (function(){ try { return fs.readFileSync(path.join(REPO, 'bilan_economique.html'), 'utf8'); } catch (e) { return ''; } })();
+    if (!html) { echecs.push('bilan_economique.html introuvable'); }
+    else {
+      const NL = String.fromCharCode(10);
+      const code = html.split(NL).map(function(l){ return l.replace(/\/\/.*$/, ''); }).join(NL);
+
+      /* (1) le compteur d'essais existe et marche sur les 4 niveaux */
+      if (code.indexOf('nbEssaisDe') === -1) echecs.push('pas de compteur d essais dans l ecran d import');
+      const iFn = code.indexOf('const nbEssaisDe =');
+      if (iFn < 0) echecs.push('le compteur nbEssaisDe est introuvable');
+      else {
+        const ligne = code.slice(iFn, code.indexOf(String.fromCharCode(10), iFn));
+        ['references','ops','scenarios','essais'].forEach(function(k){
+          if (ligne.indexOf(k) === -1) echecs.push('le compteur nbEssaisDe ne compte pas le niveau ' + k);
+        });
+      }
+
+      /* (2) la comparaison est faite entre le RECU et le LOCAL */
+      if (code.indexOf('essaisRecus < essaisLocaux') === -1) echecs.push('la comparaison recu/local est absente');
+
+      /* (3) l'avertissement s affiche dans le panneau, AVANT les boutons */
+      const iPanneau = code.indexOf('importPanelBody');
+      const iBoutons = code.indexOf('importRemplace');
+      if (iPanneau < 0 || iBoutons < 0) echecs.push('le panneau d import est introuvable');
+      else {
+        const panneau = code.slice(iPanneau, iBoutons);
+        if (panneau.indexOf('moinsDEssais') === -1) echecs.push('l avertissement moins-d-essais n est pas affiche dans le panneau (ou apres les boutons)');
+        if (panneau.indexOf('de MOINS que vos données actuelles') === -1) echecs.push('le texte de l avertissement est absent');
+      }
+    }
+
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'import 4.100.3 : l ecran d import previent quand le fichier recu porte moins d essais que les donnees locales' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   (function coqueDansLeRepoGit(){
     const fs = require('fs');
     const path = require('path');
