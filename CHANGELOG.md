@@ -5,6 +5,42 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.103.0] — 2026-10-21 · Le prix SPK par défaut sort du code — à la source
+
+**Le chantier confié au verrou.** Hermes (Tour 84) a rendu le verrou à Z Code
+avec quatre sujets : valider le tableau de bord live du Plan, valider l'ordre
+de résolution de l'auteur d'un essai, valider la porte hors-suite réécrite,
+et régler « le build retire `prixSpk` du monolithe — les deux mondes
+divergent ».
+
+**Validé sans correction.**
+- Ordre de résolution de l'auteur (chronologie du Plan) :
+  `redigePar > operateur > equipe > auteur de session` — conforme au sujet du
+  verrou (`bilan_economique.html`, `planChronologieEssais`).
+- Porte hors-suite 4.102 : 5 contrôles réels (listener de la case prix
+  validé, 5 fonctions du tableau de bord, gains actés/possibles jamais
+  additionnés — contrôle posé **sans regex**, par découpage en lignes, la
+  leçon du faux vert ; pas de réseau dans les SVG ; montage dans
+  `renderPlan`).
+- Tableau de bord live : rendu vérifié au navigateur sur la base 2025.
+
+**Corrigé : la divergence prixSpk.** La décision Benjamin du 20/10 (« chaque
+plaquette a son prix ») était portée par `outils/build-coque.mjs` SEUL : sept
+transformations amputaient le fichier servi du prix par défaut, de la
+suggestion KY3500 à 5 €, du contrôle et du listener — pendant que le
+monolithe, le harnais et les tests continuaient de vivre avec. Le fichier
+servi et la source testée n'étaient plus le même logiciel. **Le retrait vit
+désormais dans `bilan_economique.html`** (initialisation `planReglages`,
+suggestion KY3500 sans prix, repli `ciblePrix`, contrôle UI, listener,
+placeholder, test 4.86 mis à jour) ; le build ne détourne plus rien et son
+garde-fou devient une **porte de principe** : une seule occurrence de
+`prixSpk` = build en échec. Une porte harnais équivalente verrouille la
+source entre deux builds.
+
+Conséquence visible : le champ « Prix cible » des lignes du Plan démarre
+vide (plus de placeholder 5) — le prix de la plaquette visée se pose à la
+main, comme les vrais devis.
+
 ## [4.102.0] — 2026-10-21 · Le Plan de conversion devient un tableau de bord live
 
 **La commande.** « Sur le plan de conversion il serait chouette d'avoir 1 — les gains

@@ -1,8 +1,27 @@
-| **Auteur** | **Z Code** *(verrou pris par Hermes le 21/10/2026, soir — Tour 84 — et rendu à Z Code)* |
-| **Pris le** | 21/10/2026, soir (après le Tour 84) |
-| **Écrit dans** | `bilan_economique.html` (Plan de conversion), `build_harness.py`, `outils/build-coque.mjs`, `CHANGELOG.md`, `ECHANGES.md` |
-| **Version visée** | 4.103.0 (ou correction de 4.102.0) |
-| **Sujet** | Reprise du Plan de conversion : valider ou corriger la structure du tableau de bord live, l'ordre de résolution de l'auteur d'un essai (`redigePar` > `operateur` > `equipe` > auteur de session), la porte hors-suite ajoutée au harnais, et le chantier « Prix SPK par défaut » (le build retire `prixSpk` du monolithe — les deux mondes divergent). |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+
+---
+
+✅ **Verrou libéré par Z Code le 21/10/2026, soir** (Tour 85, v4.103.0 — la
+mission du verrou est remplie). **Validé sans correction** : ordre de
+résolution de l'auteur (`redigePar > operateur > equipe > session`, conforme),
+porte hors-suite 4.102 (5 contrôles réels, « gains non mélangés » posé sans
+regex), tableau de bord live rendu au navigateur. **Corrigé : la divergence
+prixSpk** — la décision Benjamin du 20/10 vit désormais dans le SOURCE
+(`planReglages`, suggestion KY3500 sans prix, repli `ciblePrix`, contrôle UI,
+listener, placeholder, test 4.86) ; `build-coque.mjs` ne détourne plus rien,
+son garde-fou devient une porte de principe (1 occurrence de `prixSpk` =
+build en échec) et une porte harnais équivalente verrouille la source entre
+deux builds. **Vérifié** : 606/0 (porte « prix SPK défaut » nouvelle),
+syntaxe 0 erreur, build 5 transformations / garde vert, navigateur (plus de
+contrôle ni libellé « Prix SPK défaut », `planReglages = {relSpk:100}`,
+levier prix live prix ÷2 → −50 %). **DEV** : 4.103.0 servie, SHA
+`6e80a8ce…` identique au `dist/`, zéro `prixSpk` dans le fichier servi.
+**PROD : rien** — 4.97.2.
 
 ---
 

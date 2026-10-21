@@ -1131,6 +1131,20 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'plan 4.102.0 : le tableau de bord live est monte, la case prix valide est cablee, les gains ne sont pas melanges' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  /* ── v4.103.0 — LE PRIX SPK PAR DÉFAUT N'EXISTE PLUS ─────────────────────
+     Décision Benjamin du 20/10 (chaque plaquette a son prix) d'abord portée
+     par le build SEUL — ce qui faisait diverger les deux mondes : le harnais
+     testait des comportements que le fichier servi ne connaissait plus.
+     Le retrait vit dans le source ; cette porte l'empêche de revenir, entre
+     deux builds (le build-coque a son propre garde, il ne court qu'à lui). */
+  (function prixSpkAbsentDuSource(){
+    const fs = require('fs');
+    const html = fs.readFileSync('bilan_economique.html', 'utf8');
+    const n = html.split('prixSpk').length - 1;
+    if (n) r.echecs += 1;
+    console.log((n ? '  ECHEC ' : '  ok  ') + 'prix SPK défaut : le source ne référence plus prixSpk (décision 20/10 dans la source, plus dans le build)' + (n ? ' — ' + n + ' occurrence(s)' : ''));
+  })();
+
   (function coqueDansLeRepoGit(){
     const fs = require('fs');
     const path = require('path');

@@ -174,73 +174,17 @@ remplacer(
 );
 
 /* --------------------------------------------------------------------------
-   5. Le prix SPK par defaut sort du code : chaque plaquette a son prix
-      (Benjamin, 20/10/2026). La suggestion ISO reste, sans prix.
+   5. Le prix SPK par defaut est sorti du code A LA SOURCE (v4.103.0).
+      Decision Benjamin du 20/10 (« chaque plaquette a son prix »), d'abord
+      appliquee par ce build en detournant le monolithe — ce qui faisait
+      DIVERGER les deux mondes : le harnais testait des comportements
+      (prix par defaut, suggestion KY3500 a 5 EUR) que le fichier servi ne
+      connaissait plus. Le retrait vit maintenant dans bilan_economique.html
+      lui-meme ; ce build n'a plus qu'a EMPECHER le retour :
+      une seule occurrence de prixSpk quelque part = build en echec.
    -------------------------------------------------------------------------- */
-remplacer(
-  'let planReglages = { prixSpk: 5, relSpk: 100 };  /* v4.90 — le prix SUGGÉRÉ et l\'hypothèse de durée de vie sortent du code (revue Claude P3) */',
-  'let planReglages = { relSpk: 100 };  /* v4.90 — l\'hypothèse de durée de vie sort du code (revue Claude P3) ; prix SPK défaut retiré : chaque plaquette a son propre prix (Benjamin, 20/10) */',
-  'initialisation de planReglages (prix Spk par defaut retire)'
-);
-
-remplacer(
-  'const sugg = isoKY ? { iso: String(isoKY).replace(/KY3500/gi, "LKT640"), prix: planReglages.prixSpk } : null;',
-  'const sugg = isoKY ? { iso: String(isoKY).replace(/KY3500/gi, "LKT640") } : null;',
-  'suggestion KY3500 (sans prix)'
-);
-
-remplacer(
-  [
-    '    const ciblePrix = (p.prixCible !== "" && p.prixCible != null) ? Number(p.prixCible)',
-    '                      : (sugg ? sugg.prix : "");'
-  ].join('\n'),
-  '    const ciblePrix = (p.prixCible !== "" && p.prixCible != null) ? Number(p.prixCible) : "";',
-  'ciblePrix (repli sur le prix par defaut retire)'
-);
-
-remplacer(
-  '      <span style="font-weight:600;">Prix SPK défaut :</span> <input id="planPrixSpk" type="number" step="0.5" min="0.5" style="width:64px; font-family:var(--font-mono);" value="${planReglages.prixSpk}"> €\n',
-  '',
-  'controle « Prix SPK defaut » (retire de l interface)'
-);
-
-remplacer(
-  [
-    '  const gPrix = document.getElementById("planPrixSpk");',
-    '  const gVie = document.getElementById("planRelSpk");',
-    '  const gSem = document.getElementById("planSemaines");',
-    '  if(gPrix) gPrix.addEventListener("change", () => {',
-    '    if(Number(gPrix.value) > 0) planReglages.prixSpk = Number(gPrix.value);',
-    '    renderPlan();',
-    '  });'
-  ].join('\n'),
-  [
-    '  const gVie = document.getElementById("planRelSpk");',
-    '  const gSem = document.getElementById("planSemaines");'
-  ].join('\n'),
-  'listener du prix Spk par defaut (retire)'
-);
-
-remplacer(
-  ' value="${l.ciblePrix === "" ? "" : l.ciblePrix}" placeholder="5">',
-  ' value="${l.ciblePrix === "" ? "" : l.ciblePrix}">',
-  'placeholder 5 du prix cible'
-);
-
-remplacer(
-  [
-    '        ok("plan : la cible KY3500 est auto-suggérée en LKT640 à 5 € (décision Benjamin)",',
-    '           [l0.auto, l0.cibleIso, Number(l0.ciblePrix)], [true, "SNMX120716T02020 LKT640", 5]);'
-  ].join('\n'),
-  [
-    '        ok("plan : la cible KY3500 est auto-suggérée en LKT640, SANS prix par défaut (chaque plaquette a le sien)",',
-    '           [l0.auto, l0.cibleIso, l0.ciblePrix], [true, "SNMX120716T02020 LKT640", ""]);'
-  ].join('\n'),
-  'auto-test de la suggestion de prix'
-);
-
 if (html.includes('prixSpk')) {
-  throw new Error('prixSpk encore reference apres build — une transformation a ete sautée');
+  throw new Error('prixSpk encore reference — la decision Benjamin du 20/10 (chaque plaquette a son prix, pas de prix par defaut) a ete contournée');
 }
 
 /* --------------------------------------------------------------------------

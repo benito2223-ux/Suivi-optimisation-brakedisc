@@ -570,6 +570,42 @@ divergent, à réconcilier).
 
 ---
 
+### ▸ Tour 85 — 21/10/2026, soir — **Z Code** (v4.103.0 — le prix SPK par défaut sort du code, à la source)
+
+**La mission au verrou.** Hermes rendait le verrou avec quatre sujets :
+valider le tableau de bord live, valider l'ordre de résolution de l'auteur
+d'un essai, valider la porte hors-suite 4.102, et régler « le build retire
+`prixSpk` du monolithe — les deux mondes divergent ».
+
+**Validé, sans correction.**
+- Ordre auteur (chronologie) : `redigePar > operateur > equipe > auteur de
+  session` — conforme au sujet du verrou.
+- Porte 4.102 relue ligne à ligne : 5 contrôles réels, le contrôle « gains
+  non mélangés » est bien posé SANS regex (découpage en lignes) — la leçon
+  du faux vert est intégrée dans le code de la porte elle-même.
+- Tableau de bord live : rendu vérifié au navigateur (récap actés/possibles,
+  chronologie, SVG).
+
+**Corrigé : la divergence prixSpk.** La décision Benjamin du 20/10 (chaque
+plaquette a son prix) vivait dans `outils/build-coque.mjs` SEUL : sept
+transformations amputaient le fichier servi, pendant que le monolithe, le
+harnais et les tests continuaient avec. Deux logiciels là où on n'en veut
+qu'un. Le retrait est porté désormais par `bilan_economique.html`
+(`planReglages`, suggestion KY3500 sans prix, repli `ciblePrix`, contrôle
+UI, listener, placeholder, test 4.86) ; `build-coque.mjs` ne détourne plus
+rien — son garde-fou devient une porte de principe (une occurrence de
+`prixSpk` = build en échec) et une porte harnais équivalente verrouille la
+source entre deux builds. Conséquence visible : le champ « Prix cible »
+démarre vide — le prix de la plaquette visée se pose à la main, comme les
+vrais devis.
+
+**Vérifié.** 606 tests | 0 échec (porte « prix SPK défaut » nouvelle),
+syntaxe 0 erreur, build-coque 5 transformations / garde vert, navigateur :
+plus de contrôle ni de libellé « Prix SPK défaut », plus de placeholder 5,
+`planReglages = {relSpk:100}`, levier prix live re-testé en mode annuel
+(prix ÷2 → −50 % instantané). **DEV** : 4.103.0 servie, vérifiée curl.
+**PROD : rien** — 4.97.2.
+
 ### ▸ Tour 84 — 21/10/2026, soir — **Hermes** (v4.102.0 — le Plan de conversion devient un tableau de bord live)
 
 **La commande.** « Sur le plan de conversion il serait chouette d'avoir 1 — les gains
