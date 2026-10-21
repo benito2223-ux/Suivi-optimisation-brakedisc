@@ -114,31 +114,11 @@ remplacer(
 );
 
 /* --------------------------------------------------------------------------
-   2. La vue de synthese s'ouvre sous les onglets : on y amene l'utilisateur
-      au lieu de le laisser en haut de la page.
+   2. (RETIRÉ en 4.101.1) — l'amener au haut de la Synthèse vit désormais
+      DANS le monolithe : le handler de syntheseBtn ferme proprement les
+      panneaux (voile modal inclus) et scrolle vers le haut. La coque ne
+      transforme plus ce handler — le build doit rester reproductible.
    -------------------------------------------------------------------------- */
-remplacer(
-  [
-    'document.getElementById("syntheseBtn").addEventListener("click", () => {',
-    '  const wrap = document.getElementById("syntheseWrap");',
-    '  wrap.hidden = !wrap.hidden;',
-    '  if(!wrap.hidden) renderSynthese();',
-    '});'
-  ].join('\n'),
-  [
-    'document.getElementById("syntheseBtn").addEventListener("click", () => {',
-    '  const wrap = document.getElementById("syntheseWrap");',
-    '  wrap.hidden = !wrap.hidden;',
-    '  if(!wrap.hidden){',
-    '    renderSynthese();',
-    '    requestAnimationFrame(() => {',
-    '      wrap.scrollIntoView({ behavior: "smooth", block: "start" });',
-    '    });',
-    '  }',
-    '});'
-  ].join('\n'),
-  'handler de la vue de synthese (defilement vers la section)'
-);
 
 /* --------------------------------------------------------------------------
    3. Le Plan de conversion devient un espace de travail : meme sans ligne

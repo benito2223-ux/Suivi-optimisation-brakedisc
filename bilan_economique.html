@@ -3624,7 +3624,11 @@ function migrerArbre(source){
            catalogue: Array.isArray(source.catalogue) ? source.catalogue.map(normalizeArticleCat) : [],
            plan: Array.isArray(source.plan) ? source.plan.map(normalizePlanEntry) : [],
            livraisons: Array.isArray(source.livraisons) ? source.livraisons.map(normalizeLivraison) : [],
-           conso2025: normalizeConso2025(source.conso2025) };
+           /* v4.101.1 — la consommation réelle et les réglages du Plan voyagent avec l'import */
+           conso2025: normalizeConso2025(source.conso2025),
+           consoReelle: (source.consoReelle && source.consoReelle.parArticle) ? source.consoReelle : null,
+           planSource: ["theo","reel","annuel"].indexOf(source.planSource) !== -1 ? source.planSource : null,
+           consoSemaines: source.consoSemaines, planReglages: source.planReglages || null };
   }
 
   // format 6 (v4.0, projets PROPRIETAIRES des lignes -- deployee moins d'une journee) :
@@ -4108,6 +4112,13 @@ function loadAll(){
     plan = (parsed.plan || []).map(normalizePlanEntry);
         plan = (parsed.plan || []).map(normalizePlanEntry);
         conso2025 = normalizeConso2025(parsed.conso2025);   /* v4.92 : la base économique annuelle voyage avec le suivi */
+        /* v4.101.1 — la consommation réelle et le mode du Plan reviennent avec le suivi :
+           plus besoin de relire les classeurs à chaque ouverture. */
+        consoReelle = (parsed.consoReelle && parsed.consoReelle.parArticle) ? parsed.consoReelle : null;
+        planSource = ["theo","reel","annuel"].indexOf(parsed.planSource) !== -1 ? parsed.planSource
+                     : (conso2025 ? "annuel" : "theo");
+        consoSemaines = (parseFloat(parsed.consoSemaines) > 0) ? parseFloat(parsed.consoSemaines) : 52;
+        planReglages = Object.assign({}, planReglages, (parsed.planReglages && typeof parsed.planReglages === "object") ? parsed.planReglages : {});
         const l = lignes.find(x => x.id === parsed.activeLigneId) || lignes[0];
         activeLigneId = l.id;
         const r = l.references.find(x => x.id === parsed.activeReferenceId) || l.references[0];
@@ -4247,7 +4258,12 @@ function payloadSuivi(){
   // format 8 (v4.2) : `lignes` reste la racine, exactement comme les formats 5 et 7 -- une
   // version anterieure a la v4 lit ce fichier normalement, seuls `projets` et `responsables`
   // lui sont invisibles (elle ne les connait pas, elle ne les cherche pas).
-  return JSON.stringify({ format:8, lignes, projets, activeProjetId, responsables, backlog, revision, specsUsine, synchroNote, activeLigneId, activeReferenceId, activeOpId, activeScenarioId: activeId, livraisons, catalogue, plan, conso2025 });
+  // v4.101.1 : la consommation réelle (classeurs semaine) et le mode du Plan voyagent
+  // avec le suivi — avant, c'était un état de session qu'il fallait relire à chaque
+  // ouverture (« pourquoi ne reste-t-il pas en mémoire ? »). Les noms de fichiers et la
+  // date de lecture voyagent aussi : la provenance reste lisible (§3.5).
+  return JSON.stringify({ format:8, lignes, projets, activeProjetId, responsables, backlog, revision, specsUsine, synchroNote, activeLigneId, activeReferenceId, activeOpId, activeScenarioId: activeId, livraisons, catalogue, plan, conso2025,
+    consoReelle, planSource, consoSemaines, planReglages });
 }
 
 /* Ce qui pese vraiment, nomme, pour que l'utilisateur puisse agir plutot que subir. */
@@ -5296,7 +5312,11 @@ function preparerImportDepuis(parsed){
            catalogue: migreImport ? (migreImport.catalogue || []) : [],
            plan: migreImport ? (migreImport.plan || []).map(normalizePlanEntry) : [],
            livraisons: migreImport ? (migreImport.livraisons || []) : [],
-           conso2025: migreImport ? (migreImport.conso2025 || null) : null };
+           conso2025: migreImport ? (migreImport.conso2025 || null) : null,
+           consoReelle: migreImport ? (migreImport.consoReelle || null) : null,
+           planSource: migreImport ? (migreImport.planSource || null) : null,
+           consoSemaines: migreImport ? migreImport.consoSemaines : null,
+           planReglages: migreImport ? (migreImport.planReglages || null) : null };
 }
 
 function importData(file){
@@ -5432,6 +5452,13 @@ function appliquerImport(mode){
        pas une fusion par article (mélanger deux fichiers créerait des postes doublement
        comptés). L'entrant gagne s'il en porte une ; sinon la locale reste. */
     conso2025 = normalizeConso2025(importEnAttente.conso2025) || conso2025;
+    /* v4.101.1 — la consommation réelle et les réglages du Plan : l'entrant gagne s'il
+       les porte, sinon la locale reste (même règle que la base annuelle). */
+    if(importEnAttente.consoReelle && importEnAttente.consoReelle.parArticle) consoReelle = importEnAttente.consoReelle;
+    if(importEnAttente.planSource) planSource = importEnAttente.planSource;
+    if(parseFloat(importEnAttente.consoSemaines) > 0) consoSemaines = parseFloat(importEnAttente.consoSemaines);
+    if(importEnAttente.planReglages && typeof importEnAttente.planReglages === "object")
+      planReglages = Object.assign({}, planReglages, importEnAttente.planReglages);
     // la fusion produit un etat qui n'existe dans aucun des deux fichiers : elle merite sa
     // propre revision, sinon deux postes croiraient detenir la meme
     revision = Math.max(revision, revisionEntrante || 0) + 1;
@@ -5448,6 +5475,12 @@ function appliquerImport(mode){
     synchroNote = parsed.synchroNote || null;
     catalogue = (parsed.catalogue || []).map(normalizeArticleCat);
     conso2025 = normalizeConso2025(parsed.conso2025);   /* v4.92 : le reçu fait autorité, comme le catalogue */
+    /* v4.101.1 — le reçu fait autorité aussi pour la consommation réelle et le Plan */
+    consoReelle = (importEnAttente.consoReelle && importEnAttente.consoReelle.parArticle) ? importEnAttente.consoReelle : consoReelle;
+    if(importEnAttente.planSource) planSource = importEnAttente.planSource;
+    if(parseFloat(importEnAttente.consoSemaines) > 0) consoSemaines = parseFloat(importEnAttente.consoSemaines);
+    if(importEnAttente.planReglages && typeof importEnAttente.planReglages === "object")
+      planReglages = Object.assign({}, planReglages, importEnAttente.planReglages);
   }
   projets.forEach(purgerTagsMorts);
 
@@ -12125,8 +12158,22 @@ document.getElementById("resetBtn").addEventListener("click", () => {
 document.getElementById("restoreBtn").addEventListener("click", restoreBackup);
 document.getElementById("syntheseBtn").addEventListener("click", () => {
   const wrap = document.getElementById("syntheseWrap");
-  wrap.hidden = !wrap.hidden;
-  if(!wrap.hidden) renderSynthese();
+  if(wrap.hidden){
+    /* v4.101.1 — fermer PROPREMENT les panneaux AVANT d'afficher la Synthèse.
+       ouvrirPanneau laisse le voile modal (panelBackdrop, z-index 40) visible :
+       la Synthèse, bloc en flux sans z-index, s'affichait DERRIÈRE ce voile —
+       et le premier clic (reçu par le voile) appelait fermerPanneaux, qui
+       refermait tout. D'où « la synthèse n'apparaît plus quand on va et vient ».
+       v4.100.4 avait réglé l'empilement des écrans du rail, pas ce voile.
+       fermerPanneaux (patché par la coque) cache aussi la Synthèse : l'ordre
+       est fermer -> rouvrir. */
+    fermerPanneaux();
+    wrap.hidden = false;
+    renderSynthese();
+    try { window.scrollTo({ top: 0, behavior: "instant" }); } catch(e) { window.scrollTo(0, 0); }
+  } else {
+    wrap.hidden = true;
+  }
 });
 document.getElementById("backlogBtn").addEventListener("click", () => {
   ouvrirPanneau("backlogWrap");
@@ -12556,6 +12603,10 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.101.1", date:"21/10/2026", points:[
+    "<b>La Synthèse réapparaît quand on va et vient.</b> En venant de l'Accueil ou du Tableau, la Synthèse s'affichait <b>derrière le voile modal</b> resté en place — et le premier clic la refermait. Le voile est maintenant retiré à l'ouverture.",
+    "<b>Le tableau des consommations reste en mémoire.</b> La consommation réelle (classeurs semaine), le mode du Plan (théorique / réelle ×52 / annuelle 2025) et ses réglages <b>voyagent désormais avec le suivi</b> : plus besoin de relire les fichiers Excel à chaque ouverture, et ils partent dans l'export/import comme la base 2025."
+  ]},
   { version:"4.101.0", date:"21/10/2026", points:[
     "<b>⛔ FAILED : un scénario qui n'a pas tenu sa charnière sort des gains.</b> Un essai arrêté avant sa charnière (casse, brut, incident) — ou une campagne terminée sans un seul essai conforme — marque désormais le scénario <b>hors course</b> : tampon ⛔ sur sa fiche et dans le rail, mention dans la vue de synthèse, et <b>exclusion des gains projetés</b> du tableau de bord et de l'A4 Mission. C'était le trou qui faisait afficher un gain sur les essais SN60 arrêtés (OP40 EMAG 2 / DV356). À la clôture d'un essai arrêté avant charnière, une case propose d'<b>aligner la charnière du scénario sur le réel atteint</b> — explicite, jamais silencieux.",
     "<b>⬆⬇ La saisie numérique au bureau devient praticable.</b> Hors mode atelier, les flèches d'incrément des champs numériques (prix plaquettes, volumes, seuils…) sont désormais <b>affichées en permanence</b> — Chrome ne les montrait qu'au survol, et le pas du champ (step) devient un vrai contrôle de souris. Le mode atelier garde ses champs nus, pensés pour les gants."
@@ -13182,7 +13233,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.101.0";
+const TOOL_VERSION = "4.101.1";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -18977,6 +19028,24 @@ function runTests(){
         ok("verdictHTML : le scénario sain ne porte pas le tampon",
            !/FAILED/.test(verdictHTML(sBon)), true);
       } finally { lignes = lFAvant; data = dFAvant; }
+    }
+
+    /* ---- v4.101.1 : la consommation réelle voyage avec le suivi ----
+       (Benjamin : « pourquoi faut-il toujours recharger le tableau des
+        consommations ? » — parce que c'était un état de session. Plus maintenant.) */
+    {
+      const cAv = consoReelle, pAv = planSource, sAv = consoSemaines, rAv = planReglages;
+      try {
+        consoReelle = { lueLe: "21/10/2026", fichiers: ["test.xlsx"], parArticle: { "X": { qtySemaine: 10, lignes: ["PCI 4"] } } };
+        planSource = "reel"; consoSemaines = 48; planReglages = { relSpk: 80 };
+        const obj = JSON.parse(payloadSuivi());
+        ok("payload : la consommation réelle et le mode du Plan voyagent (v4.101.1)",
+           [!!obj.consoReelle, obj.consoReelle.parArticle["X"].qtySemaine, obj.planSource, obj.consoSemaines, obj.planReglages.relSpk],
+           [true, 10, "reel", 48, 80]);
+        ok("payload : pas de consommation réelle -> null, jamais inventée (§3.5)",
+           (() => { const c2 = consoReelle; consoReelle = null;
+                    const o2 = JSON.parse(payloadSuivi()); consoReelle = c2; return o2.consoReelle; })(), null);
+      } finally { consoReelle = cAv; planSource = pAv; consoSemaines = sAv; planReglages = rAv; }
     }
 
     /* ---- v4.41.1 : cadenceHeure + migration du mode global 4.39/4.40 ---- */
