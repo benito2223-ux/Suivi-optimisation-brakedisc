@@ -11,8 +11,9 @@ importe → 7 essais, PCI 5 / OP 40 compris). La perte vient du geste :
 plusieurs JSON importés à la suite avec **« Remplacer tout »** (le bouton par
 défaut) ne laissent que le dernier. Deux pièges aggravants : la **révision ne
 dit pas quel fichier est le plus complet** (rev432 > rev431 en numéro, mais
-moins d'essais), et **v5 a perdu le scénario « Process actuel » de PCI 5 /
-OP 40** (l'essai y est sur « Classeur Matis » — `rev431` est le fichier de
+moins d'essais), et **le transfert de l'essai PCI 5 / OP 40 vers
+« Classeur Matis » était délibéré** (Benjamin, confirmé le 21/10 — pas une
+perte ; `rev431` reste le fichier de
 référence). Correctif : l'écran d'import compare le **nombre d'essais** reçu et
 local et affiche l'écart avant les boutons. Porte `import 4.100.3` (3 points),
 contre-regards détectés. **DEV** : 4.100.3 servie, md5 `7a7c8119…`. **PROD :

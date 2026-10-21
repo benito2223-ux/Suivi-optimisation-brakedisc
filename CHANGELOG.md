@@ -97,6 +97,11 @@ détectés. Harnais **583/0**.
 complet : 7 essais) — avec « Remplacer tout » ou « Fusionner », les deux
 restaurent tout, PCI 5 / OP 40 / Process actuel compris.
 
+**Précision (21/10).** Le point 2 ci-dessus n'était pas une perte : Benjamin
+confirme avoir lui-même transféré l'essai PCI 5 vers « Classeur Matis ». Le
+piège restait réel — un essai sur le scénario d'import Matis se retrouve
+difficile à retrouver — mais les données de v5 étaient saines.
+
 ## [4.100.2] — 2026-10-20 · Les corrections arrivent maintenant, même sur un poste déjà ouvert
 
 **Le défaut, vu par Benjamin.** « Problème toujours présent bro. » — alors que
