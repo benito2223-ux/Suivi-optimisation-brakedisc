@@ -158,10 +158,18 @@ if (ANCRE_PLAN_VIDE.test(html)) {
 
 /* --------------------------------------------------------------------------
    4. Titre de travail plus calme ; le contexte est porte par la coque.
+      v4.102.0 : le Plan s'ouvre sur le tableau de bord LIVE, puis le tableau
+      de conversion ligne a ligne reste en dessous.
    -------------------------------------------------------------------------- */
 remplacer(
-  'wrap.innerHTML = `<h3>⚔️ Plan de conversion — vers les plaquettes SPK</h3>` + planHTML();',
-  'wrap.innerHTML = `<h3>Plan de conversion</h3>` + planHTML();',
+  [
+    'wrap.innerHTML = `<h3>⚔️ Plan de conversion — vers les plaquettes SPK</h3>` + planTableauDeBordHTML()',
+    '    + `<div class="pc-titre-section">Conversion article par article</div>` + planHTML();'
+  ].join('\n'),
+  [
+    'wrap.innerHTML = `<h3>Plan de conversion</h3>` + planTableauDeBordHTML()',
+    '    + `<div class="pc-titre-section">Conversion article par article</div>` + planHTML();'
+  ].join('\n'),
   'titre du Plan de conversion (emoji retire)'
 );
 

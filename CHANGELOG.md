@@ -5,6 +5,61 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.102.0] — 2026-10-21 · Le Plan de conversion devient un tableau de bord live
+
+**La commande.** « Sur le plan de conversion il serait chouette d'avoir 1 — les gains
+estimés quand les scénarios sont passés en série ET les gains possibles des
+scénarios en cours d'essais positifs, ainsi que des vues graphiques des
+consommations par rapport aux scénarios de base ET une chronologie des essais
+réalisés depuis le premier essai (important pour justifier mon travail ainsi
+que celui de Matis à sa hiérarchie) — ensuite la case PRIX CONFIRME correspond
+à quoi ? c'est troublant… repense ce plan de conversion comme un vrai tableau
+de bord live des travaux et essais en cours mais aussi un outil de prospective
+globale. »
+
+### Corrigé — la case « PRIX CONFIRME » était MORTE
+- **Diagnostic** : une seule occurrence de `data-planconf` dans tout le
+  fichier — le HTML — et **aucun listener**. Le champ `confirme` était lu par
+  `planLignes()` et par le total, mais **jamais écrit** : cochée ou non, le
+  total ne changeait pas. Le titre « Prix cible confirmé » mentait sur les
+  deux points (il ne validait que le prix, et son effet n'existait pas).
+- **Fix** : case câblée (`renderPlan` → listener → `e.confirme` → `saveData`),
+  intitulé « **Prix validé** », infobulle explicite, et le total annonce
+  « X €/an dont N prix validés ».
+
+### Ajouté — le tableau de bord live
+- **Bandeau de 4 blocs** : *Gains actés* (scénarios passés en série), *Gains
+  possibles* (essais en cours **positifs** : ≥ 1 essai conforme, pas de
+  `scenarioEchec`), *Écart* (le promis mais non confirmé), *Essais réalisés*.
+  **Les gains actés et projetés ne sont jamais additionnés** (constitution
+  §3.4) : deux chiffres, deux blocs, pas un total qui mélange.
+- **Vues graphiques** (SVG pur, sans dépendance réseau — §5.5) : Pareto des
+  articles (coût annuel) et **base face à cible** par poste en €/an. Le
+  **tableau des données reste sous chaque graphique** (§5.6 : un chiffre qu'on
+  ne peut pas justifier n'est pas affiché).
+- **Chronologie des essais** : frise SVG (un point par essai, couleur par
+  état : conforme / non conforme / arrêté / en cours) depuis le premier essai,
+  tableau complet (date, poste, scénario, auteur, état, mesures) et
+  **« Qui a fait quoi »** (répartition par auteur — pour justifier le travail
+  devant la hiérarchie).
+- **Source unique** : tous les gains viennent de `gainLigne` / `gainPoste` —
+  jamais recalculés. Le Plan et l'Accueil racontent la même histoire.
+
+### Vérifié
+- **606 tests | 0 échec** (13 portes nouvelles : 5 de logique + 1 hors-suite).
+- **Contre-regard en série** (3 régressions injectées, restauration vérifiée
+  par SHA-256 identique) :
+  1. listener de la case supprimé → **vue** (porte hors-suite) ;
+  2. bandeau de gains retiré du tableau de bord → **vue** ;
+  3. gains actés et possibles additionnés → **vue** — après **durcissement de
+     la porte** (elle ne l'était pas : le cadrage s'arrêtait à la première
+     accolade fermante, et la regex `[^\n]` devenait un vrai saut de ligne dans
+     la chaîne Python non-raw — le piège d'échappement documenté, qui faisait
+     passer la porte au vert sans rien voir). Réécrite sans regex, par
+     découpage en lignes.
+- **DEV** : 4.102.0 servie, **empreinte identique** au `dist/` local
+  (1 641 678 o). **PROD : rien** — 4.97.2.
+
 ## [4.101.1] — 2026-10-21 · La Synthèse réapparaît ; le tableau des consommations reste en mémoire
 
 **Les deux remontées de Benjamin.** (1) « La page Synthèse n'apparaît plus quand

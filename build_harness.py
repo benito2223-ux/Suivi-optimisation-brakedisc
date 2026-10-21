@@ -1042,6 +1042,95 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'import 4.100.3 : l ecran d import previent quand le fichier recu porte moins d essais que les donnees locales' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  (function planTableauDeBordLive(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const html = (function(){ try { return fs.readFileSync(path.join(REPO, 'bilan_economique.html'), 'utf8'); } catch (e) { return ''; } })();
+    if (!html) { echecs.push('bilan_economique.html introuvable'); }
+    else {
+      const NL = String.fromCharCode(10);
+      const code = html.split(NL).map(function(l){ return l.replace(/\/\/.*$/, ''); }).join(NL);
+
+      /* (1) la case PRIX CONFIRME est CABLEE : le listener existe et il ecrit
+             dans le champ confirme. Une case presente sans listener est une case
+             MORTE (le bug du 21/10) — le test d unitite ne la voit pas, il
+             teste le champ, pas le cable. */
+      const iConf = code.indexOf('data-planconf');
+      if (iConf < 0) echecs.push('la case prix valide n est plus dans le tableau du Plan');
+      else {
+        const iEcoute = code.indexOf('data-planconf]');
+        if (iEcoute < 0) echecs.push('la case prix valide n a aucun listener (elle est MORTE)');
+        else {
+          const bloc = code.slice(iEcoute, iEcoute + 700);
+          if (bloc.indexOf('e.confirme') === -1) echecs.push('le listener de la case prix valide n ecrit pas dans le champ confirme');
+          if (bloc.indexOf('saveData') === -1) echecs.push('le listener de la case prix valide ne sauvegarde pas');
+        }
+      }
+
+      /* (2) les 5 briques du tableau de bord live sont dans le SOURCE */
+      ['planRecapGains', 'planChronologieEssais', 'planParetoSVG', 'planBandeauHTML', 'planTableauDeBordHTML']
+        .forEach(function(fn){
+          if (code.indexOf('function ' + fn) === -1) echecs.push('la fonction ' + fn + ' est absente du source');
+        });
+
+      /* (3) les gains actes et possibles ne sont JAMAIS additionnes : pas de
+             total unique qui melee les deux (constitution 3.4). Le controle est
+             CADE sur le bloc qui CONSTRUIT le recapitulatif (l addition y
+             porterait un nom) — chercher dans tout le fichier laisserait passer
+             un calcul melee ailleurs. */
+      const iRecap = code.indexOf('function planRecapGains');
+      if (iRecap < 0) echecs.push('planRecapGains introuvable');
+      else {
+        /* le bloc va de la fonction a la fonction SUIVANTE (sinon on s arrete a
+           la premiere accolade fermante, qui coupe au milieu de la fonction) */
+        const iSuivant = code.indexOf('function planChronologieEssais', iRecap);
+        const bloc = code.slice(iRecap, iSuivant > 0 ? iSuivant : iRecap + 4000);
+        /* tout total qui additionne les deux series est interdit, quel que soit
+           le nom qu il porte. SANS REGEX : dans cette chaine Python non-raw, un
+           "\\n" Backslash-n devient un VRAI saut de ligne et la regex compile
+           mais ne matche plus rien — la porte passerait au vert sans rien voir
+           (piege documente : harnais + echappement JS). On travaille donc avec
+           des chaines : on decoupe le bloc en LIGNES et on cherche un + entre
+           un nom de serie et un nom de projete. */
+        const nomsSerie = ['gainActe', 'totalActe', 'actes'];
+        const nomsProj = ['gainProjete', 'totalPossible', 'totalProjeteBrut', 'enCoursPositifs'];
+        const lignesBloc = bloc.split(String.fromCharCode(10));
+        lignesBloc.forEach(function(ligne){
+          const posPlus = ligne.indexOf('+');
+          if (posPlus < 0) return;
+          const avant = ligne.slice(0, posPlus);
+          const apres = ligne.slice(posPlus + 1);
+          const aSerie = nomsSerie.filter(function(n){ return avant.indexOf(n) !== -1; });
+          const aProj = nomsProj.filter(function(n){ return apres.indexOf(n) !== -1; });
+          if (aSerie.length && aProj.length)
+            echecs.push('les gains actes et possibles sont additionnes dans le recapitulatif : ' + ligne.trim().slice(0, 90));
+        });
+      }
+
+      /* (4) pas de dependance reseau dans les graphiques (constitution 5.5) */
+      const iSvg = code.indexOf('function planParetoSVG');
+      if (iSvg >= 0) {
+        const bloc = code.slice(iSvg, iSvg + 2600);
+        if (bloc.indexOf('http://') !== -1 || bloc.indexOf('https://') !== -1)
+          echecs.push('le graphique du Plan depend du reseau');
+      }
+
+      /* (5) le tableau de bord est montee DANS le rendu du Plan */
+      const iRend = code.indexOf('function renderPlan');
+      if (iRend < 0) echecs.push('renderPlan introuvable');
+      else {
+        const bloc = code.slice(iRend, iRend + 1200);
+        if (bloc.indexOf('planTableauDeBordHTML') === -1)
+          echecs.push('le tableau de bord live n est pas monte dans le rendu du Plan');
+      }
+    }
+
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'plan 4.102.0 : le tableau de bord live est monte, la case prix valide est cablee, les gains ne sont pas melanges' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   (function coqueDansLeRepoGit(){
     const fs = require('fs');
     const path = require('path');

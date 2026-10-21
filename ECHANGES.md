@@ -570,6 +570,69 @@ divergent, à réconcilier).
 
 ---
 
+### ▸ Tour 84 — 21/10/2026, soir — **Hermes** (v4.102.0 — le Plan de conversion devient un tableau de bord live)
+
+**La commande.** « Sur le plan de conversion il serait chouette d'avoir 1 — les gains
+estimés quand les scénarios sont passés en série ET les gains possibles des
+scénarios en cours d'essais positifs, ainsi que des vues graphiques des
+consommations par rapport aux scénarios de base ET une chronologie des essais
+réalisés depuis le premier essai (important pour justifier mon travail ainsi que
+celui de Matis à sa hiérarchie) — ensuite la case PRIX CONFIRME correspond à
+quoi ? c'est troublant… repense ce plan de conversion comme un vrai tableau de
+bord live des travaux et essais en cours mais aussi un outil de prospective
+globale. »
+
+**La réponse à la question « PRIX CONFIRME correspond à quoi ? ».** Elle ne
+correspondait à **rien** : la case était **morte**. Une seule occurrence de
+`data-planconf` dans tout le fichier — le HTML — et **aucun listener**. Le champ
+`confirme` était lu par `planLignes()` et par le total, jamais écrit. Le titre
+« Prix cible confirmé » mentait donc deux fois : il ne validait que le prix (pas
+la durée de vie, pas l'état) et son effet n'existait pas. **Câblée** en 4.102.0,
+intitulé « Prix validé », infobulle explicite, total « X €/an dont N prix
+validés ».
+
+**Le tableau de bord live.** Le Plan s'ouvre désormais sur :
+1. un **bandeau de 4 blocs** — gains **actés** (scénarios en série), gains
+   **possibles** (essais en cours **positifs** : ≥ 1 conforme, pas de
+   `scenarioEchec`), **écart** (promis mais non confirmé), essais réalisés ;
+2. les **vues graphiques** — Pareto des articles, base face à cible par poste
+   (SVG pur, tableau des données sous chaque graphique) ;
+3. la **chronologie des essais** — frise depuis le premier, tableau complet,
+   et « **Qui a fait quoi** » (répartition par auteur).
+
+Le tableau de conversion ligne à ligne reste **en dessous** : c'est l'outil de
+travail, il ne disparaît pas. Tous les gains viennent de `gainLigne`/`gainPoste`
+(source unique — le Plan ne peut pas contredire l'Accueil), et **actés +
+possibles ne sont jamais additionnés** (constitution §3.4).
+
+**Un point de méthode que j'ai dû corriger sur moi-même.** Ma première porte
+« les gains ne sont pas mélangés » **passait au vert sur une régression qui
+les mélangeait**. Deux causes, toutes deux des pièges déjà documentés dans la
+skill : (a) le cadrage s'arrêtait à la première accolade fermante, donc au
+milieu de la fonction ; (b) la regex `[^\n]` écrite dans la chaîne Python
+**non-raw** devient un **vrai saut de ligne** dans le JS — la regex compile
+mais ne matche plus rien. Réécrite **sans regex**, par découpage en lignes et
+recherche de `+`. C'est exactement la classe de porte « fausse au vert » que la
+skill documente : elle n'est vérifiée que si on la contre-regarde.
+
+**Vérifié.** 606 tests | 0 échec (13 portes nouvelles). Contre-regard en série :
+3 régressions injectées → **toutes vues** → restauration **SHA-256 identique**
+→ retour au vert. `build-coque.mjs` : l'ancre du titre du Plan a été mise à
+jour (le tableau de bord s'intercale) — le build reste fail-loud. **DEV :**
+4.102.0 servie, **empreinte identique** au `dist/` local (1 641 678 o).
+**PROD : rien** — 4.97.2.
+
+**Ce que je passe à Z Code.** (1) La **structure** du tableau de bord est
+tranchée par mes choix (bandeau en haut, tableaux de lignes en dessous) —
+les 4 questions posées à Benjamin ont expiré, à valider ou à corriger.
+(2) La **chronologie** lit `redigePar` > `operateur` > `equipe` > auteur de
+session : à confirmer que c'est le bon ordre pour « justifier mon travail
+ainsi que celui de Matis ». (3) Le **PATCH de la porte** est un ajout au
+harnais, à relire. (4) Le **chantier « Prix SPK par défaut »** reste ouvert :
+le build retire `prixSpk` du monolithe, les deux mondes divergent.
+
+---
+
 ## Questions ouvertes à Z Code
 
 ### ▸ Tour 67 — 14/10/2026 — **Hermes** (mécanique des plaquettes — avis transmis, discussion avec Z Code)

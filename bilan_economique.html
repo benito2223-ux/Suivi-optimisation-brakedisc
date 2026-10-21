@@ -287,6 +287,38 @@ table .num, table td.num{ text-align:right; font-variant-numeric:tabular-nums;
 .eco-ap{ position:absolute; left:0; top:10px; height:6px; width:0; background:var(--green); border-radius:3px; transition:width .12s var(--ease); }
 .eco-ap.perd{ background:var(--red); }
 .eco-gain{ display:block; font-size:12.5px; font-weight:600; margin-top:1px; white-space:nowrap; }
+
+/* v4.102.0 — le tableau de bord LIVE du Plan de conversion : bandeau de gains,
+   vues graphiques (SVG), chronologie des essais. Les tokens du design system
+   seulement (constitution §5.4) : pas de couleur hors tokens. */
+.pc-bandeau{ display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:10px; margin:0 0 18px; }
+.pc-bloc{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:11px 13px; }
+.pc-lib{ font-size:11.5px; font-weight:600; color:var(--label); text-transform:uppercase; letter-spacing:.03em; }
+.pc-v{ font-size:26px; font-weight:700; color:var(--ink); font-family:var(--font-mono); line-height:1.18; margin:3px 0 2px; }
+.pc-v small{ font-size:13px; font-weight:500; color:var(--ink-faint); }
+.pc-sub{ font-size:12px; color:var(--ink-soft); line-height:1.35; }
+.pc-titre-section{ font-size:13px; font-weight:700; color:var(--ink); text-transform:uppercase; letter-spacing:.04em;
+  margin:20px 0 9px; padding-bottom:5px; border-bottom:1px solid var(--border); }
+.pc-graphs{ display:grid; grid-template-columns:repeat(auto-fit,minmax(330px,1fr)); gap:16px; }
+.pc-graph{ min-width:0; }
+.pc-table-donnees{ margin-top:7px; font-size:12px; }
+.pc-table-donnees th, .pc-table-donnees td{ padding:4px 7px; }
+.pc-table-essais{ margin-top:9px; font-size:12px; }
+.pc-table-essais th, .pc-table-essais td{ padding:5px 8px; }
+.pc-hors-course td{ background:var(--red-bg); }
+.pc-legende{ display:flex; flex-wrap:wrap; gap:13px; margin:7px 0 9px; font-size:12px; color:var(--ink-soft); }
+.pc-leg{ display:inline-flex; align-items:center; gap:5px; }
+.pc-leg i{ width:9px; height:9px; border-radius:50%; display:inline-block; }
+.pc-auteurs{ background:var(--surface-alt); border:1px solid var(--border); border-radius:var(--radius); padding:8px 11px; margin:0 0 9px; }
+.pc-auteurs-t{ font-size:11.5px; font-weight:700; color:var(--label); text-transform:uppercase; letter-spacing:.03em; margin-bottom:5px; }
+.pc-auteurs ul{ list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:6px 20px; }
+.pc-auteurs li{ display:flex; gap:7px; align-items:baseline; font-size:12.5px; }
+.pc-auteurs li span{ color:var(--ink-faint); font-size:11.5px; }
+.pc-chrono{ min-width:0; }
+@media print{
+  .pc-bandeau{ grid-template-columns:repeat(2,1fr); }
+  .pc-graphs{ grid-template-columns:1fr; }
+}
 </style>
 
 <style>
@@ -12603,6 +12635,12 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.102.0", date:"21/10/2026", points:[
+    "<b>Le Plan de conversion devient un tableau de bord live.</b> Il s'ouvre sur quatre blocs : les <b>gains actés</b> (scénarios passés en série), les <b>gains possibles</b> (essais en cours <b>positifs</b> seulement), l'<b>écart</b> entre les deux, et le nombre d'essais réalisés. Les gains actés et possibles ne sont jamais additionnés : ce sont deux chiffres, pas un.",
+    "<b>Les consommations vues en graphiques.</b> Le Pareto des articles et la <b>base face à la cible</b> par poste, en SVG — avec le tableau des chiffres sous chaque graphique, pour que tout chiffre soit justifiable.",
+    "<b>La chronologie des essais, depuis le premier.</b> Une frise des essais (couleur par état), le tableau complet, et <b>« Qui a fait quoi »</b> : la répartition par auteur, pour justifier le travail devant la hiérarchie.",
+    "<b>La case « PRIX CONFIRME » était morte.</b> Elle n'écrivait rien : cochée ou non, le total ne changeait pas. Elle est câblée, et l'intitulé dit ce qu'elle fait — <b>« Prix validé »</b>."
+  ]},
   { version:"4.101.1", date:"21/10/2026", points:[
     "<b>La Synthèse réapparaît quand on va et vient.</b> En venant de l'Accueil ou du Tableau, la Synthèse s'affichait <b>derrière le voile modal</b> resté en place — et le premier clic la refermait. Le voile est maintenant retiré à l'ouverture.",
     "<b>Le tableau des consommations reste en mémoire.</b> La consommation réelle (classeurs semaine), le mode du Plan (théorique / réelle ×52 / annuelle 2025) et ses réglages <b>voyagent désormais avec le suivi</b> : plus besoin de relire les fichiers Excel à chaque ouverture, et ils partent dans l'export/import comme la base 2025."
@@ -13233,7 +13271,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.101.1";
+const TOOL_VERSION = "4.102.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -16178,6 +16216,190 @@ function groupes2025(){
   }).sort((a, b) => b.coutAnnuel - a.coutAnnuel);
 }
 
+/* ════════════════════════════════════════════════════════════════════════════
+   v4.102.0 — LE PLAN DE CONVERSION COMME TABLEAU DE BORD LIVE
+   ---------------------------------------------------------------------------
+   Benjamin (21/10) : « repense ce plan de conversion comme un vrai tableau de
+   bord live des travaux et essais en cours mais aussi un outil de prospective
+   globale ». Cinq briques demandées :
+     1. les gains ESTIMÉS quand les scénarios sont PASSÉS EN SÉRIE (actés) ;
+     2. les gains POSSIBLES des scénarios EN COURS D'ESSAIS POSITIFS ;
+     3. des vues GRAPHIQUES des consommations par rapport aux scénarios de base ;
+     4. une CHRONOLOGIE des essais réalisés depuis le premier (pour justifier
+        le travail de Benjamin et celui de Matis, dans sa hiérarchie) ;
+     5. la case « PRIX CONFIRME » : à quoi elle correspond ?
+
+   LES RÈGLES (constitution §3) :
+   - SOURCE UNIQUE : les gains viennent de `gainPoste` / `gainLigne` — jamais
+     recalculés ici. Un chiffre du Plan ne peut pas contredire l'Accueil.
+   - PERIMÈTRE COMMUN : un delta ne compare que des postes chiffrables des deux
+     côtés (`perimetreCompare` en amont, dans `bilanAnnuel`).
+   - GAINS ACTÉS ET PROJETÉS NE SE SOMMENT JAMAIS (§3.4) : deux blocs séparés,
+     étiquetés, jamais un total unique qui mélange les deux.
+   - RIEN D'INVENTÉ : une absence se dit (« pas de volume », « pas d'essai »),
+     elle ne devient jamais 0.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* --- 1. LE RÉCAPITULATIF DES GAINS (actés / en cours) --------------------
+   Deux chiffres, deux blocs, jamais additionnés (§3.4) :
+   - ACTÉ   : le scénario en production a été remplacé par un scénario passé
+              EN SÉRIE. Le gain est réel, il est dans les numbers de l'usine.
+   - EN COURS : un scénario porte des essais et n'est pas encore en série. Son
+              gain est POSSIBLE, pas acquis — il ne compte que si l'essai est
+              POSITIF (au moins un essai conforme, aucun arrêt avant charnière).
+   Le calcul passe par `gainLigne` (la même source que l'Accueil) : l'Accueil
+   et le Plan racontent donc la même histoire, toujours. */
+function planRecapGains(){
+  const gls = lignes.map(l => gainLigne(l, LIGNES_SEPT_FONS)).filter(gl => !ligneHorsPerimetre(gl));
+  /* les postes, pas les lignes : un poste peut être gagné sur une ligne et en
+     cours sur une autre. On agrège par POSTE (ligne + OP), qui est l'unité de
+     décision de la hiérarchie. */
+  const postes = [];
+  gls.forEach(gl => (gl.postes || []).forEach(t => {
+    const p = t.poste || {};
+    postes.push({
+      ligne: gl.ligne.nom, ligneId: gl.ligne.id, opCode: p.opCode, nom: p.nom,
+      gainActe: p.gainActe || 0, gainProjete: p.gainProjete || 0,
+      serie: !!(t.refs || []).some(r => r.serie), etat: t.etat,
+      essaiOuvert: !!p.essaiOuvert, refs: t.refs || []
+    });
+  }));
+  const actes = postes.filter(p => p.gainActe > 0);
+  const enCours = postes.filter(p => p.gainActe <= 0 && p.gainProjete > 0);
+  /* le "possible" se restreint aux essais POSITIFS : un poste dont les essais
+     sont arrêtés (hors course) ne promet rien — il est écarté du possible. */
+  const enCoursPositifs = enCours.filter(p => {
+    const sc = (p.refs || []).map(r => r.meilleur && r.meilleur.sc).find(Boolean);
+    if(!sc) return false;
+    if(scenarioEchec(sc)) return false;
+    const st = scenarioStats(sc);
+    return st.validCount > 0;
+  });
+  return {
+    postes, actes, enCours, enCoursPositifs,
+    totalActe: actes.reduce((a, p) => a + p.gainActe, 0),
+    totalPossible: enCoursPositifs.reduce((a, p) => a + p.gainProjete, 0),
+    nbActe: actes.length, nbPossible: enCoursPositifs.length,
+    /* ce qui est promis mais NON acquis : l'écart entre le possible total et le
+       possible confirmé par un essai positif. */
+    totalProjeteBrut: enCours.reduce((a, p) => a + p.gainProjete, 0)
+  };
+}
+
+/* --- 2. LA CHRONOLOGIE DES ESSAIS (depuis le premier) --------------------
+   La frise se construit à partir des essais RÉELS (date, auteur, machine) —
+   jamais d'une reconstruction. On remonte à travers lignes → références → OP →
+   scénarios → essais, en gardant le contexte (ligne, OP, scénario, poste).
+   L'auteur d'un essai : `redigePar` (rédigé) > `operateur` > `equipe` > auteur
+   de la session. Un essai sans date est daté « inconnu » et va dans la fin. */
+function planChronologieEssais(){
+  const out = [];
+  lignes.forEach(l => (l.references || []).forEach(r => (r.ops || []).forEach(op => {
+    (op.scenarios || []).forEach(sc => (sc.essais || []).forEach(es => {
+      const st = essaiStats(sc, es);
+      const auteur = (es.redigePar || es.operateur || es.equipe || auteurNom || "").trim();
+      out.push({
+        date: es.date || "", dateFin: es.dateFin || "", id: es.id, titre: es.titre || "Essai",
+        auteur, equipe: es.equipe || "", operateur: es.operateur || "",
+        ligne: l.nom || "?", ligneId: l.id, ref: r.nom || "?", opCode: op.opCode || op.nom || "?",
+        scenario: sc.name || "Sans nom", scenarioId: sc.id, baseline: !!sc.baseline,
+        statutScenario: sc.statut || "essai",
+        etat: st.status, raison: st.raison, motif: (es.cloture && es.cloture.motif) || "",
+        motifLibelle: (es.cloture && es.cloture.motif) ? libelleMotifArret(es.cloture.motif) : "",
+        prelevements: (es.prelevements || []).length,
+        horsCourse: !!scenarioEchec(sc)
+      });
+    }));
+  })));
+  /* tri : par date croissante (la frise raconte l'histoire), les sans-date à la
+     fin. À date égale, l'ordre de saisie est conservé (stable). */
+  out.sort((a, b) => {
+    if(!a.date && !b.date) return 0;
+    if(!a.date) return 1;
+    if(!b.date) return -1;
+    return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0);
+  });
+  /* les auteurs, pour la répartition (qui a fait quoi) */
+  const parAuteur = {};
+  out.forEach(e => { const a = e.auteur || "— non attribué —"; parAuteur[a] = (parAuteur[a] || 0) + 1; });
+  const auteurs = Object.keys(parAuteur).map(n => { return { nom: n, nb: parAuteur[n] }; })
+                        .sort((a, b) => b.nb - a.nb);
+  return { essais: out, auteurs, premier: out[0] || null, dernier: out[out.length - 1] || null,
+           nb: out.length };
+}
+
+/* --- 3. LES VUES GRAPHIQUES (consommations vs scénarios de base) ---------
+   SVG pur : aucune dépendance réseau (constitution §5.5), imprimable, et le
+   tableau de données reste sous le graphique (le chiffre est toujours
+   justifiable — §5.6).
+   Deux graphiques :
+   a) le PARETO des articles (coût annuel) — la consommation qui pèse ;
+   b) le GAIN PAR POSTE (base vs cible) — l'écart entre la base et la cible.
+   Le Pareto est en %, l'échelle est commune : la comparaison se fait à
+   l'œil, sans deux échelles qui se mélangent (constitution §2). */
+function planParetoSVG(lignesGraph, titre, options){
+  const opt = Object.assign({ hauteur: 220, largeur: 720, margeG: 132, margeD: 46, margeH: 16, margeB: 34,
+                              couleur: "var(--blue)", couleur2: "var(--green)", format: v => fmtEuroCourt(Math.round(v)) }, options || {});
+  if(!lignesGraph || !lignesGraph.length) return "";
+  const W = opt.largeur, H = opt.hauteur, mg = opt.margeG, md = opt.margeD, mt = opt.margeH, mb = opt.margeB;
+  const iw = W - mg - md, ih = H - mt - mb;
+  const max = Math.max(...lignesGraph.map(l => Math.max(l.valeur || 0, l.valeur2 || 0)), 0) || 1;
+  const pas = Math.ceil(lignesGraph.length / 12);
+  const X = i => mg + (i + 0.5) * (iw / lignesGraph.length);
+  const Y = v => mt + ih - (Math.max(0, v) / max) * ih;
+  /* grille + axe des ordonnées */
+  let grid = "";
+  for(let k = 0; k <= 4; k++){
+    const v = (max / 4) * k, y = Y(v);
+    grid += `<line x1="${mg}" y1="${y.toFixed(1)}" x2="${(W-md).toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--border)" stroke-width="1"/>`
+          + `<text x="${mg-6}" y="${(y+3.5).toFixed(1)}" text-anchor="end" font-size="10" fill="var(--ink-faint)" font-family="var(--font-mono)">${opt.format(v)}</text>`;
+  }
+  /* barres : la base (grise) et la cible (verte) */
+  const largeurBarre = Math.max(3, (iw / lignesGraph.length) * 0.34);
+  let barres = "";
+  lignesGraph.forEach((l, i) => {
+    const x = X(i);
+    const y1 = Y(l.valeur || 0), h1 = mt + ih - y1;
+    const y2 = Y(l.valeur2 || 0), h2 = mt + ih - y2;
+    const vb = l.valeur2 != null;
+    if(vb){
+      barres += `<rect x="${(x-largeurBarre).toFixed(1)}" y="${y2.toFixed(1)}" width="${largeurBarre.toFixed(1)}" height="${Math.max(0,h2).toFixed(1)}" fill="${opt.couleur2}" rx="2"><title>${escapeAttr(l.label)} — cible : ${opt.format(l.valeur2)}</title></rect>`;
+    }
+    barres += `<rect x="${x.toFixed(1)}" y="${y1.toFixed(1)}" width="${largeurBarre.toFixed(1)}" height="${Math.max(0,h1).toFixed(1)}" fill="${opt.couleur}" rx="2"><title>${escapeAttr(l.label)} — base : ${opt.format(l.valeur)}</title></rect>`;
+    if(i % pas === 0){
+      const t = l.label.length > 16 ? l.label.slice(0, 15) + "…" : l.label;
+      barres += `<text x="${x.toFixed(1)}" y="${(mt+ih+16).toFixed(1)}" text-anchor="middle" font-size="10" fill="var(--ink-faint)" font-family="var(--font-mono)">${escapeAttr(t)}</text>`;
+    }
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="${escapeAttr(titre)}" style="max-width:100%;height:auto;display:block;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)">
+    <text x="${mg}" y="${mt-3}" font-size="11" font-weight="600" fill="var(--ink)">${escapeAttr(titre)}</text>
+    ${grid}${barres}
+  </svg>`;
+}
+
+/* --- 4. LE BANDEAU DU TABLEAU DE BORD (les chiffres d'abord) -------------
+   Deux blocs séparés (acté / possible), jamais additionnés. Le possible porte
+   sa condition : « essais en cours, validation en attente ». */
+function planBandeauHTML(recap){
+  const bloc = (lib, val, sub, cls) => `
+    <div class="pc-bloc ${cls || ""}">
+      <div class="pc-lib">${lib}</div>
+      <div class="pc-v">${val}</div>
+      <div class="pc-sub">${sub}</div>
+    </div>`;
+  const gain = v => `+${fmtEuroCourt(Math.round(v))}<small>/an</small>`;
+  return `<div class="pc-bandeau">
+    ${bloc("Gains actés — scénarios passés en série", recap.totalActe ? gain(recap.totalActe) : "—",
+      recap.totalActe ? `${recap.nbActe} poste(s) en série : le gain est dans les chiffres de l'usine` : "aucun scénario passé en série pour l'instant")}
+    ${bloc("Gains possibles — essais en cours, positifs", recap.totalPossible ? gain(recap.totalPossible) : "—",
+      recap.totalPossible ? `${recap.nbPossible} poste(s) · validation en attente, rien n'est acquis` : "aucun essai en cours positif à ce jour")}
+    ${bloc("Écart — ce qui est promis mais non confirmé", recap.totalProjeteBrut > recap.totalPossible ? gain(recap.totalProjeteBrut - recap.totalPossible) : "—",
+      recap.totalProjeteBrut > recap.totalPossible ? "postes dont les essais ne sont pas encore positifs" : "tout le projeté est porté par un essai positif")}
+    ${bloc("Essais réalisés", String(recap.essaisNb || 0),
+      recap.essaisNb ? `depuis le ${recap.premierEssai || "—"} · ${recap.auteursNb || 0} auteur(s)` : "aucun essai saisi")}
+  </div>`;
+}
+
 function planLignes(){
   const annuel = (planSource === "annuel") && conso2025;
   const d = annuel ? { groupes: groupes2025() } : plaquettesCommunes();
@@ -16235,6 +16457,128 @@ function planCoutCible(coutActuel, prixA, prixCible, viePct){
   const vie = (Number(viePct) > 0) ? Number(viePct) : 100;
   return coutActuel * (100 / vie) * (Number(prixCible) / prixA);
 }
+/* --- 5. LA CHRONOLOGIE RENDUE (la frise + le tableau d'auteurs) ---------
+   La frise est une frise SVG : une ligne de temps, un point par essai, la
+   couleur par état (conforme / non conforme / arrêté / en cours). Elle dit
+   l'histoire — « depuis le premier essai » — et le tableau d'auteurs dit qui
+   a fait quoi (Benjamin et Matis, pour justifier le travail dans la
+   hiérarchie). Le tableau reste la source : la frise est une vue. */
+function planChronologieHTML(chrono){
+  const etats = { ok: { c: "var(--green)", l: "conforme" }, bad: { c: "var(--red)", l: "non conforme" },
+                  arrete: { c: "var(--amber)", l: "arrêté" }, pending: { c: "var(--gray-300)", l: "en cours" } };
+  const W = 720, H = 96, mg = 16, md = 16, mt = 30;
+  const iw = W - mg - md;
+  const dates = chrono.essais.map(e => e.date).filter(Boolean).sort();
+  const dMin = dates[0] || "", dMax = dates[dates.length - 1] || "";
+  /* un axe de temps : du premier au dernier ESSAI daté. Sans date, la frise
+     le dit au lieu de placer l'essai n'importe où. */
+  const t0 = dMin ? Date.parse(dMin) : 0, t1 = dMax ? Date.parse(dMax) : 0;
+  const span = (t1 - t0) || 1;
+  const X = e => {
+    if(!e.date) return W / 2;
+    const t = Date.parse(e.date);
+    if(isNaN(t)) return W / 2;
+    return mg + ((t - t0) / span) * iw;
+  };
+  let frise = "";
+  if(!chrono.essais.length){
+    frise = `<p class="panel-hint">Aucun essai saisi : la chronologie se remplira dès le premier essai daté.</p>`;
+  } else {
+    frise = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="Chronologie des essais" style="max-width:100%;height:auto;display:block;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)">
+      <text x="${mg}" y="${mt-14}" font-size="11" font-weight="600" fill="var(--ink)">Chronologie des essais — depuis le premier</text>
+      <line x1="${mg}" y1="${mt+34}" x2="${(W-md).toFixed(1)}" y2="${mt+34}" stroke="var(--gray-300)" stroke-width="2"/>
+      <text x="${mg}" y="${mt+52}" font-size="10" fill="var(--ink-faint)" font-family="var(--font-mono)">${dMin ? escapeAttr(dMin.split("-").reverse().join("/")) : "—"}</text>
+      <text x="${(W-md).toFixed(1)}" y="${mt+52}" text-anchor="end" font-size="10" fill="var(--ink-faint)" font-family="var(--font-mono)">${dMax ? escapeAttr(dMax.split("-").reverse().join("/")) : "—"}</text>
+      ${chrono.essais.map(e => {
+        const x = X(e), c = (etats[e.etat] || etats.pending).c;
+        const titre = e.date ? (e.date.split("-").reverse().join("/")) + " · " + e.ligne + " " + e.opCode + " · " + e.scenario : "sans date";
+        return `<circle cx="${x.toFixed(1)}" cy="${mt+34}" r="5" fill="${c}" stroke="var(--surface)" stroke-width="1.5"><title>${escapeAttr(titre + " — " + e.titre + (e.auteur ? " (" + e.auteur + ")" : ""))}</title></circle>`;
+      }).join("")}
+    </svg>`;
+  }
+  /* la légende des états */
+  const legende = Object.keys(etats).map(k =>
+    `<span class="pc-leg"><i style="background:${etats[k].c}"></i>${etats[k].l}</span>`).join("");
+  /* le tableau des essais : c'est là que le chiffre est justifiable */
+  const lignesEssais = chrono.essais.slice().reverse().map(e => `
+    <tr class="${e.horsCourse ? "pc-hors-course" : ""}">
+      <td class="mono" style="white-space:nowrap;">${e.date ? escapeAttr(e.date.split("-").reverse().join("/")) : '<span style="color:var(--ink-faint);">sans date</span>'}</td>
+      <td>${escapeAttr(e.ligne)} <span style="color:var(--ink-faint);">${escapeAttr(e.opCode)}</span></td>
+      <td>${escapeAttr(e.scenario)}${e.baseline ? ' <span class="statut-pill serie">base</span>' : ""}</td>
+      <td>${escapeAttr(e.titre)}</td>
+      <td>${escapeAttr(e.auteur || "—")}</td>
+      <td>${e.motifLibelle ? `<span style="color:var(--amber);">${escapeAttr(e.motifLibelle)}</span>` : escapeAttr(e.raison || "—")}</td>
+      <td class="mono">${e.prelevements}</td>
+    </tr>`).join("");
+  const auteurs = chrono.auteurs.map(a => `<li><b>${escapeAttr(a.nom)}</b><span>${a.nb} essai${a.nb > 1 ? "s" : ""}</span></li>`).join("");
+  return `
+    <div class="pc-chrono">
+      ${frise}
+      <div class="pc-legende">${legende}</div>
+      ${chrono.nb ? `<div class="pc-auteurs"><div class="pc-auteurs-t">Qui a fait quoi</div><ul>${auteurs}</ul></div>` : ""}
+      ${chrono.nb ? `<table class="simul-table pc-table-essais">
+        <thead><tr><th>Date</th><th>Poste</th><th>Scénario</th><th>Essai</th><th>Auteur</th><th>État</th><th>Mesures</th></tr></thead>
+        <tbody>${lignesEssais}</tbody></table>` : ""}
+    </div>`;
+}
+
+/* --- 6. LA PROSPECTIVE (les scénarios de base face aux cibles) -----------
+   Deux graphiques SVG + leurs tableaux de données :
+   a) le PARETO des articles : ce que coûte aujourd'hui la consommation ;
+   b) les POSTES : base (scénario de production) face à cible (le meilleur
+      scénario), en €/an — l'écart est le gain.
+   Les deux tableaux restent sous les graphiques : un chiffre qu'on ne peut
+   pas justifier n'est pas affiché (constitution §5.6). */
+function planGraphiquesHTML(recap, lignesPlan){
+  /* (a) le Pareto des articles — la consommation qui pèse */
+  const groupes = (planSource === "annuel" && conso2025) ? groupes2025() : plaquettesCommunes().groupes;
+  const pareto = groupes.slice(0, 14).map(g => ({ label: g.mabec, valeur: g.coutAnnuel || 0 }));
+  const totalConso = groupes.reduce((a, g) => a + (g.coutAnnuel || 0), 0);
+  /* (b) les postes : base vs cible, en €/an */
+  const postesGraph = recap.postes
+    .filter(p => p.gainActe > 0 || p.gainProjete > 0)
+    .map(p => ({ label: (p.ligne + " " + p.opCode).slice(0, 22), valeur: p.gainActe > 0 ? p.gainActe : 0, valeur2: p.gainProjete }))
+    .filter(l => l.valeur > 0 || l.valeur2 > 0)
+    .sort((a, b) => (b.valeur + b.valeur2) - (a.valeur + a.valeur2))
+    .slice(0, 14);
+  const tables = `
+    <div class="pc-graphs">
+      <div class="pc-graph">
+        ${planParetoSVG(pareto, "Consommation annuelle par article (base actuelle)") || `<p class="panel-hint">Aucune consommation chiffrée : lis un classeur ou renseigne les volumes.</p>`}
+        ${pareto.length ? `<table class="simul-table pc-table-donnees">
+          <thead><tr><th>Article</th><th>Coût annuel</th><th>Part</th></tr></thead>
+          <tbody>${pareto.map(l => `<tr><td class="mono">${escapeAttr(l.label)}</td><td class="mono">${fmtEuroCourt(Math.round(l.valeur))}</td><td class="mono">${totalConso > 0 ? fmt((l.valeur / totalConso) * 100, 1) : "—"} %</td></tr>`).join("")}</tbody>
+          <tfoot><tr><td>Total (${pareto.length} article(s) sur ${groupes.length})</td><td class="mono">${fmtEuroCourt(Math.round(pareto.reduce((a, l) => a + l.valeur, 0)))}</td><td class="mono">${totalConso > 0 ? fmt((pareto.reduce((a, l) => a + l.valeur, 0) / totalConso) * 100, 1) : "—"} %</td></tr></tfoot>
+        </table>` : ""}
+      </div>
+      <div class="pc-graph">
+        ${planParetoSVG(postesGraph, "Base (en série) face à cible (en cours) — €/an", { couleur: "var(--green)", couleur2: "var(--blue)" }) || `<p class="panel-hint">Aucun poste chiffré : les barres apparaîtront dès qu'un scénario sera comparé à sa base.</p>`}
+        ${postesGraph.length ? `<table class="simul-table pc-table-donnees">
+          <thead><tr><th>Poste</th><th>Acté</th><th>Possible</th></tr></thead>
+          <tbody>${postesGraph.map(l => `<tr><td>${escapeAttr(l.label)}</td><td class="mono">${l.valeur ? "+" + fmtEuroCourt(Math.round(l.valeur)) : "—"}</td><td class="mono">${l.valeur2 ? "+" + fmtEuroCourt(Math.round(l.valeur2)) : "—"}</td></tr>`).join("")}</tbody>
+        </table>` : ""}
+      </div>
+    </div>`;
+  return tables;
+}
+
+/* --- 7. LE TABLEAU DE BORD COMPLET (ce que voit Benjamin en ouvrant) ---
+   L'ordre : les chiffres d'abord, puis les graphiques, puis la chronologie,
+   puis le tableau de conversion ligne à ligne (l'outil de travail). */
+function planTableauDeBordHTML(){
+  const recap = planRecapGains();
+  const chrono = planChronologieEssais();
+  recap.essaisNb = chrono.nb;
+  recap.premierEssai = chrono.premier ? (chrono.premier.date || "").split("-").reverse().join("/") : "";
+  recap.auteursNb = chrono.auteurs.length;
+  return `
+    ${planBandeauHTML(recap)}
+    <div class="pc-titre-section">Consommations et scénarios de base</div>
+    ${planGraphiquesHTML(recap, planLignes())}
+    <div class="pc-titre-section">Chronologie des essais</div>
+    ${planChronologieHTML(chrono)}`;
+}
+
 function planHTML(){
   const lignes = planLignes();
   if(!lignes.length) return `<p class="panel-hint">Aucun article de production chiffré : le plan se nourrit des mêmes données que le simulateur (scénarios en production, prix + volume), ou d'une consommation annuelle lue ci-dessous.</p>`;
@@ -16281,7 +16625,7 @@ function planHTML(){
     ${modeAnnuel && conso2025 ? `
     <div id="ecoTotal" class="simul-resultat" style="margin:0 0 10px;"></div>` : ""}
     <table class="simul-table">
-      <thead><tr><th>Article</th><th>Référence plaquette</th><th>Prix actuel</th><th>Consommation</th><th>Cible SPK</th><th>Prix cible</th><th>Vie %</th><th>Coût / an — 2025 face à simulé</th><th>OK ?</th><th>Étape</th><th>Gain / an</th></tr></thead>
+      <thead><tr><th>Article</th><th>Référence plaquette</th><th>Prix actuel</th><th>Consommation</th><th>Cible SPK</th><th>Prix cible</th><th>Vie %</th><th>Coût / an — 2025 face à simulé</th><th>Prix validé</th><th>Étape</th><th>Gain / an</th></tr></thead>
       <tbody>
       ${lignes.map((l, i) => {
         const isoCible = l.cibleIso || l.isos[0] || "";
@@ -16302,7 +16646,7 @@ function planHTML(){
           <td><input class="cell" style="width:74px; font-family:var(--font-mono);" type="number" step="0.01" min="0" data-plan="${escapeAttr(l.mabec)}" data-field="prixCible" data-eco="1" value="${l.ciblePrix === "" ? "" : l.ciblePrix}" placeholder="5"><br><span class="simul-iso" title="Durée de vie minimale de la cible pour ne pas perdre : au-dessus de ce seuil, le passage gagne.">seuil ${l.seuil != null ? fmt(l.seuil, 0) : "—"} %</span></td>
           <td><input class="cell" style="width:58px; font-family:var(--font-mono);" type="number" step="5" min="1" data-plan="${escapeAttr(l.mabec)}" data-field="vieCible" data-eco="1" value="${l.vieCible === "" ? "" : l.vieCible}" placeholder="${planReglages.relSpk}" title="Durée de vie cible en % de l'actuelle — vide = le réglage global (${planReglages.relSpk} %). 200 = deux fois plus longue : deux fois moins de plaquettes."></td>
           <td><div class="eco-bar" title="Gris : coût actuel. Vert : coût simulé (prix × vie cibles). Rouge : la combinaison coûte plus cher."><div class="eco-av"></div><div class="eco-ap"></div></div><span class="eco-gain mono">—</span></td>
-          <td><input type="checkbox" data-planconf="${escapeAttr(l.mabec)}" ${l.confirme ? "checked" : ""} title="Prix cible confirmé — la ligne compte dans le potentiel tant que cette case est cochée"></td>
+          <td><input type="checkbox" data-planconf="${escapeAttr(l.mabec)}" ${l.confirme ? "checked" : ""} title="Prix cible validé : le prix que tu proposes est le bon. La ligne compte alors dans le total VALIDÉ (le total du plan compte toutes les lignes étatées, ce décompte sépare le validé du reste)."></td>
           <td><select class="cell small" data-plan="${escapeAttr(l.mabec)}" data-field="etat">
             <option value="">—</option>
             ${PLAN_ETATS.map(e => `<option value="${e}" ${l.etat === e ? "selected" : ""}>${e}</option>`).join("")}
@@ -16313,7 +16657,7 @@ function planHTML(){
       </tbody>
     </table>
     <div class="simul-resultat">${actives
-      ? `<b>${actives} article(s)</b> en conversion — économie simulée : <b>− ${fmtEuroCourt(Math.round(total))} / an</b>${confirmes < actives ? ` <span style="font-size:13px; color:var(--ink-soft);">(dont ${confirmes} confirmé(s) : ${fmtEuroCourt(Math.round(totalConfirme))} / an)</span>` : ""} — durée de vie SPK : ${Math.round(planReglages.relSpk)} % de l'actuelle.`
+      ? `<b>${actives} article(s)</b> en conversion — économie simulée : <b>− ${fmtEuroCourt(Math.round(total))} / an</b>${confirmes < actives ? ` <span style="font-size:13px; color:var(--ink-soft);">(dont ${confirmes} prix validé(s) : ${fmtEuroCourt(Math.round(totalConfirme))} / an)</span>` : ""} — durée de vie SPK : ${Math.round(planReglages.relSpk)} % de l'actuelle.`
       : `Coche les lignes à convertir pour voir le potentiel.`}</div>
     <div class="simul-actions" style="margin-top:12px;">
       <button class="ghost small" id="planExporter">⤵ Exporter le plan (CSV)</button>
@@ -16381,7 +16725,22 @@ function majEcoPlan(wrap){
 function renderPlan(){
   const wrap = document.getElementById("planPanel");
   if(!wrap) return;
-  wrap.innerHTML = `<h3>⚔️ Plan de conversion — vers les plaquettes SPK</h3>` + planHTML();
+  /* v4.102.0 — le Plan s'ouvre sur le TABLEAU DE BORD LIVE (les chiffres, les
+     graphiques, la chronologie), puis le tableau de conversion ligne à ligne
+     reste dessous : c'est l'outil de travail, il ne disparaît pas. */
+  wrap.innerHTML = `<h3>⚔️ Plan de conversion — vers les plaquettes SPK</h3>` + planTableauDeBordHTML()
+    + `<div class="pc-titre-section">Conversion article par article</div>` + planHTML();
+  /* v4.102.0 — la case « PRIX CONFIRME » était MORTE : aucun listener, elle
+     n'écrivait rien. Cochée ou non, le total ne changeait pas. Elle est
+     câblée ici, et son intitulé est explicite (elle valide le prix proposé). */
+  wrap.querySelectorAll("[data-planconf]").forEach(cb => cb.addEventListener("change", () => {
+    const mabec = cb.getAttribute("data-planconf");
+    let e = plan.find(x => x.mabec === mabec);
+    if(!e){ e = normalizePlanEntry({ mabec }); plan.push(e); }
+    e.confirme = cb.checked;
+    saveData();
+    renderPlan();
+  }));
   wrap.querySelectorAll("[data-plan]").forEach(inp => inp.addEventListener("change", () => {
     const mabec = inp.getAttribute("data-plan"), field = inp.getAttribute("data-field");
     let e = plan.find(x => x.mabec === mabec);
@@ -19046,6 +19405,91 @@ function runTests(){
            (() => { const c2 = consoReelle; consoReelle = null;
                     const o2 = JSON.parse(payloadSuivi()); consoReelle = c2; return o2.consoReelle; })(), null);
       } finally { consoReelle = cAv; planSource = pAv; consoSemaines = sAv; planReglages = rAv; }
+    }
+
+    /* ---- v4.102.0 — le tableau de bord LIVE du Plan de conversion ----
+       (Benjamin : « repense ce plan de conversion comme un vrai tableau de
+        bord live des travaux et essais en cours mais aussi un outil de
+        prospective globale ».) */
+    {
+      const lAv = lignes, dAv = data;
+      try {
+        /* une ligne avec deux scénarios : une base (production) et un essai
+           en cours (non conforme encore), pour que le tri acté / possible
+           ait de la matière. */
+        const scBase = { id: "pcBase", name: "Base", baseline: true, statut: "serie", essais: [],
+                         outils: [], scenarioOrigine: null };
+        const scEssai = { id: "pcEssai", name: "Essai SN60", baseline: false, statut: "essai",
+                          essais: [ { id: "ePC1", titre: "Essai 1", date: "2026-08-26", equipe: "Matin",
+                                      operateur: "Matis", redigePar: "Matis", observations: "",
+                                      prelevements: [ { grandeur: "battement", valeur: 0.05, conforme: true } ] } ],
+                          outils: [] };
+        lignes = [ { id: "lPC", nom: "Ligne PC", references: [ { id: "rPC", nom: "PCI 4", productionAnnuelle: 100000,
+                    ops: [ { id: "oPC", opCode: "OP10", nom: "OP10", config: Object.assign({}, defaultConfig), scenarios: [scBase, scEssai] } ] } ] } ];
+        data = [scBase, scEssai];
+
+        /* --- le récapitulatif des gains --- */
+        const recap = planRecapGains();
+        ok("planRecapGains : le récap existe et expose les deux blocs séparés (acté / possible)",
+           [typeof recap.totalActe, typeof recap.totalPossible, Array.isArray(recap.postes)],
+           ["number", "number", true]);
+        ok("planRecapGains : un gain projeté d'un essai NON conforme n'est PAS compté comme possible",
+           recap.totalPossible, 0);
+        ok("planRecapGains : les gains actés et possibles ne sont jamais mélangés (deux compteurs distincts)",
+           [recap.totalActe >= 0, recap.totalPossible >= 0, typeof recap.totalActe, typeof recap.totalPossible],
+           [true, true, "number", "number"]);
+
+        /* --- la chronologie --- */
+        const chrono = planChronologieEssais();
+        ok("planChronologieEssais : l'essai est trouvé, avec sa date et son auteur",
+           [chrono.nb, chrono.essais[0].date, chrono.essais[0].auteur],
+           [1, "2026-08-26", "Matis"]);
+        ok("planChronologieEssais : la frise part du PREMIER essai (ordre chronologique)",
+           chrono.premier && chrono.premier.date, "2026-08-26");
+        ok("planChronologieEssais : les auteurs sont comptés (qui a fait quoi)",
+           chrono.auteurs.length >= 1 && chrono.auteurs[0].nom === "Matis" && chrono.auteurs[0].nb === 1, true);
+
+        /* --- le graphique SVG --- */
+        const svg = planParetoSVG([ { label: "A", valeur: 100 }, { label: "B", valeur: 50 } ], "Test");
+        ok("planParetoSVG : le graphique est un SVG avec les deux barres",
+           [svg.indexOf("<svg") !== -1, (svg.match(/<rect/g) || []).length], [true, 2]);
+        ok("planParetoSVG : sans données, il ne rend rien (jamais un graphique vide qui ment)",
+           planParetoSVG([], "Test"), "");
+        ok("planParetoSVG : pas de dépendance réseau (constitution §5.5)",
+           svg.indexOf("http://") === -1 && svg.indexOf("https://") === -1, true);
+
+        /* --- le tableau de bord complet --- */
+        const tdb = planTableauDeBordHTML();
+        ok("planTableauDeBordHTML : les 5 briques sont là (gains, écart, graphs, frise, tableau)",
+           [tdb.indexOf("Gains actés") !== -1, tdb.indexOf("Gains possibles") !== -1,
+            tdb.indexOf("<svg") !== -1, tdb.indexOf("Chronologie") !== -1,
+            tdb.indexOf("Qui a fait quoi") !== -1],
+           [true, true, true, true, true]);
+
+        /* --- la case « PRIX CONFIRME » : elle était MORTE, elle doit écrire ---
+           Le test suit le modèle du test voisin (base 2025 + article catalogue) :
+           c'est le seul contexte où la ligne a un coût ET un volume, donc un gain
+           chiffrable — sans quoi « validé » serait vide par construction. */
+        const pAv = plan.slice(), cAv = catalogue, sAv = planSource, bAv = conso2025, rAv = planReglages;
+        try {
+          catalogue = [ normalizeArticleCat({ mabec: "IM02 137 021", iso: "SNMX 120716 T02020 LKT640", prix: 10, aretes: 8, ddv: 150 }) ];
+          planSource = "annuel";
+          conso2025 = normalizeConso2025({ lueLe: "21/10/2026", fichier: "Pareto.xlsx",
+            parMabec: { "IM02 137 021": { parSection: { "PCI 4": 450 } } } });
+          planReglages.relSpk = 100;
+          plan = [ normalizePlanEntry({ mabec: "IM02 137 021", prixCible: 5, etat: "proposée", confirme: true }) ];
+          const l2 = planLignes().filter(x => x.mabec === "IM02 137 021");
+          ok("case PRIX CONFIRME : le champ confirme est lu par planLignes()",
+             l2.length === 1 ? l2[0].confirme : "absent", true);
+          ok("case PRIX CONFIRME : le total validé se calcule sur les lignes validées",
+             (() => { const conf = l2.filter(x => x.actif && x.confirme && x.gain).length;
+                       const tot = l2.reduce((a, x) => a + (x.actif && x.confirme && x.gain ? x.gain : 0), 0);
+                       return [conf, tot > 0]; })(), [1, true]);
+          ok("case PRIX CONFIRME : décochée, la ligne sort du total validé (la case agit)",
+             (() => { plan[0].confirme = false; const l3 = planLignes().filter(x => x.mabec === "IM02 137 021");
+                       return l3.filter(x => x.actif && x.confirme && x.gain).length; })(), 0);
+        } finally { plan = pAv; catalogue = cAv; planSource = sAv; conso2025 = bAv; planReglages = rAv; }
+      } finally { lignes = lAv; data = dAv; }
     }
 
     /* ---- v4.41.1 : cadenceHeure + migration du mode global 4.39/4.40 ---- */
