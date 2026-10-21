@@ -105,12 +105,74 @@
     cartePanel: "carteBtn",
     matisPanel: "matisBtn",
     matisDetailPanel: "matisBtn",
+    /* v4.100.4 — la Synthèse est un écran du rail à part entière (elle
+       n'emprunte pas ouvrirPanneau : c'est le bloc en flux de l'app d'avant
+       la coque). Sans cette entrée, cliquer Synthèse ne marque jamais
+       l'onglet actif. */
+    syntheseWrap: "syntheseBtn",
     planPanel: "accueilBtn",
     simulPanel: "accueilBtn",
     cataloguePanel: "accueilBtn",
     comparePanel: "accueilBtn",
     historiquePanel: "accueilBtn"
   };
+
+  /* v4.100.4 — Les écrans du rail sont EXCLUSIFS : en ouvrir un referme les
+     autres. Constat du 21/10 (Benjamin : « les onglets tableau et synthese ne
+     fonctionnent pas ») : chaque surface s'empilait sur la précédente — et la
+     Synthèse, bloc en flux de l'app d'avant la coque (aucun z-index), passait
+     SOUS l'Accueil ou le Tableau de bord restés ouverts (z 80). Mesuré :
+     Accueil ouvert -> clic Synthèse -> l'écran reste sur l'accueil ; le
+     panneau s'ouvre bel et bien, mais DERRIÈRE. Cinq écrans qui se
+     recouvrent ne sont pas une navigation, c'est un tas. On referme donc les
+     surfaces voisines AVANT que le handler de l'app n'ouvre (ou ne bascule)
+     la surface cliquée — en phase de capture, pour ne pas réécrire la
+     logique de l'application. */
+  const SURFACES_DU_BOUTON = {
+    accueilBtn: ["accueilPanel"],
+    dashboardBtn: ["dashboardPanel"],
+    syntheseBtn: ["syntheseWrap"],
+    carteBtn: ["cartePanel"],
+    matisBtn: ["matisPanel", "matisDetailPanel"]
+  };
+  const TOUTES_SURFACES = [];
+  Object.keys(SURFACES_DU_BOUTON).forEach((b) => {
+    SURFACES_DU_BOUTON[b].forEach((id) => {
+      if (TOUTES_SURFACES.indexOf(id) === -1) TOUTES_SURFACES.push(id);
+    });
+  });
+
+  nav.addEventListener("click", (e) => {
+    const btn = e.target && e.target.closest ? e.target.closest("button") : null;
+    if (!btn) return;
+    const siennes = SURFACES_DU_BOUTON[btn.id] || [];
+    TOUTES_SURFACES.forEach((id) => {
+      if (siennes.indexOf(id) !== -1) return;
+      const pan = document.getElementById(id);
+      if (pan && !pan.hidden) pan.hidden = true;
+    });
+  }, true); /* capture : passer AVANT le handler de l'application */
+
+  /* La Synthèse ne passe pas par ouvrirPanneau : son onglet actif est posé
+     ici, après coup, d'après la surface réellement visible. */
+  nav.addEventListener("click", () => {
+    requestAnimationFrame(() => {
+      clearActive();
+      const visible = TOUTES_SURFACES.find((id) => {
+        const pan = document.getElementById(id);
+        return pan && !pan.hidden;
+      });
+      if (!visible) return;
+      const btnId = panelToButton[visible];
+      const btn = btnId && document.getElementById(btnId);
+      if (btn) btn.classList.add("is-active");
+      /* La Synthèse vit dans le flux de la page : on la montre depuis le
+         haut, sinon on atterrit au milieu du défilement d'avant. */
+      if (visible === "syntheseWrap") {
+        try { window.scrollTo({ top: 0, behavior: "instant" }); } catch (e) { window.scrollTo(0, 0); }
+      }
+    });
+  });
 
   function clearActive() {
     nav.querySelectorAll("button").forEach((b) => b.classList.remove("is-active"));
@@ -137,7 +199,10 @@
   document.body.appendChild(close);
 
   function workspaceOpen() {
-    return !!document.querySelector(".panel-large:not([hidden]), #backlogWrap:not([hidden])");
+    /* v4.100.4 — #syntheseWrap compte comme un espace ouvert : c'est un écran
+       du rail, il doit afficher Retour et replier la poignée comme les
+       autres. */
+    return !!document.querySelector(".panel-large:not([hidden]), #backlogWrap:not([hidden]), #syntheseWrap:not([hidden])");
   }
 
   /* Un dialogue (ou la recherche) se pose PAR-DESSUS un espace de travail :
@@ -217,6 +282,10 @@
     const closePanels = window.fermerPanneaux;
     window.fermerPanneaux = function () {
       closePanels();
+      /* v4.100.4 — la Synthèse n'est pas un .panel : fermerPanneaux de l'app
+         ne la voit pas. Sans ça, Retour depuis la Synthèse ne fermait rien. */
+      const synthese = document.getElementById("syntheseWrap");
+      if (synthese) synthese.hidden = true;
       clearActive();
       requestAnimationFrame(syncWorkspace);
     };

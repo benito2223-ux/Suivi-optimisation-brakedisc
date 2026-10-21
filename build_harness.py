@@ -964,6 +964,44 @@ try {
      incrémentent chacun le leur (rev432 recevait MOINS d'essais que rev431).
      Le garde : l'écran de choix compare le NOMBRE D'ESSAIS reçu et local, et
      affiche l'écart AVANT le clic. */
+  /* ── v4.100.4 — LES ONGLETS DU RAIL SONT EXCLUSIFS ──
+     Benjamin, 21/10 : « les onglets tableau et synthese ne fonctionnent pas ».
+     Constat : les écrans du rail s'empilaient au lieu de se remplacer — et la
+     Synthèse, bloc en flux de l'app d'avant la coque (aucun z-index),
+     s'ouvrait DERRIÈRE l'Accueil ou le Tableau de bord restés ouverts (z 80).
+     Mesuré en navigateur : Accueil ouvert -> clic Synthèse -> l'écran reste
+     sur l'accueil. Le shell referme maintenant les surfaces voisines en
+     phase de capture, marque l'onglet de la Synthèse, et Retour la ferme. */
+  (function railExclusif4100_4(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const shell = (function(){ try { return fs.readFileSync(path.join(REPO, 'spk-shell.js'), 'utf8'); } catch (e) { return ''; } })();
+    if (!shell) { echecs.push('spk-shell.js introuvable'); }
+    else {
+      /* (1) la table d'exclusivité couvre les cinq boutons du rail */
+      ['accueilBtn: ["accueilPanel"', 'dashboardBtn: ["dashboardPanel"', 'syntheseBtn: ["syntheseWrap"', 'carteBtn: ["cartePanel"', 'matisBtn: ["matisPanel"'].forEach(function(morceau){
+        if (shell.indexOf(morceau) === -1) echecs.push('SURFACES_DU_BOUTON ne couvre pas ' + morceau.split(':')[0]);
+      });
+
+      /* (2) le refermement se fait en PHASE DE CAPTURE (avant l'app) */
+      if (shell.indexOf('}, true); /* capture') === -1) echecs.push('le refermement des surfaces n est pas en phase de capture');
+
+      /* (3) la Synthèse compte comme un espace ouvert (Retour + onglet) */
+      if (shell.indexOf('#syntheseWrap:not([hidden])') === -1) echecs.push('workspaceOpen ignore la Synthese');
+
+      /* (4) Retour referme aussi la Synthèse */
+      if (shell.indexOf('synthese.hidden = true') === -1) echecs.push('fermerPanneaux ne ferme pas la Synthese');
+
+      /* (5) l onglet actif est pose d apres la surface visible */
+      if (shell.indexOf('visible === "syntheseWrap"') === -1) echecs.push('pas de remontee en haut pour la Synthese');
+    }
+
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'rail exclusif 4.100.4 : les onglets du rail se remplacent au lieu de s empiler' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   (function importPrevientSiMoinsDEssais(){
     const fs = require('fs');
     const path = require('path');

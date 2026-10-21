@@ -4,6 +4,29 @@
 | **Version visée** | — |
 | **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
 
+✅ **Verrou libéré par Hermes le 21/10/2026, matin** (4.100.4 — les onglets du
+rail se remplacent au lieu de s'empiler). Benjamin : « les onglets tableau et
+synthese ne fonctionnent pas ». Reproduction avec captures : les écrans du rail
+**s'empilaient** — la Synthèse, bloc en flux de l'app d'avant la coque (aucun
+z-index), s'ouvrait **derrière** l'Accueil ou le Tableau de bord restés ouverts
+(z 80). Le shell referme maintenant les surfaces voisines en phase de capture
+(la logique de l'app n'est pas réécrite), marque l'onglet de la Synthèse, lui
+donne un Retour fonctionnel et l'affichage depuis le haut. Matrice complète
+vérifiée en navigateur (8 chemins, un seul écran à la fois, zéro erreur JS).
+Porte `rail exclusif 4.100.4` (5 points), 3/3 contre-regards détectés.
+**DEV** : 4.100.4 servie, md5 `288e57aa…` (HTML) et `22f76752…` (shell)
+identiques au `dist/` local. **PROD : rien** — 4.97.2.| **Auteur** | **Hermes** |
+| **Pris le** | 21/10/2026, matin |
+| **Écrit dans** | `spk-shell.js` (exclusivité du rail), `bilan_economique.html` (version), `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md` |
+| **Version visée** | 4.100.4 |
+| **Sujet** | Les onglets du rail se remplacent au lieu de s'empiler. |
+
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+
 ✅ **Verrou libéré par Hermes le 20/10/2026, nuit** (4.100.3 — l'import prévient
 avant de retirer des essais). Diagnostic par reproduction avec les vrais
 fichiers du 13/10 : le code d'import et la fusion sont **sains** (rev431

@@ -12501,6 +12501,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.100.4", date:"21/10/2026", points:[
+    "<b>Les onglets du rail sont devenus une vraie navigation.</b> Ouvrir Accueil, Atelier, Tableau, Synthèse ou Matis referme maintenant l'écran précédent — avant, ils s'empilaient, et la Synthèse s'ouvrait <i>derrière</i> l'écran déjà ouvert : cliquer ne « faisait rien ». L'onglet actif est marqué jusque dans la Synthèse, le bouton <b>Retour</b> y fonctionne, et elle s'affiche depuis le haut de la page."
+  ]},
   { version:"4.100.3", date:"20/10/2026", points:[
     "<b>L'outil vous prévient avant un import qui retirerait des essais.</b> Importer plusieurs fichiers à la suite avec « Remplacer tout » ne garde que le dernier — et le numéro de révision ne suffit pas à dire lequel est le plus complet (deux postes incrémentent chacun le leur). Désormais, si le fichier reçu porte moins d'essais que vos données actuelles, l'écran d'import le dit, en chiffres, avant le clic. « Fusionner » reste le geste qui ne perd rien."
   ]},
@@ -13120,7 +13123,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.100.3";
+const TOOL_VERSION = "4.100.4";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 

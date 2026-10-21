@@ -49,6 +49,7 @@
 
 | Date | Acte | Où | Vérifié |
 |---|---|---|---|
+| 21/10 ~11:30 | **DEV 4.100.4 — les onglets du rail se remplacent au lieu de s'empiler.** Benjamin : « les onglets tableau et synthese ne fonctionnent pas ». Reproduction avec captures : les écrans du rail **s'empilaient** — la Synthèse, bloc en flux de l'app d'avant la coque (aucun z-index), s'ouvrait **derrière** l'Accueil ou le Tableau de bord restés ouverts (z 80) : le clic « ne faisait rien ». Correctif dans la coque : onglets **exclusifs** (phase de capture, logique de l'app intacte), Synthèse écran à part entière (onglet actif, Retour fonctionnel, affichage depuis le haut). Matrice 8 chemins vérifiée, 0 erreur JS ; porte `rail exclusif 4.100.4` (5 points), 3/3 contre-regards. **PROD : rien** | suivi-optimisation-projet.surge.sh | ✅ curl : 4.100.4 servie, md5 `288e57aa…` == dist local (shell `22f76752…` ==) ; prod 4.97.2 inchangée |
 | 20/10 ~23:59 | **DEV 4.100.3 — l'import prévient avant de retirer des essais.** Benjamin : « je ne retrouve pas tous les essais réalisés (exemple PCI 5 OP40) ». Diagnostic par reproduction avec les vrais fichiers du 13/10 : **le code d'import et la fusion sont sains** (rev431 → 7 essais). La perte vient du geste : plusieurs JSON à la suite avec **« Remplacer tout »** ne laissent que le dernier. Pièges aggravants : rev432 (6 essais) porte un numéro plus grand que rev431 (7 essais) — deux postes incrémentent chacun leur compteur ; et le transfert de l'essai PCI 5 / OP 40 vers « Classeur Matis » était **délibéré** (Benjamin, confirmé le 21/10 — pas une perte) — rev431 reste le fichier de référence. Correctif : l'écran d'import compare le **nombre d'essais** reçu et local et affiche l'écart avant les boutons. **Récupération : importer `Downloads/SuiviOptimisation_rev431_20261013-1627.json`**. **PROD : rien** | suivi-optimisation-projet.surge.sh | ✅ curl : 4.100.3 servie, md5 `7a7c8119…` identique au `dist/` local ; avertissement vérifié dans l'outil (rev425 → « 2 essais de MOINS (5 reçus contre 7) », Fusionner → 7 essais) ; prod 4.97.2 inchangée |
 | 20/10 ~23:10 | **DEV 4.100.2 — la mise à jour à chaud : un correctif ne peut plus rester invisible en cache.** Benjamin : « Problème toujours présent bro » — alors que la 4.100.1 était déployée, publiée et vérifiée sur l'URL publique. Cause : le correctif était dans `spk-shell.js`, servi **cache d'abord** par le service worker ; le cache ne se purge que si le SW change, or c'est le shell qui changeait — l'ancien restait en cache, invisible. Le profil de test (Chrome neuf à chaque fois) n'avait **jamais de cache** : il testait le code, pas ce que l'utilisateur voit. Corrections : le shell passe en réseau d'abord ; `addAll` (tout ou rien) remplacé par une mise en cache entrée par entrée ; enregistrement avec `updateViaCache: "none"` ; le SW signale sa prise de main ; la page compare la version servie et se recharge si elle est en retard. **Vérifié sur un profil « déjà visité »** : le cache est passé à la bonne version **seul**, le shell exécuté portait la nouvelle version, bouton Retour affiché. Porte `maj a chaud 4.100.2` (8 points), 8 contre-regards, 8 détectés. **PROD : rien** | suivi-optimisation-projet.surge.sh | ✅ curl : 4.100.2 servie, md5 `3162a60a…` identique au `dist/` local ; prod 4.97.2 md5 `fe652969…` inchangée |
 | 20/10 ~22:05 | **DEV 4.100.1 — le bouton « Retour » ne disparaît plus quand un dialogue se pose.** Benjamin : « dans le plan de conversion quand on lis un classeur le bouton retour disparait bro ». La lecture d'un classeur appelle `dialogueAlerte` (« Consommations 2025 lues »), qui ouvre `dialogPanel` — un `.panel` **sans** `panel-large`. La coque comptait tout petit `.panel` visible comme un remplacement d'espace de travail : le dialogue annulait donc l'état d'espace ouvert, le bouton Retour disparaissait au milieu du Plan et le rail redevenait « non repliable » alors que le Plan était toujours ouvert derrière. Correction : les surcouches (dialogue, recherche, annotation photo) sont exclues du calcul — elles se posent par-dessus, elles ne remplacent pas. Porte `bouton retour 4.100.1` (3 points), 3 contre-regards, 3 détectés. **PROD : rien** | suivi-optimisation-projet.surge.sh | ✅ curl : 4.100.1 servie, md5 `6fc1c769…` identique au `dist/` local, comportement vérifié depuis l'URL publique (retour affiché avec le dialogue ouvert) ; prod 4.97.2 md5 `fe652969…` inchangée |
@@ -705,6 +706,34 @@ exogène » de la grille du tour 68 est la bonne — pas le chill.
 ---
 
 ## Journal des tours
+
+### ▸ Tour 81 — 21/10/2026, matin — **Hermes** (v4.100.4 — « les onglets tableau et synthese ne fonctionnent pas »)
+
+**Le diagnostic, par reproduction avec captures d'écran.** Sur profil neuf avec
+rev431, les handlers tirent bien (aucune erreur JS, panneaux démasqués) — mais
+la capture montre le vrai défaut : après clic sur **Synthèse**, l'écran reste
+sur le **Tableau de bord**. Les écrans du rail **s'empilaient** au lieu de se
+remplacer : la Synthèse est le bloc en flux de l'app d'avant la coque (aucun
+z-index), la coque affiche les autres écrans en plein écran à `z-index:80` —
+la Synthèse s'ouvrait **derrière**. Et rien ne refermait jamais l'écran
+précédent.
+
+**Le correctif (dans la coque, qui possède le rail).** Les onglets du rail sont
+**exclusifs** : cliquer l'un referme les autres (phase de capture — la logique
+de l'app n'est pas réécrite). La Synthèse devient un écran à part entière :
+onglet actif marqué, **Retour** fonctionnel (elle n'est pas un `.panel`,
+`fermerPanneaux` de l'app ne la voyait pas — le wrapper du shell la referme),
+affichage reparti du haut.
+
+**Vérifié** — matrice complète en navigateur : Accueil→Synthèse, Synthèse→
+Tableau, Tableau→Atelier, Atelier→Synthèse (le cas du défaut), Retour depuis
+la Synthèse, bascule Synthèse→Synthèse, Matis→Accueil, chaîne longue :
+**un seul écran à la fois, onglet actif juste, zéro erreur JS**. Porte
+`rail exclusif 4.100.4` (5 points), 3/3 contre-regards détectés. Harnais
+**583/0**.
+
+---
+
 
 ### ▸ Tour 80 — 20/10/2026, soir — **Hermes** (v4.100.3 — « je ne retrouve pas tous les essais réalisés (PCI 5 OP40) »)
 

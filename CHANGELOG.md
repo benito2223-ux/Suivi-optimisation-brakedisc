@@ -54,6 +54,38 @@ déploiement · mesures à 1440 (rail 248 px, panneaux x=248→1418), 1024
 captures à l'œil : rail visible, contenu après le rail, poignée active en
 plein écran. **PROD : rien** — la prod reste en 4.97.2.
 
+## [4.100.4] — 2026-10-21 · Les onglets du rail se remplacent au lieu de s'empiler
+
+**Le défaut, vu par Benjamin.** « les onglets tableau et synthese ne
+fonctionnent pas. »
+
+**Le diagnostic, par reproduction.** Sur profil neuf avec les données rev431,
+les handlers funcionnent (aucune erreur JS, panneaux non masqués) — mais la
+capture d'écran montrait le vrai problème : après un clic sur **Synthèse**,
+l'écran restait sur le **Tableau de bord**. Les écrans du rail **s'empilaient**
+au lieu de se remplacer : la Synthèse est le bloc en flux de l'app d'avant la
+coque (`margin-bottom:18px`, aucun z-index), et la coque affiche Accueil /
+Tableau / Atelier / Matis en plein écran à `z-index:80`. Cliquer Synthèse
+l'ouvrait bel et bien — **derrière**. Morte pour l'utilisateur. Et rien ne
+refermait jamais l'écran précédent : cinq écrans qui se recouvrent ne sont pas
+une navigation.
+
+**Le correctif (dans la coque, qui possède le rail).**
+1. **Exclusivité** : cliquer un onglet du rail referme les autres surfaces
+   (phase de capture, avant les handlers de l'app — la logique de l'application
+   n'est pas réécrite).
+2. **La Synthèse devient un écran à part entière** : onglet actif marqué,
+   bouton **Retour** fonctionnel (elle n'est pas un `.panel`, `fermerPanneaux`
+   ne la voyait pas), affichage reparti du haut de la page.
+
+**Vérifié dans l'outil** — matrice complète : Accueil→Synthèse ✓ (onglet actif,
+Retour affiché) · Synthèse→Tableau ✓ · Tableau→Atelier ✓ · Atelier→Synthèse ✓
+(le cas exact du défaut) · Retour depuis la Synthèse ✓ · Synthèse→Synthèse
+(bascule off) ✓ · Matis→Accueil ✓ · chaîne longue : un seul écran à la
+fois ✓. Zéro erreur JS. Porte `rail exclusif 4.100.4` (5 points),
+contre-regards : exclusivité retirée, Synthèse sortie des espaces, fermeture
+Retour supprimée — **3/3 détectés**. Harnais **583/0**.
+
 ## [4.100.3] — 2026-10-20 · L'import prévient avant de retirer des essais
 
 **Le défaut, vu par Benjamin.** « Je ne retrouve pas tous les essais réalisés
