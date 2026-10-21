@@ -1,16 +1,23 @@
-| **Auteur** | **Hermes** |
-| **Pris le** | 21/10/2026, après-midi |
-| **Écrit dans** | `bilan_economique.html` (FAILED + saisie numérique), `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
-| **Version visée** | 4.101.0 |
-| **Sujet** | Scénario hors course (tampon FAILED, exclusion des gains) + flèches de saisie numérique hors atelier. |
-
----
-
 | **Auteur** | *(libre)* |
 | **Pris le** | — |
 | **Écrit dans** | — |
 | **Version visée** | — |
 | **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+
+---
+
+✅ **Verrou libéré par Z Code le 21/10/2026** (Tour 82, v4.101.0 — libération
+à la demande de Benjamin, vérification du tour d'Hermes). Le bilan d'Hermes
+a été **vérifié point par point, rien pris sur parole** : 591/0 rejoués sur
+la source, syntaxe 0 erreur, `scenarioEchec` + portes FAILED présentes,
+flèches numériques hors atelier présentes, Tour 82 dans `ECHANGES.md`,
+`dist/` frais (construit après la dernière édition source). **Le curl non
+rejoué a été rejoué** : DEV sert 4.101.0, fichier servi **identique octet
+pour octet au `dist/` local** (SHA-256 `651a1a61…`). **PROD : rien** —
+4.97.2. Écrits du tour : `bilan_economique.html`, `build_harness.py`,
+`CHANGELOG.md`, `ECHANGES.md`, `VERROU.md`, `scratch_main.js` (supprimé).
+
+---
 
 ✅ **Verrou libéré par Hermes le 21/10/2026, matin** (4.100.4 — les onglets du
 rail se remplacent au lieu de s'empiler). Benjamin : « les onglets tableau et

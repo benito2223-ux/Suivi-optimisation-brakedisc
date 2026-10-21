@@ -1734,6 +1734,17 @@ body.atelier-on{overflow:hidden;}
 .atelier input[type="number"]::-webkit-outer-spin-button,
 .atelier input[type="number"]::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
 .atelier input[type="number"]{-moz-appearance:textfield; appearance:textfield;}
+/* v4.101 — saisie numérique HORS mode atelier : au bureau (prix plaquettes, volumes,
+   seuils), Chrome ne montre les flèches d'incrément qu'au survol du champ — au point
+   qu'on ne savait pas qu'elles existaient. Affichées en permanence hors atelier, la
+   souris en fait un vrai contrôle de pas (step du champ). Le mode atelier garde ses
+   champs nus — règle historique : pas de flèches qui gênent la saisie aux gants. */
+body:not(.atelier-on) input[type="number"]::-webkit-inner-spin-button,
+body:not(.atelier-on) input[type="number"]::-webkit-outer-spin-button{
+  opacity:1;
+}
+body:not(.atelier-on) input[type="number"]::-webkit-inner-spin-button{ cursor:pointer; }
+body:not(.atelier-on) input[type="number"]{ -moz-appearance:number-input; }
 
 .at-valider{min-height:76px; font-size:19px; border-radius:var(--radius);}
 
@@ -6051,6 +6062,35 @@ function scenarioStats(sc){
   return { essaisCount: essais.length, validCount, badCount, arreteCount, rate, validated };
 }
 
+/* ---- v4.101 — scénario HORS COURSE (échec de terrain) -----------------------
+   Deux preuves, CALCULÉES jamais saisies, pour qu'un tampon ne se pose pas à la main :
+   (a) un essai ARRÊTÉ avant sa charnière (clôturé avec motif) — le terrain a parlé,
+       la durée de vie déclarée n'est pas tenue (ex. SN60 OP40 EMAG 2 / DV356) ;
+   (b) une campagne FINIE sans un seul essai conforme, au moins un non conforme —
+       « rien donné de bon ». Les essais encore en cours ne condamnent personne.
+   Un scénario hors course GARDE sa fiche, ses courbes et son histoire, mais il est
+   exclu du choix du « meilleur scénario » (gainPoste) — donc des gains projetés du
+   tableau de bord et de l'A4 Mission — et son verdict porte le tampon FAILED.
+   Rien n'est silencieux : le tampon et ses motifs sont affichés partout où le
+   scénario apparaît. Réouvrir/clôturer autrement l'essai fauteur retire le tampon. */
+function scenarioEchec(sc){
+  if(!sc || sc.baseline) return null;
+  const preuves = [];
+  (sc.essais || []).forEach(es => {
+    if(!(es.cloture && es.cloture.motif)) return;
+    const st = essaiStats(sc, es);
+    const insuffisant = (st.logementProgress || []).some(lp =>
+      lp.target !== null && (lp.lastPiece ?? 0) < lp.target);
+    if(insuffisant) preuves.push("essai « " + (es.titre || "sans titre") + " » arrêté avant sa charnière");
+  });
+  const list = (sc.essais || []).map(e => essaiStats(sc, e));
+  const enCours = list.some(s => s.status === "pending");
+  if(list.length && !enCours && list.some(s => s.status === "bad") && !list.some(s => s.status === "ok")){
+    preuves.push("campagne terminée sans un seul essai conforme");
+  }
+  return preuves.length ? preuves : null;
+}
+
 /* ---- bandeau verdict : la reponse a la question que l'outil sert a trancher ----
    "est-ce que ce scenario est meilleur que ce qui tourne aujourd'hui, et de combien ?"
    Avant, il fallait lire trois cartes et faire le calcul de tete. */
@@ -6085,6 +6125,11 @@ function verdictHTML(sc){
 
   let titre, sousTitre, classe, eyebrow;
 
+  /* v4.101 — le tampon FAILED d'abord : un scénario hors course n'est ni "ok" ni
+     "pending", même si ses chiffres de coût restent affichés (transparence). Les
+     motifs d'échec sont dits en toutes lettres dans le sous-titre. */
+  const echec = scenarioEchec(sc);
+
   if(sc.baseline){
     classe = "ref";
     eyebrow = "Référence de production";
@@ -6095,8 +6140,9 @@ function verdictHTML(sc){
     const rVie  = (vieSc !== null && vieBase) ? vieSc / vieBase : null;
     const gain = dCost !== null && dCost < 0;
 
-    classe = stats.validated ? "ok" : (stats.badCount > 0 ? "bad" : "pending");
-    eyebrow = stats.validated ? "Bilan validé" : "Verdict d'essai";
+    classe = echec ? "bad" : stats.validated ? "ok" : (stats.badCount > 0 ? "bad" : "pending");
+    eyebrow = echec ? "⛔ FAILED — hors course"
+            : stats.validated ? "Bilan validé" : "Verdict d'essai";
     if(dCost === null){
       titre = "Renseignez prix, arêtes et charnière";
       sousTitre = "Le gain se calcule dès que les plaquettes sont décrites.";
@@ -6113,6 +6159,7 @@ function verdictHTML(sc){
           ? stats.badCount + " essai" + (stats.badCount>1?"s":"") + " non conforme" + (stats.badCount>1?"s":"")
           : "validation en cours (" + stats.validCount + "/" + (sc.validationThreshold||"—") + ")");
       if(horsMachine) bouts.push("comparaison hors temps machine — la référence n'a pas de cycle chiffrable");
+      if(echec) bouts.push("exclu des gains projetés : " + echec.join(" · "));
       sousTitre = bouts.join(" · ") + " — vs " + escapeAttr(base.name);
     }
   }
@@ -6584,6 +6631,12 @@ function charniereReelle(sc, logementId){
       const p = parseFloat(r.piece);
       if(!isNaN(p)) derniereConforme = p;
     }
+    /* v4.101 — un essai ARRÊTÉ (clôturé avec motif) est une fin de vie RÉELLE, pas
+       une borne inférieure : l'arrêt pour casse/brut/incident est la preuve que la
+       durée de vie s'arrête là où le terrain l'a arrêtée. Avant, il remontait la
+       moyenne SANS lever l'alerte (borneInf restait vrai) — l'écart charnière
+       restait invisible et le coût réel avec. */
+    if(es.cloture && es.cloture.motif && !echec) echec = true;
     // sortie de tolerance des le premier prelevement : la duree de vie observee est nulle,
     // il faut le voir plutot que d'ignorer l'essai en silence
     if(derniereConforme !== null || echec){
@@ -7474,7 +7527,8 @@ function syntheseTableHTML(){
       tBad: stats.badCount,
       tRebut: scrap.rate === null ? "—" : fmt(scrap.rate,1) + " %",
       tStatut: `<span class="statut-pill ${sc.statut||"essai"}">${statutLabel(sc.statut)}</span>`,
-      tVal: stats.validated ? "✓ Validé" : (stats.validCount + "/" + (sc.validationThreshold || "—") + " essais")
+      tVal: (scenarioEchec(sc) ? "⛔ FAILED — " : "") +
+            (stats.validated ? "✓ Validé" : (stats.validCount + "/" + (sc.validationThreshold || "—") + " essais"))
     };
   });
 
@@ -7726,6 +7780,7 @@ function renderTabs(){
         </span>
         <span class="tc-badges">
           <span class="statut-pill ${sc.statut || "essai"}">${statutLabel(sc.statut)}</span>
+          ${(() => { const ech = scenarioEchec(sc); return ech ? `<span class="status-badge risk" title="${escapeAttr(ech.join(" · "))}">⛔ FAILED</span>` : ""; })()}
           <span class="status-badge ${stats.validated ? "ok" : "pending"}"${!stats.validated && parseFloat(sc.validationThreshold) === 5 ? ' title="Protocole site : un essai concluant est répété 5× avant passage en série"' : ""}>${stats.validated ? "✓ Validé" : `${stats.validCount}/${sc.validationThreshold || "—"} essais conformes`}</span>
         </span>
         ${projets.length ? `<span class="tc-tags">${projets.map(pj => {
@@ -12501,6 +12556,10 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.101.0", date:"21/10/2026", points:[
+    "<b>⛔ FAILED : un scénario qui n'a pas tenu sa charnière sort des gains.</b> Un essai arrêté avant sa charnière (casse, brut, incident) — ou une campagne terminée sans un seul essai conforme — marque désormais le scénario <b>hors course</b> : tampon ⛔ sur sa fiche et dans le rail, mention dans la vue de synthèse, et <b>exclusion des gains projetés</b> du tableau de bord et de l'A4 Mission. C'était le trou qui faisait afficher un gain sur les essais SN60 arrêtés (OP40 EMAG 2 / DV356). À la clôture d'un essai arrêté avant charnière, une case propose d'<b>aligner la charnière du scénario sur le réel atteint</b> — explicite, jamais silencieux.",
+    "<b>⬆⬇ La saisie numérique au bureau devient praticable.</b> Hors mode atelier, les flèches d'incrément des champs numériques (prix plaquettes, volumes, seuils…) sont désormais <b>affichées en permanence</b> — Chrome ne les montrait qu'au survol, et le pas du champ (step) devient un vrai contrôle de souris. Le mode atelier garde ses champs nus, pensés pour les gants."
+  ]},
   { version:"4.100.4", date:"21/10/2026", points:[
     "<b>Les onglets du rail sont devenus une vraie navigation.</b> Ouvrir Accueil, Atelier, Tableau, Synthèse ou Matis referme maintenant l'écran précédent — avant, ils s'empilaient, et la Synthèse s'ouvrait <i>derrière</i> l'écran déjà ouvert : cliquer ne « faisait rien ». L'onglet actif est marqué jusque dans la Synthèse, le bouton <b>Retour</b> y fonctionne, et elle s'affiche depuis le haut de la page."
   ]},
@@ -13123,7 +13182,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.100.4";
+const TOOL_VERSION = "4.101.0";
 const CLE_VERSION_VUE = "spk_derniere_version_vue";
 const CLE_NOUVEAUTES_OFF = "spk_nouveautes_masquees";
 
@@ -13344,6 +13403,11 @@ function gainPoste(ligne, opCode, lignesSeptFons){
     let meilleur = null;
     (b.scs || []).forEach(sc => {
       if(prodSc.id === sc.id) return;
+      /* v4.101 — un scénario HORS COURSE (essais arrêtés avant charnière, ou campagne
+         finie sans un seul conforme) ne peut plus être le « meilleur » : c'est lui qui
+         faisait afficher un gain sur des essais SN60 arrêtés (OP40 EMAG 2 / DV356).
+         Exclu du calcul, jamais caché : sa fiche porte le tampon FAILED et ses motifs. */
+      if(scenarioEchec(sc)) return;
       const t = coutsDetail(sc, b.op.config, ligne).total;
       if(t === null) return;
       if(!meilleur || t < meilleur.cout) meilleur = { sc, cout: t };
@@ -17090,6 +17154,19 @@ function renderCloturePanel(){
   if(!es){ fermerPanneaux(); return; }
   const c = es.cloture || {};
   const options = MOTIFS_ARRET.map(([v, l]) => `<option value="${v}" ${c.motif === v ? "selected" : ""}>${escapeAttr(l)}</option>`).join("");
+  /* v4.101 — si la charnière n'est pas atteinte, la clôture peut ALIGNER le scénario
+     sur le réel : les logements suivis par cet essai portent leur charnière à la
+     dernière pièce atteinte. C'est un geste explicite (case cochée par défaut),
+     pas une réécriture silencieuse — l'essai clôturé reste la trace du pourquoi. */
+  const insuffisants = logementsSuivis(es).map(lp => {
+    const target = parseFloat(lp.charniere);
+    const last = lastPieceLogement(es, lp.logementId);
+    return { lp, target, last, ok: !isNaN(target) && last !== null && last < target };
+  }).filter(x => x.ok);
+  const ajusterLabel = insuffisants.map(x => {
+    const nom = nomLogementActuel(sc, x.lp);
+    return (nom.outilNumero || "?") + " " + (nom.logementNom || "") + " → " + x.last + " p (au lieu de " + x.target + ")";
+  }).join(", ");
   wrap.innerHTML = `
     <h3>${c.motif ? "Essai arrêté" : "Clôturer l'essai"} — ${escapeAttr(es.titre || "")}</h3>
     <p class="panel-hint">Un essai arrêté avant sa charnière reste dans le suivi et dans le rapport d'essai (avec le motif), mais il ne compte ni comme conforme ni comme non conforme : il sort du compteur 5× et du bandeau de reprise. Ses prélèvements restent intacts — courbes et historique ne bougent pas. Réouvrable à tout moment.</p>
@@ -17099,6 +17176,12 @@ function renderCloturePanel(){
       <input id="clotureDetail" class="cell ref" value="${escapeAttr(c.detail || "")}" placeholder="ex. éclat d'arête Inter à la pièce 37"></label>
     <label class="cloture-champ">Date d'arrêt
       <input id="clotureDate" type="date" min="2025-01-01" max="2035-12-31" class="cell" value="${escapeAttr(c.date || new Date().toISOString().slice(0,10))}"></label>
+    ${insuffisants.length ? `
+    <label class="cloture-champ" style="display:flex; flex-direction:row; align-items:flex-start; gap:10px;">
+      <input type="checkbox" id="clotureAjuster" checked style="width:17px; height:17px; margin-top:2px; accent-color:var(--blue);">
+      <span style="font-size:12.5px; line-height:1.5;">Aligner la <b>charnière du scénario sur le réel</b> — le scénario passera
+      <b>⛔ FAILED (hors course)</b> et sortira des gains projetés : ${escapeAttr(ajusterLabel)}.
+      La durée de vie déclarée n'était pas tenue : le coût du scénario se calcule désormais sur ce qu'il a réellement tenu.</span></label>` : ""}
     <div class="panel-actions">
       <button class="ghost" id="clotureAnnuler">Annuler</button>
       ${c.motif ? `<button class="ghost" id="clotureReouvrir">Réouvrir l'essai</button>` : ""}
@@ -17111,6 +17194,14 @@ function renderCloturePanel(){
       detail: document.getElementById("clotureDetail").value.trim(),
       date: document.getElementById("clotureDate").value
     };
+    const chk = document.getElementById("clotureAjuster");
+    if(chk && chk.checked){
+      insuffisants.forEach(x => {
+        const o = sc.outils.find(o2 => o2.id === x.lp.outilId);
+        const l = o && o.logements.find(l2 => l2.id === x.lp.logementId);
+        if(l) l.charniere = x.last;
+      });
+    }
     toucherEssai(es); saveData(); fermerPanneaux(); render();
   });
   const re = document.getElementById("clotureReouvrir");
@@ -18841,6 +18932,51 @@ function runTests(){
          [stIncomplet.complete, stIncomplet.secs, stIncomplet.filled], [false, null, 3]);
       ok("logementCycle : le premier logement ancre l'indice, quel que soit son nom",
          logementCycle(mkCyc([false,false], 20)).nom, "Logement 1");
+    }
+
+    /* ---- v4.101 : le scénario HORS COURSE (FAILED) ----
+       (a) essai clôturé avant charnière → scenarioEchec non null + charniereReelle
+           lève la borne inférieure ; (b) campagne finie sans un seul conforme → FAILED ;
+       (c) gainPoste exclut le scénario fauté du choix du « meilleur » — le gain ne se
+           calcule plus sur un scénario dont les essais ont échoué (cas SN60 OP40). */
+    {
+      const cfgF = Object.assign({}, cfg);
+      const sProd = normalizeScenario({ id:"sF1", name:"Prod", baseline:true, statut:"serie",
+        outils:[{ id:"tF1", numero:"T1", logements:[{ id:"gF1", nom:"Piste", prix:10, aretes:8, charniere:100 }] }] });
+      const sMauvais = normalizeScenario({ id:"sF2", name:"SN60 échoué", baseline:false, statut:"essai",
+        outils:[{ id:"tF2", numero:"T2", logements:[{ id:"gF2", nom:"Piste", prix:2, aretes:8, charniere:150 }] }] });
+      sMauvais.essais = [ essaiBrut("eF1", [prel("pF1", 30, 0.06)]) ];
+      sMauvais.essais[0].params = { logements: snapshotLogements(sMauvais) };
+      sMauvais.essais[0].cloture = { motif:"casse", detail:"éclat arête p30", date:"2026-10-21" };
+      const sBon = normalizeScenario({ id:"sF3", name:"Bon scénario", baseline:false, statut:"essai",
+        outils:[{ id:"tF3", numero:"T3", logements:[{ id:"gF3", nom:"Piste", prix:5, aretes:8, charniere:150 }] }] });
+      sBon.essais = [ essaiBrut("eF2", [prel("pF2", 150, 0.06)]) ];
+      sBon.essais[0].params = { logements: snapshotLogements(sBon) };
+      sBon.essais[0].date = "2026-10-21";
+      const lF = normalizeLigne({ id:"lF", nom:"EMAG 2", coutHoraire:50,
+        references:[{ id:"rF", nom:"DV 356x26 RPI", productionAnnuelle:100000,
+          ops:[{ id:"oF", nom:"OP40", ordre:40, config:cfgF, scenarios:[sProd, sMauvais, sBon] }] }] });
+      const lFAvant = lignes; const dFAvant = data; lignes = [lF]; data = lF.references[0].ops[0].scenarios;
+      try {
+        ok("scenarioEchec : un essai arrêté avant sa charnière marque le scénario hors course",
+           Array.isArray(scenarioEchec(sMauvais)) && /arrêté avant sa charnière/.test(scenarioEchec(sMauvais)[0]), true);
+        ok("scenarioEchec : un scénario sain (essai à la charnière) n'est pas fauté",
+           scenarioEchec(sBon), null);
+        ok("scenarioEchec : le scénario de production ne peut jamais être fauté",
+           scenarioEchec(sProd), null);
+        ok("charniereReelle : l'essai arrêté est une fin de vie RÉELLE — borne inférieure levée",
+           charniereReelle(sMauvais, "gF2").borneInf, false);
+        ok("charniereReelle : la vie observée = la dernière pièce atteinte (30 p)",
+           Math.abs(charniereReelle(sMauvais, "gF2").moyenne - 30) < 1e-9, true);
+        const posteF = gainPoste(lF, "OP40");
+        const gMauvais = posteF.refs.find(r => r.ref && r.ref.nom === "DV 356x26 RPI");
+        ok("gainPoste : le scénario FAUTÉ n'est plus le « meilleur » — le gain vient du scénario sain",
+           gMauvais.meilleur && gMauvais.meilleur.sc.id === "sF3", true);
+        ok("verdictHTML : le scénario fauté porte le tampon FAILED",
+           /FAILED/.test(verdictHTML(sMauvais)), true);
+        ok("verdictHTML : le scénario sain ne porte pas le tampon",
+           !/FAILED/.test(verdictHTML(sBon)), true);
+      } finally { lignes = lFAvant; data = dFAvant; }
     }
 
     /* ---- v4.41.1 : cadenceHeure + migration du mode global 4.39/4.40 ---- */

@@ -5,6 +5,49 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.101.0] — 2026-10-21 · ⛔ FAILED : le scénario fauté sort des gains — et les flèches de saisie reviennent au bureau
+
+**La commande de Benjamin.** Deux choses : (1) la saisie des valeurs numériques
+est peu pratique hors mode atelier (exemple : prix plaquettes) ; (2) un essai
+arrêté avant sa charnière doit sortir le scénario de la course — tampon « failed »
+— sinon la synthèse ment. Son exemple : **OP40 EMAG 2 / DV 356x26, les essais
+SN60 n'ont rien donné de bon, et le récap affiche pourtant un gain.**
+
+### Ajouté — le scénario hors course
+- **`scenarioEchec(sc)`** — deux preuves **calculées, jamais saisies** :
+  (a) un essai **clôturé avant sa charnière** (motif posé) ; (b) une campagne
+  **finie sans un seul essai conforme**, au moins un non conforme. Les essais
+  encore en cours ne condamnent personne. Le scénario de production (★) ne peut
+  jamais être fauté.
+- **Tampon ⛔ FAILED** : verdict du scénario (« hors course », motifs en toutes
+  lettres), tuile du rail, ligne « Statut de validation » de la vue de synthèse.
+  Les chiffres restent affichés (transparence), mais le scénario est **exclu du
+  choix du « meilleur scénario »** dans `gainPoste` — donc des gains projetés du
+  tableau de bord, de l'A4 Mission et du chemin prod → cible. Le cas SN60 : le
+  gain disparaît du récap, la fiche raconte pourquoi.
+- **Alignement de la charnière sur le réel** — à la clôture d'un essai arrêté
+  avant charnière, le panneau propose (cochée par défaut) de porter la charnière
+  des logements suivis à la **dernière pièce réellement atteinte**. Geste
+  explicite, jamais une réécriture silencieuse ; l'essai clôturé reste la trace.
+- **`charniereReelle` corrige** : un essai arrêté est une **fin de vie réelle**
+  (borne inférieure levée) — avant, il remontait la moyenne SANS déclencher
+  l'alerte d'écart charnière, et le coût réel restait invisible.
+
+### Changé — saisie numérique
+- **Hors mode atelier**, les flèches d'incrément des champs `number` (prix,
+  arêtes, charnières, volumes, seuils…) sont **affichées en permanence** —
+  Chrome ne les montrait qu'au survol, au point qu'on ne savait pas qu'elles
+  existaient. Le `step` de chaque champ redevient un contrôle de souris. Le
+  mode atelier garde ses champs nus (règle historique : pas de flèches pour les
+  gants).
+
+### Vérifié
+- **591 tests | 0 échec** (9 portes nouvelles : détection, exclusion gainPoste,
+  charniereReelle, tampon verdict — plus 1 cas sain négatif).
+- **Contre-regard** : exclusion désactivée par injection → **1 échec vu**
+  (`gainPoste` re-prenait le scénario fauté) → restauration octet pour octet
+  (SHA-256 identique), retour 591/0.
+
 ## [4.100.0] — 2026-10-20 · La coque est dans le repo git, et le rail ne disparaît plus
 
 **Ce que fait ce tour.** La coque de navigation construite le 20/10 par l'agent

@@ -492,6 +492,51 @@ Restaurations par copie, empreintes identiques, 521 → **552/552 verts**.
 **Prochain tour** : le test tablette avec gants (20 mesures chronométrées) ;
 la revue d'Hermes ; l'export de l'accueil ; le chantier UI de fond.
 
+### ▸ Tour 82 — 21/10/2026, après-midi — **Hermes** (v4.101.0 — ⛔ FAILED : le scénario fauté sort des gains ; les flèches de saisie au bureau)
+
+**La commande.** Benjamin : « la saisie des valeurs numériques est peu pratique
+quand le mode atelier n'est pas disponible (exemple prix plaquettes) ; ensuite
+si un essai a été arrêté pour X raison et que la charnière n'a pas été atteinte,
+la charnière du scénario doit être mise à jour et le scénario mis hors course
+(tampon "failed") pour ne pas fausser la synthèse — regarde l'OP40 EMAG 2 DV356 :
+les essais SN60 n'ont rien donné de bon et pourtant on voit un gain sur le récap.
+Corrige et déploie sur dev. »
+
+**Le diagnostic avant le code.** Le trou était dans `gainPoste` : le « meilleur
+scénario » d'un poste se choisissait **au seul coût**, sans regarder les essais.
+Un scénario pas cher mais dont les essais étaient arrêtés net (SN60) gagnait donc
+le concours — et son gain alimentait le tableau de bord et l'A4 Mission.
+Second trou, dans `charniereReelle` : un essai **arrêté** (clôturé, motif posé)
+remontait sa moyenne sans lever la borne inférieure — la vie observée à 30 p
+n'aurait jamais déclenché l'alerte d'écart charnière.
+
+**Le fix, en trois pièces.**
+1. **`scenarioEchec(sc)`** — le tampon est **calculé, jamais saisi** : (a) un
+   essai clôturé avant sa charnière ; (b) une campagne finie sans un seul
+   conforme, au moins un non conforme. Les essais en cours ne condamnent
+   personne, la production (★) ne peut jamais être fautée. Conséquences :
+   tampon ⛔ sur le verdict (« hors course », motifs dits), tuile du rail, vue
+   de synthèse — et **exclusion du choix du meilleur** : plus de gain projeté
+   sur du terrain échoué. Les chiffres restent affichés (transparence).
+2. **Alignement de charnière à la clôture** — panneau de clôture : si la
+   charnière n'est pas atteinte, une case (cochée par défaut) porte les
+   logements suivis à la dernière pièce réellement atteinte. Explicite,
+   traçé par l'essai clôturé — pas une réécriture silencieuse.
+3. **Flèches de saisie hors atelier** — `input[type=number]` : spinners
+   affichés en permanence hors `body.atelier-on` (Chrome les cachait hors
+   survol) ; le mode atelier garde ses champs nus (gants).
+
+**Vérifié.** 591 tests | 0 échec (9 portes nouvelles). Contre-regard : faute
+injectée (exclusion désactivée) → **vue** (1 échec), restauration octet pour
+octet, SHA-256 identique. **Déployé sur DEV**, vérifié curl ; **PROD : rien**
+— elle ne bouge que sur phrase de Benjamin.
+
+**Prochain tour** : chez Benjamin — clôturer les essais SN60 (motif + case
+d'alignement) pour faire sortir le scénario de la course dans SES données ;
+le tampon fait le reste tout seul.
+
+---
+
 ## Questions ouvertes à Z Code
 
 ### ▸ Tour 67 — 14/10/2026 — **Hermes** (mécanique des plaquettes — avis transmis, discussion avec Z Code)
