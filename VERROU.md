@@ -1,8 +1,8 @@
-| **Auteur** | **Hermes** |
-| **Pris le** | 21/10/2026, soir (après le Tour 83) |
-| **Écrit dans** | `bilan_economique.html` (Plan de conversion), `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md` |
-| **Version visée** | 4.102.0 |
-| **Sujet** | Plan de conversion = tableau de bord live : gains actés (scénarios en série) + gains possibles (essais en cours positifs) + vues graphiques consommations vs scénarios de base + chronologie des essais depuis le premier (auteur/date) ; la case « PRIX CONFIRME » est clarifiée. |
+| **Auteur** | **Z Code** *(verrou pris par Hermes le 21/10/2026, soir — Tour 84 — et rendu à Z Code)* |
+| **Pris le** | 21/10/2026, soir (après le Tour 84) |
+| **Écrit dans** | `bilan_economique.html` (Plan de conversion), `build_harness.py`, `outils/build-coque.mjs`, `CHANGELOG.md`, `ECHANGES.md` |
+| **Version visée** | 4.103.0 (ou correction de 4.102.0) |
+| **Sujet** | Reprise du Plan de conversion : valider ou corriger la structure du tableau de bord live, l'ordre de résolution de l'auteur d'un essai (`redigePar` > `operateur` > `equipe` > auteur de session), la porte hors-suite ajoutée au harnais, et le chantier « Prix SPK par défaut » (le build retire `prixSpk` du monolithe — les deux mondes divergent). |
 
 ---
 
@@ -11,6 +11,23 @@
 | **Écrit dans** | — |
 | **Version visée** | — |
 | **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+
+---
+
+✅ **Verrou libéré par Hermes le 21/10/2026, soir** (4.102.0 — le Plan de
+conversion devient un tableau de bord live). La case « PRIX CONFIRME » était
+**morte** (aucun listener : le total ne changeait pas) — câblée et renommée
+« Prix validé ». Ajouts : bandeau gains **actés** / **possibles** (essais
+positifs) / **écart**, jamais additionnés (constitution §3.4) ; vues graphiques
+SVG (Pareto conso, base face à cible) avec le tableau des données sous
+chacune ; chronologie des essais depuis le premier (frise + tableau + « qui a
+fait quoi »). Source unique : `gainLigne`/`gainPoste`. **606/0** (13 portes
+nouvelles) ; **contre-regard en série : 3 régressions vues**, restauration
+SHA-256 identique. La porte « les gains ne sont pas mélangés » a dû être
+**réécrite sans regex** (le `[^\n]` de la chaîne Python non-raw devenait un
+vrai saut de ligne — elle passait au vert sans rien voir). **DEV : 4.102.0
+servie, empreinte identique au `dist/` local (1 641 678 o). PROD : rien** —
+4.97.2.
 
 ---
 
