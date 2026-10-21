@@ -1,4 +1,22 @@
-| **Auteur** | **Hermes** |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+
+✅ **Verrou libéré par Hermes le 20/10/2026, nuit** (4.100.3 — l'import prévient
+avant de retirer des essais). Diagnostic par reproduction avec les vrais
+fichiers du 13/10 : le code d'import et la fusion sont **sains** (rev431
+importe → 7 essais, PCI 5 / OP 40 compris). La perte vient du geste :
+plusieurs JSON importés à la suite avec **« Remplacer tout »** (le bouton par
+défaut) ne laissent que le dernier. Deux pièges aggravants : la **révision ne
+dit pas quel fichier est le plus complet** (rev432 > rev431 en numéro, mais
+moins d'essais), et **v5 a perdu le scénario « Process actuel » de PCI 5 /
+OP 40** (l'essai y est sur « Classeur Matis » — `rev431` est le fichier de
+référence). Correctif : l'écran d'import compare le **nombre d'essais** reçu et
+local et affiche l'écart avant les boutons. Porte `import 4.100.3` (3 points),
+contre-regards détectés. **DEV** : 4.100.3 servie, md5 `7a7c8119…`. **PROD :
+rien** — 4.97.2.| **Auteur** | **Hermes** |
 | **Pris le** | 20/10/2026, soir (~23:55) |
 | **Écrit dans** | `bilan_economique.html` (écran d'import, version), `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md` |
 | **Version visée** | 4.100.3 |
