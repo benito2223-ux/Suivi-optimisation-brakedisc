@@ -1,3 +1,11 @@
+| **Auteur** | **Hermes** |
+| **Pris le** | 21/10/2026, après-midi |
+| **Écrit dans** | `bilan_economique.html` (FAILED + saisie numérique), `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
+| **Version visée** | 4.101.0 |
+| **Sujet** | Scénario hors course (tampon FAILED, exclusion des gains) + flèches de saisie numérique hors atelier. |
+
+---
+
 | **Auteur** | *(libre)* |
 | **Pris le** | — |
 | **Écrit dans** | — |
