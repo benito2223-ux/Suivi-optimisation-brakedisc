@@ -5,6 +5,40 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.104.0] — 2026-10-22 · Sept retours du terrain sur le Plan et la coque
+
+**Le lot (Benjamin, 22/10), un par un :**
+1. **Graphique illisible** : le SVG du Plan passe à 330×980 (libellés 11,5 px).
+2. **La simulation entre dans le graphique** : en base annuelle, chaque article
+   simulé (prix et/ou vie posés dans le tableau) porte sa **seconde barre
+   « simulé »** dans le Pareto, reconstruit **à chaque frappe**
+   (`majParetoPlan` lit les champs du tableau — les mêmes chiffres que les
+   barres ligne à ligne). Le tableau de données gagne la colonne Simulé.
+3. **Les consommations ne restent pas** : la cause était l'import « Remplacer
+   tout » d'un suivi JSON qui ne porte pas la base 2025 — il l'**effaçait**
+   (assignation directe). Désormais une base lue ici ne peut être remplacée
+   que par un fichier qui en porte une. (Le pareto hebdo et le mode du Plan
+   voyageaient déjà depuis la 4.101.1.)
+4. **Le pictogramme deux-cercles** était une légende de couleurs de champs
+   restée seule (un `title`, aucun listener) — retirée ; l'information
+   rejoint le bloc d'aide ⓘ (« bleu = calculé, clair = éditable »).
+5. **L'upload du Pareto au milieu de page** : les contrôles de consommation
+   (source, fichiers, postes comptés, réglages) montent **en tête du Plan**,
+   avant le tableau de bord — la base d'abord, l'outil ensuite.
+6. **Le logo SPK sort de l'outil** (header + rail). Il reste embarqué
+   (`LOGO_SPK_SRC`) uniquement pour brander les rapports A4.
+7. **L'onglet Tableau ne revenait pas** : les panneaux dérivés de l'Accueil
+   (Plan, Simulateur, Catalogue, Comparaison, Historique, Backlog) n'étaient
+   pas fermés au changement d'écran du rail et recouvraient la destination
+   (même z-index, plus tard dans le DOM). La coque les referme désormais
+   (`spk-shell.js`, `SURFACES_SECONDAIRES`).
+
+**Vérifié** : 606/0, syntaxe 0 erreur, build coque 4 transformations,
+navigateur sur le DEV servi : logo absent (header + rail), légende absente,
+Tableau revient après le Plan, contrôles en tête, graphique 330 px avec
+colonne simulée. **DEV** : 4.104.0 servie, SHA identique au `dist/`.
+**PROD : rien** — 4.97.2.
+
 ## [4.103.0] — 2026-10-21 · Le prix SPK par défaut sort du code — à la source
 
 **Le chantier confié au verrou.** Hermes (Tour 84) a rendu le verrou à Z Code

@@ -6,6 +6,17 @@
 
 ---
 
+✅ **Verrou libéré par Z Code le 22/10/2026** (Tour 86, v4.104.0 — sept
+retours du terrain : graphique lisible + simulation dans le graphique,
+consommations persistantes à l'import, pictogramme légende morte retiré,
+logo SPK sorti de l'outil (gardé pour les rapports A4 via `LOGO_SPK_SRC`),
+contrôles de consommation en tête du Plan, onglet Tableau qui se rouvre
+(coque : fermeture des panneaux dérivés). **Vérifié** : 606/0, navigateur
+sur le DEV servi. **DEV** : 4.104.0, SHA `1dbe45a0…` identique au `dist/`.
+**PROD : rien** — 4.97.2.
+
+---
+
 ✅ **Verrou libéré par Z Code le 21/10/2026, soir** (Tour 85, v4.103.0 — la
 mission du verrou est remplie). **Validé sans correction** : ordre de
 résolution de l'auteur (`redigePar > operateur > equipe > session`, conforme),

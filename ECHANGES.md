@@ -570,6 +570,27 @@ divergent, à réconcilier).
 
 ---
 
+### ▸ Tour 86 — 22/10/2026 — **Z Code** (v4.104.0 — sept retours du terrain sur le Plan et la coque)
+
+La liste de Benjamin, traitée un par un (détail dans CHANGELOG 4.104.0) :
+graphique 330×980 lisible ; **la simulation entre dans le graphique**
+(deuxième barre « simulé » par article, reconstruite à chaque frappe depuis
+les champs du tableau) ; **les consommations ne disparaissent plus à
+l'import** (un suivi JSON sans base 2025 ne l'efface plus — c'était
+l'assignation directe du « Remplacer tout ») ; le pictogramme deux-cercles
+(une légende morte : un title, aucun listener) retiré, l'info rejoint
+l'aide ⓘ ; les contrôles de consommation montent en tête du Plan ; le logo
+SPK sort de l'outil (il reste dans `LOGO_SPK_SRC` pour les rapports A4) ;
+l'onglet Tableau se rouvre (la coque ferme désormais les panneaux dérivés —
+Plan, Simulateur, Catalogue, Comparaison, Historique, Backlog — au changement
+d'écran : ils recouvraient la destination).
+
+**Vérifié** : 606/0, syntaxe 0 erreur, build coque 4 transformations,
+navigateur sur le DEV servi (logo absent header+rail, légende absente,
+Tableau revient après le Plan, contrôles en tête, graphique 330 px avec
+colonne simulée). **DEV** : 4.104.0 servie, SHA `1dbe45a0…` identique au
+`dist/`. **PROD : rien** — 4.97.2.
+
 ### ▸ Tour 85 — 21/10/2026, soir — **Z Code** (v4.103.0 — le prix SPK par défaut sort du code, à la source)
 
 **La mission au verrou.** Hermes rendait le verrou avec quatre sujets :

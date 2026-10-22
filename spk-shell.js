@@ -135,6 +135,14 @@
     carteBtn: ["cartePanel"],
     matisBtn: ["matisPanel", "matisDetailPanel"]
   };
+  /* v4.104 — les panneaux DÉRIVÉS de l'Accueil (Plan, Simulateur, Catalogue,
+     Comparaison, Historique, Backlog) ne sont pas des destinations du rail,
+     mais ce sont des espaces de travail : s'ils restent ouverts, ils
+     RECOUVRENT l'écran du rail cliqué (même z-index, plus tard dans le DOM).
+     Constat Benjamin 22/10 : « l'onglet tableau ne s'affiche plus quand on
+     clique dessus » après être passé par le Plan de conversion. Fermés à
+     chaque changement d'écran du rail. */
+  const SURFACES_SECONDAIRES = ["planPanel", "simulPanel", "cataloguePanel", "comparePanel", "historiquePanel", "backlogWrap"];
   const TOUTES_SURFACES = [];
   Object.keys(SURFACES_DU_BOUTON).forEach((b) => {
     SURFACES_DU_BOUTON[b].forEach((id) => {
@@ -146,7 +154,7 @@
     const btn = e.target && e.target.closest ? e.target.closest("button") : null;
     if (!btn) return;
     const siennes = SURFACES_DU_BOUTON[btn.id] || [];
-    TOUTES_SURFACES.forEach((id) => {
+    TOUTES_SURFACES.concat(SURFACES_SECONDAIRES).forEach((id) => {
       if (siennes.indexOf(id) !== -1) return;
       const pan = document.getElementById(id);
       if (pan && !pan.hidden) pan.hidden = true;

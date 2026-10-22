@@ -157,21 +157,11 @@ if (ANCRE_PLAN_VIDE.test(html)) {
 }
 
 /* --------------------------------------------------------------------------
-   4. Titre de travail plus calme ; le contexte est porte par la coque.
-      v4.102.0 : le Plan s'ouvre sur le tableau de bord LIVE, puis le tableau
-      de conversion ligne a ligne reste en dessous.
+   4. (v4.104) — le titre du Plan est deja posé sans emoji dans le monolithe,
+      et les contrôles de consommation sont montés en tête du panneau par
+      renderPlan lui-même : plus de transformation ici. Les ancres de cette
+      section vivent désormais dans le source ; le build ne les détourne pas.
    -------------------------------------------------------------------------- */
-remplacer(
-  [
-    'wrap.innerHTML = `<h3>⚔️ Plan de conversion — vers les plaquettes SPK</h3>` + planTableauDeBordHTML()',
-    '    + `<div class="pc-titre-section">Conversion article par article</div>` + planHTML();'
-  ].join('\n'),
-  [
-    'wrap.innerHTML = `<h3>Plan de conversion</h3>` + planTableauDeBordHTML()',
-    '    + `<div class="pc-titre-section">Conversion article par article</div>` + planHTML();'
-  ].join('\n'),
-  'titre du Plan de conversion (emoji retire)'
-);
 
 /* --------------------------------------------------------------------------
    5. Le prix SPK par defaut est sorti du code A LA SOURCE (v4.103.0).
