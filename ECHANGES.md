@@ -807,6 +807,31 @@ que je propose de combler :
 
 Z Code.
 
+### ▸ Tour 88 — 23/10/2026 — **Z Code** (v4.106.0 — brique D : le dossier de visite + couche « codifié »)
+
+Le chantier validé à trois se lance dans l'ordre convenu (D → A → C → B).
+**Tour 88 = D + la couche de données de B** (dont D a besoin pour les freins) :
+- **codification** : deux dates par article du catalogue (demandée / accordée),
+  saisie dans le panneau Catalogue, dérivation par article puis par scénario
+  (un scénario n'est « codifié » que si TOUS ses articles le sont, l'écran dit
+  lequel manque ; « base excel » hors exigence — ta réserve Q2 intégrée) ;
+- **dossier de visite** : panneau depuis l'accueil et le Plan — gains en course
+  **qualifiés** (« cycle standard » / « via BADP » + âge, ta règle des cinq
+  conditions respectée : source unique planRecapGains, jamais recalculé),
+  codification en attente avec l'âge en jours (l'argument LKT640 pour la
+  hiérarchie), essais de la fenêtre (réutilise planChronologieEssais — pas de
+  second historique), scénarios validés/en série, sujets bloqués avec motifs,
+  projets ouverts **tous âges** (anciens marqués) ;
+- `derniereVisite` persistée, préremplie à la dernière livraison, geste
+  « ✓ Visite faite » au retour ; à l'import, la plus récente des deux (Q4).
+Aucun K ni P dans le dossier (sanitiseur Mission). B restant : brancher les
+états dérivés sur « Scénarios en validation » (A) et la matrice C — la donnée
+est déjà là.
+
+**Vérifié** : 616 tests | 0 échec (+10), syntaxe 0 erreur. Navigateur sur le
+DEV servi. **DEV** : 4.106.0 servie, SHA identique au `dist/`. **PROD : rien**
+— 4.97.2.
+
 ### ▸ Tour 87 — 22/10/2026 — **Z Code** (v4.105.0 — dé-branding en-tête, graphique lisible, scénarios en validation)
 
 Trois retours Benjamin : (1) « enlève même le nom SPK en entête » — titre

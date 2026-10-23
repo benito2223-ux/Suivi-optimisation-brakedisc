@@ -5,6 +5,49 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.106.0] — 2026-10-23 · Brique D : le dossier de visite + la couche « codifié »
+
+**Le cycle de conception.** Proposition Z Code (A–E) relue par Hermes
+(5 conditions de méthode) et ChatGPT (3 affinages), sémantique de
+« codifié » tranchée par Benjamin (23/10). Ordre convenu : D → A → C → B.
+Ce tour livre **D** et la **couche de données de B** (les deux dates), dont
+D a besoin pour porter les freins.
+
+**La codification (données).** Deux dates par article du catalogue
+(`codificationDemandeeLe`, `codifieLe`), saisies dans le panneau Catalogue,
+voyageant avec le suivi. État dérivé par article (`etatCodification`) et par
+scénario (`codificationScenario`) : un scénario n'est codifié que si TOUS ses
+articles le sont, l'écran dit lequel manque ; la couche générée « base excel »
+est hors exigence (jamais d'article fantôme à coder). Sémantique affichée :
+codification par le service administratif de Matis, prérequis du cycle de
+commande standard — sans elle, BADP seulement.
+
+**Le dossier de visite (D).** Panneau dédié (depuis l'accueil ou le Plan) :
+- la référence est `derniereVisite`, posée par Benjamin, **préremplie à la
+  dernière livraison**, geste « ✓ Visite faite (aujourd'hui) » au retour ;
+  à l'import, on garde la plus récente des deux dates ;
+- **gains en course** : source unique `planRecapGains` — les actés sont
+  **qualifiés** « cycle standard » (tous les articles codifiés) ou **« via
+  BADP »** (codification en attente, âge affiché — un gain acté sous BADP
+  n'est pas un gain à l'échelle, décision Benjamin) ; les trois sous-totaux
+  ne se fusionnent jamais, les possibles restent à part (§3.4) ;
+- **codification en attente chez Matis**, la plus vieille d'abord —
+  « LKT640 : demandée le 28/08, X jours d'attente » est l'argument porté à
+  la hiérarchie ;
+- **essais de la fenêtre** avec résultat (réutilise `planChronologieEssais`,
+  le marcheur canonique — jamais un second historique), conformes comptés
+  pour le protocole 5× ;
+- **scénarios validés ou en série** (état actuel), **sujets bloqués** (essais
+  clôturés avec motif, hors course, abandonnés — trois listes), **projets
+  ouverts tous âges** (les anciens marqués, ChatGPT n°3).
+
+Aucun K, aucun P_req dans le dossier (sanitiseur du pattern Mission).
+
+Harnais : +10 assertions (états de codification, exclusion base excel,
+dérivation par article, qualification BADP vs cycle standard, fenêtre du
+dossier). API exportée : `etatCodification`, `articlesScenario`,
+`codificationScenario`, `dossierVisite`, `dateIsoMax`, `joursDepuis`.
+
 ## [4.105.0] — 2026-10-22 · Dé-branding en-tête, graphique lisible, scénarios en validation
 
 1. **Le nom SPK sort de l'en-tête** : titre d'onglet, eyebrow du bandeau,

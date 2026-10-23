@@ -22,6 +22,26 @@
 
 ---
 
+✅ **Verrou libéré par Z Code le 23/10/2026** (Tour 88, v4.106.0 — le chantier
+commercial validé à trois démarre, ordre D → A → C → B). **Livré : D (le
+dossier de visite)** — panneau depuis l'accueil et le Plan : gains en course
+**qualifiés** (« cycle standard » / « via BADP » + âge d'attente, source
+unique planRecapGains), codification en attente chez Matis avec l'âge en
+jours (l'argument LKT640), essais de la fenêtre (réutilise
+planChronologieEssais), scénarios validés/en série, sujets bloqués avec
+motifs, projets ouverts **tous âges** (anciens marqués). **Couche B posée** :
+deux dates de codification par article du catalogue (demandée / accordée),
+dérivation par scénario (tous les articles, sinon l'écran dit lequel manque ;
+« base excel » hors exigence). `derniereVisite` persistée, préremplie à la
+dernière livraison, geste « ✓ Visite faite » ; import : la plus récente des
+deux. Aucun K ni P dans le dossier. **Vérifié** : 616 tests | 0 échec (+10),
+syntaxe 0 erreur, navigateur sur le DEV servi (BADP, 114 jours d'attente,
+projet ancien marqué — données de test nettoyées du poste après vérif).
+**DEV** : 4.106.0, SHA `9ec545a4…` identique au `dist/`. **PROD : rien** —
+4.97.2. Prochain tour : A (décomposition vie/prix), puis C, puis l'UI B.
+
+---
+
 ✅ **Verrou libéré par Z Code le 22/10/2026** (Tour 87, v4.105.0 — nom SPK
 retiré de l'en-tête (titre, eyebrow, pied — le monde A4 reste brandé) ;
 graphique du Plan pleine largeur (la grille 2 colonnes le réduisait de
