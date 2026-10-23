@@ -570,6 +570,57 @@ divergent, à réconcilier).
 
 ---
 
+### ▸ Décision Benjamin — 23/10/2026 — la sémantique de « codifié » (réponse à la consultation, brique B)
+
+**Ce que « codifié » veut dire.** Que Matis fait **codifier toute nouvelle
+référence de plaquette par son service administratif, localisé en Pologne**.
+Sans codification, impossible de passer les plaquettes dans le **cycle de
+commande standard** — donc impossibles en prod. Le seul moyen de tenir :
+des **commandes ponctuelles (BADP)**, **limitées en montant et en
+récurrence**.
+
+**Le cas d'école, en production chez nous.** Les plaquettes **LKT640** sont
+**validées et testées en prod** avec des achats ponctuels BADP — mais la
+codification **n'est toujours pas effective**, alors qu'elle est **demandée
+depuis fin août 2026** (les premiers essais). C'est le frein, en vrai.
+
+**Ce que ça change pour la brique B (et pour A, C, D).**
+
+1. **Deux dates, pas une case.** `codificationDemandeeLe` et `codifieLe`.
+   L'état dérivé a trois valeurs : **non demandée / demandée depuis X jours
+   / codifiée le …**. L'âge de l'attente est la métrique actionnable —
+   « LKT640 : demandée le 28/08, 56 jours d'attente » est l'argument que
+   Benjamin porte à la hiérarchie pour faire bouger la Pologne.
+2. **Posé sur l'article (MABEC, catalogue)**, dérivé au logement et au
+   scénario — conforme à ma réponse Q2 : un scénario D1+D2 n'est « codifié »
+   que si les deux articles le sont, et l'écran dit lequel manque.
+3. **Qualification des gains actés.** Un gain « acté » produit sous BADP est
+   réel mais **plafonné** (montant, récurrence) : il n'est pas encore un gain
+   à l'échelle. Le bandeau et « Scénarios en validation » doivent distinguer
+   **« acté via BADP »** de **« acté sous cycle standard »** — et le badge
+   BADP porte l'âge de la codification en attente. Sinon la prospective
+   annonce à l'échelle un gain que le cycle d'achat ne peut pas tenir.
+4. **Un frein explicite dans C et D.** Dans la matrice « où investir », la
+   codification en attente est un état de la colonne « facilité de
+   concrétisation » (un des deux axes, jamais un score) ; dans le dossier de
+   visite, une ligne dédiée : **« gain bloqué par la codification depuis
+   X jours — LKT640 »**. C'est exactement le genre de blocage que le
+   document doit remonter à la hiérarchie.
+5. **Terminologie affichée : « Codifié » reste le mot** (c'est le terme du
+   processus, connu de la hiérarchie et de Matis) ; l'infobulle porte la
+   définition ci-dessus. Le détail « service en Pologne » peut rester dans
+   l'infobulle : le document est interne Stellantis.
+
+**Rappel de l'état.** B reste la dernière brique dans l'ordre convenu
+(D → A → C → B) ; la sémantique étant maintenant tranchée, B peut être
+codée dès que D, A, C sont posées — ou avant si Z Code préfère la traiter
+tôt, les deux dates étant indépendantes du reste. Rien de tout cela n'est
+codé à ce jour (4.105.0 est l'état livré).
+
+Hermes.
+
+---
+
 ### ▸ Réponse d'Hermes à la consultation — 23/10/2026 — **Hermes** (avis demandé, AUCUN code écrit, verrou non concerné)
 
 Z Code : voilà mon avis, question par question. Préambule : la vision est
