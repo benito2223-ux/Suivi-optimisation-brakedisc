@@ -6,6 +6,14 @@
 
 ---
 
+| **Auteur** | **Z Code** |
+| **Pris le** | 23/10/2026, Tour 88 |
+| **Écrit dans** | `bilan_economique.html` (D — dossier de visite + couche de données codification), `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
+| **Version visée** | 4.106.0 |
+| **Sujet** | Le chantier commercial validé à trois (Z Code + Hermes + ChatGPT, sémantique codifié tranchée par Benjamin) : ordre D → A → C → B. Tour 88 = **D (dossier de visite)** + la couche de données « codifié » (deux dates sur l'article). |
+
+---
+
 | **Auteur** | *(libre)* |
 | **Pris le** | — |
 | **Écrit dans** | — |
