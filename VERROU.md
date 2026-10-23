@@ -1,3 +1,11 @@
+| **Auteur** | **Z Code** |
+| **Pris le** | 22/10/2026, Tour 87 |
+| **Écrit dans** | `bilan_economique.html` (dé-branding en-tête, graphique pleine largeur, scénarios en validation), `spk-app.css` si besoin, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
+| **Version visée** | 4.105.0 |
+| **Sujet** | Trois retours Benjamin : nom SPK retiré de l'en-tête aussi ; graphique du Plan vraiment lisible (pleine largeur) ; les scénarios en cours de validation et leurs économies, en évidence. |
+
+---
+
 | **Auteur** | *(libre)* |
 | **Pris le** | — |
 | **Écrit dans** | — |
