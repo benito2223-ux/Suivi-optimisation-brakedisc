@@ -570,6 +570,30 @@ divergent, à réconcilier).
 
 ---
 
+### ▸ Tour 87 — 22/10/2026 — **Z Code** (v4.105.0 — dé-branding en-tête, graphique lisible, scénarios en validation)
+
+Trois retours Benjamin : (1) « enlève même le nom SPK en entête » — titre
+d'onglet, eyebrow et pied de page disent « Suivi d'optimisation » ; le monde
+A4 (impression, rapports autonomes) reste brandé (décision des tours
+précédents). (2) « le graphique du plan est trop petit et peu lisible » —
+la cause n'était pas le SVG mais la **grille à deux colonnes** qui le rendait
+à ~50 % : pleine largeur désormais, polices remontées (mesuré : 899 px
+rendus contre ~500). (3) « reorganise le plan pour voir de façon évidente
+les scénarios en cours de validation et les économies associées » — nouvelle
+section en tête du tableau de bord, sous le bandeau : « **Scénarios en
+validation — le gain par poste** », un tableau par poste × référence avec le
+scénario en course, son état réel (validation en cours · essai positif /
+en série · gain acté / essais en cours) et son économie €/an, groupes
+ordonnés avec cumuls ÉTIQUETÉS (jamais additionnés entre eux, §3.4), source
+unique gainPoste — le tableau ne peut pas contredire le bandeau ni l'Accueil.
+
+**Vérifié** : 606/0, syntaxe 0 erreur, build coque 4 transformations.
+Navigateur sur le DEV servi : aucun « SPK » dans l'en-tête/pied/titre
+(eyebrow contextuel « EMAG 1 — OP10 »), SVG mesuré à 899×304 pleine largeur,
+section rendue avec un scénario de test en validation (cumul possible
+500 €/an affiché), captures prises. **DEV** : 4.105.0 servie, SHA
+`21c396e8…` identique au `dist/`. **PROD : rien** — 4.97.2.
+
 ### ▸ Tour 86 — 22/10/2026 — **Z Code** (v4.104.0 — sept retours du terrain sur le Plan et la coque)
 
 La liste de Benjamin, traitée un par un (détail dans CHANGELOG 4.104.0) :

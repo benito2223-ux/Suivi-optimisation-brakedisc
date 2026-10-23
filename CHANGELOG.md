@@ -5,6 +5,26 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.105.0] — 2026-10-22 · Dé-branding en-tête, graphique lisible, scénarios en validation
+
+1. **Le nom SPK sort de l'en-tête** : titre d'onglet, eyebrow du bandeau,
+   pied de page → « Suivi d'optimisation ». Le monde A4 (impression, rapports
+   autonomes) reste brandé — le logo y vit (LOGO_SPK_SRC), décision des tours
+   précédents.
+2. **Graphique du Plan enfin lisible** : la cause n'était pas la taille du
+   SVG mais la **grille à deux colonnes** qui le réduisait à ~50 % (viewBox
+   980 rendu dans ~520 px). Pleine largeur désormais (1 colonne), polices
+   remontées (axe 12,5, libellés 12, titre 12,5).
+3. **« Scénarios en validation — le gain par poste »**, nouvelle section en
+   tête du tableau de bord, sous le bandeau : chaque poste × référence avec
+   son scénario en course, son **état réel** (validation en cours — essai
+   positif / en série — gain acté / essais en cours) et son économie €/an.
+   Groupes ordonnés (la validation d'abord), cumuls **étiquetés** par groupe,
+   jamais additionnés entre eux (§3.4). Source unique : `gainPoste` (refs
+   meilleur/gain/serie) — le tableau ne peut pas contredire le bandeau ni
+   l'Accueil. Les scénarios ⛔ arrêtés ne courent plus : hors de ce tableau,
+   visibles sur leur fiche.
+
 ## [4.104.0] — 2026-10-22 · Sept retours du terrain sur le Plan et la coque
 
 **Le lot (Benjamin, 22/10), un par un :**

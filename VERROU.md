@@ -14,6 +14,17 @@
 
 ---
 
+✅ **Verrou libéré par Z Code le 22/10/2026** (Tour 87, v4.105.0 — nom SPK
+retiré de l'en-tête (titre, eyebrow, pied — le monde A4 reste brandé) ;
+graphique du Plan pleine largeur (la grille 2 colonnes le réduisait de
+moitié) ; section « Scénarios en validation — le gain par poste » en tête
+du tableau de bord, états réels + économies €/an, cumuls étiquetés jamais
+mélangés). **Vérifié** : 606/0, navigateur sur le DEV servi (captures).
+**DEV** : 4.105.0, SHA `21c396e8…` identique au `dist/`. **PROD : rien** —
+4.97.2.
+
+---
+
 ✅ **Verrou libéré par Z Code le 22/10/2026** (Tour 86, v4.104.0 — sept
 retours du terrain : graphique lisible + simulation dans le graphique,
 consommations persistantes à l'import, pictogramme légende morte retiré,
