@@ -1,19 +1,3 @@
-| **Auteur** | **Z Code** |
-| **Pris le** | 22/10/2026, Tour 87 |
-| **Écrit dans** | `bilan_economique.html` (dé-branding en-tête, graphique pleine largeur, scénarios en validation), `spk-app.css` si besoin, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
-| **Version visée** | 4.105.0 |
-| **Sujet** | Trois retours Benjamin : nom SPK retiré de l'en-tête aussi ; graphique du Plan vraiment lisible (pleine largeur) ; les scénarios en cours de validation et leurs économies, en évidence. |
-
----
-
-| **Auteur** | **Z Code** |
-| **Pris le** | 23/10/2026, Tour 88 |
-| **Écrit dans** | `bilan_economique.html` (D — dossier de visite + couche de données codification), `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
-| **Version visée** | 4.106.0 |
-| **Sujet** | Le chantier commercial validé à trois (Z Code + Hermes + ChatGPT, sémantique codifié tranchée par Benjamin) : ordre D → A → C → B. Tour 88 = **D (dossier de visite)** + la couche de données « codifié » (deux dates sur l'article). |
-
----
-
 | **Auteur** | *(libre)* |
 | **Pris le** | — |
 | **Écrit dans** | — |
