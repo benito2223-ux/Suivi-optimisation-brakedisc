@@ -5,6 +5,31 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.109.1] — 2026-10-25 · La palette de la coque passe au brand guide (fini le noir)
+
+**Le retour.** Benjamin : « les couleurs ne sont pas respectées, par exemple
+trop de noir ». Cause : l'auto-designer avait **remappé le token `--blue` de
+l'app sur du graphite #23282b** — or TOUS les accents de l'outil (boutons,
+liens, onglets actifs, chiffres) reposent sur `--blue` : tout rendait noir.
+S'ajoutaient un signal orange (#c2410c), des bandeaux tête/KPI graphite et
+un fond crème chaud — trois palettes qui ne sont pas la marque.
+
+**Le re-mappage complet sur le brand guide** (11 substitutions + 3 blocs) :
+- `--blue` → **#1B5EA6**, `--blue-dark` → #154D8A, `--blue-bg` → #E8F0FB —
+  tous les accents de l'outil redeviennent bleus ;
+- `--spk-signal` orange → **#1B5EA6** (sélection, focus, logo du rail) ;
+- `--head` (bandeau de titre) et `--fill` (blocs KPI) graphite → **bleu
+  #1B5EA6**, texte blanc — les grands chiffres blancs sur bleu, comme le
+  guide ;
+- fond crème #ece8df → le **gris neutre** #e8eaed, surfaces **blanches**,
+  bordures #e5e5e5, blanc chaud #fffdf8 → blanc pur (6 usages) ;
+- **le rail graphite → dégradé bleu SPK** (#1B5EA6 → #154D8A), signal
+  blanc, poignée bleue ;
+- rouge → **#E2001A** / #B8001A / #FCE8EA, vert → #1a7a3f ;
+- **mode nuit** : surfaces sombres conservées, mais l'accent orange devient
+  un bleu lisible (#8AB8DD) — plus d'orange nulle part.
+Le noir ne reste que dans le **texte** (#1a1a1a), comme le guide.
+
 ## [4.109.0] — 2026-10-25 · Le filigrane de ligne revient + les polices du brand guide SPK
 
 **Le filigrane avait été tué par la coque.** `appliquerFondLigne()` (v4.27)

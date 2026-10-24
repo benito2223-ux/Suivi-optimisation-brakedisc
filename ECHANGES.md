@@ -838,6 +838,16 @@ erreur, navigateur sur le DEV servi (captures : filigrane visible, titres en
 Condensed). **DEV** : 4.109.0 servie, SHA identique au `dist/`. **PROD :
 rien** — 4.97.2.
 
+**Complément Tour 92 (4.109.1, même verrou)** : Benjamin — « les couleurs
+ne sont pas respectées, trop de noir ». Cause trouvée : l'auto-designer
+avait **remappé --blue sur du graphite #23282b** (tous les accents de
+l'app rendaient noirs) + signal orange + head/fill graphite + fond crème.
+Re-mappage complet au brand guide (11 substitutions + bloc écran + rail) :
+--blue → #1B5EA6, signal → bleu, head/fill → bleu à texte blanc, fond gris
+neutre surfaces blanches, rail en dégradé bleu SPK, rouge → #E2001A, nuit
+à accent bleu lisible (plus d'orange nulle part). Capture de contrôle :
+rail bleu, bandeau bleu, boutons bleus, filigrane E1 toujours là.
+
 ### ▸ Tour 90 — 24/10/2026 — **Z Code** (v4.108.0 — brique C : « Où investir — les priorités »)
 
 La matrice est posée dans le tableau de bord du Plan (entre « Scénarios en

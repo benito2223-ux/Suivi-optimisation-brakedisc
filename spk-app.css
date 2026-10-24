@@ -28,43 +28,43 @@
   :root {
     color-scheme: light;
 
-    --spk-signal: #c2410c;
-    --spk-signal-strong: #9a3412;
-    --spk-signal-soft: #f8e3d7;
+    --spk-signal: #1B5EA6;   /* brand guide : le bleu est l'identité */
+    --spk-signal-strong: #154D8A;
+    --spk-signal-soft: #E8F0FB;
 
-    --bg: #ece8df;
-    --spk-title-bg: rgba(236, 232, 223, .94);
-    --surface: #faf8f3;
-    --surface-alt: #e7e2d8;
-    --border: #d2ccbf;
-    --ink: #171a1c;
-    --ink-soft: #3d4347;
-    --ink-faint: #5f6569;
+    --bg: #e8eaed;   /* le gris neutre de l'app (brand guide : fond clair, noir en texte seulement) */
+    --spk-title-bg: rgba(232, 234, 237, .94);
+    --surface: #ffffff;
+    --surface-alt: #f4f4f4;
+    --border: #e5e5e5;
+    --ink: #1a1a1a;
+    --ink-soft: #4a5560;
+    --ink-faint: #5a6470;
 
-    --blue: #23282b;
-    --blue-dark: #171a1c;
-    --blue-bg: #f1ede4;
+    --blue: #1B5EA6;   /* LE bleu de la marque — tous les accents de l'app y reviennent */
+    --blue-dark: #154D8A;
+    --blue-bg: #E8F0FB;
 
-    --green: #2f6f4e;
-    --green-bg: #e3efe7;
+    --green: #1a7a3f;
+    --green-bg: #edf7f1;
     --amber: #8a5a00;
     --amber-bg: #f7ecd4;
-    --red: #a3261b;
-    --red-dark: #7f1d15;
-    --red-bg: #f6e2df;
+    --red: #E2001A;
+    --red-dark: #B8001A;
+    --red-bg: #FCE8EA;
     --teal: #2b5f8a;
     --teal-strong: #1f4868;
-    --on-accent: #fffdf8;
+    --on-accent: #ffffff;
 
-    --head: #23282b;
-    --head-ink: #f7f4ed;
-    --head-ink-soft: #c9c4b9;
-    --head-line: rgba(247, 244, 237, 0.18);
+    --head: #1B5EA6;   /* le bandeau de tête : le bleu de la marque, texte blanc */
+    --head-ink: #ffffff;
+    --head-ink-soft: rgba(255, 255, 255, 0.78);
+    --head-line: rgba(255, 255, 255, 0.28);
 
-    --fill: #23282b;
-    --fill-ink: #f7f4ed;
-    --fill-ink-soft: #c9c4b9;
-    --fill-line: rgba(247, 244, 237, 0.22);
+    --fill: #1B5EA6;   /* les blocs KPI : bleu de la marque, chiffres blancs */
+    --fill-ink: #ffffff;
+    --fill-ink-soft: rgba(255, 255, 255, 0.8);
+    --fill-line: rgba(255, 255, 255, 0.28);
     --fill-good: #2f6f4e;
     --fill-good-ink-soft: #c2e5d2;
     --on-fill-good: #8ce0ae;
@@ -96,16 +96,16 @@
       --ink: #f0ece3;
       --ink-soft: #c3bdb1;
       --ink-faint: #948e83;
-      --blue: #f0733b;
-      --blue-dark: #ffb08a;
-      --blue-bg: #3a2118;
+      --blue: #8AB8DD;   /* nuit : un bleu lisible sur fond sombre (plus d'orange) */
+      --blue-dark: #B9D6ED;
+      --blue-bg: #16283c;
       --green: #6fbf93;
       --green-bg: #1d3328;
       --amber: #e0ad55;
       --amber-bg: #372b16;
-      --red: #ef8a7e;
-      --red-dark: #f7b5ad;
-      --red-bg: #3b1e1b;
+      --red: #F27B8A;
+      --red-dark: #F7B5AD;
+      --red-bg: #3b1e22;
       --teal: #8ab8dd;
       --teal-strong: #b9d6ed;
       --on-accent: #171a1c;
@@ -187,7 +187,7 @@
 
   ::selection {
     background: var(--spk-signal);
-    color: #fffdf8;
+    color: #ffffff;
   }
 
   :focus-visible {
@@ -229,7 +229,7 @@
     height: 48px;
     padding: 5px 8px;
     border-radius: 2px;
-    background: #fffdf8;
+    background: #ffffff;
   }
 
   .hd h1 {
@@ -767,7 +767,7 @@
   .baseline-pill.active {
     background: var(--spk-signal);
     border-color: var(--spk-signal);
-    color: #fffdf8;
+    color: #ffffff;
   }
 
   .sc-actions button {
@@ -899,7 +899,7 @@
   .ap-pastille,
   .outil-pastille {
     border-radius: 2px;
-    color: #fffdf8;
+    color: #ffffff;
   }
 
   .ap-v,
@@ -1469,13 +1469,13 @@
   .bandeau-stockage button.primary {
     background: var(--red);
     border-color: var(--red);
-    color: #fffdf8;
+    color: #ffffff;
   }
 
   .bandeau-stockage button.primary:hover {
     background: var(--red-dark);
     border-color: var(--red-dark);
-    color: #fffdf8;
+    color: #ffffff;
   }
 
   .parcours-bandeau,
@@ -2129,16 +2129,16 @@
 @media screen {
 
   :root {
-    --ink: #171a1c;
-    --body: #3d4347;
-    --label: #5f6569;
-    --line: #d2ccbf;
-    --white: #fffdf8;
-    --gray-50: #faf8f3;
-    --gray-100: #f4f1ea;
-    --gray-200: #e7e2d8;
-    --gray-300: #d2ccbf;
-    --blue-light: #f1ede4;
+    --ink: #1a1a1a;
+    --body: #4a5560;
+    --label: #5a6470;
+    --line: #e5e5e5;
+    --white: #ffffff;
+    --gray-50: #fafafa;
+    --gray-100: #f4f4f4;
+    --gray-200: #e5e5e5;
+    --gray-300: #cfcfcf;
+    --blue-light: #E8F0FB;
     --radius: 4px;
   }
 
@@ -2148,7 +2148,7 @@
       --body: #c3bdb1;
       --label: #948e83;
       --line: #343b3f;
-      --white: #f7f4ed;
+      --white: #f0ece3;
       --gray-50: #1e2326;
       --gray-100: #252b2e;
       --gray-200: #343b3f;
@@ -2163,7 +2163,7 @@
     --body: #c3bdb1;
     --label: #948e83;
     --line: #343b3f;
-    --white: #f7f4ed;
+    --white: #f0ece3;
     --gray-50: #1e2326;
     --gray-100: #252b2e;
     --gray-200: #343b3f;
@@ -2395,10 +2395,10 @@
 
 :root {
   --shell: #202629;
-  --shell-2: #2a3134;
-  --shell-ink: #f7f4ec;
-  --shell-soft: #aeb6b3;
-  --shell-signal: #d4552a;
+  --shell-2: #154D8A;   /* rail : le bleu foncé de la marque */
+  --shell-ink: #ffffff;
+  --shell-soft: rgba(255, 255, 255, 0.72);
+  --shell-signal: #ffffff;
 }
 
 body.spk-has-rail {
@@ -2416,8 +2416,8 @@ body.spk-has-rail {
   flex-direction: column;
   padding: 24px 18px 18px;
   background:
-    radial-gradient(circle at 20% 0%, rgba(255, 255, 255, .07), transparent 34%),
-    linear-gradient(180deg, #272e31 0%, #1b2023 100%);
+    radial-gradient(circle at 20% 0%, rgba(255, 255, 255, .08), transparent 34%),
+    linear-gradient(180deg, #1B5EA6 0%, #154D8A 100%);
   color: var(--shell-ink);
   border-right: 1px solid rgba(255, 255, 255, .08);
 }
@@ -3418,8 +3418,8 @@ body.spk-has-rail {
   border: 1px solid rgba(255, 255, 255, .1);
   border-left: 0;
   border-radius: 0 10px 10px 0;
-  background: #272e31;
-  color: var(--shell-soft, #aeb6b3);
+  background: #154D8A;
+  color: rgba(255, 255, 255, 0.72);
   cursor: pointer;
   box-shadow: 6px 0 16px rgba(23, 26, 28, .16);
   transition:

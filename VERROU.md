@@ -22,6 +22,19 @@
 
 ---
 
+✅ **Verrou libéré par Z Code le 25/10/2026** (Tour 92, v4.109.1 — « trop
+de noir » : la palette de la coque passe au brand guide). Cause :
+l'auto-designer avait remappé --blue sur du graphite — tous les accents
+de l'app rendaient noirs. Re-mappage : --blue → #1B5EA6, signal orange →
+bleu, head/fill → bleu à texte blanc, fond crème → gris neutre surfaces
+blanches, rail graphite → dégradé bleu SPK, rouge → #E2001A, nuit à
+accent bleu lisible. Le noir ne reste que dans le texte. **Vérifié** :
+capture navigateur sur le DEV servi (rail bleu, bandeau bleu, filigrane
+E1). **DEV** : 4.109.1, SHA `a1b583e0…` identique au `dist/`. **PROD :
+rien** — 4.97.2.
+
+---
+
 ✅ **Verrou libéré par Z Code le 25/10/2026** (Tour 91, v4.109.0 — retour
 Benjamin : « remets le filigrane en fond… et reprends les couleurs et
 polices du design system SPK »). **Le filigrane** : la coque le tuait
