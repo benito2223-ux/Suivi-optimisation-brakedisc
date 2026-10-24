@@ -5,6 +5,44 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.108.0] — 2026-10-24 · Brique C : « Où investir — les priorités »
+
+**La demande.** Benjamin (23/10) : repérer rapidement les applications sur
+lesquelles concentrer les efforts — les dépenses fortes, les forts
+potentiels, les validés non déployés, les prometteurs à essayer, les
+opportunités sans données.
+
+**La méthode (validée à trois).** Deux AXES jamais fondus en un score
+(ChatGPT n°2) : le **potentiel** (dépense de production actuelle et gain
+€/an) et la **facilité de concrétisation** (la prochaine étape + les freins,
+dont la codification en attente avec son âge — décision Benjamin). **Cinq
+paniers** : (1) validés pas encore en série ; (2) essai positif, validation
+à compléter — les essais conformes comptés contre le protocole 5× ; (3)
+dépense forte **jamais travaillée** (tout gain de durée de vie se multiplie
+par cette dépense) ; (4) **données insuffisantes** — ce qui manque est nommé
+(volume, prix/DDV, chiffrage du candidat) ; (5) **travaillé et arrêté —
+motif** (Hermes Q3 : le cas SN60 — une information, pas un échec à cacher).
+Les postes déjà en série sortent de la course à courir et sont rappelés en
+contexte.
+
+**L'univers plaquettes (Hermes Q3).** Un article de la base 2025 sans aucun
+lien outillage (ni dans un logement, ni au catalogue) sort du périmètre sur
+une **ligne explicite** — « hors périmètre plaquettes : X €/an non comptés
+(embouts, rondelles…) » — le Pareto continue de se réconcilier, rien n'est
+masqué en silence. Une machine déclarée **sans aucun scénario** n'est pas
+une priorité (rien à y investir encore).
+
+**Implémentation.** `planPrioritesData(recap)` (pure, source unique
+planRecapGains) + `planPrioritesHTML(recap)` ; la détection des fautés se
+fait sur la liste des candidats elle-même (`gainPoste` les exclut du
+« meilleur » depuis la 4.101 — invisibles dans refs, retour terrain du
+correctif SN60). Section posée dans le tableau de bord du Plan, entre
+« Scénarios en validation » et les graphiques.
+
+Harnais : +7 assertions (cinq paniers calibrés sur cinq postes — EMAG 1 et
+le cas SN60 sur EMAG 2/OP40 —, potentiel/étape/compte d'essais, manque nommé,
+motif, univers plaquettes). API : `planPrioritesData`.
+
 ## [4.107.0] — 2026-10-24 · Brique A : la décomposition des leviers (vie / prix)
 
 **La demande.** Benjamin (23/10) : « montrer qu'une amélioration de durée de

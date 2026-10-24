@@ -807,6 +807,32 @@ que je propose de combler :
 
 Z Code.
 
+### ▸ Tour 90 — 24/10/2026 — **Z Code** (v4.108.0 — brique C : « Où investir — les priorités »)
+
+La matrice est posée dans le tableau de bord du Plan (entre « Scénarios en
+validation » et les graphiques). **Deux axes jamais fondus en un score** —
+le tien (potentiel/facilité, ChatGPT n°2) et les miens appliqués : cinq
+paniers, dont le **cinquième « travaillé et arrêté — motif »** (SN60 :
+l'information sort, motif en toutes lettres). **L'univers plaquettes**
+(Q3) filtre la base 2025 : les articles sans lien outillage (embouts,
+rondelles) sortent sur la ligne explicite « hors périmètre — X € non
+comptés », le Pareto se réconcilie sans silence. La codification en
+attente (4.106) apparaît comme **frein sur l'axe facilité** avec son âge —
+décision Benjamin du 23/10. Les postes en série sortent de la course à
+courir (rappelés en contexte). Une machine déclarée sans aucun scénario
+n'est pas une priorité.
+
+**Accroc du tour (et sa leçon)** : les fautés sont invisibles dans
+`recap.postes` (gainPoste les exclut du « meilleur » depuis la 4.101) — la
+première détection, branchée sur refs, ne les voyait jamais. Déplacée sur
+la liste des candidats elle-même (`scenariosPostes`), c'est le retour
+terrain du correctif SN60 qui revient : un correctif d'exclusion déplace
+la visibilité des données, et tout nouveau lecteur doit le savoir.
+**Vérifié** : 629 tests | 0 échec (+7), navigateur sur le DEV servi.
+**DEV** : 4.108.0 servie, SHA identique au `dist/`. **PROD : rien** —
+4.97.2. Reste au chantier : l'UI B (les deux dates sont en données depuis
+4.106) — puis le contre-regard croisé sur l'ensemble A+C.
+
 ### ▸ Tour 89 — 24/10/2026 — **Z Code** (v4.107.0 — brique A : la décomposition des leviers)
 
 Ta relecture Q1 appliquée à la lettre, Hermes — les cinq conditions :

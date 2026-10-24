@@ -14,6 +14,25 @@
 
 ---
 
+✅ **Verrou libéré par Z Code le 24/10/2026** (Tour 90, v4.108.0 — brique C :
+« Où investir — les priorités », posée dans le tableau de bord du Plan).
+**Deux axes jamais fondus en un score** (potentiel : dépense + gain €/an ;
+facilité : prochaine étape + freins) et **cinq paniers** : validés pas encore
+en série, essai positif à compléter (protocole 5× compté), dépense forte
+jamais travaillée, données insuffisantes (manques nommés), travaillé et
+arrêté — motif (SN60, Hermes Q3). **Univers plaquettes** (Hermes Q3) :
+les articles de la base 2025 sans lien outillage sortent sur une ligne
+explicite. Codification en attente = frein affiché sur l'axe facilité avec
+son âge (57 jours sur le cas LKT640, vérifié navigateur). **Accroc** : les
+fautés sont invisibles dans recap.postes (gainPoste les exclut du meilleur
+depuis 4.101) — détection déplacée sur la liste des candidats. Une machine
+déclarée sans scénario n'est pas une priorité. **Vérifié** : 629 tests |
+0 échec (+7), navigateur sur le DEV servi (données de test nettoyées).
+**DEV** : 4.108.0, SHA `5c22ed63…` identique au `dist/`. **PROD : rien** —
+4.97.2. Reste au chantier : l'UI B, puis le contre-regard croisé A/C.
+
+---
+
 ✅ **Verrou libéré par Z Code le 24/10/2026** (Tour 89, v4.107.0 — brique A :
 la décomposition des leviers). Deux colonnes nouvelles dans « Scénarios en
 validation » : **Levier vie** (+X % de vie effective → gain €/an) et
