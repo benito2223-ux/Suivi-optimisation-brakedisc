@@ -1,11 +1,3 @@
-| **Auteur** | **Z Code** |
-| **Pris le** | 24/10/2026, Tour 89 |
-| **Écrit dans** | `bilan_economique.html` (brique A — décomposition vie/prix dans « Scénarios en validation »), `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
-| **Version visée** | 4.107.0 |
-| **Sujet** | Brique A : la décomposition des leviers — gain vie seule / prix seule / combiné / interaction, % de vie et de prix, coût plaquette par pièce — dans les cinq conditions d'Hermes. |
-
----
-
 | **Auteur** | *(libre)* |
 | **Pris le** | — |
 | **Écrit dans** | — |
