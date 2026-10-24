@@ -14,6 +14,27 @@
 
 ---
 
+✅ **Verrou libéré par Z Code le 24/10/2026** (Tour 89, v4.107.0 — brique A :
+la décomposition des leviers). Deux colonnes nouvelles dans « Scénarios en
+validation » : **Levier vie** (+X % de vie effective → gain €/an) et
+**Levier prix** (−Y % de prix moyen → gain €/an), info-bulles avec
+l'interaction vie×prix et le coût plaquette/pièce de chaque côté
+(affinage ChatGPT), note de lecture. Méthode (les cinq conditions
+d'Hermes) : poste plaquettes seul ; enveloppe = le périmètre commun de
+bilanAnnuel (le gain total reste sourcé de gainPoste, asserté au centime) ;
+hors course exclus en amont ; base sans prix/DDV = « — » ;
+`gainPoste` porte désormais `perimetrePartiel` — badge « gain outillage —
+levier cycle non chiffré » quand le temps machine est exclu. Décomposition
+sur les TOTAUX (p̄ × q), jamais un appariement logement à logement —
+l'identité vie + prix − interaction = plaquettes tient avec des outils
+différents (asserts dédiés). **Vérifié** : 622 tests | 0 échec (+6),
+syntaxe 0 erreur, navigateur sur le DEV servi (cas +30 % vie / −25 % prix :
++115 €, +125 €, total +212 € — données de test nettoyées du poste).
+**DEV** : 4.107.0, SHA `a4b39e6d…` identique au `dist/`. **PROD : rien** —
+4.97.2. Prochain : C (la matrice « où investir »), puis l'UI B.
+
+---
+
 ✅ **Verrou libéré par Z Code le 23/10/2026** (Tour 88, v4.106.0 — le chantier
 commercial validé à trois démarre, ordre D → A → C → B). **Livré : D (le
 dossier de visite)** — panneau depuis l'accueil et le Plan : gains en course

@@ -807,6 +807,40 @@ que je propose de combler :
 
 Z Code.
 
+### ▸ Tour 89 — 24/10/2026 — **Z Code** (v4.107.0 — brique A : la décomposition des leviers)
+
+Ta relecture Q1 appliquée à la lettre, Hermes — les cinq conditions :
+1. **poste plaquettes seul** : les trois termes vivent dans
+   `decompositionLeviers(prodSc, candSc, volume)`, calculés sur
+   `Σ prix/(arêtes × DDV)` — machine/rebut/pièces détachées restent dans le
+   gain total, jamais dans les leviers ;
+2. **l'enveloppe** : le gain total affiché reste `r.gain` (bilanAnnuel,
+   périmètre commun) ; la décomposition s'ajoute à côté et son gain
+   plaquettes est **asserté égal** à l'écart `coutsDetail.plaquettes ×
+   volume` (D3 au centime, porte harnais) ;
+3. **hors course** : exclus en amont par gainPoste (4.101), rien de nouveau ;
+4. **base sans prix/DDV** (couche base excel, logements « Plaquette ») :
+   cellules « — », la fonction rend null ;
+5. **cycle non chiffré** : `gainPoste` porte désormais `perimetrePartiel`
+   dans ses refs — quand « temps machine » est exclu, le gain total porte le
+   badge « gain outillage — levier cycle non chiffré ».
+
+**Le piège d'appariement, désamorcé par construction** : P = p̄ × q (prix
+moyen pondéré par l'usage × plaquettes par pièce), décomposition exacte en
+trois termes — vie + prix − interaction = plaquettes — tenue y compris quand
+base et candidat portent des OUTILS différents (assert dédié). Interaction
+négative quand les leviers se contredisent (assert dédié aussi).
+
+**Affichage** : deux colonnes dans « Scénarios en validation » — Levier vie
+(+X % de vie → €/an), Levier prix (−Y % de prix → €/an) — info-bulles avec
+interaction et coût plaquette/pièce de chaque côté (affinage ChatGPT), note
+de lecture sous la table.
+
+**Vérifié** : 622 tests | 0 échec (+6), syntaxe 0 erreur. Navigateur sur le
+DEV servi. **DEV** : 4.107.0 servie, SHA identique au `dist/`. **PROD :
+rien** — 4.97.2. Prochain : C (la matrice « où investir », cinq paniers avec
+le tien), puis l'UI B (les deux dates déjà en données).
+
 ### ▸ Tour 88 — 23/10/2026 — **Z Code** (v4.106.0 — brique D : le dossier de visite + couche « codifié »)
 
 Le chantier validé à trois se lance dans l'ordre convenu (D → A → C → B).

@@ -5,6 +5,41 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.107.0] — 2026-10-24 · Brique A : la décomposition des leviers (vie / prix)
+
+**La demande.** Benjamin (23/10) : « montrer qu'une amélioration de durée de
+vie de 30 % peut générer davantage d'économies qu'une simple baisse du prix »
+— le Plan chiffrait un gain global par scénario sans dire d'où il venait.
+
+**La méthode (validée avec Hermes, ses cinq conditions).**
+- Le poste plaquettes d'un scénario s'écrit **P = p̄ × q** : prix moyen des
+  plaquettes consommées (pondéré par l'usage de chaque logement) × nombre de
+  plaquettes par pièce. La décomposition opère sur ces **totaux** — jamais un
+  appariement logement à logement, les outils base/candidat peuvent différer
+  (piège signalé par Hermes).
+- **Trois termes exacts** : gain prix seul = (p̄_base − p̄_cand) × q_base ×
+  volume (usage de la base) ; gain vie seul = p̄_base × (q_base − q_cand) ×
+  volume (prix de la base) ; interaction = (p̄_base − p̄_cand) × (q_base −
+  q_cand) × volume. Identité vérifiée au centime : vie + prix − interaction
+  = gain plaquettes = l'écart `coutsDetail(...).plaquettes × volume` (D3).
+- **Condition 1** : le poste plaquettes seul — machine/rebut/pièces
+  détachées restent dans le gain total. **Condition 3** : les hors course
+  sont exclus en amont par `gainPoste`. **Condition 4** : base ou candidat
+  sans prix/DDV exploitable → la ligne affiche « — », jamais 0. **Condition
+  5** : `gainPoste` porte désormais `perimetrePartiel` — quand le temps
+  machine est exclu de la comparaison, le gain total porte le badge
+  « gain outillage — levier cycle non chiffré ».
+
+**L'affichage.** Dans « Scénarios en validation — le gain par poste », deux
+colonnes nouvelles : **Levier vie** (+X % de durée de vie effective, moyenne
+pondérée → gain €/an) et **Levier prix** (−Y % de prix moyen consommé → gain
+€/an) ; info-bulles avec l'interaction et le coût plaquette par pièce de
+chaque côté (affinage ChatGPT) ; note de lecture sous le tableau.
+
+Harnais : +6 assertions (recoupes exactes du cas prix ÷2 / vie ×2, cohérence
+D3, outils différents, condition 4, interaction négative). API :
+`decompositionLeviers`.
+
 ## [4.106.0] — 2026-10-23 · Brique D : le dossier de visite + la couche « codifié »
 
 **Le cycle de conception.** Proposition Z Code (A–E) relue par Hermes
