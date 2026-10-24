@@ -6,6 +6,14 @@
 
 ---
 
+| **Auteur** | **Z Code** |
+| **Pris le** | 25/10/2026, Tour 92 |
+| **Écrit dans** | `spk-app.css` (palette coque → brand guide), `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
+| **Version visée** | 4.109.1 |
+| **Sujet** | Retour Benjamin : « trop de noir » — la coque (graphite + orange de l'auto-designer) reprend la palette du brand guide SPK : fond clair, bleu #1B5EA6 en identité, rouge #E2001A en alerte, noir en texte seulement. |
+
+---
+
 | **Auteur** | *(libre)* |
 | **Pris le** | — |
 | **Écrit dans** | — |
