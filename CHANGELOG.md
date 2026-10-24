@@ -5,6 +5,40 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.109.0] — 2026-10-25 · Le filigrane de ligne revient + les polices du brand guide SPK
+
+**Le filigrane avait été tué par la coque.** `appliquerFondLigne()` (v4.27)
+pose la teinte et le code de la ligne (EMAG 1, HESSAPP…) en image de fond du
+body — la coque de navigation (4.100) posait `body { background-image: none
+!important }` par-dessus : le filigrane existed but was invisible. La règle
+passe en `background-color` simple : la teinte et le code traversent la
+coque, le texte du filigrane passe en **Open Sans Condensed**.
+
+**Les polices passent au brand guide SPK** (`SPK_CeramTec_BrandGuide.html`) :
+- **Open Sans Condensed 700** pour les titres et les grands chiffres (le
+  `--font-cond` du guide, ex-Manrope) ;
+- **Open Sans 300–800** pour le corps et l'interface (le `--font` du guide,
+  ex-Roboto) — police variable, une seule face embarquée ;
+- IBM Plex Mono conservée pour les données (le guide n'en prescrit pas pour
+  ce rôle) ;
+- embarquées en **base64** (police variable woff2 : 2 faces, ~85 Ko — le
+  fichier a même maigri) : zéro appel réseau, l'outil reste 100 % hors ligne.
+Les **couleurs restaient déjà celles du guide** (bleu #1B5EA6, rouge
+#E2001A, vert #1a7a3f, encre #1a1a1a — contrôlées par les portes
+d'identité, inchangées).
+
+Les portes d'identité du harnais suivent la marque : titres « Open Sans
+Condensed » ≠ corps « Open Sans » (trois formes), face réellement embarquée.
+
+**La coque aussi.** L'auto-designer avait doté la coque de ses propres
+polices (Barlow Condensed / Public Sans) et ses `:root` **redéfinissaient
+les tokens** par-dessus ceux de l'app : le corps et les titres mesurés
+restaient en Barlow/Public Sans malgré le changement de tokens. Les tokens
+de la coque s'alignent sur le brand guide et ses @font-face locaux
+(Barlow/Public Sans) sont retirés — les faces embarquées par l'app font
+foi. Vérifié au calculé : corps « Open Sans », titres « Open Sans
+Condensed », filigrane « E1 » posé.
+
 ## [4.108.0] — 2026-10-24 · Brique C : « Où investir — les priorités »
 
 **La demande.** Benjamin (23/10) : repérer rapidement les applications sur

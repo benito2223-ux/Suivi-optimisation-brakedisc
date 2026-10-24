@@ -807,6 +807,37 @@ que je propose de combler :
 
 Z Code.
 
+### ▸ Tour 91 — 25/10/2026 — **Z Code** (v4.109.0 — le filigrane de ligne revient + polices du brand guide SPK)
+
+Benjamin : « remets le filigrane en fond qui permet de savoir sur quelle
+ligne on travaille, il a disparu avec la nouvelle UI — et au niveau des
+couleurs et des polices reprends celles du design system SPK ».
+
+- **Le filigrane** : `appliquerFondLigne()` n'avait jamais cessé de tourner —
+  la coque posait `body { background-image: none !important }` par-dessus
+  son image inline. La règle passe en `background-color` : la teinte et le
+  code de la ligne traversent la coque. Le texte du filigrane passe en Open
+  Sans Condensed.
+- **Les polices** : le brand guide (`SPK_CeramTec_BrandGuide.html`) prescrit
+  `--font-cond` = **Open Sans Condensed** (titres, chiffres) et `--font` =
+  **Open Sans** (corps, UI) — les tokens `--font-disp`/`--font-body`
+  s'alignent, faces embarquées en base64 (police variable : 2 faces ~85 Ko,
+  le fichier a maigri). **Les couleurs étaient déjà celles du guide** — les
+  portes d'identité le confirmaient (bleu #1B5EA6, rouge #E2001A, vert,
+  encre), elles suivent la nouvelle marque (titres ≠ corps, face
+  embarquée). **Complément en cours de tour** : la COQUE aussi — ses propres
+  polices (Barlow Condensed / Public Sans de l'auto-designer) écrasaient les
+  tokens sur le rail et les titres ; elles passent elles aussi à Open Sans
+  Condensed / Open Sans, les @font-face locaux retirés au profit des faces
+  embarquées par l'app.
+- **Rappel du fil** : le filigrane v4.27 ne pose jamais de K ni de P —
+  uniquement la teinte et le code de la ligne.
+
+**Vérifié** : 629 tests | 0 échec (portes d'identité suivies), syntaxe 0
+erreur, navigateur sur le DEV servi (captures : filigrane visible, titres en
+Condensed). **DEV** : 4.109.0 servie, SHA identique au `dist/`. **PROD :
+rien** — 4.97.2.
+
 ### ▸ Tour 90 — 24/10/2026 — **Z Code** (v4.108.0 — brique C : « Où investir — les priorités »)
 
 La matrice est posée dans le tableau de bord du Plan (entre « Scénarios en

@@ -6,54 +6,6 @@
    ========================================================================== */
 
 @font-face {
-  font-family: 'Barlow Condensed';
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url('fonts/barlow-condensed-600.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'Barlow Condensed';
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url('fonts/barlow-condensed-700.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'Public Sans';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url('fonts/public-sans-400.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'Public Sans';
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url('fonts/public-sans-500.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'Public Sans';
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url('fonts/public-sans-600.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'Public Sans';
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url('fonts/public-sans-700.woff2') format('woff2');
-}
-
-@font-face {
   font-family: 'IBM Plex Mono';
   font-style: normal;
   font-weight: 400;
@@ -119,8 +71,10 @@
     --on-fill-bad: #ffb3bd;
     --on-fill-warn: #ffd08a;
 
-    --font-disp: 'Barlow Condensed', 'Arial Narrow', 'Roboto Condensed', sans-serif;
-    --font-body: 'Public Sans', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    /* v4.109 — brand guide SPK : --font-cond / --font (les faces sont embarquées
+       en base64 par l'app ; Barlow/Public Sans de l'auto-designer retirées). */
+    --font-disp: 'Open Sans Condensed', 'Open Sans', Arial, sans-serif;
+    --font-body: 'Open Sans', 'Segoe UI', Arial, sans-serif;
     --font-mono: 'IBM Plex Mono', 'Cascadia Mono', Consolas, 'Courier New', monospace;
 
     --radius-lg: 8px;
@@ -220,8 +174,9 @@
   }
 
   body {
-    background: var(--bg) !important;
-    background-image: none !important;
+    background-color: var(--bg);
+    /* v4.109 — le filigrane de ligne (appliquerFondLigne) DOIT traverser la coque :
+       l'ancien `background-image: none !important` le tuait (retour Benjamin). */
     color: var(--ink);
     font-family: var(--font-body);
     font-size: 15.5px;

@@ -1,8 +1,35 @@
+| **Auteur** | **Z Code** |
+| **Pris le** | 25/10/2026, Tour 91 |
+| **Écrit dans** | `spk-app.css` / `bilan_economique.html` (filigrane ligne + identité SPK), `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
+| **Version visée** | 4.109.0 |
+| **Sujet** | Retour Benjamin : le filigrane de ligne a disparu avec la coque — à remettre ; couleurs et polices alignées sur le brand guide SPK_CeramTec. |
+
+---
+
 | **Auteur** | *(libre)* |
 | **Pris le** | — |
 | **Écrit dans** | — |
 | **Version visée** | — |
 | **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+
+---
+
+✅ **Verrou libéré par Z Code le 25/10/2026** (Tour 91, v4.109.0 — retour
+Benjamin : « remets le filigrane en fond… et reprends les couleurs et
+polices du design system SPK »). **Le filigrane** : la coque le tuait
+(`body { background-image: none !important }`) — règle passée en
+`background-color`, la teinte et le code de ligne (E1…) traversent la
+coque ; texte du filigrane en Open Sans Condensed. **Les polices** :
+brand guide SPK — --font-disp → Open Sans Condensed (titres, chiffres),
+--font-body → Open Sans (corps, UI), embarquées en base64 (police
+variable, 2 faces ~85 Ko, zéro réseau) ; **et la coque elle-même** — ses
+:root redéfinissaient les tokens en Barlow Condensed / Public Sans, les
+tokens s'alignent et ses @font-face locaux sont retirés. **Les couleurs
+étaient déjà celles du guide** (portes d'identité inchangées et vertes).
+**Vérifié** : 629 tests | 0 échec (portes suivies), calculé sur le DEV
+servi : filigrane E1 posé, corps « Open Sans », titres « Open Sans
+Condensed ». **DEV** : 4.109.0, SHA `30c2d37b…` identique au `dist/`.
+**PROD : rien** — 4.97.2.
 
 ---
 

@@ -339,7 +339,7 @@ try {
 
      Constat du Tour 56 : on a restauré la palette v3.15 et surtout la
 
-     hiérarchie de forme (Manrope / Roboto / IBM Plex Mono). Le contre-regard
+     hiérarchie de forme (Open Sans Condensed / Open Sans / IBM Plex Mono — brand guide SPK, 4.109). Le contre-regard
 
      a montré qu'UNE SEULE de ces valeurs était gardée : remettre
 
@@ -451,7 +451,7 @@ try {
 
     const body = (tok['--font-body'] || '').split(',')[0].trim().replace(/^'|'$/g, '');
 
-    porte('les titres ont leur propre famille', disp, 'Manrope');
+    porte('les titres ont leur propre famille', disp, 'Open Sans Condensed');  /* v4.109 — brand guide SPK */
 
     joues++;
 
@@ -471,7 +471,7 @@ try {
 
 
 
-    /* 4. Manrope est RÉELLEMENT embarquée, pas seulement nommée dans un token.
+    /* 4. Open Sans Condensed est RÉELLEMENT embarquée, pas seulement nommée dans un token.
 
        Un token qui promet une police absente du fichier donne un repli
 
@@ -479,15 +479,15 @@ try {
 
     joues++;
 
-    if (html.indexOf("@font-face{font-family:'Manrope'") < 0) {
+    if (html.indexOf("@font-face{font-family:'Open Sans Condensed'") < 0) {
 
       echecs++;
 
-      console.log("  ECHEC identite : Manrope est nommee dans le token mais AUCUN @font-face ne l'embarque");
+      console.log("  ECHEC identite : Open Sans Condensed est nommee dans le token mais AUCUN @font-face ne l'embarque");
 
     } else {
 
-      console.log('  ok  identité : Manrope est embarquée en base64 (aucun appel réseau)');
+      console.log('  ok  identité : Open Sans Condensed est embarquée en base64 (aucun appel réseau — brand guide SPK)');
 
     }
 
