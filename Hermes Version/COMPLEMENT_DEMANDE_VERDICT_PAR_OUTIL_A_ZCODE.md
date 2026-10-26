@@ -45,8 +45,7 @@ supprimer les fichiers de `fonts/`, les rayer de la liste de cache du SW,
 **bumper la constante CACHE** (sinon les clients installés gardent l'ancien cache).
 Vérifs après déploiement dev : les 8 URLs en 404, le SW servi porte le nouveau CACHE,
 `curl` des assets restants en 200. Si un jour une police de marque revient
-(Le Monde Livre, ACaslon…), elle sera re-ajoutée à ce moment-là — pas de
-précaution脱水 à payer aujourd'hui.
+(Le Monde Livre, ACaslon…), elle sera re-ajoutée à ce moment-là — pas de précaution à payer aujourd'hui.
 
 ## 4. Rappels de protocole (inchangés)
 
