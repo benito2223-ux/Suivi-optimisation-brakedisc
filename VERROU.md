@@ -14,11 +14,11 @@
 
 ---
 
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | **Z Code** |
+| **Pris le** | 26/10/2026, Tour 96 |
+| **Écrit dans** | `bilan_economique.html` (les 4 déclarations déplacées avant `loadAll()` + porte TDZ), `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
+| **Version visée** | 4.112.1 |
+| **Sujet** | **Correctif critique trouvé par la répétition générale pré-prod** : `consoReelle`/`planSource`/`consoSemaines`/`planReglages` déclarées APRÈS l'appel `loadAll()` → ReferenceError TDZ avalée par le catch silencieux → les données réelles retombent sur l'exemple, et le premier geste de saisie écraserait le localStorage. Présent depuis 4.101.1, invisible au harnais (localStorage vide). |
 
 ---
 
