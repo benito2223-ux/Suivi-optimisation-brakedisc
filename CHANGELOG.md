@@ -5,6 +5,34 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.115.0] — 2026-10-26, nuit · « La campagne » — la timeline commerciale + la file à compléter · Brique C, Hermes
+
+**La demande.** Benjamin : « cet outil sert aussi commercialement — à suivre
+les essais que nous avons faits, les économies que cela a permis, sur une
+timeline. » La cinquième question de l'outil (voir l'avis Hermes) : que nous
+a rapporté la campagne ?
+
+**Ce qui est livré.** Un panneau « La campagne » (menu •••, groupe Consulter,
++ résumé en tête de Synthèse avec bouton) : la liste des jalons datés (essais
+lancés, validations 5×, passages en série), le gain €/an acté par passage en
+série, la **courbe SVG cumulée** des économies actées, et la **file « à
+compléter »** : jalons sans date, prix/charnière/arêtes manquants sur les
+scénarios qui comptent, OP non chiffrables.
+
+**Les règles.** §3.4 : la courbe ne compte que les séries datées — les validés
+sont le pipeline, jamais additionnés aux actés ; un total non daté est affiché
+à part (« hors courbe, à dater »). §3.5 : un jalon sans date est listé comme
+tel, jamais daté en silence. Le scan est un calcul à l'ouverture (fonction
+pure, aucun champ persisté).
+
+**Porte.** `campagneGate` : collecteur, courbe SVG, panneau, bouton menu,
+résumé Synthèse, jalons non datés, OP non chiffrables, coûts incomplets,
+séries non-★ seulement. Deux désaccords attrapés par la porte elle-même à
+l'insertion (libellé « jalon non daté », opérateur du garde-fou abandonné) —
+corrigés avant d'aller plus loin. Rendu vérifié headless : bouton → panneau →
+jalons d'essai listés, « à compléter » présent, courbe absente sur données
+d'exemple (comportement attendu : elle naît avec les séries datées réelles).
+
 ## [4.114.0] — 2026-10-26 · Le bandeau « Coût pièce » dit vrai · Brique A, prise de main Hermes
 
 **Le déclencheur.** Benjamin, sur une copie d'écran prod : « Explique-moi d'où

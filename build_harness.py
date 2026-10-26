@@ -1288,6 +1288,35 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'bandeau CPP 4.114 : lecture série, trois phrases, abandonnés filtrés, vocabulaire tenu, détail au clic' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  /* ── v4.115.0 — LA PORTE « LA CAMPAGNE » ─────────────────────────────────
+     La timeline commerciale : seuls les séries actent (§3.4), un jalon sans
+     date se dit et va dans « à compléter » (§3.5), la courbe cumule dans
+     l'ordre des dates, et la file attrape jalons non datés et coûts incomplets. */
+  (function campagneGate(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const html = (function(){ try { return fs.readFileSync(path.join(REPO, 'bilan_economique.html'), 'utf8'); } catch (e) { return ''; } })();
+    if (!html) { echecs.push('bilan_economique.html introuvable'); }
+    else {
+      [['function campagneCollecter', 'le collecteur de campagne absent'],
+       ['function campagneCourbeSVG', 'la courbe cumulée absente'],
+       ['function campagneHTML', 'le rendu de la campagne absent'],
+       ['id="campagnePanel"', 'le panneau campagne absent du DOM'],
+       ['id="campagneBtn"', 'le bouton de menu absent'],
+       ['campagneOuvrirBtn', 'le résumé en tête de Synthèse absent'],
+       ['jalon non daté', 'les jalons sans date ne se disent pas'],
+       ['OP non chiffrable', 'les OP non chiffrables ne remontent pas'],
+       ['manque ', 'les coûts incomplets ne se listent pas'],
+       ['sc.statut === "serie" && !sc.baseline', 'la courbe doit ne compter que les séries non-étoile'],
+       ['sc.statut === "abandonne"', 'garde-fou abandonné du bandeau disparu ?']]
+      .forEach(function(m){ if (html.indexOf(m[0]) === -1) echecs.push(m[1]); });
+    }
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'la campagne 4.115 : jalons, courbe actée seule, à compléter, deux points d entrée' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   /* ── v4.112.1 — LA PORTE TDZ DU CHARGEMENT ────────────────────────────
      Le bug de la répétition générale pré-prod (26/10) : une globale assignée
      dans loadAll() mais déclarée APRÈS l'appel initial lève ReferenceError,

@@ -4,6 +4,24 @@
 | **Version visée** | — |
 | **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
 
+✅ **Verrou libéré par Hermes le 26/10/2026, nuit (2)** — brique C 4.115.0.
+« La campagne » : panneau timeline (menu ••• + résumé en tête de Synthèse),
+jalons datés (essais/validations/séries), gains €/an actés par passage en
+série, courbe SVG cumulée (séries datées SEULEMENT, §3.4), jalons sans date
+affichés comme tels et poussés en file « à compléter » avec les coûts
+incomplets (prix/charnière/arêtes) et les OP non chiffrables. Porte
+`campagneGate` — deux désaccords attrapés par la porte elle-même à
+l'insertion, corrigés avant livraison. 652/0, syntaxe 5/5, rendu vérifié
+headless. **DEV** : md5 `fbf5b53f…` identique, TOOL_VERSION 4.115.0 servi.
+Pièges du tour : fins de ligne MIXTES dans bilan_economique.html (une zone
+CRLF, une zone LF — les ancres multi-lignes doivent être vérifiées par octets,
+pas supposées) et le harnais est un template python à `
+` littéraux (l'ancre
+d'insertion de porte se cherche en octets). Reste : brique B (fusion Classeur
+Matis) — spec prête dans `DEMANDE_BANDEAU_CPP_ET_FUSION_OUTILS_A_ZCODE.md`.
+Écrits : `bilan_economique.html`, `build_harness.py`, `CHANGELOG.md`,
+`VERROU.md`.
+
 ✅ **Verrou libéré par Hermes le 26/10/2026, nuit** (brique A 4.114.0, prise de
 main actée par Benjamin). Le bandeau « Coût pièce » lit désormais la production
 du jour (série si existe, sinon ★), trois phrases séparées (aujourd'hui /
