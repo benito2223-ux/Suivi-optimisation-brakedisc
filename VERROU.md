@@ -4,6 +4,24 @@
 | **Version visée** | — |
 | **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
 
+✅ **Verrou libéré par Hermes le 26/10/2026, nuit (4)** — brique B 4.116.0,
+spec `DEMANDE_BANDEAU_CPP_ET_FUSION_OUTILS_A_ZCODE.md` intégralement tenue.
+Détection par porte+position (bouton sur la fiche scénario), porteur
+d'histoire (score : prélèvements ancrés > plan PDF > pièces) garde son id et
+ceux de ses logements, prévision pure, conflits champ par champ en radio
+(« manuel / Classeur »), application bloquée tant qu'une radio pende, PDF non
+retenu téléchargeable dans le bilan, numéro ambigu et double porteur d'histoire
+jamais fusionnés, contrôle des prélèvements AVANT mutation. `fusionGate` + 9
+tests in-suite (B.6). Contre-regard : amputation réelle → porte tombée.
+**Piège du contre-regard** : une casse par préfixe (renommer
+`matisPairesDoublons` en `matisPairesDoublonsX`) ne peut PAS tomber une porte
+à `indexOf` — amputer vraiment, pas renommer. **662/0 ×2, syntaxe 5/5.**
+**DEV** : md5 `c893feff…` identique, TOOL_VERSION 4.116.0 servi. PROD : 4.113.0.
+Reste du chantier : la navigation « Première Lecture » (5 questions), les
+améliorations actées (âges généralisés, décliner un gagnant, Ctrl+K, filet
+undo 30 j). Écrits : `bilan_economique.html`, `build_harness.py`,
+`CHANGELOG.md`, `VERROU.md`.
+
 ✅ **Verrou libéré par Hermes le 26/10/2026, nuit (3)** — fix 4.115.1, remonté
 par Benjamin (copie d'écran : cascade sans barres). Cause : le CSS de la
 cascade ET de la table comparative v4.30 ne vivait que dans le template JS du

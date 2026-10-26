@@ -1340,6 +1340,32 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'cascade 4.115.1 : la page a sa copie du CSS cascade + comparative' + (echecs.length ? ' - ' + echecs.join(' ; ') : ''));
   })();
 
+  /* ── v4.116.0 — LA PORTE « LA FUSION NE MENT PAS » ────────────────────────
+     La fusion Classeur Matis : le porteur d'histoire garde ses ids, la
+     prévision est pure, les conflits bloquent l'application, un numéro
+     ambigu n'est jamais fusionné, contrôle des prélèvements AVANT mutation. */
+  (function fusionGate(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const html = (function(){ try { return fs.readFileSync(path.join(REPO, 'bilan_economique.html'), 'utf8'); } catch (e) { return ''; } })();
+    if (!html) { echecs.push('bilan_economique.html introuvable'); }
+    else {
+      [['function matisPairesDoublons', 'la détection de paires absente'],
+       ['function prevoirFusionMatis', 'la prévision pure absente'],
+       ['function appliquerFusionMatis', "l'application absente"],
+       ['id="fusionMatisPanel"', 'le panneau de fusion absent du DOM'],
+       ['fusion-matis-btn', "le bouton d'entrée sur la fiche absent"],
+       ['à trancher à la main', 'les numéros ambigus ne sont pas refusés'],
+       ['fusionScoreHistoire', "le score d'histoire (plan, pièces, prélèvements) absent"],
+       ['contrôle AVANT mutation', 'le contrôle des prélèvements ne se fait pas avant mutation']]
+      .forEach(function(m){ if (html.indexOf(m[0]) === -1) echecs.push(m[1]); });
+    }
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'fusion Matis 4.116 : détection, porteur d histoire, prévision pure, conflits bloquants, zéro dangling' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   /* ── v4.112.1 — LA PORTE TDZ DU CHARGEMENT ────────────────────────────
      Le bug de la répétition générale pré-prod (26/10) : une globale assignée
      dans loadAll() mais déclarée APRÈS l'appel initial lève ReferenceError,

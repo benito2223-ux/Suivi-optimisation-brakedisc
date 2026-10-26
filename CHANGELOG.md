@@ -5,6 +5,38 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.116.0] — 2026-10-26, nuit · Brique B : la fusion des doublons Classeur Matis · Hermes
+
+**La demande.** Benjamin (26/10) : importer les outils du Classeur Matis dans un
+scénario créé avant le Classeur double la même physique — la version manuelle
+riche (plan PDF, prélèvements, prix négociés) et la version Classeur officielle
+(mabec, correcteur, mise en page). Spec : `DEMANDE_BANDEAU_CPP_ET_FUSION_OUTILS_
+A_ZCODE.md`, brique B, portes B.6. La règle actée : **l'identité vient du
+Classeur, l'histoire vient du manuel.**
+
+**Ce qui est livré.** Détection sur la fiche scénario (bouton quand une paire
+existe) : deux outils même porte-outil + même position. Écran de révision en
+trois temps : (1) prévision **pure** — l'outil qui porte l'histoire (plan PDF,
+pièces, ou logements ancrés par des prélèvements) garde son id et ceux de ses
+logements ; (2) champ par champ : un seul côté renseigné = pris et listé sans
+question ; les deux renseignés et différents = **conflit en radio** (manuel /
+Classeur), l'application reste bloquée tant qu'une radio pende ; (3)
+application sur acceptation seulement, avec bilan (pris du Classeur / gardé du
+manuel / unilatéraux / logements non appariés ajoutés ou retirés sur choix) et
+le **PDF non retenu téléchargeable** — rien ne disparaît sans avoir été montré.
+
+**Les garde-fous.** Numéro ambigu (3+ outils même clé) : jamais fusionné,
+listé « à résoudre à la main ». Deux porteurs d'histoire sur la même paire :
+refus explicite. Contrôle **avant mutation** : si un logementId de prélèvement
+ne résoudrait plus après fusion, la fusion est refusée et rien n'est touché.
+Le défaut reste « ajouter » : sans choix de fusion, le comportement est inchangé.
+
+**Portes.** `fusionGate` (hors-suite) + 9 tests in-suite sur fixtures (B.6) :
+un seul T546 après fusion, mabec Classeur présent, plan manuel présent, zéro
+logementId de prélèvement cassé, prévision pure vérifiée (les ids du scénario
+ne bougent pas avant l'application). Contre-regard : amputation réelle de la
+détection → porte tombée proprement, restauration octet-pour-octet. 662/0.
+
 ## [4.115.1] — 2026-10-26, nuit · Fix : la cascade du gain retrouve ses barres · remonté par Benjamin
 
 **Le signe.** Benjamin, copie d'écran Chrome : la cascade affiche les chiffres
