@@ -870,6 +870,15 @@ antérieure — purge + onglet neuf : 4.111.0 rendue). **PROD : rien** — 4.97.
 la phrase prod de Benjamin (4.97.2 → 4.111.0), et une décision ouverte : le
 retrait des 8 polices mortes (Barlow/Public Sans) de `fonts/` et du SW.
 
+**Complément (même jour, aucun code écrit — verrou non repris)** : la réponse
+point par point à la demande est déposée dans
+`Hermes Version/REPONSE_VERDICT_PAR_OUTIL_ZCODE_2026-10-26.md` — pour le
+contre-regard d'Hermes : les écarts au spec assumés (version 4.111.0, signe
+des sorties en deux écritures, groupes limités aux membres appariés, temps
+machine des sorties en « non réparti »), ce que le cas réel rev433 a appris
+(bruit des renommages de logements — deux options à trancher par Benjamin),
+et l'état des garde-fous.
+
 ### ▸ Tour 93 — 26/10/2026 — **Z Code** (v4.110.0 — brique B : le badge de codification sur les fiches scénario)
 
 Le chantier commercial validé à trois se referme : **D → A → C → B, tout est
