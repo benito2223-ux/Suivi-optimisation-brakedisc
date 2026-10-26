@@ -228,8 +228,17 @@ for (const nom of ['spk-app.css', 'spk-shell.js']) {
   fs.copyFileSync(path.join(RACINE, nom), path.join(DIST, nom));
 }
 fs.mkdirSync(path.join(DIST, 'fonts'), { recursive: true });
-for (const f of fs.readdirSync(path.join(RACINE, 'fonts'))) {
-  fs.copyFileSync(path.join(RACINE, 'fonts', f), path.join(DIST, 'fonts', f));
+/* v4.112 — purge AVANT copie : le build ne nettoyait pas dist/, et le retrait
+   des 8 polices mortes est reparti une fois avec les anciennes encore dans
+   dist/ (vues après déploiement, corrigé le jour même). Un dossier fonts/
+   source vide reste vide au dist. */
+for (const f of fs.readdirSync(path.join(DIST, 'fonts'))) {
+  fs.rmSync(path.join(DIST, 'fonts', f), { force: true });
+}
+if (fs.existsSync(path.join(RACINE, 'fonts'))) {
+  for (const f of fs.readdirSync(path.join(RACINE, 'fonts'))) {
+    fs.copyFileSync(path.join(RACINE, 'fonts', f), path.join(DIST, 'fonts', f));
+  }
 }
 for (const nom of ['index.html', 'manifest.webmanifest', 'service-worker.js']) {
   const src = path.join(RACINE, nom);
@@ -263,16 +272,10 @@ const SURGEIGNORE = `# Deploiement verrouille (genere par outils/build-coque.mjs
 !icons/icon-192.png
 !icons/icon-512.png
 !icons/icon-512-maskable.png
-# Polices locales (l'outil doit rester utilisable hors ligne)
+# Polices : v4.112 — les 8 fichiers de la coque d'origine sont retires
+# (Barlow/Public Sans/IBM Plex mortes, l'app embarque ses polices en base64).
+# La ligne !fonts reste pour le jour ou une police de marque revient.
 !fonts
-!fonts/barlow-condensed-600.woff2
-!fonts/barlow-condensed-700.woff2
-!fonts/public-sans-400.woff2
-!fonts/public-sans-500.woff2
-!fonts/public-sans-600.woff2
-!fonts/public-sans-700.woff2
-!fonts/ibm-plex-mono-400.woff2
-!fonts/ibm-plex-mono-500.woff2
 `;
 fs.writeFileSync(path.join(DIST, '.surgeignore'), SURGEIGNORE, 'utf8');
 

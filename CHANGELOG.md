@@ -5,6 +5,38 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.112.0] — 2026-10-26 · Le complément du verdict par outil (décisions Benjamin du soir)
+
+**Trois décisions tranchées** (complément Hermes `COMPLEMENT_DEMANDE_VERDICT_PAR_OUTIL_A_ZCODE.md`,
+contre-regard 4.111.0 rendu et **accepté**) :
+
+1. **L'appariement de secours intra-outil** — un logement renommé (« D1 » →
+   « Piste extérieure ») dans un outil par ailleurs apparié par numéro, avec le
+   même nombre de logements des deux côtés, s'apparie par position **à
+   l'intérieur de l'outil** (jamais entre outils), **tracé** : « apparié par
+   secours — noms divergents » dans le dépliant, « N logement(s) apparié(s)
+   par secours » dans la réconciliation. Compteurs inégaux → **aucun repli** :
+   le déséquilibre reste visible (c'est l'information). Sur le cas réel rev433
+   (SL500 vs Classeur Matis) : les paires fantômes sortie+ajout des
+   renommages disparaissent (zéro sortie), ne restent que les vrais écarts.
+2. **La mention des postes sortis sur le badge du groupe** — « groupe :
+   cycle −15 % · dont 1 poste sorti » : un outil de la référence est « sorti »
+   quand aucun de ses logements n'est apparié ; il compte dans le groupe
+   simultané dont il était membre. Le détail chiffré reste dans « non réparti »
+   (sémantique 4.111 inchangée).
+3. **Retrait des 8 polices mortes** — Barlow Condensed, Public Sans, IBM Plex
+   Mono de la coque d'origine (`fonts/*.woff2`) ne servaient jamais (l'app
+   embarque ses polices en base64). Fichiers supprimés, rayées du cache du
+   service worker, **CACHE bumpé v6 → v7** (sinon les clients installés
+   gardaient l'ancien cache), liste blanche du build nettoyée.
+
+**Vérifié** : 648 tests | 0 échec (+6), contre-regards triples (tracé retiré →
+porte tombée ; secours élargi entre outils → test tombé ; police réinjectée au
+SW → porte tombée), navigateur sur rev433 (profil nettoyé). Une porte
+**fausse au vert** vue au contre-regard : le libellé du secours vivait aussi
+dans l'annonce NOUVEAUTES — la porte lit désormais les blocs de rendu, pas le
+fichier entier.
+
 ## [4.111.0] — 2026-10-26 · Le verdict par outil : le gain se refait en additionnant les tuiles
 
 **La contre-mesure structurelle de l'incident du 26/10** (demande

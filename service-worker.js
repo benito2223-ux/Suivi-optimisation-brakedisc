@@ -9,9 +9,10 @@
    écrans plein écran) et ses polices sont maintenant dans le REPO GIT, donc
    dans le build de déploiement. Le service worker doit les connaître :
    - `spk-app.css` et `spk-shell.js` entrent dans le cache ;
-   - les polices `fonts/*.woff2` aussi (elles sont en local, jamais distantes :
-     l'outil doit rester utilisable hors ligne) ;
-   - le nom du cache change (`spk-suivi-shell-v5`) pour purger l'ancien.
+   - v4.112 : les 8 fichiers `fonts/*.woff2` de la coque d'origine sont
+     RETIRÉS (Barlow/Public Sans/IBM Plex mortes — l'app embarque ses
+     polices en base64, elles ne servaient jamais) et le nom du cache passe
+     en `spk-suivi-shell-v7` pour purger l'ancien.
 
    Stratégie volontairement simple, calée sur la réalité de l'outil :
    - L'application = UN fichier HTML + la coque (CSS + JS) + les polices
@@ -41,7 +42,7 @@
    pas les autres). Le cache passe en `v6` : l'ancien `v5` est purgé à
    l'activation.
    ============================================================================ */
-const CACHE = "spk-suivi-shell-v6";
+const CACHE = "spk-suivi-shell-v7";
 const SHELL = [
   "./",
   "./index.html",
@@ -51,15 +52,7 @@ const SHELL = [
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
-  "./icons/icon-512-maskable.png",
-  "./fonts/barlow-condensed-600.woff2",
-  "./fonts/barlow-condensed-700.woff2",
-  "./fonts/public-sans-400.woff2",
-  "./fonts/public-sans-500.woff2",
-  "./fonts/public-sans-600.woff2",
-  "./fonts/public-sans-700.woff2",
-  "./fonts/ibm-plex-mono-400.woff2",
-  "./fonts/ibm-plex-mono-500.woff2"
+  "./icons/icon-512-maskable.png"
 ];
 
 self.addEventListener("install", (e) => {

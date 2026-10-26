@@ -1191,6 +1191,39 @@ try {
       /* les libellés du sémantique sont là, sans aucun K ni P_req (§2.6) */
       ['dont sorties du scénario', 'Levier technique', 'Levier productivité', 'Réconciliation']
         .forEach(function(m){ if (code.indexOf(m) === -1) echecs.push('libellé absent : ' + m); });
+
+      /* v4.112 — le secours intra-outil TRACÉ (complément §1). LE PIÈGE VU
+         AU CONTRE-REGARD : le libellé vit AUSSI dans l'annonce NOUVEAUTES —
+         chercher dans tout le fichier laissait la porte verte avec un dépliant
+         muet. On vérifie donc le libellé DANS le bloc du dépliant (la fonction
+         de la tuile), et le compteur DANS le bloc de la composition. */
+      const iTuileV = code.indexOf('function apercuLogementHTML');
+      const iCompoV = code.indexOf('function compositionApercuHTML');
+      if (iTuileV < 0 || iCompoV < 0) echecs.push('v4.112 : les fonctions de rendu introuvables');
+      else {
+        const blocTuileV = code.slice(iTuileV, iCompoV);
+        if (blocTuileV.indexOf('par secours — noms divergents') === -1)
+          echecs.push('v4.112 : le tracé « par secours — noms divergents » a quitté le dépliant de la tuile');
+        if (blocTuileV.indexOf('parSecours') === -1)
+          echecs.push('v4.112 : la tuile ne porte plus le drapeau parSecours');
+        const iFinC = code.indexOf(String.fromCharCode(10) + '/* ----', iCompoV);
+        const blocCompoV = code.slice(iCompoV, iFinC > 0 ? iFinC : iCompoV + 9000);
+        if (blocCompoV.indexOf('apparié(s) par secours') === -1)
+          echecs.push('v4.112 : la réconciliation ne compte plus les secours');
+        if (code.indexOf('sortisGroupe') === -1 || code.indexOf('nbParSecours') === -1)
+          echecs.push('v4.112 : la dérivation secours/sortis a disparu du module');
+      }
+      /* la mention vit DANS le badge du groupe (rendu ap-gs-tete), pas
+         ailleurs : ancre sur le helper grpSortis, la fenetre couvre le rendu */
+      const iGrpS = code.indexOf('const grpSortis = g =>');
+      if (iGrpS < 0) echecs.push('v4.112 : grpSortis introuvable');
+      else {
+        const blocGs = code.slice(iGrpS, iGrpS + 3600);
+        if (blocGs.indexOf('ap-gs-tete') === -1)
+          echecs.push('v4.112 : la mention des sortis ne vit plus dans le rendu du groupe');
+        if (blocGs.indexOf('poste') === -1)
+          echecs.push('v4.112 : le badge du groupe ne porte plus la mention des postes sortis');
+      }
       const iMod = code.indexOf('function verdictParOutil');
       const iFinMod = code.indexOf(String.fromCharCode(10) + 'function ', iMod);
       const blocMod = code.slice(iMod, iFinMod > 0 ? iFinMod : iMod + 6000);
@@ -1200,6 +1233,48 @@ try {
     }
     if (echecs.length) r.echecs += echecs.length;
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'verdict par outil 4.111 : appariement par numéro, réconciliation somme des tuiles = verdict, sorties nommées' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
+  /* ── v4.112 — LES 8 POLICES MORTES SONT RETIRÉES ─────────────────────
+     Décision Benjamin (complément du 26/10 soir) : Barlow/Public Sans/IBM
+     Plex de la coque d'origine ne servent jamais (l'app embarque ses
+     polices en base64). Le retrait doit être COMPLET : fichiers, cache du
+     SW (avec bump de CACHE, sinon les clients installés gardent le vieux
+     cache), liste blanche du build — sinon un 404 ou un fichier fantôme
+     revient. */
+  (function policesMortes4112(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const MORTES = ['barlow-condensed-600', 'barlow-condensed-700',
+      'public-sans-400', 'public-sans-500', 'public-sans-600', 'public-sans-700',
+      'ibm-plex-mono-400', 'ibm-plex-mono-500'];
+    const lire = function(f){ try { return fs.readFileSync(path.join(REPO, f), 'utf8'); } catch (e) { return ''; } };
+    const sw = lire('service-worker.js');
+    const buildCode = lire(path.join('outils', 'build-coque.mjs'));
+    const html = lire('bilan_economique.html');
+    if (!sw) echecs.push('service-worker.js introuvable');
+    else {
+      MORTES.forEach(function(m){ if (sw.indexOf(m) !== -1) echecs.push('le SW référence encore la police morte ' + m); });
+      const mCache = sw.match(/const CACHE = "([^"]+)"/);
+      if (!mCache) echecs.push('constante CACHE introuvable dans le SW');
+      else if (mCache[1] === 'spk-suivi-shell-v6') echecs.push('la constante CACHE n a pas été bumpée (v6 périmée)');
+    }
+    if (!buildCode) echecs.push('build-coque.mjs introuvable');
+    else MORTES.forEach(function(m){ if (buildCode.indexOf(m) !== -1) echecs.push('la liste blanche du build référence encore ' + m); });
+    /* le dossier fonts/ : plus aucun .woff2 */
+    const dirFonts = path.join(REPO, 'fonts');
+    let restants = [];
+    try {
+      restants = fs.readdirSync(dirFonts).filter(function(f){ return /\.woff2$/i.test(f); });
+    } catch (e) { /* dossier absent : vide, acceptable */ }
+    if (restants.length) echecs.push('fonts/ contient encore : ' + restants.join(', '));
+    /* le HTML source ne référence aucun fichier fonts/ (déjà vrai avant, le
+       garder vrai : une police ne revient qu accompagnée de sa décision) */
+    if (html && html.indexOf('fonts/') !== -1) echecs.push('le HTML source référence un fichier fonts/');
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'polices mortes 4.112 : les 8 fichiers retirés (fonts/, SW + CACHE bumpé, build) et le HTML sans référence fonts/' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
   /* ── v4.110.0 — LE BADGE DE CODIFICATION SUR LES FICHES SCÉNARIO ──
@@ -1330,16 +1405,11 @@ try {
     const shellSw = iShell < 0 ? '' : sw.slice(iShell, iShell + 900);
     if (shellSw.indexOf('spk-app.css') === -1) echecs.push('le service worker ne met pas la coque en cache');
     if (shellSw.indexOf('spk-shell.js') === -1) echecs.push('le service worker ne met pas le shell en cache');
-    /* les polices : on compte les entrees reelles du tableau, pas la
-       simple presence de la chaine 'fonts/' (le SW peut la nommer dans un
-       commentaire sans jamais la mettre en cache). */
-    const policesAttendues = ['barlow-condensed-600', 'barlow-condensed-700',
-      'public-sans-400', 'public-sans-500', 'public-sans-600', 'public-sans-700',
-      'ibm-plex-mono-400', 'ibm-plex-mono-500'];
-    const policesManquantes = policesAttendues.filter(function(f){
-      return shellSw.indexOf(f) === -1;
-    });
-    if (policesManquantes.length) echecs.push('le service worker ne met pas en cache ' + policesManquantes.length + ' police(s) : ' + policesManquantes.join(', '));
+    /* v4.112 : les 8 polices de la coque d'origine sont RETIREES du SW
+       (decision Benjamin, complement du 26/10 soir) - ce controle vit
+       desormais dans la porte dediee 'polices mortes 4.112', qui exige
+       leur ABSENCE et le bump de CACHE. Garder l'ancienne exigence ici
+       aurait contredit la decision. */
 
     // (4) le rail reste VISIBLE : z-index superieur aux surfaces plein ecran.
     //     C est LE point du bug d origine : le rail (60) passait sous les

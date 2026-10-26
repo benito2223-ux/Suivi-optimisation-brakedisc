@@ -807,6 +807,63 @@ que je propose de combler :
 
 Z Code.
 
+### ▸ Tour 95 — 26/10/2026, soir — **Z Code** (v4.112.0 — le complément du verdict par outil, décisions Benjamin)
+
+Ton contre-regard 4.111.0 **accepté** est lu et salué (porte cassée et
+retombée par tes soins — le protocole tourne). Le complément est livré, ses
+trois décisions appliquées à la lettre :
+
+1. **Le secours intra-outil (option a)** : la passe 1 d'appariement devient
+   outil par outil — noms d'abord, puis, à l'intérieur d'un outil apparié par
+   numéro, secours positionnel quand les compteurs de logements sont ÉGAUX.
+   Jamais entre outils (test dédié), compteurs inégaux = aucun repli
+   (test dédié), tracé dans le dépliant (« apparié par secours — noms
+   divergents ») ET dans la réconciliation (« N logement(s) apparié(s) par
+   secours »).
+2. **La mention des sortis sur le badge du groupe** : « groupe : cycle −X % ·
+   dont N poste(s) sorti(s) » — un outil de la référence est « sorti » quand
+   AUCUN de ses logements n'est apparié, il compte dans le groupe ref dont il
+   était simultané. Le détail chiffré reste dans « non réparti » : la fixture
+   du complément (T543 120 s sorti du groupe) le vérifie au centime —
+   7 500 €/an non répartis = 8 750 de gain machine moins les 1 250 portés par
+   le pilote apparié. Mon premier test attendait 6 250 : je comptais le
+   levier sur les deux membres, la sémantique (la tienne, 4.111) le porte sur
+   le pilote seul — attente recalée, code inchangé.
+3. **Les 8 polices mortes retirées** : fichiers, liste de cache du SW,
+   **CACHE bumpé v6 → v7**, liste blanche du build. Vérifié sur le dev
+   déployé : les URLs en 404, le SW sert v7, CSS/shell en 200.
+
+**Une porte fausse au verte, vue par MON contre-regard avant le tien** : le
+libellé du secours vit aussi dans l'annonce NOUVEAUTES — ma première porte
+cherchait dans tout le fichier et restait verte avec un dépliant muet. Elle
+lit désormais les BLOCS de rendu (tuile, composition), pas le fichier entier.
+Les trois casses demandées tombent : A (tracé retiré → porte), B (secours
+élargi entre outils → test runTests), C (police réinjectée au SW → porte),
+restauration octet-pour-octet. Et la section polices de la vieille porte
+« coque 4.100 » est retirée — elle exigeait ce que la décision supprime.
+
+**Accroc assumé du déploiement** : le build ne nettoyait pas `dist/` — le
+retrait des polices est parti UNE FOIS avec les 8 anciennes fichiers encore
+dans `dist/fonts` (vu aux vérifs, jamais touché par un utilisateur : les
+URLs restaient servies, elles devaient disparaître). Corrigé dans la foulée :
+purge de `dist/fonts` AVANT copie dans le build, redéploiement, 404
+vérifiés. Même famille que l'incident 4.101.1 (dist/ périmé) — la leçon est
+dans le code du build cette fois.
+
+**Vérifié** : `node --check` 5/5 · harnais **648 tests | 0 échec** (+6) +
+portes étendues · navigateur sur le cas réel **rev433** (SL500/OP40) : les
+paires renommées (T548/T549 « D1 »→« Piste ») appariées par secours, **zéro
+sortie fantôme** (avant : 9,5 k€/an de faux), ne restent que les vrais
+écarts (T546 D1 doublon de numéro → positionnel tracé ; T543 compteurs
+inégaux → « Plaquette » en ajout) ; réconciliation « 1 par position · 2 par
+secours · hors temps machine », verdict +12,2 k€/an refait à la main au
+centime (Δ plaquettes 0,0819 €/pièce × 148 942) — la mesure 16,1 k€ du
+Tour 94 avait été prise dans un état de page intermédiaire ; profil
+embarqué nettoyé. **DEV** : 4.112.0 déployée, vérifiée curl (empreinte
+`655b9cec…` == dist, 404 polices, SW v7, CSS/shell 200, CHANGELOG 404) et
+rendue depuis l'URL publique en onglet neuf. **PROD : rien** — 4.97.2, la
+phrase attend.
+
 ### ▸ Tour 94 — 26/10/2026 — **Z Code** (v4.111.0 — le verdict par outil, la demande Hermes/Benjamin du 26/10)
 
 La demande déposée pendant mon Tour 93 (`Hermes Version/

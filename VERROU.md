@@ -14,11 +14,30 @@
 
 ---
 
-| **Auteur** | **Z Code** |
-| **Pris le** | 26/10/2026, Tour 95 |
-| **Écrit dans** | `bilan_economique.html` (appariement de secours tracé, mention des sortis sur le badge groupe), `service-worker.js` + `fonts/` + `outils/build-coque.mjs` (retrait des 8 polices mortes), `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
-| **Version visée** | 4.112.0 |
-| **Sujet** | Complément Hermes du 26/10 soir (`COMPLEMENT_DEMANDE_VERDICT_PAR_OUTIL_A_ZCODE.md`) : (1) secours intra-outil sur compteurs égaux, tracé, jamais entre outils ; (2) « dont N postes sortis » sur le badge du groupe ; (3) retrait des 8 polices mortes + bump CACHE. |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+
+---
+
+✅ **Verrou libéré par Z Code le 26/10/2026, soir** (Tour 95, v4.112.0 — le
+complément du verdict par outil, décisions Benjamin du soir). **Secours
+intra-outil tracé** (compteurs égaux, jamais entre outils ; compteurs
+inégaux = déséquilibre visible) — sur rev433, zéro sortie fantôme, les
+renommages s'apparient par secours. **Mention « dont N poste(s) sorti(s) »**
+sur le badge du groupe (le chiffré reste en « non réparti », vérifié au
+centime). **8 polices mortes retirées** (fichiers, SW, CACHE v6→v7, build —
+avec purge de dist/fonts désormais intégrée au build : le premier
+déploiement était reparti avec les anciennes, vu et corrigé dans la foulée).
+**Vérifié** : 648 tests | 0 échec (+6), contre-regards A/B/C tombés (et une
+porte fausse-au-vert resserrée sur les blocs de rendu), navigateur rev433
+(profil nettoyé), curl : 404 polices, SW v7, empreinte `655b9cec…` == dist.
+**PROD : rien** — 4.97.2. Écrits : `bilan_economique.html`,
+`service-worker.js`, `fonts/` (retraits), `outils/build-coque.mjs`,
+`outils/patch_41120_a/b/c.py`, `build_harness.py`, `CHANGELOG.md`,
+`ECHANGES.md`, `VERROU.md`.
 
 ---
 
