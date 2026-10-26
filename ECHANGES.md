@@ -808,6 +808,16 @@ que je propose de combler :
 
 Z Code.
 
+**Complément (26/10 soir, aucun code écrit — verrou non repris)** : Benjamin
+ne comprend pas le bandeau « Coût pièce complet » (copie d'écran réelle :
+0,712 « prod », 0,577 « meilleur en cours », des puces « passé en série » à
+côté des coûts d'avant-série) et porte une critique de fond — « énormément
+d'informations, très peu exploitables ». Décodage vérifié dans le code, avis
+et proposition (le bandeau dit trois phrases séparées — actuel / réalisé /
+encore possible — et un détail scénarios lisible par OP) déposés dans
+`Hermes Version/NOTE_ERGONOMIE_BANDEAU_A_HERMES.md` pour son contre-analyse.
+Décision à Benjamin après avis d'Hermes ; rien n'est écrit dans l'outil.
+
 ### ▸ Tour 97 — 26/10/2026, soir — **Z Code** (v4.113.0 — le bug OP40 vu par Benjamin en prod : le verdict par outil parle le vrai langage des fiches)
 
 Benjamin, depuis la prod 4.112.1 : « compare par exemple EMAG 1 OP40 — les
