@@ -58,7 +58,7 @@ API = ("get TOOL_VERSION(){return TOOL_VERSION;}, normalizeLigne, normalizeRefer
 
        "_matisFeuille, "
 
-       "getActiveLigne, preparerImportDepuis, axesActifs, reattribuerEssai, opContenantScenario, brancheDeScenario, destinationsEssai, remapperLogementsEssai, normeCleLogement, etatCodification, articlesScenario, codificationScenario, dossierVisite, dateIsoMax, joursDepuis, decompositionLeviers, planPrioritesData, plaquettesCommunes, simulCSV, catalogueSeed, catalogueAppliquer, catalogueCSV, catalogueDepuisCSV, planLignes, catalogueSuggestion, catalogueParIso, suggestionDepuisArbre, valeurModale, appliquerSuggestionCatalogue, conso2025DepuisFeuille, normalizeConso2025, conso2025SectionsActives, conso2025Somme, planCoutCible, get conso2025(){return conso2025}, set conso2025(v){conso2025=v}, get conso2025SectionsOn(){return conso2025SectionsOn}, set conso2025SectionsOn(v){conso2025SectionsOn=v}, get planSource(){return planSource}, set planSource(v){planSource=v}, get plan(){return plan}, set plan(v){plan=v}, get lignes(){return lignes}, set lignes(v){lignes=v}, "
+       "getActiveLigne, preparerImportDepuis, axesActifs, reattribuerEssai, opContenantScenario, brancheDeScenario, destinationsEssai, remapperLogementsEssai, normeCleLogement, etatCodification, articlesScenario, codificationScenario, badgeCodifScenario, dossierVisite, dateIsoMax, joursDepuis, decompositionLeviers, planPrioritesData, plaquettesCommunes, simulCSV, catalogueSeed, catalogueAppliquer, catalogueCSV, catalogueDepuisCSV, planLignes, catalogueSuggestion, catalogueParIso, suggestionDepuisArbre, valeurModale, appliquerSuggestionCatalogue, conso2025DepuisFeuille, normalizeConso2025, conso2025SectionsActives, conso2025Somme, planCoutCible, get conso2025(){return conso2025}, set conso2025(v){conso2025=v}, get conso2025SectionsOn(){return conso2025SectionsOn}, set conso2025SectionsOn(v){conso2025SectionsOn=v}, get planSource(){return planSource}, set planSource(v){planSource=v}, get plan(){return plan}, set plan(v){plan=v}, get lignes(){return lignes}, set lignes(v){lignes=v}, "
 
        "get projets(){return projets}, set projets(v){projets=v}, "
 
@@ -1131,6 +1131,55 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'plan 4.102.0 : le tableau de bord live est monte, la case prix valide est cablee, les gains ne sont pas melanges' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  /* ── v4.110.0 — LE BADGE DE CODIFICATION SUR LES FICHES SCÉNARIO ──
+     Brique B (UI) : l'état dérivé de la 4.106 devient visible là où le
+     scénario est jugé. La fonction pure est testée dans runTests ; cette
+     porte lit le fichier réel : la fonction existe, la fiche l'appelle,
+     les trois libellés du sémantique Benjamin (codifié / attente X j /
+     non demandée) sont là, et le hors-exigence (base excel / sans
+     article) n'a pas fondu. */
+  (function badgeCodifFiches(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const html = (function(){ try { return fs.readFileSync(path.join(REPO, 'bilan_economique.html'), 'utf8'); } catch (e) { return ''; } })();
+    if (!html) { echecs.push('bilan_economique.html introuvable'); }
+    else {
+      const code = html;
+
+      /* (1) la fonction pure existe */
+      if (code.indexOf('function badgeCodifScenario(sc){') === -1)
+        echecs.push('badgeCodifScenario absente du source');
+
+      /* (2) la fiche scénario du Plan appelle le badge : un badge dérivé
+             qui n'est pas rendu est une donnée morte (leçon case PRIX). */
+      const iFiche = code.indexOf('function planScenariosHTML');
+      if (iFiche < 0) echecs.push('planScenariosHTML introuvable');
+      else {
+        const iSuiv = code.indexOf(String.fromCharCode(10) + 'function ', iFiche);
+        const bloc = code.slice(iFiche, iSuiv > 0 ? iSuiv : iFiche + 8000);
+        if (bloc.indexOf('badgeCodifScenario(sc)') === -1)
+          echecs.push('la fiche scénario n affiche plus l état de codification');
+        if (bloc.indexOf('l.codifB') === -1)
+          echecs.push('le badge dérivé nest plus rendu dans la cellule État');
+      }
+
+      /* (3) les trois libellés du sémantique + le hors-exigence */
+      const iBadge = code.indexOf('function badgeCodifScenario');
+      if (iBadge >= 0) {
+        const iFin = code.indexOf(String.fromCharCode(10) + 'function ', iBadge);
+        const bloc = code.slice(iBadge, iFin > 0 ? iFin : iBadge + 3000);
+        ['codification attendue', 'codification non demand', '>codifié<', 'pc-stat serie', 'pc-stat attente']
+          .forEach(function(m){ if (bloc.indexOf(m) === -1) echecs.push('le badge a perdu « ' + m + ' »'); });
+        if (bloc.indexOf('sansExigence') === -1 || bloc.indexOf('sansArticle') === -1)
+          echecs.push('le badge ne respecte plus le hors-exigence (base excel / sans article)');
+      }
+    }
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'badge codif 4.110 : la fiche scénario porte l état de codification dérivé (codifié / attente X j / non demandée)' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   /* ── v4.103.0 — LE PRIX SPK PAR DÉFAUT N'EXISTE PLUS ─────────────────────
      Décision Benjamin du 20/10 (chaque plaquette a son prix) d'abord portée
      par le build SEUL — ce qui faisait diverger les deux mondes : le harnais
@@ -1198,7 +1247,12 @@ try {
     // (3) la coque est complete
     if (css.indexOf('.spk-rail') === -1) echecs.push('spk-app.css ne definit pas le rail');
     if (shell.indexOf('spk-rail') === -1) echecs.push('spk-shell.js ne construit pas le rail');
-    if (css.indexOf('Barlow Condensed') === -1) echecs.push('les polices de la coque ne sont pas declarees');
+    /* v4.109 (brand guide SPK, Tour 91) : les polices de la coque sont
+       Open Sans Condensed / Open Sans — Barlow/Public Sans de
+       l'auto-designer sont retirées. La porte suit : la déclaration
+       doit être là, et la police retirée ne doit pas revenir. */
+    if (css.indexOf("'Open Sans Condensed'") === -1) echecs.push('les polices de la coque ne sont pas au brand guide (Open Sans Condensed absente)');
+    if (css.indexOf('Barlow Condensed') !== -1) echecs.push('la police retirée Barlow Condensed est de retour dans la coque');
     /* le SW : on verifie le TABLEAU SHELL, pas le fichier entier — la
        chaine peut apparaitre dans un commentaire sans etre en cache. */
     const iShell = sw.indexOf('const SHELL = [');

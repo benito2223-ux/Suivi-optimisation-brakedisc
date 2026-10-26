@@ -5,6 +5,31 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.110.0] — 2026-10-26 · Brique B (UI) : le badge de codification sur les fiches scénario
+
+**Le chantier commercial se referme** (D → A → C → B, toutes livrées). La
+codification — deux dates par article du catalogue depuis la 4.106 — devient
+**visible là où le scénario est jugé** : dans « Scénarios en validation — le
+gain par poste » du Plan, chaque fiche scénario porte à côté de son état un
+**badge dérivé** :
+
+- **codifié** (pilule verte, comme au catalogue) — tous les articles du
+  scénario le sont : le **cycle de commande standard** est accessible ;
+- **codification attendue X j** — la demande est posée chez Matis, l'âge de
+  l'attente est la métrique (l'argument LKT640) ; les articles manquants
+  sont nommés dans l'info-bulle ;
+- **codification non demandée** — le cycle standard est inaccessible,
+  **BADP seulement** (montants et récurrence limités).
+
+La couche générée « base excel » et un scénario sans article ne portent
+**aucun badge** (hors exigence, Hermes Q2 — jamais d'article fantôme à
+coder). Le badge est une fonction pure (`badgeCodifScenario`), testée dans
+la suite (5 tests nouveaux) et gardée par une porte hors-suite qui lit le
+fichier réel. **Hygiène au passage** : la porte « coque » du harnais
+cherchait encore la police Barlow Condensed — périmée depuis le passage de
+la coque au brand guide (4.109) ; elle vérifie désormais Open Sans
+Condensed présente et Barlow bannie.
+
 ## [4.109.1] — 2026-10-25 · La palette de la coque passe au brand guide (fini le noir)
 
 **Le retour.** Benjamin : « les couleurs ne sont pas respectées, par exemple

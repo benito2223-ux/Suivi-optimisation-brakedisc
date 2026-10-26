@@ -14,11 +14,28 @@
 
 ---
 
-| **Auteur** | **Z Code** |
-| **Pris le** | 26/10/2026, Tour 93 |
-| **Écrit dans** | `bilan_economique.html` (badge de codification sur les fiches scénario), `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
-| **Version visée** | 4.110.0 |
-| **Sujet** | Chantier commercial, brique B (UI) : les états de codification dérivés (4.106) affichés sur les fiches scénario — badge « codifié / attente X j / non demandée ». |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+
+---
+
+✅ **Verrou libéré par Z Code le 26/10/2026** (Tour 93, v4.110.0 — brique B :
+le badge de codification sur les fiches scénario). Le chantier D → A → C → B
+est **complet**. `badgeCodifScenario(sc)` (pure) dérive le badge — codifié /
+attente X j / non demandée — affiché dans « Scénarios en validation » à côté
+de l'état ; base excel et scénario sans article : aucun badge (hors exigence).
+**Accroc** : la porte « coque 4.100 » du harnais était périmée (cherchait
+Barlow Condensed, retirée au Tour 91) — recalée sur le brand guide (Open Sans
+Condensed présente, Barlow bannie). **Vérifié** : 634 tests | 0 échec (+5),
+syntaxe 0 erreur, 2 régressions injectées → 2 portes tombées, restauration
+vérifiée, navigateur (pilules 117 j et « codifié » vues, profil embarqué
+nettoyé). **DEV** : 4.110.0 servie, SHA `c3cdc863…` identique au `dist/`.
+**PROD : rien** — 4.97.2. Écrits : `bilan_economique.html`,
+`build_harness.py`, `outils/patch_41100_a/b/c.py`, `CHANGELOG.md`,
+`ECHANGES.md`, `VERROU.md`.
 
 ---
 

@@ -807,6 +807,47 @@ que je propose de combler :
 
 Z Code.
 
+### ▸ Tour 93 — 26/10/2026 — **Z Code** (v4.110.0 — brique B : le badge de codification sur les fiches scénario)
+
+Le chantier commercial validé à trois se referme : **D → A → C → B, tout est
+livré**. La codification (deux dates par article, 4.106) devient **visible là
+où le scénario est jugé** : dans « Scénarios en validation — le gain par
+poste », chaque fiche porte à côté de son état un badge dérivé — **codifié**
+(pilule verte, comme au catalogue : cycle standard accessible),
+**codification attendue X j** (l'âge de l'attente est la métrique, l'argument
+LKT640 ; les articles manquants nommés dans l'info-bulle) ou **codification
+non demandée** (BADP seulement). Fonction pure `badgeCodifScenario(sc)`,
+dérivée à la construction de la fiche (jamais recalculée au rendu). La couche
+« base excel » et un scénario sans article ne portent AUCUN badge (hors
+exigence, Hermes Q2 — jamais d'article fantôme).
+
+**Accroc du tour (et sa leçon)** : le premier passage harnais a révélé que la
+porte « coque 4.100 » était **périmée depuis le Tour 91** — elle cherchait
+encore « Barlow Condensed » dans `spk-app.css`, que le Tour 91 avait justement
+retirée au profit du brand guide. Le VERDICT disait ECHEC sur un code sain :
+une porte qu'on ne suit pas quand on touche son sujet reste là pour tromper.
+Recalée : Open Sans Condensed présente, Barlow Condensed bannie. (Les huit
+fichiers de polices Barlow/Public Sans restent dans `fonts/` et au SW —
+mortes mais inoffensives ; leur retrait est une décision de Benjamin, pas
+une hygiène.)
+
+**Vérifié** : `node --check` 5/5 blocs · harnais **634 tests | 0 échec**
+(+5 : les trois états, le hors-exigence, le rendu de fiche) + porte hors-suite
+`badge codif 4.110` · **contre-regards : 2 régressions injectées, 2 portes
+tombées** (badge décâblé de la fiche ; Barlow réinjectée dans la coque),
+restauration vérifiée à l'empreinte · navigateur sur le site servi : pilule
+« codification attendue 117 j » à côté de « Validation en cours — essai
+positif », pilule verte « codifié » après bascule de l'article, info-bulle
+porte l'article manquant ; **profil embarqué nettoyé** (`localStorage.clear()`
++ reload — aucune donnée de test persistée). **DEV** : 4.110.0 déployée et
+vérifiée curl — empreinte `c3cdc863…` identique au `dist/` local, coque et
+shell en 200, CHANGELOG en 404, rendu vérifié depuis l'URL publique (la
+fenêtre Nouveautés annonce la 4.110.0). **PROD : rien** — 4.97.2.
+
+**Reste au fil** : le contre-regard d'Hermes sur A/C/4.109+4.110 (rien reçu
+depuis le Tour 83), la phrase prod de Benjamin (4.97.2 → 4.110.0), et la
+proposition de retrait des 8 polices mortes.
+
 ### ▸ Tour 91 — 25/10/2026 — **Z Code** (v4.109.0 — le filigrane de ligne revient + polices du brand guide SPK)
 
 Benjamin : « remets le filigrane en fond qui permet de savoir sur quelle
