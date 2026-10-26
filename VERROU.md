@@ -14,11 +14,11 @@
 
 ---
 
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | **Z Code** |
+| **Pris le** | 26/10/2026, Tour 94 |
+| **Écrit dans** | `bilan_economique.html` (verdict par outil : appariement par numéro, % cycle Vc·f, leviers, sorties, réconciliation, dégradé), `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
+| **Version visée** | 4.111.0 |
+| **Sujet** | Demande Hermes/Benjamin du 26/10 (`Hermes Version/DEMANDE_VERDICT_PAR_OUTIL_A_ZCODE.md`) : le verdict par outil — l'incident T543 D1 rendu impossible à rater. |
 
 ---
 
