@@ -14,11 +14,11 @@
 
 ---
 
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | **Z Code** |
+| **Pris le** | 26/10/2026, Tour 93 |
+| **Écrit dans** | `bilan_economique.html` (badge de codification sur les fiches scénario), `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
+| **Version visée** | 4.110.0 |
+| **Sujet** | Chantier commercial, brique B (UI) : les états de codification dérivés (4.106) affichés sur les fiches scénario — badge « codifié / attente X j / non demandée ». |
 
 ---
 
