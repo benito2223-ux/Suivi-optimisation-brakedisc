@@ -1247,6 +1247,47 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'verdict par outil 4.111 : appariement par numéro, réconciliation somme des tuiles = verdict, sorties nommées' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  /* ── v4.114.0 — LA PORTE « LE BANDEAU DIT VRAI » ────────────────────────
+     Décision Benjamin 26/10 : le bandeau Coût pièce lit la SÉRIE comme
+     production du jour, la ★ reste la base (jamais de re-base automatique),
+     trois temporalités affichées séparément, les abandonnés ne nourrissent
+     plus le meilleur, et le clic puce OP ouvre le détail des scénarios.
+     Le vocabulaire tué ne doit jamais revenir dans le bloc rendu. */
+  (function bandeauCPPGate(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const html = (function(){ try { return fs.readFileSync(path.join(REPO, 'bilan_economique.html'), 'utf8'); } catch (e) { return ''; } })();
+    if (!html) { echecs.push('bilan_economique.html introuvable'); }
+    else {
+      const iA = html.indexOf('function pieceCPPComplet');
+      const iB = html.indexOf('function feuilleRouteHTML');
+      if (iA < 0 || iB < 0 || iB <= iA) echecs.push('bloc bandeau introuvable');
+      else {
+        const bloc = html.slice(iA, iB);
+        [['meilleur en cours', "le vocabulaire tué est de retour : meilleur en cours"],
+         ['passé en série', "le vocabulaire tué est de retour : passé en série"],
+         ['€ prod', "le vocabulaire tué est de retour : EUR prod"],
+         ['"prod seule"', "le vocabulaire tué est de retour : prod seule"]]
+        .forEach(function(m){ if (bloc.indexOf(m[0]) !== -1) echecs.push(m[1]); });
+        [['function pcbOuvrirDetail', 'le détail au clic puce OP absent'],
+         ['pcbDernier = p', 'état de rendu du bandeau non branché'],
+         ['sc.statut !== "serie"', 'la lecture série = production du jour absente'],
+         ['sc.statut === "abandonne"', 'le filtre des abandonnés absent'],
+         ['ne bouge jamais toute seule', 'engagement anti-ré-base automatique absent'],
+         ['réalisé', 'la phrase réalisé absente du bandeau'],
+         ['reste possible', 'la phrase reste possible absente du bandeau'],
+         ['Ce que coûte la pièce', 'le titre du bandeau non revocabularisé'],
+         ['data-pcb-i', 'les puces OP ne sont pas cliquables']]
+        .forEach(function(m){ if (bloc.indexOf(m[0]) === -1) echecs.push(m[1]); });
+      }
+      if (html.indexOf('id="pcbOpPanel"') === -1) echecs.push('le panneau détail OP absent du DOM');
+    }
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'bandeau CPP 4.114 : lecture série, trois phrases, abandonnés filtrés, vocabulaire tenu, détail au clic' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   /* ── v4.112.1 — LA PORTE TDZ DU CHARGEMENT ────────────────────────────
      Le bug de la répétition générale pré-prod (26/10) : une globale assignée
      dans loadAll() mais déclarée APRÈS l'appel initial lève ReferenceError,

@@ -5,6 +5,48 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.114.0] — 2026-10-26 · Le bandeau « Coût pièce » dit vrai · Brique A, prise de main Hermes
+
+**Le déclencheur.** Benjamin, sur une copie d'écran prod : « Explique-moi d'où
+vient le meilleur scénario, je ne comprends rien. » La note Z Code
+(`NOTE_ERGONOMIE_BANDEAU_A_HERMES.md`) a décodé : le bandeau lisait l'étoile
+(l'avant) pendant que les pilules affichaient « passé en série » — trois
+temporalités empilées sans être nommées. Avis Hermes
+(`AVIS_HERMES_BANDEAU_CPP_2026-10-26.md`), points 1 et 2 **validés par
+Benjamin**, qui a ensuite donné la main à Hermes (« vas-y, prends la main et
+code tout ça »). Première brique codée par Hermes, contre-regard Z Code à venir.
+
+**La règle de lecture (décision Benjamin).** Production du jour d'une OP = son
+scénario `statut === "serie"` (le plus économe des non-★ passés) s'il existe,
+sinon la ★ en repli. **L'étoile ne bouge jamais toute seule** — elle reste le
+dénominateur du Plan et des verdicts ; la ré-base reste un geste manuel lourd.
+Le bandeau affiche trois phrases séparées (§3.4 : actés et possibles jamais
+additionnés) : Aujourd'hui (lecture série) · Réalisé (base → aujourd'hui) ·
+Reste possible (aujourd'hui → meilleur candidat non-série non-abandonné).
+Le % de chemin se calcule sur réalisé ÷ (réalisé + reste possible), plus sur
+l'avant seul.
+
+**Le bug latent corrigé au passage.** `meilleur` itérait tous les scénarios
+non-★ **y compris les abandonnés** — un abandonné pouvait nourrir le « meilleur
+en cours » et le % du chemin. Filtré.
+
+**Le vocabulaire.** Tués : « meilleur en cours », « € prod » (→ « base »),
+« passé en série » (→ « en série »), « prod seule » (→ « base seule »). Cinq
+états, cinq pilules : Base ★ / En série / Validé 5× / Essai / Abandonné.
+Le bandeau s'appelle désormais « Ce que coûte la pièce ».
+
+**Le détail au clic.** Chaque puce OP du bandeau est cliquable : panneau listant
+les scénarios de l'OP (coût €/pièce, pilule d'état, écart vs base, gain €/an),
+triés par coût, abandonnés grisés, avec le rappel explicite « le ★ reste la base
+du Plan et des verdicts ».
+
+**Porte harnais.** `bandeauCPPGate` : lecture série présente, anti-ré-base
+gravée, filtre abandonnés, vocabulaire tué surveillé (toute réapparition fait
+tomber la porte), panneau et puces cliquables vérifiés. Contre-regard Hermes :
+casse « meilleur en cours » réinjectée → porte tombée proprement, restauration
+octet-pour-octet. Rendu vérifié navigateur headless : bandeau + panneau de
+détail fonctionnels de bout en bout.
+
 ## [4.113.0] — 2026-10-26 · Le verdict par outil parle le vrai langage des fiches (bug OP40)
 
 **Vu par Benjamin en prod sur EMAG 1 / 356x26 RPI / OP40** : les badges
