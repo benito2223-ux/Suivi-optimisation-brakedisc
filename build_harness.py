@@ -1317,6 +1317,29 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'la campagne 4.115 : jalons, courbe actée seule, à compléter, deux points d entrée' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  /* ── v4.115.1 — LA PORTE « LA CASCADE A SES BARRES » ──────────────────────
+     Bug v4.31-v4.115.0 : le CSS de la cascade et de la table comparative ne
+     vivait que dans le template du rapport de validation. La page doit avoir
+     SA copie : chaque règle colorée doit exister DEUX fois (template + page).
+     Une seule occurrence = la page est redevenue aveugle. */
+  (function cascadeGate(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const html = (function(){ try { return fs.readFileSync(path.join(REPO, 'bilan_economique.html'), 'utf8'); } catch (e) { return ''; } })();
+    if (!html) { echecs.push('bilan_economique.html introuvable'); }
+    else {
+      [['.syn2-wf-bar { border-radius', 2, 'le style de barre de cascade n a plus sa copie page'],
+       ['.syn2-wf-bar.save { background:var(--green); }', 2, 'la barre verte n a plus sa copie page'],
+       ['table.synthese.syn2 { min-width:760px; }', 2, 'la table comparative n a plus sa copie page'],
+       ['td.syn2-best', 2, 'la meilleure valeur n a plus sa copie page']]
+      .forEach(function(m){ if ((html.split(m[0]).length - 1) < m[1]) echecs.push(m[2]); });
+    }
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'cascade 4.115.1 : la page a sa copie du CSS cascade + comparative' + (echecs.length ? ' - ' + echecs.join(' ; ') : ''));
+  })();
+
   /* ── v4.112.1 — LA PORTE TDZ DU CHARGEMENT ────────────────────────────
      Le bug de la répétition générale pré-prod (26/10) : une globale assignée
      dans loadAll() mais déclarée APRÈS l'appel initial lève ReferenceError,

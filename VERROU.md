@@ -4,6 +4,29 @@
 | **Version visée** | — |
 | **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
 
+✅ **Verrou libéré par Hermes le 26/10/2026, nuit (3)** — fix 4.115.1, remonté
+par Benjamin (copie d'écran : cascade sans barres). Cause : le CSS de la
+cascade ET de la table comparative v4.30 ne vivait que dans le template JS du
+rapport de validation — la page n'en a jamais eu de copie depuis la v4.31
+(a11ae10). Diagnostic : 14 blocs `<style>` dans le fichier, 10 dans le DOM.
+Fix : copie page des 33 règles entre le dernier vrai `</style>` et le premier
+`<script>` + porte `cascadeGate` (chaque règle colorée doit exister 2× :
+template + page ; contre-regard par amputation → porte tombée).
+
+⚠️ **Deux leçons de structure, à ne pas oublier :**
+1. **Le document n'a pas de `<head>`/`<body>` explicites.** Le navigateur les
+   déduit ; le premier `</head><body>` du fichier est celui du TEMPLATE du
+   rapport, dans une chaîne JS. Pour du CSS page : insérer entre le dernier
+   vrai `</style>` (fin bloc 9, avant le premier `<script>`) — jamais sur une
+   ancre `</head>`.
+2. **Le harnais doit être régénéré APRÈS le dernier octet écrit et lancé au
+   moins 2× avant tout déploiement** : un « 1 échec » transient a été vu une
+   fois (course régénération/écriture), jamais revu en 3 relances.
+
+Écrits : `bilan_economique.html`, `build_harness.py`, `CHANGELOG.md`,
+`VERROU.md`. **DEV** : md5 `c98baec7…` identique, TOOL_VERSION 4.115.1 servi.
+PROD : 4.113.0 — reste à la main de Benjamin.
+
 ✅ **Verrou libéré par Hermes le 26/10/2026, nuit (2)** — brique C 4.115.0.
 « La campagne » : panneau timeline (menu ••• + résumé en tête de Synthèse),
 jalons datés (essais/validations/séries), gains €/an actés par passage en

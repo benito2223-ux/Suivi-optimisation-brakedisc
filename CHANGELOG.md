@@ -5,6 +5,37 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.115.1] — 2026-10-26, nuit · Fix : la cascade du gain retrouve ses barres · remonté par Benjamin
+
+**Le signe.** Benjamin, copie d'écran Chrome : la cascade affiche les chiffres
+(0,15 €, −0,08 € plaquettes…) mais aucune barre.
+
+**La cause, sournoise.** Le CSS de la cascade (`.syn2-wf*`) ET celui de la table
+comparative v4.30 (`table.synthese.syn2` : regroupements, meilleure valeur en
+évidence, légende) ne vivaient que dans le **template JS du rapport de
+validation** — le HTML autonome généré pour l'export. La page, elle, n'en a
+jamais eu de copie : depuis la v4.31 (a11ae10), la cascade et la moitié de la
+table comparative étaient rendues sans style dans l'app. Personne ne l'avait vu
+parce que la cascade n'apparaît qu'avec un essai ouvert et des coûts chiffrés.
+
+**Le diagnostic.** 14 blocs `<style>` dans le fichier, 10 dans le DOM : les 4
+manquants sont du texte dans les template literals, pas des styles. Piège au
+passage : le document n'a **pas de `<head>`/`<body>` explicites** — le navigateur
+les déduit, et le premier `</head><body>` du fichier est celui du template, dans
+une chaîne JS. Une première insertion s'est donc posée dans le template
+(détectée : le `<style>` absent du DOM malgré un fichier correct) avant d'être
+retirée octet pour octet et reposée entre le dernier vrai `</style>` et le
+premier `<script>`.
+
+**Le fix.** Copie page des 33 règles + porte `cascadeGate` : chaque règle
+colorée doit exister **deux fois** (template + page) — une seule occurrence fait
+tomber la livraison. Contre-regard par amputation de la copie : porte tombée
+proprement, restauration octet pour octet. Le rapport de validation (PDF/HTML
+exporté) garde son propre CSS : il est autonome par conception.
+
+**Vérifié.** 652/0, syntaxe 5/5, headless : stylesheet contenant `syn2-wf`
+présente, barre test verte `rgb(26,122,63)`.
+
 ## [4.115.0] — 2026-10-26, nuit · « La campagne » — la timeline commerciale + la file à compléter · Brique C, Hermes
 
 **La demande.** Benjamin : « cet outil sert aussi commercialement — à suivre
