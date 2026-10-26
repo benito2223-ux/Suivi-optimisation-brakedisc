@@ -5,6 +5,48 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.117.0] — 2026-10-26, nuit · Le dernier lot avant prod · Hermes
+
+**La demande.** Benjamin : « envoi toute la fin — navigation Première Lecture
+et les améliorations (âges généralisés, décliner un gagnant, Ctrl+K, filet
+undo). Et passe en prod. »
+
+**Livré.**
+1. **La boussole « Première Lecture »** — en tête d'accueil, cinq liens : où
+   sont les euros (Synthèse/feuille de route), ce qui tourne aujourd'hui
+   (carte atelier), ce qui attend une décision (tableau de bord), ce que la
+   campagne a rapporté (panneau La campagne), raconter/transmettre (Synthèse).
+   Pas de refonte du modèle de navigation — chaque question saute là où vit
+   déjà sa réponse ; la réponse à « on ne sait pas où aller » à la première
+   lecture.
+2. **Ctrl+K** — la recherche universelle au clavier (le bouton existait, le
+   raccourci manquait).
+3. **« Ce qui attend »** dans La campagne — âges généralisés : validés 5× pas
+   encore passés en série (depuis combien de jours), essais lancés sans mesure.
+   Tri par âge décroissant. Le temps qui pousse les décisions, visible.
+4. **⇄ Décliner ce gagnant** — sur les fiches en série/validé : crée un
+   NOUVEAU scénario « Essai » dans l'OP cible choisie (même machine), outils
+   copiés avec des **ids tout neufs** — aucun historique partagé, l'original
+   intact.
+5. **⤺ Actions récentes (filet 30 j)** — chaque geste structurel (fusion
+   Classeur Matis, suppression de logement) prend un **instantané du scénario
+   AVANT de muter** ; restauration en un clic depuis le menu •••. 5 gestes,
+   30 jours, instantanés > 3 Mo listés « hors filet » (jamais de localStorage
+   explosé en silence).
+
+**Porte.** `dernierLotGate` : boussole, liens, âges, déclinaison + clone à ids
+neufs, journal, restauration, instantanés pré-mutation, panneaux et boutons.
+**Incident du lot, attrapé avant prod** : une insertion mal ancrée a doublé un
+appel (`matisPairesDoublons(matisPairesDoublons(…))`) — invisible sur les
+données d'exemple, fatal sur les vraies (l'accueil aurait planté dès qu'une
+paire existe). Repéré par le `node --check` de protocole, réparé, puis une
+salve d'apostrophes bares dans les chaînes single-quote a été réparée
+itérativement contre le même juge. 662/0 ×2.
+
+**PROD.** Déploiement de cette version sur
+`suivi-optimisation-septfons.surge.sh` **à la demande explicite de Benjamin**
+(« passe en prod »), vérifié au md5.
+
 ## [4.116.0] — 2026-10-26, nuit · Brique B : la fusion des doublons Classeur Matis · Hermes
 
 **La demande.** Benjamin (26/10) : importer les outils du Classeur Matis dans un

@@ -1366,6 +1366,36 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'fusion Matis 4.116 : détection, porteur d histoire, prévision pure, conflits bloquants, zéro dangling' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  /* ── v4.117.0 — LA PORTE « LE DERNIER LOT » ────────────────────────────────
+     Boussole Première Lecture, Ctrl+K, ce qui attend (âges), décliner un
+     gagnant (ids neufs), filet undo 30 jours avec instantané AVANT mutation. */
+  (function dernierLotGate(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const html = (function(){ try { return fs.readFileSync(path.join(REPO, 'bilan_economique.html'), 'utf8'); } catch (e) { return ''; } })();
+    if (!html) { echecs.push('bilan_economique.html introuvable'); }
+    else {
+      [['function boussoleHTML', 'la boussole Première Lecture absente'],
+       ['boussole-lien', 'les liens de la boussole absents'],
+       ['function campagneCeQuiAttendHTML', 'les âges (ce qui attend) absents'],
+       ['function declinerScenario', 'la déclinaison de gagnant absente'],
+       ['declinerCloneOutils', 'la copie à ids neufs absente'],
+       ['const UNDO_CLE', 'le journal undo absent'],
+       ['function undoRestaurer', 'la restauration absente'],
+       ['undoPousser(', 'la prise d instantané avant mutation absente'],
+       ['id="undoPanel"', 'le panneau du filet absent du DOM'],
+       ['id="declinerPanel"', 'le panneau de déclinaison absent du DOM'],
+       ['id="undoMenuBtn"', 'le bouton de menu du filet absent'],
+       ['.decliner-btn', 'le bouton décliner absent de la fiche']]
+      .forEach(function(m){ if (html.indexOf(m[0]) === -1) echecs.push(m[1]); });
+      if (html.indexOf('toLowerCase() === "k"') === -1) echecs.push('le raccourci Ctrl+K absent');
+    }
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'dernier lot 4.117 : boussole, Ctrl+K, âges, déclinaison, filet undo' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   /* ── v4.112.1 — LA PORTE TDZ DU CHARGEMENT ────────────────────────────
      Le bug de la répétition générale pré-prod (26/10) : une globale assignée
      dans loadAll() mais déclarée APRÈS l'appel initial lève ReferenceError,

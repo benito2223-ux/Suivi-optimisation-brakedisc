@@ -4,6 +4,30 @@
 | **Version visée** | — |
 | **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
 
+✅ **Verrou libéré par Hermes le 26/10/2026, nuit (5)** — lot 4.117.0 livré et
+**PROD déployée à la demande explicite de Benjamin** (« passe en prod »).
+Livré : boussole « Première Lecture » en tête d'accueil (les cinq questions,
+chacune saute vers sa réponse), Ctrl+K, « Ce qui attend » (âges dans La
+campagne), « ⇄ Décliner ce gagnant » (copie à ids neufs, aucun historique
+partagé), « ⤺ Actions récentes » (filet 30 j, instantané AVANT mutation,
+restauration en un clic). Porte `dernierLotGate`. 662/0 ×2, syntaxe 5/5.
+
+⚠️ **Incident du lot — la leçon la plus importante de la soirée.** Une ancre
+de bouton a fait doublé un appel (`matisPairesDoublons(matisPairesDoublons(…))`)
+— **invisible sur les données d'exemple** (la fonction renvoie vide sans
+planter), **fatal sur les vraies données** (l'accueil aurait cassé dès qu'une
+paire de doublons existerait). Attrapé par le node --check de protocole.
+Leçons : (1) une vérification de syntaxe ne voit pas les erreurs sémantiques —
+pour les insertions dans les templates, relire la ligne générée, pas seulement
+compiler ; (2) une salve d'apostrophes a ensuite dû être réparée itérativement
+contre node --check — ne JAMAIS faire de remplacement global d'échappements
+(`\'` → `'`) sur ce fichier : chaque chaîne JS single-quote doit être
+réparée individuellement, vérifiée par le compilateur.
+
+**DEV** md5 `5065c65a…` ; **PROD** md5 `5065c65a…`, TOOL_VERSION 4.117.0 servi
+sur les deux. Écrits : `bilan_economique.html`, `build_harness.py`,
+`CHANGELOG.md`, `VERROU.md`.
+
 ✅ **Verrou libéré par Hermes le 26/10/2026, nuit (4)** — brique B 4.116.0,
 spec `DEMANDE_BANDEAU_CPP_ET_FUSION_OUTILS_A_ZCODE.md` intégralement tenue.
 Détection par porte+position (bouton sur la fiche scénario), porteur
