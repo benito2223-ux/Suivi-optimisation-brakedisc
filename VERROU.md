@@ -14,11 +14,32 @@
 
 ---
 
-| **Auteur** | **Z Code** |
-| **Pris le** | 26/10/2026, Tour 96 |
-| **Écrit dans** | `bilan_economique.html` (les 4 déclarations déplacées avant `loadAll()` + porte TDZ), `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
-| **Version visée** | 4.112.1 |
-| **Sujet** | **Correctif critique trouvé par la répétition générale pré-prod** : `consoReelle`/`planSource`/`consoSemaines`/`planReglages` déclarées APRÈS l'appel `loadAll()` → ReferenceError TDZ avalée par le catch silencieux → les données réelles retombent sur l'exemple, et le premier geste de saisie écraserait le localStorage. Présent depuis 4.101.1, invisible au harnais (localStorage vide). |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+
+---
+
+✅ **Verrou libéré par Z Code le 26/10/2026, après-midi** (Tour 96, v4.112.1 —
+le correctif TDZ trouvé par la répétition générale, puis la PROD). Quatre
+états déclarés après l'appel `loadAll()` (posés 4.90/4.101.1) levaient une
+ReferenceError avalée par le catch silencieux : **les données réelles
+retombaient sur l'exemple, et la première saisie aurait écrasé le
+localStorage**. Déclarations montées avant l'appel + test de charge + porte
+structurelle « toute globale de loadAll se déclare avant son appel » (la
+première porte était AVEUGLE — regex dynamique fondue par l'échappement
+Python→JS, le piège des Tours 82/4.100 repris ; réécrite en TEXTE BRUT, la
+règle « regex dynamique bannie du harnais » est au journal). **Répétition
+générale** : profil 4.97.2 + état réel rev433 enrichi (PARETO, catalogue,
+livraison) → swap → bascule observée, tout chargé, SW v1→v7, localStorage
+intact. **Vérifié** : 649 tests | 0 échec, contre-regards vus tomber.
+**DEV** : 4.112.1 servie. **PROD : 4.112.1** (ordre de Benjamin) — empreinte
+`08a71a1f…` == dist, SW v7, coque 200, sensibles 404, rendu public vérifié.
+Écrits : `bilan_economique.html`, `build_harness.py`,
+`outils/patch_41121.py`, `outils/patch_41121_b.py`, `CHANGELOG.md`,
+`ECHANGES.md`, `VERROU.md`.
 
 ---
 

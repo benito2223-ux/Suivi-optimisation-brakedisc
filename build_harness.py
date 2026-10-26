@@ -1235,6 +1235,56 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'verdict par outil 4.111 : appariement par numéro, réconciliation somme des tuiles = verdict, sorties nommées' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  /* ── v4.112.1 — LA PORTE TDZ DU CHARGEMENT ────────────────────────────
+     Le bug de la répétition générale pré-prod (26/10) : une globale assignée
+     dans loadAll() mais déclarée APRÈS l'appel initial lève ReferenceError,
+     avalée par le catch silencieux — les données réelles retombent sur
+     l'exemple, et la première saisie écraserait le localStorage. Le test
+     runtime ne le voit pas (il rejoue loadAll après l'évaluation complète,
+     quand la TDZ est levée) : seule la SÉQUENCE initiale du fichier mord.
+     Cette porte lit donc le fichier réel : pour chaque identifiant assigné
+     en tête de ligne dans le corps de loadAll, sa déclaration top-level
+     `let/const` doit précéder l'appel `loadAll();`. */
+  (function porteTdzLoadAll(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const html = (function(){ try { return fs.readFileSync(path.join(REPO, 'bilan_economique.html'), 'utf8'); } catch (e) { return ''; } })();
+    if (!html) { echecs.push('bilan_economique.html introuvable'); }
+    else {
+      const NL = String.fromCharCode(10);
+      const iDeb = html.indexOf('function loadAll(){');
+      const iFin = html.indexOf(NL + 'function ', iDeb);
+      const iAppel = html.indexOf(NL + 'loadAll();');
+      if (iDeb < 0 || iAppel < 0) echecs.push('loadAll ou son appel initial introuvable');
+      else if (iFin < 0) echecs.push('fin de loadAll introuvable');
+      else {
+        const corps = html.slice(iDeb, iFin);
+        const noms = {};
+        corps.split(NL).forEach(function(l){
+          const m = l.match(/^\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=[^=]/);
+          if (m) noms[m[1]] = true;
+        });
+        Object.keys(noms).sort().forEach(function(n){
+          /* déclaration top-level la plus précoce (colonne 0). PAS DE REGEX
+             DYNAMIQUE : la leçon des tours 82/4.100 (échappement Python→JS)
+             reprisée ici — une new RegExp en string a déjà laissé cette porte
+             aveugle au premier contre-regard. On cherche du TEXTE : une
+             déclaration top-level commence par 'let NAME ' en tête de ligne. */
+          const iLet = html.indexOf(NL + 'let ' + n + ' ');
+          const iConst = html.indexOf(NL + 'const ' + n + ' ');
+          const iDec = (iLet < 0) ? iConst : ((iConst < 0) ? iLet : Math.min(iLet, iConst));
+          if (iDec < 0) return; /* locale sans déclaration top-level : hors périmètre */
+          if (iDec > iAppel)
+            echecs.push('la globale ' + n + ' est assignée dans loadAll mais déclarée APRÈS son appel — piège TDZ : repli silencieux sur les données d\u2019exemple');
+        });
+      }
+    }
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'porte TDZ 4.112.1 : toute globale de loadAll se déclare avant son appel (le repli silencieux sur les données d\u2019exemple ne reviendra pas)' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   /* ── v4.112 — LES 8 POLICES MORTES SONT RETIRÉES ─────────────────────
      Décision Benjamin (complément du 26/10 soir) : Barlow/Public Sans/IBM
      Plex de la coque d'origine ne servent jamais (l'app embarque ses

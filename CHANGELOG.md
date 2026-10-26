@@ -5,6 +5,30 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.112.1] — 2026-10-26 · Correctif critique : les données réelles retombaient sur l'exemple au chargement
+
+**Trouvé par la répétition générale pré-prod** (la question de Benjamin :
+« aucune friction à Matis ») : depuis la 4.101.1 (21/10), quatre états
+(`consoReelle`, `planSource`, `consoSemaines`, `planReglages`) étaient
+déclarés APRÈS l'appel initial `loadAll()`. Leur assignation au chargement
+levait une ReferenceError TDZ, **avalée par le catch silencieux** : les
+données réelles retombaient sur le jeu d'exemple — et le premier geste de
+saisie aurait alors **écrasé le localStorage** par l'état exemple. Invisible
+au harnais (localStorage vide), frôlé au Tour 94 sans diagnostic.
+
+- Les quatre déclarations montent **avant** `loadAll()` (le piège documenté
+  depuis le début du cahier, jamais gardé).
+- **Double garde** : un test runTests rejoue le chargement avec un état
+  (jamais l'exemple), et une porte hors-suite structurelle vérifie que toute
+  globale assignée dans `loadAll` se déclare avant son appel. La première
+  version de cette porte était **aveugle** (regex dynamique tuée par
+  l'échappement Python→JS — le piège des Tours 82/4.100 repris) : le
+  contre-regard l'a vue, elle est réécrite **en texte brut, sans regex**.
+- Vérifié par la répétition générale : profil 4.97.2 + état réel rev433
+  enrichi (PARETO, catalogue, livraisons) → swap 4.112.1 → **tout se charge**
+  (10 lignes, PARETO, catalogue), service worker v1 → v7, rechargement
+  automatique observé, localStorage intact.
+
 ## [4.112.0] — 2026-10-26 · Le complément du verdict par outil (décisions Benjamin du soir)
 
 **Trois décisions tranchées** (complément Hermes `COMPLEMENT_DEMANDE_VERDICT_PAR_OUTIL_A_ZCODE.md`,

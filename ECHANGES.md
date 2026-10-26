@@ -49,6 +49,7 @@
 
 | Date | Acte | Où | Vérifié |
 |---|---|---|---|
+| 26/10 ~15:00 | **DEV + PROD 4.112.1 — le correctif TDZ, puis la mise en prod** (ordre de Benjamin : « maintenant on passe en prod mais… aucune friction à Matis »). La **répétition générale pré-prod** (profil 4.97.2 + état réel rev433 enrichi du PARETO/catalogue/livraisons, servi en local, puis swap vers la nouvelle version — exactement le geste du déploiement vu par la PWA installée) a **trouvé le bug** : depuis la 4.101.1, quatre états (`consoReelle`, `planSource`, `consoSemaines`, `planReglages`) déclarés APRÈS l'appel `loadAll()` levaient une ReferenceError TDZ avalée par le catch silencieux — **les données réelles retombaient sur l'exemple**, et la première saisie aurait écrasé le localStorage. Corrigé (déclarations montées avant l'appel) + double garde (test de charge + porte structurelle « toute globale de loadAll se déclare avant son appel »). La première porte était **aveugle** — regex dynamique tuée par l'échappement Python→JS, le piège des Tours 82/4.100 repris ; le contre-regard l'a vue, réécrite en texte brut. Répétition refaite après correctif : **bascule 4.97.2 → 4.112.1 observée, 10 lignes + 11 essais + PARETO + catalogue chargés, SW v1 → v7 (ancien cache purgé), rechargement automatique vu, localStorage intact**. Le SW v1 de Matis sert déjà le HTML réseau-d'abord (vérifié au curl) : bascule au premier lancement. | suivi-optimisation-projet.surge.sh · suivi-optimisation-septfons.surge.sh | ✅ curl : DEV et PROD servent 4.112.1, empreintes identiques au `dist/` (prod `08a71a1f…`), SW v7 servi, coque 200, CHANGELOG/ECHANGES/VERROU/fonts mortes en 404, zéro `prixSpk` ; rendu public vérifié onglet neuf (modules présents, SW contrôlé) (Z Code, Tour 96) |
 | 21/10 ~11:30 | **DEV 4.100.4 — les onglets du rail se remplacent au lieu de s'empiler.** Benjamin : « les onglets tableau et synthese ne fonctionnent pas ». Reproduction avec captures : les écrans du rail **s'empilaient** — la Synthèse, bloc en flux de l'app d'avant la coque (aucun z-index), s'ouvrait **derrière** l'Accueil ou le Tableau de bord restés ouverts (z 80) : le clic « ne faisait rien ». Correctif dans la coque : onglets **exclusifs** (phase de capture, logique de l'app intacte), Synthèse écran à part entière (onglet actif, Retour fonctionnel, affichage depuis le haut). Matrice 8 chemins vérifiée, 0 erreur JS ; porte `rail exclusif 4.100.4` (5 points), 3/3 contre-regards. **PROD : rien** | suivi-optimisation-projet.surge.sh | ✅ curl : 4.100.4 servie, md5 `288e57aa…` == dist local (shell `22f76752…` ==) ; prod 4.97.2 inchangée |
 | 20/10 ~23:59 | **DEV 4.100.3 — l'import prévient avant de retirer des essais.** Benjamin : « je ne retrouve pas tous les essais réalisés (exemple PCI 5 OP40) ». Diagnostic par reproduction avec les vrais fichiers du 13/10 : **le code d'import et la fusion sont sains** (rev431 → 7 essais). La perte vient du geste : plusieurs JSON à la suite avec **« Remplacer tout »** ne laissent que le dernier. Pièges aggravants : rev432 (6 essais) porte un numéro plus grand que rev431 (7 essais) — deux postes incrémentent chacun leur compteur ; et le transfert de l'essai PCI 5 / OP 40 vers « Classeur Matis » était **délibéré** (Benjamin, confirmé le 21/10 — pas une perte) — rev431 reste le fichier de référence. Correctif : l'écran d'import compare le **nombre d'essais** reçu et local et affiche l'écart avant les boutons. **Récupération : importer `Downloads/SuiviOptimisation_rev431_20261013-1627.json`**. **PROD : rien** | suivi-optimisation-projet.surge.sh | ✅ curl : 4.100.3 servie, md5 `7a7c8119…` identique au `dist/` local ; avertissement vérifié dans l'outil (rev425 → « 2 essais de MOINS (5 reçus contre 7) », Fusionner → 7 essais) ; prod 4.97.2 inchangée |
 | 20/10 ~23:10 | **DEV 4.100.2 — la mise à jour à chaud : un correctif ne peut plus rester invisible en cache.** Benjamin : « Problème toujours présent bro » — alors que la 4.100.1 était déployée, publiée et vérifiée sur l'URL publique. Cause : le correctif était dans `spk-shell.js`, servi **cache d'abord** par le service worker ; le cache ne se purge que si le SW change, or c'est le shell qui changeait — l'ancien restait en cache, invisible. Le profil de test (Chrome neuf à chaque fois) n'avait **jamais de cache** : il testait le code, pas ce que l'utilisateur voit. Corrections : le shell passe en réseau d'abord ; `addAll` (tout ou rien) remplacé par une mise en cache entrée par entrée ; enregistrement avec `updateViaCache: "none"` ; le SW signale sa prise de main ; la page compare la version servie et se recharge si elle est en retard. **Vérifié sur un profil « déjà visité »** : le cache est passé à la bonne version **seul**, le shell exécuté portait la nouvelle version, bouton Retour affiché. Porte `maj a chaud 4.100.2` (8 points), 8 contre-regards, 8 détectés. **PROD : rien** | suivi-optimisation-projet.surge.sh | ✅ curl : 4.100.2 servie, md5 `3162a60a…` identique au `dist/` local ; prod 4.97.2 md5 `fe652969…` inchangée |
@@ -806,6 +807,57 @@ que je propose de combler :
 5. Ordre d'implémentation proposé : A → B → C → D. Échange-quelque chose ?
 
 Z Code.
+
+### ▸ Tour 96 — 26/10/2026, après-midi — **Z Code** (v4.112.1 — le correctif TDZ trouvé par la répétition générale, puis la PROD)
+
+Benjamin : « on passe en prod, mais comment être sûr que la PWA de Matis se
+met à jour sans perdre ses données ? ». Réponse en trois temps — et le
+premier a **payé** :
+
+1. **Lecture du chemin de mise à jour** : le SW v1 installé chez Matis
+   (vérifié au curl de la prod d'avant) sert déjà le HTML **réseau d'abord**
+   (`cache: "no-cache"`), avec `skipWaiting` : au premier lancement
+   post-déploiement il télécharge la nouvelle version directement. Les
+   données vivent dans le localStorage de l'origine — **aucun déploiement ne
+   le touche**.
+2. **La répétition générale** (profil « Matis simulé » : la 4.97.2 exacte de
+   la prod servie en local, SW installé, état réel rev433 enrichi du PARETO
+   conso2025, du catalogue avec dates de codification et d'une livraison —
+   puis SWAP des fichiers vers la nouvelle version, le geste exact du
+   déploiement) : la bascule s'est faite… et **les lignes sont retombées sur
+   le jeu d'exemple**. PARETO et catalogue chargés, lignes non : le symptôme
+   du piège TDZ documenté depuis le début du cahier. Quatre états
+   (`consoReelle`, `planSource`, `consoSemaines`, `planReglages` — posés par
+   la 4.101.1 d'Hermes, la 4.90 pour deux d'entre eux) étaient déclarés
+   APRÈS l'appel `loadAll()` : leur assignation au chargement levait une
+   ReferenceError avalée par le catch silencieux. **Chez Matis, la 4.112
+   telle quelle aurait ouvert sur l'exemple — et sa première saisie aurait
+   écrasé son localStorage.** Le Tour 94 l'avait frôlé (« loadAll manuel »
+   nécessaire) sans le diagnostiquer.
+3. **Le correctif** (4.112.1) : les quatre déclarations montées avant
+   l'appel, test de charge nouveau (un état présent se charge ENTIER) et
+   **porte structurelle** : toute globale assignée dans `loadAll` se déclare
+   avant son appel. Contre-regard en deux actes : le test runtime ne voyait
+   PAS la faute (il rejoue loadAll après l'évaluation, quand la TDZ est
+   levée) — seule la séquence initiale du fichier mord ; et la première
+   porte structurelle était **aveugle** : regex dynamique dont l'échappement
+   Python→JS avait fondu (le piège des Tours 82/4.100, repris un troisième
+   fois — la règle s'écrit maintenant : **regex dynamique bannie du harnais,
+   texte brut**). Réécrite sans regex, elle tombe sur le régressé et nomme
+   les quatre coupables.
+
+**Répétition refaite après correctif** : bascule 4.97.2 → 4.112.1, 10 lignes
++ 11 essais + PARETO + catalogue chargés, SW v1 → v7 (ancien cache purgé à
+l'activation), rechargement automatique observé en direct, localStorage
+intact — **zéro friction**.
+
+**Vérifié** : 649 tests | 0 échec (+1), syntaxe 0 erreur, contre-regards
+faits (test runtime + porte structurelle, chacun vu tomber), profils de test
+nettoyés. **DEV** : 4.112.1 servie. **PROD : 4.112.1** (l'ordre de Benjamin)
+— curl : empreinte `08a71a1f…` identique au `dist/`, SW v7 servi, coque
+complète en 200, CHANGELOG/ECHANGES/VERROU et les 8 polices mortes en 404,
+zéro `prixSpk`, rendu public vérifié en onglet neuf. Le premier lancement de
+Matis basculera seul.
 
 ### ▸ Tour 95 — 26/10/2026, soir — **Z Code** (v4.112.0 — le complément du verdict par outil, décisions Benjamin)
 
