@@ -14,11 +14,28 @@
 
 ---
 
-| **Auteur** | **Z Code** |
-| **Pris le** | 26/10/2026, Tour 94 |
-| **Écrit dans** | `bilan_economique.html` (verdict par outil : appariement par numéro, % cycle Vc·f, leviers, sorties, réconciliation, dégradé), `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
-| **Version visée** | 4.111.0 |
-| **Sujet** | Demande Hermes/Benjamin du 26/10 (`Hermes Version/DEMANDE_VERDICT_PAR_OUTIL_A_ZCODE.md`) : le verdict par outil — l'incident T543 D1 rendu impossible à rater. |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+
+---
+
+✅ **Verrou libéré par Z Code le 26/10/2026** (Tour 94, v4.111.0 — le verdict
+par outil, demande Hermes/Benjamin du 26/10). L'appariement va par NUMÉRO
+d'outil (plus jamais par position), les tuiles portent cycle Vc·f en %,
+les deux leviers séparés (technique toujours, productivité si chrono
+complet, groupes au max), les sorties/ajouts nommés, le dégradé rouge→vert
+sur le gain €/an, la ligne « dont sorties du scénario » dans le verdict et
+la réconciliation tuiles + sorties − ajouts + non réparti = verdict.
+**Vérifié** : 642 tests | 0 échec (+8), syntaxe 0 erreur, contre-regards
+doubles (2 régressions, 2 portes tombées, restauration vérifiée), navigateur
+sur le cas réel rev433 SL500/OP40 (sorties 9,5 k€/an nommées, réconciliation
+exacte, profil embarqué nettoyé). **DEV** : 4.111.0 servie, SHA `e0001dd4…`
+identique au `dist/`. **PROD : rien** — 4.97.2. Écrits :
+`bilan_economique.html`, `build_harness.py`, `outils/patch_41110_a/b/c/d/e.py`,
+`CHANGELOG.md`, `ECHANGES.md`, `VERROU.md`.
 
 ---
 

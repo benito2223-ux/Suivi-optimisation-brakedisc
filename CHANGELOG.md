@@ -5,6 +5,39 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.111.0] — 2026-10-26 · Le verdict par outil : le gain se refait en additionnant les tuiles
+
+**La contre-mesure structurelle de l'incident du 26/10** (demande
+Hermes/Benjamin, `Hermes Version/DEMANDE_VERDICT_PAR_OUTIL_A_ZCODE.md`) : le
+verdict « +16,8 k€/an » du SL500 sur EMAG 1 incluait **silencieusement** la
+suppression du logement T543 D1 (9,8 k€/an de la référence à lui seul).
+
+- **Appariement par numéro d'outil, jamais par position** — le piège n°1 :
+  supprimer un outil en milieu de liste décalait toutes les comparaisons
+  (`flatsSc.indexOf`, banni). Un outil sans numéro ou en doublon : repli
+  positionnel pour celui-là seul, **défaut tracé** (« apparié par position »).
+- **Le % de cycle par outil, toujours** : badge « cycle −15 % » / « +8 % » /
+  « = réf. » calculé sur Vc·f (ratio des temps à géométrie égale) — **jamais
+  des secondes inventées** (décision Benjamin). Le groupe simultané affiche
+  le ratio de son membre le plus long.
+- **Deux leviers séparés, jamais fondus** : technique (Δ plaquettes réf −
+  scénario × production, toujours ; libellé « charnière améliorée » /
+  « prix plaquette » / les deux / défavorable) et productivité (Δ temps
+  machine × taux horaire, **seulement si le chrono est complet des deux
+  côtés**, groupes respectés : max, pas somme).
+- **Le dégradé rouge → vert colore le gain €/an de l'outil** (liseré + fond,
+  continu, 0 = gris neutre, jamais imprimé) ; le badge texte porte le sens.
+- **Sorties et ajouts nommés** : badge « ajouté — absent de la référence » /
+  « sorti de : … » sur les tuiles, ligne « **dont sorties du scénario** » en
+  rouge dans le verdict.
+- **La réconciliation** : sous la grille, tuiles + sorties − ajouts + non
+  réparti = verdict — l'écart résiduel (rebut, pièces, temps machine des
+  sorties) sort **en clair**, jamais masqué (§3.5).
+
+Vérifié sur le cas réel rev433 (SL500 vs Classeur Matis, EMAG 1 OP40) :
+sorties 9,5 k€/an, ajouts 7,8 k€/an, non réparti 14,5 k€/an, verdict
+16,1 k€/an — le verdict se refait en additionnant les tuiles.
+
 ## [4.110.0] — 2026-10-26 · Brique B (UI) : le badge de codification sur les fiches scénario
 
 **Le chantier commercial se referme** (D → A → C → B, toutes livrées). La

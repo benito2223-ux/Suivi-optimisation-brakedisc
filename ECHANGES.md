@@ -807,6 +807,69 @@ que je propose de combler :
 
 Z Code.
 
+### ▸ Tour 94 — 26/10/2026 — **Z Code** (v4.111.0 — le verdict par outil, la demande Hermes/Benjamin du 26/10)
+
+La demande déposée pendant mon Tour 93 (`Hermes Version/
+DEMANDE_VERDICT_PAR_OUTIL_A_ZCODE.md`) est livrée. **La contre-mesure
+structurelle de l'incident T543 D1** : un verdict global qu'on ne peut plus
+refaire en additionnant les tuiles n'existe plus.
+
+- **`appariementOutils(scRef, scCand)`** — par NUMÉRO d'outil puis nom de
+  logement, jamais par position (`flatsSc.indexOf` banni de la tuile ; la
+  porte le surveille). Sans numéro ou en doublon : repli positionnel pour
+  celui-là seul, défaut tracé (« apparié par position » dans le dépliant et
+  la réconciliation).
+- **`verdictParOutil(sc, …)`** — par logement apparié : l'indice Vc·f et le
+  badge « cycle ±X % » (ratio des temps à géométrie égale, jamais des
+  secondes inventées) ; le levier TECHNIQUE au centime avec son libellé
+  métier (charnière/prix/les deux/défavorable) ; le levier PRODUCTIVITÉ
+  seulement si le chrono est complet des deux côtés, groupes simultanés
+  respectés (max, jamais la somme, porté par l'outil le plus long) ;
+  sorties/ajouts chiffrés du seul côté où ils existent ; et la
+  RÉCONCILIATION : tuiles + sorties − ajouts + non réparti = verdict,
+  l'écart résiduel en clair (§3.5).
+- **La fiche** : badges visibles sans déplier (cycle, gain €/an, « ajouté —
+  absent de la référence », « sorti de : … » côté base) ; dégradé rouge→vert
+  sur le gain €/an de l'outil (liseré + fond, continu, 0 = gris neutre,
+  jamais imprimé) ; badge du groupe simultané ; ligne de réconciliation sous
+  la grille ; et la ligne « **dont sorties du scénario** » en rouge dans le
+  verdict — l'incident du 26/10 est désormais impossible à rater.
+
+**Deux recalages de MES tests (le code était juste)** : avec chrono, le
+temps machine de l'outil SORTI (T543 : 120 s) ne peut pas entrer dans un
+levier apparié — la réconciliation le met en clair (+15 000 €/an « non
+réparti ») ; et le groupe simultané ne porte que ses membres APPARIÉS (le
+max côté réf vaut 60 s, pas 120). Un accroc pris par le harnais avant
+livraison : les groupes construits dans `parCle` n'étaient jamais poussés
+dans `outils` (test sur `outils[0]` undefined). Cosmétique vu au navigateur :
+double unité « 3,6 k€ €/an » sur les badges — aligné sur « /an ».
+
+**Vérifié** : `node --check` 5/5 · harnais **642 tests | 0 échec** (+8) +
+porte hors-suite `verdict par outil 4.111` · **contre-regards doubles** :
+casser A (ligne « dont sorties » décâblée) → porte tombée ; casser B
+(appariement positionnel réinjecté) → porte tombée ; restauration vérifiée à
+l'empreinte · **navigateur sur le cas réel rev433** (SL500 vs Classeur
+Matis, EMAG 1 / 356x26 RPI / OP40) : ligne « dont sorties du scénario :
+−9,5 k€/an (T548 · D1, T549 · D1…) », ajouts +7,8 k€/an, réconciliation
+« tuiles +0 € · sorties +9,5 k€ · ajouts −7,8 k€ · non réparti +14,5 k€ =
+verdict +16,1 k€ /an · 1 outil apparié par position · hors temps machine » ;
+**profil embarqué nettoyé** (localStorage.clear + reload, aucune trace
+rev433). Note pour Benjamin : les chiffres du §7 de la demande (+2,4 k€ par
+piste, −9,8 k€ T543 D1) viennent de SES données du jour (postérieures à
+rev433) — la fiche vivante portera ses propres montants, le mécanisme est
+le même. Les renommages de logements (« D1 » → « Piste extérieure »,
+scission « Plaquette »/« D1 ») apparaissent comme paires sortie+ajout qui
+s'annulent dans la réconciliation — c'est le prix de l'appariement par nom,
+la trace est visible plutôt que masquée. **DEV** : 4.111.0 déployée et
+vérifiée curl — empreinte `e0001dd4…` identique au `dist/`, coque 200,
+CHANGELOG 404, rendu vérifié depuis l'URL publique dans un onglet neuf
+(l'ancien onglet de test restait piégé par une entrée de cache SW
+antérieure — purge + onglet neuf : 4.111.0 rendue). **PROD : rien** — 4.97.2.
+
+**Reste au fil** : le contre-regard d'Hermes (rien reçu depuis le Tour 83),
+la phrase prod de Benjamin (4.97.2 → 4.111.0), et une décision ouverte : le
+retrait des 8 polices mortes (Barlow/Public Sans) de `fonts/` et du SW.
+
 ### ▸ Tour 93 — 26/10/2026 — **Z Code** (v4.110.0 — brique B : le badge de codification sur les fiches scénario)
 
 Le chantier commercial validé à trois se referme : **D → A → C → B, tout est
