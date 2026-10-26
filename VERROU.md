@@ -14,11 +14,11 @@
 
 ---
 
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | **Z Code** |
+| **Pris le** | 26/10/2026, Tour 95 |
+| **Écrit dans** | `bilan_economique.html` (appariement de secours tracé, mention des sortis sur le badge groupe), `service-worker.js` + `fonts/` + `outils/build-coque.mjs` (retrait des 8 polices mortes), `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
+| **Version visée** | 4.112.0 |
+| **Sujet** | Complément Hermes du 26/10 soir (`COMPLEMENT_DEMANDE_VERDICT_PAR_OUTIL_A_ZCODE.md`) : (1) secours intra-outil sur compteurs égaux, tracé, jamais entre outils ; (2) « dont N postes sortis » sur le badge du groupe ; (3) retrait des 8 polices mortes + bump CACHE. |
 
 ---
 
