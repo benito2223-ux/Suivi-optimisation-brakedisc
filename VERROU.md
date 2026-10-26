@@ -1,9 +1,8 @@
-| **Auteur** | **Z Code** |
-| **Pris le** | 25/10/2026, Tour 91 |
-| **Écrit dans** | `spk-app.css` / `bilan_economique.html` (filigrane ligne + identité SPK), `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
-| **Version visée** | 4.109.0 |
-| **Sujet** | Retour Benjamin : le filigrane de ligne a disparu avec la coque — à remettre ; couleurs et polices alignées sur le brand guide SPK_CeramTec. |
-
+| **Auteur** | **Hermes** |
+| **Pris le** | 26/10/2026, soir (Benjamin : « vas-y, prends la main et code tout ça ») |
+| **Écrit dans** | `bilan_economique.html`, `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
+| **Version visée** | 4.114.0 (brique A), puis 4.115.0 (brique C) si le tour le permet |
+| **Sujet** | Brique A : le bandeau « Coût pièce complet » dit vrai — lecture série = production du jour, trois phrases séparées, vocabulaire 5 mots, filtre des abandonnés, détail scénarios au clic sur la puce OP. |
 ---
 
 | **Auteur** | **Z Code** |
