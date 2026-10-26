@@ -14,11 +14,11 @@
 
 ---
 
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | **Z Code** |
+| **Pris le** | 26/10/2026, Tour 97 |
+| **Écrit dans** | `bilan_economique.html` (appariement : porteurs de coût seulement + secours par données identiques), `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
+| **Version visée** | 4.113.0 |
+| **Sujet** | Bug vu par Benjamin en prod (EMAG 1 OP40) : les « outils rajoutés » ne correspondent pas au Classeur Matis — les logements sans données (Plaquette/D1/D2 de la migration 4.93) étaient appariés par nom, masquant la VRAIE sortie T543·D1 = 9,8 k€/an (l'incident exact du 26/10). Fix : seuls les porteurs de coût s'apparient ; secours par données identiques dans l'outil ; le déséquilibre réel sort en sortie nommée. |
 
 ---
 
