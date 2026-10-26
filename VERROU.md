@@ -1,8 +1,22 @@
-| **Auteur** | **Hermes** |
-| **Pris le** | 26/10/2026, soir (Benjamin : « vas-y, prends la main et code tout ça ») |
-| **Écrit dans** | `bilan_economique.html`, `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
-| **Version visée** | 4.114.0 (brique A), puis 4.115.0 (brique C) si le tour le permet |
-| **Sujet** | Brique A : le bandeau « Coût pièce complet » dit vrai — lecture série = production du jour, trois phrases séparées, vocabulaire 5 mots, filtre des abandonnés, détail scénarios au clic sur la puce OP. |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+
+✅ **Verrou libéré par Hermes le 26/10/2026, nuit** (brique A 4.114.0, prise de
+main actée par Benjamin). Le bandeau « Coût pièce » lit désormais la production
+du jour (série si existe, sinon ★), trois phrases séparées (aujourd'hui /
+réalisé / reste possible), l'étoile jamais re-basée automatiquement, abandonnés
+filtrés du « meilleur » (bug latent), vocabulaire 5 mots, détail scénarios au
+clic puce OP (panel + délégation). Porte `bandeauCPPGate` + contre-regard
+casse/restaure par Hermes (652/0 avant et après). Piège du tour : label de porte
+avec apostrophes/backslash → h451.js en SyntaxError, réparé en réécrivant le
+libellé sans échappement ; et build coque invoqué par erreur avec python (le
+vrai runner est `node outils/build-coque.mjs`). **DEV vérifiée** : md5
+`adf497c4…` identique octet pour octet, TOOL_VERSION 4.114.0 servi. PROD :
+4.113.0 (déploiement Benjamin du jour), reste à sa discrétion. Écrits :
+`bilan_economique.html`, `build_harness.py`, `CHANGELOG.md`, `VERROU.md`.
 ---
 
 | **Auteur** | **Z Code** |
