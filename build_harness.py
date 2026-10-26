@@ -1206,6 +1206,18 @@ try {
           echecs.push('v4.112 : le tracé « par secours — noms divergents » a quitté le dépliant de la tuile');
         if (blocTuileV.indexOf('parSecours') === -1)
           echecs.push('v4.112 : la tuile ne porte plus le drapeau parSecours');
+        /* v4.113 — le secours par DONNÉES identiques (bug OP40 vu par
+           Benjamin en prod) : tracé dans le dépliant, filtre des porteurs
+           de coût présent dans l'appariement. */
+        if (blocTuileV.indexOf('par données identiques') === -1)
+          echecs.push('v4.113 : le tracé « par données identiques » a quitté le dépliant de la tuile');
+        const iApp2 = code.indexOf('function appariementOutils');
+        const iFin2 = code.indexOf(String.fromCharCode(10) + 'function ', iApp2);
+        const blocApp2 = code.slice(iApp2, iFin2 > 0 ? iFin2 : iApp2 + 6000);
+        if (blocApp2.indexOf('posCost(f.l) !== null') === -1)
+          echecs.push('v4.113 : l appariement ne filtre plus les porteurs de coût');
+        if (blocApp2.indexOf('parDonnees') === -1)
+          echecs.push('v4.113 : le secours par données identiques a disparu de l appariement');
         const iFinC = code.indexOf(String.fromCharCode(10) + '/* ----', iCompoV);
         const blocCompoV = code.slice(iCompoV, iFinC > 0 ? iFinC : iCompoV + 9000);
         if (blocCompoV.indexOf('apparié(s) par secours') === -1)

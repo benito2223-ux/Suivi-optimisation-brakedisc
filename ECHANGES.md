@@ -808,6 +808,52 @@ que je propose de combler :
 
 Z Code.
 
+### ▸ Tour 97 — 26/10/2026, soir — **Z Code** (v4.113.0 — le bug OP40 vu par Benjamin en prod : le verdict par outil parle le vrai langage des fiches)
+
+Benjamin, depuis la prod 4.112.1 : « compare par exemple EMAG 1 OP40 — les
+outils rajoutés ne correspondent pas au scénario de base du classeur MATIS :
+bug en vue ». Reproduction sur rev433, et le diagnostic dépasse le cosmétique :
+
+- **La cause** : la migration 4.93 a restructuré les scénarios récents en
+  **[Plaquette (porteuse de données)] + [D1/D2 (contexte de mesure, sans
+  prix/charnière)]** ; le Classeur Matis garde ses données sur D1/D2
+  directement. L'appariement 4.111/4.112 comparait par NOM des logements
+  **sans données** : paires mortes D2↔D2 et D1↔D1 (vide contre vide), et la
+  porteuse réelle flaggée « ajouté — absent de la référence : 681 €/an ».
+- **Le vrai signal était masqué** : T543·D1 (11,87 € / 6 arêtes / 30) n'a
+  plus AUCUN porteur côté candidat — 0,0659 €/pièce × 148 942 =
+  **9,8 k€/an**, le chiffre EXACT de l'incident fondateur du 26/10, avalé par
+  la paire nom D1↔D1.
+- **Le fix** (la demande §4.4 le disait déjà : « absent OU SANS PRIX/
+  CHARNIÈRE chiffrables ») : seuls les **porteurs de coût** entrent dans
+  l'appariement (ni paire, ni sortie, ni ajout pour les autres — leur tuile
+  dit déjà « Manque : … ») ; nouveau secours **par données identiques**
+  (prix/arêtes/charnière égaux, dans le même outil, tracé « apparié par
+  données » et compté dans la réconciliation) AVANT le secours positionnel ;
+  les porteurs restants sortent nommément.
+- **Résultat sur OP40 réel** (rev433, SL500 vs Classeur Matis) : 4 paires
+  porteuses tracées — T548 [données], T549 [données], T543·D2↔Plaquette
+  [données], T546·D1↔T546 D1·Plaquette [position] — **zéro faux ajout**, et
+  la ligne du verdict affiche enfin ce que la demande attendait :
+  « dont sorties du scénario : **−9,8 k€/an (T543 · D1** — un poste de la
+  référence supprimé, pas une plaquette améliorée) ».
+
+**Note pour le contre-regard** : le secours par données pair aussi T549
+(9,56/8/30 identiques des deux côtés) — c'est la même preuve de données, pas
+un repli positionnel ; les compteurs inégaux restent sans repli positionnel
+(le surplus sort en ajout nommé, test recalé en ce sens). Les trois badges
+« données / secours / position » sont distinguables dans chaque dépliant.
+
+**Vérifié** : `node --check` 5/5 · harnais **652 tests | 0 échec** (+3 : le
+cas OP40 réel en fixture, les sans-données hors univers, la sortie au
+centime) · porte étendue (tracé « par données identiques », filtre des
+porteurs) · **contre-regard** : filtre des porteurs retiré → les tests OP40
+tombent (5 paires, faux ajouts reviennent) → restauration · navigateur sur
+rev433 (profil nettoyé). **DEV** : 4.113.0 déployée et vérifiée curl
+(empreinte `7e0a083f…` == dist). **PROD : rien** — 4.112.1, elle attend la
+phrase de Benjamin (le bug y est visible ; la ligne fautive ne gonfle aucun
+chiffre du classeur, elle fait du bruit sur les badges et tait les 9,8 k€/an).
+
 ### ▸ Tour 96 — 26/10/2026, après-midi — **Z Code** (v4.112.1 — le correctif TDZ trouvé par la répétition générale, puis la PROD)
 
 Benjamin : « on passe en prod, mais comment être sûr que la PWA de Matis se

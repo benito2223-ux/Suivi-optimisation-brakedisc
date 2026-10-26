@@ -5,6 +5,35 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.113.0] — 2026-10-26 · Le verdict par outil parle le vrai langage des fiches (bug OP40)
+
+**Vu par Benjamin en prod sur EMAG 1 / 356x26 RPI / OP40** : les badges
+« ajouté — absent de la référence » nommaient T543·Plaquette et T546 D1·D1 —
+qui ne correspondent pas au Classeur Matis — pendant que la **vraie**
+disparition restait muette. Cause : la migration 4.93 a restructuré les
+scénarios récents en **[Plaquette (porteuse de données)] + [D1/D2 (mesure,
+sans prix/charnière)]**, et l'appariement comparait des logements sans
+données — la paire nom D1↔D1 vide-contre-vide masquait que **T543·D1
+(11,87 € / 6 arêtes / 30 = 9,8 k€/an)** avait perdu tout porteur côté
+candidat : l'incident **exact** du 26/10.
+
+- Seuls les **porteurs de coût** (prix × arêtes × charnière exploitables)
+  entrent dans l'appariement — un logement sans données n'est ni paire, ni
+  sortie, ni ajout (sa tuile dit déjà « Manque : … »). La demande §4.4 le
+  disait déjà : « absent **ou sans prix/charnière chiffrables** ».
+- Nouveau secours, avant le positionnel : à l'intérieur d'un outil apparié
+  par numéro, un logement relogé **à l'identique** (prix, arêtes, charnière)
+  se paire **par données identiques** — tracé (« apparié par données »,
+  compté dans la réconciliation).
+- Les porteurs restants sortent **nommément** : sur OP40, la ligne du
+  verdict affiche désormais « dont sorties du scénario : **−9,8 k€/an
+  (T543 · D1)** » — le chiffre exact de la demande.
+
+Vérifié sur le cas réel rev433 (SL500 vs Classeur Matis) : 4 paires porteuses
+(données/secours/position tracées), zéro faux ajout, la sortie 9 822 €/an
+nommée. 652 tests | 0 échec (+3), contre-regard (filtre retiré → tests
+tombés).
+
 ## [4.112.1] — 2026-10-26 · Correctif critique : les données réelles retombaient sur l'exemple au chargement
 
 **Trouvé par la répétition générale pré-prod** (la question de Benjamin :
