@@ -5,6 +5,26 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.118.0] — 2026-10-26, nuit · Retours de terrain sur la fiche outil · Benjamin → Hermes
+
+Quatre retours de Benjamin, quatre réponses :
+1. **Le vocabulaire du logement.** Les mentions D1/D2 dans le champ
+   « Logement » sont en réalité le N° de correcteur — celui que remplissent
+   les excels de Matis (suivi des consommations). Le champ s'appelle
+   désormais **« Correcteur (D1, D2…) »**, avec le titre explicite. Le
+   modèle ne bouge pas (le champ `nom` du logement), seul le libellé dit
+   enfin la réalité de l'atelier.
+2. **La croix de suppression était peu visible** — 26 px, bordée, rouge au
+   survol.
+3. **La confirmation nomme ce qu'on supprime** : « Supprimer le logement
+   « D1 » de l'outil T546 ? » — plus jamais un « Supprimer ce logement ? »
+   anonyme.
+4. **🗑 Supprimer l'outil** dans le bandeau de chaque outil : confirmation
+   nominative avec nombre de logements et prélèvements ancrés comptés,
+   instantané pris pour le filet des 30 jours avant mutation.
+
+662/0 ×2, syntaxe 5/5, déploiement dev vérifié.
+
 ## [4.117.0] — 2026-10-26, nuit · Le dernier lot avant prod · Hermes
 
 **La demande.** Benjamin : « envoi toute la fin — navigation Première Lecture

@@ -4,6 +4,17 @@
 | **Version visée** | — |
 | **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
 
+✅ **Verrou libéré par Hermes le 26/10/2026, nuit (6)** — retours de terrain
+4.118.0 (Benjamin) : champ « Logement » renommé **« Correcteur (D1, D2…) »**
+(c'est le N° de correcteur que remplissent les excels Matis — libellé seul,
+modèle intact), croix de suppression visible (26 px, bordée, rouge survol),
+confirmation de suppression nominative (« logement « D1 » de l'outil T546 ? »),
+**🗑 Supprimer l'outil** dans le bandeau de chaque outil (confirmation
+nominative, prélèvements ancrés comptés, instantané filet 30 j avant
+mutation). 662/0 ×2, syntaxe 5/5. **DEV** md5 `186f6743…`, TOOL_VERSION
+4.118.0 servi. PROD : 4.117.0 — le push attend le mot de Benjamin.
+Écrits : `bilan_economique.html`, `CHANGELOG.md`, `VERROU.md`.
+
 ✅ **Verrou libéré par Hermes le 26/10/2026, nuit (5)** — lot 4.117.0 livré et
 **PROD déployée à la demande explicite de Benjamin** (« passe en prod »).
 Livré : boussole « Première Lecture » en tête d'accueil (les cinq questions,
