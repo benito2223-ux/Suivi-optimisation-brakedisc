@@ -1388,7 +1388,11 @@ try {
        ['id="undoPanel"', 'le panneau du filet absent du DOM'],
        ['id="declinerPanel"', 'le panneau de déclinaison absent du DOM'],
        ['id="undoMenuBtn"', 'le bouton de menu du filet absent'],
-       ['.decliner-btn', 'le bouton décliner absent de la fiche']]
+       ['.decliner-btn', 'le bouton décliner absent de la fiche'],
+      ['const BASE_MATIS', 'la base Matis embarquée absente'],
+      ['BASE_MATIS.consoArticle', 'les consommations réelles Matis absentes'],
+      ['totalPareto: 1004671', 'le total Pareto absent'],
+      ['Réel Matis</th>', 'la colonne Réel Matis absente du simulateur']]
       .forEach(function(m){ if (html.indexOf(m[0]) === -1) echecs.push(m[1]); });
       if (html.indexOf('toLowerCase() === "k"') === -1) echecs.push('le raccourci Ctrl+K absent');
     }

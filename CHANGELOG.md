@@ -5,6 +5,29 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.119.0] — 2026-10-26, nuit · La Base Matis embarquée · Hermes
+
+**La demande.** Benjamin : « nous avons toutes les données dans les fichiers de
+Matis, volumes, prix, conso nominales — ces données doivent être dans l'outil
+par défaut avec une option pour uploader des données à jour ».
+
+**Le diagnostic qui l'a précédé.** L'écart simulateur/réel sur Z000 546 265
+(15,8 k€ vs 159 k€) se décompose en trois causes : WEISSER 1-4 hors périmètre
+(87 920 €, 55 %), volumes réels supérieurs aux volumes saisis (356x26 RPI :
+6 781/sem suivis vs 2 864/sem implicites), DDV non tenue (suivis Matis :
++63 % EMAG, ×4,6 HESSAPP). Le total empilé du Pareto MAJ retombe exactement
+sur 1 004 671 € — la base actée en octobre.
+
+**Livré.** `const BASE_MATIS` embarquée (16 articles vérifiés au total €/an,
+dont les décomptes par ligne de Z000 546 265, 513 527, 544 318…) + colonne
+**Réel Matis** dans le tableau du simulateur (avec détail au survol) + note
+explicative (théorique = périmètre modélisé ; réel = le site entier ;
+l'écart est l'argument). Le re-upload d'un Pareto plus récent reste dans le
+Plan et prend la main pour la lecture annuelle.
+
+**Porte.** dernierLotGate étendu : BASE_MATIS, consoArticle, total Pareto,
+colonne Réel Matis. 662/0 ×2, syntaxe 5/5.
+
 ## [4.118.0] — 2026-10-26, nuit · Retours de terrain sur la fiche outil · Benjamin → Hermes
 
 Quatre retours de Benjamin, quatre réponses :

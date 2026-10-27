@@ -4,6 +4,20 @@
 | **Version visée** | — |
 | **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
 
+✅ **Verrou libéré par Hermes le 26/10/2026, nuit (7)** — Base Matis embarquée
+4.119.0 (« go » de Benjamin). `const BASE_MATIS` : 16 articles du Pareto MAJ
+vérifiés (total empilé = 1 004 671 €, la base actée), décomptes par ligne des
+gros posts (Z000 546 265 = 159 040 €/an toutes lignes), volumes des suivis,
+réel-vs-théorique. Colonne **Réel Matis** dans le tableau du simulateur avec
+détail au survol + note « l'écart est l'argument ». Porte dernierLotGate
+étendue (4 checks). 662/0 ×2, syntaxe 5/5. **DEV** md5 `fbf78838…` servi,
+TOOL_VERSION 4.119.0. PROD : 4.118.0 — le push attend le mot de Benjamin.
+Diagnostic acté (ne pas perdre) : écart Z000 546 265 = WEISSER hors périmètre
+87 920 € (55 %) + volumes réels > saisis (356x26 : 6 781/sem vs 2 864/sem
+implicites) + DDV non tenue (suivis Matis : +63 % EMAG, ×4,6 HESSAPP).
+Écrits : `bilan_economique.html`, `build_harness.py`, `CHANGELOG.md`,
+`VERROU.md`.
+
 ✅ **Verrou libéré par Hermes le 26/10/2026, nuit (6)** — retours de terrain
 4.118.0 (Benjamin) : champ « Logement » renommé **« Correcteur (D1, D2…) »**
 (c'est le N° de correcteur que remplissent les excels Matis — libellé seul,
