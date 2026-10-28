@@ -1,8 +1,8 @@
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | **Z Code** |
+| **Pris le** | 28/10/2026, Tour 100 |
+| **Écrit dans** | `bilan_economique.html` (réparation CSS de Benjamin adoptée : `.reprise-bandeau` retrouve ses déclarations), `build_harness.py` (porte « équilibre CSS » + contrôles de rendu), `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
+| **Version visée** | 4.124.1 |
+| **Sujet** | La 4.124.0 était CASSÉE : mon patch P0-2 a laissé `.reprise-bandeau{` ouvert sans déclarations — la moitié de la mise en forme mourait sans AUCUNE erreur console. Réparation de Benjamin (`bilan_economique_v4.124_css-repare.html`) adoptée ; garde-fou structurel (équilibre des accolades par bloc style) + contrôles de rendu consignés au protocole. |
 
 ---
 
