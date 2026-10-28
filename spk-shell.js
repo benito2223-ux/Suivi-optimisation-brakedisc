@@ -114,8 +114,8 @@
 
   const panelToButton = {
     accueilPanel: "accueilBtn",
-    dashboardPanel: "dashboardBtn",
-    cartePanel: "carteBtn",
+    dashboardPanel: "accueilBtn",
+    cartePanel: "accueilBtn",
     matisPanel: "matisBtn",
     matisDetailPanel: "matisBtn",
     /* v4.100.4 — la Synthèse est un écran du rail à part entière (elle
@@ -142,10 +142,9 @@
      la surface cliquée — en phase de capture, pour ne pas réécrire la
      logique de l'application. */
   const SURFACES_DU_BOUTON = {
-    accueilBtn: ["accueilPanel"],
-    dashboardBtn: ["dashboardPanel"],
+    /* v4.122 acte II : fusion — le bouton unique possede les trois surfaces */
+    accueilBtn: ["accueilPanel", "cartePanel", "dashboardPanel"],
     syntheseBtn: ["syntheseWrap"],
-    carteBtn: ["cartePanel"],
     matisBtn: ["matisPanel", "matisDetailPanel"]
   };
   /* v4.104 — les panneaux DÉRIVÉS de l'Accueil (Plan, Simulateur, Catalogue,

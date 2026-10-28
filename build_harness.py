@@ -980,10 +980,18 @@ try {
     const shell = (function(){ try { return fs.readFileSync(path.join(REPO, 'spk-shell.js'), 'utf8'); } catch (e) { return ''; } })();
     if (!shell) { echecs.push('spk-shell.js introuvable'); }
     else {
-      /* (1) la table d'exclusivité couvre les cinq boutons du rail */
-      ['accueilBtn: ["accueilPanel"', 'dashboardBtn: ["dashboardPanel"', 'syntheseBtn: ["syntheseWrap"', 'carteBtn: ["cartePanel"', 'matisBtn: ["matisPanel"'].forEach(function(morceau){
+      /* (1) la table d'exclusivité couvre les entrées du rail — v4.122 acte II :
+         Accueil/Atelier/Tableau ont fusionné en UNE entrée qui possède les trois
+         surfaces ; Synthèse et Matis restent un bouton = une surface. La porte
+         verrouille la NOUVELLE architecture (une régression qui rendrait
+         cartePanel ou dashboardPanel orphelins, ou reverrouillerait la fusion,
+         doit tomber). */
+      ['accueilBtn: ["accueilPanel", "cartePanel", "dashboardPanel"', 'syntheseBtn: ["syntheseWrap"', 'matisBtn: ["matisPanel"'].forEach(function(morceau){
         if (shell.indexOf(morceau) === -1) echecs.push('SURFACES_DU_BOUTON ne couvre pas ' + morceau.split(':')[0]);
       });
+      if (shell.indexOf('dashboardBtn: ["dashboardPanel"') !== -1) echecs.push('la fusion Vue d ensemble est reverrouillee (dashboardBtn reapparaît dans SURFACES_DU_BOUTON)');
+      if (shell.indexOf('cartePanel: "carteBtn"') !== -1) echecs.push('cartePanel n est plus eclaire par le bouton Vue d ensemble');
+      if (shell.indexOf('dashboardPanel: "dashboardBtn"') !== -1) echecs.push('dashboardPanel n est plus eclaire par le bouton Vue d ensemble');
 
       /* (2) le refermement se fait en PHASE DE CAPTURE (avant l'app) */
       if (shell.indexOf('}, true); /* capture') === -1) echecs.push('le refermement des surfaces n est pas en phase de capture');

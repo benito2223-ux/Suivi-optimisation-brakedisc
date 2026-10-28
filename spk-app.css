@@ -3606,3 +3606,12 @@ html.spk-boot .wrap {
     margin-right: 0;
   }
 }
+
+/* v4.122 — acte II : fusion Accueil/Atelier/Tableau en une « Vue d'ensemble ».
+   Les trois ecrans existent toujours ; le rail n'expose qu'une entree, la
+   bascule vit dans l'ecran (onglets internes + portes de retour). */
+#carteBtn, #dashboardBtn{ display:none !important; }
+.ve-onglets{ display:flex; align-items:center; gap:8px; margin:0 0 14px; }
+.ve-onglets .ve-lab{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint); }
+.ve-onglets button:disabled{ opacity:.55; cursor:default; }
+.ve-retour{ margin-left:10px; vertical-align:middle; }

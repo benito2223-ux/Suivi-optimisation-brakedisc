@@ -5,6 +5,16 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.122.0] — 2026-10-28 · Acte II lot 2 : Accueil, Atelier et Tableau fusionnent en une « Vue d'ensemble » · Hermes
+
+Le rail passe de trois entrées concurrentes à une seule : **Vue d'ensemble**.
+Les trois écrans existent toujours (lignes, postes, tableau détaillé) ; la
+bascule vit dans l'écran — une barre « Trois vues » sous l'en-tête de
+l'accueil, et une porte « ◻ Vue d'ensemble » dans la carte atelier comme dans
+le tableau. La coque suit : les trois surfaces appartiennent au même bouton
+(`SURFACES_DU_BOUTON`), l'écran actif l'éclaire quel que soit l'onglet.
+Raccourcis et liens profonds (tuile → carte, boussole) inchangés.
+
 ## [4.121.0] — 2026-10-28 · Acte II lot 1 : la fiche scénario en niveaux, une info un endroit · Hermes
 
 Débroussaillage acte II (revue Claude validée par Benjamin). La fiche scénario
