@@ -108,6 +108,13 @@ self.addEventListener("fetch", (e) => {
      d'abord aussi, sinon le cache cacherait l'arrivée d'une nouvelle
      version et la détection ne verrait jamais rien. */
   const estVersion = url.pathname.endsWith("version.json");
+  /* v4.127.1 (étape 0.5) : version.json en NETWORK-ONLY — le signal de mise à
+     jour ne doit jamais venir du cache (même pas en repli hors ligne : hors
+     ligne, il n'y a rien de nouveau à détecter). */
+  if (estVersion) {
+    e.respondWith(fetch(req, { cache: "no-cache" }));
+    return;
+  }
   if (estHtml || estCss || estJs || estVersion) {
     // réseau d'abord : mise à jour automatique à chaque ouverture en ligne ;
     // hors ligne, on sert la dernière version connue. cache:"no-cache" garantit que

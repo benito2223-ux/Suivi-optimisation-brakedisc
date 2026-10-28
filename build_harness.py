@@ -1440,6 +1440,37 @@ try {
          et le filet à 5 s (si le rendu meurt, la page doit se montrer quand même) */
       const nbPret = html.split('data-pret').length - 1;
       if (nbPret < 3) echecs.push('l anti-flash est incomplet (cache + révélation + filet attendus, ' + nbPret + ' occurrence(s) de data-pret)');
+      /* v4.127.1 (étape 0.6) — LA CAUSE RÉELLE du rejet silencieux de la
+         4.127.0, nommée : le bloc atelier avait été inséré DANS le
+         `@media print` non fermé qui termine le dernier bloc style du head
+         — les règles n'existaient qu'à l'impression. Le lint structurel
+         vérifie qu'aucune règle data-mode ne vit dans un @media (analyse
+         d'accolades à pile — un vrai parseur CSS sans dépendance npm). */
+      (function lintMediaAtelier(src){
+        /* l'échappement Python→JS a déjà tué deux portes (tours 82/104) :
+           quote et backslash passent par String.fromCharCode, jamais en
+           littéral. */
+        const QUOTE = String.fromCharCode(39);
+        const BS = String.fromCharCode(92);
+        const pile = [];
+        let i = 0;
+        const N = src.length;
+        while (i < N) {
+          const c = src[i];
+          if (c === QUOTE || c === '"') { const q = c; i++; while (i < N) { if (src[i] === BS) { i += 2; continue; } if (src[i] === q) break; i++; } i++; continue; }
+          if (c === '@' && src.slice(i, i + 6) === '@media') {
+            const o = src.indexOf('{', i);
+            if (o > -1) { pile.push({ t: 'media', txt: src.slice(i, i + 40) }); i = o + 1; continue; }
+          }
+          if (c === '{') { pile.push({ t: 'bloc' }); i++; continue; }
+          if (c === '}') { pile.pop(); i++; continue; }
+          if (c === '/' && src[i+1] === '*') { const f = src.indexOf('*/', i + 2); i = f > 0 ? f + 2 : N; continue; }
+          const dansMedia = pile.some(function(p){ return p.t === 'media'; });
+          if (dansMedia && src.slice(i, i + 22) === 'html[data-mode="atelier')
+            echecs.push('une règle du mode atelier vit dans un @media (inerte à l écran) : ' + src.slice(i, i + 60));
+          i++;
+        }
+      })(html);
       /* v4.127 : le masquage visibility:hidden est remplacé par l'écran de
          boot (même but : pas de page à moitié peinte — une page de chargement).
          La porte suit le mécanisme. */

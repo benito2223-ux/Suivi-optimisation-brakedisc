@@ -1,9 +1,38 @@
-| **Auteur** | **Z Code** |
-| **Pris le** | 28/10/2026, Tour 105 |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
 | **Écrit dans** | `bilan_economique.html` + `spk-app.css` (étape 0 : plancher atelier complet, disques supprimés, filigrane masqué, SPK_MAJ gardé), `service-worker.js` (version.json network-only), `outils/build-coque.mjs` (A4 pile mono), `build_harness.py` (mesure atelier + lint structurel), `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
 | **Version visée** | 4.127.1 |
 | **Sujet** | Étape 0 de la feuille de route (avant promotion du 4.127.0) : empreinte nommée (algorithme + périmètre), plancher police atelier à 0 élément < 12 px (141 visés), disques/filigrane/chevauchement atelier, gardes SPK_MAJ, version.json network-only, cause réelle du rejet CSS nommée + lint structurel. |
 
+---
+
+✅ **Verrou libéré par Z Code le 28/10/2026** (Tour 105, v4.127.1 — l'étape 0
+de la feuille de route). **Empreinte** : SHA-256 nommé, périmètre = dist +
+fichier servi, recalculés identiques (`4a1d3bc919e775b20e5124bef2709aaadc16cfbf2b66d01babaa997fe6cf16f9`)
+— le protocole nomme désormais algorithme et périmètre. **Plancher 12 px** :
+MutationObserver throttlé (200 ms) + restauration en sortie de mode — mesure :
+417 éléments de texte, **1 résidu = le 🔒 à 0 px masqué volontairement** (le
+critère honnête : « aucun texte visible ») ; le script annexe livré
+(`outils/mesure_atelier.py`). **Atelier** : disques ::before supprimés,
+filigrane masqué, boutons icône étiquetés (data-etiquette + ::after), aide
+projet sans chevauchement. **SPK_MAJ** : les mêmes gardes (saisie, flush,
+anti-boucle par CACHE). **version.json network-only** dans le SW. **Cause
+réelle du rejet CSS nommée** : le bloc atelier était DANS le @media print non
+fermé qui termine le dernier bloc style du head ; **lint structurel** posé
+(analyse d'accolades à pile, quote/backslash par String.fromCharCode — écart
+assumé : pas de tinycss2, zéro SDK). **A4** : pile mono complète.
+**Accroc attrapé par version.json** : le bump de version oublié du patch
+(build générait 4.127.0 pour un code modifié) — la cohérence
+version.json/TOOL_VERSION est un test de livraison de fait. **Vérifié** :
+662 tests | 0 échec, syntaxe 0 erreur, audit navigateur (417 éléments,
+cibles 56 px, profil nettoyé). **DEV** : 4.127.1 servie, SHA-256
+`a3b7ed50c4146e8a…` == dist, version.json cohérent. **PROD** : 4.126.0 —
+elle attend ta phrase (4.123.0 → 4.127.1 d'un coup). Écrits :
+`bilan_economique.html`, `service-worker.js`, `outils/build-coque.mjs`,
+`outils/patch_41271_a.py`, `outils/mesure_atelier.py`, `build_harness.py`,
+`CHANGELOG.md`, `ECHANGES.md`, `VERROU.md`.
+
+---
 ---
 
 ✅ **Verrou libéré par Z Code le 28/10/2026** (Tour 104, v4.127.0 — LOT 2 :

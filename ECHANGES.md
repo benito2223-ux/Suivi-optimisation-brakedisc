@@ -821,6 +821,54 @@ encore possible — et un détail scénarios lisible par OP) déposés dans
 `Hermes Version/NOTE_ERGONOMIE_BANDEAU_A_HERMES.md` pour son contre-analyse.
 Décision à Benjamin après avis d'Hermes ; rien n'est écrit dans l'outil.
 
+### ▸ Tour 105 — 28/10/2026 — **Z Code** (v4.127.1 — l'étape 0 de la feuille de route, avant promotion du 4.127.0)
+
+L'étape 0 de ta feuille de route, point par point :
+
+1. **L'empreinte** : recalcule — **algorithme SHA-256, périmètre = le fichier
+   `bilan_economique.html` livré (dist) ET le fichier servi (curl), intégraux**.
+   Résultat : `4a1d3bc919e775b20e5124bef2709aaadc16cfbf2b66d01babaa997fe6cf16f9`
+   identique sur les deux. Mon journal tronquait à 16 hex sans nommer
+   l'algorithme — le protocole est corrigé : **algorithme + périmètre nommés**.
+   Si ta mesure diffère, le fichier haché n'était pas celui-là (copie locale
+   modifiée ?) — dis-moi laquelle.
+2. **Le plancher 12 px** : les 276 sélecteurs < 12 px des CSS rendaient la
+   couverture CSS irréaliste — j'ai pris ta méthode : **un MutationObserver
+   throttlé (200 ms)** qui remonte à 12 px tout texte visible rendu plus
+   petit, restauration en sortie de mode, exclusion des éléments à
+   font-size 0 (masqués volontairement). **Mesure (le script annexe, joué
+   au navigateur)** : 417 éléments de texte, **1 résidu = le 🔒 du bandeau
+   verrouillé à 0 px** (masqué volontairement — son visuel vit dans son
+   ::after ; le critère honnête est « aucun texte visible < 12 px »). Ton
+   script Python annexe est livré dans `outils/mesure_atelier.py`.
+3. **Atelier** : les **disques ::before supprimés** (le cadre plein suffit),
+   le **filigrane de ligne masqué**, les boutons icône seule **étiquetés**
+   (`data-etiquette` + `::after`), et l'aide « + Créer un projet » ne
+   chevauche plus.
+4. **SPK_MAJ** : les **mêmes gardes** que la détection périodique (saisie au
+   focus, saveData flushé, anti-boucle par CACHE du SW — le SW envoie son
+   cache dans le message : c'est l'identité de la version cible).
+5. **version.json en network-only** dans le SW (même pas en repli hors
+   ligne : hors ligne il n'y a rien de nouveau à détecter).
+6. **La cause réelle du rejet CSS, nommée** : le bloc atelier avait été
+   inséré **dans le `@media print` non fermé qui termine le dernier bloc
+   style du head** — les règles n'existaient qu'à l'impression. Le lint
+   structurel est posé : un analyseur d'accolades à pile (quote/backslash
+   par String.fromCharCode — l'échappement Python→JS a déjà tué deux portes)
+   vérifie qu'**aucune règle data-mode ne vit dans un @media**. Écart assumé
+   au brief : pas de tinycss2/postcss — le repo est zéro SDK, le lint
+   structurel est sans dépendance et a prouvé son travail.
+7. **A4** : pile mono complète `ui-monospace, Menlo, Consolas, monospace`.
+
+**Accroc de fin de tour, attrapé par version.json lui-même** : le bump de
+version était oublié du patch (le build générait `{"v":"4.127.0"}` pour un
+code modifié) — la cohérence version.json/TOOL_VERSION est devenue un test
+de livraison de fait. **Vérifié** : 662 tests | 0 échec, syntaxe 0 erreur,
+audit navigateur (417 éléments texte, cibles 56 px, le plancher posé),
+profil nettoyé. **DEV** : 4.127.1 servie (SHA-256 `a3b7ed50c4146e8a…` ==
+dist, version.json cohérent). **PROD** : 4.126.0 — **elle attend ta phrase**
+(4.123.0 → 4.127.1 d'un coup : les correctifs de la revue + les deux lots).
+
 ### ▸ Tour 104 — 28/10/2026 — **Z Code** (v4.127.0 — LOT 2 du brief complémentaire : le mode atelier ; PROD 4.126.0)
 
 Ton « je valide tout et la prod » : **la prod est passée à 4.126.0** (le LOT
