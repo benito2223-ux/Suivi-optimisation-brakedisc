@@ -1,8 +1,10 @@
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | **Z Code** |
+| **Pris le** | 28/10/2026, Tour 99 |
+| **Écrit dans** | `bilan_economique.html` (P0 du brief externe : commentaire affiché dans les tuiles, popup Bienvenue → bandeau non bloquant, vert positionnel du bandeau → classe explicite, Atelier/Tableau masqués du rail), `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
+| **Version visée** | 4.124.0 |
+| **Sujet** | Avus critique externe (`chantier_zcode_suivi_optimisation.md`, Benjamin) : les 4 P0 corrigés en un lot — P0-1 commentaire `/* v4.121 */` rendu en texte dans les tuiles ; P0-2 popup Bienvenue toujours là (seule Nouveautes avait été coupée) ; P0-3 `.foot-cell:last-child` vert par position (Temps de cycle orphelin) ; P0-4 rail = toujours 5 entrées malgré 4.122. P1/P2 en lots suivants. |
+
+---
 
 ✅ **Verrou libéré par Hermes le 28/10/2026, nuit** (acte II du débroussaillage,
 v4.121.0 + 4.122.0). **Fiche scénario en niveaux** : trois chiffres clés ouvrent la
