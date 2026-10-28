@@ -1,8 +1,8 @@
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | **Z Code** |
+| **Pris le** | 28/10/2026, Tour 101 |
+| **Écrit dans** | `bilan_economique.html` (lot 4.125 du brief : ouverture sur l'écran de travail (Q11 tranché), anneau de focus sur l'onglet actif, boussole retirée, Transmettre en fin de rail + Importer dedans, tuile ouverte réduite, doublons nom/statut supprimés, états vides en ligne grise), `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
+| **Version visée** | 4.125.0 |
+| **Sujet** | Lot 4.125 du brief externe (navigation et doublons), feu vert de Benjamin avec demande de captures avant/après. Mobile (457 px) reste au lot 4.127. |
 
 ---
 
