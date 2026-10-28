@@ -5,6 +5,34 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.127.0] — 2026-10-28 · Le mode atelier · Z Code
+
+Le LOT 2 du brief complémentaire : un bouton **⚒ Atelier** de la barre
+bascule l'outil en mode machine — et le mode bureau garde la charte
+CeramTec inchangée.
+
+- **Tokens de lecture** dans `:root` (bureau = valeurs actuelles) et
+  surcharge `html[data-mode="atelier"]` : texte ≥ 16 px, libellés ≥ 14 px,
+  valeurs ≥ 20 px, **cibles tactiles ≥ 56 px** (boutons, champs, lignes),
+  boutons **pleins et bordés** (plus de ton sur ton), états en **pastilles
+  remplies**, bordures d'UI ≥ 3:1 (#8a9099), **plus de verre** sur la barre.
+- **Bascule mémorisée** (localStorage), défaut **automatique sur écran
+  tactile** (`pointer:coarse`), bureau sinon.
+- **IBM Plex Mono retiré** (3 @font-face, ~45 Ko) : Open Sans porte aussi
+  les chiffres avec `font-variant-numeric: tabular-nums` ; les gabarits A4
+  passent à Consolas (le repli prévu).
+- **Écran de chargement** (div statique retiré au premier rendu) à la place
+  du masquage du body, et le commentaire d'en-tête des polices corrigé.
+
+**Découvert au tour** : le parseage des 30 blocs de style empilés du head a
+**rejeté silencieusement** le bloc du mode atelier posé dedans (les règles
+n'apparaissaient dans aucune feuille chargée) — le CSS du mode est donc
+**injecté par JavaScript** (`poserCSS`, une feuille dédiée posée/vidée à
+chaque bascule), indépendant du parseage. Critère du brief testé au rendu :
+cibles ≥ 56 px et boutons pleins vérifiés en mode atelier ; résidu assumé :
+quelques libellés restent entre 9 et 10 px hors des familles couvertes
+(à compléter dans une itération).
+
 ## [4.126.0] — 2026-10-28 · La mise à jour ne pèse plus rien et ne coupe plus la saisie · Z Code
 
 Le LOT 1 du brief complémentaire (priorité 1, risque prod). La vérification

@@ -1440,8 +1440,13 @@ try {
          et le filet à 5 s (si le rendu meurt, la page doit se montrer quand même) */
       const nbPret = html.split('data-pret').length - 1;
       if (nbPret < 3) echecs.push('l anti-flash est incomplet (cache + révélation + filet attendus, ' + nbPret + ' occurrence(s) de data-pret)');
-      if (html.indexOf('html:not([data-pret]) body{visibility:hidden') === -1)
-        echecs.push('le body n est plus caché pendant le chargement');
+      /* v4.127 : le masquage visibility:hidden est remplacé par l'écran de
+         boot (même but : pas de page à moitié peinte — une page de chargement).
+         La porte suit le mécanisme. */
+      if (html.indexOf('html:not([data-pret]) body') !== -1)
+        echecs.push('l ancien masquage visibility:hidden traîne (remplacé par le boot)');
+      if (html.indexOf('id="spkBoot"') === -1)
+        echecs.push('l écran de boot a disparu');
       if (html.indexOf(',5000)') === -1)
         echecs.push('le filet de révélation à 5 s a disparu');
       const iRend = html.indexOf(NL79() + 'render();');
@@ -1462,6 +1467,48 @@ try {
     function NL79(){ return String.fromCharCode(10); }
     if (echecs.length) r.echecs += echecs.length;
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot UX 4.120 : printGo vit (logo A4), anti-flash posé, import au rail' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
+  /* ── v4.127 — LOT 2 : LE MODE ATELIER ──────────────────────────────────
+     Le socle : tokens de lecture dans :root, html[data-mode=atelier] qui
+     surcharge, Plex retiré (mono retargeté Open Sans), écran de boot, bascule
+     mémorisée avec défaut tactile. */
+  (function lot2Atelier4127(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const html = (function(){ try { return fs.readFileSync(path.join(REPO, 'bilan_economique.html'), 'utf8'); } catch (e) { return ''; } })();
+    if (!html) echecs.push('bilan_economique.html introuvable');
+    else {
+      for (const m of ['--fs-label', '--fs-base', '--fs-val', '--fs-hero', '--hit', '--bord-atelier'])
+        if (html.indexOf(m + ':') === -1) echecs.push('token absent : ' + m);
+      /* v4.125.1 → 4.127 : le CSS du mode est INJECTÉ PAR JS (spkAtelierCSS) —
+         le parseage des blocs <style> du head rejetait le bloc en silence. */
+      if (html.indexOf('spkAtelierCSS') === -1 || html.indexOf('function poserCSS') === -1)
+        echecs.push('l injection JS du CSS atelier a disparu');
+      if (html.indexOf('matchMedia("(pointer:coarse)")') === -1)
+        echecs.push('le défaut tactile (pointer:coarse) a disparu');
+      if (html.indexOf('id="modeBtn"') === -1 || html.indexOf('_spkSetMode') === -1)
+        echecs.push('la bascule du mode a disparu');
+      if (html.indexOf("'IBM Plex Mono'") !== -1)
+        echecs.push('IBM Plex Mono est de retour (police ou token)');
+      if (html.indexOf('id="spkBoot"') === -1 || html.indexOf('html[data-pret] #spkBoot') === -1)
+        echecs.push('l écran de boot a disparu');
+      if (html.indexOf('html:not([data-pret]) body') !== -1)
+        echecs.push('l ancien masquage visibility:hidden traîne encore');
+      /* les cibles tactiles et les tailles minimales sont dans la surcharge */
+      const iAt = html.indexOf('html[data-mode="atelier"]');
+      if (iAt >= 0) {
+        const iFin = html.indexOf('</style>', iAt);
+        const bloc = html.slice(iAt, iFin > 0 ? iFin : iAt + 5000);
+        if (bloc.indexOf('min-height:56px') === -1) echecs.push('les cibles tactiles 56px ont disparu');
+        if (bloc.indexOf('font-size:14px !important') === -1) echecs.push('le plancher libellés 14px a disparu');
+        if (bloc.indexOf('font-size:16px !important') === -1) echecs.push('le plancher texte 16px a disparu');
+      }
+    }
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 2 4.127 : tokens, surcharge atelier (14/16px, 56px, pastilles), Plex retiré, boot, bascule tactile' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
   /* ── v4.126 — LOT 1 : LA MISE À JOUR ÉCONOME ET GARDÉE ────────────────
@@ -1499,6 +1546,16 @@ try {
       if (build.indexOf('version.json') === -1) echecs.push('le build ne publie pas version.json');
       if (build.indexOf('TOOL_VERSION') === -1 && build.indexOf('mVersion') === -1)
         echecs.push('version.json n est pas lu depuis TOOL_VERSION');
+    }
+    /* le SW sert version.json en RÉSEAU D'ABORD — vu au test réel : le
+       cache-first du « reste » cacherait l'arrivée d'une nouvelle version. */
+    const sw = lire('service-worker.js');
+    if (!sw) echecs.push('service-worker.js introuvable');
+    else {
+      const mCond = sw.match(/if \(estHtml \|\| estCss \|\| estJs[^)]*\) \{/);
+      if (!mCond) echecs.push('la condition réseau-d abord du SW est introuvable');
+      else if (mCond[0].indexOf('estVersion') === -1)
+        echecs.push('version.json n est plus en réseau d abord dans le SW (le cache cacherait la mise à jour)');
     }
     if (echecs.length) r.echecs += echecs.length;
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 1 4.126 : maj via version.json (10 min + onglet), reload gardé (saisie, flush, anti-boucle)' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));

@@ -1,9 +1,31 @@
-| **Auteur** | **Z Code** |
-| **Pris le** | 28/10/2026, Tour 104 |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
 | **Écrit dans** | `service-worker.js` + `dist` (PROD 4.126.0 : le LOT 1 validé), puis LOT 2 du brief complémentaire (mode atelier) |
 | **Version visée** | 4.127.0 |
 | **Sujet** | Prod 4.126.0 validée par Benjamin (« je valide tout et la prod ») ; puis LOT 2 du brief complémentaire : le mode atelier — tokens de taille/contraste, `html[data-mode=atelier]` (texte ≥ 16 px, cibles ≥ 56 px, boutons pleins, pastilles remplies), bascule mémorisée, défaut tactile. |
 
+---
+
+✅ **Verrou libéré par Z Code le 28/10/2026** (Tour 104, v4.127.0 — LOT 2 :
+le mode atelier ; **PROD 4.126.0** passée sur ta phrase). **Accroc** :
+version.json en 404 sur la prod (liste blanche du dist sans le fichier) —
+corrigé dans le build, redéployé, servi sur les deux domaines. **Le mode
+atelier** : tokens de lecture + surcharge data-mode (14/16/20/24 px, cibles
+56 px, boutons pleins, pastilles remplies, bordures 3:1, plus de verre),
+bascule ⚒ mémorisée (défaut pointer:coarse), **Plex retiré** (A4 à
+Consolas), écran de boot. **Découvert** : le parseage des 30 blocs de style
+a rejeté le bloc atelier silencieusement — le CSS du mode est **injecté par
+JS** (feuille dédiée posée/vidée à chaque bascule). **Vérifié** : 662 tests
+| 0 échec + portes LOT 1/2 étendues, contre-regards (boot, SW, masquage),
+navigateur (cibles 56 px mesurées, capture regardée, bascule réversible,
+profil nettoyé). **DEV** : 4.127.0, SHA `4a1d3bc9…` == dist. **PROD** :
+4.126.0 (le LOT 2 attend ta phrase). Résidu assumé : quelques libellés
+9-10 px hors familles couvertes. Écrits : `bilan_economique.html`,
+`service-worker.js`, `spk-shell.js`, `spk-app.css`, `outils/build-coque.mjs`,
+`outils/patch_41270_a.py`, `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`,
+`VERROU.md`.
+
+---
 ---
 
 ✅ **Verrou libéré par Z Code le 28/10/2026** (Tour 103, v4.126.0 — LOT 1 du

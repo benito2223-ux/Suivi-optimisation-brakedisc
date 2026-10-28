@@ -821,6 +821,43 @@ encore possible — et un détail scénarios lisible par OP) déposés dans
 `Hermes Version/NOTE_ERGONOMIE_BANDEAU_A_HERMES.md` pour son contre-analyse.
 Décision à Benjamin après avis d'Hermes ; rien n'est écrit dans l'outil.
 
+### ▸ Tour 104 — 28/10/2026 — **Z Code** (v4.127.0 — LOT 2 du brief complémentaire : le mode atelier ; PROD 4.126.0)
+
+Ton « je valide tout et la prod » : **la prod est passée à 4.126.0** (le LOT
+1, vérifiée curl) — **accroc attrapé à la vérification** : `version.json`
+renvoyait la page 404 de surge (le `.surgeignore` du dist est une liste
+blanche et je n'y avais pas ajouté le fichier). Corrigé dans le build,
+redéployé sur les deux domaines, `{"v":"4.126.0"}` servi.
+
+**Le LOT 2 (mode atelier) est livré en 4.127.0 sur le DEV** :
+- **Tokens de lecture** dans :root (bureau = actuel) + surcharge
+  `html[data-mode="atelier"]` : texte ≥ 16 px, libellés ≥ 14 px, valeurs
+  ≥ 20 px, **cibles tactiles ≥ 56 px**, boutons pleins et bordés, pastilles
+  remplies, bordures 3:1, plus de verre. Bascule ⚒ mémorisée, défaut
+  automatique sur écran tactile.
+- **Plex retiré** (3 @font-face, le fichier a maigri de ~45 Ko) : Open Sans
+  + tabular-nums porte les chiffres ; les A4 passent à Consolas.
+- **Écran de chargement** (div statique) à la place du masquage du body ;
+  le commentaire d'en-tête des polices corrigé.
+
+**L'accroc majeur du tour, assumé** : le parseage des 30 blocs de style
+empilés du head a **rejeté silencieusement** le bloc atelier posé dedans
+(les règles n'apparaissaient dans AUCUNE feuille chargée — le rendu restait
+bureau alors que l'attribut était posé). Diagnostiqué au cssText des
+feuilles, réparé **par injection JavaScript** : le CSS du mode vit dans le
+câblage de bascule et une feuille dédiée `spkAtelierCSS` est posée/vidée à
+chaque set. Contre-regards : boot retiré → 2 portes tombées ; version.json
+repassé en cache-d'abord dans le SW → porte LOT 1 tombée ; masquage
+verrouillé retiré → porte tombée. **Résidu assumé** : quelques libellés
+restent entre 9 et 10 px hors des familles couvertes (itération à venir).
+
+**Vérifié** : 662 tests | 0 échec + portes « lot 2 4.127 » et « lot 1 »
+étendue · navigateur : cibles ≥ 56 px mesurées au rendu, bouton + Scénario
+plein bleu à 56 px, bascule atelier → bureau → atelier réversible, capture
+du mode atelier regardée, profil nettoyé. **DEV** : 4.127.0 servie, SHA
+`4a1d3bc9…` == dist. **PROD** : 4.126.0 (le LOT 2 attend ta phrase).
+**Reste** : LOT 3 (logique éco — à cadrer avec toi), LOT 5, LOT 4.
+
 ### ▸ Tour 103 — 28/10/2026 — **Z Code** (v4.126.0 — LOT 1 du brief complémentaire : la mise à jour économe et gardée)
 
 Ton analyse complémentaire (« lis et prends ce qui est pertinent ») : je

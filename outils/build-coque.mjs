@@ -262,6 +262,7 @@ const SURGEIGNORE = `# Deploiement verrouille (genere par outils/build-coque.mjs
 *
 !bilan_economique.html
 !index.html
+!version.json
 # La coque de navigation (v4.100.0)
 !spk-app.css
 !spk-shell.js
