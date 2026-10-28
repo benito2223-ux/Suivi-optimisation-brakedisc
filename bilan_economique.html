@@ -2516,7 +2516,7 @@ body:not(.atelier-on) input[type="number"]{ -moz-appearance:number-input; }
   .base-banner .bb-right{margin-left:auto;display:flex;flex-direction:column;gap:5px;align-items:flex-end}
   .base-banner .bb-reco{font-size:12.5px;color:var(--ink-soft)}
   .base-banner .bb-reco b{color:var(--blue-dark)}
-  .base-banner .bb-alert{font-size:12px;font-weight:700;color:var(--red);background:var(--gray-50);
+  .base-banner .bb-alert{font-size:12px;font-weight:700;color:var(--green);background:var(--gray-50);
     border-radius:var(--radius-sm);padding:4px 9px}
 
   table.synthese.syn2 th.colbase{box-shadow:inset 0 -3px 0 var(--blue)}
@@ -14148,7 +14148,9 @@ function verifierNouveautes(){
     off = localStorage.getItem(CLE_NOUVEAUTES_OFF) === "1";
   } catch(e){ return; }
   if(off || vue === TOOL_VERSION) return;
-  ouvrirNouveautes();
+  /* v4.120 - plus aucune popup au demarrage (avis Claude 28/10, valide Benjamin) :
+     la fenetre ne s'ouvre plus toute seule - le bouton Nouveautes du menu suffit. */
+  try { localStorage.setItem(CLE_VERSION_VUE, TOOL_VERSION); } catch(e){}
 }
 
 /* ---- parcours de demarrage (v4.6) ----
