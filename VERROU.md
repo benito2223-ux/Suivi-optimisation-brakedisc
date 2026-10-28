@@ -1,8 +1,10 @@
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | **Z Code** |
+| **Pris le** | 28/10/2026, Tour 98 |
+| **Écrit dans** | `bilan_economique.html` (fix « ⤓ Imprimer » mort depuis le dé-branding + révélation anti-flash au démarrage), `spk-shell.js` + `spk-app.css` (bouton Importer au pied du rail), `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
+| **Version visée** | 4.120.0 |
+| **Sujet** | Lot UX de Benjamin : « Générer le PDF » ne fonctionne pas (logique du logo retiré de l'en-tête → printGo jette avant window.print(), mort depuis 4.104) ; flash de l'ancienne page au démarrage ; bouton Importer au pied du rail. Le raccourci Matis : expliqué, pas retiré (avis de Benjamin attendu). 4.114–4.119 : briques Hermes, non touchées. |
+
+---
 
 ✅ **Verrou libéré par Hermes le 26/10/2026, nuit (7)** — Base Matis embarquée
 4.119.0 (« go » de Benjamin). `const BASE_MATIS` : 16 articles du Pareto MAJ
