@@ -1,8 +1,8 @@
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | **Z Code** |
+| **Pris le** | 28/10/2026, Tour 104 |
+| **Écrit dans** | `service-worker.js` + `dist` (PROD 4.126.0 : le LOT 1 validé), puis LOT 2 du brief complémentaire (mode atelier) |
+| **Version visée** | 4.127.0 |
+| **Sujet** | Prod 4.126.0 validée par Benjamin (« je valide tout et la prod ») ; puis LOT 2 du brief complémentaire : le mode atelier — tokens de taille/contraste, `html[data-mode=atelier]` (texte ≥ 16 px, cibles ≥ 56 px, boutons pleins, pastilles remplies), bascule mémorisée, défaut tactile. |
 
 ---
 
