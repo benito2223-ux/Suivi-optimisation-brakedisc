@@ -1,8 +1,8 @@
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | `bilan_economique.html` (mode verrouillé : #importMenuBtn masqué, orphelins #importBtn retirés ; tuile active compactée), `build_harness.py` (porte étendue), `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
-| **Version visée** | 4.125.1 |
-| **Sujet** | Régression vue par Benjamin : le mode « Consultation » (verrouillé) masquait l'import via `body.locked #importBtn` — supprimé, le nouvel item #importMenuBtn n'est pas dans la règle → verrouillé, l'import restait possible. Fix + garde-fou. Prod 4.125.1 dès le fix (phrase donnée). |
+| **Auteur** | **Z Code** |
+| **Pris le** | 28/10/2026, Tour 103 |
+| **Écrit dans** | `bilan_economique.html` (LOT 1 : vérif de version via version.json de quelques octets, 10 min + retour d'onglet, reload gardé anti-boucle), `outils/build-coque.mjs` (version.json), `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
+| **Version visée** | 4.126.0 |
+| **Sujet** | LOT 1 du brief complémentaire (priorité 1, risque prod) : la vérification de version fetchait ~1,8 Mo toutes les 60 s (~0,9 Go/jour/poste) et reloadait sans garde. Fix : version.json, 10 min + retour d'onglet, reload seulement si pas de saisie au focus + sauvegarde flushée + anti-boucle < 2 ; sinon bandeau non bloquant. |
 
 ---
 
