@@ -1516,6 +1516,13 @@ try {
       /* (7) la Vue d'ensemble ne vole plus le focus */
       if (html.indexOf('data-sans-focus') === -1)
         echecs.push('le mécanisme sans-focus a disparu');
+      /* (8) v4.125.1 — verrouillé, l'import du menu est masqué comme le reste
+         (la régression vue par Benjamin : l'item restait actif à l'écran
+         partagé d'atelier) ; et plus aucune règle orpheline #importBtn */
+      const mLocked = html.match(/body\.locked[^{]*#importMenuBtn[^{]*\{/);
+      if (!mLocked) echecs.push('verrouillé : l item Importer du menu Transmettre n est plus masqué');
+      if (html.indexOf('#importBtn') !== -1)
+        echecs.push('une règle orpheline #importBtn traîne (le bouton n existe plus)');
     }
     if (echecs.length) r.echecs += echecs.length;
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.125 : ouverture sur la fiche, boussole retiree, Transmettre en fin avec Importer, tuile a une ligne, etat vide gris' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));

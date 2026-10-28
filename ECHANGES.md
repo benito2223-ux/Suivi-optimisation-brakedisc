@@ -49,6 +49,7 @@
 
 | Date | Acte | Où | Vérifié |
 |---|---|---|---|
+| 28/10 ~soir | **DEV + PROD 4.125.1 — le mode Consultation verrouille de nouveau l'import, puis mise en prod** (phrase de Benjamin : « Je la passerais en 4.125 dès que le correctif du mode verrouillé est fait »). Régression vue par Benjamin sur la 4.125.0 : le mode « Consultation » (écran partagé d'atelier) masquait l'import via `body.locked #importBtn` — bouton supprimé au lot 4.125, le nouvel item du menu Transmettre n'était pas dans la règle → **verrouillé, l'import restait possible**. Fix : `body.locked #importMenuBtn` ajouté à la liste, règles orphelines `#importBtn` retirées, cas ajouté à la porte « lot 4.125 » ; la tuile du scénario affiché se resserre. Test de recette au rendu : verrouiller → item `display:none` (comme + Scénario), bannière Consultation posée, capture regardée. | suivi-optimisation-projet.surge.sh · suivi-optimisation-septfons.surge.sh | ✅ curl : DEV et PROD servent 4.125.1, empreinte `4f8086b9…` identique au `dist/` sur les deux domaines, SW v7, coque 200, CHANGELOG 404, zéro `prixSpk` ; rendu public vérifié (ouverture sur l'écran de travail, item présent) ; 662 tests \| 0 échec (Z Code, Tour 102) |
 | 28/10 ~nuit (2) | **DEV 4.123.0 — l'acte III du débroussaillage.** Un bouton **« Transmettre »** unique en tête de barre : Rapport de validation + Générer le PDF (le scénario affiché), Exporter .json + Export CSV (l'archive). Le menu ••• se recentre : Consulter (campagne, gestes, recherche, nouveautés) puis Gérer (options, reset, photos, sauvegardes). Ids inchangés — listeners et raccourcis intactes. Trois défauts de rendu attrapés à l'écran et corrigés : menu ancré à droite sortait de l'écran (règle `#transmettreMore{left:0}`), wrap à 31 px écrasait le libellé (`#transmettreWrap{width:auto}`), Exporter gardait son bloc vert sans libellé (passé en ghost + texte). **PROD : rien** | suivi-optimisation-projet.surge.sh | ✅ 662/0 + VERDICT tout vert ; curl HTTP 200, TOOL_VERSION = 4.123.0 servie, md5 `a7d66087c0d314a1141b026a8c2636ba` identique au `dist/`, ECHANGES.md en 404, **prod 4.120.0 re-vérifiée inchangée** ; rendu vérifié au navigateur (menu ouvert, deux groupes, libellés, chevauchement résolu mesuré au getBoundingClientRect) (Hermes, acte III) |
 | 28/10 ~nuit | **DEV 4.121.0 + 4.122.0 — l'acte II du débroussaillage (demande consignée dans VERROU 28/10).** **4.121.0, la fiche scénario en niveaux** : trois chiffres ouvrent la bande (verdict, coût/pièce avec écart, validation remontée) ; la tuile ouverte redevient de la navigation (mini-fiche « dont plaquettes/cycle/essais/rebut » supprimée, statut + x/y essais conformes + coût/gain masqués sur la carte active) ; badge « En cours » de tête et badge « x/y » du résumé d'essais supprimés (une info, un endroit) ; configuration née repliée (`configReplies`→`configOuverts`), suivi rebut en accordéon. Piège attrapé à la capture : la cellule validation s'était insérée DANS le template `annuelCell` — sortie en variable propre. **4.122.0, la fusion** : Accueil/Atelier/Tableau = UNE entrée « Vue d'ensemble » (rail 3→1), bascule « Lignes · Postes · Tableau » dans l'écran, portes de retour ; l'exclusivité passe par les boutons du rail existants (un appel direct d'ouvreur EMPILAIT les panneaux — constaté à l'écran, corrigé) ; porte harnais « rail exclusif 4.100.4 » mise à niveau vers la nouvelle architecture, **2 contre-regards injectés, 2 détectés**, restauration md5 identique. **États vides CPP : constatés déjà conformes** (une ligne, une explication — vagues 4.114+), rien touché. **PROD : rien** | suivi-optimisation-projet.surge.sh | ✅ 662/0 sur le fichier de déploiement + VERDICT tout vert ; curl HTTP 200, TOOL_VERSION = 4.122.0 servie, md5 `1fd883b9c0f9512959df0e85c9ed4410` identique au `dist/`, ECHANGES.md en 404, **prod 4.120.0 re-vérifiée inchangée** ; rendu vérifié au navigateur (rail 3 entrées, onglets, portes, fiche en niveaux sur scénario de test) (Hermes, acte II) |
 | 26/10 ~15:00 | **DEV + PROD 4.112.1 — le correctif TDZ, puis la mise en prod** (ordre de Benjamin : « maintenant on passe en prod mais… aucune friction à Matis »). La **répétition générale pré-prod** (profil 4.97.2 + état réel rev433 enrichi du PARETO/catalogue/livraisons, servi en local, puis swap vers la nouvelle version — exactement le geste du déploiement vu par la PWA installée) a **trouvé le bug** : depuis la 4.101.1, quatre états (`consoReelle`, `planSource`, `consoSemaines`, `planReglages`) déclarés APRÈS l'appel `loadAll()` levaient une ReferenceError TDZ avalée par le catch silencieux — **les données réelles retombaient sur l'exemple**, et la première saisie aurait écrasé le localStorage. Corrigé (déclarations montées avant l'appel) + double garde (test de charge + porte structurelle « toute globale de loadAll se déclare avant son appel »). La première porte était **aveugle** — regex dynamique tuée par l'échappement Python→JS, le piège des Tours 82/4.100 repris ; le contre-regard l'a vue, réécrite en texte brut. Répétition refaite après correctif : **bascule 4.97.2 → 4.112.1 observée, 10 lignes + 11 essais + PARETO + catalogue chargés, SW v1 → v7 (ancien cache purgé), rechargement automatique vu, localStorage intact**. Le SW v1 de Matis sert déjà le HTML réseau-d'abord (vérifié au curl) : bascule au premier lancement. | suivi-optimisation-projet.surge.sh · suivi-optimisation-septfons.surge.sh | ✅ curl : DEV et PROD servent 4.112.1, empreintes identiques au `dist/` (prod `08a71a1f…`), SW v7 servi, coque 200, CHANGELOG/ECHANGES/VERROU/fonts mortes en 404, zéro `prixSpk` ; rendu public vérifié onglet neuf (modules présents, SW contrôlé) (Z Code, Tour 96) |
@@ -819,6 +820,45 @@ et proposition (le bandeau dit trois phrases séparées — actuel / réalisé /
 encore possible — et un détail scénarios lisible par OP) déposés dans
 `Hermes Version/NOTE_ERGONOMIE_BANDEAU_A_HERMES.md` pour son contre-analyse.
 Décision à Benjamin après avis d'Hermes ; rien n'est écrit dans l'outil.
+
+### ▸ Tour 102 — 28/10/2026 — **Z Code** (v4.125.1 — le mode Consultation verrouille l'import ; PROD)
+
+La revue de Benjamin sur la 4.125.0 (« solide et presque prête pour la
+prod ») valide le lot 4.125 et relève **une régression** : le mode
+« Consultation » (écran partagé d'atelier) masquait l'import via
+`body.locked #importBtn` — bouton supprimé au lot 4.125, le nouvel item du
+menu Transmettre n'était pas dans la règle → **verrouillé, l'import restait
+possible**. Et deux écarts notés (non bloquants) : la ligne grise ne se voit
+pas sur l'exemple — **par design** : la condition est vraie seulement sur une
+référence réellement vide (l'exemple porte un reste possible de −0,050 €, le
+bandeau bleu est honnête dessus ; prouvé au navigateur en vidant le candidat
+en mémoire) ; et la tuile ouverte faisait encore 80 px — **compactée**
+(padding serré, une ligne visuelle).
+
+**Le fix** : `body.locked #importMenuBtn` dans la liste du verrou, règles
+orphelines `#importBtn` retirées, le cas ajouté à la porte « lot 4.125 »
+(lecture statique de la règle + absence d'orphelins). **Contre-regard** :
+le masquage retiré → porte tombée. **Test de recette au rendu** (la consigne
+du Tour 100 appliquée) : verrouiller → l'item Importer du menu est
+`display:none` comme + Scénario, bannière Consultation posée, **capture
+regardée**. Un faux positif de porte au passage : ma note de commentaire
+contenait `#importBtn` et la porte le voyait — assainie.
+
+**Vérifié** : 662 tests | 0 échec, syntaxe 0 erreur, profil nettoyé.
+**DEV + PROD : 4.125.1** (la phrase de Benjamin : « Je la passerais en 4.125
+dès que le correctif du mode verrouillé est fait ») — curl : empreinte
+`4f8086b9…` identique au `dist/` **sur les deux domaines**, SW v7, coque
+200, CHANGELOG 404, zéro `prixSpk`, rendu public vérifié (ouverture sur
+l'écran de travail, item présent). **La prod saute 4.123.0 → 4.125.1** :
+plus de commentaire rendu sur les tuiles, plus de popup empilé au
+démarrage, le rail recentré, Transmettre avec Importer/Exporter réunis.
+
+**Pour la suite** (l'ordre que Benjamin propose) : **4.126** (couleurs et
+disques sur les boutons), **4.127** (mobile 457 px), puis les briques
+fonctionnelles d'Hermes — « bandeau dit vrai » étant déjà livré par Hermes
+en 4.114+ (le bandeau dit aujourd'hui/réalisé/reste), il reste la **fusion
+des outils en doublon** (brique B) et le trou de grille à droite de la
+validation.
 
 ### ▸ Tour 101 — 28/10/2026 — **Z Code** (v4.125.0 — lot 2 du brief : la navigation se resserre)
 

@@ -5,6 +5,20 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.125.1] — 2026-10-28 · Le mode Consultation verrouille de nouveau l'import · Z Code (mise en prod)
+
+Régression vue par Benjamin sur la 4.125.0 : le mode « Consultation »
+(écran partagé d'atelier) masquait l'import via `body.locked #importBtn` —
+bouton supprimé au lot 4.125, et le **nouvel item du menu Transmettre
+n'était pas dans la règle** : verrouillé, l'import restait possible.
+Corrigé (`body.locked #importMenuBtn`), les règles orphelines du bouton
+retirées, et le cas ajouté à la porte « lot 4.125 ». La tuile du scénario
+affiché se resserre au passage.
+
+**Vérifié au rendu** : verrouiller → l'item Importer du menu Transmettre
+est `display:none` (comme + Scénario), bannière Consultation posée ; la
+porte nomme la régression si le masquage est retiré.
+
 ## [4.125.0] — 2026-10-28 · Lot 2 de la revue : la navigation se resserre · Z Code
 
 Le lot 4.125 du brief externe, feu vert de Benjamin (captures avant/après

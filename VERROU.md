@@ -1,9 +1,24 @@
-| **Auteur** | **Z Code** |
-| **Pris le** | 28/10/2026, Tour 102 |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
 | **Écrit dans** | `bilan_economique.html` (mode verrouillé : #importMenuBtn masqué, orphelins #importBtn retirés ; tuile active compactée), `build_harness.py` (porte étendue), `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
 | **Version visée** | 4.125.1 |
 | **Sujet** | Régression vue par Benjamin : le mode « Consultation » (verrouillé) masquait l'import via `body.locked #importBtn` — supprimé, le nouvel item #importMenuBtn n'est pas dans la règle → verrouillé, l'import restait possible. Fix + garde-fou. Prod 4.125.1 dès le fix (phrase donnée). |
 
+---
+
+✅ **Verrou libéré par Z Code le 28/10/2026** (Tour 102, v4.125.1 — le mode
+Consultation verrouille de nouveau l'import ; **PROD**). Le fix de la
+régression vue par Benjamin (l'item du menu Transmettre restait actif
+verrouillé) + orphelins retirés + tuile active compactée + porte étendue
+(contre-regard : masquage retiré → porte tombée). **Test de recette au
+rendu** (consigne du Tour 100) : verrouiller → item display:none, bannière
+posée, capture regardée. **DEV + PROD : 4.125.1** (phrase de Benjamin) —
+curl : empreinte `4f8086b9…` == dist sur les deux domaines, SW v7, sensibles
+404, rendu public vérifié. La prod saute 4.123.0 → 4.125.1. Écrits :
+`bilan_economique.html`, `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`,
+`VERROU.md`.
+
+---
 ---
 
 ✅ **Verrou libéré par Z Code le 28/10/2026** (Tour 101, v4.125.0 — lot 2 du
