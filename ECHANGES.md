@@ -820,6 +820,45 @@ encore possible — et un détail scénarios lisible par OP) déposés dans
 `Hermes Version/NOTE_ERGONOMIE_BANDEAU_A_HERMES.md` pour son contre-analyse.
 Décision à Benjamin après avis d'Hermes ; rien n'est écrit dans l'outil.
 
+### ▸ Tour 100 — 28/10/2026 — **Z Code** (v4.124.1 — la 4.124.0 était cassée ; la réparation de Benjamin adoptée, le garde-fou structurel posé)
+
+La revue de la 4.124.0 (Benjamin, rendu réel 1440/390 px) : « une accolade
+CSS manquante fait perdre une grande partie de la mise en forme ». **Exact,
+et c'est ma faute, entièrement** : mon patch P0-2 a remplacé la ligne
+`.reprise-bandeau{…}` en laissant le sélecteur OUVERT sans ses déclarations —
+le navigateur engloutissait ce qui suit, la moitié de l'habillage mourait,
+**sans AUCUNE erreur console**. Mes « vérifications navigateur » du Tour 99
+ont mesuré des éléments ciblés (badge, bandeau, rail) et n'ont JAMAIS regardé
+le rendu global — la leçon est la consigne de Benjamin, adoptée au
+protocole : **ne rien livrer sans avoir ouvert et regardé la capture de
+l'écran principal** (+ les trois contrôles de rendu : bouton + Scénario
+stylé, bannière Consultation masquée, tuiles bordées).
+
+- **La réparation de Benjamin est adoptée telle quelle** : diff mécanique de
+  ma 4.124.0 vs sa copie (`bilan_economique_v4.124_css-repare.html`) =
+  **UNE ligne** (la règle 4.123 restaurée) ; ma source corrigée est
+  **identique octet pour octet** à sa copie. Les P0 tiennent sur sa copie
+  (il l'a vérifié : P0-1 ✅, P0-3 ✅, P0-4 ✅, P0-2 à moitié — le bandeau
+  fermable une fois est là, l'ouverture auto de la Vue d'ensemble reste,
+  décision Q11 en attente de ta voix).
+- **Le garde-fou structurel** : une porte du harnais vérifie désormais que
+  **chaque bloc `<style>` a autant d'accolades ouvrantes que fermantes** —
+  le mécanisme exact du bug fait échouer la livraison — et la règle
+  `.reprise-bandeau` complète est gardée par son nom. Contre-regard : la
+  règle recassée EXACTEMENT comme l'était la 4.124.0 → la porte répond
+  « 1061 accolades ouvrantes, 1060 fermantes » et nomme la règle perdue.
+- **Rendu vérifié avec capture cette fois** : Vue d'ensemble complète
+  (tuiles stylées, rail 3 écrans, Importer au pied, v4.124.1) ; + Scénario
+  `rgb(27,94,166)` plein ; tuile bordée `2,67px solid` ; bannière
+  Consultation absente ; `innerText` sans `/*`.
+
+**Vérifié** : 662 tests | 0 échec + porte « équilibre css 4.124.1 » ·
+profil nettoyé. **DEV** : 4.124.1 déployée et vérifiée curl. **PROD :
+rien** — 4.123.0. **Reste (vu par la revue, en file)** : le trou de grille
+à droite de la validation quand le gain manque (P0-3 complément), le mobile
+467 px, le lot P1 complet (boussole, ordre du rail, doublons, couleurs,
+disques, aide) — 4.125-4.127 — et les briques Hermes.
+
 ### ▸ Tour 99 — 28/10/2026 — **Z Code** (v4.124.0 — les quatre P0 du brief de revue externe)
 
 Benjamin transmet un avis critique externe (`chantier_zcode_suivi_optimisation.md`,

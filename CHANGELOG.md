@@ -5,6 +5,31 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.124.1] — 2026-10-28 · Réparation de mise en forme (revue de la 4.124.0) · Z Code
+
+**La 4.124.0 était cassée, et aucun de mes tests ne l'a vu.** Mon patch du
+bandeau de bienvenue avait remplacé la ligne `.reprise-bandeau{…}` en
+laissant le sélecteur **ouvert sans ses déclarations** : le navigateur
+engloutissait les règles suivantes, et une grande partie de la mise en forme
+disparaissait — **sans aucune erreur JavaScript**. C'est la revue externe
+qui l'a vu au rendu (1440 px et 390 px), réparé une ligne dans une copie
+(`bilan_economique_v4.124_css-repare.html`), et vérifié que les P0 tiennent
+sur la copie. Sa consigne est adoptée au protocole : **ne rien livrer sans
+avoir regardé la capture de l'écran principal** — un contrôle de rendu
+(bouton + Scénario stylé, bannière Consultation masquée, tuiles bordées)
+rejoint le test de livraison.
+
+- La réparation est adoptée telle quelle (diff mécanique : **une seule
+  ligne**, la règle 4.123 restaurée ; le reste de ma source identique
+  octet pour octet à la copie).
+- **Le garde-fou structurel** : une porte du harnais vérifie désormais que
+  **chaque bloc `<style>` a autant d'accolades ouvrantes que fermantes** —
+  le mécanisme exact du bug (une accolade orpheline avalant la suite) fait
+  échouer la livraison ; la règle `.reprise-bandeau` complète est aussi
+  gardée par son nom. Contre-regard : la règle recassée exactement comme
+  l'était la 4.124.0 → la porte nomme « 1061 accolades ouvrantes, 1060
+  fermantes » et la règle perdue.
+
 ## [4.124.0] — 2026-10-28 · Les quatre P0 du brief de revue externe · Z Code
 
 La revue externe (`chantier_zcode_suivi_optimisation.md`, transmise par

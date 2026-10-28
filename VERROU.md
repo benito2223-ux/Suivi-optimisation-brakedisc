@@ -1,8 +1,27 @@
-| **Auteur** | **Z Code** |
-| **Pris le** | 28/10/2026, Tour 100 |
-| **Écrit dans** | `bilan_economique.html` (réparation CSS de Benjamin adoptée : `.reprise-bandeau` retrouve ses déclarations), `build_harness.py` (porte « équilibre CSS » + contrôles de rendu), `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
-| **Version visée** | 4.124.1 |
-| **Sujet** | La 4.124.0 était CASSÉE : mon patch P0-2 a laissé `.reprise-bandeau{` ouvert sans déclarations — la moitié de la mise en forme mourait sans AUCUNE erreur console. Réparation de Benjamin (`bilan_economique_v4.124_css-repare.html`) adoptée ; garde-fou structurel (équilibre des accolades par bloc style) + contrôles de rendu consignés au protocole. |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+
+---
+
+✅ **Verrou libéré par Z Code le 28/10/2026** (Tour 100, v4.124.1 — la
+réparation de Benjamin adoptée, le garde-fou structurel posé). La 4.124.0
+était cassée par MON patch P0-2 (`.reprise-bandeau{` ouvert sans
+déclarations — habillage avalé, zéro erreur console, vu au rendu par la
+revue, pas par mes tests). Réparation adoptée telle quelle (diff = 1 ligne,
+ma source == sa copie octet pour octet) ; porte « équilibre css » : chaque
+bloc style doit avoir ses accolades fermées + la règle complète gardée par
+son nom ; contre-regard = le bug exact rejoué → porte nomme « 1061 ouvrantes,
+1060 fermantes ». **La consigne de Benjamin est au protocole** : ne rien
+livrer sans la capture de l'écran principal + les 3 contrôles de rendu.
+Vérifié au navigateur avec capture : Vue d'ensemble complète, + Scénario
+stylé, tuile bordée 2,67px, bannière absente, innerText sans /*, profil
+nettoyé. **DEV** : 4.124.1 servie, SHA `25dcfe81…` == dist. **PROD : rien**
+— 4.123.0. Reste : trou de grille P0-3, mobile 467 px, lot P1 (4.125-4.127),
+briques Hermes, Q11. Écrits : `bilan_economique.html`, `build_harness.py`,
+`outils/patch_41241_a/b.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md`.
 
 ---
 
