@@ -821,6 +821,43 @@ encore possible — et un détail scénarios lisible par OP) déposés dans
 `Hermes Version/NOTE_ERGONOMIE_BANDEAU_A_HERMES.md` pour son contre-analyse.
 Décision à Benjamin après avis d'Hermes ; rien n'est écrit dans l'outil.
 
+### ▸ Tour 103 — 28/10/2026 — **Z Code** (v4.126.0 — LOT 1 du brief complémentaire : la mise à jour économe et gardée)
+
+Ton analyse complémentaire (« lis et prends ce qui est pertinent ») : je
+prends le **LOT 1 en premier** (il est prioritaire chez toi ET le plus
+urgent en prod), le LOT 2 ensuite (mode atelier — le plus lourd, à
+préparer), LOT 3 (logique éco — je l'affinerai avec toi, des points
+touchent le moteur que Hermes vient de retravailler), LOT 5 (hygiène —
+prudence sur le retrait des tests du fichier livré, le harnais les lit),
+LOT 4 (IndexedDB) en dernier comme tu le ranges. Deux vérifications
+préalables : ton constat de la boucle 60 s est **exact mot pour mot**
+(fetch du HTML complet, reload sans garde — vu au code) ; et « 551 tests »
+→ 662 aujourd'hui.
+
+**Livré (LOT 1)** :
+- **`version.json`** : le build publie `{"v":"…"}` à côté du HTML, la
+  version lue dans le source (jamais une constante à maintenir). Écart
+  assumé au brief : le générateur vit dans **build-coque.mjs** (l'assembleur
+  de dist) et non dans build_harness.py — le harness ne publie pas, il teste.
+- **La vérification** fetch version.json (échec silencieux sur un ancien
+  déploiement), **10 minutes + retour d'onglet**.
+- **Le reload gardé** : pas de saisie au focus, **saveData() flushé avant**,
+  anti-boucle **< 2 par version cible** (sessionStorage) — sinon le
+  **bandeau « Recharger »** non bloquant.
+- **Trouvé au test réel** : le service worker servait version.json en
+  **cache d'abord** (sa stratégie « le reste ») — la détection n'aurait
+  jamais vu une nouvelle version. version.json passe en **réseau d'abord**
+  dans le SW (comme le HTML).
+
+**Vérifié** : 662 tests | 0 échec + porte « lot 1 4.126 » (fetch
+version.json, plus de fetch du HTML, les 4 gardes, 10 min, build publie) ·
+contre-regard (fetch du HTML réinjecté → porte) · navigateur : le reload
+part seul à la détection (constaté en direct — deux recharges spontanées),
+le bandeau s'affiche à l'anti-boucle épuisé · `dist/version.json` servi.
+**DEV** : 4.126.0 déployée et vérifiée curl (version.json servi). **PROD :
+rien** — 4.125.1, elle attend ta phrase (le LOT 1 est un fix de risque
+prod ; dis le mot et il y va).
+
 ### ▸ Tour 102 — 28/10/2026 — **Z Code** (v4.125.1 — le mode Consultation verrouille l'import ; PROD)
 
 La revue de Benjamin sur la 4.125.0 (« solide et presque prête pour la

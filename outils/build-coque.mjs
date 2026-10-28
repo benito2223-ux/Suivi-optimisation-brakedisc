@@ -279,6 +279,14 @@ const SURGEIGNORE = `# Deploiement verrouille (genere par outils/build-coque.mjs
 `;
 fs.writeFileSync(path.join(DIST, '.surgeignore'), SURGEIGNORE, 'utf8');
 
+/* v4.126 (LOT 1 du brief complémentaire) — version.json : quelques octets que
+   la page fetch pour détecter une nouvelle version, au lieu du HTML complet
+   (~1,8 Mo) toutes les 60 s. La version lue dans le SOURCE, jamais une
+   constante à maintenir à la main. */
+const mVersion = html.match(/TOOL_VERSION\s*=\s*"([^"]+)"/);
+fs.writeFileSync(path.join(DIST, 'version.json'),
+  JSON.stringify({ v: mVersion ? mVersion[1] : '' }), 'utf8');
+
 console.log('coque assemblee dans dist/');
 console.log('  sortie : ' + path.relative(RACINE, SORTIE));
 console.log('  transformations appliquees : ' + remplacements.length);

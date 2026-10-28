@@ -1464,6 +1464,46 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot UX 4.120 : printGo vit (logo A4), anti-flash posé, import au rail' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  /* ── v4.126 — LOT 1 : LA MISE À JOUR ÉCONOME ET GARDÉE ────────────────
+     La vérif de version fetchait le HTML complet (~1,8 Mo) toutes les 60 s
+     et reloadait sans garde. Portes : le fetch porte sur version.json, la
+     fréquence est à 10 minutes, la garde de reload est complète (saisie au
+     focus, saveData, anti-boucle), le build publie version.json. */
+  (function lot1Maj4126(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const lire = function(f){ try { return fs.readFileSync(path.join(REPO, f), 'utf8'); } catch (e) { return ''; } };
+    const html = lire('bilan_economique.html');
+    const build = lire(path.join('outils', 'build-coque.mjs'));
+    if (!html) echecs.push('bilan_economique.html introuvable');
+    else {
+      const iVer = html.indexOf('async function _spkVerifierVersion');
+      if (iVer < 0) echecs.push('_spkVerifierVersion introuvable');
+      else {
+        const iFin = html.indexOf(String.fromCharCode(10) + '  /* ', iVer);
+        const bloc = html.slice(iVer, iFin > 0 ? iFin : iVer + 4000);
+        if (bloc.indexOf('./bilan_economique.html') !== -1)
+          echecs.push('la vérif fetch encore le HTML complet');
+        if (bloc.indexOf('./version.json') === -1)
+          echecs.push('la vérif ne fetch pas version.json');
+        for (const m of ['_spkSaisieAuFocus', 'saveData()', 'spk_maj_recharges_', '_spkMajBandeau'])
+          if (bloc.indexOf(m) === -1) echecs.push('la garde de reload a perdu : ' + m);
+      }
+      if (html.indexOf('}, 600000)') === -1) echecs.push('la fréquence de vérif n est pas à 10 minutes');
+      if (html.indexOf('}, 60000)') !== -1) echecs.push('une boucle de 60 s traîne encore');
+    }
+    if (!build) echecs.push('build-coque.mjs introuvable');
+    else {
+      if (build.indexOf('version.json') === -1) echecs.push('le build ne publie pas version.json');
+      if (build.indexOf('TOOL_VERSION') === -1 && build.indexOf('mVersion') === -1)
+        echecs.push('version.json n est pas lu depuis TOOL_VERSION');
+    }
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 1 4.126 : maj via version.json (10 min + onglet), reload gardé (saisie, flush, anti-boucle)' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   /* ── v4.125 — LE LOT NAVIGATION ET DOUBLONS ───────────────────────────
      Brief externe P1-1/P1-2/P1-3, feu vert Benjamin : ouverture sur l'écran
      de travail (Vue d'ensemble sur clic ou #accueil), boussole retirée de la

@@ -5,6 +5,32 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.126.0] — 2026-10-28 · La mise à jour ne pèse plus rien et ne coupe plus la saisie · Z Code
+
+Le LOT 1 du brief complémentaire (priorité 1, risque prod). La vérification
+de nouvelle version reposait sur le re-téléchargement de l'outil **complet**
+(~1,8 Mo) toutes les **60 secondes** — ~0,9 Go par journée de 8 h et par
+poste — et rechargeait **sans aucune garde** (perte possible de la dernière
+saisie, boucle possible).
+
+- **`version.json`** : le build publie quelques octets `{"v":"…"}` à côté du
+  HTML (la version lue dans le source, jamais une constante à maintenir) ;
+  la vérification fetch ce fichier au lieu du HTML.
+- **Fréquence** : 10 minutes + au retour d'onglet (plus à 60 s).
+- **Le reload est gardé** : il ne part que si **aucune saisie n'a le focus**,
+  après une **sauvegarde flushée** (`saveData()`), et au plus **2 fois par
+  version cible** (anti-boucle en sessionStorage). Sinon un **bandeau
+  discret « Recharger »** non bloquant.
+- **Le service worker sert version.json en réseau d'abord** — trouvé au test
+  réel : le cache-first du « reste » cacherait le signal, la détection ne
+  verrait jamais une nouvelle version.
+
+**Vérifié** : 662 tests | 0 échec + porte « lot 1 4.126 » (fetch version.json,
+plus de fetch du HTML, les 4 gardes, 10 min, build publie) ; contre-regard
+(fetch du HTML réinjecté → porte) ; navigateur : le reload part seul à la
+détection (constaté en direct), le bandeau s'affiche à l'anti-boucle épuisé ;
+`dist/version.json` servi correctement.
+
 ## [4.125.1] — 2026-10-28 · Le mode Consultation verrouille de nouveau l'import · Z Code (mise en prod)
 
 Régression vue par Benjamin sur la 4.125.0 : le mode « Consultation »

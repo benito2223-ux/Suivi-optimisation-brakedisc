@@ -1,8 +1,25 @@
-| **Auteur** | **Z Code** |
-| **Pris le** | 28/10/2026, Tour 103 |
-| **Écrit dans** | `bilan_economique.html` (LOT 1 : vérif de version via version.json de quelques octets, 10 min + retour d'onglet, reload gardé anti-boucle), `outils/build-coque.mjs` (version.json), `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
-| **Version visée** | 4.126.0 |
-| **Sujet** | LOT 1 du brief complémentaire (priorité 1, risque prod) : la vérification de version fetchait ~1,8 Mo toutes les 60 s (~0,9 Go/jour/poste) et reloadait sans garde. Fix : version.json, 10 min + retour d'onglet, reload seulement si pas de saisie au focus + sauvegarde flushée + anti-boucle < 2 ; sinon bandeau non bloquant. |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+
+---
+
+✅ **Verrou libéré par Z Code le 28/10/2026** (Tour 103, v4.126.0 — LOT 1 du
+brief complémentaire). La vérif de version fetch **version.json** (quelques
+octets, publié par le build depuis le source) au lieu du HTML complet toutes
+les 60 s ; fréquence **10 min + retour d'onglet** ; **reload gardé** (pas de
+saisie au focus, saveData flushé, anti-boucle < 2 par version) sinon bandeau
+« Recharger » non bloquant ; **version.json en réseau d'abord dans le SW**
+(trouvé au test réel : le cache-first cacherait le signal). **Vérifié** :
+662 tests | 0 échec + porte « lot 1 4.126 », contre-regard (fetch HTML
+réinjecté → porte), navigateur (reload spontané constaté, bandeau à
+l'anti-boucle). **DEV** : 4.126.0 servie, SHA `ed95f499…` == dist,
+version.json servi. **PROD : rien** — 4.125.1 (son version.json est la page
+404 de surge → repli silencieux correct). Écrits : `bilan_economique.html`,
+`outils/build-coque.mjs`, `build_harness.py`, `outils/patch_41260_a.py`,
+`CHANGELOG.md`, `ECHANGES.md`, `VERROU.md`.
 
 ---
 

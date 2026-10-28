@@ -104,7 +104,11 @@ self.addEventListener("fetch", (e) => {
   const estHtml = url.pathname.endsWith("bilan_economique.html") || url.pathname.endsWith("index.html");
   const estCss = url.pathname.endsWith("spk-app.css");
   const estJs = url.pathname.endsWith("spk-shell.js");
-  if (estHtml || estCss || estJs) {
+  /* v4.126 : version.json est le signal de mise à jour — servi en réseau
+     d'abord aussi, sinon le cache cacherait l'arrivée d'une nouvelle
+     version et la détection ne verrait jamais rien. */
+  const estVersion = url.pathname.endsWith("version.json");
+  if (estHtml || estCss || estJs || estVersion) {
     // réseau d'abord : mise à jour automatique à chaque ouverture en ligne ;
     // hors ligne, on sert la dernière version connue. cache:"no-cache" garantit que
     // le contrôle réseau n'est jamais répondu par le cache HTTP du navigateur (304)
