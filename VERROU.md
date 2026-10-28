@@ -1,8 +1,8 @@
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | `service-worker.js` + `dist` (PROD 4.126.0 : le LOT 1 validé), puis LOT 2 du brief complémentaire (mode atelier) |
-| **Version visée** | 4.127.0 |
-| **Sujet** | Prod 4.126.0 validée par Benjamin (« je valide tout et la prod ») ; puis LOT 2 du brief complémentaire : le mode atelier — tokens de taille/contraste, `html[data-mode=atelier]` (texte ≥ 16 px, cibles ≥ 56 px, boutons pleins, pastilles remplies), bascule mémorisée, défaut tactile. |
+| **Auteur** | **Z Code** |
+| **Pris le** | 28/10/2026, Tour 105 |
+| **Écrit dans** | `bilan_economique.html` + `spk-app.css` (étape 0 : plancher atelier complet, disques supprimés, filigrane masqué, SPK_MAJ gardé), `service-worker.js` (version.json network-only), `outils/build-coque.mjs` (A4 pile mono), `build_harness.py` (mesure atelier + lint structurel), `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
+| **Version visée** | 4.127.1 |
+| **Sujet** | Étape 0 de la feuille de route (avant promotion du 4.127.0) : empreinte nommée (algorithme + périmètre), plancher police atelier à 0 élément < 12 px (141 visés), disques/filigrane/chevauchement atelier, gardes SPK_MAJ, version.json network-only, cause réelle du rejet CSS nommée + lint structurel. |
 
 ---
 
