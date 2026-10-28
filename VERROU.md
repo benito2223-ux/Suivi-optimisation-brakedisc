@@ -1,8 +1,26 @@
-| **Auteur** | **Z Code** |
-| **Pris le** | 28/10/2026, Tour 99 |
-| **Écrit dans** | `bilan_economique.html` (P0 du brief externe : commentaire affiché dans les tuiles, popup Bienvenue → bandeau non bloquant, vert positionnel du bandeau → classe explicite, Atelier/Tableau masqués du rail), `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
-| **Version visée** | 4.124.0 |
-| **Sujet** | Avus critique externe (`chantier_zcode_suivi_optimisation.md`, Benjamin) : les 4 P0 corrigés en un lot — P0-1 commentaire `/* v4.121 */` rendu en texte dans les tuiles ; P0-2 popup Bienvenue toujours là (seule Nouveautes avait été coupée) ; P0-3 `.foot-cell:last-child` vert par position (Temps de cycle orphelin) ; P0-4 rail = toujours 5 entrées malgré 4.122. P1/P2 en lots suivants. |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+
+---
+
+✅ **Verrou libéré par Z Code le 28/10/2026** (Tour 99, v4.124.0 — les quatre
+P0 du brief de revue externe). P0-1 commentaire rendu en texte sur les tuiles
+→ retiré + **machine à états** du harnais qui garde la règle « jamais de
+commentaire dans un template » (3 itérations : global faux → accolades naïves
+fausses → pile d'états juste, contre-regard tombé) ; P0-2 Bienvenue →
+**bandeau non bloquant fermable une fois** (l'ouverture auto Q11 de Benjamin
+NON changée — à sa voix) ; P0-3 le vert devient **`.is-ok` explicite** (seuil
+atteint) et les 3 précisions descendent en ligne secondaire grise ; P0-4
+Atelier/Tableau masqués du rail (clics internes vérifiés au navigateur).
+**Vérifié** : 662 tests | 0 échec, contre-regards A/B/C/D tombés, navigateur
+(innerText sans /*, rail 3 écrans, bandeau non modal, profil nettoyé).
+**DEV** : 4.124.0 servie, SHA `f63bbab7…` == dist. **PROD : rien** — 4.123.0.
+Reste : P1/P2 du brief (4.125-4.127), briques Hermes en file, Q11 à trancher.
+Écrits : `bilan_economique.html`, `build_harness.py`,
+`outils/patch_41240_a/b/c.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md`.
 
 ---
 

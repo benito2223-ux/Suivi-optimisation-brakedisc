@@ -1464,6 +1464,126 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot UX 4.120 : printGo vit (logo A4), anti-flash posé, import au rail' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  /* ── v4.124 — LES P0 DU BRIEF EXTERNE ─────────────────────────────────
+     La revue externe (chantier_zcode, Benjamin) : un commentaire rendu en
+     texte dans les tuiles, un popup modal au démarrage, un vert positionnel,
+     un rail qui contredit le changelog. La porte lit les fichiers réels et
+     garde chaque correction. */
+  (function p0Brief4124(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const lire = function(f){ try { return fs.readFileSync(path.join(REPO, f), 'utf8'); } catch (e) { return ''; } };
+    const html = lire('bilan_economique.html');
+    if (!html) echecs.push('bilan_economique.html introuvable');
+    else {
+      const NLX = String.fromCharCode(10);
+      /* (1) P0-1 : la chaîne fautive est absente (le contrôle de rendu
+         « innerText sans /* » vit dans le test navigateur, pas ici) */
+      if (html.indexOf('est supprimee - la fiche en dessous dit tout') !== -1)
+        echecs.push('le commentaire fautif est de retour dans le fichier');
+      /* (1bis) la règle du cahier est gardée par un mini-parseur : il traverse
+         le fichier, suit les backticks (templates) et les ${} imbriqués, et
+         signale TOUT commentaire bloc ou ligne qui vivrait DANS un template
+         (il se rendrait en texte — le bug P0-1). Les strings simples et
+         doubles sont sautées ; les regex littérales sont traitées comme du
+         texte neutre (imprécision assumée : elles ne peuvent pas ouvrir un
+         template ni un commentaire qui compte ici). */
+      (function scanCarte(src){
+        /* Le contrôle se borne au bloc `carte` (le template des tuiles, JS pur) :
+           un parseur sur le fichier ENTIER serait faux (HTML/CSS/JS mélangés).
+           Le reste de l'écran est couvert par le test navigateur (innerText).
+           Machine à états à pile : code / template / expression-${} / string —
+           les accolades d'objets dans ${} sont comptées, les templates
+           imbriqués dans ${} suivent la pile. */
+        const iDeb = src.indexOf('const carte = ({ sc, numero }) => {');
+        const iFin = src.indexOf('const ouverte = ordre.filter', iDeb);
+        if (iDeb < 0 || iFin < 0) { echecs.push('le bloc carte des tuiles est introuvable'); return; }
+        const bloc = src.slice(iDeb, iFin);
+        const BS = String.fromCharCode(92);
+        const QUOTE = String.fromCharCode(39);
+        /* pile d'états : { t:'code' } | { t:'tmpl' } | { t:'str', q } */
+        const pile = [{ t:'code' }];
+        let braces = 0;   /* accolades ouvertes dans l'expression ${} courante */
+        const echecSiTemplate = function(genre, i){
+          const enTemplate = pile[pile.length-1].t === 'tmpl' && braces === 0;
+          if (enTemplate) echecs.push('commentaire ' + genre + ' dans le template de la tuile (il se rend en texte) : ' + bloc.slice(i, Math.min(i + 70)).trim());
+        };
+        let i = 0;
+        const N = bloc.length;
+        while (i < N) {
+          const c = bloc[i];
+          const etat = pile[pile.length-1];
+          if (c === BS && (etat.t === 'tmpl' || etat.t === 'str')) { i += 2; continue; }
+          if (etat.t === 'str') { if (c === etat.q) pile.pop(); i++; continue; }
+          if (c === QUOTE || c === '"') { pile.push({ t:'str', q:c }); i++; continue; }
+          if (etat.t === 'tmpl' && c === '$' && bloc[i+1] === '{') { pile.push({ t:'code' }); braces = 0; i += 2; continue; }
+          if (c === '`') {
+            if (etat.t === 'code') pile.push({ t:'tmpl' });
+            else pile.pop();           /* fermeture du template (imbriqué ou pas) */
+            i++; continue;
+          }
+          if (etat.t === 'code' && pile.length > 1 && c === '{') { braces++; i++; continue; }
+          if (etat.t === 'code' && pile.length > 1 && c === '}') {
+            if (braces > 0) braces--;
+            else { pile.pop(); i++; continue; }   /* fermeture du ${ */
+            i++; continue;
+          }
+          if (c === '/' && bloc[i+1] === '*') {
+            const fin = bloc.indexOf('*/', i + 2);
+            echecSiTemplate('bloc', i);
+            i = fin > 0 ? fin + 2 : N; continue;
+          }
+          if (c === '/' && bloc[i+1] === '/') {
+            const finL = bloc.indexOf(NLX, i);
+            echecSiTemplate('ligne', i);
+            i = finL > 0 ? finL : N; continue;
+          }
+          i++;
+        }
+      })(html);
+      /* (2) P0-2 : le bienvenue est un bandeau non bloquant, pas une modale.
+         L'ancien titre de fenêtre ne doit plus exister ; le poseur porte la
+         clé de stockage (une seule fois) et le bouton fermable. */
+      if (html.indexOf('Bienvenue dans la base 2026/2027') !== -1)
+        echecs.push('le titre de la fenêtre modale de bienvenue est de retour');
+      if (html.indexOf('id="bandeauPremiere"') === -1)
+        echecs.push('le bandeau non bloquant de bienvenue est absent');
+      const iMsg = html.indexOf('function messagePremiereOuverture');
+      if (iMsg < 0) echecs.push('le poseur du bandeau de bienvenue introuvable');
+      else {
+        const bloc = html.slice(iMsg, iMsg + 1400);
+        if (bloc.indexOf('ouvrirDialogue') !== -1)
+          echecs.push('le bienvenue s affiche encore dans une fenêtre modale');
+        if (bloc.indexOf('spk_msg_base_2026') === -1 || bloc.indexOf('Compris') === -1)
+          echecs.push('le bandeau de bienvenue ne se mémorise plus ou ne se ferme plus');
+      }
+      /* (3) P0-3 : le vert est un état, plus une position */
+      const mLast = html.match(/\.foot-cell:last-child\{[^}]*\}/);
+      if (mLast && mLast[0].indexOf('fill-good') !== -1)
+        echecs.push('le vert positionnel last-child est de retour');
+      if (html.indexOf('.foot-cell.is-ok') === -1)
+        echecs.push('la classe explicite is-ok est absente');
+      const iValid = html.indexOf('const validationCell');
+      if (iValid < 0) echecs.push('validationCell introuvable');
+      else {
+        const bloc = html.slice(iValid, iValid + 400);
+        if (bloc.indexOf('is-ok') === -1)
+          echecs.push('la validation ne porte plus le vert explicite');
+      }
+      if (html.indexOf('class="foot-second"') === -1)
+        echecs.push('la ligne secondaire de la fiche a disparu');
+      /* (4) P0-4 : Atelier / Tableau masqués du rail */
+      const mRail = html.match(/\.toolbar-ecrans #carteBtn[^}]*\}/);
+      if (!mRail) echecs.push('la règle de masquage Atelier/Tableau a disparu');
+      else if (mRail[0].indexOf('display:none') === -1 && mRail[0].indexOf('display: none') === -1)
+        echecs.push('Atelier/Tableau ne sont plus masqués');
+    }
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'P0 brief 4.124 : tuile sans commentaire rendu, bienvenue non modal, vert explicite, rail recentré' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   /* ── v4.112.1 — LA PORTE TDZ DU CHARGEMENT ────────────────────────────
      Le bug de la répétition générale pré-prod (26/10) : une globale assignée
      dans loadAll() mais déclarée APRÈS l'appel initial lève ReferenceError,

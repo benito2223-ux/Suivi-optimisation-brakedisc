@@ -5,6 +5,44 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.124.0] — 2026-10-28 · Les quatre P0 du brief de revue externe · Z Code
+
+La revue externe (`chantier_zcode_suivi_optimisation.md`, transmise par
+Benjamin) a validé les lots 4.120-4.123 mais relevé quatre défauts visibles —
+tous corrigés ici, chacun vérifié mécaniquement avant correction :
+
+- **P0-1 — un commentaire de code s'affichait en texte sur les tuiles**
+  (`/* v4.121 acte II … */` resté dans un template literal). Retiré du
+  template ; la règle du cahier est désormais **gardée** : une machine à
+  états du harnais traverse le bloc des tuiles et signale tout commentaire
+  qui vivrait dans un template (il se rendrait en texte).
+- **P0-2 — la fenêtre « Bienvenue » bloquait encore le démarrage** (seule
+  « Nouveautés » avait été coupée en 4.120). Elle devient un **bandeau non
+  bloquant, fermable, affiché une seule fois** (clé conservée) — deux
+  lignes : la base est en place + le geste de mise à jour.
+- **P0-3 — le vert du bandeau de fiche était une position** :
+  `.foot-cell:last-child` colorait « Temps de cycle » depuis que la
+  validation est remontée au milieu. Le vert devient la **classe explicite
+  `.is-ok`**, posée seulement quand le seuil de validation est atteint ; et
+  les trois précisions (durée de vie, €/arête, temps de cycle) descendent
+  dans une **ligne secondaire grise** — trois chiffres ouvrent la fiche
+  (coût, validation, gain).
+- **P0-4 — le rail contredisait la 4.122** : Atelier et Tableau restaient
+  des entrées à côté de la Vue d'ensemble qui porte déjà ses onglets
+  Lignes · Postes · Tableau. Les deux boutons sont **masqués** (display:none
+  — les onglets les cliquent en interne, vérifié) : le rail reste
+  Vue d'ensemble · Synthèse · Matis · + Scénario · Transmettre.
+
+**Vérifié** : 662 tests | 0 échec + porte « P0 brief 4.124 » ; contre-regards
+A/B/C/D (commentaire réinjecté → parseur, modale réinjectée → porte, vert
+positionnel réinjecté → porte, masquage retiré → porte) ; navigateur :
+`innerText` sans `/*`, bandeau non modal visible, rail à trois écrans, clic
+onglet « Postes » → Atelier ouverte via le bouton masqué, profil nettoyé.
+**Reste au fil (P1/P2 du brief)** : la boussole « Je cherche… » et son
+« raconter / transmettre » ambigu, l'ordre du rail (Transmettre en fin),
+les doublons de tuile ouverte, la sémantique des couleurs, le mobile 457 px,
+l'aide périmée — en lots 4.125-4.127 selon le brief.
+
 ## [4.123.0] — 2026-10-28 · Acte III : un bouton « Transmettre », l'administration au menu ••• · Hermes
 
 Fin du débroussaillage. **« Transmettre »** prend la tête de la barre : un menu

@@ -820,6 +820,57 @@ encore possible — et un détail scénarios lisible par OP) déposés dans
 `Hermes Version/NOTE_ERGONOMIE_BANDEAU_A_HERMES.md` pour son contre-analyse.
 Décision à Benjamin après avis d'Hermes ; rien n'est écrit dans l'outil.
 
+### ▸ Tour 99 — 28/10/2026 — **Z Code** (v4.124.0 — les quatre P0 du brief de revue externe)
+
+Benjamin transmet un avis critique externe (`chantier_zcode_suivi_optimisation.md`,
+P0/P1/P2, avec lignes et critères de test) sur les lots 4.120-4.123 : « ils
+ont introduit des bugs visibles et plusieurs corrections annoncées ne sont
+pas faites ». Les quatre P0 sont **vérifiés mécaniquement avant correction**
+(rien pris sur parole) — les quatre constats tenaient :
+
+1. **P0-1** : le commentaire `/* v4.121 acte II … */` vivait DANS le template
+   des tuiles → rendu en texte. Retiré ; et la règle du cahier est désormais
+   **gardée** : une machine à états du harnais (pile code/template/expression)
+   traverse le bloc `carte` des tuiles et signale tout commentaire qui
+   vivrait dans un template. **Deux tours d'apprentissage pour ce garde-fou** :
+   v1 = mini-parseur sur tout le fichier → des centaines de faux positifs
+   (HTML/CSS/JS mélangés) ; v2 = compteur d'accolades naïf → les `{}` d'objets
+   dans `${}` décrémentaient faux ; v3 = pile d'états propre, contre-regard
+   tombé. Et mon propre commentaire de porte contenait `/* … */` qui fermait
+   le commentaire JS trop tôt — le sujet se venge.
+2. **P0-2** : la fenêtre « Bienvenue dans la base 2026/2027 » bloquait encore
+   le démarrage (4.120 n'avait coupé que Nouveautés). Elle devient un
+   **bandeau non bloquant, fermable, une seule fois** (clé conservée),
+   deux lignes. **NB : l'ouverture auto sur la Vue d'ensemble (ta décision
+   Q11 du 30/09) n'est PAS changée** — le brief externe le demande, mais Q11
+   est ton arbitrage explicite : il se tranche à la voix, pas en silence.
+   Dis le mot si tu veux l'écran de travail à l'ouverture.
+3. **P0-3** : le vert `.foot-cell:last-child` (position) frappait « Temps de
+   cycle » depuis que la validation est remontée au milieu (acte II
+   d'Hermes). Le vert devient la **classe explicite `.is-ok`** sur la
+   validation seulement quand le seuil est atteint ; durée de vie / €/arête /
+   temps de cycle descendent dans une **ligne secondaire grise** — trois
+   chiffres ouvrent la fiche (coût, validation, gain), comme le demandait
+   la 4.121.
+4. **P0-4** : Atelier et Tableau quittent le rail (`display:none` — les
+   onglets de la Vue d'ensemble les cliquent en interne, `.click()` vérifié
+   au navigateur sur l'onglet « Postes »). Rail : Vue d'ensemble · Synthèse ·
+   Matis · + Scénario · Transmettre.
+
+**Vérifié** : harnais **662 tests | 0 échec** + porte « P0 brief 4.124 » ·
+contre-regards A/B/C/D tombés (commentaire réinjecté, modale réinjectée,
+vert positionnel réinjecté, masquage retiré) · navigateur sur le `dist/` :
+`innerText` sans `/*`, bandeau non modal visible, rail à trois écrans, clic
+« Postes » → Atelier ouverte · profil nettoyé. **DEV** : 4.124.0 déployée et
+vérifiée curl. **PROD : rien** — 4.123.0, elle attend la phrase.
+
+**Reste au fil (P1/P2 du brief)** : la boussole et son « raconter /
+transmettre » ambigu, l'ordre du rail (Transmettre en fin, Importer dans le
+menu), les doublons de la tuile ouverte, la sémantique des couleurs, le
+mobile (457 px à 390), l'aide périmée et le CSS orphelin — en lots
+4.125-4.127 selon le plan du brief. Les briques d'Hermes (bandeau dit vrai,
+fusion outils) restent aussi en file — à arbitrer avec les lots P1.
+
 ### ▸ Tour 98 — 28/10/2026 — **Z Code** (v4.120.0 — lot confort : ⤓ Imprimer réparé, plus de page fantôme, l'import au rail)
 
 Les quatre retours de Benjamin du matin, sur la 4.119.0 d'Hermes (briques
