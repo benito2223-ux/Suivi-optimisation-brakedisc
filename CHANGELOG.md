@@ -5,6 +5,43 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.128.0] — 2026-10-28 · Le chiffre de tête est le gain d'outillage · Z Code
+
+Le LOT 3 du brief complémentaire (décisions Benjamin validées) :
+
+- **Le chiffre de tête = le gain d'outillage** (plaquettes + pièces
+  détachées). Le **temps machine** et le **rebut** sont des axes séparés,
+  jamais sommés — `coutsDetail` expose `cumul` (la somme complète) mais il
+  n'apparaît que sur demande explicite, libellé « cumul des deux axes ».
+  Machine et rebut inactifs (défaut) : les chiffres que Matis a déjà vus ne
+  bougent pas (test de non-régression).
+- **Le gain porte son étiquette** : « objectif, non mesuré » à la charnière
+  visée ; **« mesuré (min, N essais) »** dès qu'une vraie fin de vie est
+  observée — le gain mesuré est calculé à la charnière réelle minimale,
+  substituée logement par logement. La fourchette visée / moyenne /
+  minimum est calculée.
+- **`charniereReelle`** expose min / N / fins réelles / « ≥ » ; la moyenne
+  ne s'affiche qu'à partir de **5 vraies fins de vie** (les essais arrêtés
+  à la visée sont des bornes inférieures, pas des fins de vie).
+- **La polarité des heures parle** : « −X h/an (plus rapide) » / « +X h/an
+  (plus lent) » — dans le détail annuel, la tuile et les A4.
+- **Le conditionnement et la casse** : `plaquettesParAn` accepte deux
+  paramètres optionnels (boîte de N, arrondi au supérieur ; taux de casse
+  %) — vides = inchangé.
+- **Le rebut nomme son échantillon** : le N (nombre de pièces du journal)
+  voyage avec le taux.
+- **La fusion nomme le conflit d'horloge** : deux versions d'un essai
+  modifiées à moins de 10 minutes d'écart ne sont pas arbitrées en silence
+  — la version locale est conservée, le conflit est signalé nommément.
+
+**Vérifié** : 667 tests | 0 échec (les recalages documentés : le total =
+outillage, le seuil de bascule sur l'axe outillage, le non-réparti du
+verdict par outil dit la productivité machine non portée, le détail annuel
+suit le nouveau libellé) + les tests des nouveaux points (fourchette avec
+la physique du mesuré plus faible, conditionnement à l'arithmétique exacte,
+conflit d'horloge). Machine inactive : les chiffres de l'exemple sont
+identiques (test de non-régression).
+
 ## [4.127.0] — 2026-10-28 · Le mode atelier · Z Code
 
 Le LOT 2 du brief complémentaire : un bouton **⚒ Atelier** de la barre

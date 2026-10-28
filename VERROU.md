@@ -1,9 +1,32 @@
-| **Auteur** | **Z Code** |
-| **Pris le** | 28/10/2026, Tour 106 |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
 | **Écrit dans** | `bilan_economique.html` (LOT 3 : chiffre de tête = outillage, machine/rebut en tuiles séparées, fourchette de gain, charniereReelle min/N/≥, polarité heures, conditionnement/casse, rebut N + seuil, conflit d'horloge), `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
 | **Version visée** | 4.128.0 |
 | **Sujet** | LOT 3 du brief complémentaire (décisions Benjamin validées) : le chiffre de tête devient le gain d'outillage (plaquettes + pièces), machine/rebut en tuiles séparées jamais sommées, fourchette visée/min/moyenne avec étiquette, polarité des heures, conditionnement + casse, rebut N + échantillon trop faible, conflit d'horloge < 10 min nommé. |
 
+---
+
+✅ **Verrou libéré par Z Code le 28/10/2026** (Tour 106, v4.128.0 — LOT 3 :
+le chiffre de tête est le gain d'outillage). **coutsDetail** ne somme plus
+plaquettes + machine (total = plaquettes + pièces ; cumul sur demande) ;
+**bilanAnnuel** : le gain = l'écart d'outillage, les écarts machine (h/an +
+€/an) et rebut en champs séparés ; **la fourchette** visée/min/moyenne avec
+étiquette (« objectif, non mesuré » / « mesuré (min, N essais) ») ;
+**charniereReelle** expose min/N/fins réelles/moyenneFins(≥ 5) +
+charniereReelleParLogement pour la substitution ; **polarité des heures**
+(« plus rapide » / « plus lent ») ; **plaquettesParAn** (conditionnement +
+casse, vides = inchangé) ; **le rebut nomme son N** ; **la fusion nomme le
+conflit d'horloge < 10 min** (local conservé, signalé). **Recalages
+documentés** : coutsDetail (outillage / cumul), seuilBascule (axe
+outillage, « hors plaquettes » = pièces + rebut, le fixture contrôle sa
+comparaison), le non-réparti du verdict par outil dit la productivité
+machine non portée. **Vérifié** : 667 tests | 0 échec (+2), syntaxe 0
+erreur. **DEV** : 4.128.0 servie, SHA-256 `0491ad8ebb49bdd3…` == dist,
+version.json cohérent. **PROD** : 4.126.0 — le LOT 3 attend ta phrase.
+Écrits : `bilan_economique.html`, `outils/patch_41280_a.py`,
+`build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md`.
+
+---
 ---
 
 ✅ **Verrou libéré par Z Code le 28/10/2026** (Tour 105, v4.127.1 — l'étape 0

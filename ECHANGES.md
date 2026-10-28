@@ -821,6 +821,57 @@ encore possible — et un détail scénarios lisible par OP) déposés dans
 `Hermes Version/NOTE_ERGONOMIE_BANDEAU_A_HERMES.md` pour son contre-analyse.
 Décision à Benjamin après avis d'Hermes ; rien n'est écrit dans l'outil.
 
+### ▸ Tour 106 — 28/10/2026 — **Z Code** (v4.128.0 — LOT 3 du brief complémentaire : le chiffre de tête est le gain d'outillage)
+
+Les sept points du LOT 3 (décisions Benjamin validées), livrés ensemble :
+
+1. **Le chiffre de tête = le gain d'outillage** : `coutsDetail` ne somme
+   plus plaquettes + machine — `total` = plaquettes + pièces détachées ;
+   machine et rebut restent des champs exposés ; `cumul` porte la somme
+   complète, affichée seulement sur demande explicite (« cumul des deux
+   axes »). **Machine et rebut inactifs (défaut) : les chiffres de Matis
+   sont identiques** — le test de non-régression le vérifie.
+2. **bilanAnnuel** : le gain annuel = l'écart **d'outillage**
+   (`perimetreCompare` filtré plaquettes + pièces) ; `deltaMachineEurAn` et
+   `deltaRebutEurAn` sortent en champs séparés, jamais sommés.
+3. **La fourchette** : `coutsDetailCharniere(sc, cfg, ligne, facteur)` — le
+   coût outillage à charnières substituées (visée / réelle min / réelle
+   moyenne via `charniereReelleParLogement`). Le gain porte son étiquette :
+   **« objectif, non mesuré »** à la visée, **« mesuré (min, N essais) »**
+   dès qu'une vraie fin de vie existe. **La physique recalée au test** : une
+   charnière réelle plus courte (75 < 150) coûte plus cher — le gain mesuré
+   est PLUS FAIBLE que l'objectif, jamais l'inverse (ma première assertion
+   disait l'inverse : la physique a tranché).
+4. **charniereReelle** expose min / N / fins réelles / moyenneFins (≥ 5
+   vraies fins de vie) et `charniereReelleParLogement` nourrit la
+   substitution.
+5. **Polarité des heures** : « −X h/an (plus rapide) » / « +X h/an (plus
+   lent) » dans le détail annuel et la tuile — plus de signe seul.
+6. **plaquettesParAn** : conditionnement (boîte de N, ceil) + taux de casse
+   — vides = inchangé, renseignés = affichés. UI de saisie : à venir.
+7. **Rebut** : le N (les pièces du journal) voyage avec le taux.
+8. **La fusion** : écart de modifieLe < 10 min → **pas d'arbitrage** — la
+   version locale est conservée, le conflit est signalé nommément (« horloges
+   des deux postes non synchrones »).
+
+**Recalages documentés** (le sens du lot change les attentes) : le test
+coutsDetail (total = outillage 0,02625 ; **cumul = 1,67625 sur demande**) ;
+seuilBascule (le cycle max porte l'axe outillage ; « hors plaquettes » =
+pièces + **rebut** — les coûts non compensables par des charnières — et le
+fixture **contrôle sa comparaison** : le test montait le prix des pièces,
+sinon B gagne sur la baseline de l'exemple global et le sens du test
+dépendait de données qui ne sont pas les siennes) ; le non-réparti du
+verdict par outil dit désormais **la productivité machine non portée par le
+verdict outillage** (−2 500 = la productivité des tuiles dépassant le gain
+d'outillage — c'est le sens du LOT 3).
+
+**Vérifié** : 667 tests | 0 échec (+2 : fourchette/physique,
+conditionnement à l'arithmétique exacte 12,5 → boîte de 50 → 55 ; conflit
+d'horloge 5 min vs 45 min), syntaxe 0 erreur. **DEV** : 4.128.0 déployée,
+vérifiée curl (SHA-256 `0491ad8ebb49bdd3…` == dist, version.json cohérent).
+**PROD** : 4.126.0 — **le LOT 3 attend ta phrase** (il change des chiffres
+que Matis voit : lis le résumé avant de trancher).
+
 ### ▸ Tour 105 — 28/10/2026 — **Z Code** (v4.127.1 — l'étape 0 de la feuille de route, avant promotion du 4.127.0)
 
 L'étape 0 de ta feuille de route, point par point :
