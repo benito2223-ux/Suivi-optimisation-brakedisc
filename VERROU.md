@@ -1,8 +1,8 @@
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | Hermes (acte II du débroussaillage) |
+| **Pris le** | 28/10/2026, session « acte 2 » |
+| **Écrit dans** | bilan_economique.html, spk-shell.js, spk-app.css, build_harness.py, CHANGELOG.md, ECHANGES.md, VERROU.md |
+| **Version visée** | 4.121.0 → 4.123.0 |
+| **Sujet** | Acte II : dédoublonnage fiche scénario (nom ×3, x/y essais conformes ×4, statuts orange), fiche en niveaux, états vides bandeau CPP, fusion Accueil/Atelier/Tableau en Vue d'ensemble |
 
 ---
 
