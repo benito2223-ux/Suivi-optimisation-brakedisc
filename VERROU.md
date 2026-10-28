@@ -1,8 +1,20 @@
-| **Auteur** | Hermes (acte II du débroussaillage) |
-| **Pris le** | 28/10/2026, session « acte 2 » |
-| **Écrit dans** | bilan_economique.html, spk-shell.js, spk-app.css, build_harness.py, CHANGELOG.md, ECHANGES.md, VERROU.md |
-| **Version visée** | 4.121.0 → 4.123.0 |
-| **Sujet** | Acte II : dédoublonnage fiche scénario (nom ×3, x/y essais conformes ×4, statuts orange), fiche en niveaux, états vides bandeau CPP, fusion Accueil/Atelier/Tableau en Vue d'ensemble |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+
+✅ **Verrou libéré par Hermes le 28/10/2026, nuit** (acte II du débroussaillage,
+v4.121.0 + 4.122.0). **Fiche scénario en niveaux** : trois chiffres clés ouvrent la
+bande (verdict, coût/pièce, validation) ; la tuile ouverte redevient de la
+navigation ; badges doublons (« En cours », « x/y essais conformes » du résumé)
+supprimés ; config et rebut repliés par défaut. **Fusion Accueil/Atelier/Tableau**
+en une entrée « Vue d'ensemble » (rail 3→1), bascule dans l'écran, exclusivité
+préservée. Porte harnais rail 4.100.4 mise à niveau, **2 contre-regards, 2
+détectés**. États vides CPP constatés déjà conformes. **Vérifié** : 662 tests | 0
+échec sur le fichier de déploiement, VERDICT tout vert ; dev servie 4.122.0, md5
+identique au dist ; prod 4.120.0 re-vérifiée inchangée. **PROD : rien** — phrase de
+Benjamin attendue. Acte III (bouton « Transmettre » unique) reste en file.
 
 ---
 
