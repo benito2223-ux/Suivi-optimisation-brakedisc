@@ -5,6 +5,15 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.123.0] — 2026-10-28 · Acte III : un bouton « Transmettre », l'administration au menu ••• · Hermes
+
+Fin du débroussaillage. **« Transmettre »** prend la tête de la barre : un menu
+unique avec tout ce qui part vers Stellantis, la hiérarchie ou l'archive —
+Rapport de validation et Générer le PDF (le scénario affiché), Exporter (.json)
+et Export CSV (l'archive). Le menu ••• se recentre : Consulter (campagne, gestes,
+recherche, nouveautés) puis Gérer (options, reset, photos, sauvegardes). Les ids
+ne bougent pas — listeners et raccourcis intactes.
+
 ## [4.122.0] — 2026-10-28 · Acte II lot 2 : Accueil, Atelier et Tableau fusionnent en une « Vue d'ensemble » · Hermes
 
 Le rail passe de trois entrées concurrentes à une seule : **Vue d'ensemble**.
