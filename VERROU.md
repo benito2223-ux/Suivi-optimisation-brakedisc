@@ -916,3 +916,7 @@ Le verrou manuel peut être oublié. Une version automatique lèverait deux déf
 
 À faire quand on aura un vrai besoin — deux sessions qui codent en parallèle sur des
 sujets différents. Pas avant : un garde-fou inutilisé est un garde-fou qu'on contourne.
+
+## DEMANDE EN ATTENTE — ACTE II du débroussaillage (Benjamin, 28/10/2026)
+
+Décrire « acte II » : dédoublonner la fiche scénario (nom ×3, « x/y essais conformes » ×4, statuts orange répétés — une info, un endroit), états vides du bandeau CPP en une ligne grise, fusionner Accueil/Atelier/Tableau en une « Vue densemble » (la boussole 4.117 reste en tête), fiche en niveaux (3 chiffres clés en tête : coût/pièce, écart vs base, validation ; config et rebut en accordéons repliés), puis acte III : bouton « Transmettre » unique + administration au menu •••. Protocole complet (verrou, ancres assert==1, portes, node --check, 662/0, build node, vérif curl). Ancres connues : nouveautesBtn ligne ~2024, verifierNouveautes ~14144, bb-alert ~2519, Tendance <h3> ~7467, rebut ~8774. État de départ : 4.120.0 en dev ET prod, 662/0, tout commité. NE PAS toucher aux polices des modèles dimpression A4 (Public Sans/Manrope = documents, pas linterface).
