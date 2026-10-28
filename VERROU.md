@@ -1,9 +1,31 @@
-| **Auteur** | **Z Code** |
-| **Pris le** | 28/10/2026, Tour 101 |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
 | **Écrit dans** | `bilan_economique.html` (lot 4.125 du brief : ouverture sur l'écran de travail (Q11 tranché), anneau de focus sur l'onglet actif, boussole retirée, Transmettre en fin de rail + Importer dedans, tuile ouverte réduite, doublons nom/statut supprimés, états vides en ligne grise), `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
 | **Version visée** | 4.125.0 |
 | **Sujet** | Lot 4.125 du brief externe (navigation et doublons), feu vert de Benjamin avec demande de captures avant/après. Mobile (457 px) reste au lot 4.127. |
 
+---
+
+✅ **Verrou libéré par Z Code le 28/10/2026** (Tour 101, v4.125.0 — lot 2 du
+brief : la navigation se resserre). **Ouverture sur l'écran de travail** (Q11
+révisé comme demandé ; Vue d'ensemble au clic ou #accueil) + anneau de focus
+retiré de son ouverture (data-sans-focus) ; **boussole retirée de la fiche**
+(Ctrl+K reste) ; **Transmettre en fin de barre** avec **Importer dans son
+groupe « L'archive »** (boutons de barre et de rail retirés ; la porte
+« lot UX 4.120 » mise à jour) ; **tuile ouverte = une ligne** (doublons
+nom/statut partent) ; **ligne grise d'état vide** au lieu du grand bandeau
+(bug latent : la 4.114 calculait realise/reste sans les renvoyer — exposés).
+**Vérifié** : 662 tests | 0 échec + porte « lot 4.125 » (7 points),
+contre-regards tombés (dont le déplacement raté de Transmettre, vu en vrai),
+navigateur (ouverture sans panel, ordre de barre mesuré, import au menu,
+ligne grise prouvée, profil nettoyé), captures avant/après fournies.
+**DEV** : 4.125.0 servie, SHA `db8bf532…` == dist. **PROD : rien** — 4.123.0.
+Reste : mobile 467 px (4.127), couleurs/disques (4.126), aide, briques Hermes.
+Écrits : `bilan_economique.html`, `spk-shell.js`, `spk-app.css`,
+`build_harness.py`, `outils/patch_41250_a/b/c.py`, `CHANGELOG.md`,
+`ECHANGES.md`, `VERROU.md`.
+
+---
 ---
 
 ✅ **Verrou libéré par Z Code le 28/10/2026** (Tour 100, v4.124.1 — la

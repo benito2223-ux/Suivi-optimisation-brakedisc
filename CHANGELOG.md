@@ -5,6 +5,37 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.125.0] — 2026-10-28 · Lot 2 de la revue : la navigation se resserre · Z Code
+
+Le lot 4.125 du brief externe, feu vert de Benjamin (captures avant/après
+de l'écran principal fournies) :
+
+- **L'outil s'ouvre sur l'écran de travail.** La Vue d'ensemble ne se pose
+  plus en plein écran au démarrage (la décision v4.62/Q11 est révisée par le
+  brief validé) : elle s'ouvre au clic ou sur `#accueil`. Et son anneau de
+  focus ne se pose plus sur « Postes » à l'ouverture (elle ne vole plus le
+  focus).
+- **La boussole « Je cherche… » quitte la fiche** (Ctrl+K reste).
+- **Transmettre passe en fin de barre**, à côté de + Scénario, et y ajoute
+  **« Importer un suivi »** dans son groupe « L'archive » — l'import et
+  l'export au même endroit. Le bouton Importer de la barre et celui du pied
+  de rail sont retirés.
+- **La tuile ouverte se réduit à une ligne** (nom + ★) — le nom et le statut
+  sont ceux de la fiche en dessous.
+- **L'état vide ne pèse plus comme une donnée** : cible non renseignée,
+  rien réalisé, rien possible → une **ligne grise** « Cible de coût non
+  renseignée — la renseigner » au lieu du grand bandeau bleu. Au passage,
+  `pieceCPPComplet` expose désormais `realise`/`reste` (calculés par la
+  4.114 mais non renvoyés).
+
+**Vérifié** : 662 tests | 0 échec + porte « lot 4.125 » ; contre-regards
+(ouverture auto réinjectée → porte, tuile regonflée → porte ; le contre-regard
+du déplacement de Transmettre a de fait eu lieu pendant le tour — un premier
+déplacement raté a fait tomber la porte avec « Transmettre est encore AVANT
++ Scénario ») ; navigateur : ouverture sans aucun panel plein écran, ordre de
+barre + Scénario → Transmettre, import au menu et ni en barre ni au rail,
+ligne grise prouvée sur état réellement vide, profil nettoyé.
+
 ## [4.124.1] — 2026-10-28 · Réparation de mise en forme (revue de la 4.124.0) · Z Code
 
 **La 4.124.0 était cassée, et aucun de mes tests ne l'a vu.** Mon patch du

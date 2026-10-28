@@ -820,6 +820,50 @@ encore possible — et un détail scénarios lisible par OP) déposés dans
 `Hermes Version/NOTE_ERGONOMIE_BANDEAU_A_HERMES.md` pour son contre-analyse.
 Décision à Benjamin après avis d'Hermes ; rien n'est écrit dans l'outil.
 
+### ▸ Tour 101 — 28/10/2026 — **Z Code** (v4.125.0 — lot 2 du brief : la navigation se resserre)
+
+Feu vert de Benjamin (« Zcode peut passer au lot 4.125 », captures
+avant/après demandées). **Captures fournies** : AVANT (boussole avec
+« raconter / transmettre », Transmettre en tête de barre, la grande carte
+« Ce que coûte la pièce » à l'état vide) et APRÈS (écran de travail direct,
++ Scénario puis Transmettre en fin de barre, plus de boussole, ligne grise
+prouvée sur état réellement vide).
+
+1. **Q11 révisé comme demandé** : l'outil s'ouvre sur l'**écran de travail**
+   (`if(location.hash === "#accueil") ouvrirAccueil();`) — la Vue
+   d'ensemble reste au clic ou #accueil. **Et l'anneau de focus** : la Vue
+   d'ensemble porte `data-sans-focus` — `ouvrirPanneau` ne vole plus le
+   focus, l'anneau ne se pose plus sur « Postes » à l'ouverture.
+2. **La boussole** quitte la fiche (Ctrl+K reste ; fonction et styles
+   dormants).
+3. **Transmettre en fin de barre** (après + Scénario) — déplacement PAR
+   BORNES EXACTES : ma première tentative (regex non-greedy sur le wrap) a
+   mordu trop court, la porte l'a vu (« Transmettre est encore AVANT +
+   Scénario ») — contre-regard de fait. Deuxième tentative par indentation
+   calculée : fausse aussi (l'indentation réelle était inversée, lue ligne
+   à ligne). Troisième : chaînes exactes du fichier.
+4. **Importer dans Transmettre** (groupe « L'archive ») ; le bouton de la
+   barre et le ⤒ du pied de rail (mon 4.120) retirés ; la porte « lot UX
+   4.120 » mise à jour (elle exigeait ce que la décision supprime — même
+   famille que la porte coque au Tour 93).
+5. **Tuile ouverte = une ligne** (nom + ★) — plus de grande carte vide, les
+   doublons nom/statut partent avec.
+6. **Ligne grise d'état vide** : cible non renseignée + rien réalisé +
+   rien possible → « Cible de coût non renseignée — la renseigner » au lieu
+   du grand bandeau bleu. **Bug latent attrapé au passage** : la 4.114
+   d'Hermes calculait `realise`/`reste` sans les RENVOYER — mon test de
+   condition lisait `undefined`. Exposés au return.
+
+**Vérifié** : `node --check` 5/5 · harnais **662 tests | 0 échec** + porte
+« lot 4.125 » (7 points) · contre-regards (ouverture auto → porte ; tuile
+regonflée → porte ; déplacement raté → porte, vu en vrai) · navigateur :
+ouverture SANS aucun panel plein écran, ordre de barre vérifié au getBoundingClientRect
+(+ Scénario à 292 px, Transmettre à 381 px), import au menu et ni en barre
+ni au rail, ligne grise prouvée, **profil nettoyé**. **DEV** : 4.125.0
+déployée et vérifiée curl. **PROD : rien** — 4.123.0, la phrase attend.
+**Reste** : le mobile (457 px, lot 4.127), les couleurs et les disques
+(4.126), l'aide périmée — et les briques Hermes.
+
 ### ▸ Tour 100 — 28/10/2026 — **Z Code** (v4.124.1 — la 4.124.0 était cassée ; la réparation de Benjamin adoptée, le garde-fou structurel posé)
 
 La revue de la 4.124.0 (Benjamin, rendu réel 1440/390 px) : « une accolade

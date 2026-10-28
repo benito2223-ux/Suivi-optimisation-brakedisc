@@ -30,12 +30,8 @@
     '</div>',
     '<div class="spk-rail-label">Parcours</div>',
     '<div class="spk-rail-nav" id="spkRailNav"></div>',
-    /* v4.120 — l'import au pied du rail (demande Benjamin) : le même geste
-       que l'Importer de la barre d'outils, à l'endroit où l'œil est. */
-    '<div class="spk-rail-actions">',
-    '  <button type="button" class="spk-rail-action" id="spkRailImport" title="Importer un fichier .json de suivi (remplacer ou fusionner)">⤒<span>Importer</span></button>',
-    '</div>',
-    '<div class="spk-rail-foot">',
+    /* v4.125 — le bouton Importer du pied de rail est retiré : l'import vit
+       dans le menu Transmettre (groupe « L'archive »), comme l'export. */
     '  <span class="spk-rail-live"><i></i>Données locales</span>',
     '  <span class="spk-rail-version"></span>',
     '</div>'
@@ -63,13 +59,8 @@
   document.body.prepend(rail);
   document.body.classList.add("spk-has-rail");
 
-  /* v4.120 — le câblage : le même file picker que l'Importer de la barre
-     d'outils (la coque ne touche pas aux données, elle déclenche). */
-  const railImport = rail.querySelector("#spkRailImport");
-  if (railImport) railImport.addEventListener("click", () => {
-    const inp = document.getElementById("importInput");
-    if (inp) inp.click();
-  });
+  /* v4.125 — le câblage rail→import a disparu avec le bouton : l'import vit
+     dans le menu Transmettre (bilan_economique.html, importMenuBtn). */
 
   // Le libellé reste accessible quand le rail se réduit en icônes.
   nav.querySelectorAll("button").forEach((btn) => {

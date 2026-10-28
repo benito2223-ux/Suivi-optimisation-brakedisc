@@ -1453,15 +1453,72 @@ try {
       }
     }
     if (shell) {
-      /* (3) le rail câble l'import au file picker de l'app */
-      if (shell.indexOf('id="spkRailImport"') === -1)
-        echecs.push('le bouton Importer a quitté le pied du rail');
-      if (shell.indexOf('getElementById("importInput")') === -1)
-        echecs.push('le bouton du rail ne déclenche plus le file picker de l app');
+      /* (3) v4.125 — le bouton Importer du pied de rail est RETIRÉ (décision
+         Benjamin : l'import vit dans le menu Transmettre, groupe « L'archive »
+         — porte lot 4.125). La porte vérifie son absence, pas sa présence. */
+      if (shell.indexOf('spkRailImport') !== -1)
+        echecs.push('le bouton Importer du rail est de retour (il vit dans Transmettre depuis 4.125)');
     }
     function NL79(){ return String.fromCharCode(10); }
     if (echecs.length) r.echecs += echecs.length;
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot UX 4.120 : printGo vit (logo A4), anti-flash posé, import au rail' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
+  /* ── v4.125 — LE LOT NAVIGATION ET DOUBLONS ───────────────────────────
+     Brief externe P1-1/P1-2/P1-3, feu vert Benjamin : ouverture sur l'écran
+     de travail (Vue d'ensemble sur clic ou #accueil), boussole retirée de la
+     fiche, Transmettre en fin de barre avec Importer dans son groupe
+     « L'archive », tuile ouverte à une ligne, état vide en ligne grise,
+     anneau de focus retiré de l'ouverture de la Vue d'ensemble. */
+  (function lot4125(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const lire = function(f){ try { return fs.readFileSync(path.join(REPO, f), 'utf8'); } catch (e) { return ''; } };
+    const html = lire('bilan_economique.html');
+    const shell = lire('spk-shell.js');
+    if (!html) echecs.push('bilan_economique.html introuvable');
+    else {
+      /* (1) l'ouverture : la Vue d'ensemble ne s'ouvre plus toute seule */
+      const mOpen = html.match(/if\([^)]*\)\s*ouvrirAccueil\(\);/);
+      if (!mOpen) echecs.push('la condition d ouverture de la Vue d ensemble est introuvable');
+      else if (mOpen[0].indexOf('#accueil') === -1 || mOpen[0].indexOf('!location.hash') !== -1)
+        echecs.push('la Vue d ensemble s ouvre encore sans #accueil');
+      /* (2) la boussole n'est plus rendue dans la fiche */
+      const iFiche = html.indexOf("el.innerHTML = ");
+      const zone = html.slice(html.indexOf('boussoleHTML'), html.indexOf('boussoleHTML') + 200);
+      if (zone.indexOf('boussoleHTML() +') !== -1)
+        echecs.push('la boussole est encore rendue en tête de fiche');
+      /* (3) Transmettre APRÈS + Scénario dans le DOM (fin de barre) */
+      const iT = html.indexOf('id="transmettreBtn"');
+      const iA = html.indexOf('id="addBtn"');
+      if (iT < 0 || iA < 0) echecs.push('Transmettre ou + Scénario introuvable');
+      else if (iT < iA) echecs.push('Transmettre est encore AVANT + Scénario (fin de barre attendue)');
+      /* (4) Importer dans le menu Transmettre ; plus de bouton de barre ni de rail */
+      if (html.indexOf('id="importMenuBtn"') === -1)
+        echecs.push('l item Importer a disparu du menu Transmettre');
+      if (html.indexOf('id="importBtn"') !== -1)
+        echecs.push('le bouton Importer de la barre est de retour');
+      if (shell.indexOf('spkRailImport') !== -1)
+        echecs.push('le bouton Importer du rail est de retour');
+      /* (5) la tuile ouverte à une ligne (pas de badges sur l'actif) */
+      const iCarte = html.indexOf('if(sc.id === activeId) return `');
+      if (iCarte < 0) echecs.push('la réduction de la tuile ouverte a disparu');
+      else {
+        const bloc = html.slice(iCarte, iCarte + 500);
+        if (bloc.indexOf('tc-badges') !== -1 || bloc.indexOf('tag-pill') !== -1)
+          echecs.push('la tuile ouverte porte encore badges ou tags');
+      }
+      /* (6) la ligne grise d'état vide */
+      if (html.indexOf('pcb-vide') === -1)
+        echecs.push('la ligne grise d état vide a disparu');
+      /* (7) la Vue d'ensemble ne vole plus le focus */
+      if (html.indexOf('data-sans-focus') === -1)
+        echecs.push('le mécanisme sans-focus a disparu');
+    }
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.125 : ouverture sur la fiche, boussole retiree, Transmettre en fin avec Importer, tuile a une ligne, etat vide gris' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
   /* ── v4.124.1 — L'ÉQUILIBRE CSS (leçon de la 4.124.0) ──────────────────

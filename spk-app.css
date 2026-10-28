@@ -2547,18 +2547,7 @@ body.spk-has-rail {
   box-shadow: inset 3px 0 0 var(--shell-signal);
 }
 
-/* v4.120 — l'import au pied du rail */
-.spk-rail-actions { padding: 10px 10px 0; }
-.spk-rail-action {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 6px 10px; border-radius: 4px;
-  background: rgba(255, 255, 255, .12); color: #fff;
-  border: 1px solid rgba(255, 255, 255, .28);
-  font-family: var(--font-mono, monospace); font-size: 10.5px; letter-spacing: .04em;
-  cursor: pointer;
-}
-.spk-rail-action:hover { background: rgba(255, 255, 255, .22); }
-.spk-rail-off .spk-rail-action span { display: none; }
+/* v4.125 — les styles du bouton Importer du pied de rail sont retirés avec lui. */
 .spk-rail-foot {
   display: flex;
   align-items: center;
