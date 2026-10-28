@@ -1,8 +1,8 @@
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | Hermes (acte III du débroussaillage) |
+| **Pris le** | 28/10/2026, suite de session « acte 2 » |
+| **Écrit dans** | bilan_economique.html, spk-app.css, build_harness.py, CHANGELOG.md, ECHANGES.md, VERROU.md |
+| **Version visée** | 4.123.0 |
+| **Sujet** | Acte III : un bouton « Transmettre » unique (rapports + exports) ; administration regroupée au menu ••• |
 
 ✅ **Verrou libéré par Hermes le 28/10/2026, nuit** (acte II du débroussaillage,
 v4.121.0 + 4.122.0). **Fiche scénario en niveaux** : trois chiffres clés ouvrent la
