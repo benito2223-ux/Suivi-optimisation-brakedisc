@@ -5,6 +5,20 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.121.0] — 2026-10-28 · Acte II lot 1 : la fiche scénario en niveaux, une info un endroit · Hermes
+
+Débroussaillage acte II (revue Claude validée par Benjamin). La fiche scénario
+gagne des niveaux : la tuile ouverte redevient de la navigation (son nom reste,
+ses chiffres répétés partent — la mini-fiche « dont plaquettes / temps cycle /
+essais / rebut » est supprimée), le badge « En cours » de tête disparaît (le
+statut select et la cellule validation disent déjà), le badge « x/y essais
+conformes » du résumé d'essais part (la cellule Validation est l'unique
+endroit). Les trois chiffres clés ouvrent la bande : verdict, coût/pièce (avec
+son écart), validation — remontée juste après le coût. La configuration naît
+repliée (l'utilisateur la déplie, le choix survit aux re-rendus —
+`configReplies` devient `configOuverts`, sémantique inversée), et le suivi
+rebut se replie en accordéon avec son résumé en tête. 662 tests | 0 échec.
+
 ## [4.120.0] — 2026-10-28 · Lot confort : ⤓ Imprimer réparé, plus de page fantôme, l'import au rail · Z Code
 
 Trois retours de terrain de Benjamin (28/10), traités en un lot (les briques
