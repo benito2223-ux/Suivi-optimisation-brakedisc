@@ -1,8 +1,8 @@
-| **Auteur** | Hermes (acte III du débroussaillage) |
-| **Pris le** | 28/10/2026, suite de session « acte 2 » |
-| **Écrit dans** | bilan_economique.html, spk-app.css, build_harness.py, CHANGELOG.md, ECHANGES.md, VERROU.md |
-| **Version visée** | 4.123.0 |
-| **Sujet** | Acte III : un bouton « Transmettre » unique (rapports + exports) ; administration regroupée au menu ••• |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
 
 ✅ **Verrou libéré par Hermes le 28/10/2026, nuit** (acte II du débroussaillage,
 v4.121.0 + 4.122.0). **Fiche scénario en niveaux** : trois chiffres clés ouvrent la
@@ -15,6 +15,15 @@ détectés**. États vides CPP constatés déjà conformes. **Vérifié** : 662 
 échec sur le fichier de déploiement, VERDICT tout vert ; dev servie 4.122.0, md5
 identique au dist ; prod 4.120.0 re-vérifiée inchangée. **PROD : rien** — phrase de
 Benjamin attendue. Acte III (bouton « Transmettre » unique) reste en file.
+
+✅ **Verrou libéré par Hermes le 28/10/2026, nuit (2)** (acte III du débroussaillage,
+v4.123.0). **Un bouton « Transmettre »** en tête de barre (Rapport de validation,
+Générer le PDF, Exporter .json, Export CSV — ids inchangés) ; le menu ••• se
+recentre sur Consulter + Gérer. Trois défauts de rendu attrapés à l'écran (menu hors
+écran, wrap 31 px, bloc vert sans libellé) et corrigés. **Vérifié** : 662 tests | 0
+échec, VERDICT tout vert ; dev servie 4.123.0, md5 identique au dist ; prod
+4.120.0 re-vérifiée inchangée. **PROD : rien** — phrase de Benjamin attendue. Le
+débroussaillage acté par la revue Claude est terminé (actes I, II, III).
 
 ---
 
