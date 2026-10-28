@@ -5,6 +5,31 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.120.0] — 2026-10-28 · Lot confort : ⤓ Imprimer réparé, plus de page fantôme, l'import au rail · Z Code
+
+Trois retours de terrain de Benjamin (28/10), traités en un lot (les briques
+4.114/4.115 d'Hermes restent en file) :
+
+- **« Générer le PDF » refonctionne.** Le bouton « ⤓ Imprimer » ouvrait le
+  panneau d'options puis… rien : le code lisait le logo dans l'en-tête
+  (`.hd-left img`), **retiré au dé-branding du 22/10 (4.104)** — le
+  `querySelector` rendait null, l'erreur jetait avant `window.print()`.
+  Mort pendant 6 jours sans qu'on le voie. Le logo A4 embarqué
+  (`LOGO_SPK_SRC`) est maintenant la source directe.
+- **Plus de page fantôme au démarrage.** Le squelette statique se peignait
+  pendant les 1-2 s de chargement du script (« on aperçoit l'ancienne page
+  puis la nouvelle ») : le body est caché jusqu'au premier rendu, avec un
+  filet de révélation à 5 s (une page invisible serait pire qu'une page en
+  retard).
+- **L'import au pied du rail.** Un bouton « ⤒ Importer » rejoint l'état des
+  données en bas du rail de navigation — le même file picker que l'Importer
+  de la barre d'outils (remplacer ou fusionner).
+
+**Vérifié** : 662 tests | 0 échec (suite Hermes) + porte « lot UX 4.120 »
+(contre-regards A/B/C tombés), parcours ⤓ Imprimer rejoué au navigateur avec
+`window.print` neutralisé (logo posé, `window.print` atteint), bouton rail
+visible en pied, `data-pret` posé au premier rendu, profil nettoyé.
+
 ## [4.119.0] — 2026-10-26, nuit · La Base Matis embarquée · Hermes
 
 **La demande.** Benjamin : « nous avons toutes les données dans les fichiers de

@@ -818,6 +818,49 @@ encore possible — et un détail scénarios lisible par OP) déposés dans
 `Hermes Version/NOTE_ERGONOMIE_BANDEAU_A_HERMES.md` pour son contre-analyse.
 Décision à Benjamin après avis d'Hermes ; rien n'est écrit dans l'outil.
 
+### ▸ Tour 98 — 28/10/2026 — **Z Code** (v4.120.0 — lot confort : ⤓ Imprimer réparé, plus de page fantôme, l'import au rail)
+
+Les quatre retours de Benjamin du matin, sur la 4.119.0 d'Hermes (briques
+4.114/4.115 lues et **en file** — un tour par brique, jamais les deux) :
+
+1. **« Générer le PDF » ne fonctionne pas** — vrai, et mort depuis le
+   **22/10** : `printGo` lisait le logo dans l'en-tête (`.hd-left img`),
+   retiré au dé-branding 4.104 — `querySelector` null, TypeError **avant**
+   `window.print()`. Six jours sans impression, personne ne s'en était servi.
+   Fix : le logo A4 embarqué `LOGO_SPK_SRC` est la source directe. Parcours
+   rejoué au navigateur avec `window.print` neutralisé : logo posé,
+   `window.print` atteint.
+2. **« On aperçoit l'ancienne page puis la nouvelle »** — le squelette
+   statique se peignait pendant les 1-2 s de chargement du script
+   (1,75 Mo, polices base64). Le body se cache désormais jusqu'au premier
+   rendu (`data-pret`), avec un **filet à 5 s** — une page invisible serait
+   pire qu'une page en retard. **Accroc assumé** : le filet avait d'abord été
+   posé en `<script>` dans le head — la porte « css impression » découpe le
+   head **au premier `<script`** et se retrouvait tronquée (3 échecs) ;
+   le filet déménage après `loadAll()` (planifié tôt, tire à 5 s même si le
+   rendu mourait), la porte css impression est refonte verte.
+3. **L'import au pied du rail** : bouton « ⤒ Importer » à côté de l'état des
+   données — le même file picker que l'Importer de la barre d'outils
+   (remplacer ou fusionner). Rail réduit : le libellé se cache, l'icône
+   reste.
+4. **Le raccourci Matis** : **expliqué, pas retiré** — il ouvre le lecteur du
+   **classeur hebdomadaire de Matis** (production réelle, CPP réel, écart à
+   la théorie ; lu sur le poste, rien n'est envoyé). Redondant avec
+   « 📁 Lire un classeur hebdo… » déjà présent dans le Plan des
+   consommations : sa suppression du rail est **proposée**, décision
+   Benjamin.
+
+**Vérifié** : harnais **662 tests | 0 échec** (suite Hermes) + porte
+« lot UX 4.120 » · **contre-regards A/B/C** (logo fautin réinjecté → porte ;
+révélation retirée → porte ; câblage rail coupé → porte), restaurations
+vérifiées · navigateur sur le `dist/` : bouton ⤒ Importer visible en pied de
+rail, `data-pret` posé, ⤓ Imprimer sans exception · profil nettoyé.
+Deux portes d'Hermes recâlées au passage (sans desserrer) : l'ancre TDZ
+(`}loadAll();` est désormais collé sans saut de ligne — première occurrence
+au lieu du saut de ligne) et les aiguilles anti-flash (un `;` les faisait
+rater). **DEV** : 4.120.0 déployée et vérifiée curl (empreinte == dist).
+**PROD : rien** — elle attend la phrase de Benjamin.
+
 ### ▸ Tour 97 — 26/10/2026, soir — **Z Code** (v4.113.0 — le bug OP40 vu par Benjamin en prod : le verdict par outil parle le vrai langage des fiches)
 
 Benjamin, depuis la prod 4.112.1 : « compare par exemple EMAG 1 OP40 — les
