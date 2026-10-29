@@ -14,6 +14,15 @@
 
 ---
 
+✅ **Verrou libéré par Hermes le 30/10/2026** (Tour 110, v4.130.1 — reprise
+du lot 4.130 : « + Scénario » principal bleu plein, en-tête mobile
+343 px → 95 px, mesure du débord interne, porte coque 4.130.1, contre-regard
+3 régressions vues, 673/0, DEV vérifiée curl). **PROD : rien — 4.129.1.**
+Reste au brief : lot 4.131 (chiffre de gain, états vides), lot 4.132 ;
+`outils/mesure_41301.py` fournit captures et mesures 1440/390 pour chaque
+Attention au cache service worker pour tout test visuel :
+purger les registrations avant de juger un rendu.
+
 ✅ **Verrou libéré par Z Code le 29/10/2026** (Tour 109, v4.130.0 — passe
 design lot 4.130 : boutons et en-tête). **Charter v4.70 (disque noir +
 chevron) remplacé** par trois niveaux (principal bleu plein unique,
