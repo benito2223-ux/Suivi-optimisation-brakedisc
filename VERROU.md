@@ -1,8 +1,8 @@
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | **Z Code** |
+| **Pris le** | 29/10/2026, Tour 109 |
+| **Écrit dans** | `bilan_economique.html` (LOT 4.130 du brief design : hiérarchie 3 niveaux de boutons, disques noirs supprimés, chips, filigrane dev-only au coin, virgule Composition, version, NOUVEAUTES), `spk-app.css` + `spk-shell.js` (en-tête 2 rangées navy, onglets soulignés, + Scénario hors barre), `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
+| **Version visée** | 4.130.0 |
+| **Sujet** | Passe design « conviviale », lot 4.130 (boutons et en-tête) : une hiérarchie de boutons à trois niveaux (principal bleu plein unique, secondaire contour, tertiaire texte), fin des disques noirs à chevron partout, en-tête en deux rangées (logo + titre + actions / fil d'Ariane) avec onglets soulignés, barre navy 54 px à liseré bleu, filigrane seulement en DEV au coin. Aucune fonction nouvelle (interdiction brief). Captures avant/après 1440/390 × normal/atelier/verrouillé. |
 
 ---
 
