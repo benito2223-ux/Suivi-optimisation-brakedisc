@@ -1,8 +1,30 @@
-| **Auteur** | **Z Code** |
-| **Pris le** | 29/10/2026, Tour 108 bis (contrôle pré-prod) |
-| **Écrit dans** | `outils/retour_arriere/` (la 4.126.0 téléchargée de la prod), `ECHANGES.md`, `VERROU.md` — **pas dans `bilan_economique.html`** |
-| **Version visée** | 4.129.1 (inchangée) |
-| **Sujet** | Le contrôle demandé par Benjamin avant la phrase de prod : 4.126.0 (prod) vs 4.129.1 (dist) chargées du même export réel rev433, comparaison des chiffres de tête (gain annuel, coût/pièce) machine décochée. |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+
+---
+
+✅ **Verrou libéré par Z Code le 29/10/2026** (Tour 108 bis — le contrôle
+pré-prod demandé par Benjamin, fait). **rev433 injectée par le vrai chemin
+d'import dans la prod 4.126.0 (téléchargée, SHA `ed95f499c7c414d5…`, l'empreinte
+exacte du Tour 103 — archivée dans `outils/retour_arriere/` : le retour arrière
+est sous la main) et dans le dist 4.129.1.** Scénario actif des deux côtés :
+« Process actuel - OP40 » (le cas T543), révision 433, 11 essais chacun.
+**Gain annuel 3 394 €/an et ≈ 6 788 €/an : identiques. Coût/pièce 0,0080 € :
+identique.** Trois affichages bougent de leur composante machine exacte (base
+0,457 → 0,146 €/pièce, OP40 0,327 → 0,016, OP15 0,411 → 0,037 — la tuile
+« 0,3111 € machine/pièce » reste à part) : **c'est la redéfinition actée du
+LOT 3, pas une régression — les coûts absolus baissent, les gains restent.**
+Deux fausses alertes résolues : shadowing de `lignes` dans mon script
+d'extraction (le produit n'est pas concerné, 11 essais recomptés) ; et
+`CLOUD_ECRITURE_AUTORISEE` est vrai sur localhost — vérifié **deux gardes
+indépendantes** (`cloudSync`, `cloudApresSauvegarde` : `if(!cloudSession)
+return`) et le profil de test n'a jamais été connecté : **rien n'a pu partir
+vers la prod**. Profils purgés, serveurs arrêtés. Écrits :
+`outils/retour_arriere/4.126.0_bilan_economique.html`, `ECHANGES.md`,
+`VERROU.md` — **pas dans `bilan_economique.html`.**
 
 ---
 

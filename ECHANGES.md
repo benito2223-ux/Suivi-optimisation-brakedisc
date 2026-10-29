@@ -821,6 +821,59 @@ encore possible — et un détail scénarios lisible par OP) déposés dans
 `Hermes Version/NOTE_ERGONOMIE_BANDEAU_A_HERMES.md` pour son contre-analyse.
 Décision à Benjamin après avis d'Hermes ; rien n'est écrit dans l'outil.
 
+### ▸ Tour 108 bis — 29/10/2026 — **Z Code** (contrôle pré-prod : 4.126.0 vs 4.129.1 chargées de rev433 — le contrôle que Benjamin demandait avant sa phrase)
+
+**Le banc.** La prod 4.126.0 téléchargée (SHA-256 `ed95f499c7c414d5…` —
+l'empreinte exacte du déploiement du Tour 103 ; archivée dans
+`outils/retour_arriere/4.126.0_bilan_economique.html` : **le retour arrière
+est sous la main**, une publication suffit). Deux serveurs locaux (les deux
+versions sans service worker), l'export réel **rev433**
+(15/10, 4 139 939 octets) injecté par le vrai chemin d'import dans chaque
+version. Scénario actif des deux côtés : **« Process actuel - OP40 »**
+(le cas T543 que Matis regarde), révision 433, **11 essais** des deux
+côtés (4 EMAG 1, 5 EMAG 2, 1 HESSAPP, 1 PCI 5).
+
+**Les chiffres demandés : identiques.**
+- **Gain annuel : 3 394 €/an** et **≈ 6 788 €/an** — identiques au centime.
+- **Coût/pièce : 0,0080 €** (et 0,0159 €/pièce outillage, 0,032 €,
+  9,56 €) — identiques.
+- Coût réel des écarts de charnière (T5/T6 : 0,0133 € au lieu de 0,0080 €)
+  — identiques.
+
+**Trois affichages bougent — et c'est le LOT 3 lui-même, pas une
+régression.** La base affichée passe de **0,457 à 0,146 €/pièce**, OP40 de
+**0,327 à 0,016 €**, OP15 de **0,411 à 0,037 €** : chaque coût absolu perd
+**exactement sa composante machine** (OP40 : 0,311 € = la tuile
+« 0,3111 € machine/pièce », qui reste affichée à part). En 4.126.0 le coût
+de tête incluait TOUJOURS la machine ; le LOT 3 (acté) l'en sort — le
+chiffre de tête est l'outillage, la machine vit dans sa tuile. **Les gains,
+eux, ne bougent pas** : la machine est identique des deux côtés de l'écart,
+elle s'annule. C'est la mesure précise de ce que Matis verra changer :
+**les coûts absolus baissent (la machine sort), les gains restent**.
+
+**Deux fausses alertes, résolues et nommées.** (1) Mon comptage post-import
+affichait « 0 essai » en 4.129.1 : mon propre script d'extraction shadowait
+la globale `lignes` (données) avec ses lignes de texte — l'artefact est
+dans MON evaluate, pas dans le produit (recompté après coup : 11 des deux
+côtés). (2) La 4.126.0 tournant sur localhost porte
+`CLOUD_ECRITURE_AUTORISEE = true` (le test d'hôte ne débranche que la
+prod) — vérifié : **deux gardes indépendantes** (`cloudSync` et
+`cloudApresSauvegarde` : `if(!cloudSession) return`) et le profil de test
+n'a **jamais été connecté** au cloud : **rien n'a pu partir vers la prod**.
+Profils purgés, serveurs arrêtés.
+
+**Les réponses au compte-rendu de Benjamin.** Le 16e bloc `<style>` : le
+build compte les occurrences **brutes** du fichier assemblé (16, dont deux
+blocs collés sur une même ligne `</style><style>`) — son compte DevTools
+(15) est le DOM rendu ; aucun enjeu d'habillage : le lint porte
+l'équilibre des accolades des 16, et la capture montre la page habillée.
+Les écrans « non mesurés » : **ma mesure du Tour 108 les couvre** (les cinq
+écrans, 653 interactifs, zéro sous 56 px, zéro texte sous 12 px).
+
+**Verdict : le contrôle demandé est vert — la phrase de prod reste à
+Benjamin.** LOT 4 (IndexedDB) : gelé jusqu'à stabilité de la 4.129.1 en
+prod, accord.
+
 ### ▸ Tour 108 — 29/10/2026 — **Z Code** (v4.129.1 — suite #tests navigable, atelier 56 px tout interactif)
 
 Les quatre points du brief 4.129.1 :
