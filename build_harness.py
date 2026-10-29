@@ -1679,6 +1679,18 @@ try {
        ['__xssPwned=1', 'le payload hostile du test de sécurité est absent']]
       .forEach(function(m){ if (html.indexOf(m[0]) === -1) echecs.push(m[1]); });
       if (html.indexOf('step="500"') !== -1) echecs.push('le step 500 fauteur d invalid est encore la');
+      /* v4.129.1 — la suite #tests est navigable : plus de `global.localStorage`
+         (Node-only, l exception interrompait la suite entière au navigateur) ;
+         la sonde de substitution dit quand la porte ne peut pas tourner ici ;
+         le plancher atelier 56 px couvre tout élément saisissable ou cliquable. */
+      if (html.indexOf('global.localStorage') !== -1) echecs.push('global.localStorage (Node-only) est de retour — la suite plante au navigateur');
+      [['globalThis.localStorage = lsFaux', 'la porte TDZ ne passe plus par globalThis'],
+       ['lsSubstitue', 'la sonde de substitution localStorage est absente'],
+       ['textarea{ min-height:56px', 'les zones de texte atelier ne font pas 56 px'],
+       ['summary{ min-height:56px', 'les résumés dépliables atelier ne font pas 56 px'],
+       ['.pcb-op{ min-height:56px', 'les lignes d opération atelier ne font pas 56 px'],
+       ['background-clip:content-box', 'la case à cocher atelier (56/28 par content-box) est absente']]
+      .forEach(function(m){ if (html.indexOf(m[0]) === -1) echecs.push(m[1]); });
       [["const MARQUE_TESTS = 'Tests du moteur economique';", 'le build ne repère plus le bloc des tests (déclaration amputée)'],
        ['botte secrete', 'le build ne préserve plus la botte secrete (la partie K de l aide partirait en clair)'],
        ['porte encore la suite intégrée', 'le contrôle du livré (suite intégrée absente) est absent du build'],
@@ -1688,7 +1700,7 @@ try {
     const dist = (function(){ try { return fs.readFileSync(path.join(REPO, 'dist', 'bilan_economique.html'), 'utf8'); } catch (e) { return ''; } })();
     if (dist && dist.indexOf('runTests') !== -1) echecs.push('le dist construit porte encore la suite intégrée — relancer le build');
     if (echecs.length) r.echecs += echecs.length;
-    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 5 4.129 : tests hors livré (botte secrete préservée), sécurité à l import, charnière step any, lint css du livré' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 5 4.129 (étendue 4.129.1) : tests hors livré, sécurité à l import, charnière step any, lint css du livré, suite navigable (globalThis), atelier 56 px tout interactif' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
   /* ── v4.124.1 — L'ÉQUILIBRE CSS (leçon de la 4.124.0) ──────────────────

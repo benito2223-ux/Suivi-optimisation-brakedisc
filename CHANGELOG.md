@@ -5,6 +5,20 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.129.1] — 2026-10-29 · Atelier : tout interactif atteint 56 px · Z Code
+
+- **Le mode atelier s'adresse aux doigts partout** : les cibles de 56 px ne
+  sont plus réservées aux boutons — champs texte et nombre (tous), zones de
+  texte, résumés dépliables, lignes d'opération des tuiles, et les cases à
+  cocher portent une zone de clic de 56 px autour d'une case dessinée à
+  28 px. La mesure d'atelier parcourt désormais les cinq écrans (saisie
+  d'essai, vue d'ensemble, synthèse, Matis, Transmettre) et vérifie tout
+  élément interactif : 653 mesurés, zéro sous 56 px.
+- **La suite de tests interne (#tests) va jusqu'au bout au navigateur** :
+  elle ne bloque plus sur `global`, une syntaxe réservée au harnais —
+  663/663 à l'écran, la porte du chargement complet annonce honnêtement
+  quand elle ne peut pas tourner ici.
+
 ## [4.129.0] — 2026-10-29 · LOT 5 : l'hygiène · Z Code
 
 Les quatre points d'hygiène du brief :

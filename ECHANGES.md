@@ -821,6 +821,62 @@ encore possible — et un détail scénarios lisible par OP) déposés dans
 `Hermes Version/NOTE_ERGONOMIE_BANDEAU_A_HERMES.md` pour son contre-analyse.
 Décision à Benjamin après avis d'Hermes ; rien n'est écrit dans l'outil.
 
+### ▸ Tour 108 — 29/10/2026 — **Z Code** (v4.129.1 — suite #tests navigable, atelier 56 px tout interactif)
+
+Les quatre points du brief 4.129.1 :
+
+1. **La suite #tests ne s'interrompt plus au navigateur.** La faute était
+   dans la porte TDZ (v4.112.1) : `global.localStorage` — l'objet `global`
+   n'existe qu'en Node, l'exception interrompait la suite entière au test
+   n° 472 (constat Benjamin : 471/472). Remplacé par **`globalThis`** —
+   avec une complication assumée : l'accesseur `localStorage` de window
+   n'a **pas de setter**, l'assignation y échoue en silence. Une **sonde**
+   vérifie que la globale a bien changé ; si non, la porte l'annonce
+   (« substitution localStorage indisponible ici — la porte est jouée pour
+   de vrai au harnais ») au lieu d'échouer ni de mentir. **Première sonde
+   fausse, attrapée au test réel** : elle appelait `lsFaux.setItem` — qui
+   écrit toujours dans `mem` et ne prouve rien ; la vraie sonde passe par
+   la globale `localStorage.setItem` et regarde si la matière atterrit
+   dans `mem`. **Résultat : 663/663 « tout est vert » au navigateur**
+   (le compte navigateur diffère du harnais : 673 — dix tests vivent sous
+   des branches d'environnement), plus aucune exception, la clé _sonde
+   retirée après usage.
+2. **Le plancher atelier 56 px couvre tout élément saisissable ou
+   cliquable** (CSS injecté `poserCSS`) : **inputs texte et nombre** tous
+   (plus seulement `.cell`), **textarea**, **summary**, **lignes
+   d'opération `.pcb-op`**, et les **cases à cocher** : boîte cliquable de
+   **56 px** dont la case dessinée reste **28 px** (`border:14px solid
+   transparent` + `background-clip:content-box` — le dessin natif suit la
+   content box). select était déjà couvert.
+3. **La mesure** (`outils/mesure_atelier.py` v2) parcourt désormais les
+   **cinq écrans** — saisie d'essai, vue d'ensemble, synthèse, Matis,
+   Transmettre (menu ouvert) — et mesure **tout interactif** (`a, button,
+   input, select, textarea, summary, [onclick], [role=button]`) :
+   **653 interactifs mesurés, zéro sous 56 px ; 2 389 textes, zéro sous
+   12 px**. Leçon de mesure incluse au script : attendre **2 200 ms** par
+   écran — à 900 ms, la passe throttlée du plancher 12 px est encore en
+   cours et la Vue d'ensemble comptait **156 textes transitoires** (faux
+   positif disparu à 2 200 ms). Playwright absent du poste : la mesure a
+   tourné **à l'IAB avec le même JS** que le script livré (protocole
+   Tour 105).
+4. **Livraison + empreinte, périmètre nommé** (SHA-256 **intégral** du
+   fichier) : `dist/bilan_economique.html` **1 538 256 octets, SHA-256
+   `c280fdefee9b314d592972ec1b9107a9bdc8cba7ac87e7936a8fb4c25f81909b`** ;
+   fichier servi sur le dev **identique octet pour octet** ; annexes hachées
+   dans le journal (spk-app.css `fc953eb14c9545b1…`, spk-shell.js
+   `1a08c78006a229d9…`, version.json `c1cad2ae81544039…`,
+   service-worker.js `e68f4a8854d1008d…`), version.json servi
+   `{"v":"4.129.1"}`, sensibles 404.
+
+**Vérifié** : 673 tests | 0 échec au harnais, 663/663 au navigateur,
+syntaxe 0 erreur, contre-regard CR4 (règle `summary` amputée à 20 px →
+**porte tombée**, restauration SHA identique), **rendu regardé** : capture
+du mode atelier (barre boutons pleins et hauts, fil d'ariane agrandi,
+v4.129.1 en pied, aucun débord — un premier screenshot bizarre était un
+artefact de capture en transition : scrollW = clientW = 1280 mesuré).
+**Profils embarqués purgés** (8791 : 6 clés ; 8793 : la suite #tests ne
+sauvegarde pas). **PROD** : 4.126.0 — tout attend ta phrase.
+
 ### ▸ Tour 107 — 29/10/2026 — **Z Code** (v4.129.0 — LOT 5 du brief : l'hygiène)
 
 Les quatre points du LOT 5, livrés ensemble :

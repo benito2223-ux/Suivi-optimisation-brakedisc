@@ -1,8 +1,41 @@
-| **Auteur** | **Z Code** |
-| **Pris le** | 29/10/2026, Tour 108 |
-| **Écrit dans** | `bilan_economique.html` (4.129.1 : suite #tests navigable — global→globalThis avec sonde, plancher atelier 56 px étendu à tout interactif, NOUVEAUTES, version), `build_harness.py` (porte lot 5 étendue), `outils/mesure_atelier.py` (mesure interactifs ≥ 56 px sur 5 écrans), `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
-| **Version visée** | 4.129.1 |
-| **Sujet** | Brief 4.129.1 : la suite #tests ne s'interrompt plus au navigateur (global→globalThis), le plancher 56 px du mode atelier couvre tout élément saisissable ou cliquable (inputs, select, textarea, summary, .pcb-op, cases à cocher 56/28), le test de mesure vérifie les interactifs sur 5 écrans, livraison dist + empreinte SHA-256 nommée. |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+
+---
+
+✅ **Verrou libéré par Z Code le 29/10/2026** (Tour 108, v4.129.1 — suite
+navigable, atelier 56 px tout interactif). **#tests au navigateur** : la
+faute était `global.localStorage` dans la porte TDZ (v4.112.1) — Node-only,
+l'exception interrompait la suite au test n° 472 (constat Benjamin 471/472).
+**globalThis + sonde** : l'accesseur window.localStorage n'a pas de setter,
+la sonde vérifie la substitution et la porte l'annonce (« jouée pour de vrai
+au harnais ») au lieu d'échouer — **première sonde fausse attrapée au test
+réel** (elle interrogeait lsFaux, toujours vrai) ; corrigée, la sonde passe
+par la globale. **663/663 tout est vert au navigateur** (673 au harnais :
+dix tests vivent sous des branches d'environnement). **Atelier 56 px** :
+inputs texte/nombre tous, textarea, summary, .pcb-op, cases à cocher 56 px
+de boîte cliquable pour 28 px dessinés (border transparent +
+background-clip:content-box) ; select déjà couvert. **Mesure v2** : cinq
+écrans (saisie d'essai, vue d'ensemble, synthèse, Matis, Transmettre menu
+ouvert), tout interactif — **653 interactifs, zéro sous 56 px ; 2 389
+textes, zéro sous 12 px** ; attente 2 200 ms par écran (à 900 ms : 156
+textes transitoires sur la Vue d'ensemble, la passe throttlée du plancher
+était en cours — faux positif nommé au script). Playwright absent du poste :
+mesure tournée à l'IAB avec le même JS. **Empreinte nommée** (SHA-256
+intégral) : dist/bilan_economique.html **1 538 256 octets,
+`c280fdefee9b314d592972ec1b9107a9bdc8cba7ac87e7936a8fb4c25f81909b`**, fichier
+servi identique octet pour octet, annexes hachées au journal, version.json
+servi `{"v":"4.129.1"}`, sensibles 404. **Vérifié** : 673/0 harnais,
+syntaxe 0 erreur, CR4 (summary amputé → porte tombée, restauration SHA
+identique), capture regardée (atelier : barre boutons pleins et hauts,
+fil agrandi, aucun débord — un screenshot transitoire mesuré scrollW =
+clientW = 1280). Profils embarqués purgés. **PROD** : 4.126.0 — tout
+attend ta phrase. Écrits : `bilan_economique.html`, `build_harness.py`,
+`outils/mesure_atelier.py`, `outils/patch_41291_a/b.py`, `CHANGELOG.md`,
+`ECHANGES.md`, `VERROU.md`.
 
 ---
 
