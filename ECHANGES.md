@@ -821,6 +821,72 @@ encore possible — et un détail scénarios lisible par OP) déposés dans
 `Hermes Version/NOTE_ERGONOMIE_BANDEAU_A_HERMES.md` pour son contre-analyse.
 Décision à Benjamin après avis d'Hermes ; rien n'est écrit dans l'outil.
 
+### ▸ Tour 107 — 29/10/2026 — **Z Code** (v4.129.0 — LOT 5 du brief : l'hygiène)
+
+Les quatre points du LOT 5, livrés ensemble :
+
+1. **Les tests ne partent plus dans le fichier livré.** Étape « 5 bis » de
+   `outils/build-coque.mjs` : le bloc « Tests du moteur economique »
+   (~3 550 lignes, la suite intégrée et son appel `#tests`) reste dans le
+   monolithe versionné — **le harnais garde sa source**, rien à changer de
+   son côté — mais le dist s'en passe : **1 536 582 octets servis contre
+   1 806 267 au source (~15 % de moins à chaque mise à jour)**. La
+   « botte secrete » (v4.42) vivait DANS ce bloc : elle masque la partie K
+   de l'aide aux accès non autorisés — **extraite du bloc retiré et
+   reposée à la même place** (l'ordre d'exécution ne change pas, l'aide K
+   reste masquée pour tous). Un contrôle « 7 bis » du build refuse de
+   livrer un fichier qui porterait encore la suite ou un style
+   déséquilibré.
+2. **Le test de sécurité à l'import.** Six tests in-suite (673 au total,
+   +6) : un payload hostile `<img src=x onerror=window.__xssPwned=1>` est
+   posé dans **chaque champ texte** d'un suivi complet (les clés de saisie,
+   jamais ids/dates/nombres), le suivi passe par le VRAI chemin
+   (`preparerImportDepuis` + `appliquerImport` « remplace »), puis tous les
+   rendus tournent et **chaque innerHTML écrit est capté** (le stub
+   getElementById est enveloppé pendant le test) : la forme crue doit être
+   absente de TOUT rendu, et le payload échappé doit être VU au moins une
+   fois (la porte n'est pas aveugle). `saveData` est neutralisé pendant le
+   test (la promesse du bloc tient).
+3. **La charnière accepte tout nombre** : `step="500"` → `step="any"` +
+   `inputmode="numeric"` (table des pièces détachées) — un 1250 saisi ne
+   passe plus `:invalid`. **Résidu nommé** : le champ charnière des
+   LOGEMENTS (table de coupe, l.10392) garde `step="1"` — le brief ne le
+   nommait pas, il n'invalide pas les entiers ; à trancher si des
+   charnières décimales se saisissent un jour.
+4. **Le lint CSS porte sur le livré** : la porte « equilibre css » (Tour
+   100/105) s'étend au `dist/` quand il est construit, et le build rejoue
+   le contrôle d'accolades sur le fichier assemblé (16 blocs, échec
+   bruyant sinon).
+
+**La porte qui était fausse au vert, attrapée par son contre-regard.** La
+porte « lot 5 4.129 » cherchait « Tests du moteur economique » dans le
+build : l'amputation du CODE laissait la chaîne dans le COMMENTAIRE de
+l'étape 5 bis — porte verte, protection nulle (le piège des Tours
+82/104/105, ressuscité). Recalée sur la **déclaration complète**
+`const MARQUE_TESTS = '...'` — l'amputation tombe la porte. Rappel du
+protocole appliqué au passage : **le harnais se régénère APRÈS le dernier
+octet écrit** (le premier contre-regard a tourné sur le harnais périmé).
+
+**Vérifié** : 673 tests | 0 échec (+6), syntaxe 0 erreur sur 5 blocs.
+Trois contre-regards vus : (1) échappement `<` amputé d'escapeAttr → **21
+rendus exposent le payload cru**, deux tests tombent, restauration SHA
+identique ; (2) déclaration amputée du build → porte tombée ; (3) étape
+neutralisée en douceur → **build en échec bruyant** (exit 1). **Rendu
+regardé** (consigne de la revue) : capture de l'écran principal sur le
+dist servi — rail, barre, fil d'ariane, v4.129.0 en pied, aucune zone
+cassée. **Sécurité au navigateur réel** : le suivi infecté importé par le
+vrai chemin → `window.__xssPwned` **non posé** (aucun onerror exécuté),
+**0 `<img src=x>` active** dans le DOM, le payload visible en texte
+échappé. Charnière au rendu : `step="any"` + 1250 valide. `#tests` sur le
+livré : inert (`runTests` undefined). Profil embarqué purgé après (7 clés,
+jeu [Exemple] rétabli).
+
+**DEV** : 4.129.0 déployée, vérifiée curl — **SHA-256
+`90150065501a7760…` == dist** (périmètre nommé : dist + fichier servi,
+intégraux), version.json servi `{"v":"4.129.0"}`, sensibles 404, SW 200.
+**PROD** : 4.126.0 — LOT 1 en prod, LOT 2/3/5 **attendent ta phrase** (la
+4.129 est une version d'hygiène : aucun chiffre affiché ne change).
+
 ### ▸ Tour 106 — 28/10/2026 — **Z Code** (v4.128.0 — LOT 3 du brief complémentaire : le chiffre de tête est le gain d'outillage)
 
 Les sept points du LOT 3 (décisions Benjamin validées), livrés ensemble :

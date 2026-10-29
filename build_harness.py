@@ -1656,6 +1656,41 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.125 : ouverture sur la fiche, boussole retiree, Transmettre en fin avec Importer, tuile a une ligne, etat vide gris' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  /* ── v4.129.0 — LOT 5 : L'HYGIÈNE ──────────────────────────────────────
+     Le livré maigrit : la suite intégrée ne voyage plus (étape de build,
+     la botte secrete v4.42 qui vivait dans son bloc est préservée — sinon
+     la partie K de l aide serait livrée à tous). Le test de sécurité à
+     l import vit dans la suite ; la charnière accepte tout nombre
+     (step any : un 1250 saisi ne passe plus invalid) ; le lint CSS du
+     livré existe. Si un dist est déjà construit : il ne porte pas la
+     suite intégrée. */
+  (function lot54129(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const html = (function(){ try { return fs.readFileSync(path.join(REPO, 'bilan_economique.html'), 'utf8'); } catch (e) { return ''; } })();
+    const build = (function(){ try { return fs.readFileSync(path.join(REPO, 'outils', 'build-coque.mjs'), 'utf8'); } catch (e) { return ''; } })();
+    if (!html) echecs.push('bilan_economique.html introuvable');
+    if (!build) echecs.push('outils/build-coque.mjs introuvable');
+    if (html && build) {
+      [['data-field="charniere" type="number" step="any" inputmode="numeric"', 'la charniere n accepte pas tout nombre (step any attendu)'],
+       ['sécurité import : AUCUN innerHTML ni rendu', 'le test de sécurité à l import est absent de la suite'],
+       ['__xssPwned=1', 'le payload hostile du test de sécurité est absent']]
+      .forEach(function(m){ if (html.indexOf(m[0]) === -1) echecs.push(m[1]); });
+      if (html.indexOf('step="500"') !== -1) echecs.push('le step 500 fauteur d invalid est encore la');
+      [["const MARQUE_TESTS = 'Tests du moteur economique';", 'le build ne repère plus le bloc des tests (déclaration amputée)'],
+       ['botte secrete', 'le build ne préserve plus la botte secrete (la partie K de l aide partirait en clair)'],
+       ['porte encore la suite intégrée', 'le contrôle du livré (suite intégrée absente) est absent du build'],
+       ['déséquilibré dans le livré', 'le lint CSS du livré est absent du build']]
+      .forEach(function(m){ if (build.indexOf(m[0]) === -1) echecs.push(m[1]); });
+    }
+    const dist = (function(){ try { return fs.readFileSync(path.join(REPO, 'dist', 'bilan_economique.html'), 'utf8'); } catch (e) { return ''; } })();
+    if (dist && dist.indexOf('runTests') !== -1) echecs.push('le dist construit porte encore la suite intégrée — relancer le build');
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 5 4.129 : tests hors livré (botte secrete préservée), sécurité à l import, charnière step any, lint css du livré' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   /* ── v4.124.1 — L'ÉQUILIBRE CSS (leçon de la 4.124.0) ──────────────────
      Mon patch P0-2 avait laissé `.reprise-bandeau{` ouvert sans ses
      déclarations : le navigateur jetait le bloc suivant, la moitié de la
@@ -1687,12 +1722,29 @@ try {
         if (o !== c) echecs.push('bloc style n° ' + (i + 1) + ' déséquilibré : ' + o + ' accolades ouvrantes, ' + c + ' fermantes — une règle avalera la suivante');
         i = f + 7;
       }
+      /* v4.129.0 (LOT 5) — le même contrôle sur le FICHIER LIVRÉ quand il
+         est construit : le dist est ce que le navigateur reçoit vraiment. */
+      const dist = (function(){ try { return fs.readFileSync(path.join(REPO, 'dist', 'bilan_economique.html'), 'utf8'); } catch (e) { return ''; } })();
+      if (dist) {
+        let i = 0;
+        while (i < dist.length) {
+          const d = dist.indexOf('<style', i);
+          if (d < 0) break;
+          const f = dist.indexOf('</style>', d);
+          if (f < 0) { echecs.push('dist : bloc style non fermé'); break; }
+          const corps = dist.slice(dist.indexOf('>', d) + 1, f);
+          const o = corps.split('{').length - 1;
+          const c = corps.split('}').length - 1;
+          if (o !== c) echecs.push('dist : bloc style déséquilibré (octet ' + d + ') : ' + o + ' ouvrantes, ' + c + ' fermantes');
+          i = f + 8;
+        }
+      }
       /* la règle fautive, gardée complète (celle de la 4.123) */
       const mRep = html.match(/\.reprise-bandeau\{[^}]*display:flex[^}]*\}/);
       if (!mRep) echecs.push('.reprise-bandeau a perdu ses déclarations (la règle 4.123 attendue est absente)');
     }
     if (echecs.length) r.echecs += echecs.length;
-    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'equilibre css 4.124.1 : chaque bloc style a ses accolades fermees, la regle reprise-bandeau est complete' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'equilibre css 4.124.1 (étendue 4.129 au dist) : chaque bloc style a ses accolades fermees, la regle reprise-bandeau est complete' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
   /* ── v4.124 — LES P0 DU BRIEF EXTERNE ─────────────────────────────────

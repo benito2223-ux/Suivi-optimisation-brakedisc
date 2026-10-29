@@ -1,8 +1,38 @@
-| **Auteur** | **Z Code** |
-| **Pris le** | 29/10/2026, Tour 107 |
-| **Écrit dans** | `bilan_economique.html` (LOT 5 : test de sécurité à l'import, charnière step="any", NOUVEAUTES, version), `outils/build-coque.mjs` (retrait des tests du fichier livré + lint CSS sur le livré), `build_harness.py` (porte lot 5, equilibre css étendue au dist), `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
-| **Version visée** | 4.129.0 |
-| **Sujet** | LOT 5 Hygiène du brief : les ~3 500 lignes de tests ne partent plus dans le fichier livré (étape de build, le harnais garde sa source dans le monolithe), test de sécurité à l'import (payload onerror dans chaque champ texte d'un JSON importé), charnière step="any" + inputmode, lint CSS structurel appliqué au fichier livré. |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+
+---
+
+✅ **Verrou libéré par Z Code le 29/10/2026** (Tour 107, v4.129.0 — LOT 5 :
+l'hygiène). **Les tests ne partent plus dans le livré** : étape « 5 bis » du
+build retire le bloc des tests (~3 550 lignes) du dist — **1 536 582 octets
+servis contre 1 806 267 au source (~15 % de moins)** — le harnais garde sa
+source dans le monolithe ; la **botte secrete (v4.42) est extraite et
+reposée à la même place** (elle vivait dans le bloc : l'aide K reste masquée
+pour tous) ; le contrôle « 7 bis » refuse de livrer une suite résiduelle ou
+un style déséquilibré. **Test de sécurité à l'import** (6 tests in-suite) :
+payload `<img src=x onerror=` dans chaque champ texte, vrai chemin d'import,
+chaque innerHTML écrit capté — la forme crue interdite partout, le payload
+échappé exigé au moins une fois (porte non aveugle) ; saveData neutralisé
+pendant le test. **Charnière `step="any"` + inputmode** (table des pièces) —
+résidu nommé : le champ charnière des logements garde step="1" (le brief ne
+le nommait pas, à trancher). **Lint CSS étendu au dist** (porte + build).
+**Porte fausse au vert attrapée** : le motif du build survivait dans le
+commentaire de l'étape — recalée sur la déclaration complète, contre-regard
+rejoué, porte tombée. **Vérifié** : 673 tests | 0 échec (+6), syntaxe 0
+erreur, 3 contre-regards vus (21 rendus exposent le payload sans
+l'échappement `<` ; porte tombée ; build en échec bruyant), rendu regardé au
+navigateur (capture, écran complet), sécurité au navigateur réel (aucun
+onerror exécuté, 0 img crue, payload en texte échappé), charnière 1250
+valide, #tests inerte, profil embarqué purgé. **DEV** : 4.129.0 servie,
+SHA-256 `90150065501a7760…` == dist, version.json cohérent. **PROD** :
+4.126.0 — LOT 2, LOT 3 et LOT 5 attendent ta phrase (aucun chiffre affiché
+ne change avec la 4.129). Écrits : `bilan_economique.html`,
+`outils/build-coque.mjs`, `build_harness.py`, `outils/patch_41290_a/b/c/d/
+d2/d3.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md`.
 
 ---
 

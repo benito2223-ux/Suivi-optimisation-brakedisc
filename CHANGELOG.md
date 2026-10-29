@@ -5,6 +5,26 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.129.0] — 2026-10-29 · LOT 5 : l'hygiène · Z Code
+
+Les quatre points d'hygiène du brief :
+
+- **Le fichier livré maigrit de ~15 %** (1 806 267 → 1 536 582 octets) :
+  les ~3 550 lignes de tests internes ne voyagent plus jusqu'aux postes.
+  Elles restent dans le monolithe versionné (le harnais y lit sa matière) ;
+  l'étape de build qui les retire préserve la « botte secrete » (le masquage
+  de la partie K de l'aide) qui vivait dans leur bloc, et le build refuse
+  de livrer un fichier qui porterait encore la suite ou un style
+  déséquilibré.
+- **Le test de sécurité à l'import** rejoué à chaque livraison : un script
+  hostile est injecté dans chaque champ texte d'un suivi importé par le
+  vrai chemin, et aucun rendu ne doit l'exposer (échappement vérifié sur
+  chaque `innerHTML` écrit).
+- **La charnière des pièces détachées accepte tout nombre** (`step="any"`
+  + `inputmode="numeric"`) : un 1250 saisi ne passe plus `:invalid`.
+- **Le lint CSS s'applique aussi au fichier livré** (porte étendue au
+  `dist/`, contrôle rejoué à chaque build).
+
 ## [4.128.0] — 2026-10-28 · Le chiffre de tête est le gain d'outillage · Z Code
 
 Le LOT 3 du brief complémentaire (décisions Benjamin validées) :
