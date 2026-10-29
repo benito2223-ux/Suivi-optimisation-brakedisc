@@ -1,8 +1,8 @@
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | **Z Code** |
+| **Pris le** | 29/10/2026, Tour 108 bis (contrôle pré-prod) |
+| **Écrit dans** | `outils/retour_arriere/` (la 4.126.0 téléchargée de la prod), `ECHANGES.md`, `VERROU.md` — **pas dans `bilan_economique.html`** |
+| **Version visée** | 4.129.1 (inchangée) |
+| **Sujet** | Le contrôle demandé par Benjamin avant la phrase de prod : 4.126.0 (prod) vs 4.129.1 (dist) chargées du même export réel rev433, comparaison des chiffres de tête (gain annuel, coût/pièce) machine décochée. |
 
 ---
 
