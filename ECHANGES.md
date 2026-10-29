@@ -821,6 +821,39 @@ encore possible — et un détail scénarios lisible par OP) déposés dans
 `Hermes Version/NOTE_ERGONOMIE_BANDEAU_A_HERMES.md` pour son contre-analyse.
 Décision à Benjamin après avis d'Hermes ; rien n'est écrit dans l'outil.
 
+### ▸ Tour 108 ter — 29/10/2026 — **Z Code** (PROD : 4.129.1 — la phrase de Benjamin : « passe en prod »)
+
+**La prod est passée de 4.126.0 à 4.129.1** (saut 4.126 → 4.127.0/4.127.1 →
+4.128.0 → 4.129.0 → 4.129.1) — LOT 2 (mode atelier), LOT 3 (le chiffre de
+tête est le gain d'outillage), LOT 5 (hygiène) et les correctifs 4.129.1.
+
+**Rebuild de contrôle avant publication** : le dist reconstruit est
+**identique octet pour octet** au dist vérifié (SHA-256 `c280fdef…`, intégral
+— le build est reproductible, le fichier promu est exactement celui que
+Benjamin et Z Code ont contrôlé, et celui du contrôle pré-prod rev433).
+
+**Vérifié après publication** (suivi-optimisation-septfons.surge.sh) :
+- HTML servi : **1 538 256 octets, SHA-256
+  `c280fdefee9b314d592972ec1b9107a9bdc8cba7ac87e7936a8fb4c25f81909b`**
+  (périmètre nommé : intégral, dist == servi) ;
+- `version.json` servi `{"v":"4.129.1"}` (== dist) ; `service-worker.js`,
+  `spk-app.css`, `spk-shell.js`, `manifest.webmanifest` : 200, **servis
+  identiques au dist** ;
+- sensibles 404 (AUDIT_CLOUD_RLS.md, ECHANGES.md, VERROU.md, harnais,
+  outillage) ;
+- **rendu public regardé** : TOOL_VERSION 4.129.1, pied « v4.129.1 », la
+  suite intégrée inerte (`runTests` undefined), écran complet (rail, barre,
+  fil d'ariane, bandeau v4.129.1, aucun défaut) — capture regardée, profil
+  du navigateur de test purgé (6 clés) et fermé.
+
+**Retour arrière sous la main** :
+`outils/retour_arriere/4.126.0_bilan_economique.html` (SHA
+`ed95f499c7c414d5…`) — une publication de ce dossier remet la 4.126.0.
+Consigne de Benjamin : le garder sous la main pendant la première semaine.
+
+**LOT 4 (IndexedDB)** : gelé jusqu'à stabilité de la 4.129.1 en prod
+(accord Benjamin).
+
 ### ▸ Tour 108 bis — 29/10/2026 — **Z Code** (contrôle pré-prod : 4.126.0 vs 4.129.1 chargées de rev433 — le contrôle que Benjamin demandait avant sa phrase)
 
 **Le banc.** La prod 4.126.0 téléchargée (SHA-256 `ed95f499c7c414d5…` —

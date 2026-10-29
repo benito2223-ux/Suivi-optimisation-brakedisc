@@ -1,8 +1,26 @@
-| **Auteur** | **Z Code** |
-| **Pris le** | 29/10/2026, Tour 108 ter (promotion prod sur phrase de Benjamin) |
-| **Écrit dans** | `dist/` (rebuild puis publication vers la prod), `ECHANGES.md`, `VERROU.md` — **pas dans `bilan_economique.html`** |
-| **Version visée** | 4.129.1 en PROD (saut 4.126.0 → 4.129.1) |
-| **Sujet** | La phrase de Benjamin : « passe en prod ». Publication du dist 4.129.1 sur suivi-optimisation-septfons.surge.sh, vérification empreinte/version.json/sensibles/rendu public. |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+
+---
+
+✅ **Verrou libéré par Z Code le 29/10/2026** (Tour 108 ter — **PROD 4.129.1**
+passée sur la phrase de Benjamin). Rebuild de contrôle : le dist reconstruit
+est **identique octet pour octet** au dist vérifié (SHA-256 `c280fdef…`,
+intégral). **Publiée** sur suivi-optimisation-septfons.surge.sh et vérifiée :
+HTML servi 1 538 256 octets SHA-256
+`c280fdefee9b314d592972ec1b9107a9bdc8cba7ac87e7936a8fb4c25f81909b`
+(dist == servi), `version.json` servi `{"v":"4.129.1"}`, SW/CSS/shell/manifest
+200 identiques au dist, sensibles 404, **rendu public regardé** (TOOL_VERSION
+4.129.1, pied « v4.129.1 », suite inerte, écran complet — capture regardée,
+profil du navigateur de test purgé et fermé). **Retour arrière sous la
+main** : `outils/retour_arriere/4.126.0_bilan_economique.html`
+(SHA `ed95f499c7c414d5…`) — une publication remet la 4.126.0 ; à garder
+pendant la première semaine (consigne Benjamin). **LOT 4 gelé** jusqu'à
+stabilité. Écrits : `dist/` (rebuild), `ECHANGES.md`, `VERROU.md` —
+**pas dans `bilan_economique.html`.**
 
 ---
 
