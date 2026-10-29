@@ -1,3 +1,11 @@
+| **Auteur** | **Hermes** |
+| **Pris le** | 30/10/2026 |
+| **Écrit dans** | `spk-app.css`, `spk-shell.js`, `bilan_economique.html`, `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md` |
+| **Version visée** | 4.130.1 |
+| **Sujet** | Reprise du lot 4.130 : hiérarchie réelle des boutons (un principal plein par écran), en-tête 2 rangées vérifié au rendu (1440 ET 390), onglets soulignés, débord mobile 390 réglé, captures livrées pour chaque point. |
+
+---
+
 | **Auteur** | *(libre)* |
 | **Pris le** | — |
 | **Écrit dans** | — |
