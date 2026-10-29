@@ -11,58 +11,100 @@
   const nav = document.querySelector(".toolbar-ecrans");
   if (!nav) return;
 
-  // Préférence de repli lue AVANT toute création : appliquée sans animation.
-  let railFermé = false;
-  try { railFermé = localStorage.getItem("spk-rail-closed") === "1"; } catch (e) { /* stockage indisponible */ }
-  if (railFermé) {
-    document.documentElement.classList.add("spk-boot");
-    document.body.classList.add("spk-rail-off");
-  }
+  /* v4.130 — l'en-tête du design system remplace le rail : une barre fixe
+     de deux rangées. La logique (exclusivité des écrans, marquage de
+     l'onglet actif, espaces de travail) opère sur les boutons et les
+     panneaux : rien d'elle ne change. */
+  const head = document.createElement("header");
+  head.className = "spk-head";
+  head.setAttribute("aria-label", "En-tête");
 
-  const rail = document.createElement("aside");
-  rail.className = "spk-rail";
-  rail.setAttribute("aria-label", "Navigation principale");
-
-  rail.innerHTML = [
-    '<div class="spk-rail-head">',
-    '  <div class="spk-rail-mark">SPK<span>by CeramTec</span></div>',
-    '  <div class="spk-rail-title">Suivi d’optimisation</div>',
-    '</div>',
-    '<div class="spk-rail-label">Parcours</div>',
-    '<div class="spk-rail-nav" id="spkRailNav"></div>',
-    /* v4.125 — le bouton Importer du pied de rail est retiré : l'import vit
-       dans le menu Transmettre (groupe « L'archive »), comme l'export. */
-    '  <span class="spk-rail-live"><i></i>Données locales</span>',
-    '  <span class="spk-rail-version"></span>',
-    '</div>'
+  const r1 = document.createElement("div");
+  r1.className = "spk-head-r1";
+  r1.innerHTML = [
+    '<div class="spk-head-mark">SPK<span>by CeramTec</span></div>',
+    '<div class="spk-head-titre" id="spkHeadTitre"></div>',
+    '<div class="spk-head-actions" id="spkHeadActions"></div>'
   ].join("");
 
-  const sourceLogo = document.querySelector(".hd-left img");
-  if (sourceLogo) {
-    const logo = sourceLogo.cloneNode();
-    logo.className = "spk-rail-logo";
-    logo.alt = "";
-    rail.querySelector(".spk-rail-head").prepend(logo);
+  const r2 = document.createElement("div");
+  r2.className = "spk-head-r2";
+  r2.innerHTML = '<div class="spk-head-onglets" id="spkHeadOnglets"></div>'
+    + '<div class="spk-head-contexte" id="spkHeadContexte"></div>';
+
+  head.appendChild(r1);
+  head.appendChild(r2);
+  document.body.prepend(head);
+  document.body.classList.add("spk-has-head");
+
+  /* le titre de la référence vit déjà dans le bandeau du monolithe
+     (hdTitle, mis à jour par l'app) : on le DÉPLACE dans la barre — les
+     références du rendu restent valides, le h1 continue de se mettre à
+     jour. Le bandeau bleu .hd, sans titre, est masqué par la feuille. */
+  const hdTitle = document.getElementById("hdTitle");
+  if (hdTitle) r1.querySelector(".spk-head-titre").appendChild(hdTitle);
+
+  /* les actions : la recherche existante (Ctrl+K), Transmettre avec son
+     menu, le verrou, le mode, le menu •••. On déplace les éléments — ids,
+     handlers et gardes de verrouillage (body.locked) suivent. */
+  const actions = r1.querySelector(".spk-head-actions");
+  const btnRecherche = document.createElement("button");
+  btnRecherche.type = "button";
+  btnRecherche.className = "ghost spk-head-btn";
+  btnRecherche.id = "spkRechercheBtn";
+  btnRecherche.setAttribute("aria-label", "Rechercher (Ctrl+K)");
+  btnRecherche.title = "Rechercher (Ctrl+K)";
+  btnRecherche.innerHTML = '<svg class="icon" viewBox="0 0 18 18" aria-hidden="true"><circle cx="8" cy="8" r="4.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="m11.5 11.5 3 3" stroke-linecap="round"/></svg><span class="label-tb">Rechercher</span>';
+  btnRecherche.addEventListener("click", () => {
+    if (typeof window.ouvrirRecherche === "function") window.ouvrirRecherche();
+  });
+  actions.appendChild(btnRecherche);
+  ["transmettreWrap", "lockBtn", "modeBtn", "moreBtn", "saveStatus"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) actions.appendChild(el);
+  });
+
+  /* rangée 2 : la navigation à onglets (déplacée telle quelle), puis le
+     fil d'Ariane et « + Scénario » — la zone de travail porte son bouton
+     principal, la barre ne porte plus que la navigation. */
+  const onglets = r2.querySelector(".spk-head-onglets");
+  onglets.appendChild(nav);
+  nav.classList.add("spk-head-links");
+  const contexte = r2.querySelector(".spk-head-contexte");
+  const fil = document.getElementById("filAriane");
+  if (fil) contexte.appendChild(fil);
+  const addBtn = document.getElementById("addBtn");
+  if (addBtn) contexte.appendChild(addBtn);
+  /* le bandeau projets (« + Créer un projet » + ⓘ, rendu par l'app dans
+     son conteneur) quitte les rangées de tête : il suit dans la rangée 2,
+     compacté par la feuille. Rendu et ids inchangés. */
+  const pjBanner = document.getElementById("projetsBandeau");
+  if (pjBanner) contexte.appendChild(pjBanner);
+
+  /* l'aide repliable (details.aide) quittait une icône seule en tête de
+     contenu : elle vit dans les actions à droite (brief 4.130.B). */
+  const aideBlock = document.getElementById("aideBlock");
+  if (aideBlock) actions.appendChild(aideBlock);
+
+  /* le pied : « Données locales » et la version descendent du rail vers le
+     pied de page existant (footCloud y vit déjà). */
+  const foot = document.querySelector(".foot");
+  if (foot) {
+    const live = document.createElement("span");
+    live.className = "foot-poids";
+    live.innerHTML = '<i class="spk-live-puce"></i>Données locales';
+    foot.insertBefore(live, foot.firstChild);
+    try {
+      if (typeof TOOL_VERSION === "string") {
+        const ver = document.createElement("span");
+        ver.className = "foot-poids";
+        ver.textContent = "v" + TOOL_VERSION;
+        foot.insertBefore(ver, foot.firstChild);
+      }
+    } catch (e) { /* pas de version connue */ }
   }
 
-  // La version affichée suit l'application, pas la coque.
-  try {
-    if (typeof TOOL_VERSION === "string") {
-      rail.querySelector(".spk-rail-version").textContent = "v" + TOOL_VERSION;
-    }
-  } catch (e) { /* pas de version connue */ }
-
-  const navHost = rail.querySelector(".spk-rail-nav");
-  navHost.appendChild(nav);
-  nav.classList.add("spk-rail-links");
-
-  document.body.prepend(rail);
-  document.body.classList.add("spk-has-rail");
-
-  /* v4.125 — le câblage rail→import a disparu avec le bouton : l'import vit
-     dans le menu Transmettre (bilan_economique.html, importMenuBtn). */
-
-  // Le libellé reste accessible quand le rail se réduit en icônes.
+  // Le libellé reste accessible en lecture d'écran.
   nav.querySelectorAll("button").forEach((btn) => {
     const label = btn.textContent.replace(/\s+/g, " ").trim();
     if (label) {
@@ -71,37 +113,23 @@
     }
   });
 
-  // --- Poignée de repli du rail (bureau et tablette uniquement) -----------
-  const toggle = document.createElement("button");
-  toggle.type = "button";
-  toggle.id = "spkRailToggle";
-  toggle.setAttribute("aria-controls", "spkRailNav");
-  toggle.setAttribute("aria-expanded", "true");
-  toggle.innerHTML =
-    '<svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true">' +
-    '<path d="M7.5 2 3.5 6l4 4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-  toggle.addEventListener("click", () => {
-    const off = document.body.classList.toggle("spk-rail-off");
-    try { localStorage.setItem("spk-rail-closed", off ? "1" : "0"); } catch (e) { /* stockage indisponible */ }
-    syncRailToggle();
-  });
-
-  function syncRailToggle() {
-    const off = document.body.classList.contains("spk-rail-off");
-    toggle.setAttribute("aria-expanded", off ? "false" : "true");
-    const label = off ? "Afficher la navigation" : "Masquer la navigation";
-    toggle.setAttribute("aria-label", label);
-    toggle.setAttribute("title", label);
-  }
-
-  document.body.appendChild(toggle);
-  syncRailToggle();
-
-  // On retire le verrou d'animation après deux frames (filet de secours par
-  // timeout : les rAF d'un onglet en arrière-plan peuvent ne jamais partir).
+  /* l'ancien verrou d'animation du boot : retiré après deux frames
+     (filet de secours par timeout, comme avant). */
   const finBoot = () => document.documentElement.classList.remove("spk-boot");
   requestAnimationFrame(() => requestAnimationFrame(finBoot));
   setTimeout(finBoot, 300);
+
+  /* la hauteur réelle de l'en-tête nourrit --spk-head-h : les écrans plein
+     écran et le filigrane du coin se posent sous la barre, quelle que soit
+     la largeur (l'en-tête wrappe sur mobile). */
+  if (window.ResizeObserver) {
+    const poserHauteur = () => {
+      document.documentElement.style.setProperty("--spk-head-h", head.offsetHeight + "px");
+    };
+    const obsHead = new ResizeObserver(poserHauteur);
+    obsHead.observe(head);
+    poserHauteur();
+  }
 
   const panelToButton = {
     accueilPanel: "accueilBtn",

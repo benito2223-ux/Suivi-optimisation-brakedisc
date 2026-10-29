@@ -5,6 +5,22 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.130.0] — 2026-10-29 · Passe design 1/3 : boutons et en-tête · Z Code
+
+Le lot 4.130 du brief design « conviviale » :
+
+- **Fin des disques noirs à chevron.** Trois niveaux de bouton : un
+  principal bleu plein par écran (les navigation et raccourcis passent en
+  contour ou texte), secondaire contour bleu, tertiaire texte — le rouge
+  reste réservé aux accents et aux actions destructives.
+- **L'en-tête tient en deux rangées** : barre bleu marine (logo, titre de
+  la référence, actions — recherche, transmettre, verrou, mode) puis
+  navigation à onglets soulignés avec le fil d'Ariane intégré et « +
+  Scénario » en invitation pointillée. Le filigrane de ligne quitte le
+  fond du travail (code au coin, sur les adresses de développement
+  seulement) et les chips « + Ra / + VE / + Autre critère » deviennent des
+  invitations pointillées.
+
 ## [4.129.1] — 2026-10-29 · Atelier : tout interactif atteint 56 px · Z Code
 
 - **Le mode atelier s'adresse aux doigts partout** : les cibles de 56 px ne

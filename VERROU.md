@@ -1,8 +1,55 @@
-| **Auteur** | **Z Code** |
-| **Pris le** | 29/10/2026, Tour 109 |
-| **Écrit dans** | `bilan_economique.html` (LOT 4.130 du brief design : hiérarchie 3 niveaux de boutons, disques noirs supprimés, chips, filigrane dev-only au coin, virgule Composition, version, NOUVEAUTES), `spk-app.css` + `spk-shell.js` (en-tête 2 rangées navy, onglets soulignés, + Scénario hors barre), `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
-| **Version visée** | 4.130.0 |
-| **Sujet** | Passe design « conviviale », lot 4.130 (boutons et en-tête) : une hiérarchie de boutons à trois niveaux (principal bleu plein unique, secondaire contour, tertiaire texte), fin des disques noirs à chevron partout, en-tête en deux rangées (logo + titre + actions / fil d'Ariane) avec onglets soulignés, barre navy 54 px à liseré bleu, filigrane seulement en DEV au coin. Aucune fonction nouvelle (interdiction brief). Captures avant/après 1440/390 × normal/atelier/verrouillé. |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+
+---
+
+✅ **Verrou libéré par Z Code le 29/10/2026** (Tour 109, v4.130.0 — passe
+design lot 4.130 : boutons et en-tête). **Charter v4.70 (disque noir +
+chevron) remplacé** par trois niveaux (principal bleu plein unique,
+secondaire contour, tertiaire texte ; rouge = accent/destructif) ; les
+principaux foisonnants rétrogradés (13 → 1 réel par écran : Voir l'atelier,
+pf*, alClose, Mode atelier, atelier-open, + Créer un projet → ghost) ;
+**+ Scénario en tuile d'invitation pointillée** de la Vue d'ensemble
+(4.131.B anticipé, annoncé), masqué quand un espace plein écran s'ouvre
+(:has(), l'Accueil exclu car il EST un .panel-large) ; **en-tête 2 rangées
+remplace le rail** : navy #2F4159 54 px (mark, titre déplacé — le h1 se
+met à jour, actions : Rechercher câblé sur ouvrirRecherche, Transmettre,
+verrou, mode, •••, aide) + blanc 48 px (onglets soulignés 2 px bleu — VE ·
+Synthèse · Matis · Atelier ; fil d'Ariane compacté ; bandeau projets
+tertiaire) ; **105 px total** (≤ 110), --spk-head-h mesurée par
+ResizeObserver ; écrans plein écran sous l'en-tête ; Données locales +
+version au pied de page ; **filigrane au coin en DEV seulement**
+(body[data-env=dev] posé par appliquerFondLigne) ; **virgule orpheline de
+la grille Composition** : tuileOutil sans join — le cast Array séparait
+par « , » ; chips pointillées + bleu. **Pièges** : la règle filigrane
+tombée DANS le @media print (piège du head rejoué, corrigé au rendu) ; le
+SW local a servi l'ancien CSS trois mesures (purge systématique) ; la
+porte coque 4.100 recalée en 4.130 (en-tête, plus de rail, z 90 > 80,
+poignée neutralisée) et le bug **'z-index:' = 8 caractères** (j+9 mangeait
+le chiffre sans espace : z-index:90 lu 0 — l'ancienne convention avec
+espace le masquait) ; contre-regard z 50 → porte tombée. **Vérifié** :
+673 tests | 0 échec, 0 erreur syntaxe, 16 blocs style équilibrés,
+1 principal/écran (6 écrans, mesure rect+elementFromPoint), verrouillé :
+0 action de saisie + bannière, 0 erreur console, 0 débord 1440. Captures
+avant/après 6+6 — **une capture (verrouillé 1440) en retard à la
+livraison** (surface IAB saturée en fin de salée ; l'état verrouillé est
+prouvé programmatiquement). **Écarts annoncés** : + Scénario pointillé
+dès 4.130, Atelier revient en onglet (le brief le liste), Rechercher =
+câblage existant, portes historiques du rail vertes sur règles inertes.
+**DEV** : 4.130.0 servie, SHA-256
+`d72d4be5a318cc62eef38abe2389b6708fccce5e360d8e54f964ae4a6d1f19ab`
+(dist == servi, intégral), version.json `{"v":"4.130.0"}`, sensibles 404.
+**PROD : rien** — Benjamin regarde le rendu. Écrits :
+`bilan_economique.html`, `spk-shell.js`, `spk-app.css`, `build_harness.py`,
+`outils/patch_41300_a-e.py`, `outils/captures_4130/`, `CHANGELOG.md`,
+`ECHANGES.md`, `VERROU.md`.
+
+---
+
+✅ **Verrou libéré par Z Code le 29/10/2026** (Tour 108 ter — **PROD 4.129.1**
 
 ---
 

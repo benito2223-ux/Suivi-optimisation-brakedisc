@@ -3604,3 +3604,213 @@ html.spk-boot .wrap {
 .ve-onglets .ve-lab{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint); }
 .ve-onglets button:disabled{ opacity:.55; cursor:default; }
 .ve-retour{ margin-left:10px; vertical-align:middle; }
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+   v4.130.0 — L'EN-TÊTE DU DESIGN SYSTEM (remplace le rail)
+   Rangée 1 : navy --ink-navy, mark SPK + titre de la référence + actions.
+   Rangée 2 : blanc, onglets soulignés (2 px bleu, 11 px/600/0,05 em
+   majuscules) + fil d'Ariane 12 px + « + Scénario » + bandeau projets.
+   Liseré bas 3 px bleu. Les écrans plein écran passent sous l'en-tête —
+   la hauteur réelle est mesurée par la coque dans --spk-head-h.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+:root { --spk-head-h: 98px; }
+
+body.spk-has-head{ padding-top:0; }
+body.spk-has-head .wrap{ margin-top:var(--spk-head-h); }
+
+.spk-head{
+  position:fixed; top:0; left:0; right:0; z-index:90;
+  background:var(--ink-navy, #2F4159);
+  border-bottom:3px solid #1B5EA6;
+  box-shadow:0 2px 8px rgba(47,65,89,.18);
+}
+.spk-head-r1{
+  display:flex; align-items:center; gap:16px;
+  height:54px; padding:0 18px;
+}
+.spk-head-mark{
+  font-family:'Open Sans Condensed','Open Sans',Arial,sans-serif;
+  font-size:26px; font-weight:700; letter-spacing:.04em; color:#fff;
+  line-height:1; flex:0 0 auto;
+}
+.spk-head-mark span{
+  display:block; font-family:'Open Sans',Arial,sans-serif;
+  font-size:9px; font-weight:600; letter-spacing:.22em;
+  text-transform:uppercase; color:rgba(255,255,255,.72);
+}
+.spk-head-titre{ flex:1 1 auto; min-width:0; }
+.spk-head-titre h1{
+  margin:0; color:#fff; font-size:20px; line-height:1.2;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.spk-head-actions{
+  display:flex; align-items:center; gap:6px; flex:0 0 auto;
+}
+.spk-head-r1 button.ghost, .spk-head-r1 .toolbar-more-wrap > button{
+  background:transparent; border:1px solid rgba(255,255,255,.28);
+  color:#fff; border-radius:3px;
+}
+.spk-head-r1 button.ghost:hover, .spk-head-r1 .toolbar-more-wrap > button:hover{
+  background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.45);
+}
+.spk-head-r1 button.ghost .icon{ stroke:#fff; }
+.spk-head-r1 .toolbar-more{
+  background:#fff; color:var(--ink);
+  border:1px solid var(--border, #e5e7eb); border-radius:3px;
+  box-shadow:0 8px 24px rgba(0,0,0,.16);
+}
+.spk-head-r1 .save-status{ color:rgba(255,255,255,.72); font-size:11px; }
+
+.spk-head-r2{
+  display:flex; align-items:center; gap:16px;
+  min-height:48px; padding:2px 18px;
+  background:#fff; flex-wrap:wrap;
+}
+.spk-head-onglets{ display:flex; align-items:stretch; gap:18px; flex:0 1 auto; min-width:0; overflow-x:auto; }
+.spk-head-links button{
+  background:none; border:none; box-shadow:none;
+  padding:12px 2px 10px; margin:0; border-radius:0;
+  font-family:'Open Sans',Arial,sans-serif; font-size:11px; font-weight:600;
+  letter-spacing:.05em; text-transform:uppercase;
+  color:var(--ink, #1a1a1a); position:relative; white-space:nowrap;
+  display:inline-flex; align-items:center; gap:6px;
+}
+.spk-head-links button .icon{ width:14px; height:14px; stroke:var(--blue, #1B5EA6); }
+.spk-head-links button::after{
+  content:""; position:absolute; left:0; right:0; bottom:-1px; height:2px;
+  background:transparent;
+}
+.spk-head-links button:hover{ color:var(--blue, #1B5EA6); }
+.spk-head-links button.is-active{ color:var(--blue, #1B5EA6); }
+.spk-head-links button.is-active::after{ background:var(--blue, #1B5EA6); }
+
+.spk-head-contexte{
+  display:flex; align-items:center; gap:12px; flex:1 1 auto;
+  min-width:0; flex-wrap:wrap; justify-content:flex-end;
+}
+.spk-head-contexte .fil-ariane{ font-size:12px; color:var(--label, #555); }
+.spk-head-contexte .fil-ariane .fil-lib{ font-size:10px; }
+.spk-head-contexte .fil-ariane .fil-val{ font-size:12px; }
+.spk-head-contexte #addBtn{ flex:0 0 auto; }
+.spk-head-contexte #projetsBandeau{ flex:0 1 auto; min-width:0; margin:0; }
+.spk-head-contexte #projetsBandeau .pj-entete{ margin:0; padding:0; background:none; border:none; }
+
+/* rangée 2 compactée (rendu regardé) : le fil d'Ariane tient sur la ligne
+   des valeurs seules — les étiquettes numérotées partent ; « + Créer un
+   projet » passe au niveau tertiaire (un seul bouton principal par écran) ;
+   les onglets suivent l'ordre du brief (Atelier en dernier) et l'onglet
+   Tableau reste dans la Vue d'ensemble (décision 4.124, le brief ne le
+   liste pas) ; la scrollbar des onglets ne se montre pas. */
+.spk-head-contexte .fil-ariane .fil-meta{ display:none; }
+.spk-head-contexte .fil-ariane{ gap:6px; }
+.spk-head-contexte .fil-ariane .fil-seg{ padding:4px 6px; }
+.spk-head-contexte .fil-ariane .fil-sep{ padding:4px 0; }
+.spk-head-onglets{ scrollbar-width:none; }
+.spk-head-onglets::-webkit-scrollbar{ display:none; }
+.spk-head-links #dashboardBtn{ display:none; }
+/* le masquage 4.124 d'Atelier visait le rail : dans l'en-tête, l'onglet
+   Atelier revient (le brief le liste), replacé en dernier */
+.spk-head-links #carteBtn{ display:inline-flex !important; order:4; }
+/* hauteur maîtrisée (rendu regardé : 129 px -> ~105) : les actions de la
+   rangée 1 héritaient de 56 px posés pour la toolbar ; l'en-tête resserre */
+.spk-head-r1 .spk-head-actions button,
+.spk-head-r1 .spk-head-actions .toolbar-more-wrap > button{
+  min-height:44px !important; padding-top:5px; padding-bottom:5px;
+}
+.spk-head-actions details.aide > summary{
+  min-height:44px; height:44px; padding:0 10px;
+  background:transparent; border:1px solid rgba(255,255,255,.28);
+}
+.spk-head-r2 .spk-head-links button{ padding-top:8px; padding-bottom:8px; }
+.spk-head-r2{ min-height:48px; }
+
+/* le caret ▾ du fil : le segment entier est cliquable, le caret ne fait
+   plus prendre une ligne au fil compacté */
+.spk-head-contexte .fil-ariane .fil-mod{ display:none; }
+/* l'aide repliable dans les actions : l'icône seule, le panneau s'ouvre en
+   absolu sous la barre (il ne pousse plus le contenu) */
+.spk-head-actions details.aide{ position:relative; }
+.spk-head-actions details.aide > summary{ list-style:none; cursor:pointer; min-width:44px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; color:#fff; border-radius:3px; }
+.spk-head-actions details.aide > summary::-webkit-details-marker{ display:none; }
+.spk-head-actions details.aide > summary::before{ content:none; }
+.spk-head-actions details.aide[open] .aide-body,
+.spk-head-actions details.aide[open] > *:not(summary){
+  position:absolute; top:calc(100% + 8px); right:0; z-index:120;
+  width:min(420px, 86vw);
+  background:#fff; color:var(--ink); border:1px solid var(--border,#e5e7eb);
+  border-radius:3px; box-shadow:0 10px 30px rgba(0,0,0,.2);
+  padding:14px; text-align:left;
+}
+.spk-head-actions details.aide[open] summary{ background:rgba(255,255,255,.14); }
+
+.spk-head-contexte #projetsBandeau button.primary,
+.spk-head-contexte #projetsBandeau #addProjetBtn{
+  background:none; border:none; color:var(--blue); padding:6px 4px;
+  font-weight:600; font-size:13px;
+}
+.spk-head-contexte #projetsBandeau .pj-aide-btn{
+  background:none; border:none; color:var(--blue); padding:4px; min-width:0;
+}
+
+/* le bandeau bleu de la fiche et la toolbar du monolithe : leurs éléments
+   vivent dans l'en-tête maintenant — les cadres vides disparaissent. */
+body.spk-has-head .hd{ display:none; }
+body.spk-has-head .toolbar{ display:none; }
+/* l'ancien rail : plus d'élément, plus de décalage */
+body.spk-has-head .panel.panel-large,
+body.spk-has-head #backlogWrap{
+  left:0 !important; width:auto !important;
+  top:var(--spk-head-h) !important;
+}
+body.spk-has-head #syntheseWrap{ margin-top:0; }
+/* « + Scénario » en tuile d'invitation (le 4.131.B en fera la tuile
+   pointillée de fin de rangée de cartes — annoncé comme écart anticipé) */
+.spk-head-contexte #addBtn{
+  background:#fff; border:1px dashed var(--blue); color:var(--blue);
+  font-weight:600;
+}
+.spk-head-contexte #addBtn:hover{ background:#e8f0fb; border-style:solid; }
+
+/* « + Scénario » porte la Vue d'ensemble : quand un espace de travail plein
+   écran s'ouvre, il sort (un seul bouton principal par écran — la fiche
+   essai porte le sien). :has() est supporté par les navigateurs cibles. */
+/* (l'Accueil est lui-même un .panel-large : on l'exclut — + Scénario est
+   son bouton principal ; la saisie d'essai, la Synthèse, Matis, le Plan,
+   le Catalogue et le Backlog portent le leur ou n'en portent pas) */
+body:has(.panel-large:not(#accueilPanel):not([hidden])) .spk-head-contexte #addBtn,
+body:has(.atelier:not([hidden])) .spk-head-contexte #addBtn,
+body:has(#syntheseWrap:not([hidden])) .spk-head-contexte #addBtn,
+body:has(#backlogWrap:not([hidden])) .spk-head-contexte #addBtn{ display:none; }
+
+/* la poignée de repli du rail n'existe plus */
+#spkRailToggle{ display:none !important; }
+/* le filigrane au coin passe sous l'en-tête */
+body[data-env="dev"][data-filigrane-code]:not([data-filigrane-code=""])::after{
+  top:calc(var(--spk-head-h) + 8px);
+}
+/* le bouton Retour des espaces de travail suit */
+#spkWorkspaceClose{ top:calc(var(--spk-head-h) + 12px); }
+
+@media (max-width:760px){
+  .spk-head-r1{ flex-wrap:wrap; padding:6px 12px; gap:8px; height:auto; min-height:54px; }
+  .spk-head-mark{ font-size:20px; }
+  .spk-head-titre{ flex:1 1 100%; order:3; }
+  .spk-head-titre h1{ font-size:16px; white-space:normal; }
+  .spk-head-actions{ margin-left:auto; }
+  .spk-head-r1 .label-tb{ display:none; }
+  .spk-head-r1 button.ghost{ min-width:44px; min-height:44px; justify-content:center; }
+  .spk-head-r2{ gap:10px; padding:2px 12px; }
+  .spk-head-onglets{ flex:1 1 100%; }
+  .spk-head-contexte{ justify-content:flex-start; }
+  body.spk-has-head .panel.panel-large,
+  body.spk-has-head #backlogWrap{ top:var(--spk-head-h) !important; }
+}
+
+/* mode atelier : les actions de la barre restent des cibles de 56 px */
+html[data-mode="atelier"] .spk-head-r1 button.ghost,
+html[data-mode="atelier"] .spk-head-r1 .toolbar-more-wrap > button{
+  min-width:56px; min-height:56px; justify-content:center;
+}
+html[data-mode="atelier"] .spk-head-links button{ min-height:56px; }

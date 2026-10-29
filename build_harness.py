@@ -74,7 +74,7 @@ HARNESS = '''const fs = require('fs');
 
 const node = ()=>({ getAttribute:()=>null, setAttribute(){}, removeAttribute(){}, hasAttribute:()=>false,
 
-  style:{}, dataset:{}, scrollIntoView(){}, focus(){}, blur(){}, click(){}, setPointerCapture(){},
+  style:{ setProperty(){}, removeProperty(){}, getPropertyValue(){return "";}, }, dataset:{}, scrollIntoView(){}, focus(){}, blur(){}, click(){}, setPointerCapture(){},
 
   classList:{add(){},remove(){},toggle(){},contains:()=>false,replace(){}},
 
@@ -2087,9 +2087,14 @@ try {
     if (buildCode.indexOf('spk-shell.js') === -1) echecs.push('le build ne branche pas le shell de la coque');
     if (buildCode.indexOf('fonts') === -1) echecs.push('le build ne copie pas les polices');
 
-    // (3) la coque est complete
-    if (css.indexOf('.spk-rail') === -1) echecs.push('spk-app.css ne definit pas le rail');
-    if (shell.indexOf('spk-rail') === -1) echecs.push('spk-shell.js ne construit pas le rail');
+    // (3) la coque est complete — v4.130 : l EN-TETE remplace le rail
+    if (css.indexOf('.spk-head') === -1) echecs.push('spk-app.css ne definit pas l en-tete');
+    if (shell.indexOf('spk-head') === -1) echecs.push('spk-shell.js ne construit pas l en-tete');
+    if (shell.indexOf('spk-head-r2') === -1) echecs.push('la rangée 2 de l en-tête (onglets + fil) est absente');
+    if (shell.indexOf('spk-head-actions') === -1) echecs.push('les actions de la rangée 1 sont absentes');
+    if (shell.indexOf('hdTitle') === -1) echecs.push('le titre de la référence n est pas déplacé dans l en-tête');
+    /* le rail de colonne ne doit PLUS être construit : l en-tête le remplace */
+    if (shell.indexOf('className = "spk-rail"') !== -1) echecs.push('spk-shell.js construit encore le rail de colonne');
     /* v4.109 (brand guide SPK, Tour 91) : les polices de la coque sont
        Open Sans Condensed / Open Sans — Barlow/Public Sans de
        l'auto-designer sont retirées. La porte suit : la déclaration
@@ -2102,76 +2107,35 @@ try {
     const shellSw = iShell < 0 ? '' : sw.slice(iShell, iShell + 900);
     if (shellSw.indexOf('spk-app.css') === -1) echecs.push('le service worker ne met pas la coque en cache');
     if (shellSw.indexOf('spk-shell.js') === -1) echecs.push('le service worker ne met pas le shell en cache');
-    /* v4.112 : les 8 polices de la coque d'origine sont RETIREES du SW
-       (decision Benjamin, complement du 26/10 soir) - ce controle vit
-       desormais dans la porte dediee 'polices mortes 4.112', qui exige
-       leur ABSENCE et le bump de CACHE. Garder l'ancienne exigence ici
-       aurait contredit la decision. */
 
-    // (4) le rail reste VISIBLE : z-index superieur aux surfaces plein ecran.
-    //     C est LE point du bug d origine : le rail (60) passait sous les
-    //     panneaux (80) et disparaitait de l ecran.
-    /* On lit le z-index du rail DANS la regle qui le remonte (celle qui
-       suit le repere « LE RAIL DOIT RESTER VISIBLE »), pas la premiere
-       occurrence du fichier : le CSS de la coque contient plusieurs
-       `.spk-rail { z-index: 60 }` (le rail de base, le rail mobile), et
-       lire la premiere ferait passer une regression du z-index de la
-       correction. On prend donc la valeur la plus HAUTE appliquee au rail
-       dans un media query bureau — c'est elle qui compte a l'ecran. */
-    const blocCorrection = css.split('LE RAIL DOIT RESTER VISIBLE')[1] || '';
-    /* PAS DE REGEX : le harnais est du JS dans une chaine Python non-raw,
-       chaque backslash y est reinterprete. Une regex de z-index ecrit
-       ici arrive en JS avec un double backslash et ne matche jamais -
-       la porte passerait donc toujours au vert. On lit la valeur par
-       decoupage de chaine, qui ne depend d'aucun echappement. */
+    // (4) l en-tete reste VISIBLE : z-index superieur aux surfaces plein ecran.
+    //     C est LE point du bug d origine (le rail 60 sous les panneaux 80) :
+    //     la meme exigence vaut pour l en-tete (90) — lire le z-index DANS la
+    //     regle .spk-head, par decoupage de chaine (pas de regex : le harnais
+    //     est du JS dans une chaine Python non-raw).
     function lireZIndexApres(texte, apres, fenetre){
       const i = texte.indexOf(apres);
       if (i < 0) return null;
       const tranche = texte.slice(i, i + (fenetre || 200));
       const j = tranche.indexOf('z-index:');
       if (j < 0) return null;
-      /* apres 'z-index:' il y a des espaces puis le nombre : on saute les
-         espaces, sinon le nettoyage des non-chiffres ne laisse rien. */
-      const reste = tranche.slice(j + 9).replace(/^[^0-9]+/, '');
-      /* on ne garde QUE les chiffres : le reste peut contenir un ';' ou
-         un retour ligne, et Number() renverrait alors NaN — qui ne vaut ni
-         null ni comparable, et la porte passerait au vert sans rien voir. */
+      /* 'z-index:' fait HUIT caracteres : j+9 mangeait le premier chiffre
+         quand la regle n'a pas d'espace (z-index:90 -> 0). Vu en 4.130. */
+      const reste = tranche.slice(j + 8).replace(/^[^0-9]+/, '');
       const chiffres = (reste.match(/[0-9]+/) || [''])[0];
       return chiffres ? Number(chiffres) : null;
     }
-    /* le rail : on part de la REGLE `.spk-rail {` du bloc de correction, pas
-       du premier `z-index:` du bloc (celui-la est dans le commentaire). */
-    const zRailMax = lireZIndexApres(blocCorrection, '.spk-rail {', 120);
-    /* le panneau : la regle de la coque est longue (position, inset, top,
-       left, transform, width, max-width, height...) avant le z-index — on
-       ouvre la fenetre largement. */
+    const zHead = lireZIndexApres(css, '.spk-head{', 160);
     const zPanneau = lireZIndexApres(css, '.panel.panel-large,', 700);
-    /* un NaN ne vaut ni null ni comparable : il passerait au vert. On le
-       traite donc comme une lecture impossible. */
-    if (zRailMax === null || zPanneau === null || isNaN(zRailMax) || isNaN(zPanneau)) echecs.push('impossible de lire les z-index du rail et des panneaux');
-    else if (zRailMax <= zPanneau) echecs.push('le rail (z ' + zRailMax + ') passe sous les panneaux (z ' + zPanneau + ') : il disparait de l ecran');
-    /* le decalage : on le cherche DANS le bloc de correction. La chaine
-       'left: 248px !important' existe aussi dans la regle `.wrap` (le
-       contenu decale de la meme facon) : chercher dans tout le fichier
-       laisserait passer un bloc de correction vide. */
-    if (blocCorrection.indexOf('left: 248px !important') === -1) echecs.push('les ecrans plein ecran ne s arretent pas au bord du rail');
-    if (blocCorrection.indexOf('width: auto !important') === -1) echecs.push('les ecrans plein ecran gardent width 100% : ils deborderaient');
-
-    // (5) la poignee de repli reste ACTIVE en plein ecran (Benjamin, 20/10) :
-    //     le rail est le repere de navigation, un espace de travail ne doit
-    //     pas le figer. La regle inverse (poignee masquee) a ete retiree.
-    /* meme contrainte : decoupage de chaine, pas de regex (les backslash
-       sont reinterpretes par la chaine Python du harnais). */
-    const iPoignee = css.indexOf('body.spk-workspace-open #spkRailToggle');
-    const poignee = iPoignee < 0 ? '' : css.slice(iPoignee, iPoignee + 260);
-    if (!poignee) echecs.push('plus de regle pour la poignee en espace de travail');
-    else {
-      if (poignee.indexOf('pointer-events: none') !== -1) echecs.push('la poignee est encore neutralisee en espace de travail');
-      if (poignee.indexOf('opacity: 0') !== -1) echecs.push('la poignee est encore masquee en espace de travail');
-    }
+    if (zHead === null || zPanneau === null || isNaN(zHead) || isNaN(zPanneau)) echecs.push('impossible de lire les z-index de l en-tete et des panneaux');
+    else if (zHead <= zPanneau) echecs.push('l en-tete (z ' + zHead + ') passe sous les panneaux (z ' + zPanneau + ') : il disparait de l ecran');
+    /* les ecrans plein ecran se posent SOUS l en-tete (hauteur mesurée) */
+    if (css.indexOf('top:var(--spk-head-h)') === -1) echecs.push('les ecrans plein ecran ne se posent pas sous l en-tete');
+    /* la poignee de repli du rail est neutralisee : le repli n existe plus */
+    if (css.indexOf('#spkRailToggle{ display:none !important; }') === -1) echecs.push('la poignee de repli du rail n est pas neutralisee');
 
     if (echecs.length) r.echecs += echecs.length;
-    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'coque 4.100 : la coque est dans le repo git, le rail reste visible et repliable (12 points verifies dans les fichiers reels)' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'coque 4.130 : l en-tete du design system remplace le rail (barre navy, onglets, actions, hauteur mesurée) (12 points verifies dans les fichiers reels)' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
   if (typeof (__DIAG__) !== 'undefined') (__DIAG__)(A);

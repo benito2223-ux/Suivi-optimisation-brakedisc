@@ -821,6 +821,84 @@ encore possible — et un détail scénarios lisible par OP) déposés dans
 `Hermes Version/NOTE_ERGONOMIE_BANDEAU_A_HERMES.md` pour son contre-analyse.
 Décision à Benjamin après avis d'Hermes ; rien n'est écrit dans l'outil.
 
+### ▸ Tour 109 — 29/10/2026 — **Z Code** (v4.130.0 — passe design, lot 4.130 : boutons et en-tête)
+
+Le lot 4.130 du brief design « conviviale » (chantier_zcode_design_4130.md),
+livré SEUL — Benjamin regarde le rendu avant la suite. **Aucune fonction
+nouvelle** (interdiction du brief) : CSS, déplacements de boutons existants,
+une classe.
+
+1. **Le charter v4.70 (disque noir + chevron ›) est remplacé** par la
+   hiérarchie à trois niveaux : principal bleu plein (un par écran),
+   secondaire contour bleu, tertiaire texte (destructif : texte rouge,
+   fond rouge clair au survol). Le filet bicolore de la barre passe au
+   liseré bleu 3 px. Les 128 boutons gardent balises, ids et handlers.
+2. **Les « principaux » foisonnants sont rétrogradés** (le diagnostic : «
+   tout est un bouton principal, donc rien ne l'est » — 13 .primary
+   visibles sur l'écran de travail) : Voir l'atelier, pfVueCpp/pfSimul/
+   pfCatalogue/pfPlan, alClose, Mode atelier (bandeau reprise), atelier-open
+   (raccourci par essai), + Créer un projet passent en ghost. **+ Scénario
+   quitte la barre** et devient la tuile d'invitation pointillée de la
+   Vue d'ensemble (l'esprit 4.131.B, écart anticipé annoncé) — masqué quand
+   un espace de travail plein écran s'ouvre (`:has()`, l'Accueil exclu car
+   il EST un .panel-large). **Compte final : 8 .primary dans tout le DOM,
+   dont 7 fantômes de panneaux fermés (0×0) et un seul d'action**
+   (« + Ajouter un essai »). Mesure du test : rect intersectant le viewport
+   ET elementFromPoint au centre (les boutons recouverts par les écrans
+   plein écran ou hors viewport ne comptent pas).
+3. **L'en-tête en deux rangées remplace le rail** (spk-shell.js + spk-app.css)
+   : rangée 1 navy #2F4159 54 px (mark SPK, titre de la référence DÉPLACÉ —
+   le h1 continue de se mettre à jour, actions à droite : Rechercher câblé
+   sur ouvrirRecherche existante, Transmettre avec son menu, verrou, mode,
+   •••, aide details déplacée) ; rangée 2 blanche 48 px (onglets soulignés
+   2 px bleu — Vue d'ensemble · Synthèse · Matis · Atelier, Tableau reste
+   dans la Vue d'ensemble ; fil d'Ariane compacté sans ses étiquettes ;
+   + Scénario ; bandeau projets tertiaire) ; liseré bas 3 px bleu ;
+   **hauteur totale 105 px** (≤ 110 exigé), --spk-head-h mesurée par
+   ResizeObserver. Les écrans plein écran se posent sous l'en-tête. « Données
+   locales » et la version descendent dans le pied de page. La poignée de
+   repli du rail disparaît.
+4. **Finitions** : filigrane de ligne — la teinte reste en fond, le code
+   ligne va AU COIN en DEV seulement (body[data-env=dev] posé par
+   appliquerFondLigne ; hostname prod = « prod »). La virgule orpheline de
+   la grille Composition : tuileOutil retournait un Array sans join("") —
+   le cast implicite séparait les tuiles d'un outil multi-logements par
+   « , ». Chips + Ra / + VE / + Autre critère : « + » en <b> bleu, contour
+   pointillé.
+
+**Les pièges du tour.** (1) La règle du filigrane posée près du commentaire
+v4.27 est tombée DANS le @media print — le piège du parseage du head,
+rejoué puis corrigé au premier rendu (la porte « equilibre css » ne voit
+pas ce défaut : le rendu, oui). (2) Le service worker du LOCAL a servi
+l'ancien CSS pendant trois mesures (hauteur figée à 117) : purge
+systématique des registrations + caches avant tout test. (3) La porte
+« coque 4.100 » (12 points sur le rail) est RECALÉE en « coque 4.130 » :
+en-tête présent dans shell et CSS, plus AUCUNE construction du rail,
+z-index 90 > 80 des écrans, écrans sous --spk-head-h, poignée neutralisée.
+**Bug trouvé au passage : 'z-index:' fait 8 caractères** — la fonction de
+lecture du harnais coupait à j+9 et mangeait le premier chiffre sans espace
+(z-index:90 → 0) ; l'ancienne convention « z-index: 90 » le masquait.
+Contre-regard : z-index amputé à 50 → porte tombée ; restaurée, verte.
+(4) L'icône ⓘ isolée du diagnostic = le details.aide du monolithe — déplacé
+dans les actions, panneau ouvert en absolu.
+
+**Vérifié** : 673 tests | 0 échec, syntaxe 0 erreur, 16 blocs style
+équilibrés, un principal par écran (6 écrans), verrouillé : 0 action de
+saisie visible + bannière posée, 0 erreur console, en-tête 105 px, 0
+débord horizontal à 1440. Captures avant (6) écrites ;
+captures après : **en cours à la livraison** (la surface de capture IAB
+sature par salées — un screenshot sur deux passe ; les vues du fil du tour
+ont toutes été regardées, la livraison les complète).
+
+**Écarts au brief, annoncés** : + Scénario en invitation pointillée dès
+4.130 (le 4.131.B le confirme en fin de rangée) ; l'onglet Atelier revient
+(4.124 l'avait retiré du rail — le brief le liste) ; Rechercher est un
+câblage de la recherche existante (Ctrl+K), pas une fonction nouvelle ; les
+portes historiques du rail (4.124 masquage, 4.100.4 exclusivité) restent
+vertes sur des règles devenues inertes — le sens nouveau est porté par la
+porte coque 4.130 recalée. **PROD : rien** — DEV 4.130.0, Benjamin regarde
+le rendu.
+
 ### ▸ Tour 108 ter — 29/10/2026 — **Z Code** (PROD : 4.129.1 — la phrase de Benjamin : « passe en prod »)
 
 **La prod est passée de 4.126.0 à 4.129.1** (saut 4.126 → 4.127.0/4.127.1 →
