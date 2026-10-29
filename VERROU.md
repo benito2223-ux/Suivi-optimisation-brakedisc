@@ -1,8 +1,8 @@
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | **Z Code** |
+| **Pris le** | 29/10/2026, Tour 108 |
+| **Écrit dans** | `bilan_economique.html` (4.129.1 : suite #tests navigable — global→globalThis avec sonde, plancher atelier 56 px étendu à tout interactif, NOUVEAUTES, version), `build_harness.py` (porte lot 5 étendue), `outils/mesure_atelier.py` (mesure interactifs ≥ 56 px sur 5 écrans), `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
+| **Version visée** | 4.129.1 |
+| **Sujet** | Brief 4.129.1 : la suite #tests ne s'interrompt plus au navigateur (global→globalThis), le plancher 56 px du mode atelier couvre tout élément saisissable ou cliquable (inputs, select, textarea, summary, .pcb-op, cases à cocher 56/28), le test de mesure vérifie les interactifs sur 5 écrans, livraison dist + empreinte SHA-256 nommée. |
 
 ---
 
