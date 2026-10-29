@@ -5,6 +5,51 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.130.1] — 2026-10-30 · La hiérarchie devient visible, l'en-tête tient sur un téléphone · Hermes
+
+Reprise du lot 4.130 après le retour d'analyse de Claude : « on est passé de
+"tout est noir" à "tout est pareil" », et l'en-tête mobile faisait **343 px**.
+
+### Corrigé — la hiérarchie des boutons est à nouveau visible
+- **« + Scénario » redevient le principal bleu plein** de l'écran de travail.
+  Le lot 4.130 l'avait passé en invitation pointillée (« écart anticipé ») :
+  résultat mesuré, **0 bouton plein visible** à l'écran — tous en contour
+  bleu identique. Mesuré maintenant : **exactement 1 principal visible**
+  (1440 et 390).
+- La coque lui donne la classe `primary` (ids et handlers inchangés) : la
+  sémantique suit le rendu, et la mesure « un principal par écran » le voit.
+
+### Corrigé — l'en-tête mobile : 343 px → 95 px
+- **Cause trouvée** : un ancien bloc `@media ≤ 760px` posait le titre et les
+  onglets sur leurs propres lignes (`flex: 1 1 100%`) — 7 rangées avant le
+  contenu à 390 px, et « Verrouiller » coupé au bord droit.
+- **Un seul bloc mobile** : r1 = 46 px, actions en **icônes seules**
+  (« Transmettre » porte son texte en nœud direct : `font-size:0` le masque,
+  les SVG restent) ; r2 = 46 px, onglets scrollables **sans wrap**, « +
+  Scénario » compact. Sous 480 px, la marque s'efface au profit du titre de
+  la référence.
+- **Le mode atelier garde ses cibles de 56 px** : le compactage cède via
+  `:not([data-mode="atelier"])`.
+
+### Outilé — le contrôle visuel n'est plus une promesse
+- `outils/mesure_41301.py` (Playwright) : captures + mesures à 1440 et 390 —
+  débord horizontal, débord **interne** de la rangée 1 (le `scrollWidth` ne
+  voit pas un flex fixed qui clippe ses enfants), nombre de primaires
+  visibles, hauteur d'en-tête. Captures avant/après dans
+  `outils/captures_41301/`.
+- **Porte hors-suite « coque 4.130.1 »** (5 points, lecture des fichiers
+  réels) : classe primary posée par le shell, style plein (pas pointillé),
+  bloc mobile avec `nowrap`, libellés masqués, cession au mode atelier,
+  absence de l'ancienne règle « titre sur sa propre ligne ».
+- **Contre-regard** : 3 régressions injectées (classe retirée, pointillé
+  restauré, wrap remis) → **toutes vues** → restauration, 673/0.
+
+### Noté — ce qui reste au brief (non fait, annoncé)
+- Le **lot 4.131** (chiffre de gain en tête, états vides illustrés) et le
+  **lot 4.132** (finitions) ne sont pas touchés.
+- Le filigrane reste en coin (dev) : l'analyse Claude jugeait l'état
+  « mieux » ; le motif plein fond n'est pas fait.
+
 ## [4.130.0] — 2026-10-29 · Passe design 1/3 : boutons et en-tête · Z Code
 
 Le lot 4.130 du brief design « conviviale » :

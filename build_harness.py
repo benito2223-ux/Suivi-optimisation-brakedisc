@@ -2138,6 +2138,52 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'coque 4.130 : l en-tete du design system remplace le rail (barre navy, onglets, actions, hauteur mesurée) (12 points verifies dans les fichiers reels)' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  (function coque41301HierarchieMobile(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const lire = (rel) => { try { return fs.readFileSync(path.join(REPO, rel), 'utf8'); } catch (e) { return ''; } };
+    const css = lire('spk-app.css');
+    const shell = lire('spk-shell.js');
+    if (!css || !shell) { echecs.push('spk-app.css ou spk-shell.js introuvable'); }
+    else {
+      /* (1) « + Scénario » est un PRINCIPAL : la coque lui donne la classe
+             (la sémantique suit le rendu ; la mesure « un plein par écran »
+             le voit). S'il redevient pointillé ou ghost, la hiérarchie meurt. */
+      if (shell.indexOf('addBtn.classList.add("primary")') === -1)
+        echecs.push('la coque ne donne plus la classe primary au bouton + Scénario');
+      /* (1bis) détection SANS fenêtre de slice : le style plein exact sur
+             #addBtn, et AUCUNE règle addBtn retournée en pointillé. */
+      if (css.indexOf('background:var(--blue, #1B5EA6); border:1px solid var(--blue, #1B5EA6)') === -1)
+        echecs.push('le style bleu plein du bouton + Scénario est introuvable');
+      const dashedAdd = css.match(/#addBtn[^{}]{0,60}\{[^}]*dashed/);
+      if (dashedAdd) echecs.push('le bouton + Scénario est retourné en pointillé (plus aucun plein visible)');
+      /* (2) l en-tête mobile : le bloc ≤760px existe et N AUTORISE PLUS le
+             wrap qui fabrique les 343 px (7 rangées mesurées avant).
+             Fenêtre LARGE : les règles suivent plusieurs lignes de
+             commentaires, une fenêtre courte passe à côté (faux vert). */
+      const iMob = css.indexOf('MOBILE ≤ 760 px');
+      if (iMob < 0) echecs.push('le bloc mobile de l en-tête a disparu');
+      else {
+        const bloc = css.slice(iMob, iMob + 3500);
+        if (bloc.indexOf('flex-wrap:nowrap') === -1)
+          echecs.push('la rangée 2 mobile re-wrape : l en-tête recasse en plusieurs rangées');
+        if (bloc.indexOf('font-size:0') === -1)
+          echecs.push('les libellés de la rangée 1 mobile ne sont plus masqués : débord « Verrouille… / Transmett… »');
+        if (bloc.indexOf('data-mode="atelier"') === -1)
+          echecs.push('le compactage mobile ne cède plus aux cibles 56 px du mode atelier');
+      }
+      /* (3) l ancien bloc qui mettait titre et onglets sur leurs propres
+             lignes (flex:1 1 100%) ne doit plus exister nulle part. */
+      const iOld = css.indexOf('.spk-head-titre{ flex:1 1 100%; order:3; }');
+      if (iOld !== -1) echecs.push('l ancienne règle titre-sur-sa-propre-ligne est revenue (en-tête mobile recasse en 7 rangées)');
+    }
+
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'coque 4.130.1 : + Scénario principal plein, en-tête mobile 2 rangées sans débord (5 points verifies dans les fichiers reels)' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   if (typeof (__DIAG__) !== 'undefined') (__DIAG__)(A);
 
   /* v4.80 — LE VERDICT FINAL TIENT COMPTE DES GARDE-FOUS.

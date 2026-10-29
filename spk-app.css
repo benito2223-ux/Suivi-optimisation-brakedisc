@@ -3765,13 +3765,21 @@ body.spk-has-head #backlogWrap{
   top:var(--spk-head-h) !important;
 }
 body.spk-has-head #syntheseWrap{ margin-top:0; }
-/* « + Scénario » en tuile d'invitation (le 4.131.B en fera la tuile
-   pointillée de fin de rangée de cartes — annoncé comme écart anticipé) */
+/* « + Scénario » est le PRINCIPAL de la Vue d'ensemble : bleu plein. La
+   version pointillée du lot 4.130 (écart « anticipé ») ne créait aucune
+   hiérarchie — l'écran n'avait plus AUCUN bouton plein (mesuré : 0
+   .primary visible) et tous les autres sont en contour. Un seul plein par
+   écran : c'est lui. Les écrans plein écran le cachent (plus bas) et
+   portent le leur. */
 .spk-head-contexte #addBtn{
-  background:#fff; border:1px dashed var(--blue); color:var(--blue);
-  font-weight:600;
+  background:var(--blue, #1B5EA6); border:1px solid var(--blue, #1B5EA6);
+  color:#fff; font-weight:600;
+  box-shadow:0 1px 3px rgba(27,94,166,.28);
 }
-.spk-head-contexte #addBtn:hover{ background:#e8f0fb; border-style:solid; }
+.spk-head-contexte #addBtn:hover{
+  background:var(--blue-dark, #154d8a); border-color:var(--blue-dark, #154d8a);
+  color:#fff;
+}
 
 /* « + Scénario » porte la Vue d'ensemble : quand un espace de travail plein
    écran s'ouvre, il sort (un seul bouton principal par écran — la fiche
@@ -3793,17 +3801,59 @@ body[data-env="dev"][data-filigrane-code]:not([data-filigrane-code=""])::after{
 /* le bouton Retour des espaces de travail suit */
 #spkWorkspaceClose{ top:calc(var(--spk-head-h) + 12px); }
 
+/* ════════════════════════════════════════════════════════════════════════════
+   MOBILE ≤ 760 px — l'en-tête du lot 4.130 mesurait 343 px à 390 px (7 rangées
+   avant le contenu : la r2 wrappait onglets + fil + créer + scénario, et la r1
+   débordait — « Verrouiller T… » coupé au bord). Cible : 2 rangées ≈ 115 px,
+   zéro débord. Chaque retrait est annoncé dans le tour (§3.5 : une absence se
+   dit).
+   ════════════════════════════════════════════════════════════════════════════ */
 @media (max-width:760px){
-  .spk-head-r1{ flex-wrap:wrap; padding:6px 12px; gap:8px; height:auto; min-height:54px; }
-  .spk-head-mark{ font-size:20px; }
-  .spk-head-titre{ flex:1 1 100%; order:3; }
-  .spk-head-titre h1{ font-size:16px; white-space:normal; }
-  .spk-head-actions{ margin-left:auto; }
-  .spk-head-r1 .label-tb{ display:none; }
-  .spk-head-r1 button.ghost{ min-width:44px; min-height:44px; justify-content:center; }
-  .spk-head-r2{ gap:10px; padding:2px 12px; }
-  .spk-head-onglets{ flex:1 1 100%; }
-  .spk-head-contexte{ justify-content:flex-start; }
+  /* r1 : 46 px, icônes seules — les libellés (« Verrouiller travail ») sont
+     la cause du débord ; les gestes restent tous présents, en icône.
+     HORS MODE ATELIER : en atelier, les cibles 56 px (C6, gants) priment. */
+  html:not([data-mode="atelier"]) .spk-head-r1{ height:46px; padding:0 10px; gap:8px; }
+  html:not([data-mode="atelier"]) .spk-head-mark{ font-size:20px; }
+  html:not([data-mode="atelier"]) .spk-head-mark span{ display:none; } /* « by CeramTec » part : le mark seul tient */
+  html:not([data-mode="atelier"]) .spk-head-titre h1{ font-size:15px; }
+  html:not([data-mode="atelier"]) .spk-head-actions{ gap:3px; }
+  html:not([data-mode="atelier"]) .spk-head-r1 .spk-head-actions button,
+  html:not([data-mode="atelier"]) .spk-head-r1 .spk-head-actions .toolbar-more-wrap > button{
+    min-height:36px !important; padding:4px 7px !important;
+  }
+  /* les libellés de la toolbar déplacée dans la r1 : icônes seules.
+     (#lockLabel du verrou n'a pas .label-tb, et « Transmettre » porte son
+     texte en noeud DIRECT — font-size:0 masque les deux, les svg restent,
+     dimensionnés en dur. Aucun bouton de la r1 n'est texte-seul.) */
+  .spk-head-actions .label-tb{ display:none; }
+  html:not([data-mode="atelier"]) .spk-head-actions button span{ display:none; }
+  html:not([data-mode="atelier"]) .spk-head-actions button{ font-size:0; gap:0; }
+  .spk-head-actions button .icon{ margin-right:0; }
+  /* le statut de sauvegarde texte part (il vit aussi dans •••) */
+  .spk-head-r1 .save-status{ display:none; }
+
+  /* r2 : 46 px, UNE ligne — les onglets scrollent au doigt, le fil d'Ariane
+     est ellipsé, « + Créer un projet » part (il reste sur desktop ; sur
+     mobile la création de projet n'est pas un geste d'atelier). */
+  .spk-head-r2{ min-height:46px; padding:0 8px; gap:10px; flex-wrap:nowrap; align-items:center; }
+  .spk-head-onglets{ gap:0; flex:1 1 auto; min-width:0; }
+  .spk-head-links button{ padding:13px 8px 11px; font-size:10px; gap:4px; }
+  .spk-head-links button .icon{ width:12px; height:12px; }
+  .spk-head-contexte{ flex:0 0 auto; flex-wrap:nowrap; justify-content:flex-end; }
+  #projetsBandeau{ display:none !important; }   /* annoncé : création de projet sur desktop */
+  .spk-head-contexte .fil-ariane{ display:none; } /* le contexte vit dans le titre r1 */
+  .spk-head-contexte #addBtn{ min-height:34px; padding:4px 10px; font-size:12px; }
+}
+@media (max-width:480px){
+  /* la marque part, le titre de la référence prend la place : sur un
+     téléphone d'atelier, la référence prime sur le logo (il vit au pied). */
+  html:not([data-mode="atelier"]) .spk-head-mark{ display:none; }
+}
+
+@media (max-width:760px){
+  /* (fusion 4.130.1 — l'ancien bloc mettait le titre et les onglets sur leurs
+     propres lignes via flex:1 1 100% : 7 rangées, 343 px mesurés. Les règles
+     du bloc unique ci-dessus s'appliquent ; ici ne restent que les offsets.) */
   body.spk-has-head .panel.panel-large,
   body.spk-has-head #backlogWrap{ top:var(--spk-head-h) !important; }
 }

@@ -74,7 +74,15 @@
   const fil = document.getElementById("filAriane");
   if (fil) contexte.appendChild(fil);
   const addBtn = document.getElementById("addBtn");
-  if (addBtn) contexte.appendChild(addBtn);
+  if (addBtn) {
+    contexte.appendChild(addBtn);
+    /* 4.130.1 : « + Scénario » est le PRINCIPAL de la Vue d'ensemble. Il
+       était resté classé .ghost (stylé plein par id dans la feuille) : la
+       sémantique suit le rendu — la classe porte la hiérarchie, la mesure
+       « un principal par écran » le voit, les ids et handlers ne bougent pas. */
+    addBtn.classList.remove("ghost");
+    addBtn.classList.add("primary");
+  }
   /* le bandeau projets (« + Créer un projet » + ⓘ, rendu par l'app dans
      son conteneur) quitte les rangées de tête : il suit dans la rangée 2,
      compacté par la feuille. Rendu et ids inchangés. */

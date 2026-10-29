@@ -821,6 +821,77 @@ encore possible — et un détail scénarios lisible par OP) déposés dans
 `Hermes Version/NOTE_ERGONOMIE_BANDEAU_A_HERMES.md` pour son contre-analyse.
 Décision à Benjamin après avis d'Hermes ; rien n'est écrit dans l'outil.
 
+### ▸ Tour 110 — 30/10/2026 — **Hermes** (v4.130.1 — reprise du lot 4.130 : la hiérarchie devient visible, l'en-tête tient sur un téléphone)
+
+**Le déclencheur.** Benjamin a fait analyser la 4.130.0 par Claude, qui a
+tranché : « on est passé de "tout est noir" à "tout est pareil" » — aucun
+bouton plein ne se distinguait, et sur mobile la barre prenait un
+demi-écran. Z Code a été renvoyé ; Benjamin demande à Hermes de prendre la
+main et de coder la suite.
+
+**La vérité mesurée avant de coder.** Les captures de Z Code
+(`outils/captures_4130/`) montrent un en-tête 2 rangées QUI EXISTE dans le
+code (105 px à 1440, mesuré) — l'analyse Claude décrivait un rendu
+mélangé (5 rangées, onglets encadrés) : symptôme classique du **cache
+service worker** (piège documenté depuis la 4.100.2), pas du code. En
+revanche, Claude avait raison sur les deux vrais défauts, tous deux
+mesurés avant correction :
+1. **0 bouton principal visible** à l'écran de travail (1440 comme 390) —
+   le « + Scénario » pointillé du lot 4.130 n'était détecté par aucune
+   mesure : la mesure Z Code comptait les `.primary`, et le bouton était
+   resté classé `.ghost`.
+2. **En-tête mobile de 343 px à 390 px** — 7 rangées avant le contenu, «
+   Verrouiller » coupé au bord droit. Un ancien bloc `@media ≤ 760px`
+   posait le titre et les onglets sur leurs propres lignes
+   (`flex: 1 1 100%`), APRÈS le nouveau bloc — c'est lui qui gagnait.
+
+**Corrigé.**
+- « + Scénario » redevient le **principal bleu plein** ; la coque lui pose
+  la classe `primary` (ids/handlers inchangés, la sémantique suit le
+  rendu). Mesuré après : exactement 1 principal visible, 1440 et 390.
+- L'en-tête mobile tient en **2 rangées ≈ 95 px** : un seul bloc `@media ≤
+  760px` (l'ancien fusionné), r1 46 px icônes seules (« Transmettre » porte
+  son texte en nœud direct — `font-size:0` le masque, les SVG restent), r2
+  46 px onglets scrollables sans wrap, « + Scénario » compact ; sous
+  480 px la marque s'efface au profit du titre de référence. Le mode
+  atelier **conserve ses cibles 56 px** (le compactage cède via
+  `:not([data-mode="atelier"])`).
+- **Nouvelle mesure de contrôle** : le débord INTERNE de la rangée 1 (le
+  `scrollWidth` ne voit pas un flex fixed qui clippe ses enfants — le
+  défaut exact « Verrouille…/Transmett… » coupés). Avant : 7 rangées,
+  contenu 402 px pour 390. Après : 2 rangées, 354/390, aucun texte coupé.
+
+**Portes et contre-regard.** Porte hors-suite « coque 4.130.1 » (5 points,
+fichiers réels) : classe primary posée par le shell, style plein (jamais
+pointillé), bloc mobile `nowrap`, libellés masqués, cession atelier,
+l'ancienne règle « titre sur sa propre ligne » interdite. Pièges de la
+porte elle-même : (a) le sélecteur `#addBtn` a QUATRE règles — première et
+dernière occurrence étaient les mauvaises, détection par sous-chaîne exacte
+du style plein, sans fenêtre de slice ; (b) la fenêtre courte du bloc
+mobile coupait avant `flex-wrap:nowrap` (faux vert). **Contre-regard : 3
+régressions injectées (classe retirée, pointillé, wrap) → toutes vues →
+restauration → 673 tests | 0 échec, tout vert.**
+
+**Outilé pour la suite.** `outils/mesure_41301.py` (Playwright) : captures
+1440/390 + débord horizontal + débord interne + primaires visibles +
+hauteur d'en-tête, avant/après dans `outils/captures_41301/`. La demande
+de Claude — « des captures 1440 et 390 pour chaque point » — est désormais
+une commande locale, pas une promesse.
+
+**Écarts annoncés (ce qui n'est PAS fait).** Le lot 4.131 (chiffre de gain
+en tête, états vides) et le 4.132 ne sont pas touchés. Le filigrane reste
+en coin dev (Claude jugeait l'état « mieux » ; le motif plein fond n'est
+pas fait). Sur mobile, « + Créer un projet » est masqué (geste
+d'administration, il reste sur desktop) et le fil d'Ariane disparaît (le
+contexte vit dans le titre de la r1).
+
+**Vérifié.** 673/0 ; DEV : 4.130.1 servie, empreinte identique au dist,
+CSS servi porte le nouveau bloc. **PROD : rien — 4.129.1.**
+
+Hermes.
+
+---
+
 ### ▸ Tour 109 — 29/10/2026 — **Z Code** (v4.130.0 — passe design, lot 4.130 : boutons et en-tête)
 
 Le lot 4.130 du brief design « conviviale » (chantier_zcode_design_4130.md),
