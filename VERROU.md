@@ -1,8 +1,8 @@
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | **Z Code** |
+| **Pris le** | 29/10/2026, Tour 108 ter (promotion prod sur phrase de Benjamin) |
+| **Écrit dans** | `dist/` (rebuild puis publication vers la prod), `ECHANGES.md`, `VERROU.md` — **pas dans `bilan_economique.html`** |
+| **Version visée** | 4.129.1 en PROD (saut 4.126.0 → 4.129.1) |
+| **Sujet** | La phrase de Benjamin : « passe en prod ». Publication du dist 4.129.1 sur suivi-optimisation-septfons.surge.sh, vérification empreinte/version.json/sensibles/rendu public. |
 
 ---
 
