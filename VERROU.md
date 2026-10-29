@@ -1,8 +1,8 @@
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | `bilan_economique.html` (LOT 3 : chiffre de tête = outillage, machine/rebut en tuiles séparées, fourchette de gain, charniereReelle min/N/≥, polarité heures, conditionnement/casse, rebut N + seuil, conflit d'horloge), `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
-| **Version visée** | 4.128.0 |
-| **Sujet** | LOT 3 du brief complémentaire (décisions Benjamin validées) : le chiffre de tête devient le gain d'outillage (plaquettes + pièces), machine/rebut en tuiles séparées jamais sommées, fourchette visée/min/moyenne avec étiquette, polarité des heures, conditionnement + casse, rebut N + échantillon trop faible, conflit d'horloge < 10 min nommé. |
+| **Auteur** | **Z Code** |
+| **Pris le** | 29/10/2026, Tour 107 |
+| **Écrit dans** | `bilan_economique.html` (LOT 5 : test de sécurité à l'import, charnière step="any", NOUVEAUTES, version), `outils/build-coque.mjs` (retrait des tests du fichier livré + lint CSS sur le livré), `build_harness.py` (porte lot 5, equilibre css étendue au dist), `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
+| **Version visée** | 4.129.0 |
+| **Sujet** | LOT 5 Hygiène du brief : les ~3 500 lignes de tests ne partent plus dans le fichier livré (étape de build, le harnais garde sa source dans le monolithe), test de sécurité à l'import (payload onerror dans chaque champ texte d'un JSON importé), charnière step="any" + inputmode, lint CSS structurel appliqué au fichier livré. |
 
 ---
 
