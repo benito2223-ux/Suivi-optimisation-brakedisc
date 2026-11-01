@@ -1,11 +1,3 @@
-| **Auteur** | **Claude (Sonnet 5.5) — à la demande de Benjamin** |
-| **Pris le** | 01/11/2026 |
-| **Écrit dans** | `spk-app.css`, `bilan_economique.html`, `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
-| **Version visée** | 4.131.0 |
-| **Sujet** | Lot 4.131 : ergonomie 3 formats (laptop · tablette · téléphone) — couche CSS (police, en-tête tablette/téléphone en atelier, cases à cocher) ; carte « Réponse » (le gain en grand, un seul bouton) ; plus de « — € » ; mode BUREAU par défaut sur écran tactile (l'atelier se choisit). |
-
----
-
 | **Auteur** | *(libre)* |
 | **Pris le** | — |
 | **Écrit dans** | — |
@@ -13,6 +5,14 @@
 | **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
 
 ---
+
+✅ **Verrou libéré par Claude le 01/11/2026** (Tour 111, v4.131.0 — la carte « Réponse » (gain en
+grand, un seul bouton), plus de « — € », mode **bureau** par défaut même sur écran tactile, coque :
+Open Sans rétabli (Plex Mono revenait par spk-app.css), en-tête tablette/téléphone sans débord,
+cases à cocher d'atelier à taille humaine). 673 tests | 0 échec + porte « lot 4.131 » ; rendu
+vérifié à 1440 / 820 / 390. **DEV** : build `dist/` prêt, publication par Benjamin. **PROD : rien
+— 4.129.1.** Le bloc « pris » d'Hermes, resté en tête après sa libération, a été retiré.
+Attention aux fins de ligne : sous Linux, `git -c core.autocrlf=true` pour add/status.
 
 ✅ **Verrou libéré par Hermes le 30/10/2026** (Tour 110, v4.130.1 — reprise
 du lot 4.130 : « + Scénario » principal bleu plein, en-tête mobile

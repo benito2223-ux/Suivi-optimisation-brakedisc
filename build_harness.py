@@ -1500,6 +1500,43 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot UX 4.120 : printGo vit (logo A4), anti-flash posé, import au rail' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  /* ── v4.131 — LA RÉPONSE D'ABORD, ET L'OUTIL À L'AISE SUR TABLETTE ET TÉLÉPHONE ─
+     Portes : la carte Réponse existe, le rendu l'utilise et la branche ; plus de « — € »
+     sans valeur ; le défaut est le mode bureau ; la coque garde Open Sans (jamais la
+     police à chasse fixe) et porte la couche ergonomie + les styles de la carte. */
+  (function lot4131Reponse(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const lire = function(f){ try { return fs.readFileSync(path.join(REPO, f), 'utf8'); } catch (e) { return ''; } };
+    const html = lire('bilan_economique.html');
+    const css = lire('spk-app.css');
+    if (!html) echecs.push('bilan_economique.html introuvable');
+    else {
+      if (html.indexOf('function heroReponseHTML()') === -1) echecs.push('la carte Réponse a disparu');
+      if (html.indexOf('heroReponseHTML() + pieceCPPBannerHTML()') === -1) echecs.push('le rendu n utilise plus la carte Réponse');
+      if (html.indexOf('heroBind(el);') === -1) echecs.push('le bouton de la carte n est plus branché');
+      if (html.indexOf('Number.isFinite(p.aujourdhui)') === -1) echecs.push('le tiret euro sans valeur est de retour');
+      if (html.indexOf('mode = "bureau";') === -1) echecs.push('le défaut bureau a disparu');
+      /* un seul bouton plein dans la carte (hiérarchie 4.130) */
+      const i0 = html.indexOf('function heroReponseHTML()');
+      const i1 = html.indexOf('function heroBind(', i0);
+      const corps = i0 >= 0 && i1 > i0 ? html.slice(i0, i1) : '';
+      const nPrimary = (corps.match(/id="heroCta"/g) || []).length;
+      if (nPrimary < 1 || (corps.match(/class="primary"/g) || []).length > 3) echecs.push('la carte Réponse n a pas un bouton principal clair');
+    }
+    if (!css) echecs.push('spk-app.css introuvable');
+    else {
+      if (css.indexOf("--font-mono:'Open Sans'") === -1) echecs.push('la police à chasse fixe de la coque est de retour');
+      if (css.indexOf('v4.131 — ERGONOMIE 3 FORMATS') === -1) echecs.push('la couche ergonomie 3 formats a disparu');
+      if (css.indexOf('.hero{') === -1 || css.indexOf('.hero-big{') === -1) echecs.push('les styles de la carte Réponse ont disparu');
+      if (css.indexOf('@media (max-width:1100px)') === -1) echecs.push('la règle tablette de l en-tête a disparu');
+    }
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.131 : carte Réponse, plus de tiret euro, défaut bureau, Open Sans, ergonomie 3 formats' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   /* ── v4.127 — LOT 2 : LE MODE ATELIER ──────────────────────────────────
      Le socle : tokens de lecture dans :root, html[data-mode=atelier] qui
      surcharge, Plex retiré (mono retargeté Open Sans), écran de boot, bascule
@@ -1518,8 +1555,11 @@ try {
          le parseage des blocs <style> du head rejetait le bloc en silence. */
       if (html.indexOf('spkAtelierCSS') === -1 || html.indexOf('function poserCSS') === -1)
         echecs.push('l injection JS du CSS atelier a disparu');
-      if (html.indexOf('matchMedia("(pointer:coarse)")') === -1)
-        echecs.push('le défaut tactile (pointer:coarse) a disparu');
+      /* v4.131 (décision de Benjamin) : plus de bascule d'office en atelier sur écran
+         tactile — le défaut est BUREAU, l'atelier se choisit. La porte garde le NOUVEAU
+         comportement : le défaut tactile ne doit pas revenir sans décision. */
+      if (html.indexOf('matches ? "atelier" : "bureau"') !== -1)
+        echecs.push('le défaut tactile (atelier d office) est de retour contre la décision 4.131');
       if (html.indexOf('id="modeBtn"') === -1 || html.indexOf('_spkSetMode') === -1)
         echecs.push('la bascule du mode a disparu');
       if (html.indexOf("'IBM Plex Mono'") !== -1)
@@ -1539,7 +1579,7 @@ try {
       }
     }
     if (echecs.length) r.echecs += echecs.length;
-    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 2 4.127 : tokens, surcharge atelier (14/16px, 56px, pastilles), Plex retiré, boot, bascule tactile' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 2 4.127 : tokens, surcharge atelier (14/16px, 56px, pastilles), Plex retiré, boot, bascule du mode' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
   /* ── v4.126 — LOT 1 : LA MISE À JOUR ÉCONOME ET GARDÉE ────────────────

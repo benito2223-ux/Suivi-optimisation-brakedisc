@@ -3864,3 +3864,132 @@ html[data-mode="atelier"] .spk-head-r1 .toolbar-more-wrap > button{
   min-width:56px; min-height:56px; justify-content:center;
 }
 html[data-mode="atelier"] .spk-head-links button{ min-height:56px; }
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   v4.131 — ERGONOMIE 3 FORMATS (laptop · tablette · mobile)
+   Surcharges posées en DERNIER, CSS pur : aucun id, aucun handler, aucun calcul.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* 1. La police du chiffre et des étiquettes. Le monolithe a retiré Plex Mono en
+   4.127 (--font-mono = Open Sans, chiffres tabulaires) ; la ligne 78 de ce fichier
+   la remettait : machine à écrire partout, contre le design system (« jamais de
+   police hors Open Sans »). On réaligne sur le monolithe. */
+:root{ --font-mono:'Open Sans','Segoe UI',Arial,sans-serif; }
+body{ font-variant-numeric:tabular-nums; }
+
+/* 2. Rythme : les titres de zone ne mangent plus l'écran. */
+.wrap .zone-band{ margin-top:clamp(22px,2.6vw,32px); padding-top:12px; }
+.wrap .zone-band b{ font-size:clamp(20px,2vw,26px); }
+
+/* 3. « La base est la plus chère — les autres économisent » est une BONNE nouvelle :
+   vert (gain), pas rouge (alerte). */
+.base-banner .bb-alert{
+  background:var(--green-bg); border:1px solid var(--green); color:var(--green);
+}
+
+/* 4. TABLETTE (≤1100 px, tactile ou non) : sur un appareil tactile l'outil passe seul
+   en mode atelier (cibles 56 px) — c'est CE mode que voit une tablette. La rangée 1 ne
+   déborde plus : icônes seules. La rangée 2 s'étage : onglets + « + Scénario » sur une
+   ligne, fil d'Ariane (ligne › référence › OP › scénario) sur la sienne, pleine largeur,
+   au lieu d'être écrasé entre les onglets. */
+@media (max-width:1100px){
+  .spk-head-r1{ gap:10px; }
+  .spk-head-actions button{ font-size:0 !important; gap:0 !important; }
+  .spk-head-actions button span, .spk-head-actions .label-tb{ display:none !important; }
+  .spk-head-actions button .icon{ margin-right:0 !important; }
+  .spk-head-r1 .save-status{ display:none; }
+  .spk-head-r2{ flex-wrap:wrap; row-gap:0; }
+  .spk-head-contexte{ display:contents; }
+  .spk-head-onglets{ order:1; flex:1 1 auto; }
+  .spk-head-contexte #addBtn{ order:2; margin-left:auto; }
+  .spk-head-contexte .fil-ariane{ order:3; flex:1 1 100%; flex-wrap:nowrap; overflow-x:auto; white-space:nowrap;
+    border-top:1px solid var(--border); padding:2px 0; scrollbar-width:none; }
+  .spk-head-contexte .fil-ariane::-webkit-scrollbar{ display:none; }
+  .spk-head-contexte #projetsBandeau{ display:none !important; }
+}
+@media (max-width:760px){
+  .spk-head-r2{ flex-wrap:nowrap; }
+  .spk-head-contexte .fil-ariane{ display:none; }
+}
+
+/* 5. TÉLÉPHONE (≤480 px) : les quatre onglets tiennent sans être coupés ; « + Scénario »
+   devient un « + » franc. */
+@media (max-width:480px){
+  .spk-head-links button .icon{ display:none; }
+  .spk-head-links button{ padding:13px 7px 11px; }
+  .spk-head-contexte #addBtn{
+    font-size:0; min-width:42px; padding:0;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10 4v12M4 10h12' stroke='white' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:center; background-size:18px;
+  }
+}
+
+/* l'icône d'aide se centre comme ses voisines : le monolithe lui pose margin-bottom:14px
+   (.aide), qui la remontait de 7 px et la collait au bord haut de la barre */
+.spk-head-actions details.aide{ display:flex; align-items:center; margin:0 !important; }
+
+/* 6. TÉLÉPHONE EN MODE ATELIER (c'est le mode d'office d'un écran tactile) : la rangée 1
+   tenait 7 boutons de 56 px sur 390 px — « ? » et « Transmettre » sortaient du cadre.
+   La marque et le voyant partent, les cibles passent à 48 px, le titre garde sa place. */
+@media (max-width:480px){
+  html[data-mode="atelier"] .spk-head-mark{ display:none; }
+  html[data-mode="atelier"] .spk-head-r1{ gap:6px; padding:0 8px; }
+  html[data-mode="atelier"] .spk-head-actions{ gap:4px; }
+  html[data-mode="atelier"] .spk-head-r1 button.ghost,
+  html[data-mode="atelier"] .spk-head-r1 .toolbar-more-wrap > button,
+  html[data-mode="atelier"] .spk-head-actions details.aide > summary{ min-width:46px !important; min-height:46px !important; padding:0 6px !important; }
+  html[data-mode="atelier"] .spk-head-actions details.aide,
+  html[data-mode="atelier"] #saveDot, html[data-mode="atelier"] .spk-head-r1 .save-dot{ display:none; }
+  html[data-mode="atelier"] .spk-head-links button{ min-height:46px; }
+}
+
+/* 7. Cases à cocher en mode atelier : 56 px + bordure de 14 px dessinaient un bloc
+   plein de la taille d'un bouton. 30 px suffisent à un doigt ganté DANS une ligne
+   cliquable (le libellé qui l'entoure est lui aussi une cible). */
+html[data-mode="atelier"] body input[type="checkbox"],
+html[data-mode="atelier"] body input[type="radio"]{
+  width:30px !important; height:30px !important; min-width:30px !important; min-height:30px !important;
+  border:0 !important; margin:8px !important; flex:0 0 auto;
+}
+/* téléphone : les quatre onglets tiennent sans être coupés (« MATIS » sortait) */
+@media (max-width:480px){
+  html[data-mode="atelier"] .spk-head-links button{ padding:12px 5px; font-size:10px; letter-spacing:.02em; }
+  html[data-mode="atelier"] .spk-head-onglets{ gap:0; }
+}
+.spk-head-contexte .fil-ariane{ align-items:center; }
+
+/* 8. LA CARTE « RÉPONSE » (4.131) : le gain en grand, une phrase, UN bouton.
+   Design system : liseré rouge 3 px (accent), eyebrow bleu + trait rouge, chiffre en
+   condensé, vert = gain. Le sélecteur de base passe en petit, sous la carte. */
+.hero{ background:var(--surface); border:1px solid var(--border); border-top:3px solid var(--red);
+  border-radius:var(--radius); padding:16px 20px 14px; margin-bottom:16px; box-shadow:var(--shadow-card); }
+.hero-eyebrow{ display:flex; align-items:center; gap:10px; font-size:11px; font-weight:700;
+  letter-spacing:.22em; text-transform:uppercase; color:var(--blue); margin-bottom:10px; }
+.hero-eyebrow::after{ content:""; width:32px; height:2px; background:var(--red); }
+.hero-main{ display:flex; align-items:center; gap:10px 24px; flex-wrap:wrap; }
+.hero-big{ font-family:var(--font-disp); font-weight:700; font-size:clamp(38px,5vw,52px); line-height:1;
+  letter-spacing:-.01em; color:var(--ink-faint); font-variant-numeric:tabular-nums; }
+.hero-gain .hero-big{ color:var(--green); }
+.hero-txt{ flex:1 1 260px; min-width:0; }
+.hero-verdict{ margin:0 0 3px; font-size:16px; line-height:1.3; color:var(--ink); }
+.hero-verdict b{ font-family:var(--font-disp); font-size:19px; color:var(--blue); }
+.hero-sub{ margin:0; font-size:13px; color:var(--ink-soft); }
+.hero-ok{ color:var(--green); font-weight:700; }
+.hero-wait{ color:var(--amber); font-weight:600; }
+.hero-cta button{ font-size:14px; padding:10px 20px; white-space:nowrap; }
+.hero-base{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:12px; padding-top:10px;
+  border-top:1px solid var(--border); font-size:12px; color:var(--ink-soft); }
+.hero-base label{ font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-faint); }
+.hero-base select{ font-family:var(--font-body); font-size:13px; padding:4px 8px; color:var(--ink);
+  background:var(--surface); border:1px solid var(--border); border-radius:3px; }
+.hero-tag{ font-size:9px; font-weight:700; letter-spacing:.15em; text-transform:uppercase;
+  background:var(--blue); color:#fff; padding:2px 7px; border-radius:2px; }
+.hero-tag.alt{ background:var(--ink-faint); }
+.pcb-cible-vide{ margin-left:auto; font-size:12px; color:var(--ink-faint); }
+body.locked .hero-cta [data-act="add"]{ display:none; }
+@media (max-width:760px){
+  .hero{ padding:14px 14px 12px; }
+  .hero-cta, .hero-cta button{ width:100%; }
+}
+html[data-mode="atelier"] .hero-cta button{ min-height:56px; font-size:16px; }

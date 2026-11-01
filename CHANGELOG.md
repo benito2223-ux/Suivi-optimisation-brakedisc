@@ -5,6 +5,44 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.131.0] — 2026-11-01 · La réponse d'abord, l'outil à l'aise sur tablette et téléphone · Claude
+
+Benjamin : « de plus en plus moche » — il manquait la lecture en 3 secondes (où je suis,
+ce que ça rapporte, quoi faire). Lot codé par Claude à la demande de Benjamin (carte blanche),
+verrou pris dans VERROU.md.
+
+### Ajouté — la carte « Réponse »
+- **Le gain en grand** (−66,7 %), une phrase de verdict (« Scénario B est le moins cher »),
+  le détail (0,0250 € au lieu de 0,0750 €, 1/5 essais conformes) et **un seul bouton** :
+  « Continuer les essais » (ouvre le scénario et amène à l'ajout d'essai) ou « Ouvrir ce
+  scénario » s'il est validé ; « + Scénario » s'il n'y a rien à comparer. Le sélecteur de base
+  passe en petit, sous la carte. Elle ne fait que LIRE les fonctions de calcul existantes.
+- Plus de « — € /pièce aujourd'hui » ni de barre de route quand la cible n'est pas
+  renseignée : une phrase grise.
+
+### Changé — mode bureau par défaut, même sur écran tactile
+- L'outil ne bascule plus seul en mode atelier sur tablette/téléphone (décision de Benjamin :
+  l'écran d'un commercial n'est pas celui d'une machine). L'atelier se choisit, et le choix est
+  mémorisé. La porte « lot 2 4.127 » garde désormais CE comportement.
+
+### Corrigé — la coque (spk-app.css)
+- **La police à chasse fixe** (IBM Plex Mono) revenait par la ligne 78 de la coque alors que le
+  monolithe l'avait retirée en 4.127 : aspect « machine à écrire » partout. `--font-mono`
+  repasse sur Open Sans (chiffres tabulaires).
+- **Tablette** : l'en-tête ne déborde plus (icônes seules, onglets + « + Scénario » sur une
+  ligne, fil d'Ariane sur la sienne). **Téléphone en atelier** : « ? » et « Transmettre »
+  sortaient du cadre — cibles à 46 px, marque et voyant retirés. Cases à cocher de l'atelier :
+  30 px au lieu de 56 px + bordure de 14 px. Icône d'aide recentrée (marge héritée du monolithe).
+- « La base est l'option la plus chère — les autres économisent » : vert (bonne nouvelle), plus rouge.
+- Titres de zone moins gourmands en hauteur.
+
+### Vérifié
+- 673 tests | 0 échec ; porte « lot 4.131 » (carte, rendu, branchement, plus de tiret euro, défaut
+  bureau, Open Sans, couche ergonomie) ; rendu navigateur 1440 / 820 / 390 : 0 débord
+  horizontal, 0 erreur console, tiret euro absent, bouton de la carte → scénario B ouvert.
+- Non couvert : appareil tactile réel, thème sombre, mode atelier tablette (regardé seulement
+  en émulation).
+
 ## [4.130.1] — 2026-10-30 · La hiérarchie devient visible, l'en-tête tient sur un téléphone · Hermes
 
 Reprise du lot 4.130 après le retour d'analyse de Claude : « on est passé de

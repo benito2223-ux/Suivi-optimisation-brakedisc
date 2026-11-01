@@ -821,6 +821,38 @@ encore possible — et un détail scénarios lisible par OP) déposés dans
 `Hermes Version/NOTE_ERGONOMIE_BANDEAU_A_HERMES.md` pour son contre-analyse.
 Décision à Benjamin après avis d'Hermes ; rien n'est écrit dans l'outil.
 
+### ▸ Tour 111 — 01/11/2026 — **Claude** (v4.131.0 — la réponse d'abord, l'outil à l'aise sur tablette et téléphone)
+
+**Le déclencheur.** Benjamin : « de plus en plus moche » ; il demande à Claude de prendre la main
+(« carte blanche, prends le verrou ») pour une app ergonomique sur laptop, tablette et téléphone,
+puis une mise en ligne sur DEV, puis PROD une fois validé.
+
+**Un aveu d'abord.** Claude avait jugé la 4.130 « inchangée » en ouvrant le HTML SANS `spk-app.css`
+ni `spk-shell.js` : le rendu sans coque n'avait pas l'en-tête. Le jugement « cinq rangées, rien n'a
+changé » était faux — l'en-tête de Z Code et d'Hermes existe. Corrigé auprès de Benjamin dans la
+même séance ; leçon : toujours juger le `dist/` avec ses deux fichiers, jamais le monolithe seul.
+
+**Ce que j'ai trouvé** (coque lue en entier) : (1) `spk-app.css` ligne 78 remettait IBM Plex Mono
+contre le monolithe et le design system — la cause du rendu « machine à écrire » ; (2) un écran
+tactile passe seul en mode atelier : tablette et téléphone ne voyaient QUE l'atelier, que les
+corrections d'en-tête 4.130.1 (`:not([data-mode="atelier"])`) ne couvraient pas — « ? » et
+« Transmettre » sortaient du cadre à 390 px, « Transmettre » coupé à 820 px.
+
+**Ce que j'ai fait.** Voir CHANGELOG 4.131.0. Monolithe : carte Réponse (`heroReponseHTML`,
+`heroBind`), plus de « — € », défaut bureau. Coque : couche « ergonomie 3 formats » + styles de la
+carte. `build_harness.py` : porte « lot 4.131 » ; la porte « lot 2 4.127 » garde désormais le
+défaut bureau (décision de Benjamin, annoncée). Verrou pris dans un commit, libéré dans celui-ci.
+(Le bloc « pris » laissé par Hermes dans VERROU.md avait été oublié à sa libération : remplacé.)
+
+**Vérifié** : 673 | 0 ; 3 formats au rendu (captures) ; clic sur le bouton de la carte ; verrouillé.
+**Pas vérifié** : appareil tactile réel, thème sombre. **DEV** : build prêt (`dist/`, 4.131.0) ;
+Claude n'a pas de compte Surge — publication par Benjamin (commande dans le message de la séance).
+**PROD** : rien — 4.129.1. **Piège git** : le dépôt vu depuis Linux montre 75 fichiers modifiés
+(fins de ligne) ; toujours `git -c core.autocrlf=true` pour add/status.
+
+**Reste** : lot 4.132 (mobile fin : composition, essais), vérification sur appareil, puis PROD
+sur ordre de Benjamin et mise en ordre du dépôt GitHub (branches dev/main).
+
 ### ▸ Tour 110 — 30/10/2026 — **Hermes** (v4.130.1 — reprise du lot 4.130 : la hiérarchie devient visible, l'en-tête tient sur un téléphone)
 
 **Le déclencheur.** Benjamin a fait analyser la 4.130.0 par Claude, qui a
