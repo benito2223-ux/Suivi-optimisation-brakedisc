@@ -5,6 +5,14 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.132.1] — 2026-11-01 · Menus déroulants lisibles · Claude
+
+Benjamin : « pas de contraste des textes dans les menus déroulants, blanc sur blanc illisible ».
+Cause : mes règles « bouton blanc sur bleu » du bandeau s'appliquaient aussi aux boutons à
+l'intérieur des menus (Transmettre, •••). Corrigé : sélecteurs limités aux boutons de la bande ;
+menus en fond blanc / texte #1a1a1a / survol bleu clair ; « ? » ouvert garde son contraste.
+Contrôle : 0 texte sous 4,5:1 dans Transmettre, ••• et l'aide (mesuré sur le rendu).
+
 ## [4.132.0] — 2026-11-01 · Une seule bande en tête, menu rangé (base 4.129.1) · Claude
 
 Benjamin : « c'est moche, on repart de la version en prod comme référence (barre latérale, couleurs) ».

@@ -3685,13 +3685,13 @@ body.spk-has-rail .hd{
 body.spk-has-rail .hd .hd-left{ min-width:0; flex:1 1 auto; }
 body.spk-has-rail .hd h1{ font-size:clamp(1.35rem,2.2vw,1.9rem); }
 .spk-hd-actions{ display:flex; align-items:center; gap:8px; flex:0 0 auto; position:relative; }
-.spk-hd-actions button, .spk-hd-actions summary{ min-height:38px; }
-.spk-hd-actions button.ghost, .spk-hd-actions .toolbar-more-wrap > button{
+.spk-hd-actions > button, .spk-hd-actions .toolbar-more-wrap > button, .spk-hd-actions summary{ min-height:38px; }
+.spk-hd-actions > button.ghost, .spk-hd-actions .toolbar-more-wrap > button{
   background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.3); color:#fff;
   padding:0 10px; box-shadow:none;
 }
-.spk-hd-actions button.ghost:hover, .spk-hd-actions .toolbar-more-wrap > button:hover{ background:rgba(255,255,255,.2); }
-.spk-hd-actions button .icon, .spk-hd-actions summary .icon{ stroke:#fff; }
+.spk-hd-actions > button.ghost:hover, .spk-hd-actions .toolbar-more-wrap > button:hover{ background:rgba(255,255,255,.2); }
+.spk-hd-actions > button .icon, .spk-hd-actions .toolbar-more-wrap > button .icon, .spk-hd-actions summary .icon{ stroke:#fff; }
 .spk-hd-actions #modeBtn, .spk-hd-actions #lockBtn{ font-size:0; gap:0; min-width:38px; justify-content:center; }
 .spk-hd-actions #modeBtn .icon, .spk-hd-actions #lockBtn .icon{ margin:0; }
 .spk-hd-actions #addBtn{
@@ -3779,3 +3779,27 @@ body:not(.spk-workspace-open) .spk-rail .toolbar-ecrans #spkTravailBtn{
   .spk-hd-actions #saveStatus, .spk-hd-actions .save-status{ display:none !important; }
 }
 .spk-rail .toolbar-ecrans .spk-nav-sep{ align-self:stretch; text-align:left; }
+
+/* v4.132.1 — LES MENUS DÉROULANTS SE LISENT (blanc sur blanc corrigé). Les boutons
+   à l'intérieur de Transmettre / ••• / aide ne sont PAS des boutons de la bande :
+   fond blanc, texte sombre, survol bleu clair. Contraste ≥ 7:1. */
+.spk-hd-actions .toolbar-more{
+  background:#fff; color:#1a1a1a; border:1px solid var(--border); border-radius:4px;
+  box-shadow:0 8px 24px rgba(47,65,89,.22); z-index:130;
+}
+.spk-hd-actions .toolbar-more button,
+.spk-hd-actions .toolbar-more button.ghost,
+.spk-hd-actions .toolbar-more a{
+  background:transparent; color:#1a1a1a; border:0; box-shadow:none; min-height:36px;
+}
+.spk-hd-actions .toolbar-more button:hover,
+.spk-hd-actions .toolbar-more button.ghost:hover{ background:#e8f0fb; color:#154d8a; }
+.spk-hd-actions .toolbar-more button .icon, .spk-hd-actions .toolbar-more button svg{ stroke:currentColor; }
+.spk-hd-actions .toolbar-more [class*="titre"], .spk-hd-actions .toolbar-more h4, .spk-hd-actions .toolbar-more .tm-groupe{ color:#4a5568; }
+.spk-hd-actions .toolbar-more *{ --ink:#1a1a1a; }
+/* le « ? » ouvert garde son contraste (il virait au carré blanc, icône blanche invisible) */
+.spk-hd-actions details.aide[open] > summary,
+.spk-hd-actions details.aide > summary:hover{
+  background:rgba(255,255,255,.22); color:#fff; border-color:rgba(255,255,255,.6);
+}
+.spk-hd-actions details.aide > summary svg, .spk-hd-actions details.aide > summary .icon{ stroke:#fff; color:#fff; }
