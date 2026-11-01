@@ -1500,6 +1500,23 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot UX 4.120 : printGo vit (logo A4), anti-flash posé, import au rail' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  /* ── v4.132.2 — bugs du check complet (nav mobile, carte vers fiche, Synthèse, cycle, fil atelier) ── */
+  (function lot41322Bugs(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const lire = function(f){ try { return fs.readFileSync(path.join(REPO, f), 'utf8'); } catch (e) { return ''; } };
+    const css = lire('spk-app.css'), js = lire('spk-shell.js'), html = lire('bilan_economique.html');
+    if (css.indexOf('v4.132.2 — LES BUGS DU CHECK COMPLET') === -1) echecs.push('la couche bugs 4.132.2 a disparu');
+    if (css.indexOf('--spk-nav-h') === -1) echecs.push('les écrans plein écran recouvrent de nouveau la barre du bas (téléphone)');
+    if (css.indexOf('body:has(#syntheseWrap:not([hidden])) #tabsStrip') === -1) echecs.push('la Synthèse ne remplace plus la zone de travail');
+    if (js.indexOf('fiche.scrollIntoView') === -1) echecs.push('ouvrir une carte ne défile plus vers sa fiche');
+    if (html.indexOf('placeholder="à saisir"') === -1) echecs.push('le champ temps de cycle a perdu sa case');
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.132.2 : bugs du check complet (nav mobile, carte vers fiche, Synthèse, cycle, fil atelier)' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   /* ── v4.132 — UNE SEULE BANDE EN TÊTE, UNE NAVIGATION RANGÉE (base 4.129.1) ── */
   (function lot4132Bande(){
     const fs = require('fs');

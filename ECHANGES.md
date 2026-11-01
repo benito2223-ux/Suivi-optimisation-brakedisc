@@ -191,6 +191,10 @@ Matis doivent tenir le MÊME état (v3) — une correction d'un côté recrée d
 lignées. Consigne Matis : import v3, Remplacer tout, ne pas cliquer la correction.
 
 
+### ▸ Tour 114 — 01/11/2026 — **Claude** (v4.132.2 — les bugs du check complet ; branche `ux-rail`)
+
+Audit complet du 01/11 (Benjamin : « fais un check complet… »). Corrigé : téléphone, la barre d'onglets du bas passait sous les écrans plein écran (on ne naviguait plus qu'avec Retour) ; ouvrir une carte de scénario défile jusqu'à sa fiche ; la Synthèse remplace la zone de travail (et « Retour » ne recouvre plus le bandeau) ; champ temps de cycle en vraie case ; fil d'Ariane centré en mode atelier ; apostrophe « d'abord ». Le filigrane « E1 » est le repère DEV (absent en PROD) : gardé. 673/0 + porte lot 4.132.2 ; rendu 1440/390 normal et atelier.
+
 ### ▸ Tour 65 bis — 13/10/2026 soir — **Z Code** (v5, rev 440 — l'essai du jour réattribué à la production)
 
 **La demande.** Benjamin : l'essai réalisé ce matin sur PCI 5 / DV 304x28 RPE

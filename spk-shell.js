@@ -188,6 +188,37 @@
     }
   })();
 
+  /* v4.132.2 — ouvrir une carte de scénario AMÈNE à sa fiche. Avant : la fiche
+     changeait 900 px plus bas et l'écran ne bougeait pas — on croyait que le clic
+     n'avait rien fait. On laisse l'application rendre, puis on défile (en douceur,
+     sauf si l'utilisateur a demandé moins d'animations). Les étiquettes de projet
+     sur la carte ne déclenchent pas le défilement. */
+  document.addEventListener("click", (e) => {
+    const t = e.target;
+    if (!t || !t.closest) return;
+    const carte = t.closest(".tab-card");
+    if (!carte || t.closest(".tag-pill")) return;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const fiche = document.getElementById("scenarioDetail");
+      if (!fiche) return;
+      const doux = !(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+      try { fiche.scrollIntoView({ behavior: doux ? "smooth" : "auto", block: "start" }); }
+      catch (err) { fiche.scrollIntoView(true); }
+    }));
+  });
+
+  /* v4.132.2 — téléphone : la hauteur réelle de la barre d'onglets du bas nourrit
+     --spk-nav-h (les écrans plein écran s'arrêtent au-dessus d'elle). */
+  (function () {
+    const poser = () => {
+      const h = window.matchMedia("(max-width:900px)").matches ? rail.offsetHeight : 0;
+      document.documentElement.style.setProperty("--spk-nav-h", h + "px");
+    };
+    poser();
+    window.addEventListener("resize", poser);
+    if (window.ResizeObserver) new ResizeObserver(poser).observe(rail);
+  })();
+
   const panelToButton = {
     accueilPanel: "accueilBtn",
     dashboardPanel: "accueilBtn",

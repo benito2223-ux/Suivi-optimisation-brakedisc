@@ -3803,3 +3803,54 @@ body:not(.spk-workspace-open) .spk-rail .toolbar-ecrans #spkTravailBtn{
   background:rgba(255,255,255,.22); color:#fff; border-color:rgba(255,255,255,.6);
 }
 .spk-hd-actions details.aide > summary svg, .spk-hd-actions details.aide > summary .icon{ stroke:#fff; color:#fff; }
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+   v4.132.2 — LES BUGS DU CHECK COMPLET (audit du 01/11)
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* 1. Téléphone : la barre d'onglets du bas restait SOUS les écrans plein écran
+   (rail z 60 < panneau z 80) — on ne naviguait plus qu'avec « Retour ». La barre
+   passe devant, les écrans s'arrêtent au-dessus d'elle ; les dialogues restent
+   au-dessus de tout. */
+@media screen and (max-width:900px){
+  .spk-rail{ z-index:85; }
+  .panel.panel-large, #backlogWrap{ bottom:var(--spk-nav-h, 64px) !important; }
+  body:has(.panel:not(.panel-large):not(#backlogWrap):not([hidden])) .panel-backdrop{ z-index:95; }
+  .panel:not(.panel-large):not(#backlogWrap){ z-index:100; }
+  .spk-workspace-close{ z-index:90; }
+}
+
+/* 2. La Synthèse est un ÉCRAN, pas un bloc ajouté sous les scénarios : quand elle est
+   ouverte, la zone de travail s'efface. Le rail dit où l'on est : pas de « Retour »
+   flottant par-dessus les boutons du bandeau. */
+body:has(#syntheseWrap:not([hidden])) #tabsStrip,
+body:has(#syntheseWrap:not([hidden])) #scenarioDetail,
+body:has(#syntheseWrap:not([hidden])) #repriseBandeau,
+body:has(#syntheseWrap:not([hidden])) #bandeauPremiere,
+body:has(#syntheseWrap:not([hidden])) #spkWorkspaceClose{ display:none !important; }
+#syntheseWrap:not([hidden])::before{
+  content:"Synthèse de l'opération"; display:block;
+  font-family:var(--font-disp); font-weight:700; font-size:26px; color:var(--ink);
+  margin:6px 0 14px;
+}
+
+/* 3. La carte ouverte se voit, et la fiche s'aligne sous le bandeau quand on y défile */
+#scenarioDetail{ scroll-margin-top:12px; }
+
+/* 4. Le champ « temps de cycle » : une vraie case (plus de tirets « _ _ _ _ ») */
+.foot-second input.cell-cycle{
+  border:1px solid rgba(255,255,255,.55) !important; border-bottom-width:1px !important;
+  border-radius:3px; background:rgba(255,255,255,.1); padding:2px 6px; width:76px;
+  -moz-appearance:textfield;
+}
+.foot-second input.cell-cycle::-webkit-outer-spin-button,
+.foot-second input.cell-cycle::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+.foot-second input.cell-cycle::placeholder{ color:rgba(255,255,255,.6); font-weight:400; }
+
+/* 5. Fil d'Ariane en mode atelier : les segments prennent 56 px (cible tactile) mais
+   leur texte restait collé en haut, les « › » et l'engrenage tombaient au milieu —
+   tout se centre sur la même ligne. */
+.spk-ctx .fil-ariane .fil-seg{ justify-content:center; }
+.spk-ctx .fil-ariane .fil-ico{ display:inline-flex; align-items:center; justify-content:center; }
+.spk-ctx .fil-ariane .fil-sep{ display:inline-flex; align-items:center; }
