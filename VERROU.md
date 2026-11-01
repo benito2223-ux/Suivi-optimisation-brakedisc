@@ -1,8 +1,8 @@
-| **Auteur** | **Hermes** |
-| **Pris le** | 30/10/2026 |
-| **Écrit dans** | `spk-app.css`, `spk-shell.js`, `bilan_economique.html`, `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md` |
-| **Version visée** | 4.130.1 |
-| **Sujet** | Reprise du lot 4.130 : hiérarchie réelle des boutons (un principal plein par écran), en-tête 2 rangées vérifié au rendu (1440 ET 390), onglets soulignés, débord mobile 390 réglé, captures livrées pour chaque point. |
+| **Auteur** | **Claude (Sonnet 5.5) — à la demande de Benjamin** |
+| **Pris le** | 01/11/2026 |
+| **Écrit dans** | `spk-app.css`, `bilan_economique.html`, `build_harness.py`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
+| **Version visée** | 4.131.0 |
+| **Sujet** | Lot 4.131 : ergonomie 3 formats (laptop · tablette · téléphone) — couche CSS (police, en-tête tablette/téléphone en atelier, cases à cocher) ; carte « Réponse » (le gain en grand, un seul bouton) ; plus de « — € » ; mode BUREAU par défaut sur écran tactile (l'atelier se choisit). |
 
 ---
 
