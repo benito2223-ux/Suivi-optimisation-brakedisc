@@ -1537,6 +1537,25 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.133.0 : fiche en onglets, critères repliés, chiffres sur blanc, échelle de texte' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  /* ── v4.134.0 — Vue d'ensemble parlante, flèches et glisser entre scénarios, rappel flottant, mode gants ── */
+  (function lot4134Usine(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const lire = function(f){ try { return fs.readFileSync(path.join(REPO, f), 'utf8'); } catch (e) { return ''; } };
+    const css = lire('spk-app.css'), js = lire('spk-shell.js'), html = lire('bilan_economique.html');
+    if (html.indexOf('function accueilPhraseHTML(') === -1) echecs.push('la phrase d état de la Vue d ensemble a disparu');
+    if (html.indexOf('bd-vide') === -1) echecs.push('les indicateurs sans valeur pèsent de nouveau comme des chiffres');
+    if (css.indexOf('v4.134 — LA VUE D') === -1) echecs.push('la couche 4.134 a disparu');
+    if (css.indexOf('#bandeauPremiere:not([hidden]){') === -1) echecs.push('le rappel Base pousse de nouveau la page');
+    if (js.indexOf('spk-sc-nav') === -1) echecs.push('les flèches précédent / suivant ont disparu');
+    if (js.indexOf('touchend') === -1) echecs.push('le glisser entre scénarios a disparu');
+    if (js.indexOf('Mode gants') === -1) echecs.push('le mode tactile a perdu son nom');
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.134.0 : Vue d’ensemble parlante, flèches et glisser entre scénarios, rappel flottant, mode gants' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   /* ── v4.132 — UNE SEULE BANDE EN TÊTE, UNE NAVIGATION RANGÉE (base 4.129.1) ── */
   (function lot4132Bande(){
     const fs = require('fs');

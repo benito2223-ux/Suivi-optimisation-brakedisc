@@ -141,6 +141,13 @@
     const plus = document.getElementById("moreBtn");
     const plusWrap = plus && plus.closest ? plus.closest(".toolbar-more-wrap") : null;
     if (plusWrap) bar.appendChild(plusWrap);
+    /* v4.134 — « Atelier » désignait trois choses (le mode tactile, la carte des
+       machines, « Voir l'atelier ») : le mode tactile se dit « mode gants ». */
+    const modeB = document.getElementById("modeBtn");
+    if (modeB) {
+      modeB.setAttribute("title", "Mode gants : grandes cibles tactiles, gros chiffres — pour l'écran de la machine");
+      modeB.setAttribute("aria-label", "Mode gants");
+    }
     ["modeBtn", "lockBtn"].forEach((id) => {
       const b = document.getElementById(id);
       if (b && !b.getAttribute("title")) b.setAttribute("title", b.textContent.replace(/\s+/g, " ").trim());
@@ -306,6 +313,41 @@
       det.open = (idSc in criteresOuverts) ? criteresOuverts[idSc] : nEssais === 0;
       det.addEventListener("toggle", () => { criteresOuverts[idSc] = det.open; });
     }
+    /* v4.134 — ‹ n / N › : le scénario précédent / suivant, sans remonter aux cartes.
+       L'ordre est celui des numéros des cartes (le rang dans l'OP). */
+    const head = sc.querySelector(":scope > .scenario-head");
+    const cartes = [...document.querySelectorAll("#tabsStrip .tab-card")]
+      .map((c) => ({ c, n: parseInt((c.querySelector(".tc-num") || {}).textContent, 10) || 0 }))
+      .sort((a, b) => a.n - b.n);
+    const iAct = cartes.findIndex((x) => x.c.classList.contains("active"));
+    if (head && cartes.length > 1 && iAct >= 0 && !head.querySelector(".spk-sc-nav")) {
+      const nav = document.createElement("div");
+      nav.className = "spk-sc-nav";
+      const aller = (d) => { const x = cartes[iAct + d]; if (x) x.c.click(); };
+      nav.innerHTML = '<button type="button" aria-label="Scénario précédent" title="Scénario précédent">‹</button>'
+        + "<span>" + (iAct + 1) + " / " + cartes.length + "</span>"
+        + '<button type="button" aria-label="Scénario suivant" title="Scénario suivant">›</button>';
+      const [bPrec, , bSuiv] = nav.children;
+      bPrec.disabled = iAct === 0;
+      bSuiv.disabled = iAct === cartes.length - 1;
+      bPrec.addEventListener("click", () => aller(-1));
+      bSuiv.addEventListener("click", () => aller(1));
+      head.appendChild(nav);
+      /* glisser horizontalement sur l'en-tête ou les chiffres (écran tactile) */
+      let x0 = null, y0 = null;
+      [head, sc.querySelector(":scope > .scenario-foot")].forEach((zone) => {
+        if (!zone) return;
+        zone.addEventListener("touchstart", (e) => { const t = e.touches[0]; x0 = t.clientX; y0 = t.clientY; }, { passive: true });
+        zone.addEventListener("touchend", (e) => {
+          if (x0 === null) return;
+          const t = e.changedTouches[0];
+          const dx = t.clientX - x0, dy = t.clientY - y0;
+          x0 = null;
+          if (Math.abs(dx) > 70 && Math.abs(dy) < 45) aller(dx < 0 ? 1 : -1);
+        }, { passive: true });
+      });
+    }
+
     const h3 = sc.querySelector(".sec-essais .log-section > h3");
     if (h3 && !h3.dataset.court) {
       h3.dataset.court = "1";

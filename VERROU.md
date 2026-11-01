@@ -1,10 +1,17 @@
-| **Auteur** | Claude |
-| **Pris le** | 01/11/2026 |
-| **Écrit dans** | `bilan_economique.html`, `spk-app.css`, `spk-shell.js`, `build_harness.py`, CHANGELOG, ECHANGES — **branche `ux-rail`** |
-| **Version visée** | 4.132.2 → 4.133 → 4.134 |
-| **Sujet** | *Lots autonomes demandés par Benjamin : bugs + défilement (4.132.2), fiche en onglets + critères + typo (4.133), Vue d'ensemble + gestes mobile (4.134).* |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
 
 ---
+
+✅ **Verrou libéré par Claude le 01/11/2026** (Tours 114–116, branche `ux-rail` : 4.132.2 bugs du
+check complet · 4.133.0 fiche en onglets, critères repliés, chiffres sur blanc, échelle de texte ·
+4.134.0 Vue d'ensemble parlante, ‹ › et glisser entre scénarios, rappel flottant, mode gants).
+673 tests | 0 échec + 3 portes. **`dev` et PROD non touchées (PROD 4.129.1).** DEV : publication
+par Benjamin depuis `ux-rail`.
+
 
 ✅ **Verrou libéré par Claude le 01/11/2026** (Tour 112, v4.131.1 — barre fixe compacte 105 → 83 px,
 rangée marine repliée au défilement). 673 tests | 0 échec. DEV : build prêt, publication par

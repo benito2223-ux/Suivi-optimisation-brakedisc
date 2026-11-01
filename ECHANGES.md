@@ -191,6 +191,10 @@ Matis doivent tenir le MÊME état (v3) — une correction d'un côté recrée d
 lignées. Consigne Matis : import v3, Remplacer tout, ne pas cliquer la correction.
 
 
+### ▸ Tour 116 — 01/11/2026 — **Claude** (v4.134.0 — la Vue d'ensemble parle de l'usine, le téléphone se parcourt au pouce ; branche `ux-rail`)
+
+Vue d'ensemble : une phrase d'état calculée (accueilPhraseHTML) remplace la description de l'écran ; « à surveiller · n/N actives » et « Écran creux » retirés de l'AFFICHAGE (calcul et tests A2 conservés) ; indicateur sans valeur = tuile grise (bd-vide). Fiche : ‹ n / N › précédent/suivant + glisser horizontal (tactile) sur l'en-tête et les chiffres. Rappel « Base 2026/2027 » en toast bas d'écran jusqu'à « Compris ». Mode tactile renommé « mode gants » (titre/aria du bouton). Vérification finale : 1440/1024/390 × clair/sombre × 17 actions (Vue, Synthèse, Réel vs budget, cartes, 3 onglets, essai ouvert, verrou, gants, menus) : 0 erreur, 0 débord, verrouillé = 0 bouton d'ajout, tâche longue max 132 ms. 673/0 + portes 4.132.2 / 4.133 / 4.134. Non vu : vrai téléphone/tablette.
+
 ### ▸ Tour 115 — 01/11/2026 — **Claude** (v4.133.0 — la fiche se lit par onglet, les chiffres sur fond blanc ; branche `ux-rail`)
 
 Fiche du scénario en trois onglets (Essais par défaut, Composition, Suivi = tendance + rebut) — 2 400 px empilés avant ; un défilement programmé ou un focus vers un onglet masqué l'ouvre d'abord ; impression inchangée (tout visible). Critères de jugement repliés derrière un résumé (ouverts d'office sans essai). « Ce que coûte la pièce » entre dans la carte Réponse. Bandeau de chiffres de la fiche en tuiles blanches (variables de remplissage redéfinies localement, thème sombre vérifié). Échelle de texte 11/12/13/15/19/26/48 (rien sous 11 px hors atelier). Un seul chevron ; carte ouverte bleu clair ; « + Scénario » en contour ; nom de scénario coupé à 34 car. avec « … ». Tout côté coque sauf 2 retouches du monolithe (placeholder déjà en 4.132.2, coupe du nom). 673/0 + porte lot 4.133 ; rendu 1440/390, atelier, sombre.

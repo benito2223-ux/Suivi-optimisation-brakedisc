@@ -4001,3 +4001,43 @@ html:not([data-mode="atelier"]) .foot-cell .v:not(.small):not(.mid){ font-size:c
 html:not([data-mode="atelier"]) .tabs-strip .tab-card.active .tc-name{ font-size:var(--t-l) !important; }
 /* les badges en capitales restent compacts malgré le palier 11 */
 html:not([data-mode="atelier"]) :is(.status-badge, .statut-pill, .pcb-st, .baseline-pill, .badge, .hero-tag){ letter-spacing:.06em; }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   v4.134 — LA VUE D'ENSEMBLE PARLE DE L'USINE, LE TÉLÉPHONE SE PARCOURT AU POUCE
+   ════════════════════════════════════════════════════════════════════════════ */
+/* A. Les compteurs internes de l'écran (« à surveiller · 0/4 actives », « Écran
+   creux : … ») parlaient de l'outil, pas de l'usine : retirés de l'affichage (le
+   calcul reste, les tests aussi). La phrase d'en-tête dit l'état réel. */
+#accueilPanel .bd-index, #accueilPanel .al-recette{ display:none !important; }
+#accueilPanel .bd-sous{ font-size:var(--t-b) !important; font-weight:400; color:var(--ink); max-width:none; }
+#accueilPanel .bd-sous b{ font-weight:700; color:var(--blue); }
+/* un compteur sans valeur ne pèse pas comme un chiffre : petite tuile grise */
+#accueilPanel .bd-bloc.bd-vide .bd-v{ display:none; }
+#accueilPanel .bd-bloc.bd-vide{ background:var(--surface-alt, #f7f8fa); }
+#accueilPanel .bd-bloc.bd-vide .bd-sub{ color:var(--ink-faint); font-style:italic; }
+#accueilPanel .bd-bandeau:has(.bd-bloc:not(.bd-vide)) .bd-bloc.bd-vide{ flex-grow:.6; }
+
+/* C. Le rappel « Base 2026/2027 en place » ne pousse plus la page : il flotte en bas,
+   jusqu'à « Compris » (même règle qu'avant : une fois lu, il ne revient plus). */
+#bandeauPremiere:not([hidden]){
+  position:fixed; right:16px; bottom:16px; z-index:120; max-width:440px; margin:0;
+  box-shadow:0 8px 28px rgba(47,65,89,.28); background:var(--surface); align-items:flex-start;
+  animation:spk-toast .25s ease-out;
+}
+@keyframes spk-toast{ from{ transform:translateY(16px); opacity:0; } to{ transform:none; opacity:1; } }
+@media screen and (max-width:900px){
+  #bandeauPremiere:not([hidden]){ left:8px; right:8px; bottom:calc(var(--spk-nav-h, 64px) + 8px); max-width:none; }
+}
+@media (prefers-reduced-motion:reduce){ #bandeauPremiere:not([hidden]){ animation:none; } }
+
+/* B. Passer d'un scénario à l'autre sans remonter : ‹ 2 / 3 › dans l'en-tête de la fiche
+   (et glisser du doigt sur les chiffres, sur écran tactile). */
+.spk-sc-nav{ display:inline-flex; align-items:center; gap:4px; margin-left:auto; }
+.spk-sc-nav button{
+  min-width:40px; min-height:40px; padding:0; border:1px solid var(--border); background:var(--surface);
+  color:var(--blue); font-size:20px; line-height:1; border-radius:3px; box-shadow:none;
+}
+.spk-sc-nav button:disabled{ opacity:.35; }
+.spk-sc-nav span{ font-size:var(--t-s); color:var(--ink-soft); min-width:44px; text-align:center; }
+html[data-mode="atelier"] .spk-sc-nav button{ min-width:56px; min-height:56px; }
+#scenarioDetail .scenario-head{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
