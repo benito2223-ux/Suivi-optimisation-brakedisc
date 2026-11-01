@@ -5,6 +5,22 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.132.0] — 2026-11-01 · Une seule bande en tête, menu rangé (base 4.129.1) · Claude
+
+Benjamin : « c'est moche, on repart de la version en prod comme référence (barre latérale, couleurs) ».
+Branche `ux-rail`, base = coque 4.129.1 (rail bleu) + monolithe 4.131 (carte Réponse).
+
+### Modifié
+- **Plus de barre fixe** (4.130/4.131.1 abandonnées côté coque). Le rail bleu revient (bureau),
+  icônes en tablette, barre d'onglets en bas sur téléphone.
+- **Une bande en tête** : le bandeau bleu porte les actions (+ Scénario en blanc = le principal,
+  recherche, Transmettre, mode, verrou, •••, aide). Fil d'Ariane sur **une ligne** avec
+  « + Créer un projet » à droite. « Réponse » démarre à ~240 px (570 avant) ; téléphone : gain à 360 px.
+- **Menu rangé** : « Scénarios » (écran de travail) devient une destination ; le classeur Matis est
+  dans un groupe « Contrôle » et s'appelle « Réel vs budget » (ids inchangés).
+- Reprend de 4.131 : police Open Sans (plus de chasse fixe), carte Réponse, cases atelier.
+- Portes de test : 4.130 / 4.130.1 / 4.131.1 (barre fixe) remplacées par « lot 4.132 ».
+
 ## [4.131.1] — 2026-11-01 · Barre fixe compacte · Claude
 
 Benjamin : « la barre fixe en haut est beaucoup trop grosse et cache trop le tableau de bord ».

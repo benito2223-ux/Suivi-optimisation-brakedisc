@@ -821,6 +821,13 @@ encore possible — et un détail scénarios lisible par OP) déposés dans
 `Hermes Version/NOTE_ERGONOMIE_BANDEAU_A_HERMES.md` pour son contre-analyse.
 Décision à Benjamin après avis d'Hermes ; rien n'est écrit dans l'outil.
 
+### ▸ Tour 113 — 01/11/2026 — **Claude** (v4.132.0 — une seule bande en tête, menu rangé ; branche `ux-rail`)
+
+Benjamin : « c'est moche, on repart de la prod comme référence ». Coque 4.129.1 (rail) restaurée,
+monolithe 4.131 gardé. Verrou tenu sur la branche `ux-rail` (rien sur `dev`). Rendu 1440/1024/390 :
+0 débord, 0 erreur ; Réponse à 242 px (570 avant). 673 tests | 0 échec + porte « lot 4.132 ».
+Non vu : vrai téléphone, thème sombre. DEV/PROD non touchées.
+
 ### ▸ Tour 112 — 01/11/2026 — **Claude** (v4.131.1 — barre fixe compacte)
 
 Demande de Benjamin : barre trop grosse, cache le tableau de bord. Mesuré 105/95 px → 83/81 px,
