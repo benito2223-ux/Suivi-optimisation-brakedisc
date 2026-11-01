@@ -1,8 +1,8 @@
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | Claude |
+| **Pris le** | 01/11/2026 |
+| **Écrit dans** | `spk-app.css`, `spk-shell.js`, `build_harness.py`, `bilan_economique.html` (version + nouveautés), CHANGELOG, ECHANGES |
+| **Version visée** | 4.131.1 |
+| **Sujet** | *Barre fixe compacte (105 px → ~84 px) + rangée marine qui se replie au défilement : le tableau de bord n'est plus caché.* |
 
 ---
 
