@@ -1576,6 +1576,27 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.135.0 : l’essentiel par défaut, Détails, menu Outils, simulateur retiré' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  /* ── v4.136.0 — vendre : €/an et trois axes, démultiplication, pipeline, bilan client, présentation client ── */
+  (function lot4136Vendre(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const lire = function(f){ try { return fs.readFileSync(path.join(REPO, f), 'utf8'); } catch (e) { return ''; } };
+    const css = lire('spk-app.css'), js = lire('spk-shell.js'), html = lire('bilan_economique.html');
+    if (html.indexOf('function troisGains(') === -1) echecs.push('les trois axes de gain ont disparu');
+    if (html.indexOf('function demultiplication(') === -1) echecs.push('la démultiplication a disparu');
+    if (html.indexOf('function pipelineLignes(') === -1) echecs.push('le pipeline a disparu');
+    if (html.indexOf('function bilanClientHTML(') === -1) echecs.push('le bilan client a disparu');
+    if (html.indexOf('pousser("bilanClientHTML"') === -1) echecs.push('le bilan client a quitté la batterie anti-injection');
+    if (js.indexOf('spk-client') === -1) echecs.push('le mode présentation client a disparu');
+    if (js.indexOf('data-commercial') === -1) echecs.push('les entrées commerciales ne sont plus marquées');
+    if (css.indexOf('body.spk-client [data-commercial]') === -1) echecs.push('le mode client n efface plus le commercial');
+    if (css.indexOf('body.print-bilan .bc-page{ page-break-after') === -1) echecs.push('le bilan ne fait plus une page par ligne');
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.136.0 : vendre — €/an et trois axes, démultiplication, pipeline, bilan client, présentation client' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   /* ── v4.132 — UNE SEULE BANDE EN TÊTE, UNE NAVIGATION RANGÉE (base 4.129.1) ── */
   (function lot4132Bande(){
     const fs = require('fs');

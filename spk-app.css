@@ -4148,3 +4148,115 @@ html[data-mode="atelier"] .spk-outils button b{ font-size:17px; }
   .spk-rail .toolbar-ecrans{ overflow-x:visible; }
   .spk-rail .toolbar-ecrans > button:not([style*="display: none"]){ flex:1 1 0; min-width:0; padding:5px 2px; white-space:normal; text-align:center; line-height:1.1; }
 }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   v4.136 — VENDRE : €/an en tête, trois axes, démultiplication, pipeline,
+   présentation client, bilan PDF
+   ════════════════════════════════════════════════════════════════════════════ */
+.hero-big .hero-unit{ font-size:.42em; font-weight:600; margin-left:2px; letter-spacing:0; }
+/* les trois axes */
+.g3{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:0; margin:14px 0 0; border:1px solid var(--border); border-radius:3px; }
+.g3-c{ padding:10px 14px; border-right:1px solid var(--border); min-width:0; }
+.g3-c:nth-child(3){ border-right:0; }
+.g3-l{ font-size:var(--t-xs); font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft); }
+.g3-v{ font-family:var(--font-disp); font-weight:700; font-size:22px; line-height:1.15; color:var(--ink); font-variant-numeric:tabular-nums; }
+.g3-c.ok .g3-v{ color:var(--green); }
+.g3-c.ko .g3-v{ color:var(--red); }
+.g3-c.nd .g3-v{ color:var(--ink-faint); }
+.g3-s{ font-size:var(--t-s); color:var(--ink-soft); }
+.g3-note{ grid-column:1 / -1; font-size:var(--t-xs); color:var(--ink-faint); padding:6px 14px; border-top:1px solid var(--border); background:var(--surface-alt, #f7f8fa); }
+.g3.g3-vide{ display:block; padding:10px 14px; font-size:var(--t-m); color:var(--ink-soft); background:var(--surface-alt, #f7f8fa); }
+@media (max-width:600px){ .g3{ grid-template-columns:1fr; } .g3-c{ border-right:0; border-bottom:1px solid var(--border); } }
+/* la démultiplication */
+.dm{ margin:12px 0 0; padding:12px 14px; border:1px dashed var(--blue); border-radius:3px; background:#f3f8fd; }
+.dm-t{ font-size:var(--t-xs); font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--blue); }
+.dm-p{ margin:4px 0; font-size:var(--t-m); color:var(--ink); }
+.dm-total{ font-family:var(--font-disp); font-size:19px; color:var(--green); }
+.dm-est{ font-size:var(--t-xs); text-transform:uppercase; letter-spacing:.1em; color:var(--amber); border:1px solid currentColor; border-radius:2px; padding:0 5px; margin-left:4px; }
+.dm-l{ list-style:none; margin:6px 0 0; padding:0; display:grid; gap:4px; }
+.dm-l li{ display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 10px; font-size:var(--t-m); }
+.dm-motif{ font-size:var(--t-xs); color:var(--ink-soft); background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:0 7px; }
+.dm-v{ margin-left:auto; font-weight:700; color:var(--green); font-variant-numeric:tabular-nums; }
+body:not(.spk-details) .hero .dm-l li:nth-child(n+4){ display:none; }
+/* le pipeline */
+.pl-kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px; margin:6px 0 16px; }
+.pl-kpis > div{ background:var(--surface); border:1px solid var(--border); border-top:3px solid var(--red); border-radius:3px; padding:10px 14px; }
+.pl-kpis span{ display:block; font-size:var(--t-xs); font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft); }
+.pl-kpis b{ font-family:var(--font-disp); font-size:26px; color:var(--blue); }
+.pl-tbl td{ vertical-align:top; }
+.pl-tbl small{ color:var(--ink-soft); }
+.pl-st{ font-size:var(--t-xs); font-weight:700; text-transform:uppercase; letter-spacing:.06em; padding:2px 8px; border-radius:10px; background:var(--surface-alt,#f2f4f7); }
+.pl-encours .pl-st{ background:var(--amber-bg); color:var(--amber); }
+.pl-gagne .pl-st{ background:var(--green-bg); color:var(--green); }
+.pl-note, .pl-vide{ font-size:var(--t-s); color:var(--ink-soft); margin-top:10px; }
+/* la présentation client */
+.spk-outils-sep{ border-top:1px solid var(--border); margin:6px 0; }
+#spkClientBtn b{ color:var(--blue); }
+body.spk-client [data-commercial],
+body.spk-client #transmettreWrap,
+body.spk-client .spk-hd-actions .toolbar-more-wrap,
+body.spk-client .spk-hd-actions #addBtn,
+body.spk-client .spk-plus-menu,
+body.spk-client .spk-prix,
+body.spk-client .spk-ctx .projets-bandeau,
+body.spk-client #spkPipelinePanel,
+body.spk-client #bandeauPremiere,
+body.spk-client .pl-note{ display:none !important; }
+.spk-client-puce{
+  position:fixed; left:50%; transform:translateX(-50%); bottom:16px; z-index:125;
+  display:flex; align-items:center; gap:8px; padding:6px 6px 6px 14px; border-radius:22px;
+  background:var(--ink-navy, #2F4159); color:#fff; box-shadow:0 8px 24px rgba(20,40,70,.3);
+}
+.spk-client-puce[hidden]{ display:none; }
+.spk-client-l{ font-size:var(--t-s); font-weight:600; letter-spacing:.02em; }
+.spk-client-puce button{ min-height:32px; padding:0 12px; border-radius:16px; border:1px solid rgba(255,255,255,.4); background:transparent; color:#fff; font-size:var(--t-s); box-shadow:none; }
+.spk-client-puce .spk-client-pdf{ background:#fff; color:var(--blue); border-color:#fff; font-weight:700; }
+@media screen and (max-width:900px){ .spk-client-puce{ bottom:calc(var(--spk-nav-h, 64px) + 8px); } }
+/* le bilan client imprimé : une page par ligne */
+@media print{
+  body.print-bilan #bilanClient{ font-family:'Open Sans',Arial,sans-serif; color:#111; }
+  body.print-bilan .bc-page{ page-break-after:always; break-after:page; }
+  body.print-bilan .bc-page:last-child{ page-break-after:auto; break-after:auto; }
+}
+#bilanClient .bc-tete{ display:flex; justify-content:space-between; align-items:flex-end; border-bottom:3px solid #1B5EA6; padding-bottom:8px; margin-bottom:14px; }
+#bilanClient .bc-sur{ font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#1B5EA6; font-weight:700; }
+#bilanClient h1{ font-family:'Open Sans Condensed','Open Sans',Arial,sans-serif; font-size:26px; margin:2px 0 0; color:#111; }
+#bilanClient .bc-date{ text-align:right; font-size:11px; color:#444; }
+#bilanClient .bc-poste{ border:1px solid #cfd6de; border-top:3px solid #E2001A; border-radius:3px; padding:10px 14px; margin:0 0 12px; break-inside:avoid; }
+#bilanClient h2{ font-size:16px; margin:0 0 8px; display:flex; align-items:center; gap:10px; }
+#bilanClient .bc-etat{ font-size:9px; letter-spacing:.12em; text-transform:uppercase; padding:2px 8px; border-radius:10px; background:#eef2f6; color:#334; }
+#bilanClient .bc-gagne{ background:#edf7f1; color:#1a7a3f; }
+#bilanClient .bc-encours{ background:#fff8ed; color:#b45309; }
+#bilanClient .bc-axes{ display:grid; grid-template-columns:repeat(3,1fr); border:1px solid #cfd6de; border-radius:3px; margin:0 0 8px; }
+#bilanClient .bc-axes > div{ padding:6px 10px; border-right:1px solid #cfd6de; }
+#bilanClient .bc-axes > div:last-child{ border-right:0; }
+#bilanClient .bc-axes span{ display:block; font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:#555; }
+#bilanClient .bc-axes b{ font-size:15px; color:#1a7a3f; }
+#bilanClient .bc-t{ width:100%; border-collapse:collapse; font-size:11px; margin:4px 0 6px; }
+#bilanClient .bc-t th{ text-align:left; font-size:9px; letter-spacing:.08em; text-transform:uppercase; color:#555; border-bottom:1px solid #cfd6de; padding:4px; }
+#bilanClient .bc-t td{ border-bottom:1px solid #eef1f4; padding:4px; vertical-align:top; }
+#bilanClient .num{ text-align:right; font-variant-numeric:tabular-nums; }
+#bilanClient .bc-fige, #bilanClient .bc-next, #bilanClient .bc-nd{ font-size:11.5px; margin:4px 0; }
+#bilanClient .bc-pied{ font-size:9.5px; color:#555; border-top:1px solid #cfd6de; padding-top:6px; margin-top:10px; }
+/* verrou actif : l'icône reste visible (elle disparaissait, blanc sur blanc) */
+body.locked .spk-hd-actions #lockBtn .icon, .spk-hd-actions #lockBtn[aria-pressed="true"] .icon{ stroke:var(--blue) !important; }
+body.locked .spk-hd-actions #lockBtn{ color:var(--blue); }
+/* présentation client : ni bouton verrou ni bandeau « déverrouillez » devant le client */
+body.spk-client .spk-hd-actions #lockBtn, body.spk-client .lock-bandeau{ display:none !important; }
+/* téléphone : les trois axes restent sur une rangée, compacts */
+@media (max-width:600px){
+  .g3{ grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .g3-c{ border-right:1px solid var(--border); border-bottom:0; padding:8px; }
+  .g3-c:nth-child(3){ border-right:0; }
+  .g3-v{ font-size:15px; }
+  .g3-s{ display:none; }
+}
+#bilanClient .bc-axes b.nd{ color:#777; font-weight:600; }
+body.print-bilan::after{ content:none !important; }
+/* présentation client : pas de consigne de saisie interne devant le client */
+body.spk-client .g3.g3-vide{ display:none !important; }
+@media (max-width:480px){
+  .spk-client-l{ display:none; }
+  .spk-client-puce::before{ content:"Présentation client"; font-size:var(--t-s); font-weight:600; white-space:nowrap; }
+  .spk-client-puce{ white-space:nowrap; }
+}

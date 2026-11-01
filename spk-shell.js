@@ -591,6 +591,120 @@
     epurerFiche(); marquerPcb(); epurerAccueil();
   })();
 
+  /* ══ v4.136 — VENDRE : présentation client, pipeline, bilan PDF ══════════════════
+     Le MODE PRÉSENTATION CLIENT se projette chez le client sans risque : lecture
+     seule (le verrou existant), et tout ce qui est commercial s'efface — pipeline,
+     plan de conversion, catalogue, dossier de visite, prix unitaires des plaquettes,
+     menus d'export et d'options. Il reste les PREUVES : réponse, gains, essais,
+     courbes, bilan PDF. Il vit le temps de la session (jamais rouvert par surprise). */
+  const CLE_CLIENT = "spk-client";
+  function marquerPrix() {
+    document.querySelectorAll("#scenarioDetail .ap-l, #scenarioDetail .fs-l").forEach((l) => {
+      const t = l.textContent.trim().toLowerCase();
+      if (t === "plaquette" || t.indexOf("€ / arête") === 0) l.parentElement.classList.add("spk-prix");
+    });
+  }
+  function poserClient(on, depuisSession) {
+    document.body.classList.toggle("spk-client", on);
+    let etat = null;
+    try { etat = JSON.parse(sessionStorage.getItem(CLE_CLIENT) || "null"); } catch (e) { /* rien */ }
+    if (on && !depuisSession) {
+      const dejaVerrou = typeof lectureSeule !== "undefined" && lectureSeule;
+      try { sessionStorage.setItem(CLE_CLIENT, JSON.stringify({ verrouAvant: dejaVerrou })); } catch (e) { /* rien */ }
+      if (!dejaVerrou && typeof window.toggleLock === "function") window.toggleLock();
+    }
+    if (!on) {
+      try { sessionStorage.removeItem(CLE_CLIENT); } catch (e) { /* rien */ }
+      if (etat && !etat.verrouAvant && typeof lectureSeule !== "undefined" && lectureSeule && typeof window.toggleLock === "function") window.toggleLock();
+    }
+    puce.hidden = !on;
+    marquerPrix();
+  }
+  const puce = document.createElement("div");
+  puce.className = "spk-client-puce";
+  puce.hidden = true;
+  puce.innerHTML = '<span class="spk-client-l">Présentation client · lecture seule</span>'
+    + '<button type="button" class="spk-client-pdf">Bilan PDF</button>'
+    + '<button type="button" class="spk-client-quitter">Quitter</button>';
+  document.body.appendChild(puce);
+  puce.querySelector(".spk-client-pdf").addEventListener("click", () => { if (typeof window.imprimerBilanClient === "function") window.imprimerBilanClient(); });
+  puce.querySelector(".spk-client-quitter").addEventListener("click", () => poserClient(false));
+
+  /* l'écran Pipeline (pour toi seul) */
+  const pipe = document.createElement("div");
+  pipe.className = "panel panel-large spk-pipeline";
+  pipe.id = "spkPipelinePanel";
+  pipe.hidden = true;
+  document.body.appendChild(pipe);
+  function ouvrirPipeline() {
+    pipe.innerHTML = '<h3>Pipeline — les essais qui font les commandes</h3>'
+      + (typeof window.pipelineHTML === "function" ? window.pipelineHTML() : "");
+    if (typeof window.ouvrirPanneau === "function") window.ouvrirPanneau("spkPipelinePanel");
+    else pipe.hidden = false;
+  }
+
+  /* les nouvelles entrées du menu Outils : en tête, le pipeline et le bilan ; en pied,
+     la bascule de présentation. Les entrées commerciales portent data-commercial. */
+  (function () {
+    const pop = document.getElementById("spkOutils");
+    if (!pop) return;
+    const titre = pop.querySelector(".spk-outils-t");
+    const fermer = () => { pop.hidden = true; const b = document.getElementById("spkOutilsBtn"); if (b) b.setAttribute("aria-expanded", "false"); };
+    const entree = (lib, sous, f, commercial) => {
+      const it = document.createElement("button");
+      it.type = "button";
+      it.setAttribute("role", "menuitem");
+      it.innerHTML = "<b></b><span></span>";
+      it.querySelector("b").textContent = lib;
+      it.querySelector("span").textContent = sous;
+      if (commercial) it.setAttribute("data-commercial", "1");
+      it.addEventListener("click", () => { fermer(); f(); });
+      return it;
+    };
+    const pipeIt = entree("Pipeline", "potentiel €/an, statut, prochaine action — pour toi seul", () => {
+      if (typeof window.fermerPanneaux === "function") window.fermerPanneaux();
+      ouvrirPipeline();
+    }, true);
+    const bilanIt = entree("Bilan client (PDF)", "une page par ligne : avant/après, preuves, gain figé", () => {
+      if (typeof window.imprimerBilanClient === "function") window.imprimerBilanClient();
+    }, false);
+    titre.after(pipeIt, bilanIt);
+    [...pop.querySelectorAll("button")].forEach((b) => {
+      const lib = (b.querySelector("b") || {}).textContent || "";
+      if (/^(Plan de conversion|Catalogue|Dossier de visite)$/.test(lib)) b.setAttribute("data-commercial", "1");
+    });
+    const sep = document.createElement("div");
+    sep.className = "spk-outils-sep";
+    pop.appendChild(sep);
+    const clientIt = entree("Mode présentation client", "lecture seule, rien de commercial à l'écran", () => poserClient(!document.body.classList.contains("spk-client")), false);
+    clientIt.id = "spkClientBtn";
+    pop.appendChild(clientIt);
+    new MutationObserver(() => {
+      const on = document.body.classList.contains("spk-client");
+      clientIt.querySelector("b").textContent = on ? "Quitter la présentation client" : "Mode présentation client";
+    }).observe(document.body, { attributes: true, attributeFilter: ["class"] });
+  })();
+  /* le bilan aussi dans Transmettre */
+  (function () {
+    const menu = document.getElementById("transmettreMore");
+    if (!menu || menu.querySelector(".spk-bilan-tm")) return;
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "ghost spk-bilan-tm";
+    b.innerHTML = '<svg class="icon" viewBox="0 0 18 18" aria-hidden="true"><path d="M5 2.5h6l3 3v10H5z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M7.5 9h4M7.5 12h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Bilan client (PDF)';
+    b.addEventListener("click", () => { if (typeof window.imprimerBilanClient === "function") window.imprimerBilanClient(); });
+    const premier = menu.querySelector("button");
+    if (premier) premier.parentNode.insertBefore(b, premier); else menu.appendChild(b);
+  })();
+  /* après chaque rendu de la fiche : les prix se re-marquent */
+  (function () {
+    const detail = document.getElementById("scenarioDetail");
+    if (detail && window.MutationObserver) new MutationObserver(marquerPrix).observe(detail, { childList: true });
+    let etat = null;
+    try { etat = JSON.parse(sessionStorage.getItem(CLE_CLIENT) || "null"); } catch (e) { /* rien */ }
+    if (etat) poserClient(true, true);
+  })();
+
   const panelToButton = {
     accueilPanel: "accueilBtn",
     dashboardPanel: "accueilBtn",

@@ -6,6 +6,10 @@
 
 ---
 
+✅ **Verrou pris puis libéré par Claude le 01/11/2026** (Tour 118, branche `ux-rail`, v4.136.0 —
+vendre : €/an et trois axes, démultiplication, pipeline, bilan client PDF, mode présentation client).
+680 tests | 0 échec + porte lot 4.136. **`dev` et PROD non touchées (PROD 4.129.1).**
+
 ✅ **Verrou pris puis libéré par Claude le 01/11/2026** (Tour 117, branche `ux-rail`, v4.135.0 —
 l'essentiel par défaut, bouton « Détails », menu « Outils » du rail, simulateur de prix retiré).
 673 tests | 0 échec + porte lot 4.135. **`dev` et PROD non touchées (PROD 4.129.1).**
