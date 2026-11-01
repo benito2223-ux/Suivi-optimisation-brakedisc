@@ -6,6 +6,10 @@
 
 ---
 
+✅ **Verrou pris puis libéré par Claude le 01/11/2026** (Tour 117, branche `ux-rail`, v4.135.0 —
+l'essentiel par défaut, bouton « Détails », menu « Outils » du rail, simulateur de prix retiré).
+673 tests | 0 échec + porte lot 4.135. **`dev` et PROD non touchées (PROD 4.129.1).**
+
 ✅ **Verrou libéré par Claude le 01/11/2026** (Tours 114–116, branche `ux-rail` : 4.132.2 bugs du
 check complet · 4.133.0 fiche en onglets, critères repliés, chiffres sur blanc, échelle de texte ·
 4.134.0 Vue d'ensemble parlante, ‹ › et glisser entre scénarios, rappel flottant, mode gants).

@@ -4041,3 +4041,110 @@ html:not([data-mode="atelier"]) :is(.status-badge, .statut-pill, .pcb-st, .basel
 .spk-sc-nav span{ font-size:var(--t-s); color:var(--ink-soft); min-width:44px; text-align:center; }
 html[data-mode="atelier"] .spk-sc-nav button{ min-width:56px; min-height:56px; }
 #scenarioDetail .scenario-head{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   v4.135 — L'ESSENTIEL PAR DÉFAUT (body sans .spk-details), LE RESTE À UN CLIC
+   ════════════════════════════════════════════════════════════════════════════ */
+/* le bouton du bandeau */
+.spk-ctx #spkDetailsBtn{
+  flex:0 0 auto; margin-left:auto; min-height:32px; padding:0 12px; font-size:13px; font-weight:600;
+  color:var(--blue); background:var(--surface); border:1px solid var(--border); border-radius:16px; box-shadow:none;
+}
+.spk-ctx #spkDetailsBtn::after{ content:" ▾"; font-size:10px; }
+.spk-ctx #spkDetailsBtn[aria-pressed="true"]{ background:var(--blue); color:#fff; border-color:var(--blue); }
+.spk-ctx #spkDetailsBtn[aria-pressed="true"]::after{ content:" ▴"; }
+.spk-ctx .projets-bandeau + #spkDetailsBtn{ margin-left:8px; }
+html[data-mode="atelier"] .spk-ctx #spkDetailsBtn{ min-height:48px; }
+@media screen and (max-width:900px){ .spk-ctx{ flex-wrap:nowrap; } .spk-ctx .ctx-rail{ min-width:0; } }
+
+/* Scénarios : plus d'en-têtes de zone numérotés, la Réponse sans son eyebrow */
+body:not(.spk-details) #tabsStrip > .zone-band,
+body:not(.spk-details) #scenarioDetail > .zone-band,
+body:not(.spk-details) .hero-eyebrow{ display:none !important; }
+body:not(.spk-details) #tabsStrip > .tab-card.active{ margin-top:18px; }
+body:not(.spk-details) .hero-base{ border-top:0; margin-top:6px; padding-top:0; }
+body:not(.spk-details) .hero-base label{ font-size:12px !important; letter-spacing:0; text-transform:none; font-weight:400; color:var(--ink-soft); }
+body:not(.spk-details) .hero-base select{ border-color:transparent; background:transparent; padding:2px 4px; color:var(--blue); font-weight:600; }
+body:not(.spk-details) .hero-base .hero-tag{ display:none; }
+body:not(.spk-details) .hero:not(.pcb-multi) .pcb-dans-reponse{ display:none; }
+/* cartes : nom, €/pièce et %, une pastille de statut */
+body:not(.spk-details) .tab-card .tc-badges .status-badge:not(.risk),
+body:not(.spk-details) .tab-card .tc-tags,
+body:not(.spk-details) .tab-card .tc-row ~ .tc-row{ display:none; }
+
+/* Fiche : le menu « ⋯ » de l'en-tête (toujours) */
+.spk-plus-menu{ position:relative; }
+.spk-plus-menu > summary{
+  list-style:none; cursor:pointer; min-width:40px; min-height:40px; display:inline-flex; align-items:center; justify-content:center;
+  border:1px solid var(--border); border-radius:3px; background:var(--surface); color:var(--ink-soft); font-size:20px; line-height:1;
+}
+.spk-plus-menu > summary::-webkit-details-marker{ display:none; }
+.spk-plus-menu[open] > summary{ border-color:var(--blue); color:var(--blue); }
+.spk-plus-corps{
+  position:absolute; z-index:40; top:calc(100% + 6px); left:0; min-width:220px; display:flex; flex-direction:column; gap:2px;
+  background:var(--surface); border:1px solid var(--border); border-radius:4px; padding:6px; box-shadow:0 8px 24px rgba(47,65,89,.18);
+}
+.spk-plus-corps > *{ width:100%; justify-content:flex-start; text-align:left; border:0 !important; background:transparent; box-shadow:none; min-height:38px; padding:0 10px; font-size:13px; color:var(--ink); border-radius:3px; cursor:pointer; display:flex; align-items:center; text-transform:none; letter-spacing:0; font-weight:500; }
+.spk-plus-corps > *:hover{ background:#e8f0fb; color:var(--blue); }
+.spk-plus-corps .sc-del, .spk-plus-corps [class*="suppr"], .spk-plus-corps button:last-child:hover{ color:var(--red); }
+html[data-mode="atelier"] .spk-plus-menu > summary{ min-width:56px; min-height:56px; }
+html[data-mode="atelier"] .spk-plus-corps > *{ min-height:52px; font-size:16px; }
+
+/* Fiche, Essentiel : 3 tuiles (coût, validation, gain) — le verdict répète la Réponse,
+   les phrases sous les chiffres passent en infobulle */
+body:not(.spk-details) #scenarioDetail .scenario-foot > .foot-verdict,
+body:not(.spk-details) #scenarioDetail .scenario-foot > .foot-cell .foot-sub{ display:none; }
+/* les précisions (durée de vie, €/arête, cycle) : en tête de l'onglet Composition */
+#scenarioDetail .spk-precisions{
+  --fill:var(--surface); --fill-ink:var(--blue); --fill-ink-soft:var(--ink-soft); --fill-line:var(--border);
+  --on-fill-good:var(--green); --on-fill-bad:var(--red); --on-fill-warn:var(--amber);
+  display:flex; flex-wrap:wrap; background:var(--surface-alt, #f7f8fa); color:var(--ink);
+  border:1px solid var(--border); border-radius:3px; margin:14px 18px 4px;
+}
+#scenarioDetail .spk-precisions > *{ flex:1 1 180px; }
+#scenarioDetail .spk-precisions .fs-l{ color:var(--ink-soft); }
+#scenarioDetail .spk-precisions input.cell-cycle{ color:var(--blue); background:var(--surface) !important; border:1px solid var(--border) !important; }
+
+/* Essai ouvert, Essentiel : + prélèvement et le tableau ; le reste derrière « ⋯ Plus » */
+.spk-essai-plus{ display:none; }
+body:not(.spk-details) .spk-essai-plus{ display:inline-flex; }
+body:not(.spk-details) .essai-body:not(.spk-plus) :is(.atelier-open, .essai-comparer, .essai-rapport, .photos-block, .marposs-block, .essai-ctx){ display:none !important; }
+
+/* Vue d'ensemble, Essentiel */
+body:not(.spk-details) #accueilPanel :is(.bd-ariane, .bd-perimetre, .bd-accent){ display:none !important; }
+body:not(.spk-details) #accueilPanel .bd-bloc.bd-vide{ display:none !important; }
+body:not(.spk-details) #accueilPanel .bd-bandeau:not(:has(.bd-bloc:not(.bd-vide))){ display:none !important; }
+body:not(.spk-details) #accueilPanel .pf-actions{ display:none !important; }
+.panel.panel-large > .spk-mx-lien{ margin-top:18px; margin-bottom:6px; display:flex; justify-content:flex-start; background:transparent; border:0; border-top:1px solid var(--border); border-radius:0; box-shadow:none; padding:14px 0 6px; color:var(--blue); font-weight:600; font-size:14px; }
+.panel.panel-large > .spk-mx-lien::after{ content:" ›"; margin-left:4px; }
+body.spk-details .spk-mx-lien{ display:none; }
+body:not(.spk-details) #accueilPanel:not(.spk-mx-on) :is(.mx-titre, .mx-titre + .tbl-wrap, .mx-titre + .tbl-wrap + .panel-hint){ display:none !important; }
+
+/* le menu « Outils » du rail */
+.spk-outils{
+  position:fixed; z-index:130; width:320px; max-height:calc(100vh - 16px); overflow:auto;
+  background:var(--surface); color:var(--ink); border:1px solid var(--border); border-radius:4px; padding:8px;
+  box-shadow:0 12px 32px rgba(20,40,70,.28);
+}
+.spk-outils-t{ font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-soft); padding:6px 10px 8px; }
+.spk-outils button{
+  display:flex; flex-direction:column; align-items:flex-start; gap:1px; width:100%; text-align:left;
+  background:transparent; border:0; border-radius:3px; padding:9px 10px; min-height:48px; box-shadow:none; cursor:pointer;
+}
+.spk-outils button:hover{ background:#e8f0fb; }
+.spk-outils button b{ font-size:14px; font-weight:600; color:var(--ink); }
+.spk-outils button span{ font-size:12px; color:var(--ink-soft); font-weight:400; }
+.spk-outils button:hover b{ color:var(--blue); }
+@media screen and (max-width:900px){
+  .spk-outils{ left:8px !important; right:8px; top:auto !important; bottom:calc(var(--spk-nav-h, 64px) + 8px); width:auto; max-height:60vh; }
+}
+html[data-mode="atelier"] .spk-outils button{ min-height:60px; }
+html[data-mode="atelier"] .spk-outils button b{ font-size:17px; }
+
+#scenarioDetail .scenario-foot .foot-cell .l{ color:var(--ink-soft) !important; }
+/* le rail : « Outils » ferme la liste ; sur téléphone, cinq onglets tiennent sans défiler */
+.spk-rail .toolbar-ecrans #spkOutilsBtn{ order:99; }
+@media screen and (max-width:900px){
+  .spk-rail .toolbar-ecrans{ overflow-x:visible; }
+  .spk-rail .toolbar-ecrans > button:not([style*="display: none"]){ flex:1 1 0; min-width:0; padding:5px 2px; white-space:normal; text-align:center; line-height:1.1; }
+}

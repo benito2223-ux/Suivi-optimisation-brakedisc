@@ -1556,6 +1556,26 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.134.0 : Vue d’ensemble parlante, flèches et glisser entre scénarios, rappel flottant, mode gants' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  /* ── v4.135.0 — l'essentiel par défaut, Détails, menu Outils, simulateur retiré ── */
+  (function lot4135Essentiel(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const lire = function(f){ try { return fs.readFileSync(path.join(REPO, f), 'utf8'); } catch (e) { return ''; } };
+    const css = lire('spk-app.css'), js = lire('spk-shell.js'), html = lire('bilan_economique.html');
+    if (js.indexOf('const CLE_DETAILS = "spk-details"') === -1) echecs.push('le bouton Détails a disparu');
+    if (js.indexOf('spkOutilsBtn') === -1) echecs.push('le menu Outils du rail a disparu');
+    if (js.indexOf('spk-plus-menu') === -1) echecs.push('le menu ⋯ de la fiche a disparu');
+    if (js.indexOf('spk-essai-plus') === -1) echecs.push('le ⋯ Plus de l essai a disparu');
+    if (js.indexOf('spk-precisions') === -1) echecs.push('les précisions ne rejoignent plus l onglet Composition');
+    if (css.indexOf('v4.135 — L') === -1) echecs.push('la couche Essentiel a disparu');
+    if (css.indexOf('body:not(.spk-details) #tabsStrip > .zone-band') === -1) echecs.push('les en-têtes de zone sont revenus en Essentiel');
+    if (html.indexOf('id="pfSimul"') !== -1) echecs.push('le simulateur de prix a retrouvé un bouton');
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.135.0 : l’essentiel par défaut, Détails, menu Outils, simulateur retiré' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   /* ── v4.132 — UNE SEULE BANDE EN TÊTE, UNE NAVIGATION RANGÉE (base 4.129.1) ── */
   (function lot4132Bande(){
     const fs = require('fs');

@@ -407,6 +407,190 @@
     equiperReponse();
   })();
 
+  /* ══ v4.135 — L'ESSENTIEL PAR DÉFAUT, LE RESTE À UN CLIC ══════════════════════════
+     Mesuré le 01/11 : 253 mots et 22 commandes sur le premier écran, 64 commandes
+     dans la fiche, 40 dans un essai ouvert. Chaque version avait ajouté ses
+     explications, aucune n'en avait retiré. L'outil s'ouvre maintenant en
+     « Essentiel » : le chiffre, le verdict, le geste suivant. Le bouton « Détails »
+     du bandeau rend TOUT visible (mémorisé sur ce poste). Rien n'est supprimé du
+     calcul ; le simulateur de prix seul quitte l'interface (décision Benjamin). */
+  const CLE_DETAILS = "spk-details";
+  let details = false;
+  try { details = localStorage.getItem(CLE_DETAILS) === "1"; } catch (e) { /* stockage indisponible */ }
+  document.body.classList.toggle("spk-details", details);
+  (function () {
+    const bar = document.getElementById("spkHdActions");
+    if (!bar) return;
+    const b = document.createElement("button");
+    b.type = "button";
+    b.id = "spkDetailsBtn";
+    b.className = "ghost spk-details-btn";
+    const poser = () => {
+      b.setAttribute("aria-pressed", details ? "true" : "false");
+      b.textContent = details ? "Essentiel" : "Détails";
+      b.title = details ? "Revenir à l'essentiel : le chiffre, le verdict, le geste suivant"
+                        : "Tout afficher : explications, compteurs, outils secondaires";
+    };
+    poser();
+    b.addEventListener("click", () => {
+      details = !details;
+      document.body.classList.toggle("spk-details", details);
+      try { localStorage.setItem(CLE_DETAILS, details ? "1" : "0"); } catch (e) { /* stockage indisponible */ }
+      poser();
+    });
+    /* sur la ligne fine (fil d'Ariane), à droite : le bandeau bleu est déjà plein
+       sur téléphone */
+    const ctx = document.getElementById("spkCtx");
+    if (ctx) ctx.appendChild(b); else bar.appendChild(b);
+  })();
+
+  /* Le menu « Outils » du rail : ce qui était éparpillé (9 boutons au pied de la Vue
+     d'ensemble, « Livraisons » et « Carte atelier » dans la fiche, la campagne et le
+     tableau dans •••) au même endroit. Chaque entrée appelle l'ouvreur EXISTANT, après
+     avoir refermé l'écran en cours (les écrans restent exclusifs). */
+  (function () {
+    const OUTILS = [
+      { lib: "Carte atelier", sous: "chaque machine, son état, sa fiche", f: () => window.ouvrirCarte && window.ouvrirCarte() },
+      { lib: "Livraisons", sous: "figer les gains du jour dans un document daté", f: () => {
+          if (window.ouvrirCarte) window.ouvrirCarte();
+          setTimeout(() => { const bl = document.querySelector("#cartePanel .lv-bloc"); if (bl) bl.scrollIntoView({ behavior: "smooth", block: "start" }); }, 60);
+        } },
+      { lib: "La campagne", sous: "essais, validations, passages en série — sur une timeline", f: () => { const x = document.getElementById("campagneBtn"); if (x) x.click(); } },
+      { lib: "Tableau de bord", sous: "les chiffres de toutes les lignes", f: () => { const x = document.getElementById("dashboardBtn"); if (x) x.click(); } },
+      { lib: "Vue CPP", sous: "le coût pièce obtenu vs la référence, OP par OP", f: () => window.ouvrirVueCpp && window.ouvrirVueCpp() },
+      { lib: "Catalogue", sous: "un MABEC = un prix ; import / export CSV", f: () => window.ouvrirCatalogue && window.ouvrirCatalogue() },
+      { lib: "Plan de conversion", sous: "article par article, la cible SPK et le gain", f: () => window.ouvrirPlan && window.ouvrirPlan() },
+      { lib: "Dossier de visite", sous: "ce qui s'est passé depuis la dernière visite", f: () => window.ouvrirVisite && window.ouvrirVisite() }
+    ];
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.id = "spkOutilsBtn";
+    btn.className = "ghost";
+    btn.setAttribute("aria-haspopup", "true");
+    btn.setAttribute("aria-expanded", "false");
+    btn.setAttribute("aria-label", "Outils");
+    btn.title = "Outils";
+    btn.innerHTML = '<svg class="icon" viewBox="0 0 18 18" aria-hidden="true"><rect x="2.5" y="2.5" width="5" height="5" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="10.5" y="2.5" width="5" height="5" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="2.5" y="10.5" width="5" height="5" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M13 10.5v5M10.5 13h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Outils';
+    nav.appendChild(btn);
+    const pop = document.createElement("div");
+    pop.className = "spk-outils";
+    pop.id = "spkOutils";
+    pop.hidden = true;
+    pop.setAttribute("role", "menu");
+    pop.innerHTML = '<div class="spk-outils-t">Outils</div>';
+    OUTILS.forEach((o) => {
+      const it = document.createElement("button");
+      it.type = "button";
+      it.setAttribute("role", "menuitem");
+      it.innerHTML = "<b></b><span></span>";
+      it.querySelector("b").textContent = o.lib;
+      it.querySelector("span").textContent = o.sous;
+      it.addEventListener("click", () => {
+        fermerOutils();
+        if (typeof window.fermerPanneaux === "function") window.fermerPanneaux();
+        try { o.f(); } catch (e) { /* l'ouvreur dit lui-même ce qui manque */ }
+      });
+      pop.appendChild(it);
+    });
+    document.body.appendChild(pop);
+    function fermerOutils() { pop.hidden = true; btn.setAttribute("aria-expanded", "false"); }
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const ouvrir = pop.hidden;
+      pop.hidden = !ouvrir;
+      btn.setAttribute("aria-expanded", ouvrir ? "true" : "false");
+      if (ouvrir && window.matchMedia("(min-width:901px)").matches) {
+        const r = btn.getBoundingClientRect();
+        pop.style.left = (r.right + 8) + "px";
+        pop.style.top = Math.max(8, Math.min(r.top, window.innerHeight - pop.offsetHeight - 8)) + "px";
+      } else { pop.style.left = ""; pop.style.top = ""; }
+    }, true);
+    document.addEventListener("click", (e) => { if (!pop.hidden && !pop.contains(e.target) && e.target !== btn) fermerOutils(); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !pop.hidden) fermerOutils(); });
+  })();
+
+  /* La fiche, en Essentiel : l'en-tête garde le nom et le statut, les gestes rares
+     (définir comme référence, dupliquer, supprimer) passent dans un menu « ⋯ » ; les
+     précisions (durée de vie, €/arête, temps de cycle) rejoignent l'onglet Composition ;
+     les phrases sous les chiffres deviennent l'infobulle de leur tuile. Un essai ouvert
+     garde « + Ajouter un prélèvement » et son tableau ; le reste est derrière « ⋯ Plus ». */
+  function epurerFiche() {
+    const sc = document.querySelector("#scenarioDetail > .scenario");
+    if (!sc || sc.dataset.epure) return;
+    sc.dataset.epure = "1";
+    const head = sc.querySelector(":scope > .scenario-head");
+    if (head) {
+      const actions = head.querySelector(".sc-actions");
+      const pill = head.querySelector(".baseline-pill:not(.active)");
+      if (actions || pill) {
+        const m = document.createElement("details");
+        m.className = "spk-plus-menu";
+        m.innerHTML = '<summary aria-label="Autres actions" title="Autres actions">⋯</summary><div class="spk-plus-corps"></div>';
+        const corps = m.querySelector(".spk-plus-corps");
+        if (pill) corps.appendChild(pill);
+        if (actions) [...actions.children].forEach((c) => corps.appendChild(c));
+        const navSc = head.querySelector(".spk-sc-nav");
+        head.insertBefore(m, navSc || null);
+        document.addEventListener("click", (e) => { if (m.open && !m.contains(e.target)) m.open = false; });
+      }
+    }
+    const second = sc.querySelector(":scope > .scenario-foot > .foot-second");
+    const compo = sc.querySelector(":scope > .sec-plaquettes");
+    if (second && compo) { second.classList.add("spk-precisions"); compo.insertBefore(second, compo.firstChild); }
+    sc.querySelectorAll(":scope > .scenario-foot > .foot-cell").forEach((cell) => {
+      const subs = [...cell.querySelectorAll(".foot-sub")].map((s) => s.textContent.trim()).filter(Boolean);
+      if (subs.length && !cell.title) cell.title = subs.join("\n");
+    });
+    sc.querySelectorAll(".essai-card .essai-body").forEach((body) => {
+      if (body.querySelector(".spk-essai-plus")) return;
+      const add = body.querySelector(".prel-add");
+      if (!add) return;
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "ghost spk-essai-plus";
+      b.textContent = "⋯ Plus";
+      b.title = "Mode gants, comparer, rapport, photos, Marposs, contexte";
+      b.addEventListener("click", () => {
+        const on = body.classList.toggle("spk-plus");
+        b.textContent = on ? "Moins" : "⋯ Plus";
+      });
+      add.after(b);
+    });
+  }
+
+  /* La Vue d'ensemble, en Essentiel : la grande table des opérations derrière un lien,
+     les outils du pied dans le menu Outils. */
+  function epurerAccueil() {
+    const p = document.getElementById("accueilPanel");
+    if (!p || p.querySelector(".spk-mx-lien")) return;
+    const t = p.querySelector(".mx-titre");
+    if (!t) return;
+    const l = document.createElement("button");
+    l.type = "button";
+    l.className = "ghost spk-mx-lien";
+    const poser = () => { l.textContent = p.classList.contains("spk-mx-on") ? "Masquer le tableau des opérations" : "Voir le tableau des opérations"; };
+    poser();
+    l.addEventListener("click", () => { p.classList.toggle("spk-mx-on"); poser(); });
+    t.parentNode.insertBefore(l, t);
+  }
+  /* la Réponse : « Ce que coûte la pièce » n'apporte rien de plus qu'elle tant que la
+     référence n'a qu'une OP */
+  function marquerPcb() {
+    const hero = document.querySelector("#tabsStrip .hero");
+    if (hero) hero.classList.toggle("pcb-multi", document.querySelectorAll("#tabsStrip .pcb-op").length > 1);
+  }
+  (function () {
+    const detail = document.getElementById("scenarioDetail");
+    const strip = document.getElementById("tabsStrip");
+    const acc = document.getElementById("accueilPanel");
+    if (window.MutationObserver) {
+      if (detail) new MutationObserver(epurerFiche).observe(detail, { childList: true });
+      if (strip) new MutationObserver(marquerPcb).observe(strip, { childList: true });
+      if (acc) new MutationObserver(epurerAccueil).observe(acc, { childList: true });
+    }
+    epurerFiche(); marquerPcb(); epurerAccueil();
+  })();
+
   const panelToButton = {
     accueilPanel: "accueilBtn",
     dashboardPanel: "accueilBtn",
