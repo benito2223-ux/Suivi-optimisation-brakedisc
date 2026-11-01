@@ -821,6 +821,14 @@ encore possible — et un détail scénarios lisible par OP) déposés dans
 `Hermes Version/NOTE_ERGONOMIE_BANDEAU_A_HERMES.md` pour son contre-analyse.
 Décision à Benjamin après avis d'Hermes ; rien n'est écrit dans l'outil.
 
+### ▸ Tour 112 — 01/11/2026 — **Claude** (v4.131.1 — barre fixe compacte)
+
+Demande de Benjamin : barre trop grosse, cache le tableau de bord. Mesuré 105/95 px → 83/81 px,
+repli de la rangée marine au défilement (coque : spk-app.css, spk-shell.js). 673 tests | 0 échec
++ porte « lot 4.131.1 ». Rendu 1440/820/390 : Vue d'ensemble 83 → 43 px en descendant, retour à 83
+en remontant, 0 débord, 0 erreur. Non vu : vrai téléphone, thème sombre. DEV : build prêt,
+publication par Benjamin. **PROD : rien — 4.129.1.**
+
 ### ▸ Tour 111 — 01/11/2026 — **Claude** (v4.131.0 — la réponse d'abord, l'outil à l'aise sur tablette et téléphone)
 
 **Le déclencheur.** Benjamin : « de plus en plus moche » ; il demande à Claude de prendre la main

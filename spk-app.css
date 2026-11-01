@@ -3993,3 +3993,42 @@ body.locked .hero-cta [data-act="add"]{ display:none; }
   .hero-cta, .hero-cta button{ width:100%; }
 }
 html[data-mode="atelier"] .hero-cta button{ min-height:56px; font-size:16px; }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   v4.131.1 — BARRE FIXE COMPACTE. Benjamin : « beaucoup trop grosse, cache trop
+   le tableau de bord ». Mesuré : 105 px (PC) / 95 px (téléphone). Cible : ~84 px
+   au repos, et la rangée marine (titre + actions) se REPLIE quand on descend
+   dans la page (il reste les onglets + le fil : ~42 px), elle revient dès qu'on
+   remonte. La coque pose body.spk-head-compact ; les écrans plein écran suivent
+   par --spk-head-h (mesuré).
+   ════════════════════════════════════════════════════════════════════════════ */
+.spk-head{ border-bottom-width:2px; }
+.spk-head-r1{ height:40px !important; padding:0 14px; gap:12px; overflow:hidden; transition:height .18s ease; }
+.spk-head-mark{ font-size:20px; }
+.spk-head-mark span{ font-size:7px; }
+.spk-head-titre h1{ font-size:18px; }
+html:not([data-mode="atelier"]) .spk-head-r1 .spk-head-actions button,
+html:not([data-mode="atelier"]) .spk-head-r1 .spk-head-actions .toolbar-more-wrap > button{
+  min-height:30px !important; height:30px; padding-top:0; padding-bottom:0;
+}
+html:not([data-mode="atelier"]) .spk-head-actions details.aide > summary{
+  min-height:30px; height:30px; min-width:30px; padding:0 6px;
+}
+html[data-mode="atelier"] .spk-head-r1{ height:56px !important; }
+.spk-head-r2{ min-height:38px !important; padding-top:0; padding-bottom:0; }
+.spk-head-r2 .spk-head-links button{ padding-top:10px; padding-bottom:9px; }
+.spk-head-contexte #addBtn{ min-height:30px !important; padding-top:0; padding-bottom:0; }
+html[data-mode="atelier"] .spk-head-contexte #addBtn{ min-height:44px !important; }
+body.spk-head-compact .spk-head-r1{ height:0 !important; padding-top:0; padding-bottom:0; }
+@media (max-width:760px){
+  html:not([data-mode="atelier"]) .spk-head-r1{ height:38px !important; padding:0 8px; }
+  html:not([data-mode="atelier"]) .spk-head-r1 .spk-head-actions button,
+  html:not([data-mode="atelier"]) .spk-head-r1 .spk-head-actions .toolbar-more-wrap > button{
+    min-height:30px !important; height:30px; min-width:30px;
+  }
+  .spk-head-r2{ min-height:38px !important; }
+  .spk-head-links button{ padding-top:11px; padding-bottom:9px; }
+  body.spk-head-compact .spk-head-r1{ height:0 !important; }
+}
+@media (prefers-reduced-motion:reduce){ .spk-head-r1{ transition:none; } }
+body.spk-has-head .wrap{ margin-top:var(--spk-head-full, var(--spk-head-h)); }

@@ -133,11 +133,47 @@
   if (window.ResizeObserver) {
     const poserHauteur = () => {
       document.documentElement.style.setProperty("--spk-head-h", head.offsetHeight + "px");
+      /* hauteur « pleine » (rangée marine visible) : la page n'est pas recalée
+         quand la rangée se replie, seuls les écrans plein écran suivent */
+      if (!document.body.classList.contains("spk-head-compact")) {
+        document.documentElement.style.setProperty("--spk-head-full", head.offsetHeight + "px");
+      }
     };
     const obsHead = new ResizeObserver(poserHauteur);
     obsHead.observe(head);
     poserHauteur();
   }
+
+  /* v4.131.1 — la rangée marine (titre + actions) se replie quand on descend
+     dans un écran, revient dès qu'on remonte ou qu'on touche à la barre. Capture
+     de TOUS les défilements (les écrans plein écran défilent dans leur propre
+     conteneur). Hystérésis + gel de 350 ms après un changement : pas de
+     clignotement. Seuls les grands conteneurs comptent (pas un tableau interne). */
+  (function () {
+    const vus = new WeakMap();
+    let cumul = 0, compact = false, gel = 0;
+    const regler = (c) => {
+      if (c === compact) return;
+      compact = c;
+      document.body.classList.toggle("spk-head-compact", c);
+      gel = Date.now() + 350;
+    };
+    document.addEventListener("scroll", (e) => {
+      const se = document.scrollingElement;
+      const t = (e.target === document || e.target === se) ? se : e.target;
+      if (!t || t.nodeType !== 1) return;
+      if (t !== se && t.clientHeight < window.innerHeight * 0.5) return;
+      const y = t.scrollTop, avant = vus.has(t) ? vus.get(t) : y;
+      vus.set(t, y);
+      if (Date.now() < gel) return;
+      if (y < 24) { cumul = 0; regler(false); return; }
+      const d = y - avant;
+      cumul = (d > 0) === (cumul > 0) ? cumul + d : d;
+      if (cumul > 48) regler(true);
+      else if (cumul < -16) regler(false);
+    }, true);
+    head.addEventListener("click", () => { cumul = 0; regler(false); });
+  })();
 
   const panelToButton = {
     accueilPanel: "accueilBtn",

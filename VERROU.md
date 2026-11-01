@@ -1,10 +1,15 @@
-| **Auteur** | Claude |
-| **Pris le** | 01/11/2026 |
-| **Écrit dans** | `spk-app.css`, `spk-shell.js`, `build_harness.py`, `bilan_economique.html` (version + nouveautés), CHANGELOG, ECHANGES |
-| **Version visée** | 4.131.1 |
-| **Sujet** | *Barre fixe compacte (105 px → ~84 px) + rangée marine qui se replie au défilement : le tableau de bord n'est plus caché.* |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
 
 ---
+
+✅ **Verrou libéré par Claude le 01/11/2026** (Tour 112, v4.131.1 — barre fixe compacte 105 → 83 px,
+rangée marine repliée au défilement). 673 tests | 0 échec. DEV : build prêt, publication par
+Benjamin. **PROD : rien — 4.129.1.**
+
 
 ✅ **Verrou libéré par Claude le 01/11/2026** (Tour 111, v4.131.0 — la carte « Réponse » (gain en
 grand, un seul bouton), plus de « — € », mode **bureau** par défaut même sur écran tactile, coque :

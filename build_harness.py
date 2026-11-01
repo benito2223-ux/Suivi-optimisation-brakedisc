@@ -1500,6 +1500,22 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot UX 4.120 : printGo vit (logo A4), anti-flash posé, import au rail' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  /* ── v4.131.1 — BARRE FIXE COMPACTE : la rangée marine se replie au défilement ── */
+  (function lot41311Barre(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const lire = function(f){ try { return fs.readFileSync(path.join(REPO, f), 'utf8'); } catch (e) { return ''; } };
+    const css = lire('spk-app.css'), js = lire('spk-shell.js');
+    if (css.indexOf('v4.131.1 — BARRE FIXE COMPACTE') === -1) echecs.push('la barre compacte a disparu de la coque (css)');
+    if (css.indexOf('body.spk-head-compact .spk-head-r1') === -1) echecs.push('le repli de la rangée marine a disparu (css)');
+    if (js.indexOf('spk-head-compact') === -1) echecs.push('le repli au défilement a disparu (spk-shell.js)');
+    if (js.indexOf('--spk-head-full') === -1) echecs.push('la hauteur pleine de la barre n est plus posée');
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.131.1 : barre compacte + repli au défilement' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   /* ── v4.131 — LA RÉPONSE D'ABORD, ET L'OUTIL À L'AISE SUR TABLETTE ET TÉLÉPHONE ─
      Portes : la carte Réponse existe, le rendu l'utilise et la branche ; plus de « — € »
      sans valeur ; le défaut est le mode bureau ; la coque garde Open Sans (jamais la

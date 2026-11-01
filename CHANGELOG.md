@@ -5,6 +5,19 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.131.1] — 2026-11-01 · Barre fixe compacte · Claude
+
+Benjamin : « la barre fixe en haut est beaucoup trop grosse et cache trop le tableau de bord ».
+Mesuré : 105 px (PC) et 95 px (téléphone) avant le contenu.
+
+### Modifié
+- Barre : 83 px (PC), 81 px (téléphone), 132 px (tablette, fil d'Ariane sur sa ligne).
+- La rangée marine (titre + actions) **se replie quand on descend** dans un écran (il reste
+  onglets + fil : 43 px) et **revient dès qu'on remonte** ou qu'on touche à la barre
+  (hystérésis, gel 350 ms). Les écrans plein écran suivent via `--spk-head-h`.
+- Mode atelier inchangé : cibles tactiles 44 px conservées. Coque seule (spk-app.css,
+  spk-shell.js) ; aucun calcul touché.
+
 ## [4.131.0] — 2026-11-01 · La réponse d'abord, l'outil à l'aise sur tablette et téléphone · Claude
 
 Benjamin : « de plus en plus moche » — il manquait la lecture en 3 secondes (où je suis,
