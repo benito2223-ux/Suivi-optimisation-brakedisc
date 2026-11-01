@@ -1,8 +1,8 @@
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | Claude |
+| **Pris le** | 01/11/2026 |
+| **Écrit dans** | `bilan_economique.html`, `spk-app.css`, `spk-shell.js`, `build_harness.py`, CHANGELOG, ECHANGES — **branche `ux-rail`** |
+| **Version visée** | 4.132.2 → 4.133 → 4.134 |
+| **Sujet** | *Lots autonomes demandés par Benjamin : bugs + défilement (4.132.2), fiche en onglets + critères + typo (4.133), Vue d'ensemble + gestes mobile (4.134).* |
 
 ---
 
