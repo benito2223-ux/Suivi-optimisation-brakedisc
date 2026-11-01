@@ -3854,3 +3854,150 @@ body:has(#syntheseWrap:not([hidden])) #spkWorkspaceClose{ display:none !importan
 .spk-ctx .fil-ariane .fil-seg{ justify-content:center; }
 .spk-ctx .fil-ariane .fil-ico{ display:inline-flex; align-items:center; justify-content:center; }
 .spk-ctx .fil-ariane .fil-sep{ display:inline-flex; align-items:center; }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   v4.133 — LA FICHE SE LIT PAR ONGLET, LES CHIFFRES SUR FOND BLANC
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* A. Les onglets de la fiche (Essais · Composition · Suivi) */
+.spk-onglets{
+  display:flex; gap:4px; padding:0 18px; margin:6px 0 0;
+  border-bottom:1px solid var(--border); background:var(--surface);
+  position:sticky; top:0; z-index:5;
+}
+.spk-onglets button{
+  background:transparent; border:0; border-bottom:3px solid transparent; border-radius:0;
+  padding:12px 14px 10px; margin-bottom:-1px; box-shadow:none; min-height:44px;
+  font-size:13px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft);
+}
+.spk-onglets button:hover{ color:var(--blue); background:transparent; }
+.spk-onglets button.is-on{ color:var(--blue); border-bottom-color:var(--blue); }
+.spk-onglet-n{
+  display:inline-block; min-width:20px; padding:1px 6px; margin-left:4px; border-radius:10px;
+  background:var(--blue); color:#fff; font-size:11px; letter-spacing:0; text-align:center;
+}
+.scenario[data-onglet] > [data-dans-onglet]{ display:none; }
+.scenario[data-onglet="essais"] > [data-dans-onglet="essais"],
+.scenario[data-onglet="composition"] > [data-dans-onglet="composition"],
+.scenario[data-onglet="suivi"] > [data-dans-onglet="suivi"]{ display:block; }
+/* l'onglet Suivi : Tendance et Rebut ouverts d'office (c'est tout l'onglet) */
+.scenario[data-onglet="suivi"] .sec-graph, .scenario[data-onglet="suivi"] .sec-rebut{ margin-top:0; }
+@media print{ .spk-onglets{ display:none !important; } .scenario[data-onglet] > [data-dans-onglet]{ display:block !important; } }
+html[data-mode="atelier"] .spk-onglets button{ min-height:56px; font-size:15px; }
+@media (max-width:480px){ .spk-onglets{ padding:0 6px; } .spk-onglets button{ flex:1 1 0; padding:12px 4px 10px; } }
+
+/* B. Les critères de jugement : repliés derrière une ligne qui les résume */
+.spk-criteres{ margin:4px 0 14px; border:1px solid var(--border); border-radius:3px; background:var(--surface-alt, #f7f8fa); }
+.spk-criteres > summary{
+  list-style:none; cursor:pointer; display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;
+  padding:10px 14px; min-height:44px; box-sizing:border-box;
+}
+.spk-criteres > summary::-webkit-details-marker{ display:none; }
+.spk-criteres > summary::before{ content:"›"; display:inline-block; font-size:18px; line-height:1; color:var(--blue); transition:transform .15s; }
+.spk-criteres[open] > summary::before{ transform:rotate(90deg); }
+.spk-crit-l{ font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-soft); }
+.spk-crit-v{ font-size:13px; color:var(--ink); }
+.spk-criteres .log-meta{
+  display:flex !important; flex-direction:column; align-items:stretch; gap:10px;
+  padding:4px 14px 14px; margin:0; border-top:1px solid var(--border);
+}
+.spk-criteres .log-meta > .emag-toggle{ align-self:flex-start; height:auto; padding-top:10px; }
+.spk-criteres .limit-row{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; margin:0; }
+.spk-criteres .limit-row .limit-op-note{ flex-basis:auto; margin:0; color:var(--ink-faint); font-size:12px; }
+.spk-criteres .spec-usine{ align-self:flex-start; margin:0; font-size:12px; color:var(--ink-soft); }
+
+/* C. « Ce que coûte la pièce » dans la Réponse : une ligne de pied */
+.hero .pcb-dans-reponse{
+  margin:12px 0 0; padding:10px 0 0; border:0; border-top:1px solid var(--border);
+  background:transparent; box-shadow:none; border-radius:0;
+}
+.hero .pcb-dans-reponse::before, .hero .pcb-dans-reponse::after{ display:none; }
+.hero .pcb-dans-reponse .pcb-l{ font-size:10px; }
+
+/* E. Le bandeau de chiffres de la fiche : tuiles BLANCHES (le grand aplat bleu pesait
+   comme un résultat). Les variables de « remplissage » sont redéfinies localement :
+   chiffres en bleu, libellés gris, gain vert, alerte ambre — thème sombre compris. */
+#scenarioDetail .scenario-foot{
+  --fill:var(--surface); --fill-ink:var(--blue); --fill-ink-soft:var(--ink-soft); --fill-line:var(--border);
+  --on-fill-good:var(--green); --on-fill-bad:var(--red); --on-fill-warn:var(--amber);
+  display:flex; flex-wrap:wrap; background:var(--surface); color:var(--ink);
+  border-top:3px solid var(--red); border-bottom:1px solid var(--border);
+}
+#scenarioDetail .scenario-foot > *{ flex:1 1 185px; min-width:0; border-right:1px solid var(--border); }
+#scenarioDetail .scenario-foot > .foot-verdict{ flex:2 1 340px; }
+#scenarioDetail .scenario-foot > .foot-second,
+#scenarioDetail .scenario-foot > .foot-detail{ flex:1 1 100%; border-right:0; border-top:1px solid var(--border); background:var(--surface-alt, #f7f8fa); }
+#scenarioDetail .scenario-foot > :last-child{ border-right:0; }
+#scenarioDetail .foot-verdict.ref .fv-titre{ font-size:15px; font-weight:600; color:var(--ink-soft); }
+#scenarioDetail .foot-second input.cell-cycle{
+  color:var(--blue); background:var(--surface) !important; border:1px solid var(--border) !important;
+}
+#scenarioDetail .foot-second input.cell-cycle::placeholder{ color:var(--ink-faint); }
+#scenarioDetail .progress-track{ background:var(--border); }
+#scenarioDetail .progress-fill{ background:var(--blue); }
+
+/* F. Les cartes de scénario : un seul gabarit. La carte ouverte n'est plus un
+   cadre noir épais — fond bleu très clair, liseré bleu à gauche. */
+.tabs-strip .tab-card.active{
+  border:1px solid var(--blue) !important; border-left:4px solid var(--blue) !important;
+  background:#f3f8fd; box-shadow:none;
+}
+.tabs-strip .tab-card.active .tc-name{ font-size:19px; }
+.tabs-strip .tab-card.active .tc-num{ border-color:var(--blue); color:var(--blue); }
+
+/* G. Un seul signe pour « déplier » : le chevron › qui pivote */
+#scenarioDetail details > summary{ list-style:none; }
+#scenarioDetail details > summary::-webkit-details-marker{ display:none; }
+#scenarioDetail details.zone-det > summary::before,
+#scenarioDetail details.config-block > summary::before{
+  content:"›"; display:inline-block; width:14px; margin-right:6px; color:var(--blue);
+  font-size:18px; line-height:1; transition:transform .15s;
+}
+#scenarioDetail details.zone-det[open] > summary::before,
+#scenarioDetail details.config-block[open] > summary::before{ transform:rotate(90deg); }
+
+/* H. Un seul bouton plein par écran : « + Scénario » du bandeau passe en contour blanc,
+   la Réponse porte le principal (« Continuer les essais »). */
+.spk-hd-actions #addBtn{
+  background:transparent; color:#fff; border:1.5px solid #fff;
+}
+.spk-hd-actions #addBtn:hover{ background:rgba(255,255,255,.16); color:#fff; }
+/* l'onglet porte déjà le titre « Essais » */
+.scenario[data-onglet] .sec-essais .log-section > h3{ display:none; }
+.scenario[data-onglet] .sec-essais .log-section{ padding-top:14px; }
+.spk-criteres .limit-row > *{ flex:0 0 auto; width:auto; margin:0; }
+.spk-criteres .limit-row > input.limit-label{ width:220px; max-width:100%; }
+.spk-criteres .limit-row > input.limit-value{ width:90px; }
+.spk-criteres .limit-row > select{ width:auto; min-width:150px; }
+@media (max-width:480px){ .spk-criteres .limit-row > input.limit-label{ width:100%; } }
+
+/* D. UNE ÉCHELLE DE TEXTE — 25 tailles mesurées (de 8 à 54 px) ramenées à 7 paliers :
+   11 étiquettes · 12 notes · 13 texte secondaire · 15 texte et valeurs · 19 titres de
+   carte · 26 titres de zone · 48 le chiffre-réponse. Plus rien sous 11 px (illisible en
+   atelier comme sur téléphone). Le mode atelier garde ses propres tailles (plus grandes). */
+:root{ --t-xs:11px; --t-s:12px; --t-m:13px; --t-b:15px; --t-l:19px; --t-xl:26px; --t-xxl:48px; }
+html:not([data-mode="atelier"]) :is(
+  .fs-l, .tc-label, .foot-cell .l, .fv-eyebrow, .hero-tag, .status-badge, .statut-pill, .pcb-st,
+  .baseline-pill, .badge, .tc-num, .fs-v small, .foot-cell .v small, .spk-rail-title, .hero-base label,
+  .pcb-l, .tc-delta, .hd-eyebrow, .essai-tile-meta, .ca-etat, .ca-tentant, .bd-lib, .pf-lib,
+  .mx-nom, .bd-sub, .ve-lab, .al-recette, .bd-index, .spk-rail-label, .spk-nav-sep,
+  th, .zone-band .ghost.small, .crit-l, .spk-crit-l
+){ font-size:var(--t-xs) !important; }
+html:not([data-mode="atelier"]) :is(
+  .foot-sub, .fs-sub, .fv-sous, .limit-op-note, .mx-zero, .mx-ligne, .mx-op, .mx-ref, .mx-statut,
+  .ca-ref-ligne, .panel-hint, .log-summary span, .essai-params span, .delta, .pcb-cible-vide,
+  .foot-poids, .foot-auteur, .lp-label, .lp-val, .bandeau-premiere span, .bp-close, .pcb-op
+){ font-size:var(--t-s) !important; }
+html:not([data-mode="atelier"]) :is(
+  .zone-band span, .aide-body p, .aide-body li, .ca-vide, .hero-sub, .fil-val, .emag-toggle, .ghost
+){ font-size:var(--t-m); }
+html:not([data-mode="atelier"]) :is(
+  .tc-val, .fs-v, .hero-verdict, .ca-titre, .bd-sous, .spk-rail-live, .spk-rail-version, .essai-tile-title
+){ font-size:var(--t-b) !important; }
+html:not([data-mode="atelier"]) :is( .tc-name, .fv-titre, .hero-verdict b, .foot-cell .v.small ){ font-size:var(--t-l) !important; }
+html:not([data-mode="atelier"]) :is( .zone-band b, .bd-v ){ font-size:var(--t-xl) !important; }
+html:not([data-mode="atelier"]) :is( .hero-big, .bd-titre ){ font-size:clamp(36px, 4.4vw, var(--t-xxl)) !important; }
+html:not([data-mode="atelier"]) .foot-cell .v:not(.small):not(.mid){ font-size:clamp(28px,3vw,34px); }
+html:not([data-mode="atelier"]) .tabs-strip .tab-card.active .tc-name{ font-size:var(--t-l) !important; }
+/* les badges en capitales restent compacts malgré le palier 11 */
+html:not([data-mode="atelier"]) :is(.status-badge, .statut-pill, .pcb-st, .baseline-pill, .badge, .hero-tag){ letter-spacing:.06em; }

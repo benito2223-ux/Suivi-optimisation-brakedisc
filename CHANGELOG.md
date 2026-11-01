@@ -5,6 +5,10 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.133.0] — 2026-11-01 · la fiche se lit par onglet, les chiffres sur fond blanc · Claude
+
+Fiche du scénario en trois onglets (Essais par défaut, Composition, Suivi = tendance + rebut) — 2 400 px empilés avant ; un défilement programmé ou un focus vers un onglet masqué l'ouvre d'abord ; impression inchangée (tout visible). Critères de jugement repliés derrière un résumé (ouverts d'office sans essai). « Ce que coûte la pièce » entre dans la carte Réponse. Bandeau de chiffres de la fiche en tuiles blanches (variables de remplissage redéfinies localement, thème sombre vérifié). Échelle de texte 11/12/13/15/19/26/48 (rien sous 11 px hors atelier). Un seul chevron ; carte ouverte bleu clair ; « + Scénario » en contour ; nom de scénario coupé à 34 car. avec « … ». Tout côté coque sauf 2 retouches du monolithe (placeholder déjà en 4.132.2, coupe du nom). 673/0 + porte lot 4.133 ; rendu 1440/390, atelier, sombre.
+
 ## [4.132.2] — 2026-11-01 · les bugs du check complet · Claude
 
 Audit complet du 01/11 (Benjamin : « fais un check complet… »). Corrigé : téléphone, la barre d'onglets du bas passait sous les écrans plein écran (on ne naviguait plus qu'avec Retour) ; ouvrir une carte de scénario défile jusqu'à sa fiche ; la Synthèse remplace la zone de travail (et « Retour » ne recouvre plus le bandeau) ; champ temps de cycle en vraie case ; fil d'Ariane centré en mode atelier ; apostrophe « d'abord ». Le filigrane « E1 » est le repère DEV (absent en PROD) : gardé. 673/0 + porte lot 4.132.2 ; rendu 1440/390 normal et atelier.

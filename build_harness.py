@@ -1517,6 +1517,26 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.132.2 : bugs du check complet (nav mobile, carte vers fiche, Synthèse, cycle, fil atelier)' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  /* ── v4.133.0 — fiche en onglets, critères repliés, chiffres sur blanc, échelle de texte ── */
+  (function lot4133Fiche(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const lire = function(f){ try { return fs.readFileSync(path.join(REPO, f), 'utf8'); } catch (e) { return ''; } };
+    const css = lire('spk-app.css'), js = lire('spk-shell.js'), html = lire('bilan_economique.html');
+    if (js.indexOf('const ONGLETS = [') === -1) echecs.push('les onglets de la fiche ont disparu');
+    if (js.indexOf('spk-criteres') === -1) echecs.push('les critères de jugement ne se replient plus');
+    if (js.indexOf('pcb-dans-reponse') === -1) echecs.push('Ce que coûte la pièce ne rejoint plus la Réponse');
+    if (js.indexOf('Element.prototype.scrollIntoView = function') === -1) echecs.push('un défilement vers un onglet masqué ne l ouvre plus');
+    if (css.indexOf('v4.133 — LA FICHE SE LIT PAR ONGLET') === -1) echecs.push('la couche 4.133 a disparu');
+    if (css.indexOf('--t-xs:11px') === -1) echecs.push('l échelle de texte a disparu');
+    if (css.indexOf('@media print{ .spk-onglets{ display:none') === -1) echecs.push('l impression ne montre plus toutes les sections');
+    if (html.indexOf('n.length > 34 ? n.slice(0,33)') === -1) echecs.push('les noms de scénario sont de nouveau coupés');
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.133.0 : fiche en onglets, critères repliés, chiffres sur blanc, échelle de texte' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   /* ── v4.132 — UNE SEULE BANDE EN TÊTE, UNE NAVIGATION RANGÉE (base 4.129.1) ── */
   (function lot4132Bande(){
     const fs = require('fs');

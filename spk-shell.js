@@ -219,6 +219,152 @@
     if (window.ResizeObserver) new ResizeObserver(poser).observe(rail);
   })();
 
+  /* ══ v4.133 — LA FICHE EN TROIS ONGLETS, LES CRITÈRES REPLIÉS, LA PIÈCE DANS LA RÉPONSE ══
+     La fiche du scénario faisait 2 400 px sur PC, 3 860 sur téléphone : Composition,
+     Tendance, Essais et Rebut empilés. Elle se lit maintenant par onglet — Essais
+     (ouvert par défaut : le geste du quotidien), Composition, Suivi (tendance + rebut).
+     Le bandeau de chiffres reste au-dessus, toujours visible. Tout est fait APRÈS le
+     rendu de l'application (observateur) : rien n'est recalculé, les éléments sont
+     seulement montrés / masqués / déplacés — ids et écouteurs suivent. */
+  const ONGLETS = [
+    { id: "essais", lib: "Essais", secs: [".sec-essais"] },
+    { id: "composition", lib: "Composition", secs: [".sec-plaquettes"] },
+    { id: "suivi", lib: "Suivi", secs: [".sec-graph", ".sec-rebut"] }
+  ];
+  let ongletFiche = "essais";
+  const criteresOuverts = {};
+
+  function poserOnglet(sc, id) {
+    ongletFiche = id;
+    sc.setAttribute("data-onglet", id);
+    sc.querySelectorAll(".spk-onglets button").forEach((b) => {
+      const on = b.getAttribute("data-onglet") === id;
+      b.classList.toggle("is-on", on);
+      b.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    /* l'onglet Suivi n'a que Tendance et Rebut : on les ouvre (une fois par fiche) */
+    if (id === "suivi" && !sc.dataset.suiviOuvert) {
+      sc.dataset.suiviOuvert = "1";
+      sc.querySelectorAll(":scope > .sec-graph > details, :scope > .sec-rebut > details").forEach((d) => { if (!d.open) d.open = true; });
+    }
+  }
+
+  function equiperFiche() {
+    const detail = document.getElementById("scenarioDetail");
+    const sc = detail && detail.querySelector(":scope > .scenario");
+    if (!sc || sc.querySelector(":scope > .spk-onglets")) return;
+    const premiere = sc.querySelector(":scope > .sec-plaquettes") || sc.querySelector(":scope > .sec-essais");
+    if (!premiere) return;
+    const nEssais = sc.querySelectorAll(".essais-list > .essai-card").length;
+    const barre = document.createElement("div");
+    barre.className = "spk-onglets";
+    barre.setAttribute("role", "tablist");
+    ONGLETS.forEach((o) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.setAttribute("role", "tab");
+      b.setAttribute("data-onglet", o.id);
+      b.innerHTML = o.lib + (o.id === "essais" ? ' <span class="spk-onglet-n">' + nEssais + "</span>" : "");
+      b.addEventListener("click", () => poserOnglet(sc, o.id));
+      barre.appendChild(b);
+    });
+    sc.insertBefore(barre, premiere);
+    ONGLETS.forEach((o) => o.secs.forEach((s) => {
+      const el = sc.querySelector(":scope > " + s);
+      if (el) el.setAttribute("data-dans-onglet", o.id);
+    }));
+    poserOnglet(sc, ongletFiche);
+
+    /* les critères de jugement (battement, côtés, Ra/VE, seuil) : réglés une fois par
+       scénario, ils occupaient 170 px éparpillés au-dessus des essais. Ils se replient
+       derrière une ligne qui les résume ; ouverts d'office tant qu'aucun essai n'existe. */
+    const meta = sc.querySelector(".sec-essais .log-meta");
+    if (meta && !meta.closest(".spk-criteres")) {
+      const idSc = (sc.querySelector("[data-id]") || { getAttribute: () => "" }).getAttribute("data-id") || "";
+      const det = document.createElement("details");
+      det.className = "spk-criteres";
+      const sum = document.createElement("summary");
+      const bat = meta.querySelector('input[data-field="battActif"]');
+      const lib = meta.querySelector("input.limit-label");
+      const valBat = meta.querySelector("input.limit-value:not([data-csup]):not([data-field='validationThreshold'])");
+      const valSeuil = meta.querySelector("input[data-field='validationThreshold']");
+      const cote = meta.querySelector("select");
+      const morceaux = [];
+      if (!bat || bat.checked) {
+        morceaux.push((lib && lib.value ? lib.value : "Battement") + " ≤ " + (valBat && valBat.value ? valBat.value : "—")
+          + (cote && cote.selectedOptions && cote.selectedOptions[0] ? " (" + cote.selectedOptions[0].textContent.trim() + ")" : ""));
+      }
+      const autres = meta.querySelectorAll(".csup-item, .csup-row").length;
+      if (autres) morceaux.push("+ " + autres + " critère" + (autres > 1 ? "s" : ""));
+      const seuil = valSeuil && valSeuil.value ? valSeuil.value : null;
+      if (seuil) morceaux.push("validé à " + seuil + " essais conformes");
+      sum.innerHTML = '<span class="spk-crit-l">Critères de jugement</span><span class="spk-crit-v"></span>';
+      sum.querySelector(".spk-crit-v").textContent = morceaux.join(" · ");
+      det.appendChild(sum);
+      meta.parentNode.insertBefore(det, meta);
+      det.appendChild(meta);
+      det.open = (idSc in criteresOuverts) ? criteresOuverts[idSc] : nEssais === 0;
+      det.addEventListener("toggle", () => { criteresOuverts[idSc] = det.open; });
+    }
+    const h3 = sc.querySelector(".sec-essais .log-section > h3");
+    if (h3 && !h3.dataset.court) {
+      h3.dataset.court = "1";
+      h3.title = h3.textContent.trim();
+      h3.textContent = "Essais";
+    }
+  }
+
+  /* « Ce que coûte la pièce » répétait la Réponse dans un second bandeau : il entre
+     DANS la carte Réponse, en pied, sur une ligne. */
+  function equiperReponse() {
+    const strip = document.getElementById("tabsStrip");
+    if (!strip) return;
+    const hero = strip.querySelector(".hero");
+    const pcb = strip.querySelector(":scope > .pcb-banner, :scope > .pcb-vide");
+    if (hero && pcb) {
+      pcb.classList.add("pcb-dans-reponse");
+      hero.appendChild(pcb);
+    }
+  }
+
+  /* un défilement programmé vers un élément d'un onglet masqué (recherche, verdict,
+     lien « voir l'essai ») ouvre d'abord le bon onglet */
+  const scrollNatif = Element.prototype.scrollIntoView;
+  Element.prototype.scrollIntoView = function () {
+    try {
+      const sec = this.closest && this.closest("[data-dans-onglet]");
+      if (sec) {
+        const sc = sec.closest(".scenario");
+        const id = sec.getAttribute("data-dans-onglet");
+        if (sc && sc.getAttribute("data-onglet") !== id) poserOnglet(sc, id);
+      }
+    } catch (e) { /* jamais bloquant */ }
+    return scrollNatif.apply(this, arguments);
+  };
+  /* idem au focus clavier (Tab, Ctrl+K) */
+  document.addEventListener("focusin", (e) => {
+    const sec = e.target && e.target.closest ? e.target.closest("[data-dans-onglet]") : null;
+    if (!sec) return;
+    const sc = sec.closest(".scenario");
+    const id = sec.getAttribute("data-dans-onglet");
+    if (sc && sc.getAttribute("data-onglet") !== id) poserOnglet(sc, id);
+  });
+  /* « Continuer les essais » de la Réponse mène à l'onglet Essais */
+  document.addEventListener("click", (e) => {
+    if (e.target && e.target.closest && e.target.closest("#heroCta")) ongletFiche = "essais";
+  }, true);
+
+  (function () {
+    const detail = document.getElementById("scenarioDetail");
+    const strip = document.getElementById("tabsStrip");
+    if (window.MutationObserver) {
+      if (detail) new MutationObserver(equiperFiche).observe(detail, { childList: true });
+      if (strip) new MutationObserver(equiperReponse).observe(strip, { childList: true });
+    }
+    equiperFiche();
+    equiperReponse();
+  })();
+
   const panelToButton = {
     accueilPanel: "accueilBtn",
     dashboardPanel: "accueilBtn",
