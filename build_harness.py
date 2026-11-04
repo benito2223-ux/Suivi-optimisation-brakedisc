@@ -1576,6 +1576,24 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.135.0 : l’essentiel par défaut, Détails, menu Outils, simulateur retiré' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  /* ── v4.137.0 — suivi Marposs : date conservee, minuit, tolerance Marposs, import CSV ── */
+  (function lot4137Marposs(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const lire = function(f){ try { return fs.readFileSync(path.join(REPO, f), 'utf8'); } catch (e) { return ''; } };
+    const html = lire('bilan_economique.html');
+    if (html.indexOf('function marpossLireDate(') === -1) echecs.push('la lecture de la date Marposs a disparu');
+    if (html.indexOf('function marpossFenetre(') === -1) echecs.push('la fenêtre d essai (minuit) a disparu');
+    if (html.indexOf('function marpossTol(') === -1) echecs.push('la tolérance Marposs a disparu');
+    if (html.indexOf('data-marposs-field="tol"') === -1) echecs.push('le champ Tolérance Marposs a disparu');
+    if (html.indexOf('class="marposs-file"') === -1) echecs.push('l import de fichier CSV a disparu');
+    if (html.indexOf('ces champs ne portent pas data-essai') === -1) echecs.push('Jour / Début / Fin ne retrouvent plus leur essai');
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.137.0 : Marposs — date, minuit, tolérance, CSV' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   /* ── v4.136.0 — vendre : €/an et trois axes, démultiplication, pipeline, bilan client, présentation client ── */
   (function lot4136Vendre(){
     const fs = require('fs');

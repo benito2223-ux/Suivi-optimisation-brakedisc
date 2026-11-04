@@ -5,6 +5,23 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.137.0] — 2026-11-04 · Marposs : la date, minuit, la tolérance Marposs, le CSV · Claude
+
+Suggestions de Matis du 02/09 (format de date `JJ/MM/AA HH:MM:SS`) et du 07/09 (tolérance des pièces
+mesurées ≠ tolérance Marposs), encore au statut « nouveau » dans le backlog de la PROD. (1) `parseMarpossPaste`
+garde la date (`AAAA-MM-JJ`) et l'heure avec secondes ; formats lus : JJ/MM/AA ou AAAA, `/` `.` `-`, ISO, numéro de série
+Excel, date et heure en deux colonnes, séparateurs tabulation / `;` / blancs ; sans date, le comportement d'avant
+(heure seule, retour en arrière > 6 h = minuit). Les pièces sont triées chronologiquement. (2) Fenêtre d'essai
+`marpossFenetre` : début > fin = à cheval sur minuit ; avec des dates, jour de l'extraction ou, à défaut, la date qui
+contient le plus de pièces. (3) `marpossTol` : champ « Tolérance Marposs » par extraction, vide = spéc. usine
+(`specsUsine.battement`, 0,04) — plus la tolérance d'essai (0,12) qui rendait tout « OUI ». **Changement de comportement
+pour les extractions existantes** : leur conformité se juge désormais sur 0,04 tant que le champ est vide. (4) Import
+d'un fichier CSV/texte (bouton + glisser-déposer) ; un .xlsx est refusé avec la marche à suivre. (5) KPI : écart essai −
+journée, part hors tolérance pendant l'essai et le reste de la journée (aussi dans le rapport d'essai). (6) Bug corrigé
+(préexistant) : Jour / Début / Fin d'une extraction ne s'enregistraient pas (l'essai était cherché via un attribut
+absent). Aucune fonction de calcul touchée. +27 tests (707/0) + porte lot 4.137. Format des données : champ `date` et
+`tol` optionnels ; un ancien fichier se relit sans rien changer. `dev` et PROD non touchées (PROD 4.129.1).
+
 ## [4.136.0] — 2026-11-01 · vendre : €/an et trois axes, démultiplication, pipeline, bilan client, présentation client · Claude
 
 Demande de Benjamin après l'avis « responsable méthodes ». (1) Réponse : €/an d'outillage en tête quand le volume est connu (le % dit « sur le coût outil »), puis troisGains() — outil / cycle (h/an, € si coût machine) / rebut — lus dans bilanAnnuel(), jamais sommés, null = non chiffré (jamais 0). (2) demultiplication() : même pièce (même référence + même code OP, autre ligne) ou même plaquette d'origine (MABEC de la base dans la prod d'une autre OP) ; estimation = même % de gain outil × coût outil de là-bas × son volume, étiquetée ESTIMATION. (3) pipelineLignes()/pipelineHTML() sur cartePostes() : potentiel, acté, essais conformes, dernier essai, prochaine action (prochaineEtapePoste) — écran #spkPipelinePanel, menu Outils. (4) bilanClientHTML()/imprimerBilanClient() : une page par ligne travaillée, avant/après, preuves, gain figé (dernière livraison du poste), prochaine étape, aucune donnée commerciale ; entré dans la batterie anti-injection. (5) Mode présentation client (coque, session seulement) : verrou existant + data-commercial/prix/menus masqués ; Quitter restaure l'état du verrou. +7 tests (680/0) + porte lot 4.136. Contrôle 3 formats × clair/sombre × 32 actions : 0 erreur, 0 débord. Données d'exemple : leur OP n'a pas d'opCode (non normalisée) — la démultiplication dérive le code du nom ; pipeline/bilan restent vides sur l'exemple seul, vérifiés sur données injectées (+6,0 k€/an EMAG 1, +4,0 k€/an estimés EMAG 2).

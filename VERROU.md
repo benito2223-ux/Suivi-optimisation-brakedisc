@@ -6,6 +6,10 @@
 
 ---
 
+✅ **Verrou pris puis libéré par Claude le 04/11/2026** (Tour 119, branche `ux-rail`, v4.137.0 —
+Marposs : date conservée, minuit, tolérance Marposs, import CSV, écart essai/journée).
+707 tests | 0 échec + porte lot 4.137. **`dev` et PROD non touchées (PROD 4.129.1).**
+
 ✅ **Verrou pris puis libéré par Claude le 01/11/2026** (Tour 118, branche `ux-rail`, v4.136.0 —
 vendre : €/an et trois axes, démultiplication, pipeline, bilan client PDF, mode présentation client).
 680 tests | 0 échec + porte lot 4.136. **`dev` et PROD non touchées (PROD 4.129.1).**
