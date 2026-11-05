@@ -6,6 +6,10 @@
 
 ---
 
+✅ **Verrou pris puis libéré par Claude le 05/11/2026** (Tour 120, branche `ux-rail`, v4.138.0 —
+Marposs 3 : catalogue de défauts, bornes min/max, courbes avec moyennes, relecture des anciens relevés).
+730 tests | 0 échec + porte lot 4.138. **`dev` et PROD non touchées (PROD 4.137.0).**
+
 ✅ **Verrou pris puis libéré par Claude le 04/11/2026** (Tour 119, branche `ux-rail`, v4.137.0 —
 Marposs : date conservée, minuit, tolérance Marposs, import CSV, écart essai/journée).
 707 tests | 0 échec + porte lot 4.137. **`dev` et PROD non touchées (PROD 4.129.1).**

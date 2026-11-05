@@ -5,6 +5,24 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.138.0] — 2026-11-05 · Marposs 3 : le défaut suivi, deux bornes, courbes avec moyennes · Claude
+
+Retour de Matis (mail du 04/11 + backlog des 02 et 03/11, export rev434). (1) **Catalogue de défauts** :
+`marpossCatalogue()` — battement et VE (specs usine, inchangées) + défauts personnalisés (libellé, min, max) saisis
+dans Options → « Défauts suivis à la Marposs ». Rangés DANS `specsUsine` (`defauts`) : ils voyagent avec l'export, le
+cloud, la restauration et l'import sans nouvelle clé ; `normaliserSpecsUsine` les valide (id « battement »/« ve »
+réservés). (2) **Extraction** : champ `defaut` (menu, défaut « battement »), `tol` (max) et nouveau `tolMin`
+surchargent le catalogue ; `marpossBornes()`, `marpossOk()` (conformité à deux bornes) alimentent OUI/NON, stats
+(hors tolérance essai / reste de la journée), points rouges, rapport. Libellés du tableau, du graphique et du rapport
+suivent le défaut. (3) **Graphique** : échelle étendue sous zéro pour un défaut signé, ligne du zéro, une ou deux lignes
+de tolérance, trait gris = moyenne de la journée, trait bleu = moyenne de l'essai sur la fenêtre. (4) **Relecture des
+anciennes lignes** : un collage d'avant la 4.137 avait gardé `26/08/26 00/00/21` dans l'heure (illisible : ni graphe ni
+moyenne d'essai) — `normalizeScenario` sépare la date et l'heure (silencieux, une ligne déjà propre n'est pas touchée).
+Aucune fonction de calcul touchée. +23 tests (730/0) + porte lot 4.138. **Non fait, volontairement** : le stockage compact
+des relevés (alerte « Poids du suivi » à 3,53 Mo sur ~5 Mo) touche sauvegarde, export, fusion et cloud : lot à part ;
+la tuile d'essai qui se fermerait (non reproduite, en attente du navigateur et du champ exacts) ; la base volumes/coûts
+de rebut (suggestion du 02/11). `dev` et PROD non touchées (PROD 4.137.0).
+
 ## [4.137.0] — 2026-11-04 · Marposs : la date, minuit, la tolérance Marposs, le CSV · Claude
 
 Suggestions de Matis du 02/09 (format de date `JJ/MM/AA HH:MM:SS`) et du 07/09 (tolérance des pièces

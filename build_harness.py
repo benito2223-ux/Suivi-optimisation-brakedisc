@@ -1576,6 +1576,26 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.135.0 : l’essentiel par défaut, Détails, menu Outils, simulateur retiré' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  /* ── v4.138.0 — Marposs 3 : catalogue de defauts, bornes min/max, anciennes lignes ── */
+  (function lot4138Marposs3(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const lire = function(f){ try { return fs.readFileSync(path.join(REPO, f), 'utf8'); } catch (e) { return ''; } };
+    const html = lire('bilan_economique.html');
+    if (html.indexOf('function marpossCatalogue(') === -1) echecs.push('le catalogue des défauts a disparu');
+    if (html.indexOf('function marpossBornes(') === -1) echecs.push('les bornes min/max ont disparu');
+    if (html.indexOf('id="optDefautsMarposs"') === -1) echecs.push('le catalogue a quitté les Options');
+    if (html.indexOf('data-marposs-field="defaut"') === -1) echecs.push('le menu Défaut suivi a disparu de l extraction');
+    if (html.indexOf('data-marposs-field="tolMin"') === -1) echecs.push('le champ Tolérance min a disparu');
+    if (html.indexOf('défauts suivis à la Marposs') === -1 && html.indexOf('Défauts suivis à la Marposs') === -1) echecs.push('le libellé du catalogue a disparu');
+    if (html.indexOf('relecture des anciens relevés') === -1) echecs.push('la relecture des anciennes lignes a disparu');
+    if (html.indexOf('defauts }') === -1 && html.indexOf('defauts};') === -1) echecs.push('les défauts ne voyagent plus avec specsUsine');
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.138.0 : Marposs 3 — catalogue de défauts, bornes min/max, anciennes lignes' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   /* ── v4.137.0 — suivi Marposs : date conservee, minuit, tolerance Marposs, import CSV ── */
   (function lot4137Marposs(){
     const fs = require('fs');
