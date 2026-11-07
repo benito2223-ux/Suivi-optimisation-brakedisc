@@ -6,6 +6,10 @@
 
 ---
 
+✅ **Verrou pris puis libéré par Claude le 08/11/2026** (Tour 124, branche `ux-rail`, v4.141.0 —
+synchro v2 : par enregistrement, fusion, hors ligne, équipe par code, espaces prod/dev).
+743 tests | 0 échec + portes + 24 contrôles de bout en bout (deux appareils). **PROD : voir « Faits extérieurs ».**
+
 ✅ **Verrou pris puis libéré par Claude le 08/11/2026** (Tour 123, branche `ux-rail`, v4.140.0 —
 atelier mobile : variante en direct, création rapide, champs 16 px, conseil iOS).
 730 tests | 0 échec + porte lot 4.140 + 27 contrôles d'interaction. **`dev` et PROD non touchées (PROD 4.138.0).**

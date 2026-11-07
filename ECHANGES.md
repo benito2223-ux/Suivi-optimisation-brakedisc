@@ -193,6 +193,12 @@ Matis doivent tenir le MÊME état (v3) — une correction d'un côté recrée d
 lignées. Consigne Matis : import v3, Remplacer tout, ne pas cliquer la correction.
 
 
+### ▸ Tour 124 — 08/11/2026 — **Claude** (v4.141.0 — synchro v2 ; branche `ux-rail`)
+
+Benjamin : « oui, ça peut aller sur Supabase, les appareils de Matis laissent passer ; continue jusqu'à l'app parfaite, mise en ligne, carte blanche ». Fait : synchro par enregistrement avec fusion à trois voies, hors ligne d'abord, équipe par code, espaces prod/dev (voir CHANGELOG 4.141.0), migration serveur appliquée et testée en SQL, 24 contrôles de bout en bout à deux appareils. Le classificateur de sécurité a bloqué trois fois des scripts du navigateur (connexion factice, session injectée, URL du cloud redirigée vers un serveur local) : je n'ai pas contourné, j'ai fait le test de bout en bout en Node (`outils/e2e_sync.py`). **Le code d'équipe n'est pas écrit dans le dépôt** : seul son hachage est en base ; Benjamin le reçoit dans la conversation.
+
+**À faire par les humains (je ne crée pas de compte ni ne saisis de mot de passe)** : (1) Matis ET Benjamin créent leur compte dans Options → Synchro, puis donnent le code d'équipe ; (2) **Matis dépose le premier** (ses données, rev434, sont les plus récentes) ; (3) Benjamin se connecte ensuite et choisit « Fusionner » ; (4) iPhone / tablette : même chose, puis « Sur l'écran d'accueil » (Safari efface le stockage d'un site non ouvert pendant 7 jours). **Décisions en attente** : sortie de l'historique local (jusqu'à 10 Mo) et des plans joints du stockage navigateur ; sécurité de l'autre application du projet (`reports`, `activity_log` ouverts à `anon`, `get_app_key`). Signalement : activer « leaked password protection » dans Supabase Auth.
+
 ### ▸ Tour 123 — 08/11/2026 — **Claude** (v4.140.0 — atelier mobile ; branche `ux-rail`)
 
 Benjamin : « on continue le code pour arriver à l'app parfaite ; détail important : tablette et iPhone pour les relevés de mesures et la création de scénarios en live dans l'atelier ». Audit tactile puis lot (voir CHANGELOG 4.140.0) : champs à 16 px (zoom Safari), rappel qui ne masque plus le relevé, « Variante » (copie sans essais) + création rapide sur tactile, conseil iOS (effacement à 7 jours). 730/0 + porte + 27 contrôles d'interaction. Vérifié sur émulation, pas sur un vrai iPhone.

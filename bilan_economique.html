@@ -14224,6 +14224,14 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.141.0", date:"08/11/2026", points:[
+    "<b>Le suivi se partage entre appareils : PC, tablette, iPhone.</b> Options → Synchro : créer un compte, puis saisir le <b>code d’équipe</b> (donné par Benjamin). Ensuite chaque saisie part toute seule quelques secondes après, et celles des autres arrivent seules.",
+    "<b>Seul ce qui change voyage.</b> Une saisie d’essai envoie environ 7 Ko, contre 3,6 Mo auparavant (tout le suivi) : fini les dépassements de quota, et c’est tenable sur un réseau d’atelier.",
+    "<b>Deux personnes peuvent saisir en même temps.</b> Si vous modifiez des champs différents du même essai, tout est conservé ; sur le même champ, votre version est gardée et le conflit est consigné. Rien n’est écrasé en silence.",
+    "<b>Sans réseau, l’outil continue.</b> Les saisies s’empilent (la pastille ☁ indique combien) et partent au retour du Wi-Fi, même après fermeture de l’application.",
+    "<b>Première connexion d’un poste</b> : jamais de mélange silencieux. Cloud vide : proposition de déposer ce poste. Poste neuf : il reçoit tout. Les deux ont des données : fusion (le plus récent gagne pour un même essai) avec export de secours téléchargé avant.",
+    "<b>Accès réservé à l’équipe.</b> Avant, tout compte connecté pouvait lire le suivi partagé ; maintenant il faut le code d’équipe, vérifié côté serveur. Les photos de plaquettes et les plans partent à part, une seule fois."
+  ]},
   { version:"4.140.0", date:"07/11/2026", points:[
     "<b>Créer un scénario en direct, à l’atelier.</b> Nouveau bouton <b>Variante</b> : mêmes outils et mêmes conditions que le scénario ouvert, <b>sans ses essais</b> (« Dupliquer » copie aussi les mesures). Sur tablette et téléphone, « + Scénario » propose : variante du scénario actuel, ou scénario vide, avec son nom.",
     "<b>iPhone et iPad : plus de zoom au toucher d’un champ.</b> Safari agrandit la page quand un champ fait moins de 16 px ; les champs trop petits passent à 16 px sur écran tactile (aucun champ plus grand n’est réduit).",
@@ -15042,7 +15050,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.140.0";
+const TOOL_VERSION = "4.141.0";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -21083,6 +21091,614 @@ verifierNouveautes();
 
 <script>
 /* ============================================================
+   SYNCHRO V2 (v4.141) — par enregistrement, hors ligne d'abord
+   ------------------------------------------------------------
+   Pourquoi : l'ancienne synchro (v4.8) déposait TOUT le suivi (3 à 4 Mo) dans une seule ligne à chaque
+   saisie — le quota de bande passante a sauté en octobre — et deux appareils qui écrivaient s'écrasaient.
+   Ici le suivi est DÉCOUPÉ en petits enregistrements (« shards ») : un par scénario, un par extraction
+   Marposs, un par réglage partagé, plus la structure ligne > référence > OP. Seuls ceux qui changent
+   voyagent ; les grosses pièces (photos, plans) voyagent à part, une seule fois, adressées par leur
+   empreinte. Chaque écriture porte la révision qu'elle croit remplacer (concurrence optimiste) ; si
+   l'autre appareil est passé avant, on FUSIONNE champ par champ (fusion à trois voies : ce qui existait,
+   ce que j'ai fait, ce que l'autre a fait) au lieu d'écraser. Le localStorage reste la copie de travail :
+   sans réseau (le Wi-Fi d'atelier tombe), l'outil marche, la file d'attente part au retour.
+   Le serveur (Supabase) ne répond qu'aux membres de l'équipe (code d'équipe) ; chaque adresse a son
+   ESPACE (prod / dev / test) : le développement ne touche plus la production.
+   ============================================================ */
+const SY_CLE = STORAGE_KEY + "_sync2";
+const SY_BLOB_MIN = 3000;
+const SY_PREFIXE_BLOB = "§blob§";
+const SY_CLES_PARTAGEES = ["projets", "responsables", "backlog", "specsUsine", "livraisons", "catalogue", "plan",
+                           "conso2025", "consoReelle", "planSource", "consoSemaines", "planReglages"];
+const SY_ESPACE = /^suivi-optimisation-septfons\.surge\.sh$/.test(location.hostname) ? "prod"
+                : /^suivi-optimisation-projet\.surge\.sh$/.test(location.hostname) ? "dev"
+                : (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && localStorage.getItem("spk_espace_test"))
+                  || "test-" + String(location.hostname || "local").replace(/[^a-z0-9]/gi, "-");
+
+/* ---------- empreintes ---------- */
+function syCyrb53(str, graine){
+  let h1 = 0xdeadbeef ^ graine, h2 = 0x41c6ce57 ^ graine;
+  for(let i = 0, ch; i < str.length; i++){
+    ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+}
+function syHash(s){ s = String(s); return syCyrb53(s, 0).toString(36) + syCyrb53(s, 7919).toString(36) + s.length.toString(36); }
+/* JSON canonique : clés triées, undefined absent — deux états identiques ont la même empreinte */
+function syCanon(v){
+  if(v === undefined) return "null";
+  if(v === null || typeof v !== "object") return JSON.stringify(v);
+  if(Array.isArray(v)) return "[" + v.map(syCanon).join(",") + "]";
+  const cles = Object.keys(v).filter(k => v[k] !== undefined).sort();
+  return "{" + cles.map(k => JSON.stringify(k) + ":" + syCanon(v[k])).join(",") + "}";
+}
+function syObjet(v){ return v !== null && typeof v === "object" && !Array.isArray(v); }
+
+/* ---------- pièces volumineuses : sorties du JSON, adressées par empreinte ---------- */
+const syShaCache = new Map();   // une pièce de plusieurs centaines de Ko ne se re-hache pas à chaque calcul
+function syShaDe(v){ let s = syShaCache.get(v); if(s === undefined){ s = syHash(v); syShaCache.set(v, s); } return s; }
+function syBlobsExtraire(v, blobs){
+  if(typeof v === "string"){
+    if(v.length >= SY_BLOB_MIN && v.startsWith("data:")){ const sha = syShaDe(v); blobs[sha] = v; return SY_PREFIXE_BLOB + sha; }
+    return v;
+  }
+  if(Array.isArray(v)) return v.map(x => syBlobsExtraire(x, blobs));
+  if(v !== null && typeof v === "object"){
+    const o = {};
+    Object.keys(v).forEach(k => { if(v[k] !== undefined) o[k] = syBlobsExtraire(v[k], blobs); });
+    return o;
+  }
+  return v;
+}
+function syBlobsReferences(v, ensemble){
+  if(typeof v === "string"){ if(v.startsWith(SY_PREFIXE_BLOB)) ensemble.add(v.slice(SY_PREFIXE_BLOB.length)); return ensemble; }
+  if(Array.isArray(v)) v.forEach(x => syBlobsReferences(x, ensemble));
+  else if(v !== null && typeof v === "object") Object.keys(v).forEach(k => syBlobsReferences(v[k], ensemble));
+  return ensemble;
+}
+function syBlobsReinjecter(v, chercher, manquants){
+  if(typeof v === "string"){
+    if(v.startsWith(SY_PREFIXE_BLOB)){
+      const sha = v.slice(SY_PREFIXE_BLOB.length), d = chercher(sha);
+      if(d === undefined){ if(manquants) manquants.add(sha); return v; }
+      return d;
+    }
+    return v;
+  }
+  if(Array.isArray(v)) return v.map(x => syBlobsReinjecter(x, chercher, manquants));
+  if(v !== null && typeof v === "object"){
+    const o = {};
+    Object.keys(v).forEach(k => { o[k] = syBlobsReinjecter(v[k], chercher, manquants); });
+    return o;
+  }
+  return v;
+}
+
+/* ---------- découper / recomposer ---------- */
+function syCleUnique(vus, id){
+  const base = String(id);
+  if(vus[base] === undefined){ vus[base] = 0; return base; }
+  vus[base]++;
+  return base + "~" + vus[base];
+}
+function syDecouper(etat){
+  const shards = {}, blobs = {};
+  const ajoute = (id, kind, corps) => { shards[id] = { kind, body: syBlobsExtraire(corps, blobs) }; };
+  SY_CLES_PARTAGEES.forEach(k => { if(etat[k] !== undefined && etat[k] !== null) ajoute("k:" + k, "k", etat[k]); });
+  const arbre = (etat.lignes || []).map(l => {
+    const L = Object.assign({}, l);
+    L.references = (l.references || []).map(r => {
+      const R = Object.assign({}, r);
+      R.ops = (r.ops || []).map(o => {
+        const O = Object.assign({}, o);
+        delete O.scenarios;
+        O.scenarioIds = [];
+        const vus = {};
+        (o.scenarios || []).forEach(s => {
+          const cle = syCleUnique(vus, s.id);
+          O.scenarioIds.push(cle);
+          const corps = JSON.parse(JSON.stringify(s));
+          const vusE = {};
+          (corps.essais || []).forEach(e => {
+            const ce = syCleUnique(vusE, e.id), vusX = {};
+            (e.marpossListe || []).forEach(x => {
+              if(Array.isArray(x.releves) && x.releves.length){
+                const id = "mx:" + o.id + ":" + cle + ":" + ce + ":" + syCleUnique(vusX, x.id);
+                ajoute(id, "mx", x.releves);
+                x.releves = { "$mx": id };
+              }
+            });
+            if(e.marposs && Array.isArray(e.marposs.releves) && e.marposs.releves.length){
+              const id = "mxl:" + o.id + ":" + cle + ":" + ce;
+              ajoute(id, "mx", e.marposs.releves);
+              e.marposs.releves = { "$mx": id };
+            }
+          });
+          ajoute("sc:" + o.id + ":" + cle, "sc", corps);
+        });
+        return O;
+      });
+      return R;
+    });
+    return L;
+  });
+  ajoute("tree", "tree", arbre);
+  return { shards, blobs };
+}
+function syRecomposerScenario(m, opId, cle){
+  const corps = m["sc:" + opId + ":" + cle];
+  if(!corps) return null;
+  const s = JSON.parse(JSON.stringify(corps));
+  const rendre = (ref) => (ref && typeof ref === "object" && !Array.isArray(ref) && ref["$mx"]) ? (m[ref["$mx"]] || []).slice() : ref;
+  (s.essais || []).forEach(e => {
+    (e.marpossListe || []).forEach(x => { x.releves = rendre(x.releves); });
+    if(e.marposs) e.marposs.releves = rendre(e.marposs.releves);
+  });
+  return s;
+}
+function syAssembler(m){
+  const etat = {};
+  SY_CLES_PARTAGEES.forEach(k => { if(m["k:" + k] !== undefined) etat[k] = m["k:" + k]; });
+  if(m["tree"]){
+    etat.lignes = m["tree"].map(l => {
+      const L = Object.assign({}, l);
+      L.references = (l.references || []).map(r => {
+        const R = Object.assign({}, r);
+        R.ops = (r.ops || []).map(o => {
+          const O = Object.assign({}, o);
+          const ids = O.scenarioIds || [];
+          delete O.scenarioIds;
+          O.scenarios = ids.map(cle => syRecomposerScenario(m, o.id, cle)).filter(Boolean);
+          return O;
+        });
+        return R;
+      });
+      return L;
+    });
+  }
+  return etat;
+}
+
+/* ---------- fusion à trois voies ----------
+   base = ce qui existait à la dernière synchro ; local = ce que j'ai ; distant = ce que l'autre a déposé.
+   Objets : clé par clé. Listes d'objets portant un `id` : élément par élément (un ajout d'un côté et une
+   modification de l'autre se cumulent ; une suppression ne l'emporte que si l'autre côté n'y a pas touché).
+   Valeurs simples / listes sans id : vrai conflit — la valeur de `prefere` l'emporte et le conflit est noté. */
+function syListeId(a){ return Array.isArray(a) && a.every(x => syObjet(x) && typeof x.id === "string"); }
+function syFusion(base, local, distant, conflits, chemin, prefere){
+  chemin = chemin || "";
+  prefere = prefere || "local";
+  const egal = (a, b) => syCanon(a) === syCanon(b);
+  if(egal(local, distant)) return local;
+  if(base !== undefined && egal(local, base)) return distant;
+  if(base !== undefined && egal(distant, base)) return local;
+  if(syObjet(local) && syObjet(distant)){
+    const b = syObjet(base) ? base : {};
+    const sortie = {};
+    const cles = Object.keys(local).concat(Object.keys(distant).filter(k => !(k in local)));
+    cles.forEach(k => {
+      const lv = local[k], dv = distant[k], bv = b[k];
+      if(lv === undefined && dv === undefined) return;
+      if(lv === undefined){ if(bv !== undefined && egal(dv, bv)) return; sortie[k] = dv; return; }
+      if(dv === undefined){ if(bv !== undefined && egal(lv, bv)) return; sortie[k] = lv; return; }
+      sortie[k] = syFusion(bv, lv, dv, conflits, chemin + "." + k, prefere);
+    });
+    return sortie;
+  }
+  if(syListeId(local) && syListeId(distant) && (base === undefined || base === null || syListeId(base))){
+    const parId = (a) => { const m = {}; (a || []).forEach(x => { m[x.id] = x; }); return m; };
+    const lm = parId(local), dm = parId(distant), bm = parId(base);
+    const ordre = local.map(x => x.id).concat(distant.map(x => x.id).filter(id => !(id in lm)));
+    const sortie = [];
+    ordre.forEach(id => {
+      const l = lm[id], d = dm[id], bb = bm[id];
+      if(l && d){
+        // premier contact (aucune base commune) : pour une même fiche datée (un essai), la version la plus RÉCENTE gagne en
+        // entier — on ne mélange pas deux états d'un même essai dont on ne sait pas lequel a suivi l'autre
+        if(bb === undefined && typeof l.modifieLe === "string" && typeof d.modifieLe === "string" && l.modifieLe !== d.modifieLe && !egal(l, d)){
+          sortie.push(d.modifieLe > l.modifieLe ? d : l);
+          conflits.push({ chemin: chemin + "[" + id + "]", local: l.modifieLe, distant: d.modifieLe });
+          return;
+        }
+        sortie.push(syFusion(bb, l, d, conflits, chemin + "[" + id + "]", prefere)); return;
+      }
+      if(l && !d){ if(bb && egal(l, bb)) return; sortie.push(l); return; }
+      if(!l && d){ if(bb && egal(d, bb)) return; sortie.push(d); }
+    });
+    return sortie;
+  }
+  conflits.push({ chemin, local, distant });
+  return prefere === "distant" ? distant : local;
+}
+
+/* ---------- état de synchro de CE poste (persisté) ---------- */
+let syEtat = { espace: SY_ESPACE, curseur: 0, shards: {}, sales: {}, bases: {}, premier: false };
+const syMem = { dec: null, base: {}, blobs: {}, verrou: false, relance: false, timer: null, timerPoll: null,
+                erreur: "", membre: null, dernierOK: null, conflits: [], attente: 0 };
+try{
+  const brut = JSON.parse(localStorage.getItem(SY_CLE) || "null");
+  if(brut && brut.espace === SY_ESPACE) syEtat = Object.assign(syEtat, brut);
+}catch(e){}
+function sySauver(){
+  try{ localStorage.setItem(SY_CLE, JSON.stringify(syEtat)); }catch(e){ /* quota : la file d'attente reste en mémoire */ }
+}
+function syEtatLocal(){
+  syncActiveOp();
+  return JSON.parse(payloadSuivi());
+}
+/* compare l'état courant aux révisions connues : marque ce qui est à envoyer */
+function syCalculer(){
+  const dec = syDecouper(syEtatLocal());
+  Object.keys(dec.blobs).forEach(sha => { syMem.blobs[sha] = dec.blobs[sha]; });
+  const vus = {};
+  Object.keys(dec.shards).forEach(id => {
+    vus[id] = true;
+    const h = syHash(syCanon(dec.shards[id].body));
+    const rec = syEtat.shards[id];
+    if(!rec){ syEtat.sales[id] = true; }
+    else if(rec.hash !== h){
+      if(!syEtat.sales[id] && syMem.base[id] !== undefined && syEtat.bases[id] === undefined) syEtat.bases[id] = syMem.base[id];
+      syEtat.sales[id] = true;
+    } else {
+      delete syEtat.sales[id]; delete syEtat.bases[id];
+      syMem.base[id] = dec.shards[id].body;
+    }
+  });
+  Object.keys(syEtat.shards).forEach(id => {
+    if(!vus[id] && syEtat.sales[id] !== "suppr"){
+      if(syMem.base[id] !== undefined) syEtat.bases[id] = syMem.base[id];
+      syEtat.sales[id] = "suppr";
+    }
+  });
+  syMem.attente = Object.keys(syEtat.sales).length;
+  syMem.dec = dec;
+  return dec;
+}
+
+/* ---------- transport ---------- */
+async function syRpc(nom, corps){
+  const r = await cloudFetch(CLOUD_URL + "/rest/v1/rpc/" + nom, {
+    method: "POST", headers: cloudEntetes(), body: JSON.stringify(corps || {})
+  }, 45000);
+  if(!r.ok){
+    let msg = "cloud injoignable (" + r.status + ")";
+    try{ const j = await r.json(); if(j && (j.message || j.hint)) msg = j.message || j.hint; }catch(e){}
+    const err = new Error(msg);
+    if(r.status === 401 || r.status === 403 || /accès refusé|42501/.test(msg)) err.acces = true;
+    throw err;
+  }
+  const txt = await r.text();
+  return txt ? JSON.parse(txt) : null;
+}
+
+/* ---------- appliquer un état recomposé à l'application (sans les effets de bord d'un import) ---------- */
+function syAppliquerEtat(parts){
+  const nav = { l: activeLigneId, r: activeReferenceId, o: activeOpId, s: activeId, p: activeProjetId };
+  const brut = Object.assign({ format: 8, lignes, projets, responsables, backlog, specsUsine, livraisons, catalogue, plan,
+                               conso2025, consoReelle, planSource, consoSemaines, planReglages }, parts);
+  const migre = migrerArbre(brut);
+  if(!migre) throw new Error("synchro : arbre illisible");
+  cloudPause = true;
+  try{
+    lignes = migre.lignes;
+    projets = migre.projets;
+    responsables = migre.responsables;
+    projets.forEach(purgerTagsMorts);
+    activeProjetId = projets.find(x => x.id === nav.p) ? nav.p : null;
+    backlog = (brut.backlog || []).map(normalizeBacklogItem);
+    specsUsine = normaliserSpecsUsine(brut.specsUsine);
+    livraisons = (migre.livraisons || brut.livraisons || []).map(normalizeLivraison);
+    catalogue = (brut.catalogue || []).map(normalizeArticleCat);
+    plan = (brut.plan || []).map(normalizePlanEntry);
+    conso2025 = normalizeConso2025(brut.conso2025);
+    consoReelle = (brut.consoReelle && brut.consoReelle.parArticle) ? brut.consoReelle : null;
+    planSource = ["theo", "reel", "annuel"].indexOf(brut.planSource) !== -1 ? brut.planSource : (conso2025 ? "annuel" : "theo");
+    consoSemaines = (parseFloat(brut.consoSemaines) > 0) ? parseFloat(brut.consoSemaines) : 52;
+    planReglages = Object.assign({}, planReglages, (brut.planReglages && typeof brut.planReglages === "object") ? brut.planReglages : {});
+    // la navigation de CE poste est conservée
+    const l = lignes.find(x => x.id === nav.l) || lignes[0];
+    activeLigneId = l.id;
+    const r = l.references.find(x => x.id === nav.r) || l.references[0];
+    activeReferenceId = r ? r.id : null;
+    const op = r ? (r.ops.find(x => x.id === nav.o) || r.ops[0]) : null;
+    activeOpId = op ? op.id : null;
+    data = op ? op.scenarios : [];
+    config = op ? op.config : Object.assign({}, defaultConfig);
+    if(!data.find(s => s.baseline) && data.length) data[0].baseline = true;
+    activeId = data.find(s => s.id === nav.s) ? nav.s : (data[0] ? data[0].id : null);
+    recomputeCycles();
+    saveData();
+  } finally { cloudPause = false; }
+}
+/* une saisie est en cours : ne pas re-dessiner l'écran sous les doigts de quelqu'un */
+function syPeutAppliquer(){
+  try{
+    const a = document.activeElement;
+    if(a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA" || a.tagName === "SELECT" || a.isContentEditable)) return false;
+    const d = document.getElementById("dialogPanel");
+    if(d && !d.hidden) return false;
+  }catch(e){}
+  return true;
+}
+function syAttendreSaisie(){
+  return new Promise(resolve => {
+    let essais = 0;
+    const t = () => { if(syPeutAppliquer() || ++essais > 40) resolve(); else setTimeout(t, 1500); };
+    t();
+  });
+}
+
+/* ---------- recevoir ---------- */
+async function syBlobsAvoir(corpsParId, ids){
+  const manq = new Set();
+  ids.forEach(id => { if(corpsParId[id] !== undefined) syBlobsReferences(corpsParId[id], manq); });
+  [...manq].forEach(sha => { if(syMem.blobs[sha] !== undefined) manq.delete(sha); });
+  for(const sha of manq){
+    const d = await syRpc("sync_blob_get", { p_sha: sha });
+    if(typeof d === "string") syMem.blobs[sha] = d;
+  }
+}
+/* applique des enregistrements reçus (tirage ou conflit) : propre → on prend ; à envoyer → on fusionne */
+async function syAppliquerRecus(recus, prefere){
+  const dec = syMem.dec || syCalculer();
+  const corps = {};
+  Object.keys(dec.shards).forEach(id => { corps[id] = dec.shards[id].body; });
+  const nouveaux = recus.filter(r => { const rec = syEtat.shards[r.id]; return !rec || rec.rev < r.rev; });
+  if(!nouveaux.length) return 0;
+  await syBlobsAvoir(Object.fromEntries(nouveaux.filter(r => !r.supprime).map(r => [r.id, r.body])), nouveaux.filter(r => !r.supprime).map(r => r.id));
+  const conflits = [];
+  const aRegler = [];
+  nouveaux.forEach(r => {
+    const id = r.id, sale = syEtat.sales[id], loc = dec.shards[id], rec = syEtat.shards[id];
+    if(r.supprime){
+      if(!sale){ delete corps[id]; delete syEtat.shards[id]; delete syMem.base[id]; }
+      else { syEtat.shards[id] = { rev: r.rev, hash: rec ? rec.hash : "" }; }
+      return;
+    }
+    const hashDistant = syHash(syCanon(r.body));
+    if(!sale || !loc){
+      corps[id] = r.body;
+      syEtat.shards[id] = { rev: r.rev, hash: hashDistant };
+      syMem.base[id] = r.body;
+      aRegler.push(id);
+    } else {
+      const base = syEtat.bases[id];
+      corps[id] = syFusion(base, loc.body, r.body, conflits, id, prefere);
+      syEtat.shards[id] = { rev: r.rev, hash: hashDistant };
+      syEtat.bases[id] = r.body;
+      syMem.base[id] = r.body;
+      syEtat.sales[id] = true;
+    }
+  });
+  if(conflits.length){
+    conflits.forEach(c => syMem.conflits.push({ quand: new Date().toISOString(), chemin: c.chemin }));
+    if(syMem.conflits.length > 30) syMem.conflits = syMem.conflits.slice(-30);
+  }
+  const resolu = Object.fromEntries(Object.keys(corps).map(id => [id, syBlobsReinjecter(corps[id], sha => syMem.blobs[sha])]));
+  await syAttendreSaisie();
+  syAppliquerEtat(syAssembler(resolu));
+  if(typeof render === "function") render();
+  // la normalisation de l'application peut ajuster un enregistrement reçu : ce qui était propre le reste
+  const apres = syCalculer();
+  aRegler.forEach(id => {
+    if(apres.shards[id]){
+      syEtat.shards[id] = { rev: syEtat.shards[id].rev, hash: syHash(syCanon(apres.shards[id].body)) };
+      delete syEtat.sales[id]; delete syEtat.bases[id];
+      syMem.base[id] = apres.shards[id].body;
+    }
+  });
+  syMem.attente = Object.keys(syEtat.sales).length;
+  return nouveaux.length;
+}
+async function syTirer(){
+  const recus = [];
+  let curseur = syEtat.curseur;
+  for(;;){
+    const lot = await syRpc("sync_pull", { p_espace: SY_ESPACE, p_depuis: curseur, p_limite: 40 });
+    lot.forEach(r => recus.push(r));
+    if(lot.length) curseur = Math.max(curseur, ...lot.map(r => r.seq));
+    if(lot.length < 40) break;
+  }
+  let n = 0;
+  if(recus.length) n = await syAppliquerRecus(recus);
+  syEtat.curseur = curseur;
+  sySauver();
+  return n;
+}
+
+/* ---------- envoyer ---------- */
+async function syPousser(){
+  const ids = Object.keys(syEtat.sales);
+  if(!ids.length) return true;
+  const dec = syMem.dec || syCalculer();
+  const items = ids.map(id => {
+    const sup = syEtat.sales[id] === "suppr";
+    const rec = syEtat.shards[id];
+    return { id, kind: sup ? ((rec && rec.kind) || "") : dec.shards[id].kind, body: sup ? null : dec.shards[id].body, base_rev: rec ? rec.rev : 0, supprime: sup };
+  });
+  // pièces volumineuses : seulement celles que le serveur n'a pas
+  const shas = new Set();
+  items.forEach(it => { if(it.body) syBlobsReferences(it.body, shas); });
+  if(shas.size){
+    const manquants = await syRpc("sync_blobs_manquants", { p_shas: [...shas] });
+    for(const sha of (manquants || [])){
+      if(syMem.blobs[sha] !== undefined) await syRpc("sync_blob_put", { p_sha: sha, p_data: syMem.blobs[sha] });
+    }
+  }
+  // envois par paquets d'environ 1,5 Mo
+  const lots = []; let lot = [], poids = 0;
+  items.forEach(it => {
+    const p = JSON.stringify(it).length;
+    if(lot.length && poids + p > 1500000){ lots.push(lot); lot = []; poids = 0; }
+    lot.push(it); poids += p;
+  });
+  if(lot.length) lots.push(lot);
+  const conflitsServeur = [];
+  for(const l of lots){
+    const res = await syRpc("sync_push", { p_espace: SY_ESPACE, p_items: l });
+    (res || []).forEach(r => {
+      const it = l.find(x => x.id === r.id);
+      if(r.ok){
+        if(it && it.supprime){ delete syEtat.shards[r.id]; delete syMem.base[r.id]; }
+        else if(it){ syEtat.shards[r.id] = { rev: r.rev, hash: syHash(syCanon(it.body)), kind: it.kind }; syMem.base[r.id] = it.body; }
+        delete syEtat.sales[r.id]; delete syEtat.bases[r.id];
+      } else if(r.conflit){ conflitsServeur.push(r); }
+    });
+  }
+  syMem.attente = Object.keys(syEtat.sales).length;
+  sySauver();
+  if(conflitsServeur.length){
+    await syAppliquerRecus(conflitsServeur.map(r => ({ id: r.id, kind: "", body: r.body, rev: r.rev, seq: r.seq, supprime: r.supprime })));
+    return false;
+  }
+  return true;
+}
+
+/* ---------- premier contact : jamais de mélange silencieux ---------- */
+async function syLireTout(){
+  const tout = []; let c = 0;
+  for(;;){
+    const lot = await syRpc("sync_pull", { p_espace: SY_ESPACE, p_depuis: c, p_limite: 40 });
+    lot.forEach(r => tout.push(r));
+    if(lot.length) c = Math.max(c, ...lot.map(r => r.seq));
+    if(lot.length < 40) break;
+  }
+  return { tout, curseur: c };
+}
+async function syAdopterTout(lu){
+  await syBlobsAvoir(Object.fromEntries(lu.tout.filter(r => !r.supprime).map(r => [r.id, r.body])), lu.tout.filter(r => !r.supprime).map(r => r.id));
+  const corps = {};
+  syEtat.shards = {}; syEtat.sales = {}; syEtat.bases = {}; syMem.base = {};
+  lu.tout.forEach(r => {
+    if(r.supprime) return;
+    corps[r.id] = r.body;
+    syEtat.shards[r.id] = { rev: r.rev, hash: syHash(syCanon(r.body)), kind: r.kind };
+  });
+  const resolu = Object.fromEntries(Object.keys(corps).map(id => [id, syBlobsReinjecter(corps[id], sha => syMem.blobs[sha])]));
+  syAppliquerEtat(syAssembler(resolu));
+  if(typeof render === "function") render();
+  syEtat.curseur = lu.curseur;
+  syCalculer();
+  Object.keys(syEtat.shards).forEach(id => {
+    const dc = syMem.dec.shards[id];
+    if(dc){ syEtat.shards[id].hash = syHash(syCanon(dc.body)); delete syEtat.sales[id]; delete syEtat.bases[id]; syMem.base[id] = dc.body; }
+  });
+}
+async function syFusionnerTout(lu){
+  const dec = syMem.dec || syCalculer();
+  await syBlobsAvoir(Object.fromEntries(lu.tout.filter(r => !r.supprime).map(r => [r.id, r.body])), lu.tout.filter(r => !r.supprime).map(r => r.id));
+  const conflits = [];
+  const corps = {};
+  Object.keys(dec.shards).forEach(id => { corps[id] = dec.shards[id].body; });
+  lu.tout.forEach(r => {
+    if(r.supprime) return;
+    const loc = dec.shards[r.id];
+    syEtat.shards[r.id] = { rev: r.rev, hash: syHash(syCanon(r.body)), kind: r.kind };
+    if(!loc){ corps[r.id] = r.body; syMem.base[r.id] = r.body; return; }
+    corps[r.id] = syFusion(undefined, loc.body, r.body, conflits, r.id, "distant");
+    syEtat.bases[r.id] = r.body; syMem.base[r.id] = r.body;
+    syEtat.sales[r.id] = true;
+  });
+  const resolu = Object.fromEntries(Object.keys(corps).map(id => [id, syBlobsReinjecter(corps[id], sha => syMem.blobs[sha])]));
+  syAppliquerEtat(syAssembler(resolu));
+  if(typeof render === "function") render();
+  syEtat.curseur = lu.curseur;
+  syCalculer();
+  if(conflits.length) conflits.forEach(c => syMem.conflits.push({ quand: new Date().toISOString(), chemin: c.chemin }));
+}
+/* un poste neuf porte le jeu d'exemple et les lignes de base : sans essai RÉEL, il n'a rien à apporter au cloud */
+function syEssaisReels(){
+  let n = 0;
+  (lignes || []).forEach(l => (l.references || []).forEach(r => (r.ops || []).forEach(o => (o.scenarios || []).forEach(s => {
+    if(!(s.essais || []).length) return;
+    if(JSON.stringify([l.nom, r.nom, o.nom, s.name]).indexOf("[Exemple]") !== -1) return;
+    n += s.essais.length;
+  }))));
+  return n;
+}
+function syLocalEstExemple(){
+  return !(lignes || []).length || (JSON.stringify(lignes).indexOf("[Exemple]") !== -1 && syEssaisReels() === 0);
+}
+async function syPremierContact(){
+  const lu = await syLireTout();
+  const nLocal = syEssaisReels();
+  const exemple = syLocalEstExemple();
+  if(lu.tout.length === 0){
+    if(exemple){ syMem.erreur = "cloud vide — chargez le vrai suivi sur ce poste (import) avant de le déposer"; return false; }
+    const ok = await dialogueConfirmer("Le cloud est vide. Déposer le suivi de ce poste (" + nLocal + " essai(s)) pour le partager avec l'équipe ?\n\nIl deviendra la version partagée que les autres appareils recevront à leur connexion.", { titre: "Déposer ce suivi dans le cloud ?", okLabel: "Déposer" });
+    if(!ok) return false;
+    syEtat.premier = true; syEtat.curseur = lu.curseur; sySauver();
+    return true;
+  }
+  if(exemple){ await syAdopterTout(lu); syEtat.premier = true; sySauver(); return true; }
+  const nCloud = cloudCompterEssais(syAssembler(Object.fromEntries(lu.tout.filter(r => !r.supprime).map(r => [r.id, syBlobsReinjecter(r.body, sha => syMem.blobs[sha])]))).lignes);
+  const fusion = await dialogueConfirmer("Le cloud contient déjà un suivi (" + nCloud + " essai(s)) et ce poste aussi (" + nLocal + " essai(s)).\n\nFusionner les deux ? Rien n'est perdu : les essais, scénarios et réglages des deux côtés s'additionnent. Un export de secours de ce poste est téléchargé avant.", { titre: "Cloud — première connexion de ce poste", okLabel: "Fusionner" });
+  if(fusion){ cloudExportSecours("la fusion avec le cloud"); await syFusionnerTout(lu); syEtat.premier = true; sySauver(); return true; }
+  const prendre = await dialogueConfirmer("Prendre la version du cloud sur ce poste à la place ?\n\nLes données de ce poste seront remplacées. Un export de secours est téléchargé avant.", { titre: "Prendre la version du cloud ?", danger: true, okLabel: "Prendre le cloud" });
+  if(prendre){ cloudExportSecours("la prise de la version du cloud"); await syAdopterTout(lu); syEtat.premier = true; sySauver(); return true; }
+  return false;
+}
+
+/* ---------- le cycle ---------- */
+async function sySync(raison){
+  if(!cloudSession) return;
+  if(syMem.verrou){ syMem.relance = true; return; }
+  if(!(await cloudRafraichirSession())) return;
+  syMem.verrou = true;
+  syMem.erreur = "";
+  cloudRenduPastille();
+  try{
+    try{ syCalculer(); }catch(e){ journaliser("sync", e); }   // la file d'attente se voit même sans réseau
+    if(syMem.membre !== true){
+      const st = await syRpc("suivi_statut", {});
+      syMem.membre = !!(st && st.membre);
+    }
+    if(!syMem.membre){ syMem.erreur = "code d'équipe requis"; return; }
+    syCalculer();
+    if(!syEtat.premier){
+      const fait = await syPremierContact();
+      if(!fait) return;
+    }
+    for(let tour = 0; tour < 4; tour++){
+      await syTirer();
+      if(await syPousser()) break;
+      if(tour === 3) syMem.erreur = "modifications simultanées — nouvelle tentative au prochain contact";
+    }
+    syMem.dernierOK = new Date();
+  }catch(e){
+    syMem.erreur = (e && e.name === "AbortError") ? "cloud injoignable (délai dépassé)" : ((e && e.message) || "cloud injoignable");
+    if(e && e.acces) syMem.membre = false;
+  }finally{
+    syMem.verrou = false;
+    sySauver();
+    cloudRenduPastille();
+    const opt = document.getElementById("optionsPanel");
+    if(opt && !opt.hidden) cloudRenduOptions();
+    if(syMem.relance){ syMem.relance = false; syPlanifier(1500); }
+  }
+}
+function syPlanifier(delai){
+  clearTimeout(syMem.timer);
+  syMem.timer = setTimeout(() => { try{ syCalculer(); }catch(e){ journaliser("sync", e); } sySync("saisie"); }, delai === undefined ? 3000 : delai);
+}
+async function syRejoindre(code){
+  const r = await syRpc("suivi_rejoindre", { p_code: String(code || "").trim() });
+  if(r && r.ok){ syMem.membre = true; syMem.erreur = ""; sySync("equipe"); return true; }
+  return false;
+}
+function syResume(){
+  return { enAttente: syMem.attente || Object.keys(syEtat.sales).length, erreur: syMem.erreur, enCours: syMem.verrou,
+           membre: syMem.membre, dernierOK: syMem.dernierOK, premier: syEtat.premier, conflits: syMem.conflits.slice(-5), espace: SY_ESPACE };
+}
+
+</script>
+
+<script>
+/* ============================================================
    Cloud (v4.8) — synchro du suivi entre postes via Supabase
    ------------------------------------------------------------
    Le localStorage reste la copie de travail : l'outil marche hors ligne
@@ -21095,37 +21711,19 @@ verifierNouveautes();
    Client écrit à la main en fetch() : pas de SDK, le fichier unique et
    l'usage hors ligne (clé USB, proxy d'usine) restent la règle.
    ============================================================ */
-const CLOUD_URL  = "https://xlpfwvipdmgslwpbbfxs.supabase.co";
+const CLOUD_URL  = (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && localStorage.getItem("spk_cloud_url_test")) || "https://xlpfwvipdmgslwpbbfxs.supabase.co";
 const CLOUD_KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhscGZ3dmlwZG1nc2x3cGJiZnhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1NzEwNTgsImV4cCI6MjEwMDE0NzA1OH0.aTnjLh9whnNZG1HQSTyD1gVqUJZLGzfuTarvLdm-t6E";
 const CLOUD_SESSION_KEY = STORAGE_KEY + "_cloud_session";
 const CLOUD_STAMP_KEY   = STORAGE_KEY + "_cloud_stamp";
 const CLOUD_VU_KEY      = STORAGE_KEY + "_cloud_vu";
 
-/* ═══ v4.99.0 — LE CLOUD EST DÉBRANCHÉ SUR L'ADRESSE DE DÉVELOPPEMENT ═══════
-   Le fait : depuis le 20/10/2026, l'adresse de dev et la prod servent le MÊME
-   projet Supabase (`xlpfwvipdmgslwpbbfxs` — vérifié dans le code servi des deux
-   côtés). Conséquence : un poste qui ouvre l'URL de dev et y saisit quelque
-   chose dépose son état dans le cloud de la PROD. Benjamin : « le cloud est
-   branché sur la branche dev alors on le débranche ».
-
-   Ce que fait cette coupure, et pourquoi c'est ici :
-   · elle porte sur le CODE LIVRÉ, pas sur une configuration de poste : c'est
-     la seule façon que « le dev ne touche plus le cloud » soit vrai pour tout
-     le monde, y compris le poste de Matis qui ouvre un lien de dev ;
-   · elle coupe l'ÉCRITURE (dépôt d'état, envoi de photo), pas la LECTURE :
-     on peut encore consulter ce que le cloud contient, on ne peut plus y
-     déposer ;
-   · elle est VISIBLE : la pastille du pied de page et le panneau Options
-     disent « cloud débranché » au lieu de laisser croire que la synchro
-     fonctionne. Un mode silencieux serait pire que le problème.
-
-   L'envoyer en prod ferait couper le cloud de Matis — c'est exactement ce que
-   Benjamin ne veut pas. La liste des adresses autorisées est donc explicite,
-   et l'adresse de dev en est ABSENTE. */
-const CLOUD_ECRITURE_AUTORISEE = !/^suivi-optimisation-projet\.surge\.sh$/.test(location.hostname);
+/* v4.141 — « cloud débranché » sur le développement : REMPLACÉ par les espaces (SY_ESPACE). Le développement
+   a son espace, la production le sien : plus besoin de couper l'écriture, plus de risque de polluer la prod.
+   Les constantes restent (les appels existants les lisent) mais n'interdisent plus rien. */
+const CLOUD_ECRITURE_AUTORISEE = true;
 const CLOUD_HOTE = location.hostname;
-const CLOUD_ECRITURE_BLOQUEE = !CLOUD_ECRITURE_AUTORISEE;
-const CLOUD_MSG_BLOQUE = "Cloud débranché sur cette adresse (développement) — votre saisie reste sur ce poste, elle n'est pas déposée dans le suivi partagé.";
+const CLOUD_ECRITURE_BLOQUEE = false;
+const CLOUD_MSG_BLOQUE = "";
 
 /* une écriture refusée doit se voir, pas passer inaperçu : on trace l'appel
    et on lève une erreur explicite. L'appelant la rattrape et l'affiche. */
@@ -21373,72 +21971,6 @@ async function photoObjectURL(p){
 }
 
 /* ---- lectures / écritures de l'état partagé ---- */
-async function cloudLireEtat(){
-  const r = await cloudFetch(CLOUD_URL + "/rest/v1/etat?id=eq.1&select=donnees,modifie_le,modifie_par", { headers: cloudEntetes() });
-  if(!r.ok) throw new Error("cloud injoignable (" + r.status + ")");
-  const j = await r.json();
-  return j[0] || null;
-}
-/* v4.81.0 — la lecture LÉGÈRE : le tampon horaire seul, sans le `donnees`.
-   L'état partagé pèse 3 à 4 Mo ; chaque cycle de synchro qui le re-télécharge
-   en entier pour lire une date a épuisé le quota de bande sortante du plan
-   gratuit (exceed_egress_quota, 12/10/2026 — service restreint). Désormais la
-   synchro de routine passe par ici (~100 octets) et la lecture lourde ne se
-   paie que lorsqu'une décision a besoin du contenu : premier contact,
-   adoption, fusion. Mêmes décisions, même ordre — seul le poids du regard
-   change. */
-async function cloudLireTampon(){
-  const r = await cloudFetch(CLOUD_URL + "/rest/v1/etat?id=eq.1&select=modifie_le,modifie_par", { headers: cloudEntetes() });
-  if(!r.ok) throw new Error("cloud injoignable (" + r.status + ")");
-  const j = await r.json();
-  return j[0] || null;
-}
-/* Dépose la version locale : archive l'ancienne (historique 20 versions), écrit la
-   nouvelle, retient le tampon horaire renvoyé par la base (jamais calculé côté client). */
-async function cloudEcrireEtat(){
-  /* v4.99.0 — sur l'adresse de dev, le dépôt est REFUSÉ. Sans cette ligne, un poste
-     qui ouvre le dev et saisit dépose dans le cloud de la prod. */
-  if(CLOUD_ECRITURE_BLOQUEE) cloudRefuserEcriture("depot d'etat");
-  syncActiveOp();
-  const donnees = JSON.parse(payloadSuivi());
-  const avant = await cloudLireEtat();
-  if(avant){
-    await cloudFetch(CLOUD_URL + "/rest/v1/etat_historique", {
-      method:"POST", headers: cloudEntetes({ "Prefer":"return=minimal" }),
-      body: JSON.stringify({ donnees: avant.donnees, sauve_par: avant.modifie_par || "" })
-    });
-  }
-  const corps = { id:1, donnees, modifie_par: auteurNom || (cloudSession && cloudSession.email) || "" };
-  let r = await cloudFetch(CLOUD_URL + "/rest/v1/etat?id=eq.1", {
-    method:"PATCH", headers: cloudEntetes({ "Prefer":"return=representation" }),
-    body: JSON.stringify(corps)
-  });
-  if(!r.ok) throw new Error("cloud injoignable (" + r.status + ")");
-  let j = await r.json();
-  if(!j.length){
-    r = await cloudFetch(CLOUD_URL + "/rest/v1/etat", {
-      method:"POST", headers: cloudEntetes({ "Prefer":"resolution=merge-duplicates,return=representation" }),
-      body: JSON.stringify(corps)
-    });
-    if(!r.ok) throw new Error("cloud injoignable (" + r.status + ")");
-    j = await r.json();
-  }
-  cloudStamp = j[0].modifie_le;
-  cloudSauverStamp();
-  cloudSale = false;
-  cloudDernierOK = new Date();
-  cloudInfo = { vide:false, modifie_le: cloudStamp, modifie_par: corps.modifie_par };
-}
-async function cloudArchiverLeCloudActuel(row){
-  /* v4.99.0 — l'archive est une ÉCRITURE (POST dans etat_historique) : elle est
-     coupée sur l'adresse de dev comme le dépôt. */
-  if(CLOUD_ECRITURE_BLOQUEE) cloudRefuserEcriture("archivage");
-  await cloudFetch(CLOUD_URL + "/rest/v1/etat_historique", {
-    method:"POST", headers: cloudEntetes({ "Prefer":"return=minimal" }),
-    body: JSON.stringify({ donnees: row.donnees, sauve_par: row.modifie_par || "" })
-  });
-}
-
 /* ---- comptage d'essais, pour les résumés affichés avant décision ---- */
 function cloudCompterEssais(arbre){
   return (arbre || []).reduce((n,l) => n + (l.references || []).reduce((m,r) => m + (r.ops || []).reduce((k,o) =>
@@ -21470,156 +22002,34 @@ function cloudExportSecours(motif){
   }catch(e){}
 }
 
-/* applique la version du cloud au poste — le même chemin qu'un import « remplacer tout »,
-   avec son ↺ Restaurer et sa sauvegarde de sécurité ; silencieux = tirage de routine */
-async function cloudAdopter(row, silencieux){
-  const prep = preparerImportDepuis(row.donnees);
-  if(!prep){ cloudErreur = "contenu cloud illisible"; cloudRenduPastille(); return false; }
-  if(!silencieux) cloudExportSecours("la prise de la version du cloud");
-  const optionsOuvertes = !document.getElementById("optionsPanel").hidden;
-  cloudPause = true;
-  try{
-    importEnAttente = Object.assign({ parsed: row.donnees }, prep);
-    appliquerImport("remplace");
-  } finally { cloudPause = false; }
-  cloudStamp = row.modifie_le;
-  cloudSale = false;
-  cloudSauverStamp();
-  cloudDernierOK = new Date();
-  if(optionsOuvertes) ouvrirPanneau("optionsPanel");
-  return true;
-}
-
-/* premier contact avec un cloud déjà rempli : qui fait autorité ? Toujours demandé,
-   jamais tranché en silence — c'est la garde-fou « les données de Matis d'abord ». */
-async function cloudPremierContact(row){
-  const d = row.donnees || {};
-  const nCloud = cloudCompterEssais(d.lignes);
-  const quand = row.modifie_le ? new Date(row.modifie_le).toLocaleString("fr-FR") : "date inconnue";
-  const par = row.modifie_par || "inconnu";
-  const nLocal = cloudCompterEssais(lignes);
-  const ok = await dialogueConfirmer(
-    "Le cloud contient déjà un suivi : " + nCloud + " essai(s), dernière modification le " + quand + " par " + par + ".\n\n" +
-    "Votre version locale compte " + nLocal + " essai(s)" + (cloudLocalEstExemple() ? " et semble être le jeu d'exemple [Exemple]." : ".") + "\n\n" +
-    "Prendre la version du cloud sur ce poste ? Un export de secours de votre version locale sera téléchargé avant.",
-    { titre:"Cloud — ce poste et le cloud diffèrent", okLabel:"Prendre le cloud" });
-  if(ok){ await cloudAdopter(row, false); return; }
-  const ok2 = await dialogueConfirmer(
-    "Garder votre version locale et déposer celle-ci dans le cloud à la place ?\n\n" +
-    "La version actuellement dans le cloud ne est pas perdue : elle part dans l'historique (20 dernières versions gardées).",
-    { titre:"Déposer votre version à la place ?", danger:true, okLabel:"Déposer ma version" });
-  if(ok2){
-    try{ await cloudEcrireEtat(); cloudErreur = ""; }
-    catch(e){ cloudErreur = e.message || "dépôt impossible"; }
-  } else {
-    // on ne re-posera pas la question tant que le cloud n'a pas bougé
-    cloudStamp = row.modifie_le; cloudSauverStamp();
+/* ---- inscription : un compte se crée ici, l'ACCÈS se gagne avec le code d'équipe ---- */
+async function cloudInscription(email, motDePasse){
+  const r = await cloudFetch(CLOUD_URL + "/auth/v1/signup", {
+    method: "POST", headers: { "apikey": CLOUD_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password: motDePasse })
+  });
+  const j = await r.json().catch(() => ({}));
+  if(!r.ok){
+    const brut = j.error_description || j.msg || j.message || "inscription refusée";
+    throw new Error(/already registered|already been registered/i.test(brut) ? "Ce compte existe déjà : connectez-vous." : brut);
   }
-}
-
-/* le cloud a bougé pendant que ce poste avait des saisies non déposées : depuis la
-   v4.10, FUSION AUTOMATIQUE essai par essai (le plus récent gagne pour un même essai,
-   les essais de chacun s'ajoutent, les réglages du scénario restent à la version
-   locale) — plus de choix binaire « prendre / écraser ». Le bilan s'affiche dans le
-   panneau de fusion, la version du cloud remplacée part à l'archive, et le résultat
-   fusionné repart au cloud au prochain cycle avec une note embarquée que l'autre
-   poste lira à sa prochaine ouverture. */
-async function cloudConflit(row){
-  const quand = new Date(row.modifie_le).toLocaleString("fr-FR");
-  const par = row.modifie_par || "l'autre poste";
-  try{ await cloudArchiverLeCloudActuel(row); }catch(e){}
-  const prep = preparerImportDepuis(row.donnees);
-  if(!prep){ cloudErreur = "contenu cloud illisible"; cloudRenduPastille(); return; }
-  importEnAttente = Object.assign({ parsed: row.donnees }, prep);
-  const bilan = appliquerImport("fusion") || { essaisAjoutes:0, essaisMaj:0, essaisConserves:0, conflits:[] };
-  // dans le flux import, le panneau de bilan est déjà ouvert par le choix Fusionner ;
-  // ici il faut l'ouvrir soi-même — c'est le « message » qui raconte la fusion
-  if(bilan) ouvrirPanneau("importPanel");
-  synchroNote = {
-    par: auteurNom || (cloudSession && cloudSession.email) || "?",
-    quand: new Date().toISOString(),
-    texte: "fusion automatique après le dépôt de " + par + " (" + quand + ") : " +
-      bilan.essaisAjoutes + " essai(s) ajouté(s), " + bilan.essaisMaj + " mis à jour, " +
-      (bilan.essaisConserves || 0) + " conservé(s)" +
-      ((bilan.conflits && bilan.conflits.length) ? ", " + bilan.conflits.length + " conflit(s) à vérifier (rapport de fusion ci-dessous)" : "")
-  };
-  saveData(); // repersiste la note ; le dépôt du fusionné part au prochain cycle (4 s)
-  cloudStamp = row.modifie_le; // version du cloud vue et fusionnée
-  cloudSale = true;
-  cloudSauverStamp();
-  cloudDernierOK = new Date();
-}
-
-/* ---- le moteur : un aller-retour qui décrit tout ce qui peut se rencontrer ---- */
-async function cloudSync(raison){
-  /* v4.99.0 — adresse de dev : le cloud est DÉBRANCHÉ, donc le cycle ne fait
-     RIEN du tout. Sans cette sortie, la boucle périodique (90 s) continuerait de
-     lire le cloud de la prod et pourrait y FUSIONNER l'état de Matis par
-     surprise, sans que personne l'ait demandé. Sur dev : zéro appel cloud. */
-  if(CLOUD_ECRITURE_BLOQUEE) return;
-  if(!cloudSession || cloudEnCours) return;
-  if(!(await cloudRafraichirSession())) return;
-  cloudEnCours = true;
-  cloudRenduPastille();
-  try{
-    /* v4.81.0 — le tampon d'abord (~100 o), le contenu lourd seulement si une
-       décision l'exige. Le flux et l'ordre des décisions sont INCHANGÉS :
-       cloud vide → rien ; premier contact → dialogue ; bougé + saisies locales
-       → fusion ; bougé + poste propre → adoption silencieuse ; pas bougé +
-       saisies → dépôt ; rien → point d'horloge. */
-    const tampon = await cloudLireTampon();
-    cloudInfo = tampon
-      ? { vide:false, modifie_le: tampon.modifie_le, modifie_par: tampon.modifie_par }
-      : { vide:true, modifie_le:null, modifie_par:null };
-
-    if(!tampon){
-      // cloud vide : rien à tirer. Le dépôt initial reste volontaire (bouton dans
-      // Options) — jamais un effet de bord d'une saisie, sinon le jeu d'exemple
-      // d'un poste partirait au cloud par accident.
-      cloudDernierOK = new Date();
-      cloudErreur = "";
-      return;
-    }
-    if(cloudStamp === null){
-      await cloudPremierContact(await cloudLireEtat());
-      return;
-    }
-    if(tampon.modifie_le !== cloudStamp){
-      if(cloudSale){
-        await cloudConflit(await cloudLireEtat());
-      } else {
-        // tirage silencieux — le cas nominal. Si la version vient de l'autre poste et
-        // n'avait jamais été vue : message à l'ouverture (le journal de synchro).
-        const row = await cloudLireEtat();
-        const annonce = (tampon.modifie_le !== cloudVu) && ((tampon.modifie_par || "") !== cloudMonIdentite());
-        await cloudAdopter(row, true);
-        if(annonce) cloudAnnoncerVersion(row);
-      }
-    } else if(cloudSale){
-      await cloudEcrireEtat();               // dépôt automatique après saisie
-    } else {
-      cloudDernierOK = new Date();
-    }
-    if(!cloudErreur) cloudErreur = "";
-  }catch(e){
-    cloudErreur = (e && e.name === "AbortError") ? "cloud injoignable (délai dépassé)" : ((e && e.message) || "cloud injoignable");
-  }finally{
-    cloudEnCours = false;
-    cloudMarquerVu();
-    cloudRenduPastille();
-    const opt = document.getElementById("optionsPanel");
-    if(opt && !opt.hidden) cloudRenduOptions();
+  if(j.access_token){
+    cloudSession = { access_token: j.access_token, refresh_token: j.refresh_token,
+      expires_at: Date.now() + (j.expires_in || 3600) * 1000, email: (j.user && j.user.email) || email };
+    cloudSauverSession();
+    cloudRenduOptions(); cloudRenduPastille();
+    cloudSync("inscription");
+    return "connecte";
   }
+  return "confirmer";
 }
 
 /* ---- déclencheurs ---- */
 /* appelé par saveData() à chaque saisie (voir hook dans le script principal) */
 function cloudApresSauvegarde(){
   if(cloudPause || !cloudSession) return;
-  cloudSale = true;
+  syPlanifier(3000);
   cloudRenduPastille();
-  clearTimeout(cloudTimerPush);
-  cloudTimerPush = setTimeout(() => cloudSync("saisie"), 4000);
 }
 function cloudAuFocus(){
   if(!cloudSession) return;
@@ -21629,52 +22039,29 @@ function cloudAuFocus(){
   clearTimeout(cloudTimerFocus);
   cloudTimerFocus = setTimeout(() => cloudSync("focus"), 800);
 }
-
-/* dépôt initial volontaire (bouton Options, cloud vide) */
-async function cloudDeposerManuel(){
-  if(!cloudSession) return;
-  const nLocal = cloudCompterEssais(lignes);
-  const ok = await dialogueConfirmer(
-    "Déposer ce suivi dans le cloud ?\n\nIl compte " + nLocal + " essai(s). Il deviendra la version partagée que l'autre poste recevra à sa connexion." +
-    (cloudLocalEstExemple() ? "\n\nATTENTION : cette version semble être le jeu d'exemple [Exemple] — ne pas la déposer si le vrai suivi existe déjà sur un autre poste." : ""),
-    { titre:"Déposer ce suivi dans le cloud ?", danger: cloudLocalEstExemple(), okLabel:"Déposer" });
-  if(!ok) return;
-  cloudEnCours = true; cloudRenduPastille();
-  try{ await cloudEcrireEtat(); cloudErreur = ""; }
-  catch(e){ cloudErreur = e.message || "dépôt impossible"; }
-  cloudEnCours = false;
-  cloudRenduPastille(); cloudRenduOptions();
-}
+async function cloudSync(raison){ return sySync(raison); }
 
 /* ---- pastille de pied de page ---- */
 function cloudRenduPastille(){
   const el = document.getElementById("footCloud");
   if(!el) return;
-  /* v4.99.0 — sur l'adresse de dev, le cloud est DÉBRANCHÉ : on le dit, sinon la
-     pastille laisserait croire que la synchro fonctionne. */
-  if(CLOUD_ECRITURE_BLOQUEE){
-    el.hidden = false;
-    el.classList.remove("alerte","critique");
-    el.classList.add("alerte");
-    el.textContent = "☁ débranché";
-    el.title = CLOUD_MSG_BLOQUE;
-    return;
-  }
   if(!cloudSession){ el.hidden = true; return; }
   el.hidden = false;
-  el.classList.remove("alerte","critique");
-  let txt = "☁ à jour", title = "Synchro cloud du suivi";
-  if(cloudEnCours){ txt = "☁ synchro…"; }
-  else if(cloudErreur){
-    if(/conflit/.test(cloudErreur)){ txt = "☁ conflit"; el.classList.add("alerte"); }
-    else if(/expirée/.test(cloudErreur)){ txt = "☁ déconnecté"; el.classList.add("critique"); }
-    else { txt = "☁ hors ligne"; el.classList.add("alerte"); }
-    title += " — " + cloudErreur;
+  el.classList.remove("alerte", "critique");
+  const s = syResume();
+  const err = s.erreur || cloudErreur;
+  let txt = "☁ à jour", title = "Synchro du suivi — espace « " + s.espace + " »";
+  if(s.enCours){ txt = "☁ synchro…"; }
+  else if(err){
+    if(/code d'équipe/.test(err)){ txt = "☁ code d'équipe"; el.classList.add("alerte"); }
+    else if(/expirée/.test(err)){ txt = "☁ déconnecté"; el.classList.add("critique"); }
+    else if(/simultanées/.test(err)){ txt = "☁ à revoir"; el.classList.add("alerte"); }
+    else { txt = s.enAttente ? "☁ hors ligne · " + s.enAttente + " en attente" : "☁ hors ligne"; el.classList.add("alerte"); }
+    title += " — " + err;
   }
-  else if(cloudStamp === null && cloudInfo.vide === false){ txt = "☁ à régler"; el.classList.add("alerte"); title += " — première synchronisation à confirmer"; }
-  else if(cloudSale){ txt = "☁ en attente d'envoi"; }
-  else if(cloudInfo.vide){ txt = "☁ vide — dépôt à faire"; el.classList.add("alerte"); title += " — le cloud est vide : déposez ce suivi depuis Options"; }
-  if(cloudDernierOK && txt === "☁ à jour") title += " — dernière synchro " + cloudDernierOK.toLocaleTimeString("fr-FR");
+  else if(s.membre && !s.premier){ txt = "☁ à régler"; el.classList.add("alerte"); title += " — première synchronisation de ce poste à confirmer"; }
+  else if(s.enAttente){ txt = "☁ " + s.enAttente + " en attente"; title += " — envoi dans quelques secondes"; }
+  if(txt === "☁ à jour" && s.dernierOK) title += " — dernière synchro " + s.dernierOK.toLocaleTimeString("fr-FR");
   el.textContent = txt;
   el.title = title;
 }
@@ -21683,68 +22070,80 @@ function cloudRenduPastille(){
 function cloudRenduOptions(){
   const z = document.getElementById("cloudZone");
   if(!z) return;
-  /* v4.99.0 — adresse de dev : le cloud est DÉBRANCHÉ. On le dit EN TÊTE du
-     panneau, avant le formulaire de connexion : inutile de demander un mot de
-     passe pour un dépôt qui serait refusé. Le panneau reste visible (l'onglet
-     Cloud de Options doit toujours exister), il annonce simplement la règle. */
-  if(CLOUD_ECRITURE_BLOQUEE){
-    z.innerHTML = `
-      <label>Synchro entre postes <i class="opt-scope">Tous</i></label>
-      <div class="opt-statut ko" style="margin-top:6px;">
-        <b>Cloud débranché sur cette adresse.</b> ${CLOUD_MSG_BLOQUE}<br>
-        Le suivi partagé (Matis) reste sur l'adresse de production. Sur cette adresse
-        de développement, l'outil fonctionne normalement mais tout reste sur ce poste :
-        rien n'est déposé, rien n'est lu depuis le suivi partagé.
-      </div>`;
-    return;
-  }
+  const s = syResume();
   if(!cloudSession){
     z.innerHTML = `
-      <label>Synchro entre postes <i class="opt-scope">Tous</i></label>
-      <span class="opt-note" style="margin-bottom:10px; display:block;">Partage automatique du suivi entre vous et Matis : chaque saisie repart seule quelques secondes après, les modifications de l'autre arrivent à l'ouverture de l'outil ou en revenant sur l'onglet. Chaque poste garde sa copie locale — l'outil continue de marcher sans réseau.</span>
+      <label>Synchro entre appareils <i class="opt-scope">Tous</i></label>
+      <span class="opt-note" style="margin-bottom:10px; display:block;">Partage du suivi entre vos appareils et ceux de l'équipe (PC, tablette, iPhone) : seules les modifications voyagent, quelques secondes après chaque saisie. Chaque appareil garde sa copie locale — sans réseau l'outil continue de marcher, et l'envoi reprend au retour du Wi-Fi.</span>
       <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
         <input type="email" id="cloudEmail" placeholder="email" autocomplete="username" style="flex:1 1 170px; min-width:150px; text-align:left;">
-        <input type="password" id="cloudMdp" placeholder="mot de passe" autocomplete="current-password" style="flex:1 1 130px; min-width:120px; text-align:left;">
+        <input type="password" id="cloudMdp" placeholder="mot de passe (8 caractères mini)" autocomplete="current-password" style="flex:1 1 130px; min-width:120px; text-align:left;">
+      </div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
         <button class="primary" id="cloudBtnConnexion">Se connecter</button>
+        <button class="ghost" id="cloudBtnInscription">Créer un compte</button>
       </div>
       <div class="opt-statut ko" id="cloudErreurUI" ${cloudErreur ? "" : "hidden"} style="margin-top:8px;"></div>`;
-    const btn = z.querySelector("#cloudBtnConnexion");
+    const montrer = (msg) => { const e = z.querySelector("#cloudErreurUI"); e.hidden = false; e.textContent = msg; };
+    const lire = () => ({ email: z.querySelector("#cloudEmail").value.trim(), mdp: z.querySelector("#cloudMdp").value });
+    const btn = z.querySelector("#cloudBtnConnexion"), btnI = z.querySelector("#cloudBtnInscription");
     btn.addEventListener("click", async () => {
-      const email = z.querySelector("#cloudEmail").value.trim();
-      const mdp = z.querySelector("#cloudMdp").value;
-      if(!email || !mdp){
-        const e = z.querySelector("#cloudErreurUI"); e.hidden = false; e.textContent = "Email et mot de passe requis.";
-        return;
-      }
+      const { email, mdp } = lire();
+      if(!email || !mdp){ montrer("Email et mot de passe requis."); return; }
       btn.disabled = true; btn.textContent = "Connexion…";
       try{ await cloudConnexion(email, mdp); }
-      catch(err){
-        btn.disabled = false; btn.textContent = "Se connecter";
-        const e = z.querySelector("#cloudErreurUI"); e.hidden = false; e.textContent = err.message || "Connexion impossible.";
-      }
+      catch(err){ btn.disabled = false; btn.textContent = "Se connecter"; montrer(err.message || "Connexion impossible."); }
+    });
+    btnI.addEventListener("click", async () => {
+      const { email, mdp } = lire();
+      if(!email || mdp.length < 8){ montrer("Email et mot de passe d'au moins 8 caractères requis."); return; }
+      btnI.disabled = true;
+      try{
+        const r = await cloudInscription(email, mdp);
+        if(r === "confirmer") montrer("Compte créé. Si un e-mail de confirmation vous est envoyé, cliquez le lien, puis revenez ici vous connecter. Vous donnerez ensuite le code d'équipe.");
+      }catch(err){ montrer(err.message || "Inscription impossible."); }
+      btnI.disabled = false;
     });
     z.querySelector("#cloudMdp").addEventListener("keydown", ev => { if(ev.key === "Enter") btn.click(); });
     return;
   }
-  const dernier = cloudDernierOK ? cloudDernierOK.toLocaleString("fr-FR") : "—";
-  let etatCloud;
-  if(cloudInfo.vide === null) etatCloud = "non encore lu";
-  else if(cloudInfo.vide) etatCloud = "<b>vide</b> — ce poste peut y déposer son suivi";
-  else etatCloud = "dernier dépôt le " + new Date(cloudInfo.modifie_le).toLocaleString("fr-FR") + " par <b>" + escapeAttr(cloudInfo.modifie_par || "?") + "</b>";
+  const dernier = s.dernierOK ? s.dernierOK.toLocaleString("fr-FR") : "—";
+  if(s.membre === false || (s.erreur && /code d'équipe/.test(s.erreur))){
+    z.innerHTML = `
+      <label>Rejoindre l'équipe <i class="opt-scope">Tous</i></label>
+      <span class="opt-note" style="display:block; margin-bottom:8px;">Connecté en tant que <b>${escapeAttr(cloudSession.email || "?")}</b>. Pour accéder au suivi partagé, saisissez le code d'équipe (donné par Benjamin).</span>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+        <input type="text" id="cloudCode" placeholder="code d'équipe" autocomplete="off" autocapitalize="characters" style="flex:1 1 170px; min-width:150px; text-align:left;">
+        <button class="primary" id="cloudBtnCode">Rejoindre</button>
+        <button class="ghost" id="cloudBtnSortir">Se déconnecter</button>
+      </div>
+      <div class="opt-statut ko" id="cloudErreurUI" hidden style="margin-top:8px;"></div>`;
+    const montrer = (msg) => { const e = z.querySelector("#cloudErreurUI"); e.hidden = false; e.textContent = msg; };
+    const b = z.querySelector("#cloudBtnCode");
+    b.addEventListener("click", async () => {
+      const code = z.querySelector("#cloudCode").value.trim();
+      if(!code){ montrer("Saisissez le code d'équipe."); return; }
+      b.disabled = true;
+      try{ if(!(await syRejoindre(code))) montrer("Code incorrect."); }
+      catch(err){ montrer(err.message || "Impossible de vérifier le code."); }
+      b.disabled = false;
+    });
+    z.querySelector("#cloudCode").addEventListener("keydown", ev => { if(ev.key === "Enter") b.click(); });
+    z.querySelector("#cloudBtnSortir").addEventListener("click", cloudDeconnexion);
+    return;
+  }
+  const err = s.erreur || cloudErreur;
   z.innerHTML = `
-    <label>Connexion <i class="opt-scope">Tous</i></label>
-    <span class="opt-note" style="display:block; margin-bottom:8px;">Connecté en tant que <b>${escapeAttr(cloudSession.email || "?")}</b> — dernière synchro ${dernier}.</span>
-    <span class="opt-note" style="display:block; margin-bottom:10px;">État du cloud : ${etatCloud}.</span>
+    <label>Synchro <i class="opt-scope">Tous</i></label>
+    <span class="opt-note" style="display:block; margin-bottom:6px;">Connecté en tant que <b>${escapeAttr(cloudSession.email || "?")}</b> — espace « ${escapeAttr(s.espace)} » — dernière synchro ${dernier}.</span>
+    <span class="opt-note" style="display:block; margin-bottom:10px;">${s.enAttente ? "<b>" + s.enAttente + " enregistrement(s)</b> en attente d'envoi." : "Rien en attente : tout est parti."}${s.premier ? "" : " <b>Première synchronisation de ce poste à confirmer</b> : cliquez « Synchroniser maintenant »."}${s.conflits.length ? " " + s.conflits.length + " modification(s) simultanée(s) fusionnée(s) récemment." : ""}</span>
     <div style="display:flex; gap:8px; flex-wrap:wrap;">
-      ${cloudInfo.vide ? `<button class="primary" id="cloudBtnDeposer">Déposer ce suivi</button>` : ""}
-      <button class="ghost" id="cloudBtnSync">Synchroniser maintenant</button>
+      <button class="primary" id="cloudBtnSync">Synchroniser maintenant</button>
       <button class="ghost" id="cloudBtnSortir">Se déconnecter</button>
     </div>
-    <div class="opt-statut ko" id="cloudErreurUI" ${cloudErreur ? "" : "hidden"} style="margin-top:8px;"></div>`;
+    <div class="opt-statut ko" id="cloudErreurUI" ${err ? "" : "hidden"} style="margin-top:8px;"></div>`;
   const errUI = z.querySelector("#cloudErreurUI");
-  if(cloudErreur){ errUI.hidden = false; errUI.textContent = cloudErreur; }
-  const d = z.querySelector("#cloudBtnDeposer");
-  if(d) d.addEventListener("click", cloudDeposerManuel);
+  if(err){ errUI.hidden = false; errUI.textContent = err; }
   z.querySelector("#cloudBtnSync").addEventListener("click", async (ev) => {
     ev.target.disabled = true; ev.target.textContent = "Synchronisation…";
     await cloudSync("manuel");
@@ -21757,14 +22156,17 @@ function cloudDemarrage(){
   if(btnOpt) btnOpt.addEventListener("click", cloudRenduOptions);
   document.addEventListener("visibilitychange", () => { if(!document.hidden) cloudAuFocus(); });
   window.addEventListener("focus", cloudAuFocus);
-  setInterval(() => cloudSync("periode"), 90000);
+  window.addEventListener("online", () => cloudSync("reseau"));
+  // les modifications des autres arrivent seules : un coup d'œil léger toutes les 25 s tant que l'écran est visible
+  setInterval(() => { if(!document.hidden && cloudSession) cloudSync("periode"); }, 25000);
   const el = document.getElementById("footCloud");
   if(el) el.addEventListener("click", () => {
+    const s = syResume();
     dialogueAlerte(cloudSession
-      ? "Synchro cloud : " + (cloudErreur || ("à jour" + (cloudDernierOK ? " (dernier échange " + cloudDernierOK.toLocaleTimeString("fr-FR") + ")" : ""))) + ".\nLe détail et les actions sont dans Options, section Cloud."
-      : "Synchro cloud désactivée : connectez-vous dans Options, section Cloud.", "Synchro cloud");
+      ? "Synchro : " + (s.erreur || cloudErreur || ("à jour" + (s.dernierOK ? " (dernier échange " + s.dernierOK.toLocaleTimeString("fr-FR") + ")" : ""))) + ".\nEspace « " + s.espace + " ». " + (s.enAttente ? s.enAttente + " enregistrement(s) en attente. " : "") + "Le détail et les actions sont dans Options, section Synchro."
+      : "Synchro désactivée : connectez-vous dans Options, section Synchro.", "Synchro");
   });
-  if(cloudSession) cloudSync("demarrage");
+  if(cloudSession){ try{ syCalculer(); }catch(e){ journaliser("sync", e); } cloudSync("demarrage"); }
   cloudRenduPastille();
 }
 cloudDemarrage();
@@ -25430,22 +25832,55 @@ function runTests(){
 
 
 
-  /* v4.81.0 — portes du tampon léger. La règle protégée : la synchro de
-     routine ne télécharge JAMAIS le `donnees` complet — elle lit le tampon
-     (`select=modifie_le,modifie_par`) et ne paie la lecture lourde que sur
-     décision (premier contact, adoption, fusion). On vérifie la porte par
-     typeof ET la légèreté par la requête que la fonction écrit : un test qui
-     ne regarderait que la présence de la fonction accepterait un
-     `cloudLireTampon` qui télécharge 4 Mo. */
-  ok("porte cloud : cloudLireTampon existe et est async",
-     typeof cloudLireTampon, "function");
-  ok("porte cloud : le tampon lit modifie_le,modifie_par — JAMAIS le donnees",
-     [cloudLireTampon.toString().indexOf("select=modifie_le,modifie_par") >= 0,
-      cloudLireTampon.toString().indexOf("select=donnees") >= 0], [true, false]);
-  ok("porte cloud : cloudSync passe par le tampon AVANT toute lecture lourde",
-     [cloudSync.toString().indexOf("cloudLireTampon()") >= 0,
-      cloudSync.toString().indexOf("cloudLireTampon()") < cloudSync.toString().indexOf("cloudLireEtat()")],
-     [true, true]);
+  /* v4.141 — SYNCHRO V2 : les propriétés du moteur (fonctions pures). Elles remplacent les portes du « tampon léger »
+     de la v4.81 : l'ancienne règle (« ne jamais télécharger tout le suivi ») est maintenant garantie par construction —
+     il n'existe plus de lecture ni d'écriture du suivi entier — et vérifiée dans le fichier par la porte du harnais. */
+  {
+    const gros = "data:image/png;base64," + "A".repeat(SY_BLOB_MIN + 10);
+    const fx = { lignes:[{ id:"L1", nom:"EMAG", references:[{ id:"R1", ops:[{ id:"O1", config:{ limitValue:0.12 }, scenarios:[
+        { id:"s1", name:"A", outils:[{ id:"t1", plan:gros }], essais:[{ id:"e1", titre:"E1", prelevements:[{ id:"p1", piece:1, batt:"0.02" }],
+            marpossListe:[{ id:"mj1", releves:[{ heure:"08:00:00", valeur:"0.03", date:"2026-11-02" }] }], marposs:{ debut:"", fin:"", releves:[] } }] },
+        { id:"s1", name:"meme id", essais:[] }
+      ] }] }] }], projets:[{ id:"pj1", nom:"P" }], specsUsine:{ battement:0.04, ve:0.01, defauts:[] } };
+    const d = syDecouper(fx);
+    const ids = Object.keys(d.shards).sort();
+    ok("sync : la découpe donne structure, réglages, scénarios (même id distingué) et extraction Marposs",
+       ids, ["k:projets", "k:specsUsine", "mx:O1:s1:e1:mj1", "sc:O1:s1", "sc:O1:s1~1", "tree"]);
+    ok("sync : une pièce volumineuse sort du JSON (1 pièce, plus aucun « data: » dans l'enregistrement)",
+       [Object.keys(d.blobs).length, JSON.stringify(d.shards["sc:O1:s1"].body).indexOf("data:") === -1], [1, true]);
+    const corps = Object.fromEntries(ids.map(id => [id, syBlobsReinjecter(d.shards[id].body, sha => d.blobs[sha])]));
+    ok("sync : découper puis recomposer redonne exactement l'état d'origine",
+       syCanon(syAssembler(corps).lignes), syCanon(fx.lignes));
+    ok("sync : projets et réglages recomposés à l'identique",
+       [syCanon(syAssembler(corps).projets), syCanon(syAssembler(corps).specsUsine)], [syCanon(fx.projets), syCanon(fx.specsUsine)]);
+    const fx2 = JSON.parse(JSON.stringify(fx)); fx2.lignes[0].references[0].ops[0].scenarios[0].essais[0].operateur = "Matis";
+    const d2 = syDecouper(fx2);
+    const changes = Object.keys(d2.shards).filter(id => syHash(syCanon(d2.shards[id].body)) !== syHash(syCanon(d.shards[id].body)));
+    ok("sync : modifier un champ d'essai ne change qu'UN enregistrement (celui du scénario)", changes, ["sc:O1:s1"]);
+    ok("sync : l'empreinte ne dépend pas de l'ordre des clés", syHash(syCanon({ a:1, b:{ c:2, d:3 } })), syHash(syCanon({ b:{ d:3, c:2 }, a:1 })));
+    const fus = (b, l, di, pref) => { const c = []; return { v: syFusion(b, l, di, c, "", pref), c }; };
+    let r = fus({ a:1, b:2 }, { a:1, b:3 }, { a:5, b:2 });
+    ok("sync fusion : des champs différents modifiés des deux côtés se cumulent", [r.v, r.c.length], [{ a:5, b:3 }, 0]);
+    r = fus({ a:1 }, { a:2 }, { a:3 });
+    ok("sync fusion : même champ modifié des deux côtés = conflit noté, le local l'emporte", [r.v.a, r.c.length], [2, 1]);
+    r = fus({ a:1 }, { a:2 }, { a:3 }, "distant");
+    ok("sync fusion : ... ou le distant au premier contact (le cloud fait autorité)", r.v.a, 3);
+    const base = { essais:[{ id:"e1", n:1 }, { id:"e2", n:2 }] };
+    r = fus(base, { essais:[{ id:"e1", n:1 }, { id:"e2", n:2 }, { id:"e3", n:3 }] }, { essais:[{ id:"e1", n:1 }, { id:"e2", n:22 }] });
+    ok("sync fusion : un ajout local et une modification distante se cumulent", r.v.essais.map(x => [x.id, x.n]), [["e1", 1], ["e2", 22], ["e3", 3]]);
+    r = fus(base, { essais:[{ id:"e1", n:1 }] }, { essais:[{ id:"e1", n:1 }, { id:"e2", n:2 }] });
+    ok("sync fusion : supprimé localement, inchangé ailleurs = supprimé", r.v.essais.map(x => x.id), ["e1"]);
+    r = fus(base, { essais:[{ id:"e1", n:1 }] }, { essais:[{ id:"e1", n:1 }, { id:"e2", n:99 }] });
+    ok("sync fusion : supprimé localement mais modifié ailleurs = conservé (aucune perte)", r.v.essais.map(x => x.id), ["e1", "e2"]);
+    r = fus(undefined, { liste:[{ id:"a" }] }, { liste:[{ id:"b" }] });
+    ok("sync fusion : sans base (premier contact), les éléments des deux côtés s'additionnent", r.v.liste.map(x => x.id).sort(), ["a", "b"]);
+    r = fus({ t:[1, 2] }, { t:[1, 2, 3] }, { t:[1, 2, 4] });
+    ok("sync fusion : liste sans identifiant modifiée des deux côtés = conflit noté", r.c.length, 1);
+    r = fus(undefined, { essais:[{ id:"e1", operateur:"ancien", modifieLe:"2026-10-01T08:00:00Z" }] }, { essais:[{ id:"e1", operateur:"récent", modifieLe:"2026-11-02T09:00:00Z" }] });
+    ok("sync fusion : premier contact, un même essai des deux côtés = le plus récent gagne en entier", [r.v.essais[0].operateur, r.c.length], ["récent", 1]);
+    r = fus(undefined, { essais:[{ id:"e1", operateur:"récent", modifieLe:"2026-11-02T09:00:00Z" }] }, { essais:[{ id:"e1", operateur:"ancien", modifieLe:"2026-10-01T08:00:00Z" }] });
+    ok("sync fusion : ... quel que soit le côté qui le porte", r.v.essais[0].operateur, "récent");
+  }
 
   /* v4.81.1 — LA PORTE DE L'IMPORT. Toute la chaîne du bouton « 📂 Importer » passe
      par preparerImportDepuis : depuis la 4.53.0, sa ligne livraisons lisait `source`

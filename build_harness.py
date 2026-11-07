@@ -731,34 +731,30 @@ try {
          pourrait y fusionner l'état de Matis par surprise.
      Elle vérifie aussi que la PASTILLE et le PANNEAU Options l'annoncent :
      un débranchement muet laisserait croire que la synchro fonctionne. */
-  (function cloudDe_brancheSurDev(){
+  (function cloudParEspaces(){
     const fs = require('fs');
     const html = fs.readFileSync('bilan_economique.html', 'utf8');
     const echecs = [];
     const blocs = {
-      test_hote: html.indexOf('CLOUD_ECRITURE_AUTORISEE') !== -1
-        && html.indexOf('suivi-optimisation-projet') !== -1
-        && html.indexOf('location.hostname') !== -1,
-      depot_etat: /async function cloudEcrireEtat\(\)\{[\s\S]{0,400}?CLOUD_ECRITURE_BLOQUEE/.test(html),
-      envoi_photo: /async function cloudPhotoEnvoyer\([^)]*\)\{[\s\S]{0,300}?CLOUD_ECRITURE_BLOQUEE/.test(html),
-      archivage: /async function cloudArchiverLeCloudActuel\([^)]*\)\{[\s\S]{0,300}?CLOUD_ECRITURE_BLOQUEE/.test(html),
-      retrait_bucket: /async function cloudPhotoSupprimer\([^)]*\)\{[\s\S]{0,300}?CLOUD_ECRITURE_BLOQUEE/.test(html),
-      connexion: /async function cloudConnexion\([^)]*\)\{[\s\S]{0,300}?CLOUD_ECRITURE_BLOQUEE/.test(html),
-      cycle_sort: /async function cloudSync\([^)]*\)\{[\s\S]{0,400}?CLOUD_ECRITURE_BLOQUEE/.test(html),
-      pastille_visible: /cloudRenduPastille\(\)\{[\s\S]{0,600}?CLOUD_ECRITURE_BLOQUEE/.test(html) && /☁ débranché/.test(html),
-      panneau_visible: /cloudRenduOptions\(\)\{[\s\S]{0,800}?CLOUD_ECRITURE_BLOQUEE/.test(html) && /Cloud débranché/.test(html),
-      /* la coupure doit etre CONDITIONNELLE : la prod et le poste local ne
-         doivent PAS etre bloques. On verifie que le nom de la prod n'apparait
-         jamais dans une liste d'interdits, et que la condition est bien un
-         test d'hote (pas une constante « toujours bloque »). */
-      prod_pas_bloquee: (html.indexOf('INTERDITS') === -1 || html.indexOf('INTERDITS') > html.indexOf('suivi-optimisation-septfons'))
-        && /CLOUD_ECRITURE_AUTORISEE\s*=\s*!/.test(html),
-      poste_local_pas_bloque: html.indexOf('suivi-optimisation-septfons') === -1
-        || html.indexOf('CLOUD_ECRITURE_AUTORISEE') !== -1
+      /* chaque adresse a son ESPACE : la prod ne partage jamais ses enregistrements avec le dev */
+      espace_prod: /SY_ESPACE[\s\S]{0,160}septfons[\s\S]{0,40}"prod"/.test(html),
+      espace_dev: /projet\\\.surge[\s\S]{0,60}"dev"/.test(html),
+      espace_inconnu_isole: html.indexOf('"test-" + String(location.hostname') !== -1,
+      /* plus de lecture ni d ecriture du suivi ENTIER : ni la table etat, ni un select=donnees */
+      pas_de_table_etat: html.indexOf('/rest/v1/etat') === -1,
+      pas_de_select_donnees: html.indexOf('select=donnees') === -1,
+      rpc_pull: html.indexOf('"sync_pull"') !== -1,
+      rpc_push: html.indexOf('"sync_push"') !== -1,
+      /* la concurrence optimiste : chaque envoi porte la revision qu il croit remplacer */
+      base_rev: html.indexOf('base_rev') !== -1,
+      equipe_par_code: html.indexOf('suivi_rejoindre') !== -1,
+      pieces_a_part: html.indexOf('sync_blob_put') !== -1 && html.indexOf('sync_blobs_manquants') !== -1,
+      fusion_trois_voies: html.indexOf('function syFusion(') !== -1,
+      file_hors_ligne: html.indexOf('syEtat.sales') !== -1 && html.indexOf('SY_CLE') !== -1
     };
-    Object.keys(blocs).forEach(k => { if(!blocs[k]) echecs.push('coupure absente : ' + k); });
+    Object.keys(blocs).forEach(k => { if(!blocs[k]) echecs.push('absent : ' + k); });
     if(echecs.length) r.echecs += echecs.length;
-    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'cloud 4.99 : le cloud est debranche sur l adresse de dev (11/11 points verifies dans le fichier reel)' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'cloud 4.141 : synchro par enregistrement, espaces prod/dev, equipe par code, pieces a part (12/12 points verifies dans le fichier reel)' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
   /* ── v4.100 — LA COQUE EST DANS LE REPO GIT ──────────────────────────────
@@ -1574,6 +1570,31 @@ try {
     if (html.indexOf('id="pfSimul"') !== -1) echecs.push('le simulateur de prix a retrouvé un bouton');
     if (echecs.length) r.echecs += echecs.length;
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.135.0 : l’essentiel par défaut, Détails, menu Outils, simulateur retiré' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
+  /* ── v4.141.0 — synchro v2 : par enregistrement, fusion à trois voies, hors ligne, équipe par code ── */
+  (function lot4141Synchro(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const lire = function(f){ try { return fs.readFileSync(path.join(REPO, f), 'utf8'); } catch (e) { return ''; } };
+    const html = lire('bilan_economique.html'), sql = lire(path.join('supabase', 'migrations', '20261108_suivi_sync_v2.sql'));
+    if (html.indexOf('function syDecouper(') === -1) echecs.push('la découpe en enregistrements a disparu');
+    if (html.indexOf('function syFusion(') === -1) echecs.push('la fusion à trois voies a disparu');
+    if (html.indexOf('async function sySync(') === -1) echecs.push('le cycle de synchro a disparu');
+    if (html.indexOf('function cloudInscription(') === -1) echecs.push('l inscription a disparu');
+    if (html.indexOf('syEssaisReels') === -1) echecs.push('la reconnaissance d un poste sans données réelles a disparu');
+    if (html.indexOf('même sans réseau') === -1) echecs.push('la file d attente n est plus calculée avant le réseau');
+    if (html.indexOf('l.modifieLe > ') === -1 && html.indexOf('d.modifieLe > l.modifieLe') === -1) echecs.push('l arbitrage par date de modification a disparu');
+    if (!sql) echecs.push('la migration serveur n est plus dans le dépôt');
+    else {
+      if (sql.indexOf('suivi_est_membre') === -1) echecs.push('le serveur ne filtre plus par équipe');
+      if (sql.indexOf('revoke all on function public.sync_push') === -1) echecs.push('sync_push est de nouveau exécutable par tous');
+      if (sql.indexOf('enable row level security') === -1) echecs.push('RLS retirée des tables de synchro');
+    }
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.141.0 : synchro v2 — par enregistrement, fusion, hors ligne, équipe par code' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
   /* ── v4.140.0 — atelier mobile : variante, création rapide, champs 16 px, conseil iOS ── */

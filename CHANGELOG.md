@@ -5,6 +5,42 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.141.0] — 2026-11-08 · synchro v2 : par enregistrement, fusion à trois voies, hors ligne, équipe par code · Claude
+
+Besoin de Benjamin : tablette et iPhone en atelier pour relever et créer des scénarios en direct → il faut que les appareils
+se partagent le suivi. L'ancienne synchro (v4.8) déposait TOUT le suivi (3 à 4 Mo) dans une ligne à chaque saisie (cause du
+dépassement de quota d'octobre), s'écrasait entre appareils, était vide depuis le 15/10, et son accès reposait sur « tout compte
+connecté » alors que l'inscription est ouverte sur ce projet. **Remplacée.** (1) **Découpe** : `syDecouper` — un enregistrement par
+scénario (`sc:<op>:<id>`), par extraction Marposs (`mx:…`, les relevés sortent du scénario), par réglage partagé (`k:<nom>`) et la
+structure `tree` ; les pièces volumineuses (> 3 ko en `data:`) sortent du JSON, adressées par empreinte. Aller-retour exact vérifié
+sur l'export d'audit (62 enregistrements) et sur l'export de Matis (90). Une saisie d'essai = 1 enregistrement ≈ 6,8 Ko au lieu
+de 3,6 Mo. (2) **Concurrence optimiste** : chaque envoi porte la révision qu'il croit remplacer ; si l'autre appareil est passé
+avant, **fusion à trois voies** (`syFusion` : base, local, distant ; objets clé par clé, listes à `id` élément par élément, aucune
+perte sur « supprimé ici / modifié là-bas », conflit de valeur = local gagne et conflit consigné). Premier contact sans base : pour
+un même essai, la date `modifieLe` la plus récente gagne en entier. (3) **Hors ligne d'abord** : le localStorage reste la copie de
+travail ; la file d'attente (`syEtat.sales`, bases des enregistrements en attente) est persistée, calculée AVANT le réseau et visible
+dans la pastille ; reprise au retour du réseau / à la mise au premier plan / toutes les 25 s tant que l'écran est visible. Un
+écran n'est jamais redessiné sous une saisie en cours. (4) **Premier contact** jamais silencieux : cloud vide → proposition de
+déposer (refusée si le poste n'a que le jeu d'exemple) ; poste neuf (exemple + lignes de base, aucun essai réel) → adoption ;
+deux jeux de données → fusion avec export de secours, ou prendre le cloud. (5) **Serveur** (`supabase/migrations/20261108_suivi_sync_v2.sql`,
+appliquée au projet `xlpfwvipdmgslwpbbfxs`, uniquement objets `suivi_*` / `sync_*`) : accès par **appartenance à l'équipe** (code
+d'équipe haché, 8 essais/heure) ; aucune écriture directe, tout par fonctions `security definer` ; historique des 10 dernières
+révisions ; **espaces** prod / dev / test par adresse (fin du « cloud débranché » du dev : le développement a son espace, la production
+le sien). Les anciennes règles « tout compte connecté » de `etat`, `etat_historique` et du dossier `photos` sont resserrées aux membres.
+Contrôlé : 11 cas SQL (non-membre refusé, code, force brute, conflit, curseur, espaces, suppression, pièces, accès direct aux tables
+impossible, historique) dans une transaction annulée ; depuis l'extérieur, les 5 fonctions répondent 401 aux anonymes et les tables
+sont vides. (6) **Interface** : Options → Synchro (créer un compte / se connecter / code d'équipe / état, file d'attente, conflits
+fusionnés), pastille ☁. (7) **Tests** : +13 propriétés dans `runTests`, porte « cloud 4.141 » (12 points) et porte du lot, remplaçant
+les portes de l'ancienne architecture (adresse de dev débranchée, tampon léger) ; `outils/e2e_sync.py` + `outils/serveur_factice_supabase.mjs` :
+DEUX appareils (deux processus, chacun son stockage) exécutent le vrai code de l'application contre un serveur factice qui reproduit
+la logique SQL — 24 contrôles (dépôt, adoption sans bruit, saisie unitaire, fusion de champs différents, conflit sur le même champ,
+hors ligne puis reprise, ajout et suppression de scénario). **Limite honnête** : le trajet complet avec un VRAI compte Supabase n'a pas
+été joué (inscription = geste de l'utilisateur) ; la logique serveur est éprouvée en SQL et celle du client contre un double fidèle.
+**Constat à traiter** : `spk_suivi_optimisation_v1_history` (5 instantanés de tout le suivi) pèse jusqu'à 10 Mo localement — la vraie
+charge du stockage, hors « Poids du suivi ». **Hors périmètre, à signaler** : sur ce projet partagé, `reports` et `activity_log` (autre
+application) sont ouverts à `anon`, et `get_app_key()` est exécutable par tout compte connecté. Aucune fonction de calcul touchée.
+743 tests | 0 échec + portes.
+
 ## [4.140.0] — 2026-11-08 · atelier mobile : variante en direct, création rapide, champs 16 px, conseil iOS · Claude
 
 Besoin de Benjamin : tablette et iPhone en atelier pour les relevés et la création de scénarios en direct. Audit sur écran
