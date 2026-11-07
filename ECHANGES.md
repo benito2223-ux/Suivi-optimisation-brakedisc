@@ -193,6 +193,12 @@ Matis doivent tenir le MÊME état (v3) — une correction d'un côté recrée d
 lignées. Consigne Matis : import v3, Remplacer tout, ne pas cliquer la correction.
 
 
+### ▸ Tour 121 — 07/11/2026 — **Claude** (v4.138.1 — l'outil sans marque ; branche `ux-rail`)
+
+Benjamin : « enlève toute mention SPK ou CeramTec ». Fait sur tout le visible et tout ce qui part chez un destinataire (voir CHANGELOG 4.138.1) : rail, titres, rapports, bilan client, exports, manifeste, icônes, CSS, Nouveautés, commentaires livrés ; « cible SPK » devient « cible ». Les identifiants techniques (clés de stockage, classes CSS, noms de fichiers, cache SW, id du manifeste, champ `relSpk`) restent : les renommer sans migration ferait perdre ses données à Matis. Contrôle : porte « lot 4.138.1 » (mot isolé, point final compris, testée sur texte contaminé) ; rendu vérifié (rail « Suivi », rapports et bilan client sans marque, manifeste neutre). 730 tests | 0 échec.
+
+**Décision en attente** : lot de migration des identifiants (clés de stockage avec relecture des anciennes, classes CSS, noms de fichiers, id du manifeste — ce dernier fait réinstaller l'application chez Matis) si tu veux une base de code entièrement neutre. Non publié : `dev` et PROD restent en 4.138.0 (la neutralité n'est effective chez Matis qu'après publication).
+
 ### ▸ Tour 120 — 05/11/2026 — **Claude** (v4.138.0 — Marposs 3 : le défaut suivi, deux bornes, courbes avec moyennes ; branche `ux-rail`)
 
 Retour de Matis (mail 04/11 12:55 + export rev434, 7 suggestions au backlog). Fait : catalogue de défauts (battement et VE = specs usine, autres défauts saisis dans Options, rangés dans `specsUsine.defauts` donc exportés/cloudés sans nouvelle clé), menu « Défaut suivi » par extraction, tolérance à deux bornes (`tol` = max, `tolMin`), conformité et stats sur les deux bornes, graphique avec ligne du zéro, moyenne de la journée (gris) et de l'essai (bleu), relecture automatique des anciens relevés (`26/08/26 00/00/21` → date + heure : sa première extraction avait ni graphe ni moyenne d'essai). Vérifié sur son export réel : 198 pièces dans l'essai, moyenne 0,0292 ; défaut « Parallélisme » ±0,08 sur l'extraction 3, deux lignes rouges, catalogue persisté. 730 tests | 0 échec (+23) + porte lot 4.138. Aucune fonction de calcul touchée.

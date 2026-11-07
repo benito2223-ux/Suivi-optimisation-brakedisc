@@ -5,6 +5,22 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.138.1] — 2026-11-07 · l'outil sans marque : plus aucun nom ni logo SPK / CeramTec · Claude
+
+Demande de Benjamin : « enlève toute mention SPK ou CeramTec ». **Périmètre retenu : tout ce qui se voit ou part chez un
+destinataire** — interface (marque du rail : « Suivi »), titres d'onglet et de page, rapports d'essai / de validation /
+bilan client (logo retiré, « Interlocuteur CeramTec » → « Interlocuteur outillage », pied « outil de suivi OP10 »), exports
+(JSON `outil`, CSV du Plan), manifeste de l'application installée, favicons et icônes (remplacés par une icône neutre
+générée), CSS (`content:`), historique des Nouveautés, commentaires du code livré. Le vocabulaire métier perd la marque :
+« cible SPK » → « cible », « durée de vie SPK » → « durée de vie cible », « prix SPK » → « prix cible ». `LOGO_SPK_SRC`
+→ `LOGO_RAPPORT_SRC` (vide : plus de logo sur les rapports). **Volontairement PAS touchés** (invisibles, mais les renommer
+casserait des données ou l'installation) : clés de stockage `spk_suivi_optimisation_v1…` (données de Matis), classes CSS et
+fichiers `spk-app.css` / `spk-shell.js`, cache du service worker, `id` du manifeste, `planReglages.relSpk` (champ stocké) ;
+à traiter dans un lot de migration si l'on veut une base de code entièrement neutre. L'import accepte toujours les anciens
+fichiers (aucune vérification du champ `outil`). Porte « lot 4.138.1 » : échoue si un mot isolé SPK / CeramTec revient dans
+les six fichiers livrés (testée sur un texte contaminé : 3/3, point final compris). 730 tests | 0 échec. `dev` et PROD non
+touchées (PROD 4.138.0). Repo : README, PDF du mode d'emploi, AGENTS et documents de travail non modifiés.
+
 ## [4.138.0] — 2026-11-05 · Marposs 3 : le défaut suivi, deux bornes, courbes avec moyennes · Claude
 
 Retour de Matis (mail du 04/11 + backlog des 02 et 03/11, export rev434). (1) **Catalogue de défauts** :

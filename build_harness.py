@@ -299,7 +299,7 @@ try {
 
       ['--blue','--white',     "le bleu d'action sur une carte"],
 
-      ['--red','--white',      'le rouge CeramTec sur une carte']
+      ['--red','--white',      'le rouge de la charte sur une carte']
 
     ];
 
@@ -335,11 +335,11 @@ try {
 
 
 
-  /* ── v4.80 — L'IDENTITÉ SPK, ÉCRITE SOIT QU'ELLE PUISSE REVENIR ───────────
+  /* ── v4.80 — L'IDENTITÉ VISUELLE, ÉCRITE SOIT QU'ELLE PUISSE REVENIR ───────────
 
      Constat du Tour 56 : on a restauré la palette v3.15 et surtout la
 
-     hiérarchie de forme (Open Sans Condensed / Open Sans / IBM Plex Mono — brand guide SPK, 4.109). Le contre-regard
+     hiérarchie de forme (Open Sans Condensed / Open Sans / IBM Plex Mono — charte graphique, 4.109). Le contre-regard
 
      a montré qu'UNE SEULE de ces valeurs était gardée : remettre
 
@@ -421,11 +421,11 @@ try {
 
 
 
-    /* 1. la palette de l'identité SPK by CeramTec (v3.15, restaurée en 4.80) */
+    /* 1. la palette de l'identité visuelle (v3.15, restaurée en 4.80) */
 
     porte("le bleu d'action", tok['--blue'], '#1B5EA6');
 
-    porte('le rouge CeramTec', tok['--red'], '#E2001A');
+    porte('le rouge de la charte', tok['--red'], '#E2001A');
 
     porte('le fond de page est gris, pas blanc', tok['--bg'], '#e8eaed');
 
@@ -451,7 +451,7 @@ try {
 
     const body = (tok['--font-body'] || '').split(',')[0].trim().replace(/^'|'$/g, '');
 
-    porte('les titres ont leur propre famille', disp, 'Open Sans Condensed');  /* v4.109 — brand guide SPK */
+    porte('les titres ont leur propre famille', disp, 'Open Sans Condensed');  /* v4.109 — charte graphique */
 
     joues++;
 
@@ -487,7 +487,7 @@ try {
 
     } else {
 
-      console.log('  ok  identité : Open Sans Condensed est embarquée en base64 (aucun appel réseau — brand guide SPK)');
+      console.log('  ok  identité : Open Sans Condensed est embarquée en base64 (aucun appel réseau — charte graphique)');
 
     }
 
@@ -1433,8 +1433,8 @@ try {
         const bloc = html.slice(iPgo, iPgo + 900);
         if (bloc.indexOf('.hd-left img') !== -1)
           echecs.push('printGo lit encore le logo retiré de l en-tête (TypeError assurée)');
-        if (bloc.indexOf('LOGO_SPK_SRC') === -1)
-          echecs.push('printGo ne lit pas le logo A4 embarqué (LOGO_SPK_SRC)');
+        if (bloc.indexOf('LOGO_RAPPORT_SRC') === -1)
+          echecs.push('printGo ne lit pas le logo A4 embarqué (LOGO_RAPPORT_SRC)');
       }
       /* (2) l'anti-flash : le cache, la révélation après le premier rendu,
          et le filet à 5 s (si le rendu meurt, la page doit se montrer quand même) */
@@ -1574,6 +1574,28 @@ try {
     if (html.indexOf('id="pfSimul"') !== -1) echecs.push('le simulateur de prix a retrouvé un bouton');
     if (echecs.length) r.echecs += echecs.length;
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.135.0 : l’essentiel par défaut, Détails, menu Outils, simulateur retiré' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
+  /* ── v4.138.1 — l'outil ne porte plus de nom ni de logo de marque ── */
+  (function lot4138Neutre(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const lire = function(f){ try { return fs.readFileSync(path.join(REPO, f), 'utf8'); } catch (e) { return ''; } };
+    /* un mot seul « SPK » ou « CeramTec » : les identifiants techniques (spk-app, spk_xxx, LOGO_..)
+       sont d'un seul tenant et ne comptent pas. Le découpage évite toute regex à échapper. */
+    const fichiers = ['bilan_economique.html', 'spk-shell.js', 'spk-app.css', 'manifest.webmanifest', 'index.html', 'service-worker.js'];
+    fichiers.forEach(function(f){
+      const mots = lire(f).split(/[^A-Za-z0-9_$-]+/);  /* le point sépare : « …CeramTec. » compte */
+      const trouves = mots.filter(function(m){ const b = m.toLowerCase(); return b === 'spk' || b === 'ceramtec'; });
+      if (trouves.length) echecs.push(f + ' : ' + trouves.length + ' mention(s) de marque');
+    });
+    const html = lire('bilan_economique.html');
+    if (html.indexOf('const LOGO_RAPPORT_SRC = ""') === -1) echecs.push('le logo de rapport est revenu');
+    if (html.indexOf('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAlgAAAD6CAYAAAB9LTkQ') !== -1) echecs.push('l ancien logo est revenu');
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.138.1 : aucun nom ni logo de marque dans l outil' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
   /* ── v4.138.0 — Marposs 3 : catalogue de defauts, bornes min/max, anciennes lignes ── */
@@ -2228,7 +2250,7 @@ try {
     const html = fs.readFileSync('bilan_economique.html', 'utf8');
     const n = html.split('prixSpk').length - 1;
     if (n) r.echecs += 1;
-    console.log((n ? '  ECHEC ' : '  ok  ') + 'prix SPK défaut : le source ne référence plus prixSpk (décision 20/10 dans la source, plus dans le build)' + (n ? ' — ' + n + ' occurrence(s)' : ''));
+    console.log((n ? '  ECHEC ' : '  ok  ') + 'prix cible par défaut : le source ne référence plus prixSpk (décision 20/10 dans la source, plus dans le build)' + (n ? ' — ' + n + ' occurrence(s)' : ''));
   })();
 
   (function coqueDansLeRepoGit(){
@@ -2284,7 +2306,7 @@ try {
     // (3) la coque est complete
     if (css.indexOf('.spk-rail') === -1) echecs.push('spk-app.css ne definit pas le rail');
     if (shell.indexOf('spk-rail') === -1) echecs.push('spk-shell.js ne construit pas le rail');
-    /* v4.109 (brand guide SPK, Tour 91) : les polices de la coque sont
+    /* v4.109 (charte graphique, Tour 91) : les polices de la coque sont
        Open Sans Condensed / Open Sans — Barlow/Public Sans de
        l'auto-designer sont retirées. La porte suit : la déclaration
        doit être là, et la police retirée ne doit pas revenir. */

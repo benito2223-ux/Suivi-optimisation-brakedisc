@@ -1,7 +1,7 @@
 {
-  "name": "Suivi_optimisation_SPK",
-  "short_name": "Suivi SPK",
-  "description": "Suivi d'essais et bilan économique — SPK by CeramTec",
+  "name": "Suivi d'optimisation",
+  "short_name": "Suivi",
+  "description": "Suivi d'essais et bilan économique",
   "id": "spk-suivi-optimisation-septfons",
   "start_url": "./bilan_economique.html",
   "scope": "./",

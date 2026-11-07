@@ -1,4 +1,4 @@
-/* SPK — coque de navigation et surfaces de travail.
+/* Coque de navigation et surfaces de travail.
    Ne touche pas aux données : déplace la navigation existante dans un rail,
    ajoute un bouton de sortie aux surfaces plein écran et marque l'onglet actif.
    v4 (20/10/2026) : rail repliable au glissement, version reprise de l'app. */
@@ -25,7 +25,7 @@
 
   rail.innerHTML = [
     '<div class="spk-rail-head">',
-    '  <div class="spk-rail-mark">SPK<span>by CeramTec</span></div>',
+    '  <div class="spk-rail-mark">Suivi<span>d\'optimisation</span></div>',
     '  <div class="spk-rail-title">Suivi d’optimisation</div>',
     '</div>',
     '<div class="spk-rail-label">Parcours</div>',
@@ -459,7 +459,7 @@
       { lib: "Tableau de bord", sous: "les chiffres de toutes les lignes", f: () => { const x = document.getElementById("dashboardBtn"); if (x) x.click(); } },
       { lib: "Vue CPP", sous: "le coût pièce obtenu vs la référence, OP par OP", f: () => window.ouvrirVueCpp && window.ouvrirVueCpp() },
       { lib: "Catalogue", sous: "un MABEC = un prix ; import / export CSV", f: () => window.ouvrirCatalogue && window.ouvrirCatalogue() },
-      { lib: "Plan de conversion", sous: "article par article, la cible SPK et le gain", f: () => window.ouvrirPlan && window.ouvrirPlan() },
+      { lib: "Plan de conversion", sous: "article par article, la cible et le gain", f: () => window.ouvrirPlan && window.ouvrirPlan() },
       { lib: "Dossier de visite", sous: "ce qui s'est passé depuis la dernière visite", f: () => window.ouvrirVisite && window.ouvrirVisite() }
     ];
     const btn = document.createElement("button");

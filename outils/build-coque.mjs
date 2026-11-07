@@ -1,5 +1,5 @@
 /* ============================================================================
-   Suivi_optimisation_SPK — build de la coque UI
+   Suivi d'optimisation — build de la coque UI
    ----------------------------------------------------------------------------
    QUE FAIT CE SCRIPT
    Il prend le monolithe `bilan_economique.html` du repo git et lui ajoute la
@@ -127,12 +127,12 @@ remplacer(
 const ETAT_VIDE_PLAN = `
 <div class="plan-empty">
   <div class="plan-empty-copy">
-    <p class="plan-empty-kicker">Le passage à SPK, article par article</p>
+    <p class="plan-empty-kicker">Le passage à la cible, article par article</p>
     <h2>La production devient une feuille de route.</h2>
-    <p class="plan-empty-lead">Dès qu'un scénario est en production, chaque article est chiffré ici : consommation actuelle, cible SPK, seuil de neutralité et gain annuel. Tu décides de l'étape de chaque ligne — le potentiel ne compte que ce que tu as réellement posé.</p>
+    <p class="plan-empty-lead">Dès qu'un scénario est en production, chaque article est chiffré ici : consommation actuelle, cible, seuil de neutralité et gain annuel. Tu décides de l'étape de chaque ligne — le potentiel ne compte que ce que tu as réellement posé.</p>
     <ol class="plan-empty-steps">
       <li><span>01</span><div><b>Chiffrer</b><p>Le plan reprend les articles et leurs volumes de production.</p></div></li>
-      <li><span>02</span><div><b>Proposer</b><p>La cible SPK et le prix cible se règlent ligne par ligne.</p></div></li>
+      <li><span>02</span><div><b>Proposer</b><p>La cible et le prix cible se règlent ligne par ligne.</p></div></li>
       <li><span>03</span><div><b>Gagner</b><p>Le gain annuel se calcule en direct ; le CSV part en réunion.</p></div></li>
     </ol>
     <button class="primary" type="button" onclick="fermerPanneaux(); document.getElementById('addBtn').click();">Créer un scénario de production</button>
@@ -140,7 +140,7 @@ const ETAT_VIDE_PLAN = `
   <div class="plan-empty-preview" aria-label="Aperçu d'une ligne du plan">
     <div class="pep-top"><span>APERÇU</span><b>KY3500 → LKT640</b></div>
     <div class="pep-line"><span>Prix actuel</span><b>8,40 €</b></div>
-    <div class="pep-line"><span>Cible SPK</span><b>5,00 €</b></div>
+    <div class="pep-line"><span>Cible</span><b>5,00 €</b></div>
     <div class="pep-line"><span>Seuil de neutralité</span><b>60 %</b></div>
     <div class="pep-gain"><span>Gain annuel</span><b>− 12 400 €</b></div>
     <p>Exemple de lecture. Les chiffres réels viennent de tes scénarios en production.</p>
@@ -164,7 +164,7 @@ if (ANCRE_PLAN_VIDE.test(html)) {
    -------------------------------------------------------------------------- */
 
 /* --------------------------------------------------------------------------
-   5. Le prix SPK par defaut est sorti du code A LA SOURCE (v4.103.0).
+   5. Le prix cible par defaut est sorti du code A LA SOURCE (v4.103.0).
       Decision Benjamin du 20/10 (« chaque plaquette a son prix »), d'abord
       appliquee par ce build en detournant le monolithe — ce qui faisait
       DIVERGER les deux mondes : le harnais testait des comportements

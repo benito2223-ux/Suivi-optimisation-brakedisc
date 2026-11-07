@@ -1,6 +1,6 @@
 /* ==========================================================================
-   SPK — Console d'atelier
-   Couche de thème appliquée à Suivi_optimisation_SPK v4.38.
+   Console d'atelier
+   Couche de thème appliquée à Suivi d'optimisation v4.38.
    Le JavaScript métier n'est pas modifié. Toutes les règles ci-dessous sont
    limitées à l'écran : les styles d'impression existants restent intacts.
    ========================================================================== */
@@ -71,7 +71,7 @@
     --on-fill-bad: #ffb3bd;
     --on-fill-warn: #ffd08a;
 
-    /* v4.109 — brand guide SPK : --font-cond / --font (les faces sont embarquées
+    /* v4.109 — charte graphique : --font-cond / --font (les faces sont embarquées
        en base64 par l'app ; Barlow/Public Sans de l'auto-designer retirées). */
     --font-disp: 'Open Sans Condensed', 'Open Sans', Arial, sans-serif;
     --font-body: 'Open Sans', 'Segoe UI', Arial, sans-serif;
@@ -2775,7 +2775,7 @@ body.spk-has-rail {
 }
 
 #planPanel > h3::before {
-  content: "Commercial · conversion SPK";
+  content: "Commercial · conversion";
 }
 
 #simulPanel > h3::before {
@@ -3100,7 +3100,7 @@ body.spk-has-rail {
 }
 
 #planPanel .simul-table td:nth-child(5)::before {
-  content: "Cible SPK";
+  content: "Cible";
 }
 
 #planPanel .simul-table td:nth-child(9) {

@@ -1,5 +1,5 @@
 /* ============================================================================
-   Suivi_optimisation_SPK — service worker (v4.100.2 — mise a jour a chaud)
+   Suivi d'optimisation — service worker (v4.100.2 — mise a jour a chaud)
    ----------------------------------------------------------------------------
    Rend l'outil INSTALLABLE (PWA) et pousse les mises à jour sans jamais
    désinstaller/réinstaller : l'app installée se relance avec la dernière
