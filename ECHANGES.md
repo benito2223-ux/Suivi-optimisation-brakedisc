@@ -193,6 +193,12 @@ Matis doivent tenir le MÊME état (v3) — une correction d'un côté recrée d
 lignées. Consigne Matis : import v3, Remplacer tout, ne pas cliquer la correction.
 
 
+### ▸ Tour 123 — 08/11/2026 — **Claude** (v4.140.0 — atelier mobile ; branche `ux-rail`)
+
+Benjamin : « on continue le code pour arriver à l'app parfaite ; détail important : tablette et iPhone pour les relevés de mesures et la création de scénarios en live dans l'atelier ». Audit tactile puis lot (voir CHANGELOG 4.140.0) : champs à 16 px (zoom Safari), rappel qui ne masque plus le relevé, « Variante » (copie sans essais) + création rapide sur tactile, conseil iOS (effacement à 7 jours). 730/0 + porte + 27 contrôles d'interaction. Vérifié sur émulation, pas sur un vrai iPhone.
+
+**Décision en attente — la synchronisation entre appareils, bloquante pour le « live »** : sans elle, un relevé pris sur l'iPhone reste sur l'iPhone. Cadrage proposé (rien de codé) : synchro par enregistrement (un essai = une ligne, jamais le JSON entier), fusion champ par champ, file d'attente hors ligne (le WiFi d'atelier tombe), pièces jointes hors du JSON, comptes nominatifs (liste d'e-mails déjà en place). Deux questions à trancher avant : (1) les données d'essais de l'usine Stellantis peuvent-elles résider sur un Supabase personnel (accord de Matis / DSI Stellantis ?) ; (2) l'iPhone / la tablette sont-ils personnels ou d'atelier, et le réseau de l'atelier laisse-t-il passer supabase.co ? `dev` et PROD non touchées (PROD 4.138.0).
+
 ### ▸ Tour 122 — 07/11/2026 — **Claude** (v4.139.0 — fondations ; branche `ux-rail`)
 
 Suite de la revue de l'outil en PROD (Chrome) : voir CHANGELOG 4.139.0. Fait : doctype + lang + repères (mode standard, mesuré sans écart horizontal sur 7 écrans × 3 largeurs), rail sur fenêtre basse, noms accessibles, journal technique + « Signaler un problème », tests d'interaction (`#tests-ui`, 23 contrôles verts sur l'état d'audit et sur l'export de Matis, contrôle négatif fait). Incident consigné : un `git stash` lancé par erreur a rangé mes modifications en cours ; restaurées sans perte (`git stash pop`), copie de travail repassée en LF (`core.autocrlf` la remet en CRLF à chaque stash/changement de branche : toujours vérifier `fins de ligne : LF` au build). Piège du build : tout ce qui est entre le commentaire des tests et l'appel `#tests` est retiré du livré, et le livré ne doit contenir aucun nom `runTests` — d'où `testsInteraction` et sa place avant le bloc des tests (porte du lot).

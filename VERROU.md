@@ -6,6 +6,10 @@
 
 ---
 
+✅ **Verrou pris puis libéré par Claude le 08/11/2026** (Tour 123, branche `ux-rail`, v4.140.0 —
+atelier mobile : variante en direct, création rapide, champs 16 px, conseil iOS).
+730 tests | 0 échec + porte lot 4.140 + 27 contrôles d'interaction. **`dev` et PROD non touchées (PROD 4.138.0).**
+
 ✅ **Verrou pris puis libéré par Claude le 07/11/2026** (Tour 122, branche `ux-rail`, v4.139.0 —
 fondations : mode standard, repères, rail fenêtre basse, noms accessibles, signalement, tests d'interaction).
 730 tests | 0 échec + porte lot 4.139 + 23 contrôles d'interaction. **`dev` et PROD non touchées (PROD 4.138.0).**

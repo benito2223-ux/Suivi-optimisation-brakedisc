@@ -1576,6 +1576,28 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.135.0 : l’essentiel par défaut, Détails, menu Outils, simulateur retiré' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  /* ── v4.140.0 — atelier mobile : variante, création rapide, champs 16 px, conseil iOS ── */
+  (function lot4140Atelier(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const lire = function(f){ try { return fs.readFileSync(path.join(REPO, f), 'utf8'); } catch (e) { return ''; } };
+    const html = lire('bilan_economique.html'), js = lire('spk-shell.js'), css = lire('spk-app.css');
+    if (html.indexOf('function creerVariante(') === -1) echecs.push('la variante de scénario a disparu');
+    if (html.indexOf('data-action="variante"') === -1) echecs.push('le bouton Variante a disparu');
+    if (html.indexOf('function nouveauScenarioRapide(') === -1) echecs.push('la création rapide a disparu');
+    if (html.indexOf('function ajouterScenarioVide(') === -1) echecs.push('le scénario vide n est plus une fonction');
+    if (html.indexOf('copy.essais = []; copy.scrapLog = [];') === -1) echecs.push('la variante ne vide plus les essais');
+    if (js.indexOf('function ecranTactile') === -1) echecs.push('la couche écran tactile a disparu de la coque');
+    if (js.indexOf('el.style.fontSize = "16px"') === -1) echecs.push('les champs ne passent plus à 16 px (zoom iPhone)');
+    if (js.indexOf('navigator.storage.persist') === -1) echecs.push('la demande de stockage persistant a disparu');
+    if (css.indexOf('body.atelier-on #bandeauPremiere') === -1) echecs.push('le rappel recouvre de nouveau le mode atelier');
+    if (css.indexOf('touch-action:manipulation') === -1) echecs.push('touch-action a disparu');
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.140.0 : atelier mobile — variante, création rapide, champs 16 px, conseil iOS' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   /* ── v4.139.0 — fondations : mode standard, langue, repères, rail, noms accessibles, journal, tests UI ── */
   (function lot4139Fondations(){
     const fs = require('fs');

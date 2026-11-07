@@ -5,6 +5,30 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.140.0] — 2026-11-08 · atelier mobile : variante en direct, création rapide, champs 16 px, conseil iOS · Claude
+
+Besoin de Benjamin : tablette et iPhone en atelier pour les relevés et la création de scénarios en direct. Audit sur écran
+tactile émulé (375 px, `pointer: coarse`) avec l'état d'audit rev425 : le mode Atelier existe et tient (stepper de pièce,
+gros champs) ; trois défauts mesurés. (1) **Zoom Safari au focus** : 94 champs sur 155 faisaient moins de 16 px (12/13/14/15 px) ;
+la coque monte à 16 px, après chaque rendu, les SEULS champs plus petits (les 61 champs plus grands et les 38-40 px de l'atelier
+sont conservés ; aucun débordement : `scrollWidth` 375). Aussi `touch-action: manipulation` et `text-size-adjust`. (2) **Le rappel
+« Base 2026/2027 en place »** (une fois par appareil — donc sur chaque nouvel iPhone/tablette) recouvrait l'écran de relevé : masqué
+en mode atelier, comme le nouveau conseil iOS. (3) **Créer un scénario en direct** : « + Scénario » créait un scénario vide à
+remplir de zéro, « Dupliquer » copie aussi les mesures. Nouveau `creerVariante(sc, nom)` : copie des outils et des conditions
+(nouveaux identifiants d'outils et de logements), SANS essais ni journal de rebut, statut « essai », jamais la référence,
+héritant des projets de l'original ; bouton « Variante » dans le menu « ⋯ » de la fiche. Sur écran tactile ou ≤ 820 px,
+« + Scénario » ouvre `nouveauScenarioRapide()` : choix variante / vide (grandes zones tactiles) + nom prérempli qui suit le choix ;
+sur grand écran souris le comportement d'avant est conservé (`ajouterScenarioVide`). (4) **Conseil iOS** : Safari efface le
+stockage d'un site non ouvert pendant 7 jours (hors écran d'accueil) ; sur iPhone/iPad non installé, un rappel (tous les 14 jours,
+« Compris ») explique « Partager ▸ Sur l'écran d'accueil », et `navigator.storage.persist()` est demandé. Vérifié (UA iPhone
+simulé) : s'affiche sur Safari iOS, pas après « Compris », pas en écran d'accueil, pas sur Windows. Tests d'interaction : 27/27
+(+4 : variante créée, sans essais, outils conservés, devient active) ; stockage inchangé. 730 tests | 0 échec + porte lot 4.140.
+**Limites** : tout est vérifié sur émulation Chrome, pas sur un vrai iPhone (le zoom Safari et l'effacement à 7 jours reposent
+sur le comportement documenté de WebKit). **Non résolu, et c'est le point bloquant du besoin « live »** : les données vivent dans
+le navigateur de CHAQUE appareil ; ce qu'on relève sur l'iPhone n'arrive pas sur le PC sans synchronisation. Le cloud actuel
+(une ligne `etat` = tout le JSON, dernière écriture gagnante) est vide depuis le 15/10 et ne tiendrait pas : 3,7 Mo poussés à chaque
+saisie (cause du dépassement de quota d'octobre) et deux appareils qui écrivent s'écrasent. `dev` et PROD non touchées (PROD 4.138.0).
+
 ## [4.139.0] — 2026-11-07 · fondations : mode standard, repères, rail, noms accessibles, signalement, tests d'interaction · Claude
 
 Revue de l'outil en PROD (Chrome, 4.138.0) à la demande de Benjamin (« mon but : une app parfaite »). (1) **Mode standard** :

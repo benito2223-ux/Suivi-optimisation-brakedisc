@@ -953,3 +953,42 @@
   try { new MutationObserver(planifier).observe(document.body, { childList: true, subtree: true }); } catch (e) { /* ancien navigateur */ }
   planifier();
 })();
+
+/* v4.140 — ÉCRAN TACTILE. (1) Safari (iPhone, iPad) zoome la page au focus d'un champ dont la police fait moins de
+   16 px : mesuré, 94 champs sur 155 étaient dans ce cas. On monte à 16 px ceux-là seulement (jamais un champ plus
+   grand : l'écran Atelier garde ses gros chiffres), après chaque rendu. (2) iOS efface les données d'un site non
+   ouvert pendant 7 jours, sauf s'il est ajouté à l'écran d'accueil : on le demande au navigateur (persist) et on
+   le rappelle une fois toutes les deux semaines. */
+(function ecranTactile(){
+  const coarse = (() => { try { return matchMedia("(pointer: coarse)").matches; } catch (e) { return false; } })();
+  if (coarse) {
+    let t = null;
+    const agrandir = () => {
+      document.querySelectorAll("input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=color]):not([type=hidden]), select, textarea").forEach((el) => {
+        if (el.dataset.f16) return;
+        const fs = parseFloat(getComputedStyle(el).fontSize);
+        if (fs && fs < 16) { el.style.fontSize = "16px"; }
+        el.dataset.f16 = "1";
+      });
+    };
+    const planifier = () => { clearTimeout(t); t = setTimeout(agrandir, 120); };
+    try { new MutationObserver(planifier).observe(document.body, { childList: true, subtree: true }); } catch (e) { /* ancien navigateur */ }
+    planifier();
+  }
+  const ua = navigator.userAgent || "";
+  const ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  if (!ios) return;
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) { /* refusé : sans suite */ }
+  const autonome = window.navigator.standalone === true || (window.matchMedia && matchMedia("(display-mode: standalone)").matches);
+  if (autonome) return;
+  const CLE = "spk_conseil_ios";
+  let vu = 0;
+  try { vu = parseInt(localStorage.getItem(CLE) || "0", 10) || 0; } catch (e) { /* stockage indisponible */ }
+  if (Date.now() - vu < 14 * 86400000) return;
+  const b = document.createElement("div");
+  b.className = "spk-conseil-ios";
+  b.setAttribute("role", "status");
+  b.innerHTML = "<span><b>iPhone / iPad :</b> Safari efface les données d’un site qu’on n’ouvre pas pendant 7 jours. Pour les garder : <b>Partager ▸ Sur l’écran d’accueil</b>, puis ouvrez l’outil depuis cette icône. Pensez aussi à exporter régulièrement.</span><button type=\"button\">Compris</button>";
+  b.querySelector("button").addEventListener("click", () => { b.remove(); try { localStorage.setItem(CLE, String(Date.now())); } catch (e) { /* tant pis */ } });
+  document.body.appendChild(b);
+})();

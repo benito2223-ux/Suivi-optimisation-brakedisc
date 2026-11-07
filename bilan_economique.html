@@ -8795,6 +8795,7 @@ function scenarioBlockHTML(sc, interactive){
         : "« Référence » ici désigne le scénario de comparaison (★), pas la référence disque ni la référence plaquette. Le désigner en fait le scénario en production : son statut passera à « En série » et il restera toujours visible, même filtré par un projet."}">${sc.baseline ? "★ Scénario réf." : "Définir scénario réf."}</span>
       ${statutSelectHTML(sc)}
       <div class="sc-actions">
+        <button data-id="${sc.id}" data-action="variante" title="Mêmes outils et mêmes conditions, sans les essais : pour tester une variante en direct">Variante</button>
         <button data-id="${sc.id}" data-action="duplicate">Dupliquer</button>
         <button data-id="${sc.id}" data-action="delete" ${data.length <= 1 ? "disabled" : ""}>Supprimer</button>
       </div>
@@ -12914,6 +12915,13 @@ function attachDetailHandlers(sc){
       });
     });
   });
+  root.querySelectorAll('[data-action="variante"]').forEach(el => {
+    el.addEventListener("click", async () => {
+      const nom = await dialogueDemander("Nom de la variante (mêmes outils et mêmes conditions, sans les essais) :", sc.name + " — variante", { titre: "Nouvelle variante", okLabel: "Créer" });
+      if(nom === null || nom === false || nom === undefined) return;
+      creerVariante(sc, nom);
+    });
+  });
   root.querySelectorAll('[data-action="duplicate"]').forEach(el => {
     el.addEventListener("click", () => {
       const copy = JSON.parse(JSON.stringify(sc));
@@ -13479,11 +13487,55 @@ function onInputChange(e){
 
 document.getElementById("importAnnuler").addEventListener("click", fermerPanneaux);
 document.getElementById("lockBtn").addEventListener("click", toggleLock);
-document.getElementById("addBtn").addEventListener("click", () => {
+/* v4.140 — créer un scénario EN DIRECT, à l'atelier (tablette, iPhone) : le plus souvent on teste une VARIANTE de
+   ce qui tourne (même outil, un paramètre qui change). « Variante » copie les outils et les conditions SANS les
+   essais (« Dupliquer » copie aussi les mesures). Sur écran tactile ou étroit, « + Scénario » propose le choix. */
+function creerVariante(sc, nom){
+  const copy = JSON.parse(JSON.stringify(sc));
+  copy.id = uid("s");
+  copy.name = (nom || "").trim() || (sc.name + " — variante");
+  copy.baseline = false; copy.statut = "essai"; copy.statutMotif = ""; copy.statutDate = "";
+  copy.essais = []; copy.scrapLog = [];
+  copy.outils = (copy.outils || []).map(o => Object.assign({}, o, {
+    id: "t" + Math.random().toString(36).slice(2),
+    logements: (o.logements || []).map(l => Object.assign({}, l, { id: "g" + Math.random().toString(36).slice(2) }))
+  }));
+  const idx = data.findIndex(x => x.id === sc.id);
+  data.splice(idx + 1, 0, copy);
+  activeId = copy.id;
+  projets.forEach(pj => {
+    if(projetContientScenario(pj, activeLigneId, activeReferenceId, activeOpId, sc.id)) toggleTagScenario(pj, activeLigneId, activeReferenceId, activeOpId, copy.id);
+  });
+  saveData(); render();
+  return copy;
+}
+function modeRapide(){
+  try{ return matchMedia("(pointer: coarse)").matches || innerWidth <= 820; }catch(e){ return false; }
+}
+async function nouveauScenarioRapide(){
+  const sc = data.find(x => x.id === activeId);
+  const html = '<div class="nv-choix">' +
+    (sc ? '<label class="nv-opt"><input type="radio" name="nvScenType" value="variante" checked><span><b>Variante du scénario actuel</b><br><small>mêmes outils et conditions, sans les essais</small></span></label>' : "") +
+    '<label class="nv-opt"><input type="radio" name="nvScenType" value="vide"' + (sc ? "" : " checked") + '><span><b>Scénario vide</b><br><small>à remplir de zéro</small></span></label></div>';
+  const defaut = n => (n === "variante" && sc) ? sc.name + " — variante" : "Nouveau scénario";
+  const p = ouvrirDialogue({ titre: "Nouveau scénario", html, saisie: defaut(sc ? "variante" : "vide"), placeholder: "Nom du scénario", okLabel: "Créer" });
+  const input = document.getElementById("dialogInput");
+  let precedent = input.value;
+  document.querySelectorAll('#dialogBody input[name="nvScenType"]').forEach(r => r.addEventListener("change", () => {
+    const nouveau = defaut(r.value);
+    if(input.value === precedent) input.value = nouveau;
+    precedent = nouveau;
+  }));
+  const nom = await p;
+  if(nom === null || nom === false || nom === undefined) return;
+  const choix = (document.querySelector('#dialogBody input[name="nvScenType"]:checked') || {}).value;
+  if(choix === "variante" && sc) creerVariante(sc, nom); else ajouterScenarioVide(nom);
+}
+function ajouterScenarioVide(nom){
   const l = getActiveLigne();
   const emag1Auto = !!(l && l.nom && l.nom.trim().toLowerCase() === "emag 1");
   const blank = {
-    id: uid("s"), name: "Nouveau scénario", baseline: false, cycle: "",
+    id: uid("s"), name: (nom || "").trim() || "Nouveau scénario", baseline: false, cycle: "",
     emag1: emag1Auto, limitOverride: false, limitLabel: "Battement (mm)", limitValue: 0.12, validationThreshold: 5,
     critere2Actif: false, limitLabel2: "Ra (µm)", limitValue2: 0.8,
     // v4.10.1 — plus de logements pré-créés : le scénario arrive avec un outil vide, et
@@ -13499,6 +13551,9 @@ document.getElementById("addBtn").addEventListener("click", () => {
   const pjActif = activeProjetId && projets.find(x => x.id === activeProjetId);
   if(pjActif) toggleTagScenario(pjActif, activeLigneId, activeReferenceId, activeOpId, blank.id);
   saveData(); render();
+}
+document.getElementById("addBtn").addEventListener("click", () => {
+  if(modeRapide()) nouveauScenarioRapide(); else ajouterScenarioVide();
 });
 
 document.getElementById("resetBtn").addEventListener("click", () => {
@@ -14037,6 +14092,20 @@ async function testsInteraction(){
       ok("UI : l'import du collage crée 2 relevés datés", [ex().releves.length, ex().releves[0].date], [2, "2026-10-30"]);
       ok("UI : la tuile reste ouverte après l'import", !!tuile() && tuile().open, true);
     }
+    // variante de scénario : copie des conditions SANS les essais
+    const bouton = document.querySelector('#scenarioDetail [data-action="variante"]');
+    ok("UI : le bouton Variante existe", !!bouton, true);
+    if(bouton){
+      const nbAvant = data.length;
+      bouton.click(); await wait(300);
+      const champNom = document.getElementById("dialogInput");
+      if(champNom){ champNom.value = "Variante UI"; document.getElementById("dialogOk").click(); }
+      await wait(400);
+      const v = data.find(x => x.name === "Variante UI");
+      ok("UI : la variante est créée (un scénario de plus)", [!!v, data.length], [true, nbAvant + 1]);
+      ok("UI : la variante n'a aucun essai, garde les outils, n'est pas la référence", v ? [v.essais.length, (v.outils || []).length === (sc.outils || []).length, !!v.baseline] : null, [0, true, false]);
+      ok("UI : la variante devient le scénario actif", !!v && activeId === v.id, true);
+    }
     ok("UI : aucune erreur JavaScript pendant le test", journalTech.filter(j => j.type === "erreur").length - erreursAvant, 0);
   } finally {
     saveData = function(){};
@@ -14155,6 +14224,12 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.140.0", date:"07/11/2026", points:[
+    "<b>Créer un scénario en direct, à l’atelier.</b> Nouveau bouton <b>Variante</b> : mêmes outils et mêmes conditions que le scénario ouvert, <b>sans ses essais</b> (« Dupliquer » copie aussi les mesures). Sur tablette et téléphone, « + Scénario » propose : variante du scénario actuel, ou scénario vide, avec son nom.",
+    "<b>iPhone et iPad : plus de zoom au toucher d’un champ.</b> Safari agrandit la page quand un champ fait moins de 16 px ; les champs trop petits passent à 16 px sur écran tactile (aucun champ plus grand n’est réduit).",
+    "<b>Le relevé n’est plus masqué</b> : le rappel « Base en place » et le conseil iPhone ne s’affichent plus en mode atelier.",
+    "<b>Conseil iPhone / iPad</b> : Safari efface les données d’un site qu’on n’ouvre pas pendant 7 jours. Un rappel (toutes les deux semaines) explique comment ajouter l’outil à l’écran d’accueil, ce qui l’en protège."
+  ]},
   { version:"4.139.0", date:"07/11/2026", points:[
     "<b>Une base plus solide, sans changer ce que vous voyez.</b> La page s’affiche maintenant en mode standard des navigateurs (langue déclarée, repères de navigation) : le rendu ne dépend plus des particularités de chaque navigateur. Mesuré sur tous les écrans à trois largeurs : aucune position horizontale ne bouge, 9 px au plus en hauteur.",
     "<b>Le rail de gauche ne recouvre plus « Outils »</b> sur une fenêtre basse : la navigation défile.",
@@ -14967,7 +15042,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.139.0";
+const TOOL_VERSION = "4.140.0";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
