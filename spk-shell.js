@@ -22,6 +22,7 @@
   const rail = document.createElement("aside");
   rail.className = "spk-rail";
   rail.setAttribute("aria-label", "Navigation principale");
+  rail.setAttribute("role", "navigation");
 
   rail.innerHTML = [
     '<div class="spk-rail-head">',
@@ -912,4 +913,43 @@
   });
 
   syncWorkspace();
+})();
+
+/* v4.139 — NOMS ACCESSIBLES. Mesuré en PROD : 75 commandes sans nom pour un lecteur d'écran (cellules de tableaux
+   de prélèvements, boutons de suppression, statut, tolérance…). Un nom se déduit : règles connues, sinon
+   l'en-tête de la colonne (+ la 1re cellule de la ligne), sinon le nom du champ. Passe légère, différée, sur
+   chaque rendu ; ne touche jamais un contrôle qui a déjà un nom. */
+(function nommerControles(){
+  const CONNUS = [
+    [".log-del", "Supprimer cette ligne"], [".sc-name", "Nom du scénario"], [".statut-select", "Statut du scénario"],
+    [".limit-label", "Libellé de la grandeur suivie"], [".limit-value", "Tolérance"], [".params-sync", "Synchroniser les paramètres"]
+  ];
+  const lisible = (s) => String(s || "").replace(/([a-z])([A-Z])/g, "$1 $2").replace(/[-_]/g, " ").trim();
+  const propre = (t) => String(t || "").trim().replace(/\s+/g, " ");
+  function nom(el){
+    for (const [sel, n] of CONNUS) if (el.matches(sel)) return n;
+    const cell = el.closest("td,th");
+    if (cell && cell.closest("table")) {
+      const tr = cell.parentElement, table = cell.closest("table");
+      const th = table.tHead && table.tHead.rows[0] ? table.tHead.rows[0].cells[cell.cellIndex] : null;
+      const tete = th ? propre(th.innerText) : "";
+      const premiere = tr.cells[0] && tr.cells[0] !== cell ? propre(tr.cells[0].innerText).slice(0, 24) : "";
+      if (tete) return premiere ? tete + " — " + premiere : tete;
+    }
+    const champ = el.getAttribute("data-field") || el.getAttribute("data-marposs-field") || "";
+    return champ ? lisible(champ) : "";
+  }
+  function passer(){
+    document.querySelectorAll("button:not([aria-label]):not([title]), input:not([aria-label]):not([title]):not([type=hidden]):not([type=file]), select:not([aria-label]):not([title]), textarea:not([aria-label]):not([title])").forEach((el) => {
+      if (el.tagName === "BUTTON" && propre(el.innerText)) return;
+      if (el.placeholder || el.getAttribute("aria-labelledby") || el.closest("label")) return;
+      if (el.id && document.querySelector('label[for="' + el.id + '"]')) return;
+      const n = nom(el);
+      if (n) el.setAttribute("aria-label", n);
+    });
+  }
+  let t = null;
+  const planifier = () => { clearTimeout(t); t = setTimeout(passer, 400); };
+  try { new MutationObserver(planifier).observe(document.body, { childList: true, subtree: true }); } catch (e) { /* ancien navigateur */ }
+  planifier();
 })();

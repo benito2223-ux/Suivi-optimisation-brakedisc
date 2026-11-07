@@ -1,3 +1,5 @@
+<!doctype html>
+<html lang="fr">
 <!--
   ============================================================================
   Suivi d'optimisation — outil de suivi d'essais et de bilan économique
@@ -18,7 +20,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Suivi d'optimisation</title>
-<style>/* v4.120 — anti-flash : le squelette statique ne doit pas être peint pendant
+<style>
+/* v4.139 — la page passe en mode standard (doctype). En mode quirks, les tableaux ne héritaient ni de la taille
+   ni de l'interligne du corps : on fige ce comportement pour que rien ne bouge à l'écran. */
+table{ font-size:16px; line-height:normal; }
+/* v4.120 — anti-flash : le squelette statique ne doit pas être peint pendant
    que le script se charge (Benjamin : « on aperçoit l'ancienne page puis la
    nouvelle s'affiche »). La révélation se pose à la fin du premier rendu ;
    un filet à 5 s garantit l'affichage même si le rendu mourait. */
@@ -2048,8 +2054,8 @@ body:not(.atelier-on) input[type="number"]{ -moz-appearance:number-input; }
 
 </style>
 
-<div class="wrap">
-  <div class="hd">
+<div class="wrap" role="main">
+  <div class="hd" role="banner">
     <div class="hd-left">
       <!-- v4.104 : le logo sort de l'outil (demande Benjamin) ; il reste embarqué ci-dessous pour les rapports A4 uniquement. -->
       <div>
@@ -2276,6 +2282,14 @@ body:not(.atelier-on) input[type="number"]{ -moz-appearance:number-input; }
       <label>Catalogue des défauts et de leurs tolérances <i class="opt-scope">Tous</i></label>
       <div id="optDefautsMarposs"></div>
       <span class="opt-note">Chaque extraction Marposs choisit son défaut dans cette liste ; la tolérance suit (une borne max, ou min et max pour un défaut signé). Le battement et la VE reprennent les specs usine ci-dessus. Une tolérance reste modifiable extraction par extraction.</span>
+    </div>
+
+    <div class="opt-section">Support</div>
+
+    <div class="opt-field on" style="padding-left:0;">
+      <label>Signaler un problème <i class="opt-scope">Tous</i></label>
+      <div><button class="ghost" id="optSignaler">Préparer un signalement</button></div>
+      <span class="opt-note">Crée un petit fichier de diagnostic à envoyer à Benjamin : version, navigateur, taille du suivi, temps d'affichage, noms des derniers champs touchés et dernières erreurs. Il ne contient ni valeur de mesure, ni nom d'essai, ni prix. Rien n'est envoyé automatiquement.</span>
     </div>
 
     <div class="opt-section">Cloud — suivi partagé</div>
@@ -3557,6 +3571,25 @@ let activeOpId = null;
 let data = [];
 let config = {};
 let activeId = null;
+/* v4.139 — JOURNAL TECHNIQUE (déclaré AVANT loadAll : rituel anti-TDZ). Garde en mémoire les 40 derniers événements
+   utiles à un diagnostic : erreurs JavaScript, promesses rejetées, échecs de sauvegarde, et les NOMS (jamais les
+   valeurs) des derniers champs touchés. Rien n'est envoyé nulle part : « Signaler un problème » (Options) en fait un
+   petit fichier que l'on transmet soi-même. */
+const journalTech = [];
+function journaliser(type, detail){
+  try{
+    journalTech.push({ t: new Date().toISOString().slice(11, 19), type, detail: String(detail && detail.message ? detail.message : detail).slice(0, 240) });
+    if(journalTech.length > 40) journalTech.shift();
+  }catch(e){}
+}
+window.addEventListener("error", ev => journaliser("erreur", (ev.message || "") + " @" + String(ev.filename || "").split("/").pop() + ":" + (ev.lineno || 0)));
+window.addEventListener("unhandledrejection", ev => journaliser("promesse", ev.reason));
+["change", "click"].forEach(nom => document.addEventListener(nom, ev => {
+  const el = ev.target && ev.target.closest ? ev.target.closest("button,input,select,textarea,summary") : null;
+  if(!el) return;
+  const id = el.getAttribute("data-field") || el.getAttribute("data-marposs-field") || el.id || String(el.className || "").split(" ")[0] || el.tagName.toLowerCase();
+  journaliser(nom, el.tagName.toLowerCase() + ":" + id);
+}, true));
 // essais repliés en tuiles : quels id restent "dépliés" d'un render() a l'autre
 // (chaque saisie de mesure regenere tout le HTML - sans ca, une tuile ouverte se
 // refermerait a chaque champ valide).
@@ -4483,7 +4516,7 @@ function loadAll(){
         }
         return;
       }
-    }catch(e){ console.warn("loadAll : lecture du suivi impossible — repli ancien format/exemple", e); }
+    }catch(e){ console.warn("loadAll : lecture du suivi impossible — repli ancien format/exemple", e); journaliser("chargement", e); }
   }
   // pas de nouveau format : reprendre l'ancien fichier mono-reference s'il existe
   let legacyData = null, legacyConfig = null;
@@ -4692,6 +4725,7 @@ function saveData(){
     pushHistory();
     writeBackupToFolder();
   }catch(e){
+    journaliser("sauvegarde", e);
     // 1er secours : purger l'historique glissant, qui pese plusieurs fois le suivi
     if(libererEspaceHistorique()){
       try{
@@ -13908,6 +13942,120 @@ document.getElementById("optDefautsMarposs").addEventListener("click", ev => {
   });
 });
 
+/* v4.139 — « Signaler un problème » : un fichier de diagnostic, sans aucune donnée métier (ni valeur de mesure, ni nom
+   d'essai, ni prix) : des compteurs, la version, le navigateur, la taille du suivi, le temps d'un rendu complet,
+   les noms des derniers champs touchés et les dernières erreurs. Il se télécharge ; on l'envoie soi-même. */
+function signalerProbleme(){
+  let scenarios = 0, essais = 0, extractions = 0, releves = 0, photos = 0;
+  try{
+    lignes.forEach(l => (l.references || []).forEach(r => (r.ops || []).forEach(o => (o.scenarios || []).forEach(s => {
+      scenarios++;
+      (s.essais || []).forEach(e => { essais++; photos += (e.photos || []).length; (e.marpossListe || []).forEach(x => { extractions++; releves += (x.releves || []).length; }); });
+    }))));
+  }catch(e){}
+  let octets = 0;
+  try{ octets = (localStorage.getItem(STORAGE_KEY) || "").length; }catch(e){}
+  let renduMs = null;
+  try{ const t0 = performance.now(); render(); renduMs = Math.round(performance.now() - t0); }catch(e){ journaliser("erreur", "rendu : " + e.message); }
+  const rapport = {
+    outil: "Suivi d'optimisation", type: "signalement", version: TOOL_VERSION, date: new Date().toISOString(),
+    navigateur: navigator.userAgent,
+    ecran: { largeur: innerWidth, hauteur: innerHeight, ratio: window.devicePixelRatio || 1, tactile: !!(window.matchMedia && matchMedia("(pointer: coarse)").matches), modeStandard: document.compatMode === "CSS1Compat" },
+    mode: { details: document.body.classList.contains("spk-details"), verrouille: document.body.classList.contains("locked") },
+    stockage: { octets, partDe5Mo: Math.round(octets / (5 * 1048576) * 1000) / 10, cloudEcritureBloquee: (typeof CLOUD_ECRITURE_BLOQUEE !== "undefined") ? CLOUD_ECRITURE_BLOQUEE : null },
+    donnees: { lignes: lignes.length, scenarios, essais, extractionsMarposs: extractions, relevesMarposs: releves, photos, revision },
+    renduCompletMs: renduMs,
+    journal: journalTech.slice(),
+    note: "Ce fichier ne contient ni valeur de mesure, ni nom d'essai, ni prix : seulement des compteurs, des noms de champs et des erreurs."
+  };
+  const d = new Date(), p = n => String(n).padStart(2, "0");
+  const nom = "signalement_" + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + "-" + p(d.getHours()) + p(d.getMinutes()) + ".json";
+  const blob = new Blob([JSON.stringify(rapport, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = nom;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  dialogueAlerte("Le fichier « " + nom + " » est téléchargé.\n\nEnvoyez-le à Benjamin Rouquette avec une phrase sur ce que vous faisiez. Il ne contient ni valeur de mesure, ni nom d'essai, ni prix.", "Signaler un problème");
+  return rapport;
+}
+
+/* v4.139 — TESTS D'INTERACTION : on tape dans les vrais champs et on vérifie (1) que la valeur est enregistrée,
+   (2) que la tuile de l'essai reste ouverte, (3) qu'aucune erreur JavaScript n'est levée. Lancement : ajouter
+   #tests-ui à l'adresse, ou testsInteraction() dans la console. Travaille sur une COPIE des scénarios et neutralise
+   saveData : rien n'est écrit, rien ne reste (même sur des données réelles). Ces tests auraient attrapé les champs
+   Jour/Début/Fin du Marposs qui ne s'enregistraient pas. */
+async function testsInteraction(){
+  const T = [];
+  const ok = (nom, recu, attendu) => T.push({ nom, pass: JSON.stringify(recu) === JSON.stringify(attendu), recu, attendu });
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const sauve = { data, activeId, ouverts: essaisOuverts, save: saveData, alerte: dialogueAlerte, ctx: [activeLigneId, activeReferenceId, activeOpId] };
+  const erreursAvant = journalTech.filter(j => j.type === "erreur").length;
+  try{
+    saveData = function(){};
+    dialogueAlerte = function(){ return Promise.resolve(); };
+    // se placer sur la première opération qui porte un essai (saveData est neutralisé : rien ne s'écrit)
+    if(!data.some(s => (s.essais || []).length)){
+      let cible = null;
+      lignes.forEach(l => (l.references || []).forEach(r => (r.ops || []).forEach(o => { if(!cible && (o.scenarios || []).some(s => (s.essais || []).length)) cible = [l.id, r.id, o.id]; })));
+      if(cible) switchOp(cible[0], cible[1], cible[2]);
+    }
+    data = JSON.parse(JSON.stringify(data));
+    const sc = data.find(s => (s.essais || []).length);
+    ok("UI : un scénario avec essai est disponible", !!sc, true);
+    if(!sc) return T;
+    activeId = sc.id; essaisOuverts = new Set(); render(); await wait(200);
+    const es = sc.essais[0];
+    const tuile = () => document.querySelector('details.essai-card[data-essai-id="' + es.id + '"]');
+    ok("UI : la tuile existe et démarre repliée", !!tuile() && !tuile().open, true);
+    if(!tuile()) return T;
+    tuile().querySelector("summary").click(); await wait(200);
+    ok("UI : un clic ouvre la tuile", tuile().open, true);
+    const champ = async (sel, val, nom, lire) => {
+      const el = tuile() && tuile().querySelector(sel);
+      if(!el){ ok("UI : le champ « " + nom + " » existe", false, true); return; }
+      el.value = val;
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+      el.dispatchEvent(new Event("change", { bubbles: true }));
+      await wait(200);
+      ok("UI : « " + nom + " » est enregistré", lire(), val);
+      ok("UI : la tuile reste ouverte après « " + nom + " »", !!tuile() && tuile().open, true);
+    };
+    await champ('input[data-field="date"]', "2026-11-03", "date de l'essai", () => es.date);
+    await champ('input[data-field="operateur"]', "Test UI", "opérateur", () => es.operateur);
+    const ex = () => es.marpossListe[0];
+    await champ('input[data-marposs-field="jour"]', "2026-10-30", "jour Marposs", () => ex().jour);
+    await champ('input[data-marposs-field="debut"]', "06:45", "début Marposs", () => ex().debut);
+    await champ('input[data-marposs-field="fin"]', "07:55", "fin Marposs", () => ex().fin);
+    await champ('input[data-marposs-field="tol"]', "0,05", "tolérance max Marposs", () => ex().tol);
+    await champ('input[data-marposs-field="tolMin"]', "-0,05", "tolérance min Marposs", () => ex().tolMin);
+    await champ('select[data-marposs-field="defaut"]', "ve", "défaut suivi", () => ex().defaut);
+    const ta = tuile() && tuile().querySelector("textarea.marposs-paste");
+    ok("UI : la zone de collage Marposs existe", !!ta, true);
+    if(ta){
+      ta.value = "30/10/26 07:10:00\t0,01\n30/10/26 07:20:00\t0,07";
+      tuile().querySelector("button.marposs-import").click(); await wait(300);
+      ok("UI : l'import du collage crée 2 relevés datés", [ex().releves.length, ex().releves[0].date], [2, "2026-10-30"]);
+      ok("UI : la tuile reste ouverte après l'import", !!tuile() && tuile().open, true);
+    }
+    ok("UI : aucune erreur JavaScript pendant le test", journalTech.filter(j => j.type === "erreur").length - erreursAvant, 0);
+  } finally {
+    saveData = function(){};
+    if(activeOpId !== sauve.ctx[2]){ try{ switchOp(sauve.ctx[0], sauve.ctx[1], sauve.ctx[2]); }catch(e){} }
+    data = sauve.data; activeId = sauve.activeId; essaisOuverts = sauve.ouverts;
+    saveData = sauve.save; dialogueAlerte = sauve.alerte;
+    try{ render(); }catch(e){}
+  }
+  console.table(T.map(t => ({ test: t.nom, ok: t.pass })));
+  console.log("RESULTAT UI : " + T.length + " tests | " + T.filter(t => !t.pass).length + " echecs");
+  window.__testsUI = T;
+  return T;
+}
+
+/* v4.139 — #tests-ui : les tests d'interaction se lancent à l'ouverture, sur le fichier livré comme sur le source. */
+addEventListener("load", () => { if(location.hash === "#tests-ui") setTimeout(() => { testsInteraction(); }, 1200); });
+
+document.getElementById("optSignaler").addEventListener("click", () => signalerProbleme());
+
 /* v4.9 — modification des specs usine : double validation. Le bouton déverrouille les
    champs après confirmation explicite ; les valeurs ne sont écrites qu'au
    reverrouillage (« Verrouiller et enregistrer »), et le panneau reverrouille tout seul
@@ -14007,6 +14155,12 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.139.0", date:"07/11/2026", points:[
+    "<b>Une base plus solide, sans changer ce que vous voyez.</b> La page s’affiche maintenant en mode standard des navigateurs (langue déclarée, repères de navigation) : le rendu ne dépend plus des particularités de chaque navigateur. Mesuré sur tous les écrans à trois largeurs : aucune position horizontale ne bouge, 9 px au plus en hauteur.",
+    "<b>Le rail de gauche ne recouvre plus « Outils »</b> sur une fenêtre basse : la navigation défile.",
+    "<b>Plus de 70 champs et boutons reçoivent un nom</b> pour les lecteurs d’écran (cellules de tableaux, suppression de ligne, statut, tolérance…).",
+    "<b>Signaler un problème</b> (Options → Support) : un petit fichier de diagnostic — version, navigateur, taille du suivi, temps d’affichage, dernières erreurs — à envoyer à Benjamin. Ni valeur de mesure, ni nom d’essai, ni prix ; rien n’est envoyé tout seul."
+  ]},
   { version:"4.138.1", date:"07/11/2026", points:[
     "<b>L’outil ne porte plus aucun nom ni logo de marque.</b> En-tête, rapports d’essai et de validation, bilan client, exports (JSON, CSV), icône de l’application installée : plus rien. La cible se dit désormais simplement « cible » (colonne, durée de vie, prix).",
     "<b>Rien ne change dans vos données</b> : le suivi, les essais et les réglages se rouvrent exactement comme avant."
@@ -14813,7 +14967,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.138.1";
+const TOOL_VERSION = "4.139.0";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */

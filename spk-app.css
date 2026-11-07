@@ -4260,3 +4260,11 @@ body.spk-client .g3.g3-vide{ display:none !important; }
   .spk-client-puce::before{ content:"Présentation client"; font-size:var(--t-s); font-weight:600; white-space:nowrap; }
   .spk-client-puce{ white-space:nowrap; }
 }
+
+/* v4.139 — fenêtre basse : la navigation du rail défile au lieu de passer sous le pied (mesuré : à 495 px de haut,
+   « Données locales / version » recouvrait « Outils »), et le pied ne se laisse plus écraser. */
+.spk-rail-nav{ overflow-y:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+.spk-rail-live, .spk-rail-version{ flex:none; }
+@media (max-height:560px){
+  .spk-rail-live, .spk-rail-version{ display:none; }
+}

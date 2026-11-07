@@ -193,6 +193,12 @@ Matis doivent tenir le MÊME état (v3) — une correction d'un côté recrée d
 lignées. Consigne Matis : import v3, Remplacer tout, ne pas cliquer la correction.
 
 
+### ▸ Tour 122 — 07/11/2026 — **Claude** (v4.139.0 — fondations ; branche `ux-rail`)
+
+Suite de la revue de l'outil en PROD (Chrome) : voir CHANGELOG 4.139.0. Fait : doctype + lang + repères (mode standard, mesuré sans écart horizontal sur 7 écrans × 3 largeurs), rail sur fenêtre basse, noms accessibles, journal technique + « Signaler un problème », tests d'interaction (`#tests-ui`, 23 contrôles verts sur l'état d'audit et sur l'export de Matis, contrôle négatif fait). Incident consigné : un `git stash` lancé par erreur a rangé mes modifications en cours ; restaurées sans perte (`git stash pop`), copie de travail repassée en LF (`core.autocrlf` la remet en CRLF à chaque stash/changement de branche : toujours vérifier `fins de ligne : LF` au build). Piège du build : tout ce qui est entre le commentaire des tests et l'appel `#tests` est retiré du livré, et le livré ne doit contenir aucun nom `runTests` — d'où `testsInteraction` et sa place avant le bloc des tests (porte du lot).
+
+**Constats** : la tuile d'essai qui se ferme n'est toujours pas reproduite (même sur les 3,7 Mo de Matis) ; l'alerte « Poids du suivi » vient des plans d'outils joints (pas des relevés Marposs) ; mon constat des cibles tactiles était faux (retiré). **Décisions en attente** : sortie des pièces jointes du stockage du navigateur ; avenir de la synchronisation cloud (table `etat` vide depuis le 15/10) ; publication groupée 4.138.1 + 4.139.0 pour Matis (une seule fois, quand tu le décides). `dev` et PROD non touchées (PROD 4.138.0).
+
 ### ▸ Tour 121 — 07/11/2026 — **Claude** (v4.138.1 — l'outil sans marque ; branche `ux-rail`)
 
 Benjamin : « enlève toute mention SPK ou CeramTec ». Fait sur tout le visible et tout ce qui part chez un destinataire (voir CHANGELOG 4.138.1) : rail, titres, rapports, bilan client, exports, manifeste, icônes, CSS, Nouveautés, commentaires livrés ; « cible SPK » devient « cible ». Les identifiants techniques (clés de stockage, classes CSS, noms de fichiers, cache SW, id du manifeste, champ `relSpk`) restent : les renommer sans migration ferait perdre ses données à Matis. Contrôle : porte « lot 4.138.1 » (mot isolé, point final compris, testée sur texte contaminé) ; rendu vérifié (rail « Suivi », rapports et bilan client sans marque, manifeste neutre). 730 tests | 0 échec.

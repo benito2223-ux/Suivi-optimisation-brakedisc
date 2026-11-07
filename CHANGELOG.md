@@ -5,6 +5,31 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.139.0] — 2026-11-07 · fondations : mode standard, repères, rail, noms accessibles, signalement, tests d'interaction · Claude
+
+Revue de l'outil en PROD (Chrome, 4.138.0) à la demande de Benjamin (« mon but : une app parfaite »). (1) **Mode standard** :
+la page n'avait ni `<!doctype>` ni `<html>` (`compatMode` = `BackCompat`, mode quirks) ni `lang` ; ajoutés (`<!doctype html>`,
+`<html lang="fr">`), repères `role="main"` (`.wrap`) et `role="banner"` (`.hd`), rail `role="navigation"`. Le passage change
+le comportement des tableaux (ils n'héritaient ni de la taille ni de l'interligne) : `table{ font-size:16px; line-height:normal; }`
+fige l'ancien comportement. **Mesuré, avant/après, sur 7 écrans × 3 largeurs (1440 / 820 / 390) avec l'état d'audit rev425 :
+0 position ou largeur horizontale modifiée ; 9 px au plus en hauteur (lignes en mode quirks) ; Synthèse strictement identique.**
+(2) **Rail sur fenêtre basse** : à 495 px de haut, « Données locales / version » recouvrait « Outils » (la zone de navigation
+rétrécissait, débordement visible) ; elle défile maintenant, le pied ne rétrécit plus et disparaît sous 560 px. (3) **Noms
+accessibles** (coque) : passe différée sur chaque rendu qui nomme les commandes sans nom — règles connues, sinon en-tête de
+colonne + 1re cellule de la ligne, sinon nom du champ ; 75 commandes sans nom en PROD → 3 boutons restent (icônes), 50 noms
+ajoutés sur l'écran mesuré. (4) **Journal technique + Signaler un problème** : `journalTech` (40 derniers événements : erreurs,
+promesses rejetées, échecs de chargement/sauvegarde, NOMS des champs touchés, jamais les valeurs), déclaré avant `loadAll`
+(anti-TDZ) ; Options → Support → fichier `signalement_AAAA-MMJJ-HHMM.json` (version, navigateur, écran, taille du suivi,
+compteurs, temps d'un rendu complet, journal) — 1,9 ko sur l'export de Matis, vérifié sans valeur ni nom d'essai. Rien
+n'est envoyé. (5) **Tests d'interaction** `testsInteraction()` (livrée, `#tests-ui` ou console) : tape dans les vrais champs
+sur une COPIE des scénarios, `saveData` neutralisé (stockage inchangé, vérifié) ; 23 contrôles : valeur enregistrée, tuile
+ouverte, aucune erreur JS. Verts sur l'état d'audit ET sur l'export de Matis (3,7 Mo). Contrôle négatif : avec l'ancien bug
+Jour/Début/Fin réinjecté, 4 contrôles échouent. **Non reproduit, toujours** : la tuile d'essai qui se ferme (aucune des 23
+saisies ne la ferme, même sur les données de Matis). Retrait : mon constat « 112 cibles tactiles < 44 px » était faux
+(test à la souris ; la coque a déjà `@media (pointer: coarse)` à 44 px). Non fait : titres h1/h2 (2 h1, 0 h2), 3 boutons-icônes
+sans nom, noms de cellules de paramètres tirés du nom de champ (sans accents). Aucune fonction de calcul touchée. 730 tests |
+0 échec + porte lot 4.139. `dev` et PROD non touchées (PROD 4.138.0).
+
 ## [4.138.1] — 2026-11-07 · l'outil sans marque : plus aucun nom ni logo SPK / CeramTec · Claude
 
 Demande de Benjamin : « enlève toute mention SPK ou CeramTec ». **Périmètre retenu : tout ce qui se voit ou part chez un

@@ -6,6 +6,10 @@
 
 ---
 
+✅ **Verrou pris puis libéré par Claude le 07/11/2026** (Tour 122, branche `ux-rail`, v4.139.0 —
+fondations : mode standard, repères, rail fenêtre basse, noms accessibles, signalement, tests d'interaction).
+730 tests | 0 échec + porte lot 4.139 + 23 contrôles d'interaction. **`dev` et PROD non touchées (PROD 4.138.0).**
+
 ✅ **Verrou pris puis libéré par Claude le 07/11/2026** (Tour 121, branche `ux-rail`, v4.138.1 —
 l'outil sans marque : plus aucun nom ni logo SPK / CeramTec dans l'interface, les rapports, les exports, l'icône).
 730 tests | 0 échec + porte lot 4.138.1. **`dev` et PROD non touchées (PROD 4.138.0).**

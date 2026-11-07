@@ -1576,6 +1576,37 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.135.0 : l’essentiel par défaut, Détails, menu Outils, simulateur retiré' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  /* ── v4.139.0 — fondations : mode standard, langue, repères, rail, noms accessibles, journal, tests UI ── */
+  (function lot4139Fondations(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const lire = function(f){ try { return fs.readFileSync(path.join(REPO, f), 'utf8'); } catch (e) { return ''; } };
+    const html = lire('bilan_economique.html'), js = lire('spk-shell.js'), css = lire('spk-app.css');
+    if (html.slice(0, 40).toLowerCase().indexOf('<!doctype html>') !== 0) echecs.push('le doctype n est plus en tête : la page repasse en mode quirks');
+    if (html.slice(0, 80).indexOf('<html lang="fr">') === -1) echecs.push('la langue de la page a disparu');
+    if (html.indexOf('<div class="wrap" role="main">') === -1) echecs.push('le repère main a disparu');
+    if (html.indexOf('<div class="hd" role="banner">') === -1) echecs.push('le repère banner a disparu');
+    if (html.indexOf('table{ font-size:16px; line-height:normal; }') === -1) echecs.push('les tableaux ne gardent plus leur taille d avant (mode standard)');
+    if (html.indexOf('const journalTech = [];') === -1) echecs.push('le journal technique a disparu');
+    if (html.indexOf('function signalerProbleme(') === -1) echecs.push('Signaler un problème a disparu');
+    if (html.indexOf('id="optSignaler"') === -1) echecs.push('le bouton Signaler a quitté les Options');
+    if (html.indexOf('async function testsInteraction(') === -1) echecs.push('les tests d interaction ont disparu');
+    if (html.indexOf('#tests-ui') === -1) echecs.push('le déclencheur #tests-ui a disparu');
+    /* le build retire du livré tout ce qui est entre le commentaire des tests et l appel #tests : signalerProbleme et testsInteraction doivent rester AVANT */
+    const iTests = html.indexOf('Tests du moteur economique');
+    if (iTests !== -1 && (html.indexOf('function signalerProbleme(') > iTests || html.indexOf('async function testsInteraction(') > iTests)) echecs.push('signalerProbleme ou testsInteraction sont dans le bloc des tests : le build les retirerait du livré');
+    /* le journal doit être déclaré AVANT loadAll (rituel anti-TDZ) */
+    const iJ = html.indexOf('const journalTech = [];'), iL = html.indexOf('function loadAll(');
+    if (iJ === -1 || iL === -1 || iJ > html.indexOf('loadAll();')) echecs.push('le journal est déclaré après l appel de loadAll (TDZ)');
+    if (js.indexOf('function nommerControles') === -1) echecs.push('les noms accessibles ont disparu de la coque');
+    if (js.indexOf('rail.setAttribute("role", "navigation")') === -1) echecs.push('le rôle navigation du rail a disparu');
+    if (css.indexOf('overflow-y:auto; overscroll-behavior:contain') === -1) echecs.push('le rail ne défile plus sur fenêtre basse');
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.139.0 : fondations — mode standard, repères, rail, noms accessibles, journal, tests UI' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   /* ── v4.138.1 — l'outil ne porte plus de nom ni de logo de marque ── */
   (function lot4138Neutre(){
     const fs = require('fs');
