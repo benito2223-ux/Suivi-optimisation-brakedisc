@@ -5,6 +5,20 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.141.1] — 2026-11-08 · le suivi partagé migre sur son projet Supabase dédié · Claude
+
+Benjamin : « j'ai déjà ce projet supabase : cxjfyaorkkxemjnollnj » (`suivi-septfons`, réveillé depuis l'état INACTIVE ; vide :
+tables `etat` / `etat_historique` sans ligne, dossier `photos`, deux comptes CONFIRMÉS depuis le 22/09 — Benjamin et Matis). Mieux
+que le projet partagé avec Fellow : pas de mélange avec une application aux accès ouverts (`reports`, `activity_log`, `get_app_key`),
+quota séparé, contrôle complet. Fait : migration `suivi_sync_v2` rejouée sur ce projet (mêmes objets), **les deux comptes existants
+rattachés d'office à l'équipe** (insertion directe dans `suivi_membres`, aucun mot de passe en jeu ; le code d'équipe reste pour de
+nouveaux comptes), anciennes règles `etat_membres` / `etat_histo_membres` / `photos_membres` (« tout compte connecté ») remplacées
+par l'appartenance à l'équipe. Contrôlé en SQL (membre : statut, envoi, conflit, lecture ; intrus : refusé, rien de lisible, mauvais
+code refusé) et depuis l'extérieur (anonymes refusés, tables vides). L'outil pointe sur ce projet (`CLOUD_URL`, clé anon publique).
+Rien n'avait été synchronisé sur l'ancien projet (aucun compte connecté) : aucune donnée à reprendre ; ses objets `sync_*` y restent
+inutilisés. Reste : activer « leaked password protection » dans Supabase Auth (réglage du tableau de bord), et un mécanisme contre la
+mise en pause du plan gratuit après inactivité (cause de la disparition d'octobre). 743 tests | 0 échec.
+
 ## [4.141.0] — 2026-11-08 · synchro v2 : par enregistrement, fusion à trois voies, hors ligne, équipe par code · Claude
 
 Besoin de Benjamin : tablette et iPhone en atelier pour relever et créer des scénarios en direct → il faut que les appareils

@@ -14224,6 +14224,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.141.1", date:"08/11/2026", points:[
+    "<b>Le suivi partagé a désormais son propre serveur</b>, séparé des autres applications. Les comptes de Benjamin et de Matis y existent déjà : connectez-vous dans Options → Synchro avec votre e-mail habituel, sans rien recréer."
+  ]},
   { version:"4.141.0", date:"08/11/2026", points:[
     "<b>Le suivi se partage entre appareils : PC, tablette, iPhone.</b> Options → Synchro : créer un compte, puis saisir le <b>code d’équipe</b> (donné par Benjamin). Ensuite chaque saisie part toute seule quelques secondes après, et celles des autres arrivent seules.",
     "<b>Seul ce qui change voyage.</b> Une saisie d’essai envoie environ 7 Ko, contre 3,6 Mo auparavant (tout le suivi) : fini les dépassements de quota, et c’est tenable sur un réseau d’atelier.",
@@ -15050,7 +15053,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.141.0";
+const TOOL_VERSION = "4.141.1";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -21711,8 +21714,8 @@ function syResume(){
    Client écrit à la main en fetch() : pas de SDK, le fichier unique et
    l'usage hors ligne (clé USB, proxy d'usine) restent la règle.
    ============================================================ */
-const CLOUD_URL  = (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && localStorage.getItem("spk_cloud_url_test")) || "https://xlpfwvipdmgslwpbbfxs.supabase.co";
-const CLOUD_KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhscGZ3dmlwZG1nc2x3cGJiZnhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1NzEwNTgsImV4cCI6MjEwMDE0NzA1OH0.aTnjLh9whnNZG1HQSTyD1gVqUJZLGzfuTarvLdm-t6E";
+const CLOUD_URL  = (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && localStorage.getItem("spk_cloud_url_test")) || "https://cxjfyaorkkxemjnollnj.supabase.co";
+const CLOUD_KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN4amZ5YW9ya2t4ZW1qbm9sbG5qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwNzI0MTEsImV4cCI6MjEwNTY0ODQxMX0.QhAvtsm3vqXWJb2VFcKp3QUq7i9NGXPHv_dUepHk2KY";
 const CLOUD_SESSION_KEY = STORAGE_KEY + "_cloud_session";
 const CLOUD_STAMP_KEY   = STORAGE_KEY + "_cloud_stamp";
 const CLOUD_VU_KEY      = STORAGE_KEY + "_cloud_vu";
