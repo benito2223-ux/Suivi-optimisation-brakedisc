@@ -14413,6 +14413,11 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.148.1", date:"09/11/2026", points:[
+    "<b>Libellés : on tape directement dans la colonne.</b> Elle montre le libellé réel de l’article (plus un texte grisé) ; chaque libellé vu dans l’outil est un bouton qui l’adopte pour tout l’article en un clic.",
+    "<b>Uniformisation lisible.</b> La fenêtre de confirmation affichait les balises en clair : elle présente maintenant, article par article, ce qui sera remplacé.",
+    "<b>Économies dans l’atelier : affichées par défaut.</b> Elles se voient sans rien cocher ; la case du catalogue sert à les masquer."
+  ]},
   { version:"4.148.0", date:"09/11/2026", points:[
     "<b>Le catalogue des plaquettes se saisit directement.</b> Le prix et le libellé de chaque article se modifient dans le tableau : les logements correspondants sont mis à jour tout de suite, et les économies avec (un instantané de secours est pris à chaque modification). On peut aussi ajouter un article. L’export CSV reste l’échange avec Matis : l’outil devient sa base de saisie.",
     "<b>Les économies dans l’atelier, à la demande.</b> Une case du catalogue, « Montrer les économies dans l’atelier », affiche dans l’écran de saisie l’économie annuelle du scénario et le coût de la plaquette par pièce."
@@ -15278,7 +15283,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.148.0";
+const TOOL_VERSION = "4.148.1";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -18808,7 +18813,7 @@ function catalogueAjouterArticle(mabec, libelle, prixTexte){
 }
 /* le bloc « économies » du mode atelier : activé depuis le catalogue (planReglages.ecoAtelier) */
 function atelierEconomieHTML(sc, lp, ctx){
-  if(!planReglages || !planReglages.ecoAtelier) return "";
+  if(planReglages && planReglages.ecoAtelier === false) return ""; /* v4.148.1 : allumé par défaut */
   const lignesEco = [];
   ctx = ctx || {};
   const annuel = bilanAnnuel(sc, ctx.cfg || null, ctx.ligne || null, ctx.ref || null, ctx.base || undefined);
@@ -18886,7 +18891,7 @@ function catalogueRendu(){
     <p class="panel-hint">${catalogue.length} article(s). Un MABEC = un prix. <b>Modifier un prix ou un libellé dans le tableau l'applique tout de suite</b> aux logements de cet article (instantané de secours à chaque fois) ; les économies se recalculent. « Appliquer les prix » repropage tout le catalogue d'un coup.</p>
     <div class="simul-actions" style="align-items:center;">
       <label style="display:flex; align-items:center; gap:6px; font-size:13px;" title="Affiche, dans l'écran de saisie de l'atelier, l'économie annuelle du scénario et le coût plaquette par pièce du logement mesuré.">
-        <input type="checkbox" id="catEcoAtelier" style="width:auto; min-height:0;" ${planReglages && planReglages.ecoAtelier ? "checked" : ""}> Montrer les économies dans l'atelier</label>
+        <input type="checkbox" id="catEcoAtelier" style="width:auto; min-height:0;" ${planReglages && planReglages.ecoAtelier === false ? "" : "checked"}> Montrer les économies dans l'atelier</label>
       <span style="flex:1"></span>
       <input class="cell" id="catNouvMabec" style="width:130px;" placeholder="Nouveau MABEC" aria-label="Nouveau MABEC">
       <input class="cell" id="catNouvLib" style="width:190px;" placeholder="Libellé" aria-label="Libellé du nouvel article">
@@ -18898,8 +18903,8 @@ function catalogueRendu(){
       <thead><tr><th>Article (MABEC)</th><th>Libellés ISO vus</th><th>Libellé retenu</th><th>Prix</th><th>Codification Matis</th></tr></thead>
       <tbody>${catalogue.map((a, i) => `<tr>
         <td class="mono">${escapeAttr(a.mabec)}</td>
-        <td style="font-size:12px; color:#888;">${(() => { const v = vus[a.mabec]; const k = v ? Object.keys(v) : []; return k.length ? k.map(x => escapeAttr(x) + (k.length > 1 ? ` <i>×${v[x]}</i>` : "")).join("<br>") + (k.length > 1 ? `<br><span style="color:#b45309;">${k.length} libellés différents</span>` : "") : escapeAttr(a.iso || "—"); })()}</td>
-        <td><input class="cell ref" style="min-width:190px;" data-catlib="${i}" value="${escapeAttr(a.libelle)}" placeholder="${escapeAttr(catalogueLibelleRetenu(a, vus))}" title="Le libellé que tous les logements de cet article porteront après « Uniformiser les libellés ». Vide = le plus fréquent (proposé en grisé)."></td>
+        <td style="font-size:12px; color:#888;">${(() => { const v = vus[a.mabec]; const k = v ? Object.keys(v) : []; return k.length ? k.map((x, kk) => `<button type="button" class="ghost small" style="margin:1px 0; text-align:left; white-space:normal;" data-catadopt="${i}|${kk}" title="Adopter ce libellé pour tout l'article">${escapeAttr(x)}${k.length > 1 ? ` <i>×${v[x]}</i>` : ""}</button>`).join("<br>") + (k.length > 1 ? `<br><span style="color:#b45309;">${k.length} libellés différents</span>` : "") : escapeAttr(a.iso || "—"); })()}</td>
+        <td><input class="cell ref" style="min-width:230px;" data-catlib="${i}" value="${escapeAttr(catalogueLibelleRetenu(a, vus))}" title="Le libellé de cet article : modifie-le et valide (Entrée) — tous les logements de l'article le prennent aussitôt."></td>
         <td class="mono"><input class="cell" style="width:84px; font-family:var(--font-mono); text-align:right;" type="text" inputmode="decimal" data-catprix="${i}" value="${a.prix !== "" ? String(a.prix).replace(".", ",") : ""}" placeholder="€" title="Modifier le prix : tous les logements de cet article se mettent à jour, et les économies avec."> €${a.divergent ? ' <span style="color:#b45309;">(prix divergents dans l\'outil — Matis vérifie)</span>' : ""}</td>
         <td><label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--ink-soft);" title="Codification par le service administratif de Matis : prérequis du cycle de commande standard — sans elle, BADP seulement (montants et récurrence limités). L'âge de l'attente est la métrique.">dem.<input type="date" min="2025-01-01" max="2035-12-31" data-catdate="${i}" data-catfield="codificationDemandeeLe" value="${escapeAttr(a.codificationDemandeeLe || "")}"> cod.<input type="date" min="2025-01-01" max="2035-12-31" data-catdate="${i}" data-catfield="codifieLe" value="${escapeAttr(a.codifieLe || "")}">${(() => { const e = etatCodification(a); return e.etat === "codifie" ? ` <span class="pc-stat serie">codifié</span>` : e.etat === "demandee" ? ` <span class="pc-stat attente">${e.jours ?? 0} j</span>` : ""; })()}</label></td>
       </tr>`).join("")}</tbody>
@@ -18953,13 +18958,23 @@ function renderCatalogue(){ renderCatalogueDatlists();
     if(!res.ok){ dire("Ajout refusé : " + res.motif + "."); return; }
     apresEdition("✓ Article ajouté" + (res.rapport.logementsTouches ? " — " + res.rapport.logementsTouches + " logement(s) mis à jour." : "."));
   });
+  wrap.querySelectorAll('[data-catadopt]').forEach(b => b.addEventListener("click", () => {
+    const [ii, kk] = b.getAttribute("data-catadopt").split("|").map(Number);
+    const art = catalogue[ii];
+    const lib = art && Object.keys(libellesVusParMabec()[art.mabec] || {})[kk];
+    if(!lib) return;
+    backupSnapshot("Catalogue : libellé " + art.mabec);
+    const res = catalogueChangerLibelle(ii, lib);
+    apresEdition("✓ " + art.mabec + " : « " + art.libelle + " »" + (res.rapport.logementsTouches ? " — " + res.rapport.logementsTouches + " logement(s) mis à jour." : " — déjà partout."));
+  }));
   const unif = document.getElementById("catUniformiser");
   if(unif) unif.addEventListener("click", () => {
     const sim = catalogueUniformiserLibelles(false);
     if(!sim.logementsTouches){ dialogueAlerte("Tous les logements portent déjà le libellé retenu de leur article.", "Rien à uniformiser"); return; }
-    const detail = sim.mabecs.slice(0, 10).map(x => `<b>${escapeAttr(x.mabec)}</b> → ${escapeAttr(x.apres)}<br><span style="color:#888;">remplace : ${x.avant.map(escapeAttr).join(" · ")} (${x.n})</span>`).join("<br>") + (sim.mabecs.length > 10 ? "<br>…" : "");
-    Promise.resolve(dialogueConfirmer(`<b>${sim.logementsTouches} logement(s)</b> sur ${sim.mabecs.length} article(s) prendront le libellé retenu. Seule la référence plaquette change (ni prix, ni essais).<br><br>${detail}`,
-      { titre: "Uniformiser les libellés ?", okLabel: "Uniformiser" })).then(ok => {
+    /* v4.148.1 — dialogueConfirmer échappe son texte : le HTML s'y passe par `html` (sinon les balises s'affichaient en clair) */
+    const detail = sim.mabecs.slice(0, 12).map(x => `<div style="margin:6px 0;"><b>${escapeAttr(x.mabec)}</b> → ${escapeAttr(x.apres)}<br><span style="color:#888;">remplace : ${x.avant.map(escapeAttr).join(" · ")} (${x.n})</span></div>`).join("") + (sim.mabecs.length > 12 ? `<div>… et ${sim.mabecs.length - 12} autre(s) article(s)</div>` : "");
+    Promise.resolve(dialogueConfirmer("", { titre: "Uniformiser les libellés ?", okLabel: "Uniformiser",
+      html: `<p><b>${sim.logementsTouches} logement(s)</b> sur ${sim.mabecs.length} article(s) prendront le libellé retenu. Seule la référence plaquette change (ni prix, ni essais).</p>${detail}` })).then(ok => {
         if(!ok) return;
         backupSnapshot("Catalogue : uniformisation des libellés");
         catalogueUniformiserLibelles(true);
@@ -19005,9 +19020,9 @@ function renderCatalogue(){ renderCatalogueDatlists();
     if(!rapport.logementsTouches){ dialogueAlerte("Tous les logements correspondants portent déjà le prix du catalogue.", "Rien à mettre à jour"); return; }
     backupSnapshot("Catalogue : propagation des prix");
     saveData(); render();
-    dialogueAlerte(`<b>${rapport.logementsTouches} logement(s) mis(s) à jour.</b><br>` +
-      rapport.mabecs.slice(0, 12).map(x => `${escapeAttr(x.mabec)} : ${escapeAttr(String(x.avant))} → ${escapeAttr(String(x.apres))} € (${x.n})`).join("<br>") +
-      (rapport.mabecs.length > 12 ? "<br>…" : ""), "Prix propagés");
+    dialogueAlerte(rapport.logementsTouches + " logement(s) mis à jour.\n" +
+      rapport.mabecs.slice(0, 12).map(x => x.mabec + " : " + String(x.avant) + " → " + String(x.apres) + " € (" + x.n + ")").join("\n") +
+      (rapport.mabecs.length > 12 ? "\n…" : ""), "Prix propagés");
   });
 }
 function ouvrirCatalogue(){
@@ -20131,7 +20146,7 @@ function renderPlan(){
       conso2025SectionsOn = null;
       planSource = "annuel";
       saveData();
-      dialogueAlerte(`${Object.keys(lu.parMabec).length} article(s) sur ${lu.sections.length} poste(s) : ${lu.sections.join(", ")}.<br><br>Le Plan de conversion calcule maintenant sur cette base réelle — elle voyage avec le suivi (exports, import, cloud).`, "Consommations 2025 lues");
+      dialogueAlerte(`${Object.keys(lu.parMabec).length} article(s) sur ${lu.sections.length} poste(s) : ${lu.sections.join(", ")}.\n\nLe Plan de conversion calcule maintenant sur cette base réelle — elle voyage avec le suivi (exports, import, cloud).`, "Consommations 2025 lues");
     }catch(err){ dialogueAlerte("Lecture impossible : " + err.message, "Consommations annuelles"); }
     renderPlan();
   });
@@ -25487,6 +25502,8 @@ function runTests(){
         const lib = catalogueChangerLibelle(i, "  SNGX120716   S02 ");
         ok("catalogue interactif : modifier un libellé le recopie dans les logements de cet article (espaces normalisés)",
            [lib.ok, lib.rapport.logementsTouches, prod.outils[0].logements[0].ref, essai.outils[0].logements[0].ref], [true, 2, "SNGX120716 S02", "SNGX120716 S02"]);
+        ok("libellés : le gabarit de la colonne « libellé » est le libellé RÉEL (plus un simple texte grisé)", catalogueRendu().indexOf('data-catlib="' + i + '" value="SNGX120716 S02"') > -1, true);
+        ok("libellés : chaque variante vue est un bouton qui l'adopte pour tout l'article", catalogueRendu().indexOf('data-catadopt="' + i + '|0"') > -1, true);
         const ajout = catalogueAjouterArticle("im02 999 999", "CNGX 120716", "7,96");
         ok("catalogue interactif : un article s'ajoute (MABEC en majuscules), un doublon ou un MABEC vide est refusé",
            [ajout.ok, catalogue.some(a => a.mabec === "IM02 999 999" && a.prix === 7.96), catalogueAjouterArticle("IM02 999 999", "", "1").ok, catalogueAjouterArticle("", "", "1").ok], [true, true, false, false]);
@@ -25504,6 +25521,8 @@ function runTests(){
         planReglages = Object.assign({}, planReglages, { ecoAtelier: false });
         const lp = { outilId: "tEscEE", logementId: "gEscEE" };
         ok("atelier : option éteinte = aucun bloc économie", atelierEconomieHTML(essai, lp), "");
+        planReglages = Object.assign({}, planReglages); delete planReglages.ecoAtelier;
+        ok("atelier : sans réglage posé, les économies s'affichent (allumé par défaut)", atelierEconomieHTML(essai, lp, ctxE).indexOf("at-eco") > -1, true);
         planReglages = Object.assign({}, planReglages, { ecoAtelier: true });
         const html = atelierEconomieHTML(essai, lp, ctxE);
         ok("atelier : option allumée = l'économie annuelle du scénario et le coût plaquette par pièce",
