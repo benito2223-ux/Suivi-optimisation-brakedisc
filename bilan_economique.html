@@ -14413,6 +14413,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.149.1", date:"09/11/2026", points:[
+    "<b>Boutons « Fermer » réparés.</b> Dans les fenêtres de fusion Classeur Matis, d’annulation d’un geste et de déclinaison d’un scénario, le bouton Fermer (ou Annuler) ne faisait rien : il appelait une fonction qui n’existe plus. Il ferme maintenant la fenêtre."
+  ]},
   { version:"4.149.0", date:"09/11/2026", points:[
     "<b>Vue générale des économies, depuis le catalogue.</b> Le bouton « Voir les économies » ouvre une fenêtre : économie annuelle simulée du Plan de conversion (article par article), gains acté et potentiel du suivi d’essais. Les prix viennent du catalogue : les modifier change les chiffres.",
     "<b>Économies dans l’atelier : retour en option.</b> Elles ne s’affichent plus par défaut dans l’écran de saisie ; la case du catalogue les y remet."
@@ -15287,7 +15290,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.149.0";
+const TOOL_VERSION = "4.149.1";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -16560,7 +16563,7 @@ function fusionMatisRendre(){
       a.href = dlPlan.dataUrl; a.download = "plan-non-retenu.pdf"; a.click();
     });
     const fer = document.getElementById("fusionFermerBtn");
-    if(fer) fer.addEventListener("click", () => { fermerPanneau(); fusionMatisEtat = null; });
+    if(fer) fer.addEventListener("click", () => { fermerPanneaux(); fusionMatisEtat = null; });
     return;
   }
   const paires = matisPairesDoublons(ctx.scenario);
@@ -16622,7 +16625,7 @@ function fusionMatisRendre(){
     fusionMatisRendre();
   });
   const an = document.getElementById("fusionAnnulerBtn");
-  if(an) an.addEventListener("click", () => { fermerPanneau(); fusionMatisEtat = null; });
+  if(an) an.addEventListener("click", () => { fermerPanneaux(); fusionMatisEtat = null; });
 }
 /* ═══ v4.117.0 — DERNIER LOT AVANT PROD ═══════════════════════════════════
    1. La boussole « Première Lecture » : les cinq questions, chacune saute
@@ -16736,10 +16739,10 @@ function undoPanelRendre(){
   pan.querySelectorAll(".undo-restaurer").forEach(b => b.addEventListener("click", () => {
     const err = undoRestaurer(parseFloat(b.dataset.ts));
     if(err) dialogueAlerte(err, "Restauration impossible");
-    else { fermerPanneau(); }
+    else { fermerPanneaux(); }
   }));
   const fer = document.getElementById("undoFermerBtn");
-  if(fer) fer.addEventListener("click", () => fermerPanneau());
+  if(fer) fer.addEventListener("click", () => fermerPanneaux());
 }
 /* l'écran de déclinaison : choisir où tenter le gagnant */
 let declinerEtat = null;
@@ -16772,10 +16775,10 @@ function declinerPanelRendre(){
     saveData(); render();
     pan.innerHTML = '<h3>Décliné.</h3><p class="panel-hint">« ' + escapeAttr(nouveau.name || "") + ' » attend dans sa nouvelle OP, en Essai, avec les outils du gagnant et des ids tout neufs. À toi de jouer : réglages, essai, mesures — la suite se raconte dans La campagne.</p><div class="panel-actions"><button class="primary" id="declinerFermerBtn">Fermer</button></div>';
     const fer = document.getElementById("declinerFermerBtn");
-    if(fer) fer.addEventListener("click", () => { fermerPanneau(); declinerEtat = null; });
+    if(fer) fer.addEventListener("click", () => { fermerPanneaux(); declinerEtat = null; });
   });
   const fer = document.getElementById("declinerFermerBtn");
-  if(fer) fer.addEventListener("click", () => { fermerPanneau(); declinerEtat = null; });
+  if(fer) fer.addEventListener("click", () => { fermerPanneaux(); declinerEtat = null; });
 }
 /* v4.77.0 — Où est la POSITION d'un outil ? Elle peut vivre à trois endroits,
    selon l'âge de la donnée — et c'est exactement pour ça que la réparation ne

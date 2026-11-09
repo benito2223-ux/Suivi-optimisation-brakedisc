@@ -1572,6 +1572,18 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.135.0 : l’essentiel par défaut, Détails, menu Outils, simulateur retiré' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  /* ── v4.149.1 — plus d'appel à une fonction de fermeture qui n'existe pas ── */
+  (function lot4149Fermer(){
+    const fs = require('fs');
+    const path = require('path');
+    const REPO = __REPO__;
+    let html = '';
+    try { html = fs.readFileSync(path.join(REPO, 'bilan_economique.html'), 'utf8'); } catch (e) {}
+    const mauvais = (html.match(/fermerPanneau\(/g) || []).length;
+    if (mauvais) r.echecs += 1;
+    console.log((mauvais ? '  ECHEC ' : '  ok  ') + 'lot 4.149.1 : aucun appel a fermerPanneau() (la fonction est fermerPanneaux)' + (mauvais ? ' — ' + mauvais + ' appel(s)' : ''));
+  })();
+
   /* ── v4.146.0 — conclusion d'essai ; uniformiser les libellés ── */
   (function lot4146Conclusion(){
     const fs = require('fs');

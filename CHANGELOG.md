@@ -5,6 +5,10 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.149.1] — 2026-11-09 · boutons « Fermer » réparés · Claude
+
+Vu dans la console de Benjamin : `Uncaught ReferenceError: fermerPanneau is not defined`. Six boutons (Fermer/Annuler de la fusion Classeur Matis, Fermer et Restaurer de la fenêtre d'annulation d'un geste, Fermer de la déclinaison d'un scénario) appelaient `fermerPanneau()`, un ancien nom disparu : le clic levait l'erreur et ne fermait rien. Remplacés par `fermerPanneaux()`. Porte `lot4149Fermer` : plus aucun appel à `fermerPanneau(` dans la source. 777 tests | 0 échec.
+
 ## [4.149.0] — 2026-11-09 · vue générale des économies depuis le catalogue · Claude
 
 Benjamin : « je veux une vue générale depuis la page catalogue, une popup qui signale les économies (outil de vente pour moi) ». Rien de nouveau à calculer : `economiesGenerales()` réunit le PLAN DE CONVERSION (somme des `gain` de `planLignes()` : économie annuelle simulée, prix et/ou durée de vie cibles, article par article) et le SUIVI D'ESSAIS (`pipelineLignes()` : acté en série, potentiel en essai). Bouton « 💶 Voir les économies » dans le catalogue → fenêtre (3 chiffres clés, 10 premiers articles, articles non chiffrés signalés, lien vers le Plan). Les prix du catalogue alimentent le Plan : modifier un prix change les chiffres (testé). L'affichage des économies dans l'atelier redevient une option éteinte par défaut (il polluait l'écran de saisie). 777 tests | 0 échec (+2).
