@@ -196,6 +196,23 @@ Matis doivent tenir le MÊME état (v3) — une correction d'un côté recrée d
 lignées. Consigne Matis : import v3, Remplacer tout, ne pas cliquer la correction.
 
 
+### ▸ Tour 132 — 10/11/2026 — **Hermes** (analyse indépendante — la logique et l'évidence ; aucun code écrit)
+
+Brief `PROMPT_ANALYSE_OUTIL_2026-11-10.md` exécuté. Livrable : **`ANALYSE_OUTIL_2026-11-10.md`** (racine). Méthode : lecture du code + reproduction sur données réelles — l'export **rev435 du 09/11** injecté dans une instance locale du `dist/` 4.150.0 (profil de test isolé, zéro écriture, PROD chargée une fois en lecture sans session cloud). Chaque chiffre recalculé par les fonctions de l'outil, pas estimé.
+
+**Confirmé et dépassé** (le checkup de Claude `CHECKUP_2026-11-10.md` est juste — et la cause racine est maintenant nommée) :
+- **C1-C5 — quatre définitions d'« acté »** : 0 (Vue d'ensemble, `accueilBandeauHTML` l. 20630), 7 449 €/an (Campagne, `campagneCollecter` l. 11477 : **tous** les séries, config **globale**, volume **brut**), 0 (Plan bandeau, `planRecapGains` jette les actés ≤ 0), −2 112 €/an (Plan tableau, `gainPoste` : le « meilleur » seulement). Les quatre reproduits.
+- **Le cas pire que la divergence** : EMAG 1 OP40 a un scénario **en série** (22/09) à +7 449 €/an acté ; `gainPoste` ne lit que le « meilleur » → l'acté invisible et l'écran affiche **+12 195 €/an projeté** à sa place.
+- **Deux bugs de la campagne trouvés** (nouveau) : elle passe `undefined` à `coutsDetail` (config globale au lieu de celle de l'OP — cause du 0 vs −2 112 sur HESSAPP OP15) et lit `productionAnnuelle` brute (ignore le curseur `volumeActif` — OP20). **Le 7 449 affiché changera si on corrige** → décision Benjamin.
+- **C6-C8** : deux totaux du Plan (cochés `etat` vs cibles posées — l. 20188 vs l. 20272) ; cycle « 0,0 % » (champ manuel `sc.cycle`) vs « +33 % » (Vc·f, l. 7477) ; « meilleur −0,0 % » (ex æquo, l. 8376).
+- **Les trois questions** : Q1 = 2 clics + frappe et une réponse « toutes lignes confondues » (aucun levier par ligne de production n'existe) ; Q2 = **zéro** chiffre d'argent en mode atelier (et « pas d'économie à comparer » hors atelier, l. 19036) ; Q3 = `gainMesure` calculé (l. 7250) mais relégué au pied replié (l. 9050), verdict à la visée sans le dire. Maquettes textuelles dans le livrable.
+- **Coquilles toutes localisées à la ligne** : k€€/an (l. 20647), k€ € (l. 19632/20138/20160), −-0,005 + /an/an (l. 11607), « + -4,1 k€ » (l. 20074/20824), « manque : » **18×** à l'écran (l. 19521 sans dédup), bannière Reprendre sans ligne ni OP (l. 12294), bloc 01 « premiers passages en série en attente » alors qu'un passage a eu lieu.
+- **Plan d'action** : une fonction `gainsActes()` unique branchée sur les 4 écrans (M) → campagne config+volume (S, chiffre affiché change) → mesuré dans le verdict (S) → bloc leviers par carte/atelier (M) → passe de finissage typographique (S). Chaque lot : fichiers, comportement avant/après, test d'acceptation, effort.
+
+**Décisions en attente** (§6 du livrable) : définition officielle d'« acté » (négatifs comptés affichés comme tels, ou à part) ; acceptation que le 7 449 évolue ; levier prix au niveau ligne (ventilation conso par ligne) ou par article ; verdict « mesuré » autorisé ; ligne d'argent sur l'écran d'atelier (visible opérateurs ?).
+
+**Non vérifié** (§7) : catalogue/conso2025 absents de rev435 → totaux du Plan prouvés au code, pas à l'écran ; le cas S650 F0,25 vit dans la session locale de Benjamin ; triggers serveur non exécutés ; iPhone/Marposs/A4 hors périmètre. **PROD : rien — aucune écriture, aucun déploiement.**
+
 ### ▸ Tour 131 — 09/11/2026 — **Claude** (v4.147.0 — les relevés d'essai suivent leur logement ; branche `ux-rail`)
 
 Voir CHANGELOG 4.147.0. **À savoir** : Matis doit recharger l'appli avant de ressaisir (sa copie locale portait encore les anciens identifiants). L'Essai 2 du 09/11 (6 relevés, T5/T6) a été supprimé à 13:50 depuis son poste ; il vit dans le scénario `smw9c2okt66pv` sous le nom d'Essai 1 (14 relevés) — à confirmer avec lui.
