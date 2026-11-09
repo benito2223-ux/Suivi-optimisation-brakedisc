@@ -112,6 +112,15 @@ remplacer(
   'theme-color du navigateur'
 );
 
+/* 1 bis (v4.145.3). Le monolithe se déclare « prêt » à son premier rendu, AVANT que la coque (spk-shell.js, defer) ait posé
+   le rail et la nouvelle en-tête : on voyait un instant l'ancienne mise en page. Dans le livré, c'est la coque qui lève
+   l'écran de chargement, une fois son rail posé. */
+remplacer(
+  '/* v4.120 — la révélation : le premier rendu est posé, le squelette peut se montrer. */\ndocument.documentElement.setAttribute("data-pret", "1");',
+  '/* v4.120 — la révélation est faite par la coque (spk-shell.js) une fois le rail posé. */',
+  'révélation différée à la coque (plus de mise en page ancienne entrevue)'
+);
+
 /* --------------------------------------------------------------------------
    2. (RETIRÉ en 4.101.1) — l'amener au haut de la Synthèse vit désormais
       DANS le monolithe : le handler de syntheseBtn ferme proprement les

@@ -5,6 +5,10 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.145.3] — 2026-11-09 · l'ancienne mise en page n'est plus entrevue au chargement · Claude
+
+Benjamin : « encore des spectres ». **Cause réelle** : le monolithe levait l'écran de chargement (`data-pret`) à son premier rendu, or la coque (`spk-shell.js`, chargé en `defer`) n'avait pas encore posé le rail ni la nouvelle en-tête : l'ancienne mise en page se voyait un instant. **Correctif** : dans le livré, le build retire cette levée (étape 1 bis) et `spk-shell.js` la fait lui-même, planifiée dès son démarrage puis deux images plus tard (rail posé et mis en page) ; le filet à 5 s reste. Le monolithe seul (hors coque) garde son comportement.
+
 ## [4.145.2] — 2026-11-09 · plus de restes de l'ancien design au chargement · Claude
 
 Benjamin : « il y a encore des spectres de l'ancien design au chargement de l'app ». Causes : le `theme-color` (graphite #23282b) et le manifeste (fond crème #ece8df de l'ancienne charte, visible sur l'écran de lancement de l'application installée), la page de redirection `index.html` (texte nu sur fond blanc), et l'écran de boot sans logo. Maintenant : barre du navigateur et manifeste en bleu #1B5EA6, fond neutre #e8eaed (sombre si le système l'est), `index.html` redirige en JavaScript depuis un écran au logo Kayak, et le boot affiche le logo. **Limite** : sur iPhone, l'écran de lancement d'une application déjà ajoutée est mis en cache par iOS : la retirer puis la rajouter.

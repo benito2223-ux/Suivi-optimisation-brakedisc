@@ -1,3 +1,6 @@
+/* v4.145.3 — lève l'écran de chargement une fois la coque posée (le monolithe ne le fait plus dans le livré). Planifié en
+   tête : il part même si une partie de la coque échoue ; le filet à 5 s du monolithe reste le dernier recours. */
+setTimeout(function(){ requestAnimationFrame(function(){ requestAnimationFrame(function(){ document.documentElement.setAttribute("data-pret", "1"); }); }); }, 0);
 /* Coque de navigation et surfaces de travail.
    Ne touche pas aux données : déplace la navigation existante dans un rail,
    ajoute un bouton de sortie aux surfaces plein écran et marque l'onglet actif.

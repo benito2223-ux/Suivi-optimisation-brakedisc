@@ -14351,6 +14351,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.145.3", date:"09/11/2026", points:[
+    "<b>Démarrage sans image parasite.</b> L’écran de chargement reste en place jusqu’à ce que la nouvelle mise en page soit posée : on ne voit plus un instant l’ancienne page avant la bonne."
+  ]},
   { version:"4.145.2", date:"09/11/2026", points:[
     "<b>Écran de démarrage propre.</b> Plus de page blanche ni de restes de l’ancien design au chargement : le logo Kayak sur fond neutre, puis l’outil. La couleur de la barre du navigateur et l’écran de lancement de l’application installée suivent la charte bleue."
   ]},
@@ -15202,7 +15205,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.145.2";
+const TOOL_VERSION = "4.145.3";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
