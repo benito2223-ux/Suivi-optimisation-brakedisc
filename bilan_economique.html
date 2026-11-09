@@ -1479,6 +1479,9 @@ tr.row-bad td{background:var(--gray-50);}
 .essai-concl{margin:10px 12px; background:var(--gray-50); border:1px solid color-mix(in srgb, var(--amber) 35%, transparent); border-left:3px solid var(--amber); border-radius:var(--radius-sm); padding:8px 10px;}
 .essai-concl label{display:block; font-size:12px; font-weight:700; color:var(--ink-soft); margin-bottom:4px;}
 .essai-conclusion{width:100%; box-sizing:border-box; min-height:64px; resize:vertical; font-family:var(--font-body); font-size:14px; line-height:1.45; color:var(--ink); background:var(--white,#fff); border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px 10px;}
+.at-eco{margin:10px 0; padding:10px 14px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--bg-soft,#f6f7f9);}
+.at-eco-l{display:flex; justify-content:space-between; gap:12px; font-size:15px; padding:2px 0;}
+.at-eco-l b.ok{color:var(--green,#1f7a3d);} .at-eco-l b.bad{color:var(--red,#b42318);}
 .essai-conclusion:focus{outline:2px solid var(--blue); outline-offset:0;}
 .essai-obs-print{font-size:12px; color:var(--ink-soft); padding:6px 12px; font-style:italic; background:var(--gray-50); border-left:3px solid var(--amber); margin:8px 12px;}
 .essai-but-wrap{display:flex; align-items:center; gap:8px; margin:10px 12px 0; background:var(--gray-50); border:1px solid color-mix(in srgb, var(--blue) 35%, transparent); border-left:3px solid var(--blue); border-radius:var(--radius-sm); padding:2px 4px 2px 10px;}
@@ -6772,6 +6775,8 @@ function atelierHTML(){
         <button class="at-pm ${pmActif===""?"actif":""}" data-at-pm="">—</button>
       </div>
     </div>` : ""}
+
+    ${atelierEconomieHTML(sc, lp)}
 
     <div class="at-champs">${champs.join("")}${champUsure}</div>
 
@@ -14408,6 +14413,10 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.148.0", date:"09/11/2026", points:[
+    "<b>Le catalogue des plaquettes se saisit directement.</b> Le prix et le libellé de chaque article se modifient dans le tableau : les logements correspondants sont mis à jour tout de suite, et les économies avec (un instantané de secours est pris à chaque modification). On peut aussi ajouter un article. L’export CSV reste l’échange avec Matis : l’outil devient sa base de saisie.",
+    "<b>Les économies dans l’atelier, à la demande.</b> Une case du catalogue, « Montrer les économies dans l’atelier », affiche dans l’écran de saisie l’économie annuelle du scénario et le coût de la plaquette par pièce."
+  ]},
   { version:"4.147.0", date:"09/11/2026", points:[
     "<b>Les relevés ne se perdent plus quand un scénario est recréé.</b> Si les logements d’un scénario sont refaits (réimport du classeur, « Aligner sur le scénario »), les relevés d’un essai restaient accrochés à d’anciens logements : ils n’apparaissaient plus dans le suivi alors qu’ils étaient bien saisis. Ils se rattachent maintenant tout seuls au logement de même position (même outil, même nom), conditions de coupe conservées."
   ]},
@@ -15269,7 +15278,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.147.0";
+const TOOL_VERSION = "4.148.0";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -18580,11 +18589,12 @@ function catalogueSeed(){
   }).sort((a, b) => a.mabec.localeCompare(b.mabec));
 }
 
-function catalogueAppliquer(cat){
+function catalogueAppliquer(cat, seulMabec){
   /* propage les prix du catalogue dans TOUS les logements correspondants.
-     Rend le rapport : MABEC changés, logements touchés, avant/après. */
+     Rend le rapport : MABEC changés, logements touchés, avant/après.
+     v4.148 : `seulMabec` limite la propagation à UN article (édition d'une cellule du catalogue). */
   const parMabec = {};
-  (cat || catalogue).forEach(a => { if(a.prix !== "" && a.prix > 0) parMabec[a.mabec] = a.prix; });
+  (cat || catalogue).forEach(a => { if(a.prix !== "" && a.prix > 0 && (!seulMabec || a.mabec === seulMabec)) parMabec[a.mabec] = a.prix; });
   const rapport = { logementsTouches: 0, mabecs: [] };
   lignes.forEach(l => (l.references || []).forEach(r => (r.ops || []).forEach(o =>
     (o.scenarios || []).forEach(sc => (sc.outils || []).forEach(ou => (ou.logements || []).forEach(g => {
@@ -18740,10 +18750,10 @@ function catalogueLibelleRetenu(a, vus){
   return (a && a.libelle) || libelleMajoritaire((vus || libellesVusParMabec())[a && a.mabec]) || "";
 }
 /* rend { logementsTouches, mabecs:[{mabec, apres, n, avant:[...]}] } ; n'écrit que si appliquer === true */
-function catalogueUniformiserLibelles(appliquer){
+function catalogueUniformiserLibelles(appliquer, seulMabec){
   const vus = libellesVusParMabec();
   const retenu = {};
-  catalogue.forEach(a => { const l = catalogueLibelleRetenu(a, vus); if(l) retenu[a.mabec] = l; });
+  catalogue.forEach(a => { if(seulMabec && a.mabec !== seulMabec) return; const l = catalogueLibelleRetenu(a, vus); if(l) retenu[a.mabec] = l; });
   const rapport = { logementsTouches: 0, mabecs: [] };
   lignes.forEach(l => (l.references || []).forEach(r => (r.ops || []).forEach(o =>
     (o.scenarios || []).forEach(sc => (sc.outils || []).forEach(ou => (ou.logements || []).forEach(g => {
@@ -18758,6 +18768,66 @@ function catalogueUniformiserLibelles(appliquer){
       e.n++; if(e.avant.indexOf(avant) === -1) e.avant.push(avant);
     }))))));
   return rapport;
+}
+
+/* ═══ v4.148 — LE CATALOGUE DEVIENT LA BASE DE SAISIE ══════════════════════════
+   Benjamin : « le catalogue doit être interactif : changer les prix, modifier les
+   libellés depuis l'outil, exporter ensuite — l'outil devient la base de saisie de
+   Matis ; si on modifie un prix ici, le prix des logements se met à jour et les
+   économies aussi ». Chaque édition d'une cellule s'applique à l'article édité (et à lui
+   seul), avec instantané de secours ; les économies se recalculent d'elles-mêmes puisque
+   bilanAnnuel() lit le prix dans chaque logement. */
+function catalogueNombre(txt){
+  const n = parseFloat(String(txt == null ? "" : txt).replace(/\s/g, "").replace(",", "."));
+  return isNaN(n) ? null : n;
+}
+/* rend { ok, rapport } ; refuse un prix vide, nul ou négatif (le prix d'un article ne s'efface pas par accident) */
+function catalogueChangerPrix(i, texte){
+  const art = catalogue[i];
+  const prix = catalogueNombre(texte);
+  if(!art) return { ok: false, motif: "article inconnu" };
+  if(prix === null || prix <= 0) return { ok: false, motif: "prix invalide" };
+  art.prix = Math.round(prix * 10000) / 10000;
+  art.divergent = false; art.prixVus = [];
+  return { ok: true, rapport: catalogueAppliquer(null, art.mabec) };
+}
+function catalogueChangerLibelle(i, texte){
+  const art = catalogue[i];
+  if(!art) return { ok: false, motif: "article inconnu" };
+  art.libelle = String(texte || "").replace(/\s+/g, " ").trim();
+  return { ok: true, rapport: art.libelle ? catalogueUniformiserLibelles(true, art.mabec) : { logementsTouches: 0, mabecs: [] } };
+}
+function catalogueAjouterArticle(mabec, libelle, prixTexte){
+  const m = String(mabec || "").trim().toUpperCase();
+  if(!m) return { ok: false, motif: "MABEC manquant" };
+  if(catalogue.some(a => a.mabec === m)) return { ok: false, motif: "ce MABEC existe déjà" };
+  const prix = catalogueNombre(prixTexte);
+  catalogue.push(normalizeArticleCat({ mabec: m, libelle: libelle, prix: (prix !== null && prix > 0) ? prix : "" }));
+  catalogue.sort((a, b) => a.mabec.localeCompare(b.mabec));
+  return { ok: true, rapport: catalogueAppliquer(null, m) };
+}
+/* le bloc « économies » du mode atelier : activé depuis le catalogue (planReglages.ecoAtelier) */
+function atelierEconomieHTML(sc, lp, ctx){
+  if(!planReglages || !planReglages.ecoAtelier) return "";
+  const lignesEco = [];
+  ctx = ctx || {};
+  const annuel = bilanAnnuel(sc, ctx.cfg || null, ctx.ligne || null, ctx.ref || null, ctx.base || undefined);
+  if(annuel && annuel.gainAnnuel !== undefined){
+    const g = annuel.gainAnnuel;
+    lignesEco.push(`<div class="at-eco-l"><span>Économie annuelle de ce scénario</span><b class="${g >= 0 ? "ok" : "bad"}">${g >= 0 ? "+" : "−"} ${fmtEuroCourt(Math.abs(g))} / an</b></div>`);
+  } else if(sc.baseline){
+    lignesEco.push(`<div class="at-eco-l"><span>Scénario de référence</span><b>pas d'économie à comparer</b></div>`);
+  } else {
+    lignesEco.push(`<div class="at-eco-l"><span>Économie annuelle</span><b>volume annuel à renseigner</b></div>`);
+  }
+  const o = (sc.outils || []).find(x => lp && x.id === lp.outilId);
+  const l = o && o.logements.find(x => x.id === lp.logementId);
+  if(l){
+    const prix = parseFloat(l.prix), ar = parseFloat(l.aretes), ch = parseFloat(l.charniere);
+    if(prix > 0 && ar > 0 && ch > 0)
+      lignesEco.push(`<div class="at-eco-l"><span>Plaquette ${escapeAttr(l.ref || "")} · ${fmt(prix, 2)} €</span><b>${fmt(prix / (ar * ch), 3)} € / pièce</b></div>`);
+  }
+  return `<div class="at-eco">${lignesEco.join("")}</div>`;
 }
 
 function catalogueParIso(iso){
@@ -18813,14 +18883,24 @@ function catalogueRendu(){
       <input type="file" id="catFichier" accept=".csv,.txt" hidden>
       <button class="ghost small" id="catSeed">🌱 Regénérer depuis l'outil</button>
     </div>
-    <p class="panel-hint">${catalogue.length} article(s). Un MABEC = un prix — la propagation remplace les prix des logements correspondants, avec rapport. <b>SIMULATION jusqu'à « Appliquer ».</b></p>
+    <p class="panel-hint">${catalogue.length} article(s). Un MABEC = un prix. <b>Modifier un prix ou un libellé dans le tableau l'applique tout de suite</b> aux logements de cet article (instantané de secours à chaque fois) ; les économies se recalculent. « Appliquer les prix » repropage tout le catalogue d'un coup.</p>
+    <div class="simul-actions" style="align-items:center;">
+      <label style="display:flex; align-items:center; gap:6px; font-size:13px;" title="Affiche, dans l'écran de saisie de l'atelier, l'économie annuelle du scénario et le coût plaquette par pièce du logement mesuré.">
+        <input type="checkbox" id="catEcoAtelier" style="width:auto; min-height:0;" ${planReglages && planReglages.ecoAtelier ? "checked" : ""}> Montrer les économies dans l'atelier</label>
+      <span style="flex:1"></span>
+      <input class="cell" id="catNouvMabec" style="width:130px;" placeholder="Nouveau MABEC" aria-label="Nouveau MABEC">
+      <input class="cell" id="catNouvLib" style="width:190px;" placeholder="Libellé" aria-label="Libellé du nouvel article">
+      <input class="cell" id="catNouvPrix" style="width:70px; text-align:right;" inputmode="decimal" placeholder="Prix €" aria-label="Prix du nouvel article">
+      <button class="ghost small" id="catAjouter">＋ Ajouter l'article</button>
+    </div>
+    <div id="catStatut" class="panel-hint" role="status" aria-live="polite" style="min-height:1.4em;"></div>
     <table class="simul-table">
       <thead><tr><th>Article (MABEC)</th><th>Libellés ISO vus</th><th>Libellé retenu</th><th>Prix</th><th>Codification Matis</th></tr></thead>
       <tbody>${catalogue.map((a, i) => `<tr>
         <td class="mono">${escapeAttr(a.mabec)}</td>
         <td style="font-size:12px; color:#888;">${(() => { const v = vus[a.mabec]; const k = v ? Object.keys(v) : []; return k.length ? k.map(x => escapeAttr(x) + (k.length > 1 ? ` <i>×${v[x]}</i>` : "")).join("<br>") + (k.length > 1 ? `<br><span style="color:#b45309;">${k.length} libellés différents</span>` : "") : escapeAttr(a.iso || "—"); })()}</td>
         <td><input class="cell ref" style="min-width:190px;" data-catlib="${i}" value="${escapeAttr(a.libelle)}" placeholder="${escapeAttr(catalogueLibelleRetenu(a, vus))}" title="Le libellé que tous les logements de cet article porteront après « Uniformiser les libellés ». Vide = le plus fréquent (proposé en grisé)."></td>
-        <td class="mono">${a.prix !== "" ? fmt(a.prix, 2) + " €" : "—"}${a.divergent ? ' <span style="color:#b45309;">(prix divergents dans l\'outil — Matis vérifie)</span>' : ""}</td>
+        <td class="mono"><input class="cell" style="width:84px; font-family:var(--font-mono); text-align:right;" type="text" inputmode="decimal" data-catprix="${i}" value="${a.prix !== "" ? String(a.prix).replace(".", ",") : ""}" placeholder="€" title="Modifier le prix : tous les logements de cet article se mettent à jour, et les économies avec."> €${a.divergent ? ' <span style="color:#b45309;">(prix divergents dans l\'outil — Matis vérifie)</span>' : ""}</td>
         <td><label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--ink-soft);" title="Codification par le service administratif de Matis : prérequis du cycle de commande standard — sans elle, BADP seulement (montants et récurrence limités). L'âge de l'attente est la métrique.">dem.<input type="date" min="2025-01-01" max="2035-12-31" data-catdate="${i}" data-catfield="codificationDemandeeLe" value="${escapeAttr(a.codificationDemandeeLe || "")}"> cod.<input type="date" min="2025-01-01" max="2035-12-31" data-catdate="${i}" data-catfield="codifieLe" value="${escapeAttr(a.codifieLe || "")}">${(() => { const e = etatCodification(a); return e.etat === "codifie" ? ` <span class="pc-stat serie">codifié</span>` : e.etat === "demandee" ? ` <span class="pc-stat attente">${e.jours ?? 0} j</span>` : ""; })()}</label></td>
       </tr>`).join("")}</tbody>
     </table>`;
@@ -18836,12 +18916,43 @@ function renderCatalogue(){ renderCatalogueDatlists();
     art[inp.getAttribute("data-catfield")] = inp.value || "";
     saveData(); renderCatalogue();
   }));
-  wrap.querySelectorAll('input[data-catlib]').forEach(inp => inp.addEventListener("change", () => {
-    const art = catalogue[Number(inp.getAttribute("data-catlib"))];
+  /* v4.148 — édition en place : chaque cellule s'applique à son article, avec instantané et message */
+  const dire = msg => { const s = document.getElementById("catStatut"); if(s) s.textContent = msg; };
+  const apresEdition = (msg) => { saveData(); render(); renderCatalogue(); dire(msg); };
+  wrap.querySelectorAll('input[data-catprix]').forEach(inp => inp.addEventListener("change", () => {
+    const i = Number(inp.getAttribute("data-catprix"));
+    const art = catalogue[i];
     if(!art) return;
-    art.libelle = inp.value.replace(/\s+/g, " ").trim();
-    saveData(); renderCatalogue();
+    if(catalogueNombre(inp.value) === art.prix) return;
+    backupSnapshot("Catalogue : prix " + art.mabec);
+    const res = catalogueChangerPrix(i, inp.value);
+    if(!res.ok){ renderCatalogue(); dire("Prix refusé (" + res.motif + ") : l'ancien prix est conservé."); return; }
+    const n = res.rapport.logementsTouches;
+    apresEdition("✓ " + art.mabec + " : " + fmt(art.prix, 2) + " €" + (n ? " — " + n + " logement(s) mis à jour, économies recalculées." : " — aucun logement à mettre à jour."));
   }));
+  wrap.querySelectorAll('input[data-catlib]').forEach(inp => inp.addEventListener("change", () => {
+    const i = Number(inp.getAttribute("data-catlib"));
+    const art = catalogue[i];
+    if(!art) return;
+    backupSnapshot("Catalogue : libellé " + art.mabec);
+    const res = catalogueChangerLibelle(i, inp.value);
+    const n = res.rapport.logementsTouches;
+    apresEdition(art.libelle ? "✓ " + art.mabec + " : « " + art.libelle + " »" + (n ? " — " + n + " logement(s) mis à jour." : " — déjà partout.") : "Libellé vidé : le plus fréquent est proposé.");
+  }));
+  const eco = document.getElementById("catEcoAtelier");
+  if(eco) eco.addEventListener("change", () => {
+    planReglages = Object.assign({}, planReglages, { ecoAtelier: eco.checked });
+    saveData(); renderAtelier();
+    dire(eco.checked ? "✓ Les économies s'affichent dans l'atelier." : "Les économies ne s'affichent plus dans l'atelier.");
+  });
+  const ajout = document.getElementById("catAjouter");
+  if(ajout) ajout.addEventListener("click", () => {
+    const val = id => (document.getElementById(id) || {}).value;
+    backupSnapshot("Catalogue : ajout d'un article");
+    const res = catalogueAjouterArticle(val("catNouvMabec"), val("catNouvLib"), val("catNouvPrix"));
+    if(!res.ok){ dire("Ajout refusé : " + res.motif + "."); return; }
+    apresEdition("✓ Article ajouté" + (res.rapport.logementsTouches ? " — " + res.rapport.logementsTouches + " logement(s) mis à jour." : "."));
+  });
   const unif = document.getElementById("catUniformiser");
   if(unif) unif.addEventListener("click", () => {
     const sim = catalogueUniformiserLibelles(false);
@@ -25356,6 +25467,49 @@ function runTests(){
         const rere = catalogueDepuisCSV(catalogueCSV());
         ok("libellés : le libellé retenu fait l'aller-retour par le CSV", rere.cat.find(x => x.mabec === "IM02 209 560").libelle, "SNGX120716 S02020 CBN387");
       } finally { lignes = lAvU; catalogue = catAvU; }
+    }
+    { // v4.148 — le catalogue, base de saisie : prix et libellés s'appliquent en place, les économies suivent
+      const mkSc = (id, nom, base, prix) => normalizeScenario({ id, name: nom, baseline: base, outils: [
+        { id: "tE" + id, numero: "T1", logements: [ { id: "gE" + id, nom: "D1", ref: "SNGX 120716", codeArticle: "IM02 209 560", prix, aretes: 4, charniere: 100 } ] } ] });
+      const lE = normalizeLigne({ id: "lEc", nom: "EMAG 1", references: [ normalizeReference({ id: "rEc", nom: "356x26", productionAnnuelle: 10000, ops: [
+        normalizeOp({ id: "oEc", nom: "OP10", scenarios: [ mkSc("scEP", "Prod", true, 38), mkSc("scEE", "Essai", false, 38) ] }) ] }) ] });
+      const prod = lE.references[0].ops[0].scenarios[0], essai = lE.references[0].ops[0].scenarios[1]; // les objets réellement dans l'arbre
+      const lAvE = lignes, catAvE = catalogue, regAvE = planReglages; lignes = [ lE ];
+      try {
+        catalogue = catalogueSeed();
+        const i = catalogue.findIndex(a => a.mabec === "IM02 209 560");
+        const logs = () => [ prod, essai ].map(s => s.outils[0].logements[0].prix);
+        const res = catalogueChangerPrix(i, "42,5");
+        ok("catalogue interactif : modifier un prix met à jour tous les logements de l'article (virgule acceptée)",
+           [res.ok, res.rapport.logementsTouches, logs()], [true, 2, [42.5, 42.5]]);
+        ok("catalogue interactif : un prix vide, nul ou illisible est refusé et l'ancien est conservé",
+           [catalogueChangerPrix(i, "").ok, catalogueChangerPrix(i, "0").ok, catalogueChangerPrix(i, "abc").ok, catalogue[i].prix, logs()], [false, false, false, 42.5, [42.5, 42.5]]);
+        const lib = catalogueChangerLibelle(i, "  SNGX120716   S02 ");
+        ok("catalogue interactif : modifier un libellé le recopie dans les logements de cet article (espaces normalisés)",
+           [lib.ok, lib.rapport.logementsTouches, prod.outils[0].logements[0].ref, essai.outils[0].logements[0].ref], [true, 2, "SNGX120716 S02", "SNGX120716 S02"]);
+        const ajout = catalogueAjouterArticle("im02 999 999", "CNGX 120716", "7,96");
+        ok("catalogue interactif : un article s'ajoute (MABEC en majuscules), un doublon ou un MABEC vide est refusé",
+           [ajout.ok, catalogue.some(a => a.mabec === "IM02 999 999" && a.prix === 7.96), catalogueAjouterArticle("IM02 999 999", "", "1").ok, catalogueAjouterArticle("", "", "1").ok], [true, true, false, false]);
+        /* les économies se recalculent d'elles-mêmes : bilanAnnuel lit le prix de chaque logement */
+        essai.outils[0].logements[0].charniere = 200; // l'essai tient deux fois plus longtemps
+        catalogueChangerPrix(i, "40");
+        const cfgE = Object.assign({}, config, { volumeActif: true }), refE = lE.references[0];
+        const ctxE = { cfg: cfgE, ligne: lE, ref: refE, base: prod };
+        const g40 = bilanAnnuel(essai, cfgE, lE, refE, prod).gainAnnuel;
+        catalogueChangerPrix(i, "80");
+        const g80 = bilanAnnuel(essai, cfgE, lE, refE, prod).gainAnnuel;
+        ok("catalogue interactif : doubler le prix du catalogue double l'économie annuelle (le gain suit le prix)",
+           [g40 > 0, Math.abs(g80 / g40 - 2) < 1e-9], [true, true]);
+        /* l'option « économies dans l'atelier » */
+        planReglages = Object.assign({}, planReglages, { ecoAtelier: false });
+        const lp = { outilId: "tEscEE", logementId: "gEscEE" };
+        ok("atelier : option éteinte = aucun bloc économie", atelierEconomieHTML(essai, lp), "");
+        planReglages = Object.assign({}, planReglages, { ecoAtelier: true });
+        const html = atelierEconomieHTML(essai, lp, ctxE);
+        ok("atelier : option allumée = l'économie annuelle du scénario et le coût plaquette par pièce",
+           [html.indexOf("Économie annuelle de ce scénario") > -1, html.indexOf("+ ") > -1, html.indexOf("€ / pièce") > -1], [true, true, true]);
+        ok("atelier : le scénario de référence n'affiche pas d'économie à comparer", atelierEconomieHTML(prod, { outilId: "tEscEP", logementId: "gEscEP" }, ctxE).indexOf("pas d'économie à comparer") > -1, true);
+      } finally { lignes = lAvE; catalogue = catAvE; planReglages = regAvE; }
     }
     {
       /* v4.91 — la suggestion sans catalogue : une plaquette saisie ailleurs dans
