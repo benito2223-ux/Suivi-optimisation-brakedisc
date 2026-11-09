@@ -14413,6 +14413,10 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.149.0", date:"09/11/2026", points:[
+    "<b>Vue générale des économies, depuis le catalogue.</b> Le bouton « Voir les économies » ouvre une fenêtre : économie annuelle simulée du Plan de conversion (article par article), gains acté et potentiel du suivi d’essais. Les prix viennent du catalogue : les modifier change les chiffres.",
+    "<b>Économies dans l’atelier : retour en option.</b> Elles ne s’affichent plus par défaut dans l’écran de saisie ; la case du catalogue les y remet."
+  ]},
   { version:"4.148.1", date:"09/11/2026", points:[
     "<b>Libellés : on tape directement dans la colonne.</b> Elle montre le libellé réel de l’article (plus un texte grisé) ; chaque libellé vu dans l’outil est un bouton qui l’adopte pour tout l’article en un clic.",
     "<b>Uniformisation lisible.</b> La fenêtre de confirmation affichait les balises en clair : elle présente maintenant, article par article, ce qui sera remplacé.",
@@ -15283,7 +15287,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.148.1";
+const TOOL_VERSION = "4.149.0";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -18811,9 +18815,51 @@ function catalogueAjouterArticle(mabec, libelle, prixTexte){
   catalogue.sort((a, b) => a.mabec.localeCompare(b.mabec));
   return { ok: true, rapport: catalogueAppliquer(null, m) };
 }
+/* v4.149 — LA VUE GÉNÉRALE DES ÉCONOMIES, depuis le catalogue (l'outil de vente de Benjamin).
+   Deux sources, déjà calculées ailleurs, réunies ici sans rien recalculer d'autre :
+   · le PLAN DE CONVERSION : économie annuelle simulée si l'on passe aux plaquettes cibles
+     (prix et/ou durée de vie), article par article — la somme des `gain` de planLignes() ;
+   · le SUIVI D'ESSAIS : gains d'outillage acté (en série) et potentiel (en essai). */
+function economiesGenerales(){
+  const toutes = planLignes();
+  const chiffrees = toutes.filter(l => l.actif && l.gain !== null);
+  const nonChiffrees = toutes.filter(l => l.actif && l.gain === null);
+  const total = chiffrees.reduce((a, l) => a + l.gain, 0);
+  const base = chiffrees.reduce((a, l) => a + l.coutActuel, 0);
+  const pip = pipelineLignes().filter(r => r.etat !== "opportunite");
+  return { chiffrees: chiffrees.sort((a, b) => b.gain - a.gain), nonChiffrees, total, base, pct: base > 0 ? total / base * 100 : 0,
+           articles: toutes.length, acte: pip.reduce((a, r) => a + (r.acte || 0), 0), potentiel: pip.reduce((a, r) => a + (r.potentiel || 0), 0), postes: pip.length };
+}
+function economiesGeneralesHTML(){
+  const e = economiesGenerales();
+  const eur = v => (v >= 0 ? "" : "− ") + fmtEuroCourt(Math.abs(Math.round(v))) + " / an";
+  const lib = l => { const a = catalogue.find(x => x.mabec === l.mabec); return (a && a.libelle) || l.isos[0] || l.mabec; };
+  const kpi = (t, v, sous, couleur) => `<div style="flex:1; min-width:170px; padding:10px 14px; border:1px solid var(--border); border-radius:var(--radius-sm);"><div style="font-size:12px; color:var(--ink-soft);">${t}</div><div style="font-size:22px; font-weight:800; color:${couleur || "var(--ink)"};">${v}</div><div style="font-size:12px; color:var(--ink-soft);">${sous}</div></div>`;
+  const lignesTab = e.chiffrees.slice(0, 10).map(l => `<tr><td class="mono">${escapeAttr(l.mabec)}</td><td>${escapeAttr(lib(l))}</td>
+      <td class="mono" style="text-align:right;">${fmt(l.prixA, 2)} € → ${l.ciblePrix !== "" ? fmt(l.ciblePrix, 2) + " €" : "même prix"}</td>
+      <td class="mono" style="text-align:right; color:${l.gain >= 0 ? "var(--green)" : "var(--red)"};">${l.gain >= 0 ? "− " : "+ "}${fmtEuroCourt(Math.abs(Math.round(l.gain)))}</td></tr>`).join("");
+  return `<div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+      ${kpi("Plan de conversion — économie simulée", e.chiffrees.length ? (e.total >= 0 ? "− " : "+ ") + fmtEuroCourt(Math.abs(Math.round(e.total))) + " / an" : "—",
+            e.chiffrees.length ? e.chiffrees.length + " article(s) chiffré(s) · " + fmt(Math.abs(e.pct), 0) + " % du coût de ces articles (" + fmtEuroCourt(Math.round(e.base)) + " / an)" : "aucun article chiffré pour l'instant", e.total >= 0 ? "var(--green)" : "var(--red)")}
+      ${kpi("Suivi d'essais — acté (en série)", e.acte > 0 ? "+ " + eur(e.acte) : "—", "gain d'outillage en production")}
+      ${kpi("Suivi d'essais — potentiel", e.potentiel > 0 ? "+ " + eur(e.potentiel) : "—", e.postes + " poste(s) travaillé(s)")}
+    </div>
+    ${lignesTab ? `<table class="simul-table"><thead><tr><th>Article (MABEC)</th><th>Plaquette</th><th style="text-align:right;">Prix actuel → cible</th><th style="text-align:right;">Économie / an</th></tr></thead><tbody>${lignesTab}</tbody></table>
+      ${e.chiffrees.length > 10 ? `<p class="panel-hint">… et ${e.chiffrees.length - 10} autre(s) article(s).</p>` : ""}`
+      : `<p class="panel-hint">Pose un prix cible ou une durée de vie sur un article du Plan de conversion pour voir l'économie ici.</p>`}
+    ${e.nonChiffrees.length ? `<p class="panel-hint">${e.nonChiffrees.length} article(s) en conversion sans prix cible ni durée de vie : non chiffrés.</p>` : ""}
+    <p class="panel-hint">Les prix viennent du catalogue : modifier un prix ici change ces chiffres. <button type="button" class="ghost small" id="ecoOuvrirPlan">Ouvrir le Plan de conversion</button></p>`;
+}
+function ouvrirEconomiesGenerales(){
+  const p = ouvrirDialogue({ titre: "💶 Économies générales", html: economiesGeneralesHTML(), sansAnnuler: true, okLabel: "Fermer" });
+  const b = document.getElementById("ecoOuvrirPlan");
+  if(b) b.addEventListener("click", () => { fermerDialogue(true); ouvrirPlan(); });
+  return p;
+}
+
 /* le bloc « économies » du mode atelier : activé depuis le catalogue (planReglages.ecoAtelier) */
 function atelierEconomieHTML(sc, lp, ctx){
-  if(planReglages && planReglages.ecoAtelier === false) return ""; /* v4.148.1 : allumé par défaut */
+  if(!planReglages || !planReglages.ecoAtelier) return ""; /* option du catalogue, éteinte par défaut (v4.149) */
   const lignesEco = [];
   ctx = ctx || {};
   const annuel = bilanAnnuel(sc, ctx.cfg || null, ctx.ligne || null, ctx.ref || null, ctx.base || undefined);
@@ -18882,6 +18928,7 @@ function catalogueRendu(){
   return `
     <div class="simul-actions">
       <button class="primary small" id="catAppliquer" title="Propage les prix du catalogue dans tous les logements correspondants — avec rapport">✅ Appliquer les prix aux logements</button>
+      <button class="primary small" id="catEconomies" title="Vue générale des économies : plan de conversion (simulé) et suivi d'essais (acté, potentiel)">💶 Voir les économies</button>
       <button class="ghost small" id="catUniformiser" title="Recopie le libellé retenu de chaque article dans tous les logements correspondants — simulation, rapport et confirmation avant">🔤 Uniformiser les libellés</button>
       <button class="ghost small" id="catExporter">⤵ Exporter le CSV</button>
       <label class="ghost small" for="catFichier" style="cursor:pointer;">⤴ Importer un CSV…</label>
@@ -18891,7 +18938,7 @@ function catalogueRendu(){
     <p class="panel-hint">${catalogue.length} article(s). Un MABEC = un prix. <b>Modifier un prix ou un libellé dans le tableau l'applique tout de suite</b> aux logements de cet article (instantané de secours à chaque fois) ; les économies se recalculent. « Appliquer les prix » repropage tout le catalogue d'un coup.</p>
     <div class="simul-actions" style="align-items:center;">
       <label style="display:flex; align-items:center; gap:6px; font-size:13px;" title="Affiche, dans l'écran de saisie de l'atelier, l'économie annuelle du scénario et le coût plaquette par pièce du logement mesuré.">
-        <input type="checkbox" id="catEcoAtelier" style="width:auto; min-height:0;" ${planReglages && planReglages.ecoAtelier === false ? "" : "checked"}> Montrer les économies dans l'atelier</label>
+        <input type="checkbox" id="catEcoAtelier" style="width:auto; min-height:0;" ${planReglages && planReglages.ecoAtelier ? "checked" : ""}> Montrer les économies dans l'atelier</label>
       <span style="flex:1"></span>
       <input class="cell" id="catNouvMabec" style="width:130px;" placeholder="Nouveau MABEC" aria-label="Nouveau MABEC">
       <input class="cell" id="catNouvLib" style="width:190px;" placeholder="Libellé" aria-label="Libellé du nouvel article">
@@ -18967,6 +19014,8 @@ function renderCatalogue(){ renderCatalogueDatlists();
     const res = catalogueChangerLibelle(ii, lib);
     apresEdition("✓ " + art.mabec + " : « " + art.libelle + " »" + (res.rapport.logementsTouches ? " — " + res.rapport.logementsTouches + " logement(s) mis à jour." : " — déjà partout."));
   }));
+  const ecoBtn = document.getElementById("catEconomies");
+  if(ecoBtn) ecoBtn.addEventListener("click", () => ouvrirEconomiesGenerales());
   const unif = document.getElementById("catUniformiser");
   if(unif) unif.addEventListener("click", () => {
     const sim = catalogueUniformiserLibelles(false);
@@ -25517,12 +25566,23 @@ function runTests(){
         const g80 = bilanAnnuel(essai, cfgE, lE, refE, prod).gainAnnuel;
         ok("catalogue interactif : doubler le prix du catalogue double l'économie annuelle (le gain suit le prix)",
            [g40 > 0, Math.abs(g80 / g40 - 2) < 1e-9], [true, true]);
+        /* v4.149 — la vue générale : somme des gains du Plan de conversion + suivi d'essais */
+        const planAv = plan, cfgAv = config; plan = [ { mabec: "IM02 209 560", etat: "propose", prixCible: 20, isoCible: "", confirme: false, vieCible: "" } ]; config = cfgE;
+        try {
+          const eg = economiesGenerales();
+          const att = eg.chiffrees.reduce((x, l) => x + l.gain, 0);
+          ok("économies générales : la somme est celle des articles chiffrés du Plan, et le HTML la porte",
+             [eg.chiffrees.length >= 1, Math.abs(eg.total - att) < 1e-9, economiesGeneralesHTML().indexOf("Plan de conversion") > -1, economiesGeneralesHTML().indexOf("Suivi d'essais") > -1], [true, true, true, true]);
+          const eg1 = economiesGenerales().total;
+          catalogue.find(a => a.mabec === "IM02 209 560").prix = 76; // le prix du catalogue baisse la base : le chiffre bouge
+          ok("économies générales : un autre prix au catalogue change le chiffre (même source que le Plan)", economiesGenerales().total !== eg1, true);
+        } finally { plan = planAv; config = cfgAv; }
         /* l'option « économies dans l'atelier » */
         planReglages = Object.assign({}, planReglages, { ecoAtelier: false });
         const lp = { outilId: "tEscEE", logementId: "gEscEE" };
         ok("atelier : option éteinte = aucun bloc économie", atelierEconomieHTML(essai, lp), "");
         planReglages = Object.assign({}, planReglages); delete planReglages.ecoAtelier;
-        ok("atelier : sans réglage posé, les économies s'affichent (allumé par défaut)", atelierEconomieHTML(essai, lp, ctxE).indexOf("at-eco") > -1, true);
+        ok("atelier : sans réglage posé, rien ne s'affiche (option du catalogue, éteinte par défaut)", atelierEconomieHTML(essai, lp, ctxE), "");
         planReglages = Object.assign({}, planReglages, { ecoAtelier: true });
         const html = atelierEconomieHTML(essai, lp, ctxE);
         ok("atelier : option allumée = l'économie annuelle du scénario et le coût plaquette par pièce",
