@@ -1,10 +1,14 @@
-| **Auteur** | **Hermes** |
-| **Pris le** | 10/11/2026, Tour 135 |
-| **Écrit dans** | `bilan_economique.html`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
-| **Version visée** | 4.152.0 |
-| **Sujet** | Vue plaquette globale (spec `SPEC_VUE_PLAQUETTE_GLOBALE_2026-11-10.md`) : usages par ISO + extrapolation prospective à trois leviers, dans le Catalogue, le Plan et « Ailleurs dans l'usine ». |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
 
 ---
+
+✅ **Verrou pris puis libéré par Hermes le 10/11/2026** (Tour 135, branche `ux-rail`, v4.152.0 —
+vue plaquette globale : usages par ISO, extrapolation à trois leviers, trois écrans). 811 tests | 0 échec.
+**DEV déployée et vérifiée curl ; PROD : rien — attend la phrase de Benjamin.**
 
 ✅ **Verrou pris puis libéré par Hermes le 10/11/2026** (Tour 134, branche `ux-rail`, v4.151.0 —
 étape 2 : conditions de coupe par groupe simultané, mode G96/G97, essai figé). 803 tests | 0 échec.
