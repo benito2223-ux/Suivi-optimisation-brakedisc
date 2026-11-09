@@ -5,6 +5,10 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.145.2] — 2026-11-09 · plus de restes de l'ancien design au chargement · Claude
+
+Benjamin : « il y a encore des spectres de l'ancien design au chargement de l'app ». Causes : le `theme-color` (graphite #23282b) et le manifeste (fond crème #ece8df de l'ancienne charte, visible sur l'écran de lancement de l'application installée), la page de redirection `index.html` (texte nu sur fond blanc), et l'écran de boot sans logo. Maintenant : barre du navigateur et manifeste en bleu #1B5EA6, fond neutre #e8eaed (sombre si le système l'est), `index.html` redirige en JavaScript depuis un écran au logo Kayak, et le boot affiche le logo. **Limite** : sur iPhone, l'écran de lancement d'une application déjà ajoutée est mis en cache par iOS : la retirer puis la rajouter.
+
 ## [4.145.1] — 2026-11-09 · icône de l'application : le logo « Production Sept-Fons · Kayak industriel » · Claude
 
 Benjamin : « l'app installée sur PC garde le logo SPK ; remplace-le par le logo Kayak, idem pour l'icône PWA iPhone ». `icons/icon-192.png`, `icon-512.png`, `icon-512-maskable.png` (80 % de zone sûre sur fond bleu) et les trois icônes embarquées dans `bilan_economique.html` (favicon 32/192, `apple-touch-icon` 180) viennent du logo déposé à la racine (coins blancs rognés). Cache du service worker v7 → v8 pour que les postes renouvellent l'icône. **Limite** : une application déjà installée garde souvent son ancienne icône (Chrome la rafraîchit seul sous quelques jours ; sur iPhone il faut retirer l'icône de l'écran d'accueil puis refaire « Sur l'écran d'accueil »).

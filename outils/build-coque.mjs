@@ -104,12 +104,11 @@ function remplacer(avant, apres, label) {
 }
 
 /* --------------------------------------------------------------------------
-   1. Le thème du navigateur suit le graphite de la coque (le monolithe est
-      encore en bleu #1a1ea6 de l'ancienne charte).
+   1. Le thème du navigateur suit le bleu de la charte (v4.145.2 : plus de graphite).
    -------------------------------------------------------------------------- */
 remplacer(
   '<meta name="theme-color" content="#1a1a1a">',
-  '<meta name="theme-color" content="#23282b">',
+  '<meta name="theme-color" content="#1B5EA6">',
   'theme-color du navigateur'
 );
 
