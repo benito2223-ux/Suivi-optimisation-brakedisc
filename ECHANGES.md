@@ -49,6 +49,7 @@
 
 | Date | Acte | Où | Vérifié |
 |---|---|---|---|
+| 09/11 | **DEV + PROD 4.150.1 — détails d'affichage** (ordre de Benjamin : « commit deploie »). Unité des en-têtes (« Ra (µm) » ne s'affiche plus « RA (MM) »), « Hors course » à la place de « FAILED », plus de « Gain/an +0 € », volumes manquants comptés en une ligne, flèches des champs retirées. Format de données inchangé. | suivi-optimisation-projet.surge.sh · suivi-optimisation-septfons.surge.sh | ✅ curl : DEV et PROD servent 4.150.1, 1 833 101 o, empreinte `5539c852…` identique au `dist/` sur les deux domaines, `version.json` = 4.150.1, SW 200, CHANGELOG/ECHANGES 404 ; PROD ouverte dans Chrome en lecture seule : 86 scénarios, 16 essais, 192 relevés, 0 erreur console ; 790 tests \| 0 échec (Claude, Tour 133). Non fait : format téléphone, bascule du poste de Matis |
 | 09/11 | **DEV + PROD 4.142.0 — plus de Pipeline commercial ; synchro accessible en un clic** (demande de Benjamin avant la réunion du matin avec Matis). | suivi-optimisation-projet.surge.sh · suivi-optimisation-septfons.surge.sh | ✅ curl : DEV et PROD servent 4.142.0, 1 595 695 o, empreinte `a22f46f0…` identique au `dist/` LF, `version.json` = 4.142.0, plus aucune mention « font les commandes » dans la coque servie ; 743 tests \| 0 échec (Claude, Tour 126) |
 | 08/11 | **DEV + PROD 4.141.1 — l'outil pointe sur le projet Supabase dédié `suivi-septfons`** (Benjamin : « j'ai déjà ce projet supabase », carte blanche sur la partie Supabase). Rien n'avait été synchronisé sur l'ancien projet : aucune donnée à reprendre. | suivi-optimisation-projet.surge.sh · suivi-optimisation-septfons.surge.sh | ✅ curl : DEV et PROD servent 4.141.1, 1 594 362 o, empreinte `3f72fa92…` identique au `dist/` LF, `version.json` = 4.141.1, la PROD référence le nouveau projet et plus l'ancien ; 743 tests \| 0 échec (Claude, Tour 125). Non fait : connexion réelle (geste des utilisateurs) |
 | 08/11 | **DEV + PROD 4.141.0 — la chaîne 4.138.1 → 4.141.0 d'un coup** (ordre de Benjamin : « mise en ligne, tu as carte blanche »). PROD sautait 4.138.0 → 4.141.0 : outil sans marque, fondations (mode standard, repères, rail, noms accessibles, signalement, tests d'interaction), atelier mobile (variante, création rapide, champs 16 px, conseil iOS), **synchro v2** (par enregistrement, fusion, hors ligne, équipe par code, espaces prod/dev). Serveur : migration `suivi_sync_v2` appliquée au projet Supabase avant la publication (11 cas SQL en transaction annulée ; anonymes refusés vu de l'extérieur). Aucune synchro ne démarre tant qu'un utilisateur ne s'est pas connecté : les données locales de Matis sont intactes. Retour arrière : la 4.138.0 = `_prod_ref/` (empreinte `c280fdef…`) ; côté serveur les nouveaux objets sont additifs. | suivi-optimisation-projet.surge.sh · suivi-optimisation-septfons.surge.sh | ✅ curl : DEV et PROD servent 4.141.0, 1 594 063 o, empreinte `c1a05286…` identique au `dist/` LF sur les deux domaines, `version.json` = 4.141.0, SW/CSS/shell/manifest/icône 200, CHANGELOG/ECHANGES/VERROU/supabase/outils 404, aucune mention de marque ; 743 tests \| 0 échec + 24 contrôles de bout en bout (Claude, Tour 124). Non fait : trajet complet avec un vrai compte (inscription = geste de l'utilisateur) |
@@ -221,8 +222,18 @@ le bon nom. Le champ `nom` (présent sur 66 scénarios sur 86, « Classeur Matis
 eux) est un reliquat qui n'est affiché nulle part. Rien à corriger à l'écran ; son retrait
 est une affaire de données, renvoyée à l'étape 3. `DETAILS_SAISIE` corrigé (B2).
 
-**Vérifié** : 790 tests | 0 échec (3 nouveaux), 11 portes d'identité CSS. **Non vérifié** :
-voir le compte rendu de fin de tour. **PROD : rien, aucun déploiement.**
+**Vérifié** : 790 tests | 0 échec (3 nouveaux), 11 portes d'identité CSS.
+
+**Publication (ordre de Benjamin : « commit deploie »).** DEV + PROD en 4.150.1, voir « Faits
+extérieurs ». Contrôle dans Chrome sur PROD, lecture seule : 11 lignes, 86 scénarios, 16 essais,
+192 relevés chargés ; en-têtes « Ra (µm) Inter / Exter » et « Battement (mm) » rendus avec
+l'unité en casse d'origine ; champs numériques sans flèches ; aucune erreur console.
+**Non vérifié** : le tampon « Hors course » et la ligne des volumes manquants sur un écran réel
+(tests seulement) ; le format téléphone ; la bascule du poste de Matis. GitHub : non poussé.
+
+**Suite proposée** : `DEMANDE_ETAPE_2_CONDITIONS_DE_COUPE_A_HERMES_ZCODE.md` — conditions de
+coupe saisies une fois par groupe simultané, mode G96/G97, essai figé. Rangement inchangé
+(recopie à l'écriture) : pas de migration, pas de point de non-retour.
 
 
 ### ▸ Tour 132 — 10/11/2026 — **Hermes** (analyse indépendante — la logique et l'évidence ; aucun code écrit)
