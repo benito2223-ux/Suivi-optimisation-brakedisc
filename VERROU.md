@@ -8,7 +8,7 @@
 
 ✅ **Verrou pris puis libéré par Hermes le 10/11/2026** (Tour 135, branche `ux-rail`, v4.152.0 —
 vue plaquette globale : usages par ISO, extrapolation à trois leviers, trois écrans). 811 tests | 0 échec.
-**DEV déployée et vérifiée curl ; PROD : rien — attend la phrase de Benjamin.**
+**DEV + PROD déployées et vérifiées curl** (PROD sur la phrase de Benjamin : « passe en prod »).
 
 ✅ **Verrou pris puis libéré par Hermes le 10/11/2026** (Tour 134, branche `ux-rail`, v4.151.0 —
 étape 2 : conditions de coupe par groupe simultané, mode G96/G97, essai figé). 803 tests | 0 échec.

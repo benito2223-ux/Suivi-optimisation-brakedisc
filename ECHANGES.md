@@ -20,7 +20,8 @@
 
 | # | Question | Proposée par | Statut |
 |---|---|---|---|
-| 10/11 | **DEV 4.152.0 — la vue plaquette globale** (usages par désignation ISO + extrapolation prospective à trois leviers ; Catalogue, Plan, « Ailleurs dans l'usine »). | suivi-optimisation-projet.surge.sh | ✅ curl : DEV sert 4.151.0→4.152.0, empreinte identique au `dist/`, `version.json` = 4.152.0 ; 811 tests \| 0 échec + « tout est vert » (Hermes, Tour 135). **PROD : rien — attend la phrase de Benjamin** |
+| 10/11 | **DEV 4.152.0 — la vue plaquette globale** (usages par désignation ISO + extrapolation prospective à trois leviers ; Catalogue, Plan, « Ailleurs dans l'usine »). | suivi-optimisation-projet.surge.sh | ✅ curl : DEV sert 4.152.0, empreinte identique au `dist/`, `version.json` = 4.152.0 ; 811 tests \| 0 échec + « tout est vert » (Hermes, Tour 135) |
+| 10/11 ~suite | **PROD 4.152.0 — la vue plaquette globale en production** (phrase de Benjamin : « passe en prod »). | suivi-optimisation-septfons.surge.sh | ✅ curl : PROD sert 4.152.0, empreinte `db0148c0…` identique au `dist/` (DEV et PROD au même octet), `version.json` = 4.152.0 ; 811 tests \| 0 échec (Hermes, Tour 135) |
 
 | 10/11 | **DEV + PROD 4.151.0 — étape 2 : les conditions de coupe se tapent une fois** (ordre de Benjamin : « fini tout et déploie en prod et dev je te fais confiance »). | suivi-optimisation-projet.surge.sh · suivi-optimisation-septfons.surge.sh | ✅ curl : DEV et PROD servent 4.151.0, empreinte `83056957…` identique au `dist/` sur les deux domaines, `version.json` = 4.151.0, ECHANGES en 404 ; 803 tests \| 0 échec + « tout est vert » au harnais sur le dist final (Hermes, Tour 134) |
 
