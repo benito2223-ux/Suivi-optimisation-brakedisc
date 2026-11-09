@@ -4303,3 +4303,16 @@ body.atelier-on #bandeauPremiere, body.atelier-on .spk-conseil-ios{ display:none
   .spk-ctx .fil-ariane{ font-size:12.5px; }
   .spk-ctx .spk-details-btn{ min-height:36px; padding:4px 10px; }
 }
+
+/* v4.144 — Dossier de visite : compte rendu déployable */
+.visite-recap{ margin:12px 0; border:1px solid var(--border); border-left:3px solid var(--blue); border-radius:var(--radius); background:var(--surface); }
+.visite-recap > summary{ cursor:pointer; padding:12px 14px; font-weight:600; font-size:14px; list-style:none; min-height:44px; display:flex; align-items:center; gap:10px; }
+.visite-recap > summary::-webkit-details-marker{ display:none; }
+.visite-recap .vr-n{ font-weight:400; font-size:12px; color:var(--ink-faint); }
+.visite-recap .vr-corps{ padding:4px 14px 14px; display:flex; flex-direction:column; gap:10px; }
+.visite-recap .vr-champ{ display:flex; flex-direction:column; gap:4px; font-size:12.5px; color:var(--ink-soft); }
+.visite-recap textarea{ width:100%; min-height:84px; resize:vertical; padding:8px 10px; text-align:left; font-family:var(--font-body); line-height:1.45; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); color:var(--ink); }
+.visite-recap .vr-date{ display:flex; align-items:center; gap:8px; font-size:13px; }
+.visite-recap .vr-actions{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.visite-recap .vr-anciens{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:12.5px; color:var(--ink-soft); }
+.visite-recap .vr-ancien.actif{ border-color:var(--blue); color:var(--blue); font-weight:600; }

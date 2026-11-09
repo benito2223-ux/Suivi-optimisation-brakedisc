@@ -103,7 +103,12 @@ module.exports = async (A, LS) => {
     case 'sonde': return sortie();
     case 'nb-shards': return sortie({ nb: Object.keys(A.syDecouper(A.syEtatLocal()).shards).length });
     case 'pending': return sortie({ aEnvoyer: A.syPending });
-    case 'etat-local': return sortie({ canon: A.syHash(A.syCanon(JSON.parse(A.payloadSuivi()).lignes)) });
+    case 'etat-local': {  // les pièces jointes peuvent être en clair (sans base de fichiers) ou en référence : on compare le reste
+      const l = JSON.parse(A.payloadSuivi()).lignes;
+      const w = v => { if (Array.isArray(v)) v.forEach(w); else if (v && typeof v === 'object') Object.keys(v).forEach(k => { if (k === 'dataUrl' && typeof v[k] === 'string') v[k] = 'PJ'; else w(v[k]); }); };
+      w(l);
+      return sortie({ canon: A.syHash(A.syCanon(l)) });
+    }
   }
   return { erreur: 'pas inconnu ' + pas };
 };
@@ -188,7 +193,16 @@ if __name__ == '__main__':
     verifier('B reçoit le nouveau scénario', pas('B', 'sync')['sonde']['scenarios'] == n0 + 1)
     pas('B', 'editer', 'supprimer-dernier-scenario=1'); pas('B', 'sync')
     verifier('A reçoit la suppression', pas('A', 'sync')['sonde']['scenarios'] == n0)
-    print('== 8. le coût réseau')
+    print('== 8. l\u2019appareil qui se croit synchronisé mais a perdu ses données (mémoire pleine) se répare seul')
+    ls = os.path.join(TMP, 'ls_B.json')
+    d = json.load(io.open(ls, encoding='utf-8'))
+    d.pop('spk_suivi_optimisation_v1', None)          # l'état local n'a jamais pu être enregistré ; l'état de synchro, lui, l'a été
+    io.open(ls, 'w', encoding='utf-8').write(json.dumps(d))
+    avant_essais = pas('A', 'sonde')['sonde']['essais']
+    rb = pas('B', 'sync')
+    verifier('l\u2019appareil sans données se répare : il reprend un premier contact et récupère tout', rb['sonde']['essais'] == avant_essais, (rb['sonde']['essais'], avant_essais))
+    verifier('... sans rien renvoyer au cloud par erreur', rb['enAttente'] == 0, rb['enAttente'])
+    print('== 9. le coût réseau')
     fin = mock('/__admin/etat')
     print('   requêtes :', fin['requetes'], '| octets reçus par les appareils :', fin['octetsSortis'])
     print('\n' + (str(len(echecs)) + ' ECHEC(S) : ' + ' ; '.join(echecs) if echecs else 'TOUT VERT'))

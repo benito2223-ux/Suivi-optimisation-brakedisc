@@ -5,6 +5,27 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.144.0] — 2026-11-09 · synchro iPhone fiable ; compte rendu de visite · Claude
+
+Benjamin : « la synchro sur iPhone ne fonctionne pas, ça mentionne connecté mais aucune donnée n'est dans l'outil ; je ne trouve pas le
+bouton pour générer un rapport d'essai ; je voulais vérifier la suggestion de Matis du 23/09 (photos et légendes) ; dans le dossier de
+visite, un champ texte déployable avec un récap écrit de la visite ». **Diagnostic synchro** : le cloud contient bien les données (97
+enregistrements, espace `prod`, déposés par Benjamin à 07:52) ; l'iPhone, dont la mémoire était pleine, n'arrivait pas à ENREGISTRER l'état
+reçu alors que l'état de synchro (petit) l'était : il se croyait synchronisé (curseur avancé, enregistrements « connus ») sans avoir rien en
+local. **Correctifs** : `syAppliquerEtat` lève « mémoire pleine : l'état reçu n'a pas pu être enregistré » si `storageOk` est faux (au lieu de
+poursuivre), l'adoption et la fusion du premier contact restaurent l'état de synchro en cas d'échec, la pastille dit « ☁ mémoire pleine », et un
+appareil « synchronisé » dont le suivi n'est que le jeu d'exemple repart d'un premier contact propre (test de bout en bout : état local effacé,
+état de synchro gardé → il récupère tout seul les 5 essais, rien renvoyé au cloud). **Rapport d'essai** : le bouton existe (`.essai-rapport`) mais
+il est dans « ⋯ Plus » depuis le mode « l'essentiel par défaut » (4.135) : essai ouvert → ⋯ Plus → « Rapport de l'essai ». **Suggestion du 23/09
+(photos et légendes dans le rapport d'essai)** : déjà faite depuis la v4.24 (`photosPourRapport` aplatit les photos avec leurs annotations,
+`photosRapportHTML` les rend avec `<figcaption>`) ; vérifié ce jour ; son statut « nouveau » dans le backlog n'avait jamais été mis à jour.
+**Dossier de visite** : bloc déployable « ✍ Compte rendu de la visite » (réalisé / observations / à faire pour la suite), un compte rendu par date
+(sélecteur + boutons des visites précédentes), enregistrement automatique (les trois rubriques ensemble à chaque pause, et à la sortie d'un
+champ : un bug de frappe rapide, trouvé au test, perdait la rubrique précédente), bouton « Copier le compte rendu » pour un e-mail ; rangé dans
+`planReglages.visites[date]` donc partagé par la synchro et sauvegardé sans nouvelle clé. 751 tests | 0 échec (+5) + porte lot 4.144 ; `outils/e2e_sync.py`
+26 contrôles (+2 : l'appareil qui a perdu ses données se répare seul ; la comparaison des arbres ignore la forme des pièces jointes). **Non fait** :
+les comptes rendus de visite ne sont pas dans l'export JSON (qui n'embarque pas les réglages du Plan non plus).
+
 ## [4.143.0] — 2026-11-09 · iPhone « mémoire pleine » : les pièces jointes quittent le stockage du suivi ; écran iPhone désencombré · Claude
 
 Benjamin : « le navigateur de mon iPhone me dit que la mémoire est pleine ; l'affichage iPhone est plutôt encombré ». **Cause** :

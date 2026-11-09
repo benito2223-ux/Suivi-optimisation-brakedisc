@@ -14349,6 +14349,10 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.144.0", date:"09/11/2026", points:[
+    "<b>Dossier de visite : un compte rendu écrit.</b> Un bloc déployable « ✍ Compte rendu de la visite » avec trois rubriques — <b>ce qui a été réalisé</b>, <b>observations</b>, <b>à faire pour la suite</b>. Il se sauvegarde tout seul, se retrouve par date, voyage avec la synchro, et un bouton le copie pour un e-mail.",
+    "<b>Synchro iPhone plus fiable.</b> Si la mémoire de l’appareil est pleine, l’outil le dit (« ☁ mémoire pleine ») au lieu de se croire synchronisé ; et un appareil qui s’est cru synchronisé sans avoir rien reçu repart tout seul d’une première connexion propre."
+  ]},
   { version:"4.143.0", date:"09/11/2026", points:[
     "<b>Fini le « mémoire pleine » sur iPhone.</b> Les plans et fiches d’outils joints ne sont plus enregistrés dans la mémoire du suivi (près de 3 Mo sur 3,7) mais dans un espace à part du navigateur, bien plus grand. Le suivi redescend à moins d’1 Mo.",
     "<b>Une pièce s’ouvre à la demande</b> : trouvée sur l’appareil, sinon récupérée une seule fois par la synchro. Les exports JSON gardent les pièces dedans.",
@@ -15187,7 +15191,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.143.0";
+const TOOL_VERSION = "4.144.0";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -15503,6 +15507,92 @@ function dossierVisite(reference){
 
 /* le rendu — lisible debout devant un écran de réunion : les chiffres d'abord,
    les listes ensuite, tout étiqueté, jamais mélangé (§3.4). */
+/* v4.144 — COMPTE RENDU DE VISITE. Un texte libre par visite (réalisé / observations / à faire pour la suite), rangé dans
+   planReglages.visites[date] : il voyage avec le suivi (synchro, sauvegarde) sans nouvelle clé à plomber partout. */
+const VISITE_CHAMPS = ["realise", "observations", "suite"];
+let visiteRecapDate = null, visiteRecapOuvert = false, visiteRecapMinuteur = null;
+function visiteRecapLire(date){
+  const v = (planReglages && planReglages.visites) || {};
+  return Object.assign({ realise: "", observations: "", suite: "", majLe: "", par: "" }, v[date] || {});
+}
+function visiteRecapEcrire(date, champ, valeur){
+  if(!date || VISITE_CHAMPS.indexOf(champ) === -1) return false;
+  planReglages = Object.assign({}, planReglages, { visites: Object.assign({}, (planReglages && planReglages.visites) || {}) });
+  const cur = Object.assign({ realise: "", observations: "", suite: "" }, planReglages.visites[date] || {});
+  cur[champ] = String(valeur == null ? "" : valeur);
+  cur.majLe = new Date().toISOString();
+  cur.par = (typeof auteurNom !== "undefined" && auteurNom) || "";
+  if(VISITE_CHAMPS.every(c => !String(cur[c]).trim())) delete planReglages.visites[date];
+  else planReglages.visites[date] = cur;
+  return true;
+}
+function visiteRecapDates(){
+  return Object.keys((planReglages && planReglages.visites) || {}).filter(d => VISITE_CHAMPS.some(c => visiteRecapLire(d)[c].trim())).sort().reverse();
+}
+function visiteRecapTexte(date){
+  const r = visiteRecapLire(date);
+  const p = String(date || "").split("-");
+  const fr = p.length === 3 ? p[2] + "/" + p[1] + "/" + p[0] : (date || "");
+  const bloc = t => (t && t.trim()) ? t.trim() : "—";
+  return "Visite du " + fr + "\n\nCe qui a été réalisé :\n" + bloc(r.realise) + "\n\nObservations :\n" + bloc(r.observations) + "\n\nÀ faire pour la suite :\n" + bloc(r.suite);
+}
+function visiteRecapHTML(){
+  const date = visiteRecapDate || dateIsoAujourdhui();
+  const r = visiteRecapLire(date);
+  const dates = visiteRecapDates();
+  const fr = iso => { const p = String(iso || "").split("-"); return p.length === 3 ? p[2] + "/" + p[1] + "/" + p[0] : (iso || "—"); };
+  const champ = (id, lib, val, ph) => `<label class="vr-champ"><span>${lib}</span><textarea id="${id}" rows="4" placeholder="${ph}">${escapeAttr(val)}</textarea></label>`;
+  return `<details class="visite-recap" id="visiteRecap"${visiteRecapOuvert ? " open" : ""}>
+    <summary>✍ Compte rendu de la visite <span class="vr-n">${dates.length ? dates.length + " enregistré(s)" : "aucun pour l'instant"}</span></summary>
+    <div class="vr-corps">
+      <label class="vr-date">Visite du <input type="date" id="visiteRecapDate" min="2025-01-01" max="2035-12-31" value="${escapeAttr(date)}"></label>
+      ${champ("vrRealise", "Ce qui a été réalisé", r.realise, "Essais lancés ou terminés, réglages, mesures, échanges avec l'équipe…")}
+      ${champ("vrObs", "Observations", r.observations, "Ce qui a été constaté : usure, comportement, remarques de l'atelier…")}
+      ${champ("vrSuite", "À faire pour la suite", r.suite, "Détails à traiter, essais à prévoir, informations à obtenir, qui fait quoi et pour quand…")}
+      <div class="vr-actions">
+        <button class="ghost small" id="vrCopier" type="button">Copier le compte rendu</button>
+        <span class="panel-hint" id="vrEtat">${r.majLe ? "Enregistré le " + escapeAttr(new Date(r.majLe).toLocaleString("fr-FR")) + (r.par ? " par " + escapeAttr(r.par) : "") : "Se sauvegarde tout seul à la frappe."}</span>
+      </div>
+      ${dates.length ? `<div class="vr-anciens"><span>Visites précédentes :</span> ${dates.map(d => `<button class="ghost small vr-ancien${d === date ? " actif" : ""}" data-date="${escapeAttr(d)}" type="button">${escapeAttr(fr(d))}</button>`).join(" ")}</div>` : ""}
+    </div>
+  </details>`;
+}
+function visiteRecapBrancher(){
+  const det = document.getElementById("visiteRecap");
+  if(!det) return;
+  det.addEventListener("toggle", () => { visiteRecapOuvert = det.open; });
+  const dateInp = document.getElementById("visiteRecapDate");
+  const etat = document.getElementById("vrEtat");
+  const date = () => (dateInp && dateInp.value) || visiteRecapDate || dateIsoAujourdhui();
+  const champs = { vrRealise: "realise", vrObs: "observations", vrSuite: "suite" };
+  Object.keys(champs).forEach(id => {
+    const ta = document.getElementById(id);
+    if(!ta) return;
+    ta.addEventListener("input", () => {
+      clearTimeout(visiteRecapMinuteur);
+      if(etat) etat.textContent = "Enregistrement…";
+      visiteRecapMinuteur = setTimeout(() => {
+        // les TROIS rubriques d'un coup : passer vite d'un champ à l'autre ne doit rien perdre
+        Object.keys(champs).forEach(i2 => { const t2 = document.getElementById(i2); if(t2) visiteRecapEcrire(date(), champs[i2], t2.value); });
+        saveData();
+        if(etat) etat.textContent = "Enregistré à " + new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+      }, 500);
+    });
+  });
+  Object.keys(champs).forEach(id => { const ta = document.getElementById(id); if(ta) ta.addEventListener("blur", () => {
+    clearTimeout(visiteRecapMinuteur);
+    Object.keys(champs).forEach(i2 => { const t2 = document.getElementById(i2); if(t2) visiteRecapEcrire(date(), champs[i2], t2.value); });
+    saveData();
+  }); });
+  if(dateInp) dateInp.addEventListener("change", () => { visiteRecapDate = dateInp.value || null; visiteRecapOuvert = true; renderVisite(); });
+  document.querySelectorAll("#visiteRecap .vr-ancien").forEach(b => b.addEventListener("click", () => { visiteRecapDate = b.getAttribute("data-date"); visiteRecapOuvert = true; renderVisite(); }));
+  const cop = document.getElementById("vrCopier");
+  if(cop) cop.addEventListener("click", async () => {
+    const texte = visiteRecapTexte(date());
+    try{ await navigator.clipboard.writeText(texte); if(etat) etat.textContent = "Compte rendu copié : vous pouvez le coller dans un e-mail."; }
+    catch(e){ dialogueAlerte(texte, "Compte rendu de la visite"); }
+  });
+}
 function visiteSectionTitre(t, sous){
   return `<div class="pc-titre-section">${escapeAttr(t)}${sous ? ` <span style="font-weight:400; letter-spacing:0; text-transform:none; color:var(--ink-faint);">${escapeAttr(sous)}</span>` : ""}</div>`;
 }
@@ -15518,7 +15608,8 @@ function renderVisite(){
       <input type="date" id="visiteDate" min="2025-01-01" max="2035-12-31" value="${escapeAttr(derniereVisite || "")}" title="Le point de référence du dossier — prérempli à la dernière livraison ; à poser au retour de chaque visite.">
       <button class="ghost small" id="visiteFaite" title="Pose la date de référence à aujourd'hui — le geste du retour de visite">✓ Visite faite (aujourd'hui)</button>
       <span style="font-size:13px; color:#1b5ea6;">référence : ${escapeAttr(refTxt)}${d.derniereLivraison ? ` · dernière livraison : ${escapeAttr(fr(d.derniereLivraison))}` : ""}</span>
-    </div>`;
+    </div>
+    ${visiteRecapHTML()}`;
   /* les gains d'abord — qualifiés, jamais additionnés entre familles */
   const g = d.gains;
   const ligneGain = (l, badge) => `<tr><td class="mono">${escapeAttr(l.ligne)} · ${escapeAttr(l.opCode)}</td><td>${escapeAttr(l.ref)}</td><td><b>${escapeAttr(l.scenario)}</b></td><td>${badge || ""}</td><td class="mono" style="font-weight:600; color:var(--green);">+ ${fmtEuroCourt(Math.round(l.gain))}<small style="color:var(--ink-faint);"> /an</small></td></tr>`;
@@ -15593,6 +15684,7 @@ function renderVisite(){
     h += `</tbody></table>`;
   }
   wrap.innerHTML = h;
+  visiteRecapBrancher();
   const dateInp = document.getElementById("visiteDate");
   if(dateInp) dateInp.addEventListener("change", () => {
     derniereVisite = dateInp.value || null;
@@ -21571,6 +21663,8 @@ function syAppliquerEtat(parts){
     activeId = data.find(s => s.id === nav.s) ? nav.s : (data[0] ? data[0].id : null);
     recomputeCycles();
     saveData();
+    // v4.144 : si la mémoire de l'appareil est pleine, saveData() n'écrit rien : on ne doit PAS se croire synchronisé
+    if(typeof storageOk !== "undefined" && storageOk === false) throw new Error("mémoire pleine : l'état reçu n'a pas pu être enregistré sur cet appareil");
   } finally { cloudPause = false; }
 }
 /* une saisie est en cours : ne pas re-dessiner l'écran sous les doigts de quelqu'un */
@@ -21740,6 +21834,11 @@ async function syLireTout(){
   return { tout, curseur: c };
 }
 async function syAdopterTout(lu){
+  const copieEtat = JSON.stringify(syEtat);
+  try{ await syAdopterToutInterne(lu); }
+  catch(e){ syEtat = JSON.parse(copieEtat); syMem.base = {}; throw e; }
+}
+async function syAdopterToutInterne(lu){
   lu.tout.forEach(r => { if(r.body) r.body = syPjNormaliser(r.body); });
   await syBlobsAvoir(Object.fromEntries(lu.tout.filter(r => !r.supprime).map(r => [r.id, r.body])), lu.tout.filter(r => !r.supprime).map(r => r.id));
   const corps = {};
@@ -21760,6 +21859,11 @@ async function syAdopterTout(lu){
   });
 }
 async function syFusionnerTout(lu){
+  const copieEtat = JSON.stringify(syEtat);
+  try{ await syFusionnerToutInterne(lu); }
+  catch(e){ syEtat = JSON.parse(copieEtat); syMem.base = {}; throw e; }
+}
+async function syFusionnerToutInterne(lu){
   lu.tout.forEach(r => { if(r.body) r.body = syPjNormaliser(r.body); });
   const dec = syMem.dec || syCalculer();
   await syBlobsAvoir(Object.fromEntries(lu.tout.filter(r => !r.supprime).map(r => [r.id, r.body])), lu.tout.filter(r => !r.supprime).map(r => r.id));
@@ -21826,6 +21930,14 @@ async function sySync(raison){
   try{
     try{ await pjMigrer(); }catch(e){ journaliser("pj", e); }   // les pièces sortent du suivi AVANT tout envoi
     try{ syCalculer(); }catch(e){ journaliser("sync", e); }   // la file d'attente se voit même sans réseau
+    if(syEtat.premier && Object.keys(syEtat.shards).length > 0 && syLocalEstExemple()){
+      // v4.144 : l'appareil se croit synchronisé mais ne porte que le jeu d'exemple — l'enregistrement local avait échoué
+      // (mémoire pleine) alors que l'état de synchro, lui, avait été sauvé. On repart d'un premier contact propre.
+      journaliser("sync", "état incohérent (synchronisé sans données réelles) : reprise du premier contact");
+      syEtat = { espace: SY_ESPACE, curseur: 0, shards: {}, sales: {}, bases: {}, premier: false };
+      syMem.base = {};
+      sySauver();
+    }
     if(syMem.membre !== true){
       const st = await syRpc("suivi_statut", {});
       syMem.membre = !!(st && st.membre);
@@ -22233,6 +22345,7 @@ function cloudRenduPastille(){
   else if(err){
     if(/code d'équipe/.test(err)){ txt = "☁ code d'équipe"; el.classList.add("alerte"); }
     else if(/expirée/.test(err)){ txt = "☁ déconnecté"; el.classList.add("critique"); }
+    else if(/mémoire pleine/.test(err)){ txt = "☁ mémoire pleine"; el.classList.add("critique"); }
     else if(/simultanées/.test(err)){ txt = "☁ à revoir"; el.classList.add("alerte"); }
     else { txt = s.enAttente ? "☁ hors ligne · " + s.enAttente + " en attente" : "☁ hors ligne"; el.classList.add("alerte"); }
     title += " — " + err;
@@ -26073,6 +26186,19 @@ function runTests(){
     ok("pièces : un plan reçu en « §blob§ » devient une référence à ouvrir à la demande ; une photo reste en blob",
        syPjNormaliser({ outils:[{ plan:{ filename:"p.pdf", dataUrl:"§blob§xyz" } }], photo:{ dataUrl:"§blob§aa" } }),
        { outils:[{ plan:{ filename:"p.pdf", dataUrl:"§pj§xyz" } }], photo:{ dataUrl:"§blob§aa" } });
+    { // compte rendu de visite : écrire, relire, dater, copier — sans toucher aux vrais réglages
+      const sauvePR = planReglages;
+      planReglages = { relSpk: 100 };
+      visiteRecapEcrire("2026-11-09", "realise", "Essai SL500 lancé, 12 mesures relevées");
+      visiteRecapEcrire("2026-11-09", "suite", "Reprendre les 3 essais restants");
+      ok("visite : un compte rendu s'écrit et se relit par date", [visiteRecapLire("2026-11-09").realise, visiteRecapLire("2026-11-09").suite, visiteRecapLire("2026-11-09").observations], ["Essai SL500 lancé, 12 mesures relevées", "Reprendre les 3 essais restants", ""]);
+      ok("visite : une autre date est vide, les réglages existants sont conservés", [visiteRecapLire("2026-10-01").realise, planReglages.relSpk], ["", 100]);
+      ok("visite : le texte à copier porte les trois rubriques et la date en français", /^Visite du 09\/11\/2026[\s\S]*Ce qui a été réalisé :[\s\S]*Observations :\n—[\s\S]*À faire pour la suite :\nReprendre/.test(visiteRecapTexte("2026-11-09")), true);
+      ok("visite : un champ inconnu est refusé", visiteRecapEcrire("2026-11-09", "autre", "x"), false);
+      visiteRecapEcrire("2026-11-09", "realise", ""); visiteRecapEcrire("2026-11-09", "suite", "");
+      ok("visite : un compte rendu vidé disparaît (pas de fiche vide)", visiteRecapDates(), []);
+      planReglages = sauvePR;
+    }
     ok("pièces : les références d'un enregistrement se listent", [...syPjReferences({ a:{ dataUrl:"§pj§s1" }, b:[{ dataUrl:"§pj§s2" }, { dataUrl:"data:x" }] }, new Set())].sort(), ["s1", "s2"]);
   }
 

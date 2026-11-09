@@ -196,6 +196,10 @@ Matis doivent tenir le MÊME état (v3) — une correction d'un côté recrée d
 lignées. Consigne Matis : import v3, Remplacer tout, ne pas cliquer la correction.
 
 
+### ▸ Tour 128 — 09/11/2026 — **Claude** (v4.144.0 — synchro iPhone fiable ; compte rendu de visite ; branche `ux-rail`)
+
+Voir CHANGELOG 4.144.0. À reporter à Matis : sa suggestion du 23/09 (photos et légendes dans le rapport d'essai) est faite depuis la 4.24 — à passer en « traité » dans son backlog. Rapport d'essai : essai ouvert → « ⋯ Plus » → « Rapport de l'essai ». **Décision en attente** : faire remonter « Rapport de l'essai » hors du menu « Plus » (un bouton visible dans l'en-tête de l'essai) ?
+
 ### ▸ Tour 127 — 09/11/2026 — **Claude** (v4.143.0 — iPhone : mémoire pleine, écran encombré ; branche `ux-rail`)
 
 Benjamin : « la mémoire de mon iPhone est pleine ; l'affichage iPhone est encombré » (voir CHANGELOG 4.143.0). Les plans joints (≈ 3 Mo) et l'historique local (jusqu'à 10 Mo) saturaient le stockage : pièces rangées à part (IndexedDB), suivi local à 772 Ko sur les données de Matis. **À savoir** : sur un iPhone déjà plein, vider les données du site puis se reconnecter à la synchro peut être nécessaire — après avoir vérifié que ce qu'il contient est dans le cloud. Un `bash` de fond de la session précédente (serveur factice, port 8935) a été signalé « arrêté » : sans conséquence.

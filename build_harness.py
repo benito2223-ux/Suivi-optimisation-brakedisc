@@ -1572,6 +1572,23 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.135.0 : l’essentiel par défaut, Détails, menu Outils, simulateur retiré' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  /* ── v4.144.0 — synchro iPhone fiable ; compte rendu de visite ── */
+  (function lot4144Visite(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const lire = function(f){ try { return fs.readFileSync(path.join(REPO, f), 'utf8'); } catch (e) { return ''; } };
+    const html = lire('bilan_economique.html');
+    if (html.indexOf('function visiteRecapEcrire(') === -1) echecs.push('le compte rendu de visite a disparu');
+    if (html.indexOf('function visiteRecapHTML(') === -1) echecs.push('le bloc déployable a disparu du dossier de visite');
+    if (html.indexOf('planReglages.visites') === -1) echecs.push('le compte rendu ne passe plus par planReglages (il ne voyagerait plus)');
+    if (html.indexOf('mémoire pleine : l') === -1) echecs.push('la synchro ne vérifie plus que l état reçu est enregistré');
+    if (html.indexOf('reprise du premier contact') === -1) echecs.push('la reprise après état incohérent a disparu');
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.144.0 : synchro iPhone fiable, compte rendu de visite' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   /* ── v4.143.0 — les pièces jointes hors du stockage du suivi ── */
   (function lot4143Pieces(){
     const fs = require('fs');

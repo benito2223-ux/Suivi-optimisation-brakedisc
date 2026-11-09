@@ -6,6 +6,9 @@
 
 ---
 
+✅ **Verrou pris puis libéré par Claude le 09/11/2026** (Tour 128, branche `ux-rail`, v4.144.0 —
+synchro iPhone fiable ; compte rendu de visite). 751 tests | 0 échec + porte lot 4.144 + 26 contrôles de bout en bout.
+
 ✅ **Verrou pris puis libéré par Claude le 09/11/2026** (Tour 127, branche `ux-rail`, v4.143.0 —
 iPhone : pièces jointes hors du stockage du suivi, historique allégé, écran désencombré). 746 tests | 0 échec + porte lot 4.143.
 
