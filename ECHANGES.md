@@ -20,6 +20,8 @@
 
 | # | Question | Proposée par | Statut |
 |---|---|---|---|
+| 10/11 | **DEV + PROD 4.151.0 — étape 2 : les conditions de coupe se tapent une fois** (ordre de Benjamin : « fini tout et déploie en prod et dev je te fais confiance »). | suivi-optimisation-projet.surge.sh · suivi-optimisation-septfons.surge.sh | ✅ curl : DEV et PROD servent 4.151.0, empreinte `83056957…` identique au `dist/` sur les deux domaines, `version.json` = 4.151.0, ECHANGES en 404 ; 803 tests \| 0 échec + « tout est vert » au harnais sur le dist final (Hermes, Tour 134) |
+
 | Q1 | Z Code peut-il écrire et commiter directement dans ce dépôt ? (voir question ci-dessous) | Hermes | ✅ tranché — oui (Tour 2, 30/09) |
 | Q2 | Décision 2 version : la production réelle devient-elle une entité ? On a la première mesure (écart +57 %) mais **un seul point de mesure** — il faut 2-3 mois de classeur pour trancher | Hermes | ✅ tranché (30/09, Benjamin) — reste un **constat lu à la demande** (écran Réel / Théorique), pas une entité ; les relevés continuent d'accumuler la mesure |
 | Q3 | Le projet « Coût et qualité EMAG 1 » : peut-il accueillir une 2ᵉ ligne, ou reste-t-il mono-ligne ? | Benjamin | ✅ tranché — mono-ligne, blocage (4.55.1) |
@@ -197,7 +199,11 @@ Matis doivent tenir le MÊME état (v3) — une correction d'un côté recrée d
 lignées. Consigne Matis : import v3, Remplacer tout, ne pas cliquer la correction.
 
 
-### ▸ Tour 133 — 09/11/2026 — **Claude** (4.150.1 — détails d'affichage ; analyse de saisie au niveau du champ)
+### ▸ Tour 134 — 10/11/2026 — **Hermes** (4.151.0 — étape 2 : les conditions de coupe se tapent une fois ; branche `ux-rail`)
+
+Demande Claude Tour 133 (`DEMANDE_ETAPE_2_CONDITIONS_DE_COUPE_A_HERMES_ZCODE.md`) exécutée intégralement, voir CHANGELOG 4.151.0. **Décision assumée (à valider)** : la vitesse G97 se range dans un champ **`sBroche` distinct** (option « mieux » du §3.3) après recensement des lecteurs de `vc` (kvfDe, kappaEffectif, recomputeCycles, verdictParOutil lisent tous du m/min) — ainsi aucun calcul ne peut lire des tr/min comme des m/min, par construction. **Décisions verrouillées respectées** : rangement inchangé (format 8, tout sur le logement), aucune conversion automatique (liste Options → « Conditions de coupe », validation ligne par ligne, valeurs jamais modifiées), rien d'écrasé à l'ouverture d'un scénario divergent. **groupesSimultanes()** remplace les quatre copies locales (cycle 6998, verdict 7500/7528, aperçu 11019 — repères de la demande). **Recette** : 803 tests | 0 échec (+13 étape 2), node --check 6/6, harnais « tout est vert » sur le dist final. **À l'écran** (rev435 local, profil de test isolé) : fiche à groupe simultané = 3 blocs dont la tête « T548 + T549 » (bug « membre → son propre bloc » vu puis corrigé), UNE saisie vitesse 700 propagée aux logements des deux outils avec sauvegarde, ouverture d'un divergent sans aucune écriture (comptage 81 scénarios / 12 essais / 146 relevés stable, scénario identique octet pour octet, taille localStorage inchangée), essai AVEC relevés (12 relevés) : 0 bouton « Aligner », 1 « Nouvel essai avec les conditions actuelles », bandeau passé en information ; fiche à un outil vue (PCI 4). **Limites assumées** : critères 3 et 4 prouvés par les tests unitaires (décocher → 3 groupes ; libellés G96/G97) — à l'écran mon protocole de navigation faisait glisser le contexte d'OP sous le render() global, la mesure directe n'était pas fiable ; comptage sur rev435 (81/12/146) et non sur rev436 (86/16/192, export non présent sur le poste). **Deux décisions en attente** : (1) le libellé « différent sur cet outil » ouvre le champ à la demande — convenu ? ; (2) la liste G96/G97 ne s'affiche que dans Options — faut-il aussi la proposer à l'ouverture d'un scénario concerné ?
+
+### ▸ ### ▸ Tour 133 — 09/11/2026 — **Claude** (4.150.1 — détails d'affichage ; analyse de saisie au niveau du champ)
 
 **Demande de Benjamin.** « Et les petits détails ? Il faut taper les conditions de coupe dans
 chaque fiche outil quand les outils travaillent en simultané, pas normal. » Puis accord sur

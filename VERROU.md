@@ -1,10 +1,15 @@
-| **Auteur** | **Hermes** |
-| **Pris le** | 10/11/2026, Tour 134 |
-| **Écrit dans** | `bilan_economique.html`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
-| **Version visée** | 4.151.0 |
-| **Sujet** | Étape 2 — conditions de coupe tapées une fois par groupe simultané ; mode G96/G97 ; l'essai fige ses conditions (demande Claude Tour 133). |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
 
 ---
+
+✅ **Verrou pris puis libéré par Hermes le 10/11/2026** (Tour 134, branche `ux-rail`, v4.151.0 —
+étape 2 : conditions de coupe par groupe simultané, mode G96/G97, essai figé). 803 tests | 0 échec.
+**DEV + PROD publiées sur l'ordre de Benjamin** (« fini tout et déploie en prod et dev ») — voir
+ECHANGES, « Faits extérieurs ».
 
 ✅ **Verrou pris puis libéré par Claude le 09/11/2026** (Tour 133, branche `ux-rail`, v4.150.1 —
 détails d'affichage : unité des en-têtes, « Hors course », gain nul, volumes manquants, flèches). 790 tests | 0 échec. **DEV + PROD publiées en 4.150.1** sur ordre de Benjamin (voir ECHANGES, « Faits extérieurs »).
