@@ -5,6 +5,20 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.145.0] — 2026-11-09 · garde-fou contre les suppressions et vidages en masse (incident de synchro) · Claude
+
+**Incident** : le 09/11 à 06:50 UTC, l'iPhone de Benjamin (mémoire pleine, état local vide mais état de synchro « connu ») a envoyé en quelques
+secondes 82 suppressions et plusieurs réglages remplacés par des listes vides ; l'arbre partagé a été remplacé par celui du jeu d'exemple (3
+scénarios). **Rien n'est perdu** : l'historique serveur (10 révisions par enregistrement) a permis de tout restaurer (97 enregistrements, 80
+scénarios, arbre d'origine rev 1 de 35 019 octets, réglages, backlog, plan) ; sauvegardes `sync_secours_20261109`, `sync_secours_hist_20261109`,
+`sync_secours_orphelins_20261109`. **Serveur** (migration `20261109_garde_suppression.sql`, appliquée) : `sync_push` refuse l'envoi ENTIER s'il
+contient plus de 5 suppressions ou plus de 3 enregistrements remplis réécrits à vide. **Appli** (`syGardeEnvoi`, appelée par `syPousser`, point de
+passage unique) : (1) un appareil qui ne porte que le jeu d'exemple n'envoie JAMAIS rien ; (2) mêmes plafonds que le serveur, et en cas de refus
+tout l'envoi est annulé (l'arbre et les scénarios sont liés) et re-tiré du cloud ; message « protection : … non envoyé, restauré depuis le cloud ».
+Supprimer plus de 5 scénarios d'un coup se fait donc en plusieurs fois. 751 tests | 0 échec + porte lot 4.145 ; `outils/e2e_sync.py` 31 contrôles (+5 :
+8 suppressions refusées, cloud intact, scénarios retrouvés, rien en attente, suppression ordinaire toujours acceptée). **À faire côté appareils** :
+recharger l'outil (ne pas synchroniser avec une version antérieure à 4.145 : elle n'a pas la garde client, seule la garde serveur la protège).
+
 ## [4.144.0] — 2026-11-09 · synchro iPhone fiable ; compte rendu de visite · Claude
 
 Benjamin : « la synchro sur iPhone ne fonctionne pas, ça mentionne connecté mais aucune donnée n'est dans l'outil ; je ne trouve pas le

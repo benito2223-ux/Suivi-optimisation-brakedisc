@@ -14349,6 +14349,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.145.0", date:"09/11/2026", points:[
+    "<b>Protection contre les pertes de données.</b> Un appareil ne peut plus effacer le suivi partagé : il n’envoie jamais rien s’il ne porte que le jeu d’exemple, et refuse d’un coup plus de 5 suppressions ou plus de 3 enregistrements vidés (il les récupère alors depuis le cloud). Le serveur applique la même règle."
+  ]},
   { version:"4.144.0", date:"09/11/2026", points:[
     "<b>Dossier de visite : un compte rendu écrit.</b> Un bloc déployable « ✍ Compte rendu de la visite » avec trois rubriques — <b>ce qui a été réalisé</b>, <b>observations</b>, <b>à faire pour la suite</b>. Il se sauvegarde tout seul, se retrouve par date, voyage avec la synchro, et un bouton le copie pour un e-mail.",
     "<b>Synchro iPhone plus fiable.</b> Si la mémoire de l’appareil est pleine, l’outil le dit (« ☁ mémoire pleine ») au lieu de se croire synchronisé ; et un appareil qui s’est cru synchronisé sans avoir rien reçu repart tout seul d’une première connexion propre."
@@ -15191,7 +15194,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.144.0";
+const TOOL_VERSION = "4.145.0";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -21765,6 +21768,22 @@ async function syTirer(){
 }
 
 /* ---------- envoyer ---------- */
+/* v4.145 — garde-fou d'envoi. Incident du 09/11/2026 : un iPhone dont l'état local était vide (mémoire pleine) s'est cru
+   synchronisé et a envoyé 82 suppressions + des réglages vidés. Règles (miroir de la garde du serveur) :
+   1) un appareil qui ne porte que le jeu d'exemple n'envoie JAMAIS rien ;
+   2) plus de SY_MAX_SUPPR suppressions, ou plus de SY_MAX_VIDES enregistrements remplis réécrits à vide, dans un même
+      envoi : l'envoi ENTIER est refusé, ses marques sont retirées et les enregistrements sont re-tirés du cloud (rien n'est perdu côté cloud). */
+const SY_MAX_SUPPR = 5, SY_MAX_VIDES = 3;
+function syCorpsVide(b){ return b === null || b === undefined || (Array.isArray(b) && !b.length) || (typeof b === "object" && !Array.isArray(b) && !Object.keys(b).length); }
+function syGardeEnvoi(items){
+  if(syLocalEstExemple()) return { motif: "cet appareil ne porte que le jeu d'exemple", ids: items.map(it => it.id), tout: true };
+  const sup = items.filter(it => it.supprime).map(it => it.id);
+  const vides = items.filter(it => !it.supprime && it.base_rev > 0 && syCorpsVide(it.body) && syMem.base[it.id] !== undefined && !syCorpsVide(syMem.base[it.id])
+                                    && JSON.stringify(syMem.base[it.id]).length > 20).map(it => it.id);
+  if(sup.length > SY_MAX_SUPPR) return { motif: sup.length + " suppressions d'un coup", ids: sup.concat(vides) };
+  if(vides.length > SY_MAX_VIDES) return { motif: vides.length + " enregistrements remplis vidés d'un coup", ids: sup.concat(vides) };
+  return null;
+}
 async function syPousser(){
   const ids = Object.keys(syEtat.sales);
   if(!ids.length) return true;
@@ -21774,6 +21793,17 @@ async function syPousser(){
     const rec = syEtat.shards[id];
     return { id, kind: sup ? ((rec && rec.kind) || "") : dec.shards[id].kind, body: sup ? null : dec.shards[id].body, base_rev: rec ? rec.rev : 0, supprime: sup };
   });
+  const garde = syGardeEnvoi(items);
+  if(garde){
+    journaliser("sync", "envoi refusé par la garde : " + garde.motif + " (" + garde.ids.length + " enregistrement(s))");
+    if(garde.tout){ syMem.erreur = "rien envoyé : " + garde.motif; syMem.attente = Object.keys(syEtat.sales).length; return true; }
+    // tout l'envoi est annulé (l'arbre et les enregistrements de scénarios sont liés : en restaurer une partie les re-marquerait supprimés)
+    items.forEach(it => { delete syEtat.sales[it.id]; delete syEtat.bases[it.id]; delete syEtat.shards[it.id]; delete syMem.base[it.id]; });
+    syEtat.curseur = 0;                     // tout est re-tiré : ce que le cloud a, cet appareil le retrouve
+    syMem.erreur = "protection : " + garde.motif + " — non envoyé, restauré depuis le cloud";
+    sySauver();
+    return false;
+  }
   // pièces volumineuses : seulement celles que le serveur n'a pas
   const shas = new Set();
   items.forEach(it => { if(it.body) syBlobsReferences(it.body, shas); });

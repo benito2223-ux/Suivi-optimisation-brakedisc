@@ -6,6 +6,9 @@
 
 ---
 
+✅ **Verrou pris puis libéré par Claude le 09/11/2026** (Tour 129, branche `ux-rail`, v4.145.0 —
+incident de synchro : garde-fous serveur + appli). 751 tests | 0 échec + porte lot 4.145 + 31 contrôles de bout en bout.
+
 ✅ **Verrou pris puis libéré par Claude le 09/11/2026** (Tour 128, branche `ux-rail`, v4.144.0 —
 synchro iPhone fiable ; compte rendu de visite). 751 tests | 0 échec + porte lot 4.144 + 26 contrôles de bout en bout.
 

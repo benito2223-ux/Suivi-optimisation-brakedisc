@@ -1572,6 +1572,34 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.135.0 : l’essentiel par défaut, Détails, menu Outils, simulateur retiré' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  /* ── v4.145.0 — garde-fou contre les suppressions et vidages en masse (incident du 09/11) ── */
+  (function lot4145Garde(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const lire = function(f){ try { return fs.readFileSync(path.join(REPO, f), 'utf8'); } catch (e) { return ''; } };
+    const html = lire('bilan_economique.html');
+    if (html.indexOf('function syGardeEnvoi(') === -1) echecs.push('la garde d envoi a disparu');
+    if (html.indexOf('const garde = syGardeEnvoi(items);') === -1) echecs.push('syPousser n appelle plus la garde');
+    if (html.indexOf('SY_MAX_SUPPR = 5') === -1) echecs.push('le plafond de suppressions a changé');
+    if (!/syGardeEnvoi[\s\S]{0,200}syLocalEstExemple/.test(html)) echecs.push('la garde n interdit plus tout envoi depuis le jeu d exemple');
+    const sql = lire('supabase/migrations/20261109_garde_suppression.sql');
+    if (sql.indexOf('nb_sup > 5') === -1) echecs.push('la garde serveur (migration) a disparu');
+    try {
+      if (typeof syGardeEnvoi === 'function') {
+        const faux = n => Array.from({ length: n }, (_, i) => ({ id: 'sc:x:' + i, supprime: true, body: null, base_rev: 1 }));
+        const memLocal = syLocalEstExemple; syLocalEstExemple = function(){ return false; };
+        try {
+          if (syGardeEnvoi(faux(6)) === null) echecs.push('6 suppressions passent');
+          if (syGardeEnvoi(faux(5)) !== null) echecs.push('5 suppressions sont refusées à tort');
+        } finally { syLocalEstExemple = memLocal; }
+      }
+    } catch (e) { echecs.push('test direct de la garde : ' + e.message); }
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.145.0 : garde-fou suppressions et vidages en masse' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   /* ── v4.144.0 — synchro iPhone fiable ; compte rendu de visite ── */
   (function lot4144Visite(){
     const fs = require('fs');

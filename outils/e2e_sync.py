@@ -95,6 +95,8 @@ module.exports = async (A, LS) => {
         else if (k === 'nom') s.name = v;
         else if (k === 'tol') { e.marpossListe = e.marpossListe || []; if (!e.marpossListe.length) e.marpossListe.push({ id: 'mj1', jour: '', debut: '', fin: '', tol: '', releves: [] }); e.marpossListe[0].tol = v; }
         else if (k === 'supprimer-dernier-scenario') { const op = A.lignes[0].references[0].ops[0]; op.scenarios.pop(); }
+        else if (k === 'nouveaux-scenarios') { const op = A.lignes[0].references[0].ops[0]; for (let i = 0; i < +v; i++) { const c = JSON.parse(JSON.stringify(op.scenarios[0])); c.id = 'sx' + i + Math.random().toString(36).slice(2, 5); c.name = 'Lot ' + i; c.essais = []; c.baseline = false; op.scenarios.push(c); } }
+        else if (k === 'supprimer-derniers') { const op = A.lignes[0].references[0].ops[0]; for (let i = 0; i < +v; i++) op.scenarios.pop(); }
         else if (k === 'nouveau-scenario') { const op = A.lignes[0].references[0].ops[0]; const c = JSON.parse(JSON.stringify(op.scenarios[0])); c.id = 'snew' + Math.random().toString(36).slice(2, 6); c.name = v; c.essais = []; op.scenarios.push(c); }
       });
       A.saveData(); A.syCalculer();
@@ -202,6 +204,18 @@ if __name__ == '__main__':
     rb = pas('B', 'sync')
     verifier('l\u2019appareil sans données se répare : il reprend un premier contact et récupère tout', rb['sonde']['essais'] == avant_essais, (rb['sonde']['essais'], avant_essais))
     verifier('... sans rien renvoyer au cloud par erreur', rb['enAttente'] == 0, rb['enAttente'])
+    print('== 8 bis. garde-fou : une suppression en masse n’atteint JAMAIS le cloud, et l’appareil retrouve ses scénarios')
+    pas('A', 'editer', 'nouveaux-scenarios=8'); pas('A', 'sync'); pas('B', 'sync')
+    avant_sc = pas('A', 'sonde')['sonde']['scenarios']
+    vivants = mock('/__admin/etat')['shards']
+    pas('A', 'editer', 'supprimer-derniers=8')
+    ra = pas('A', 'sync')
+    verifier('l’envoi de 8 suppressions est refusé avec un message de protection', 'protection' in (ra['resume']['erreur'] or ''), ra['resume']['erreur'])
+    verifier('le cloud n’a perdu aucun enregistrement', mock('/__admin/etat')['shards'] == vivants, (mock('/__admin/etat')['shards'], vivants))
+    verifier('l’appareil a retrouvé ses 8 scénarios depuis le cloud', ra['sonde']['scenarios'] == avant_sc, (ra['sonde']['scenarios'], avant_sc))
+    verifier('rien n’est resté en attente de suppression', ra['enAttente'] == 0, ra['enAttente'])
+    pas('A', 'editer', 'supprimer-derniers=2'); pas('A', 'sync')
+    verifier('une suppression ordinaire (2 scénarios) passe toujours', pas('B', 'sync')['sonde']['scenarios'] == avant_sc - 2)
     print('== 9. le coût réseau')
     fin = mock('/__admin/etat')
     print('   requêtes :', fin['requetes'], '| octets reçus par les appareils :', fin['octetsSortis'])

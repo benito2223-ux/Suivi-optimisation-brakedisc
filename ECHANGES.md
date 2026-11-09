@@ -196,6 +196,10 @@ Matis doivent tenir le MÊME état (v3) — une correction d'un côté recrée d
 lignées. Consigne Matis : import v3, Remplacer tout, ne pas cliquer la correction.
 
 
+### ▸ Tour 129 — 09/11/2026 — **Claude** (v4.145.0 — incident de synchro : données restaurées, garde-fous serveur et appli ; branche `ux-rail`)
+
+Voir CHANGELOG 4.145.0. Les données supprimées par l'iPhone ont été restaurées depuis l'historique du cloud (80 scénarios, arbre, réglages). **À Matis** : recharger l'outil avant toute synchro ; un appareil resté sur une version < 4.145 ne doit pas se connecter. **Reste à surveiller** : l'état local de l'iPhone de Benjamin (à vider puis se reconnecter une fois la 4.145 en ligne) ; l'état local du PC de Benjamin (il doit avoir repris le cloud restauré — vérifier le nombre d'essais).
+
 ### ▸ Tour 128 — 09/11/2026 — **Claude** (v4.144.0 — synchro iPhone fiable ; compte rendu de visite ; branche `ux-rail`)
 
 Voir CHANGELOG 4.144.0. À reporter à Matis : sa suggestion du 23/09 (photos et légendes dans le rapport d'essai) est faite depuis la 4.24 — à passer en « traité » dans son backlog. Rapport d'essai : essai ouvert → « ⋯ Plus » → « Rapport de l'essai ». **Décision en attente** : faire remonter « Rapport de l'essai » hors du menu « Plus » (un bouton visible dans l'en-tête de l'essai) ?
