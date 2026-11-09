@@ -1909,12 +1909,12 @@ body.atelier-on{overflow:hidden;}
    qu'on ne savait pas qu'elles existaient. Affichées en permanence hors atelier, la
    souris en fait un vrai contrôle de pas (step du champ). Le mode atelier garde ses
    champs nus — règle historique : pas de flèches qui gênent la saisie aux gants. */
-body:not(.atelier-on) input[type="number"]::-webkit-inner-spin-button,
-body:not(.atelier-on) input[type="number"]::-webkit-outer-spin-button{
-  opacity:1;
-}
-body:not(.atelier-on) input[type="number"]::-webkit-inner-spin-button{ cursor:pointer; }
-body:not(.atelier-on) input[type="number"]{ -moz-appearance:number-input; }
+/* v4.150.1 — retour sur le choix v4.101 : plus de flèches nulle part. Un prix à 10,97 €
+   ou une avance à 0,25 se tapent ; une flèche les change d'un pas sans qu'on l'ait voulu.
+   Les touches ↑ ↓ du clavier restent actives dans le champ. */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button{ -webkit-appearance:none; margin:0; }
+input[type="number"]{ -moz-appearance:textfield; appearance:textfield; }
 
 .at-valider{min-height:76px; font-size:19px; border-radius:var(--radius);}
 
@@ -5137,7 +5137,7 @@ function prelevementsDetailHTML(sc, es){
   return `
     <h3 style="font-size:12.5px; margin:16px 0 4px; color:#154d8a; text-transform:uppercase; letter-spacing:.03em;">${escapeAttr(es.titre)}${es.date ? " — " + escapeAttr(es.date) : ""}</h3>
     <table>
-      <tr><th>N° pièce</th>${showLogementCol ? "<th>Logement</th>" : ""}<th>Point de mesure</th><th>Valeur</th>${csupCols.map(col => `<th>${escapeAttr(col.c.label || "critère")}${col.ax !== "v" ? " " + (AXE_LABELS[col.ax] || col.ax) : ""}</th>`).join("")}<th>Usure</th><th>Statut</th></tr>
+      <tr><th>N° pièce</th>${showLogementCol ? "<th>Logement</th>" : ""}<th>Point de mesure</th><th>Valeur</th>${csupCols.map(col => `<th>${libelleEntete(col.c.label || "critère")}${col.ax !== "v" ? " " + (AXE_LABELS[col.ax] || col.ax) : ""}</th>`).join("")}<th>Usure</th><th>Statut</th></tr>
       ${rows}
     </table>
   `;
@@ -5389,7 +5389,7 @@ function essaiRapportHTML(sc, essai, photosRap){
         <td>${statut}</td>
       </tr>`;
     }).join("");
-  const csupHeadsRap = csupCols.map(col => `<th>${escapeAttr(col.c.label || "critère")}${col.ax !== "v" ? " " + (AXE_LABELS[col.ax] || col.ax) : ""}</th>`).join("");
+  const csupHeadsRap = csupCols.map(col => `<th>${libelleEntete(col.c.label || "critère")}${col.ax !== "v" ? " " + (AXE_LABELS[col.ax] || col.ax) : ""}</th>`).join("");
 
   /* v4.12 — section Marposs du rapport : UNE sous-section par extraction (par journée)
      si l'essai a coché l'option. Palette en dur : le rapport est un fichier autonome
@@ -6613,7 +6613,7 @@ function verdictHTML(sc){
     const gain = dCost !== null && dCost < 0;
 
     classe = echec ? "bad" : stats.validated ? "ok" : (stats.badCount > 0 ? "bad" : "pending");
-    eyebrow = echec ? "⛔ FAILED — hors course"
+    eyebrow = echec ? "⛔ HORS COURSE"
             : stats.validated ? "Bilan validé" : "Verdict d'essai";
     if(dCost === null){
       titre = "Renseignez prix, arêtes et charnière";
@@ -7693,6 +7693,14 @@ function ecartsCharniereHTML(sc){
 function escapeAttr(s){
   return String(s ?? "").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
 }
+/* v4.150.1 — libellé d'en-tête de colonne : l'unité entre parenthèses garde sa casse.
+   Les en-têtes de tableau passent en majuscules (CSS), et la majuscule de « µ » est
+   « Μ » : « Ra (µm) » s'affichait « RA (MM) », une unité fausse d'un facteur 1000.
+   Style en ligne et non classe : le même libellé part dans les rapports imprimés,
+   qui ont leur propre feuille de style. */
+function libelleEntete(s){
+  return escapeAttr(s).replace(/\(([^()]{1,12})\)/g, '<span style="text-transform:none">($1)</span>');
+}
 
 /* ---- graphique de tendance ---- */
 const CHART_COLORS = ["#3b82f6","#14b8a6","#a78bfa","#f59e0b","#22c55e","#94a3b8","#ec4899","#0ea5e9"];
@@ -8447,7 +8455,7 @@ function syntheseTableHTML(){
       tBad: stats.badCount,
       tRebut: scrap.rate === null ? "—" : fmt(scrap.rate,1) + " %",
       tStatut: `<span class="statut-pill ${sc.statut||"essai"}">${statutLabel(sc.statut)}</span>`,
-      tVal: (scenarioEchec(sc) ? "⛔ FAILED — " : "") +
+      tVal: (scenarioEchec(sc) ? "⛔ HORS COURSE — " : "") +
             (stats.validated ? "✓ Validé" : (stats.validCount + "/" + (sc.validationThreshold || "—") + " essais"))
     };
   });
@@ -8725,7 +8733,7 @@ function renderTabs(){
         </span>
         <span class="tc-badges">
           ${actif ? "" : `<span class="statut-pill ${sc.statut || "essai"}">${statutLabel(sc.statut)}</span>`}
-          ${(() => { const ech = scenarioEchec(sc); return ech ? `<span class="status-badge risk" title="${escapeAttr(ech.join(" · "))}">⛔ FAILED</span>` : ""; })()}
+          ${(() => { const ech = scenarioEchec(sc); return ech ? `<span class="status-badge risk" title="${escapeAttr(ech.join(" · "))}">⛔ Hors course</span>` : ""; })()}
           ${actif ? "" : `<span class="status-badge ${stats.validated ? "ok" : "pending"}"${!stats.validated && parseFloat(sc.validationThreshold) === 5 ? ' title="Protocole site : un essai concluant est répété 5× avant passage en série"' : ""}>${stats.validated ? "✓ Validé" : `${stats.validCount}/${sc.validationThreshold || "—"} essais conformes`}</span>`}
         </span>
         ${projets.length ? `<span class="tc-tags">${projets.map(pj => {
@@ -8741,7 +8749,7 @@ function renderTabs(){
           return `<span class="tag-pill ${dedans ? "on" : ""}"${style} data-projet="${pj.id}" title="${dedans ? "Retirer de" : "Ajouter à"} « ${escapeAttr(pj.nom)} »${ctx}">${dedans ? "✓ " : "+ "}${escapeAttr(pj.nom)}</span>`;
         }).join("")}</span>` : ""}
         ${actif ? "" : `<span class="tc-row"><span class="tc-label">${couts.multiPoste ? "€/pièce total" : "€/pièce"}</span><span class="tc-val">${cRef === null ? "—" : fmt(cRef,4)}</span>${deltaHtml}</span>`}
-        ${!actif && an && an.gainAnnuel !== undefined ? `<span class="tc-row"><span class="tc-label">${an.gainAnnuel>=0?"Gain/an":"Perte/an"}</span><span class="tc-val ${an.gainAnnuel>=0?"tc-gain":"tc-perte"}">${(an.gainAnnuel>=0?"+":"−")+fmtEuroCourt(Math.abs(an.gainAnnuel))}</span></span>` : ""}
+        ${!actif && an && an.gainAnnuel !== undefined && Math.abs(an.gainAnnuel) >= 0.5 ? `<span class="tc-row"><span class="tc-label">${an.gainAnnuel>=0?"Gain/an":"Perte/an"}</span><span class="tc-val ${an.gainAnnuel>=0?"tc-gain":"tc-perte"}">${(an.gainAnnuel>=0?"+":"−")+fmtEuroCourt(Math.abs(an.gainAnnuel))}</span></span>` : ""}
       </button>
     `;
   };
@@ -10452,7 +10460,7 @@ function essaiCardHTML(sc, essai, interactive){
       <span style="margin-left:auto; color:var(--ink-faint);">Taux hors tolérance de l'essai : <b style="color:var(--ink-soft);">${es.tauxHorsTol === null ? "—" : fmt(es.tauxHorsTol,0) + " %"}</b></span>
     </div>`;
 
-  const mesureLabel = escapeAttr(libelleDe(sc));
+  const mesureLabel = libelleEntete(libelleDe(sc));
   const snapLogements = logementsSuivis(essai);
   const showLogementCol = snapLogements.length > 1;
   const logementHead = showLogementCol ? `<th>Logement</th>` : "";
@@ -10464,7 +10472,7 @@ function essaiCardHTML(sc, essai, interactive){
     : cotes === "G" ? `<th class="num">${mesureLabel} G</th>`
     : `<th class="num">Droite</th><th class="num">Gauche</th>`;
   const csupCols = csupColonnes(sc);
-  const csupHeads = csupCols.map(col => `<th class="num">${escapeAttr(col.c.label || "critère")}${col.ax !== "v" ? " " + (AXE_LABELS[col.ax] || col.ax) : ""}</th>`).join("");
+  const csupHeads = csupCols.map(col => `<th class="num">${libelleEntete(col.c.label || "critère")}${col.ax !== "v" ? " " + (AXE_LABELS[col.ax] || col.ax) : ""}</th>`).join("");
   const prelHead = `${logementHead}<th class="num">N° pièce</th><th>Point de mesure</th>${sc.battActif !== false ? battHeads : ""}${csupHeads}<th>Usure</th><th>Conf.</th>`;
   const prelListe = interactive
     ? (essai.prelevements||[])
@@ -14414,6 +14422,11 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.150.1", date:"09/11/2026", points:[
+    "<b>L’unité du Ra s’affiche juste.</b> Dans le tableau des relevés, la colonne « Ra (µm) » se lisait « RA (MM) » : les en-têtes passent en majuscules et le « µ » devenait un « M ». Les unités gardent désormais leur écriture, à l’écran comme dans les rapports.",
+    "<b>Plus de flèches dans les champs chiffrés.</b> Un prix ou une avance se tapent ; les petites flèches les modifiaient d’un pas sans qu’on le veuille. Les touches ↑ ↓ du clavier fonctionnent toujours.",
+    "<b>Trois libellés nettoyés.</b> Le tampon « FAILED » s’écrit « Hors course ». Une tuile de scénario n’affiche plus « Gain/an +0 € » quand il n’y a pas d’écart. Dans « Ailleurs dans l’usine », les postes sans volume annuel ne sont plus listés un par un : ils sont comptés en une ligne."
+  ]},
   { version:"4.150.0", date:"09/11/2026", points:[
     "<b>Les observations des essais ne peuvent plus se perdre.</b> Chaque texte écrit dans un essai (observations, conclusion, objectif, détail d’arrêt, motif) est désormais archivé en permanence côté serveur dès qu’une version l’écrase, le vide ou le supprime — fusion entre deux postes, essai déplacé ou effacé comprise. Rien n’est purgé, contrairement à l’historique des versions qui n’en garde que 10."
   ]},
@@ -15294,7 +15307,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.150.0";
+const TOOL_VERSION = "4.150.1";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -20819,15 +20832,20 @@ function demultiplication(src){
 }
 function demultiplicationHTML(d, sc){
   if(!d || !d.cibles.length) return "";
-  const rows = d.cibles.slice(0, 6).map(c => `<li><b>${escapeAttr(c.ligne)}</b> · ${escapeAttr(c.op)} · ${escapeAttr(c.ref)}
+  /* v4.150.1 — les postes sans volume ne remplissent plus la liste de « volume à saisir »
+     répétés : les postes chiffrés d'abord (6 au plus), et les autres comptés en une ligne. */
+  const chiffrees = d.cibles.filter(c => c.estimation !== null);
+  const sansVolume = d.cibles.length - chiffrees.length;
+  const rows = chiffrees.slice(0, 6).map(c => `<li><b>${escapeAttr(c.ligne)}</b> · ${escapeAttr(c.op)} · ${escapeAttr(c.ref)}
       <span class="dm-motif">${escapeAttr(c.motif)}</span>
-      <span class="dm-v">${c.estimation === null ? "volume à saisir" : "+" + fmtEuroCourt(c.estimation) + "/an"}</span></li>`).join("");
+      <span class="dm-v">${"+" + fmtEuroCourt(c.estimation) + "/an"}</span></li>`).join("");
   return `<section class="dm">
     <div class="dm-t">Ailleurs dans l'usine</div>
     <p class="dm-p">Si <b>${escapeAttr(sc ? sc.name : "cette solution")}</b> se reproduit (−${fmt(d.ratio * 100, 1)} % de coût outil) :
       <b class="dm-total">${d.total > 0 ? "+" + fmtEuroCourt(d.total) + "/an" : "à chiffrer"}</b> <span class="dm-est">estimation</span></p>
     <ul class="dm-l">${rows}</ul>
-    ${d.cibles.length > 6 ? `<p class="dm-p">+ ${d.cibles.length - 6} autre(s)</p>` : ""}
+    ${chiffrees.length > 6 ? `<p class="dm-p">+ ${chiffrees.length - 6} autre${chiffrees.length - 6 > 1 ? "s postes chiffrés" : " poste chiffré"}</p>` : ""}
+    ${sansVolume ? `<p class="dm-p">Volume annuel manquant sur ${sansVolume} poste${sansVolume > 1 ? "s" : ""} concerné${sansVolume > 1 ? "s" : ""} : non compté${sansVolume > 1 ? "s" : ""} dans l'estimation.</p>` : ""}
   </section>`;
 }
 /* la démultiplication de l'écran ouvert : l'OP active, son meilleur scénario contre sa base */
@@ -21413,7 +21431,7 @@ function renderCloturePanel(){
     <label class="cloture-champ" style="display:flex; flex-direction:row; align-items:flex-start; gap:10px;">
       <input type="checkbox" id="clotureAjuster" checked style="width:17px; height:17px; margin-top:2px; accent-color:var(--blue);">
       <span style="font-size:12.5px; line-height:1.5;">Aligner la <b>charnière du scénario sur le réel</b> — le scénario passera
-      <b>⛔ FAILED (hors course)</b> et sortira des gains projetés : ${escapeAttr(ajusterLabel)}.
+      <b>⛔ hors course</b> et sortira des gains projetés : ${escapeAttr(ajusterLabel)}.
       La durée de vie déclarée n'était pas tenue : le coût du scénario se calcule désormais sur ce qu'il a réellement tenu.</span></label>` : ""}
     <div class="panel-actions">
       <button class="ghost" id="clotureAnnuler">Annuler</button>
@@ -23959,10 +23977,21 @@ function runTests(){
         const gMauvais = posteF.refs.find(r => r.ref && r.ref.nom === "DV 356x26 RPI");
         ok("gainPoste : le scénario FAUTÉ n'est plus le « meilleur » — le gain vient du scénario sain",
            gMauvais.meilleur && gMauvais.meilleur.sc.id === "sF3", true);
-        ok("verdictHTML : le scénario fauté porte le tampon FAILED",
-           /FAILED/.test(verdictHTML(sMauvais)), true);
+        ok("verdictHTML : le scénario fauté porte le tampon HORS COURSE (en français, plus FAILED)",
+           [/HORS COURSE/.test(verdictHTML(sMauvais)), /FAILED/.test(verdictHTML(sMauvais))], [true, false]);
         ok("verdictHTML : le scénario sain ne porte pas le tampon",
-           !/FAILED/.test(verdictHTML(sBon)), true);
+           !/HORS COURSE|FAILED/.test(verdictHTML(sBon)), true);
+        /* v4.150.1 — détails d'affichage */
+        ok("en-tête : l'unité entre parenthèses garde sa casse (µm ne devient pas MM)",
+           libelleEntete("Ra (µm)"), 'Ra <span style="text-transform:none">(µm)</span>');
+        ok("en-tête : un libellé sans unité est rendu tel quel, et reste échappé",
+           [libelleEntete("Battement"), libelleEntete("a<b (mm)")], ["Battement", 'a&lt;b <span style="text-transform:none">(mm)</span>']);
+        const dmT = demultiplicationHTML({ ratio: 0.1, total: 1200, cibles: [
+          { ligne: "L1", op: "OP10", ref: "R1", motif: "même pièce", estimation: 1200 },
+          { ligne: "L2", op: "OP10", ref: "R1", motif: "même pièce", estimation: null },
+          { ligne: "L3", op: "OP10", ref: "R1", motif: "même pièce", estimation: null } ] }, { name: "S" });
+        ok("ailleurs dans l'usine : les postes sans volume sont comptés en une ligne, plus répétés",
+           [(dmT.match(/<li>/g) || []).length, /volume à saisir/.test(dmT), /manquant sur 2 postes/.test(dmT)], [1, false, true]);
       } finally { lignes = lFAvant; data = dFAvant; }
     }
 

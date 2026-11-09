@@ -196,6 +196,35 @@ Matis doivent tenir le MÊME état (v3) — une correction d'un côté recrée d
 lignées. Consigne Matis : import v3, Remplacer tout, ne pas cliquer la correction.
 
 
+### ▸ Tour 133 — 09/11/2026 — **Claude** (4.150.1 — détails d'affichage ; analyse de saisie au niveau du champ)
+
+**Demande de Benjamin.** « Et les petits détails ? Il faut taper les conditions de coupe dans
+chaque fiche outil quand les outils travaillent en simultané, pas normal. » Puis accord sur
+l'étape 1 (ce qui ne touche que l'affichage).
+
+**Analyse livrée (aucun code)** : `DETAILS_SAISIE_2026-11-09.md` — 15 frictions de saisie
+mesurées sur PROD rev 436 en lecture seule, complément de `REFONTE_OUTIL_CIBLE_2026-11-09.md`.
+Fil conducteur : une donnée se tape une fois, au niveau où elle est vraie (broche, article,
+pièce, référence × OP). Cinq étapes ; seules les étapes 2 à 5 déplacent de la donnée.
+
+**Code de ce tour (étape 1, affichage seul, format de données inchangé)** :
+- `libelleEntete()` : l'unité entre parenthèses d'un en-tête de colonne garde sa casse
+  (« Ra (µm) » s'affichait « RA (MM) ») — relevés à l'écran et rapports ;
+- tampon « FAILED » → « Hors course » (verdict, tuile, tableau, fenêtre de clôture) ;
+- tuile scénario : plus de « Gain/an +0 € » quand l'écart est nul ;
+- « Ailleurs dans l'usine » : postes sans volume comptés en une ligne, plus répétés ;
+- flèches d'incrément retirées de tous les champs numériques (retour sur le choix v4.101).
+
+**Rectification d'un point de mon analyse.** J'avais écrit que la bannière « Reprendre »
+affichait « Classeur Matis » à la place du nom de l'essai. Faux : l'écran lit `name`, qui est
+le bon nom. Le champ `nom` (présent sur 66 scénarios sur 86, « Classeur Matis » sur 4 d'entre
+eux) est un reliquat qui n'est affiché nulle part. Rien à corriger à l'écran ; son retrait
+est une affaire de données, renvoyée à l'étape 3. `DETAILS_SAISIE` corrigé (B2).
+
+**Vérifié** : 790 tests | 0 échec (3 nouveaux), 11 portes d'identité CSS. **Non vérifié** :
+voir le compte rendu de fin de tour. **PROD : rien, aucun déploiement.**
+
+
 ### ▸ Tour 132 — 10/11/2026 — **Hermes** (analyse indépendante — la logique et l'évidence ; aucun code écrit)
 
 Brief `PROMPT_ANALYSE_OUTIL_2026-11-10.md` exécuté. Livrable : **`ANALYSE_OUTIL_2026-11-10.md`** (racine). Méthode : lecture du code + reproduction sur données réelles — l'export **rev435 du 09/11** injecté dans une instance locale du `dist/` 4.150.0 (profil de test isolé, zéro écriture, PROD chargée une fois en lecture sans session cloud). Chaque chiffre recalculé par les fonctions de l'outil, pas estimé.

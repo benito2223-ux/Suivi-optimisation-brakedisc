@@ -6,6 +6,9 @@
 
 ---
 
+✅ **Verrou pris puis libéré par Claude le 09/11/2026** (Tour 133, branche `ux-rail`, v4.150.1 —
+détails d'affichage : unité des en-têtes, « Hors course », gain nul, volumes manquants, flèches). 790 tests | 0 échec. **PROD non touchée.**
+
 ✅ **Verrou pris puis libéré par Claude le 09/11/2026** (Tour 131, branche `ux-rail`, v4.147.0 —
 relevés d'essai rattachés à leur logement). 764 tests | 0 échec.
 
