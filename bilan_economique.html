@@ -910,6 +910,15 @@ details.outil-carte.drag-cible{outline:2px dashed var(--blue); outline-offset:3p
 
 /* trois groupes cote a cote tant qu'il y a la place, empiles ensuite */
 .lb-groupes{display:flex; flex-wrap:wrap; gap:10px;}
+/* Tour 134 — bloc conditions du groupe simultané */
+.cond-groupe{border:1px dashed var(--border); border-radius:var(--radius-sm); padding:8px 10px; margin:6px 0 10px; background:var(--surface);}
+.cond-groupe .cg-legende{font-size:12px; color:var(--ink-soft); margin-bottom:6px;}
+.cond-groupe .cg-champs{display:flex; flex-wrap:wrap; gap:10px;}
+.cg-input{background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-sm); padding:4px 6px; font-family:var(--font-mono); font-size:13px; color:var(--ink); max-width:140px;}
+.cond-groupe .cg-avert{margin-top:6px; font-size:12px; color:var(--amber);}
+.cond-divergence{font-size:11px; padding:2px 6px;}
+.essai-cond-groupe{display:inline-block; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:2px 6px; margin-right:6px; font-size:12px;}
+.essai-diverge-info{color:var(--ink-soft);}
 .lb-groupe{flex:1 1 auto; min-width:0; background:var(--surface-alt); border:1px solid var(--border);
   border-radius:var(--radius-sm); padding:9px 12px 11px;}
 .lb-groupe.lb-resultats{flex:0 0 auto; margin-left:auto; background:var(--gray-50); border-color:color-mix(in srgb, var(--blue) 30%, transparent);}
@@ -2162,6 +2171,13 @@ input[type="number"]{ -moz-appearance:textfield; appearance:textfield; }
       <label for="optEcartCharniere">Marge avant d'afficher un écart de charnière (pièces) <i class="opt-scope">OP</i></label>
       <input type="number" step="0.5" min="0" id="optEcartCharniere" placeholder="0,5">
       <span class="opt-note">Un logement n'est signalé « en dessous de la charnière visée » que si la durée de vie réelle observée manque la cible d'au moins cette marge. Sur une charnière courte (quelques dizaines de pièces), une marge de 0,5 est déjà significative ; sur une charnière longue (centaines de pièces), vous pouvez l'augmenter pour ignorer le bruit de mesure.</span>
+    </div>
+
+    <div class="opt-section">Conditions de coupe</div>
+    <div class="opt-field on" style="padding-left:0;">
+      <label>Mode de vitesse à confirmer (G96 / G97) <i class="opt-scope">OP</i></label>
+      <div id="optG97Liste" style="color:var(--ink); font-size:13px;"></div>
+      <span class="opt-note">Scénarios dont le NOM porte « G97 » ou « S » suivi de 3-4 chiffres : confirmer le mode une fois par scénario, ligne par ligne. La valeur saisie n'est jamais modifiée — seule l'étiquette du mode est posée. Liste vide = rien à confirmer.</span>
     </div>
 
     <label class="opt-row">
@@ -3622,6 +3638,9 @@ let cloudSession = null;   // {access_token, refresh_token, expires_at, email}
 // La composition du scenario est depliee par defaut : on memorise donc l'inverse, les
 // scenarios dont l'utilisateur a referme le tableau.
 let configOuverts = new Set(); /* v4.121 acte II : la configuration nait repliee ; l'ensemble porte les scenarios DEPLIES par l'utilisateur */
+/* Tour 134 — les logements dont l'utilisateur a rouvert le champ « différent sur cet outil » :
+   état de SESSION seulement (jamais écrit dans le suivi) — une divergence demandée n'est pas une donnée. */
+const condOutilsDivergents = new Set();
 /* Fiches outil : repliees par defaut. L'apercu au-dessus donne la vue d'ensemble, la fiche
    ne s'ouvre que quand on veut modifier — sinon quatre outils deplies noient l'ecran. */
 let outilsOuverts = new Set();
@@ -4234,7 +4253,8 @@ function normalizeOutil(o){
 function snapshotLogements(sc){
   return sc.outils.flatMap(o => o.logements.map(l => ({
     outilId: o.id, logementId: l.id, outilNumero: o.numero, logementNom: l.nom,
-    vc: l.vc, f: l.f, charniere: l.charniere, ref: l.ref, prix: l.prix
+    vc: l.vc, f: l.f, charniere: l.charniere, ref: l.ref, prix: l.prix,
+    modeVitesse: l.modeVitesse, sBroche: l.sBroche  /* Tour 134 : le mode et la rotation figent avec l'essai */
   })));
 }
 /* v4.11 — logements réellement suivis par un essai : la sélection se coche par essai
@@ -4478,6 +4498,8 @@ function paramsDivergences(sc, essai){
     if(!memeVal(s.vc, cur.vc)) champs.push("Vc " + aff(s.vc) + "→" + aff(cur.vc));
     if(!memeVal(s.f, cur.f)) champs.push("f " + aff(s.f) + "→" + aff(cur.f));
     if(!memeVal(s.charniere, cur.charniere)) champs.push("charnière " + aff(s.charniere) + "→" + aff(cur.charniere));
+    if(!memeVal(s.modeVitesse, cur.modeVitesse)) champs.push("mode " + aff(s.modeVitesse || "—") + "→" + aff(cur.modeVitesse || "—"));
+    if(!memeVal(s.sBroche, cur.sBroche)) champs.push("S " + aff(s.sBroche) + "→" + aff(cur.sBroche));
     if(champs.length) diffs.push(nom + " — " + champs.join(", "));
   });
   courant.forEach(c => {
@@ -6987,17 +7009,17 @@ function cycleDetailStatus(sc, cfg){
      série (somme de tout). Le temps de déplacement reste hors calcul (invariant). */
   const outils = sc.outils || [];
   let filled = 0, total = 0;
-  const groupes = [];
-  outils.forEach((o, idx) => {
+  /* Tour 134 : la répartition simultané/série vit dans groupesSimultanes() — une seule définition */
+  const tempsParOutil = outils.map(o => {
     let s = 0;
     (o.logements||[]).forEach(l => {
       total++;
       const c = parseFloat(l.tempsCoupe);
       if(!isNaN(c)){ filled++; s += c; }
     });
-    if(idx > 0 && o.simultaneAvecPrecedent && groupes.length) groupes[groupes.length-1].push(s);
-    else groupes.push([s]);
+    return s;
   });
+  const groupes = groupesSimultanes(outils).map(g => g.map(o => tempsParOutil[outils.indexOf(o)]));
   const complete = total > 0 && filled === total;
   const denom = groupes.reduce((acc,g) => acc + Math.max(...g), 0);
   const secs = complete ? denom : null;
@@ -7495,11 +7517,7 @@ function verdictParOutil(sc, cfg, ligne, ref, baseCmp){
   if(chronoComplet && taux && volume){
     const matchedSc = new Map();
     outils.forEach(g => matchedSc.set(g.oSc, g));
-    const groupes = [];
-    sc.outils.forEach((o, i) => {
-      if(i > 0 && o.simultaneAvecPrecedent && groupes.length) groupes[groupes.length - 1].push(o);
-      else groupes.push([o]);
-    });
+    const groupes = groupesSimultanes(sc); /* Tour 134 : une seule définition */
     groupes.forEach(membres => {
       const tSc = membres.map(tempsOutil);
       if(tSc.some(v => v === null)) return;
@@ -7523,11 +7541,7 @@ function verdictParOutil(sc, cfg, ligne, ref, baseCmp){
   const apparieRef = new Set();
   appar.paires.forEach(pr => apparieRef.add(pr.a.o));
   const outilsSortisRef = (base.outils || []).filter(o => (o.logements || []).length && !apparieRef.has(o));
-  const groupesRef = [];
-  (base.outils || []).forEach((o, i) => {
-    if(i > 0 && o.simultaneAvecPrecedent && groupesRef.length) groupesRef[groupesRef.length - 1].push(o);
-    else groupesRef.push([o]);
-  });
+  const groupesRef = groupesSimultanes(base.outils || []); /* Tour 134 : une seule définition */
   outils.forEach(g => {
     const gr = groupesRef.find(m => m.indexOf(g.oRef) > -1) || [];
     g.sortisGroupe = outilsSortisRef.filter(o => gr.indexOf(o) > -1).length;
@@ -10434,7 +10448,7 @@ function essaiCardHTML(sc, essai, interactive){
     const couleur = oi >= 0 ? OUTIL_COLORS[oi % OUTIL_COLORS.length] : "var(--ink-faint)";
     const nom = nomLogementActuel(sc, lp); // v4.22 : renommer se voit tout de suite
     const croix = interactive ? `<button class="essai-lp-del" data-id="${sc.id}" data-essai="${essai.id}" data-lp="${lp.logementId}" title="Ne plus suivre ce logement dans cet essai (le logement reste dans le scénario, re-suivable à tout moment)">✕</button>` : "";
-    return `<b style="border-left:3px solid ${couleur}; padding-left:6px;">${escapeAttr(nom.outilNumero||"—")} · ${escapeAttr(nom.logementNom||"—")} — Vc ${lp.vc === "" || lp.vc == null ? "—" : lp.vc} f ${lp.f === "" || lp.f == null ? "—" : lp.f} charnière ${lp.charniere === "" || lp.charniere == null ? "—" : lp.charniere} p${croix}</b>`;
+    return `<b style="border-left:3px solid ${couleur}; padding-left:6px;">${escapeAttr(nom.outilNumero||"—")} · ${escapeAttr(nom.logementNom||"—")} — ${lp.modeVitesse === "G97" ? "S " + (lp.sBroche === "" || lp.sBroche == null ? "—" : lp.sBroche) + " tr/min" : "Vc " + (lp.vc === "" || lp.vc == null ? "—" : lp.vc)} f ${lp.f === "" || lp.f == null ? "—" : lp.f} charnière ${lp.charniere === "" || lp.charniere == null ? "—" : lp.charniere} p${croix}</b>`;
   }).join("");
   const ajoutables = interactive
     ? snapshotLogements(sc).filter(c => !snap.some(s => s.logementId === c.logementId))
@@ -10447,9 +10461,13 @@ function essaiCardHTML(sc, essai, interactive){
   const paramsRow = `
     <div class="essai-params${diverge.length ? " diverge" : ""}" style="flex-wrap:wrap;">
       <span>Conditions de l'essai —</span>
-      ${chips}${lpAdd}
+      ${conditionsEssaiGroupeHTML(sc, essai)}${chips}${lpAdd}
       ${(!chips && !interactive) ? `<span style="color:var(--ink-faint);">aucun logement suivi</span>` : ""}
-      ${diverge.length ? `<span class="essai-diverge">⚠ modifié depuis : ${escapeAttr(diverge.join(" · "))}${interactive ? ` <button class="params-sync" data-id="${sc.id}" data-essai="${essai.id}">Aligner sur le scénario</button>` : ""}</span>` : ""}
+      ${diverge.length
+        ? (interactive && alignerDisponible(essai)
+            ? `<span class="essai-diverge">⚠ modifié depuis : ${escapeAttr(diverge.join(" · "))} <button class="params-sync" data-id="${sc.id}" data-essai="${essai.id}">Aligner sur le scénario</button></span>`
+            : `<span class="essai-diverge essai-diverge-info">ℹ le scénario a changé depuis cet essai (${escapeAttr(diverge.join(" · "))}) — l'essai garde ses conditions${interactive ? ` <button class="ghost small essai-refaire" data-id="${sc.id}" data-essai="${essai.id}" title="Créer un nouvel essai, dans ce scénario, avec les conditions actuelles">Nouvel essai avec les conditions actuelles</button>` : ""}</span>`)
+        : ""}
     </div>
     <div class="essai-params">
       <span>Maturité des bruts —</span>
@@ -10766,18 +10784,183 @@ function champHTML(label, inputHTML, cls, aide){
   </div>`;
 }
 
+/* ═══ Tour 134 (4.151.0) — ÉTAPE 2 : les conditions de coupe se tapent une fois ════
+   Demande Claude Tour 133 (DEMANDE_ETAPE_2_CONDITIONS_DE_COUPE_A_HERMES_ZCODE.md).
+   Le rangement des données NE CHANGE PAS : vc, f, kappaR, rayonBec, apPiste, tempsCoupe
+   restent sur chaque logement, format 8 inchangé. Ce qui change : le bloc « Conditions
+   de coupe » du GROUPE simultané écrit, à la saisie, dans tous les logements du groupe.
+   Un scénario existant divergent s'ouvre SANS qu'aucune valeur ne bouge : l'écrasement
+   n'arrive que quand l'utilisateur retouche le bloc. Aucune conversion automatique. */
+
+/* les groupes simultanés : un groupe = un outil et tous les suivants cochés « simultané
+   avec le précédent ». Accepte un scénario OU une liste d'outils. Une seule définition —
+   elle remplace les quatre copies locales (cycle, verdict, référence, aperçu). */
+function groupesSimultanes(scOuOutils){
+  const outils = Array.isArray(scOuOutils) ? scOuOutils : ((scOuOutils && scOuOutils.outils) || []);
+  const groupes = [];
+  let courant = null;
+  outils.forEach(o => {
+    if(o.simultaneAvecPrecedent && courant) courant.push(o);
+    else { courant = [o]; groupes.push(courant); }
+  });
+  return groupes;
+}
+function groupeDeOutil(sc, outilId){
+  return groupesSimultanes(sc).find(g => g.some(o => o.id === outilId)) || null;
+}
+/* l'état des conditions du groupe : uniforme = tous les logements du groupe portent la
+   même valeur (ou tous vides). Divergent = le bloc prévient et les champs restent sur
+   chaque logement : rien n'est écrasé en silence. Ne rien écrire ici — jamais. */
+function conditionsUniformes(membres){
+  const logs = membres.flatMap(o => (o.logements || []));
+  const uni = (cle) => {
+    const vals = logs.map(l => l[cle]);
+    const premier = String(vals[0] ?? "");
+    const uniforme = logs.length > 0 && vals.every(v => String(v ?? "") === premier);
+    return { uniforme, valeur: uniforme ? vals[0] : null };
+  };
+  const modeVitesse = uni("modeVitesse");
+  const champVitesse = modeVitesse.valeur === "G97" ? "sBroche" : "vc";
+  return { logs, modeVitesse, champVitesse,
+           vitesse: uni(champVitesse),
+           f: uni("f"), kappaR: uni("kappaR"),
+           rayonBec: uni("rayonBec"), apPiste: uni("apPiste") };
+}
+/* la saisie du groupe est RECOPIÉE dans tous les logements — le seul endroit où
+   l'outil écrit une condition de coupe au niveau du groupe. */
+function ecrireConditionsGroupe(membres, champ, val){
+  let n = 0;
+  membres.forEach(o => (o.logements || []).forEach(l => { l[champ] = val; n++; }));
+  return n;
+}
+/* le mode décide du champ et de l'unité : G96 → Vc (m/min), G97 → S (tr/min).
+   En G97 la valeur vit dans sBroche : aucun calcul ne peut lire des tr/min comme des m/min. */
+function condLabelVitesse(mode){ return mode === "G97" ? "S <span>tr/min</span>" : "Vc <span>m/min</span>"; }
+function condChampVitesse(mode){ return mode === "G97" ? "sBroche" : "vc"; }
+/* un essai avec relevés ne propose plus « Aligner sur le scénario » (Tour 134) */
+function alignerDisponible(essai){ return !(((essai && essai.prelevements) || []).length); }
+
+/* le bloc « Conditions de coupe » du groupe : une fois, en tête du groupe */
+function conditionsGroupeHTML(sc, membres, showFrFa){
+  const un = conditionsUniformes(membres);
+  const noms = membres.map(o => o.numero || "sans n°").join(" + ");
+  const titre = membres.length > 1
+    ? "Conditions de coupe — groupe simultané (" + escapeAttr(noms) + ") : tapées une fois pour tous les logements"
+    : "Conditions de coupe (" + escapeAttr(noms) + ") : tapées une fois pour tous les logements";
+  const valDe = (u) => u.uniforme ? (u.valeur ?? "") : "";
+  const plDe = (u) => u.uniforme ? "" : "diffère selon l'outil";
+  const divergence = [un.modeVitesse, un.vitesse, un.f, un.kappaR]
+    .concat(showFrFa ? [un.rayonBec, un.apPiste] : [])
+    .some(u => !u.uniforme);
+  const vitesse = champHTML(condLabelVitesse(un.modeVitesse.valeur),
+    `<input class="cg-input" type="number" step="10" data-cond-groupe="vitesse" value="${valDe(un.vitesse)}" placeholder="${plDe(un.vitesse)}" title="${un.modeVitesse.valeur === "G97" ? "Rotation broche fixe (tr/min), rangée dans sBroche — jamais lue comme une Vc" : "Vitesse de coupe (m/min)"}">`, "oc-num");
+  const mode = champHTML("Mode", `<select class="cg-input" data-cond-groupe="modeVitesse">
+      <option value="" ${un.modeVitesse.valeur ? "" : "selected"}>— (non renseigné)</option>
+      <option value="G96" ${un.modeVitesse.valeur === "G96" ? "selected" : ""}>G96 — vitesse de coupe constante</option>
+      <option value="G97" ${un.modeVitesse.valeur === "G97" ? "selected" : ""}>G97 — rotation broche fixe</option>
+    </select>`, "oc-moyen");
+  const nombre = (cle, label, step) => champHTML(label,
+    `<input class="cg-input" type="number" step="${step}" data-cond-groupe="${cle}" value="${valDe(un[cle])}" placeholder="${plDe(un[cle])}">`, "oc-num");
+  return `<div class="cond-groupe" data-sc="${sc.id}" data-groupe="${membres[0].id}">
+    <div class="cg-legende">⇉ ${titre}</div>
+    <div class="cg-champs">
+      ${mode}
+      ${vitesse}
+      ${nombre("f", "f <span>mm/tr</span>", "0.01")}
+      ${nombre("kappaR", "κr <span>°</span>", "1")}
+      ${showFrFa ? nombre("rayonBec", "rε <span>mm</span>", "0.1") : ""}
+      ${showFrFa ? nombre("apPiste", "ap <span>mm</span>", "0.1") : ""}
+    </div>
+    ${divergence ? `<div class="cg-avert">Valeurs différentes selon l'outil : les champs restent sur chaque logement, rien n'est écrasé. Retoucher un champ ici applique la valeur à tout le groupe.</div>` : ""}
+  </div>`;
+}
+/* les conditions figées de l'essai, lues PAR GROUPE (Tour 134, demande §3.4) :
+   une ligne par groupe simultané quand l'instantané est homogène — sinon rien de plus
+   que les puces par logement, qui restent la vérité logement par logement. */
+function conditionsEssaiGroupeHTML(sc, essai){
+  const snap = (essai.params && essai.params.logements) || [];
+  if(!snap.length) return "";
+  const aff = v => (v === "" || v == null) ? "—" : v;
+  const lignes = [];
+  groupesSimultanes(sc).forEach(g => {
+    const lps = g.flatMap(o => snap.filter(lp => lp.outilId === o.id));
+    if(!lps.length) return;
+    const mode = lps[0].modeVitesse || "";
+    const vitCh = condChampVitesse(mode);
+    const vitesse = lps[0][vitCh];
+    const meme = lps.every(lp => String(lp.modeVitesse || "") === String(mode)
+      && String(lp[vitCh] ?? "") === String(vitesse ?? "")
+      && String(lp.f ?? "") === String(lps[0].f ?? ""));
+    if(!(meme && (vitesse || lps[0].f || mode))) return;
+    const vit = mode === "G97" ? "S " + aff(vitesse) + " tr/min" : "Vc " + aff(vitesse) + " m/min";
+    lignes.push(escapeAttr(g.map(o => o.numero || "?").join(" + ")
+      + " — " + (mode ? mode + " · " : "") + vit + " · f " + aff(lps[0].f)));
+  });
+  if(!lignes.length) return "";
+  return `<span class="essai-cond-groupe">${lignes.join("</span><span class=\"essai-cond-groupe\">")}</span>`;
+}
+/* les scénarios dont le NOM porte G97/S+chiffres, sans mode confirmé — proposés UNE fois
+   (demande §3.3) : l'utilisateur valide ligne par ligne, la valeur tapée n'est jamais modifiée. */
+function scenariosAConfirmerMode(){
+  const rx = /G97|S\d{3,4}/;
+  const out = [];
+  (lignes || []).forEach(l => (l.references || []).forEach(r => (r.ops || []).forEach(op => {
+    (op.scenarios || []).forEach(sc => {
+      if(!rx.test(sc.name || "")) return;
+      const porte = (sc.outils || []).some(o => (o.logements || []).some(lg => lg.modeVitesse));
+      if(!porte) out.push({ sc, ou: (l.nom || "?") + " · " + (op.nom || op.opCode || "?") });
+    });
+  })));
+  return out;
+}
+function renderG97AConfirmer(){
+  const cont = document.getElementById("optG97Liste");
+  if(!cont) return;
+  const items = scenariosAConfirmerMode();
+  if(!items.length){ cont.innerHTML = "Rien à confirmer : aucun scénario n'attend de mode G96/G97."; return; }
+  cont.innerHTML = items.map(x => `<div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:4px 0;">
+      <span>« ${escapeAttr(x.sc.name || "sans nom")} » — ${escapeAttr(x.ou)}</span>
+      <button type="button" class="ghost small" data-cond-mode-sc="${x.sc.id}" data-cond-mode="G97">confirmer G97 (tr/min)</button>
+      <button type="button" class="ghost small" data-cond-mode-sc="${x.sc.id}" data-cond-mode="G96">confirmer G96 (m/min)</button>
+    </div>`).join("");
+}
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-cond-mode-sc]");
+  if(!b) return;
+  const sc = data.find(s => s.id === b.getAttribute("data-cond-mode-sc"));
+  const mode = b.getAttribute("data-cond-mode");
+  if(!sc || (mode !== "G96" && mode !== "G97")) return;
+  sc.outils.forEach(o => (o.logements || []).forEach(lg => { lg.modeVitesse = mode; }));
+  saveData(); render();
+});
+
 function logementBlocHTML(sc, o, l, showFrFa, showCycleDetail){
   const perEdge = posCostPerEdge(l), perPiece = posCost(l);
   const base = (field, extra) => `data-id="${sc.id}" data-outil="${o.id}" data-logement="${l.id}" data-field="${field}" ${extra||""}`;
   const num = (field, label, step, attrs, aide) => champHTML(label,
     `<input class="cell" ${base(field)} type="number" step="${step}" ${attrs||""} value="${l[field] ?? ""}">`, "oc-num", aide);
 
+  /* Tour 134 — les conditions portées par le bloc du groupe disparaissent ici tant
+     qu'elles valent la valeur du groupe ; le lien « différent sur cet outil » rouvre le
+     champ (session seule). tempsCoupe reste toujours ici : il dépend de la longueur
+     usinée, pas de la broche. Un groupe divergent laisse tout visible. */
+  const grp = groupeDeOutil(sc, o.id);
+  const un = (grp && grp.length) ? conditionsUniformes(grp) : null;
+  const cleDiverg = (field) => sc.id + "|" + o.id + "|" + l.id + "|" + field;
+  const cacheSiGroupe = (field) => {
+    if(!un || !un[field] || !un[field].uniforme) return false;
+    return !condOutilsDivergents.has(cleDiverg(field));
+  };
+  const lienDiff = (field) => `<button class="cond-divergence ghost small" data-divergence="${cleDiverg(field)}" title="Saisir une valeur propre à CE logement : possible et visible ; le bloc du groupe ne l'écrase que si tu le retouches">différent sur cet outil</button>`;
+  const champLog = (field, maker) => cacheSiGroupe(field) ? lienDiff(field) : maker();
+  const vitCh = un ? un.champVitesse : "vc";
+  const vitLab = condLabelVitesse(un ? un.modeVitesse.valeur : "");
   const coupe = [
-    num("vc", "Vc <span>m/min</span>", "10"),
-    num("f", "f <span>mm/tr</span>", "0.01"),
-    num("kappaR", "κr <span>°</span>", "1", 'min="0" max="90"', "Angle de direction d'arête : alimente le rapport Fr/Fa et le suivi thermique."),
-    showFrFa ? num("rayonBec", "rε <span>mm</span>", "0.1", 'min="0"', "Rayon de bec — affine le κr effectif quand la coupe se fait sur le bec.") : "",
-    showFrFa ? num("apPiste", "ap <span>mm</span>", "0.1", 'min="0"', "Profondeur de passe — affine le κr effectif.") : "",
+    champLog("vitesse", () => num(vitCh, vitLab, "10")),
+    champLog("f", () => num("f", "f <span>mm/tr</span>", "0.01")),
+    champLog("kappaR", () => num("kappaR", "κr <span>°</span>", "1", 'min="0" max="90"', "Angle de direction d'arête : alimente le rapport Fr/Fa et le suivi thermique.")),
+    showFrFa ? champLog("rayonBec", () => num("rayonBec", "rε <span>mm</span>", "0.1", 'min="0"', "Rayon de bec — affine le κr effectif quand la coupe se fait sur le bec.")) : "",
+    showFrFa ? champLog("apPiste", () => num("apPiste", "ap <span>mm</span>", "0.1", 'min="0"', "Profondeur de passe — affine le κr effectif.")) : "",
     num("tempsCoupe", "Temps de coupe <span>s</span>", "0.1", 'min="0"')
   ].filter(Boolean).join("");
 
@@ -11013,12 +11196,8 @@ function compositionApercuHTML(sc){
   /* v4.47 — les outils d'un même groupe simultané sont ENFERMÉS dans un bloc ambre :
      la disposition dit la physique (ces outils tournent ensemble, seul le plus long
      compte dans le cycle) au lieu d'un badge discret qu'on ne voit pas. */
-  const groupes = [];
-  let courant = null;
-  sc.outils.forEach((o, oi) => {
-    if(o.simultaneAvecPrecedent && courant) courant.push(oi);
-    else { courant = [oi]; groupes.push(courant); }
-  });
+  /* Tour 134 : la répartition vit dans groupesSimultanes() — une seule définition */
+  const groupes = groupesSimultanes(sc).map(g => g.map(o => sc.outils.indexOf(o)));
   const tuileOutil = (o, oi) =>
     o.logements.map(l => apercuLogementHTML(sc, o, l, OUTIL_COLORS[oi % OUTIL_COLORS.length], oi, volume, totalAnnuelSc, partRefSc, vp, ajoutCout.get(o), sortiePar.get(o))).join("");
   const tuiles = groupes.map(g => {
@@ -11665,6 +11844,10 @@ function outilCarteHTML(sc, o, oi, showFrFa, showCycleDetail){
   const cle = sc.id + "|" + o.id;
   const coutOutil = o.logements.reduce((a, l) => { const c = posCost(l); return c === null ? a : a + c; }, 0);
   const aDesCouts = o.logements.some(l => posCost(l) !== null);
+  /* Tour 134 — le bloc « Conditions de coupe » du groupe, rendu UNE FOIS par groupe,
+     en tête (le premier outil du groupe est sa tête ; un outil seul est un groupe d'un). */
+  const groupeMien = groupesSimultanes(sc).find(g => g.some(x => x === o)) || [o];
+  const estTete = groupeMien[0] === o; /* tête = premier membre du groupe ; un membre n'a pas son bloc */
   return `
     <details class="outil-carte"${outilsOuverts.has(cle) ? " open" : ""} data-outil-id="${o.id}" style="--outil-couleur:${couleur};">
       <summary class="outil-sommaire">
@@ -11689,6 +11872,7 @@ function outilCarteHTML(sc, o, oi, showFrFa, showCycleDetail){
           ${champHTML("Correcteur", `<input class="cell ref" ${base("correcteur")} value="${escapeAttr(o.correcteur)}" placeholder="—" title="Correcteur de CET outil quand il n'en a qu'un (foret, mono-position). Pour un porte-outil à plusieurs positions (T517 D1/D2), saisis plutôt un logement par position : D1, D2…">`, "oc-court")}
           ${champHTML("Type d'outil", `<input class="cell ref" ${base("description")} value="${escapeAttr(o.description)}" placeholder="ex. foret carbure monobloc à goujure droite">`, "oc-large")}
         </div>
+        ${estTete ? conditionsGroupeHTML(sc, groupeMien, showFrFa) : ""}
         ${planOutilHTML(sc, o)}
         ${o.logements.map(l => logementBlocHTML(sc, o, l, showFrFa, showCycleDetail)).join("")}
         <button class="ghost small logement-add" data-id="${sc.id}" data-outil="${o.id}">+ Logement pour ${escapeAttr(o.numero || "cet outil")}</button>
@@ -12627,6 +12811,7 @@ function restaurerFocusSigne(signe, sel){
 }
 
 function render(){
+  renderG97AConfirmer();
   const signe = focusSigne();
   const sel = plagesSelection(document.activeElement);
   if(!data.find(s => s.id === activeId)) activeId = data[0] ? data[0].id : null;
@@ -13092,10 +13277,58 @@ function attachDetailHandlers(sc){
       if(l){ l.suiviTolerance = inp.checked; saveData(); render(); }
     });
   });
+  /* Tour 134 — le bloc « Conditions de coupe » du groupe : une saisie, tous les
+     logements du groupe. Le champ vitesse suit le mode (G96 → vc, G97 → sBroche). */
+  root.querySelectorAll(".cond-groupe [data-cond-groupe]").forEach(inp => {
+    inp.addEventListener("change", () => {
+      const bloc = inp.closest(".cond-groupe");
+      const teteId = bloc ? bloc.getAttribute("data-groupe") : "";
+      const membres = groupesSimultanes(sc).find(g => g[0] && g[0].id === teteId) || [];
+      if(!membres.length) return;
+      let champ = inp.getAttribute("data-cond-groupe");
+      if(champ === "vitesse"){
+        const sel = bloc.querySelector('[data-cond-groupe="modeVitesse"]');
+        champ = condChampVitesse(sel ? sel.value : "");
+      }
+      const val = inp.type === "number" ? (inp.value === "" ? "" : parseFloat(inp.value)) : inp.value;
+      ecrireConditionsGroupe(membres, champ, val);
+      saveData(); render();
+    });
+  });
+  /* le lien « différent sur cet outil » : rouvre le champ au niveau du logement (session seule) */
+  root.querySelectorAll(".cond-divergence").forEach(btn => {
+    btn.addEventListener("click", () => {
+      condOutilsDivergents.add(btn.getAttribute("data-divergence"));
+      render();
+    });
+  });
+  /* Tour 134 — « Nouvel essai avec les conditions actuelles » : un essai neuf dans ce
+     scénario, avec l'instantané d'aujourd'hui. L'essai d'origine garde les siennes. */
+  root.querySelectorAll(".essai-refaire").forEach(el => {
+    el.addEventListener("click", () => {
+      const today = new Date().toISOString().slice(0,10);
+      sc.essais = sc.essais || [];
+      const nouvelId = "e" + Math.random().toString(36).slice(2);
+      sc.essais.push({ id: nouvelId, titre: "Essai " + (sc.essais.length + 1),
+        date: today, equipe: "", operateur: "",
+        but: "Reprendre l'essai précédent avec les conditions actuelles du scénario",
+        observations: "", conclusion: "", maturiteBruts: "",
+        params: { logements: snapshotLogements(sc) },
+        marposs: { debut:"", fin:"", releves:[] },
+        photos: [],
+        prelevements: [],
+        modifieLe: new Date().toISOString() });
+      essaisOuverts.add(sc.id + "|" + nouvelId);
+      saveData(); render();
+      const det = document.querySelector(`details.essai-card[data-essai-id="${nouvelId}"]`);
+      if(det) det.scrollIntoView({block:"center", behavior:"smooth"});
+    });
+  });
   root.querySelectorAll(".params-sync").forEach(el => {
     el.addEventListener("click", () => {
       const es = sc.essais.find(e => e.id === el.getAttribute("data-essai"));
       if(!es) return;
+      if((es.prelevements || []).length) return; /* Tour 134 : un essai avec relevés ne s'aligne plus */
       dialogueConfirmer("Aligner « " + es.titre + " » sur les conditions actuelles du scénario ?\n\nÀ ne faire que si cet essai a réellement été mené avec ces paramètres.", { titre: "Aligner sur le scénario ?", okLabel: "Aligner" }).then(ok => {
         if(!ok) return;
         const anciens = (es.params && es.params.logements) || [];
@@ -14422,6 +14655,11 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.151.0", date:"10/11/2026", points:[
+    "<b>Les conditions de coupe se tapent une fois.</b> Un groupe d'outils qui usinent en simultané partage une seule saisie : mode, vitesse, avance, κr, rε et ap se tapent en tête du groupe et remplissent tous les logements d'un coup. Un outil qui diffère garde le droit à sa valeur — le lien « différent sur cet outil » rouvre le champ, et un scénario existant aux valeurs divergentes s'ouvre sans rien changer.",
+    "<b>Le mode G96 / G97 existe.</b> Le champ « Mode » précise si la vitesse est une Vc (m/min, G96) ou une rotation broche (tr/min, G97). En G97, la valeur se range à part : aucun écran ne peut plus afficher des tr/min avec l'unité m/min. Les scénarios dont le NOM porte G97 ou S800 se proposent dans Options → « Conditions de coupe » pour confirmer le mode, ligne par ligne — la valeur tapée n'est jamais modifiée.",
+    "<b>Un essai garde ses conditions.</b> Le bouton « Aligner sur le scénario » disparaît dès qu'un relevé existe : l'essai figé reste figé, et le scénario changé se signale en information, plus en invitation. À la place : « Nouvel essai avec les conditions actuelles ». En tête d'essai, les conditions figées se lisent par groupe d'outils simultanés."
+  ]},
   { version:"4.150.1", date:"09/11/2026", points:[
     "<b>L’unité du Ra s’affiche juste.</b> Dans le tableau des relevés, la colonne « Ra (µm) » se lisait « RA (MM) » : les en-têtes passent en majuscules et le « µ » devenait un « M ». Les unités gardent désormais leur écriture, à l’écran comme dans les rapports.",
     "<b>Plus de flèches dans les champs chiffrés.</b> Un prix ou une avance se tapent ; les petites flèches les modifiaient d’un pas sans qu’on le veuille. Les touches ↑ ↓ du clavier fonctionnent toujours.",
@@ -15307,7 +15545,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.150.1";
+const TOOL_VERSION = "4.151.0";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -26889,6 +27127,67 @@ function runTests(){
     }
     ok("pièces : les références d'un enregistrement se listent", [...syPjReferences({ a:{ dataUrl:"§pj§s1" }, b:[{ dataUrl:"§pj§s2" }, { dataUrl:"data:x" }] }, new Set())].sort(), ["s1", "s2"]);
   }
+  /* Tour 134 (4.151.0) — ÉTAPE 2 : les conditions de coupe se tapent une fois.
+     Acceptation (demande Claude Tour 133 §4) : 1 saisie → tous les logements ;
+     divergent s'ouvre sans écrire ; décocher « simultané » sépare ; G97 jamais
+     lu comme des m/min ; Aligner retiré dès qu'un relevé existe. */
+  {
+    const mkLog = (id, nom, extras) => Object.assign({ id, nom, prix:"5", aretes:8, charniere:"50",
+      vc:"", f:"", kappaR:"", rayonBec:"", apPiste:"", tempsCoupe:"" }, extras || {});
+    const mkSc = (defs) => ({ id:"sTour134", name:"test etape2", outils: defs.map(d => ({
+      id:d.id, numero:d.numero, simultaneAvecPrecedent:!!d.sim, logements:d.logs.map(l => mkLog(l.id, l.nom, l.x)) })) });
+    const scT = mkSc([
+      { id:"tA", numero:"T10", logs:[{id:"gA1", nom:"D1"}] },
+      { id:"tB", numero:"T20", sim:true, logs:[{id:"gB1", nom:"D1"}, {id:"gB2", nom:"D2"}] },
+      { id:"tC", numero:"T30", logs:[{id:"gC1", nom:"D1"}] }
+    ]);
+    const g = groupesSimultanes(scT);
+    ok("etape2 : 2 outils simultanés + 1 outil seul = 2 groupes", [g.length, g[0].length, g[1].length], [2, 2, 1]);
+    scT.outils[1].simultaneAvecPrecedent = false;
+    ok("etape2 : decocher « simultané » sépare le groupe", [groupesSimultanes(scT).length, groupesSimultanes(scT)[0].length, groupesSimultanes(scT)[1].length, groupesSimultanes(scT)[2].length], [3, 1, 1, 1]);
+    scT.outils[1].simultaneAvecPrecedent = true;
+    const membres = groupesSimultanes(scT)[0];
+    const avant = JSON.stringify(membres);
+    const uni = conditionsUniformes(membres);
+    ok("etape2 : lire l'état du groupe n'écrit rien", [JSON.stringify(membres) === avant, uni.f.uniforme], [true, true]);
+    ok("etape2 : UNE saisie remplit tous les logements du groupe (3 logements ici)", [ecrireConditionsGroupe(membres, "f", 0.25), membres.flatMap(o => o.logements).every(l => l.f === 0.25)], [3, true]);
+    ecrireConditionsGroupe(membres, "vc", 800);
+    ok("etape2 : l'outil hors groupe garde ses propres valeurs", [scT.outils[0].logements[0].vc, scT.outils[1].logements[0].vc, scT.outils[2].logements[0].vc], [800, 800, ""]);
+    const vcAvant = membres[0].logements[0].vc;
+    ecrireConditionsGroupe(membres, "modeVitesse", "G97");
+    ecrireConditionsGroupe(membres, condChampVitesse("G97"), 700);
+    ok("etape2 : G97 — S rangée dans sBroche, la Vc existante jamais touchée, l'outil hors groupe intact", [membres[0].logements[0].sBroche, membres[0].logements[0].vc === vcAvant, membres[1].logements[0].sBroche, String(scT.outils[2].logements[0].sBroche ?? ""), condLabelVitesse("G97")], [700, true, 700, "", "S <span>tr/min</span>"]);
+    ok("etape2 : G96 — la vitesse vit dans Vc (m/min)", [condChampVitesse("G96"), condChampVitesse(""), condLabelVitesse("G96")], ["vc", "vc", "Vc <span>m/min</span>"]);
+    const scD = mkSc([
+      { id:"tX", numero:"T40", logs:[{id:"gX1", nom:"D1", x:{vc:"700", f:"0.25"}}, {id:"gX2", nom:"D2", x:{vc:"900", f:"0.25"}}] }
+    ]);
+    const snapAvant = JSON.stringify(scD);
+    const unD = conditionsUniformes(groupesSimultanes(scD)[0]);
+    logementBlocHTML(scD, scD.outils[0], scD.outils[0].logements[0], true, false);
+    conditionsGroupeHTML(scD, groupesSimultanes(scD)[0], false);
+    ok("etape2 : un groupe divergent s'ouvre SANS écrire (octet pour octet)", [JSON.stringify(scD) === snapAvant, unD.vitesse.uniforme, unD.f.uniforme], [true, false, true]);
+    scT.outils[1].logements[0].modeVitesse = "G97";
+    const lpB = snapshotLogements(scT).find(lp => lp.logementId === "gB1");
+    ok("etape2 : l'instantané d'essai fige le mode et la rotation", [lpB.modeVitesse, lpB.sBroche], ["G97", 700]);
+    ok("etape2 : « Aligner » — proposé sans relevé, retiré dès qu'un relevé existe", [alignerDisponible({ prelevements: [] }), alignerDisponible({ prelevements: [{ id:"p1" }] })], [true, false]);
+    const scP = mkSc([{ id:"tP", numero:"T50", logs:[{id:"gP1", nom:"D1"}] }]);
+    scP.outils[0].logements[0].vc = "700";
+    const esP = { params:{ logements:[{ outilId:"tP", logementId:"gP1", vc:"700", f:"", charniere:"" }] } };
+    scP.outils[0].logements[0].modeVitesse = "G97";
+    scP.outils[0].logements[0].sBroche = "700";
+    const dv = paramsDivergences(scP, esP);
+    ok("etape2 : une divergence de mode est nommée (mode —→G97)", dv.length === 1 && /mode/.test(dv[0]), true);
+    ecrireConditionsGroupe(membres, "modeVitesse", "");  /* retour à « non renseigné » pour lire le libellé par défaut */
+    const bloc96 = conditionsGroupeHTML(scT, membres, false);
+    const scZ = mkSc([
+      { id:"tZ1", numero:"T60", logs:[{id:"gZ1", nom:"D1", x:{modeVitesse:"G97", sBroche:"500"}}] },
+      { id:"tZ2", numero:"T61", sim:true, logs:[{id:"gZ2", nom:"D1", x:{modeVitesse:"G97", sBroche:"500"}}] }
+    ]);
+    const bloc97 = conditionsGroupeHTML(scZ, groupesSimultanes(scZ)[0], false);
+    ok("etape2 : le bloc du groupe affiche Vc (m/min) hors G97, jamais des tr/min en m/min", [/Vc <span>m\/min<\/span>/.test(bloc96), /S <span>tr\/min<\/span>/.test(bloc96)], [true, false]);
+    ok("etape2 : un groupe en G97 affiche S (tr/min)", /S <span>tr\/min<\/span>/.test(bloc97), true);
+  }
+
 
   /* v4.81.1 — LA PORTE DE L'IMPORT. Toute la chaîne du bouton « 📂 Importer » passe
      par preparerImportDepuis : depuis la 4.53.0, sa ligne livraisons lisait `source`
