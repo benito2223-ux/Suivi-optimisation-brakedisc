@@ -4286,3 +4286,20 @@ body.atelier-on #bandeauPremiere, body.atelier-on .spk-conseil-ios{ display:none
 .nv-opt:has(input:checked){ border-color:var(--blue); box-shadow:inset 0 0 0 1px var(--blue); }
 .nv-opt input{ width:22px; height:22px; margin:2px 0 0; flex:none; }
 .nv-opt small{ color:var(--ink-soft); }
+
+/* v4.143 — iPhone désencombré. Mesuré à 390 px : en-tête 142 px, fil d'Ariane 61 px, bandeau « Reprendre » 171 px et
+   message « Base 2026/2027 en place » 176 px recouvraient l'écran avant la moindre donnée. */
+@media (max-width:480px){
+  #bandeauPremiere:not([hidden]){ display:none !important; }
+  .reprise-bandeau{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px; padding:8px 10px; margin:6px 0; font-size:13px; line-height:1.3; }
+  .reprise-bandeau .rep-ico{ display:none; }
+  .reprise-bandeau .rep-txt{ flex:1 1 100%; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .reprise-bandeau button{ min-height:40px; padding:6px 12px; flex:1 1 auto; }
+  .reprise-bandeau .rep-fermer{ flex:0 0 44px; }
+  body.spk-has-rail .hd{ padding:10px 12px; gap:8px; }
+  .hd-eyebrow{ font-size:10px; margin:0; }
+  #hdTitle{ font-size:22px; line-height:1.1; }
+  .spk-ctx{ padding:6px 8px; gap:6px; }
+  .spk-ctx .fil-ariane{ font-size:12.5px; }
+  .spk-ctx .spk-details-btn{ min-height:36px; padding:4px 10px; }
+}

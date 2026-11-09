@@ -1572,6 +1572,27 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.135.0 : l’essentiel par défaut, Détails, menu Outils, simulateur retiré' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  /* ── v4.143.0 — les pièces jointes hors du stockage du suivi ── */
+  (function lot4143Pieces(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const lire = function(f){ try { return fs.readFileSync(path.join(REPO, f), 'utf8'); } catch (e) { return ''; } };
+    const html = lire('bilan_economique.html');
+    if (html.indexOf('async function pjMigrer(') === -1) echecs.push('la migration des pièces a disparu');
+    if (html.indexOf('async function pjStocker(') === -1) echecs.push('le rangement des pièces a disparu');
+    if (html.indexOf('pièce non confirmée dans la base locale') === -1) echecs.push('la relecture avant remplacement a disparu (risque de perdre une pièce)');
+    if (html.indexOf('async function pjResoudre(') === -1) echecs.push('la résolution des pièces a disparu');
+    if (html.indexOf('pjInlinerArbre(lignes)') === -1) echecs.push('l export ne remet plus les pièces dans le fichier');
+    if (html.indexOf('pjEstRef(pj.dataUrl)') === -1) echecs.push('l ouverture ne résout plus les références');
+    if (html.indexOf('function syPjNormaliser(') === -1) echecs.push('la normalisation des pièces reçues a disparu');
+    if (html.indexOf('await pjMigrer()') === -1) echecs.push('la synchro ne range plus les pièces avant d envoyer');
+    if (html.indexOf('garder = 2') === -1) echecs.push('l historique local n est plus allégé sur écran tactile');
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.143.0 : pièces jointes hors du stockage du suivi, historique allégé' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   /* ── v4.142.0 — plus de Pipeline commercial ; la synchro s'atteint en un clic ── */
   (function lot4142Credibilite(){
     const fs = require('fs');

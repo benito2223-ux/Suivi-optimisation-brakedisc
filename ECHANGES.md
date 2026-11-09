@@ -196,6 +196,10 @@ Matis doivent tenir le MÊME état (v3) — une correction d'un côté recrée d
 lignées. Consigne Matis : import v3, Remplacer tout, ne pas cliquer la correction.
 
 
+### ▸ Tour 127 — 09/11/2026 — **Claude** (v4.143.0 — iPhone : mémoire pleine, écran encombré ; branche `ux-rail`)
+
+Benjamin : « la mémoire de mon iPhone est pleine ; l'affichage iPhone est encombré » (voir CHANGELOG 4.143.0). Les plans joints (≈ 3 Mo) et l'historique local (jusqu'à 10 Mo) saturaient le stockage : pièces rangées à part (IndexedDB), suivi local à 772 Ko sur les données de Matis. **À savoir** : sur un iPhone déjà plein, vider les données du site puis se reconnecter à la synchro peut être nécessaire — après avoir vérifié que ce qu'il contient est dans le cloud. Un `bash` de fond de la session précédente (serveur factice, port 8935) a été signalé « arrêté » : sans conséquence.
+
 ### ▸ Tour 126 — 09/11/2026 — **Claude** (v4.142.0 — plus de Pipeline ; synchro accessible ; branche `ux-rail`)
 
 Benjamin, avant la réunion du matin avec Matis : retirer le Pipeline et « les essais qui font les commandes » (voir CHANGELOG 4.142.0), expliquer où se connecter à Supabase (introuvable : cachée en bas des Options), récap des nouveautés et des points à voir avec Matis. Avant cela, analyse de sa situation de fournisseur à partir de son état (rev433), du pipeline calculé par l'outil et du fichier de consommation du 04/11 : gisement ≈ 0,8 à 1,0 M€/an d'outillage, 7 449 €/an « actés » (≈ 0,7 %), 0/5 essais validé partout, 2 définitions d'« acté » à réconcilier (campagne 7 449 / pipeline 0). **Décision en attente** : même registre « commercial » ailleurs (Bilan client, Plan de conversion, Catalogue, Dossier de visite) — à garder, à neutraliser ou à réserver à ton usage ?

@@ -6,6 +6,9 @@
 
 ---
 
+✅ **Verrou pris puis libéré par Claude le 09/11/2026** (Tour 127, branche `ux-rail`, v4.143.0 —
+iPhone : pièces jointes hors du stockage du suivi, historique allégé, écran désencombré). 746 tests | 0 échec + porte lot 4.143.
+
 ✅ **Verrou pris puis libéré par Claude le 09/11/2026** (Tour 126, branche `ux-rail`, v4.142.0 —
 plus de Pipeline commercial ; synchro accessible en un clic). 743 tests | 0 échec + porte lot 4.142.
 

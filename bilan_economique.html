@@ -4778,7 +4778,9 @@ function pushHistory(){
   let hist = [];
   try{ hist = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }catch(e){}
   hist.push({ savedAt: new Date().toISOString(), count: comptePrelevements(lignes), lignes, projets, activeProjetId, responsables, backlog, revision });
-  if(hist.length > 5) hist = hist.slice(hist.length - 5);
+  let garder = 5;
+  try{ if(matchMedia("(pointer: coarse)").matches) garder = 2; }catch(e){}   // v4.143 : iPhone / tablette = quota serré
+  if(hist.length > garder) hist = hist.slice(hist.length - garder);
   try{ localStorage.setItem(HISTORY_KEY, JSON.stringify(hist)); }catch(e){}
 }
 function historyHTML(){
@@ -4914,7 +4916,7 @@ const AUTEUR_KEY = STORAGE_KEY + "_auteur";
 let auteurNom = "";
 try{ auteurNom = localStorage.getItem(AUTEUR_KEY) || ""; }catch(e){}
 
-function exportData(){
+async function exportData(){
   syncActiveOp();
   revision += 1;
   const payload = {
@@ -4942,6 +4944,7 @@ function exportData(){
     activeOpId: activeOpId,
     activeScenarioId: activeId
   };
+  payload.lignes = await pjInlinerArbre(lignes);   // v4.143 : un export se suffit à lui-même, pièces jointes comprises
   const blob = new Blob([JSON.stringify(payload, null, 2)], {type:"application/json"});
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -10980,6 +10983,117 @@ function compositionApercuHTML(sc){
      2. sinon, sous 500 ko      -> integre au fichier de suivi (base64), ca reste raisonnable ;
      3. sinon                   -> refus explique, avec le chemin pour connecter le dossier.
    Renvoie le descriptif a stocker, ou null si l'utilisateur doit d'abord agir. */
+/* ============================================================
+   v4.143 — LES PIÈCES JOINTES QUITTENT LE STOCKAGE DU SUIVI
+   Le suivi vit dans le localStorage du navigateur, plafonné à ~5 Mo pour TOUT (iPhone compris, où Safari
+   le compte plus durement encore). Mesuré : près de 3 Mo sur 3,7 étaient des plans d'outils joints, et
+   l'historique local en gardait jusqu'à cinq copies → « mémoire pleine » sur iPhone. Désormais un plan
+   (ou une fiche outil) est rangé dans une base à part du navigateur (IndexedDB, bien plus spacieuse) ;
+   le suivi n'en garde qu'une RÉFÉRENCE « §pj§<empreinte> ». La pièce s'ouvre à la demande : trouvée sur
+   l'appareil, sinon récupérée par la synchro (une seule fois), sinon on dit qu'elle n'est pas là. Les
+   exports JSON remettent les pièces dans le fichier (un export doit se suffire à lui-même).
+   ============================================================ */
+const PJ_PREFIXE = "§pj§";
+function pjEstRef(v){ return typeof v === "string" && v.startsWith(PJ_PREFIXE); }
+let pjBase = null;
+function pjDB(){
+  if(pjBase) return pjBase;
+  pjBase = new Promise((resolve, reject) => {
+    try{
+      const rq = indexedDB.open("spk_pj", 1);
+      rq.onupgradeneeded = () => { rq.result.createObjectStore("pj"); };
+      rq.onsuccess = () => resolve(rq.result);
+      rq.onerror = () => reject(rq.error);
+    }catch(e){ reject(e); }
+  });
+  pjBase.catch(() => { pjBase = null; });
+  return pjBase;
+}
+async function pjEcrire(sha, donnee){
+  const db = await pjDB();
+  return new Promise((resolve, reject) => {
+    const t = db.transaction("pj", "readwrite");
+    t.objectStore("pj").put(donnee, sha);
+    t.oncomplete = () => resolve(true);
+    t.onerror = () => reject(t.error);
+    t.onabort = () => reject(t.error || new Error("écriture annulée"));
+  });
+}
+async function pjLire(sha){
+  try{
+    const db = await pjDB();
+    return await new Promise((resolve, reject) => {
+      const rq = db.transaction("pj", "readonly").objectStore("pj").get(sha);
+      rq.onsuccess = () => resolve(rq.result === undefined ? null : rq.result);
+      rq.onerror = () => reject(rq.error);
+    });
+  }catch(e){ return null; }
+}
+/* range une pièce et rend sa référence — seulement après relecture : on ne remplace JAMAIS la donnée
+   du suivi par une référence dont la pièce n'est pas confirmée en lieu sûr */
+async function pjStocker(dataUrl){
+  const sha = syShaDe(dataUrl);
+  await pjEcrire(sha, dataUrl);
+  const relu = await pjLire(sha);
+  if(relu !== dataUrl) throw new Error("pièce non confirmée dans la base locale");
+  return PJ_PREFIXE + sha;
+}
+/* rend la donnée d'une référence : l'appareil d'abord, la synchro ensuite (puis mise en cache) */
+async function pjResoudre(ref){
+  if(!pjEstRef(ref)) return ref;
+  const sha = ref.slice(PJ_PREFIXE.length);
+  let d = await pjLire(sha);
+  if(d) return d;
+  if(typeof cloudSession !== "undefined" && cloudSession){
+    try{
+      const r = await syRpc("sync_blob_get", { p_sha: sha });
+      if(typeof r === "string" && r){ try{ await pjEcrire(sha, r); }catch(e){} return r; }
+    }catch(e){}
+  }
+  return null;
+}
+/* sort une pièce de chaque fiche : plans d'outils et fiches outils encore intégrés au suivi */
+let pjMigrationEnCours = false;
+async function pjMigrer(){
+  if(pjMigrationEnCours || typeof indexedDB === "undefined") return 0;
+  pjMigrationEnCours = true;
+  let n = 0;
+  try{
+    const pieces = [];
+    const voir = (pj) => { if(pj && typeof pj.dataUrl === "string" && pj.dataUrl.startsWith("data:") && pj.dataUrl.length >= SY_BLOB_MIN) pieces.push(pj); };
+    (lignes || []).forEach(l => (l.references || []).forEach(r => (r.ops || []).forEach(o => {
+      voir(o.ficheOutil);
+      (o.scenarios || []).forEach(s => (s.outils || []).forEach(t => voir(t.plan)));
+    })));
+    for(const pj of pieces){
+      try{ pj.dataUrl = await pjStocker(pj.dataUrl); n++; }
+      catch(e){ journaliser("pj", e); }
+    }
+    if(n){
+      saveData();
+      // les copies de sécurité locales contenaient les pièces en entier : elles pèsent plus que tout le reste
+      try{ localStorage.removeItem(HISTORY_KEY); localStorage.removeItem(BACKUP_KEY); }catch(e){}
+      if(typeof render === "function") render();
+    }
+  } finally { pjMigrationEnCours = false; }
+  return n;
+}
+/* copie de l'arbre dont les références sont remplacées par les données (export complet) */
+async function pjInlinerArbre(arbre){
+  const copie = JSON.parse(JSON.stringify(arbre));
+  const refs = [];
+  const marcher = (v) => {
+    if(Array.isArray(v)) v.forEach(marcher);
+    else if(v && typeof v === "object"){
+      if(pjEstRef(v.dataUrl)) refs.push(v);
+      Object.keys(v).forEach(k => { if(k !== "dataUrl") marcher(v[k]); });
+    }
+  };
+  marcher(copie);
+  for(const pj of refs){ const d = await pjResoudre(pj.dataUrl); if(d) pj.dataUrl = d; }
+  return copie;
+}
+
 const PJ_MAX_SANS_DOSSIER = 500 * 1024;
 
 /* v4.94 — une image jointe (plan scanné, photo d'outil) est compressée comme une photo
@@ -11007,7 +11121,8 @@ async function attacherPieceJointe(file, prefixe){
       return null;
     }
   }
-  if(contenu.size > PJ_MAX_SANS_DOSSIER){
+  const plafondPJ = (typeof indexedDB !== "undefined") ? 8 * 1024 * 1024 : PJ_MAX_SANS_DOSSIER;
+  if(contenu.size > plafondPJ){
     dialogueAlerte(`Ce fichier pèse ${Math.round(file.size/1024)} ko.
 
 Sans dossier local connecté, il devrait être intégré au fichier de suivi, dont la capacité totale est d'environ 5 Mo pour TOUT le suivi, mesures comprises. Deux pièces jointes de cette taille suffiraient à le saturer — et une sauvegarde qui échoue bloque l'enregistrement de vos relevés. On ne perd pas des mesures à cause d'un plan.
@@ -11017,7 +11132,11 @@ Connectez le dossier local (menu ••• → Dossier photos) : le fichier y se
   }
   return await new Promise(resolve => {
     const reader = new FileReader();
-    reader.onload = () => resolve({ filename: file.name, mime, addedAt: new Date().toISOString(), stockage: "fichier", dataUrl: reader.result });
+    reader.onload = async () => {
+      let du = reader.result;
+      if(typeof indexedDB !== "undefined"){ try{ du = await pjStocker(du); }catch(e){ journaliser("pj", e); } }
+      resolve({ filename: file.name, mime, addedAt: new Date().toISOString(), stockage: "fichier", dataUrl: du });
+    };
     reader.onerror = () => { dialogueAlerte("Lecture du fichier impossible.", "Lecture impossible"); resolve(null); };
     reader.readAsDataURL(contenu);
   });
@@ -11030,6 +11149,11 @@ Connectez le dossier local (menu ••• → Dossier photos) : le fichier y se
    révoqué une minute plus tard, le temps que le lecteur du navigateur l'ait chargé. */
 async function ouvrirPieceJointe(pj){
   if(!pj) return;
+  if(pjEstRef(pj.dataUrl)){
+    const d = await pjResoudre(pj.dataUrl);
+    if(!d){ dialogueAlerte("Cette pièce n'est pas disponible sur cet appareil. Connectez la synchro (Options → Synchro) pour la récupérer auprès de l'équipe, ou ouvrez-la depuis l'appareil qui l'a ajoutée.", "Pièce absente"); return; }
+    pj = Object.assign({}, pj, { dataUrl: d });
+  }
   if(pj.stockage === "dossier"){
     if(!photosDirHandle){ dialogueAlerte("Le dossier local n'est pas connecté sur ce poste — reconnectez-le (menu ••• → Dossier photos) pour ouvrir ce fichier.", "Dossier non connecté"); return; }
     const url = await readPhotoURL(pj.filename);
@@ -12104,7 +12228,7 @@ function renderReprise(){
   const derniere = rep.st.lastPiece !== null ? "dernier prélèvement n°" + rep.st.lastPiece : "aucun prélèvement";
   el.innerHTML = `
     <span class="rep-ico">↻</span>
-    <span class="rep-txt"><b>Reprendre</b> — ${escapeAttr(rep.essaiTitre || "Essai")}${rep.date ? " (" + escapeAttr(rep.date) + ")" : ""} · ${escapeAttr(rep.scName)} · ${derniere}${rep.st.raison ? " · " + escapeAttr(rep.st.raison) : ""}</span>
+    <span class="rep-txt"><b>Reprendre</b> — ${escapeAttr(rep.essaiTitre || "Essai")}${rep.date ? " (" + escapeAttr(rep.date) + ")" : ""} · ${escapeAttr(rep.scName)} · ${derniere}${(rep.st.raison && rep.st.raison !== derniere) ? " · " + escapeAttr(rep.st.raison) : ""}</span>
     <button class="ghost" id="repAtelier">Mode atelier</button>
     <button class="ghost" id="repOuvrir">Ouvrir</button>
     <button class="ghost rep-fermer" id="repFermer" title="Masquer pour cet essai (il reviendra s'il redevient le plus récent)">✕</button>`;
@@ -14225,6 +14349,12 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.143.0", date:"09/11/2026", points:[
+    "<b>Fini le « mémoire pleine » sur iPhone.</b> Les plans et fiches d’outils joints ne sont plus enregistrés dans la mémoire du suivi (près de 3 Mo sur 3,7) mais dans un espace à part du navigateur, bien plus grand. Le suivi redescend à moins d’1 Mo.",
+    "<b>Une pièce s’ouvre à la demande</b> : trouvée sur l’appareil, sinon récupérée une seule fois par la synchro. Les exports JSON gardent les pièces dedans.",
+    "<b>L’historique local est allégé</b> sur tablette et iPhone (2 copies au lieu de 5).",
+    "<b>L’écran iPhone est désencombré</b> : le message « Base en place » ne recouvre plus la page, le bandeau « Reprendre » tient sur deux lignes (et ne répète plus son texte), l’en-tête et le fil d’Ariane se resserrent."
+  ]},
   { version:"4.142.0", date:"09/11/2026", points:[
     "<b>La synchro se trouve enfin facilement.</b> Un bouton <b>Synchro</b> (menu ••• en haut à droite) et la pastille <b>☁ Se connecter</b> en bas de page ouvrent directement la connexion. Avant, elle était tout en bas des Options.",
     "<b>L’écran « Pipeline » est retiré</b> : l’outil suit des essais et des mesures, il ne tient pas un carnet de commandes."
@@ -15057,7 +15187,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.142.0";
+const TOOL_VERSION = "4.143.0";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -21185,6 +21315,28 @@ function syBlobsReinjecter(v, chercher, manquants){
   return v;
 }
 
+/* pièces jointes de fiches outils : elles voyagent comme références « §pj§ » (envoyées une fois, ouvertes à la demande) */
+function syPjReferences(v, ensemble){
+  if(typeof v === "string"){ if(v.startsWith(PJ_PREFIXE)) ensemble.add(v.slice(PJ_PREFIXE.length)); return ensemble; }
+  if(Array.isArray(v)) v.forEach(x => syPjReferences(x, ensemble));
+  else if(v !== null && typeof v === "object") Object.keys(v).forEach(k => syPjReferences(v[k], ensemble));
+  return ensemble;
+}
+/* un enregistrement émis avant la 4.143 portait la pièce comme « §blob§ » : ici elle reste une référence */
+function syPjNormaliser(v){
+  if(Array.isArray(v)) return v.map(syPjNormaliser);
+  if(v !== null && typeof v === "object"){
+    const o = {};
+    Object.keys(v).forEach(k => {
+      const x = v[k];
+      if(k === "dataUrl" && typeof x === "string" && x.startsWith(SY_PREFIXE_BLOB) && typeof v.filename === "string") o[k] = PJ_PREFIXE + x.slice(SY_PREFIXE_BLOB.length);
+      else o[k] = syPjNormaliser(x);
+    });
+    return o;
+  }
+  return v;
+}
+
 /* ---------- découper / recomposer ---------- */
 function syCleUnique(vus, id){
   const base = String(id);
@@ -21456,6 +21608,7 @@ async function syAppliquerRecus(recus, prefere){
   Object.keys(dec.shards).forEach(id => { corps[id] = dec.shards[id].body; });
   const nouveaux = recus.filter(r => { const rec = syEtat.shards[r.id]; return !rec || rec.rev < r.rev; });
   if(!nouveaux.length) return 0;
+  nouveaux.forEach(r => { if(r.body) r.body = syPjNormaliser(r.body); });
   await syBlobsAvoir(Object.fromEntries(nouveaux.filter(r => !r.supprime).map(r => [r.id, r.body])), nouveaux.filter(r => !r.supprime).map(r => r.id));
   const conflits = [];
   const aRegler = [];
@@ -21536,6 +21689,16 @@ async function syPousser(){
       if(syMem.blobs[sha] !== undefined) await syRpc("sync_blob_put", { p_sha: sha, p_data: syMem.blobs[sha] });
     }
   }
+  // pièces jointes de fiches outils : seulement celles que le serveur n'a pas, lues dans la base locale
+  const pjs = new Set();
+  items.forEach(it => { if(it.body) syPjReferences(it.body, pjs); });
+  if(pjs.size){
+    const manquantes = await syRpc("sync_blobs_manquants", { p_shas: [...pjs] });
+    for(const sha of (manquantes || [])){
+      const d = await pjLire(sha);
+      if(d) await syRpc("sync_blob_put", { p_sha: sha, p_data: d });
+    }
+  }
   // envois par paquets d'environ 1,5 Mo
   const lots = []; let lot = [], poids = 0;
   items.forEach(it => {
@@ -21577,6 +21740,7 @@ async function syLireTout(){
   return { tout, curseur: c };
 }
 async function syAdopterTout(lu){
+  lu.tout.forEach(r => { if(r.body) r.body = syPjNormaliser(r.body); });
   await syBlobsAvoir(Object.fromEntries(lu.tout.filter(r => !r.supprime).map(r => [r.id, r.body])), lu.tout.filter(r => !r.supprime).map(r => r.id));
   const corps = {};
   syEtat.shards = {}; syEtat.sales = {}; syEtat.bases = {}; syMem.base = {};
@@ -21596,6 +21760,7 @@ async function syAdopterTout(lu){
   });
 }
 async function syFusionnerTout(lu){
+  lu.tout.forEach(r => { if(r.body) r.body = syPjNormaliser(r.body); });
   const dec = syMem.dec || syCalculer();
   await syBlobsAvoir(Object.fromEntries(lu.tout.filter(r => !r.supprime).map(r => [r.id, r.body])), lu.tout.filter(r => !r.supprime).map(r => r.id));
   const conflits = [];
@@ -21659,6 +21824,7 @@ async function sySync(raison){
   syMem.erreur = "";
   cloudRenduPastille();
   try{
+    try{ await pjMigrer(); }catch(e){ journaliser("pj", e); }   // les pièces sortent du suivi AVANT tout envoi
     try{ syCalculer(); }catch(e){ journaliser("sync", e); }   // la file d'attente se voit même sans réseau
     if(syMem.membre !== true){
       const st = await syRpc("suivi_statut", {});
@@ -22170,6 +22336,7 @@ function ouvrirSynchro(){
   cloudRenduOptions();
   setTimeout(() => { const z = document.getElementById("cloudZone"); if(z) z.scrollIntoView({ block: "start" }); }, 250);
 }
+addEventListener("load", () => { setTimeout(() => { pjMigrer().catch(e => journaliser("pj", e)); }, 1500); });
 function cloudDemarrage(){
   const btnOpt = document.getElementById("optionsBtn");
   if(btnOpt) btnOpt.addEventListener("click", cloudRenduOptions);
@@ -25902,6 +26069,11 @@ function runTests(){
     ok("sync fusion : premier contact, un même essai des deux côtés = le plus récent gagne en entier", [r.v.essais[0].operateur, r.c.length], ["récent", 1]);
     r = fus(undefined, { essais:[{ id:"e1", operateur:"récent", modifieLe:"2026-11-02T09:00:00Z" }] }, { essais:[{ id:"e1", operateur:"ancien", modifieLe:"2026-10-01T08:00:00Z" }] });
     ok("sync fusion : ... quel que soit le côté qui le porte", r.v.essais[0].operateur, "récent");
+    ok("pièces : une référence « §pj§ » se reconnaît, une donnée ou un texte non", [pjEstRef("§pj§abc"), pjEstRef("data:image/png;base64,xx"), pjEstRef(null)], [true, false, false]);
+    ok("pièces : un plan reçu en « §blob§ » devient une référence à ouvrir à la demande ; une photo reste en blob",
+       syPjNormaliser({ outils:[{ plan:{ filename:"p.pdf", dataUrl:"§blob§xyz" } }], photo:{ dataUrl:"§blob§aa" } }),
+       { outils:[{ plan:{ filename:"p.pdf", dataUrl:"§pj§xyz" } }], photo:{ dataUrl:"§blob§aa" } });
+    ok("pièces : les références d'un enregistrement se listent", [...syPjReferences({ a:{ dataUrl:"§pj§s1" }, b:[{ dataUrl:"§pj§s2" }, { dataUrl:"data:x" }] }, new Set())].sort(), ["s1", "s2"]);
   }
 
   /* v4.81.1 — LA PORTE DE L'IMPORT. Toute la chaîne du bouton « 📂 Importer » passe

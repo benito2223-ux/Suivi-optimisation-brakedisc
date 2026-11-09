@@ -5,6 +5,26 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.143.0] — 2026-11-09 · iPhone « mémoire pleine » : les pièces jointes quittent le stockage du suivi ; écran iPhone désencombré · Claude
+
+Benjamin : « le navigateur de mon iPhone me dit que la mémoire est pleine ; l'affichage iPhone est plutôt encombré ». **Cause** :
+le suivi vit dans le localStorage (~5 Mo pour TOUT, et Safari le compte plus durement), or près de 3 Mo sur 3,7 étaient des plans
+d'outils joints en base64, et `…_history` gardait jusqu'à 5 copies complètes (jusqu'à 10 Mo mesurés) + `…_backup`. **Correctif** :
+(1) `pjStocker` range une pièce (plan d'outil, fiche outil) dans IndexedDB (`spk_pj`) adressée par son empreinte et ne la remplace dans
+le suivi par la référence `§pj§<empreinte>` qu'APRÈS relecture confirmée ; (2) `pjMigrer` fait ce rangement pour l'existant au
+démarrage et avant toute synchro (historique et sauvegarde locaux purgés ensuite : ils portaient les pièces en entier) ;
+(3) `ouvrirPieceJointe` résout la référence : appareil, sinon `sync_blob_get` (puis mise en cache), sinon message clair ; (4) l'export
+JSON remet les pièces dans le fichier (`pjInlinerArbre`) ; (5) synchro : les références `§pj§` voyagent telles quelles, leurs pièces
+sont envoyées une seule fois (`sync_blob_put`), et les anciens enregistrements en `§blob§` sont convertis à la réception
+(`syPjNormaliser`) : un iPhone neuf n'inflate plus rien ; (6) historique local limité à 2 copies sur écran tactile ; (7) nouvelles
+pièces : plafond 8 Mo (IndexedDB) au lieu de 500 ko. **Mesuré sur l'export de Matis** (5,05 Mo en fichier) : stockage local
+**772 Ko**, historique 0, 10 pièces en référence, la première retrouvée (282 Ko), 10 pièces réinjectées à l'export. **iPhone** :
+bandeau « Base 2026/2027 en place » masqué ≤ 480 px (176 → 0 px), bandeau « Reprendre » compact (171 → 118 px) et sans le texte
+répété « aucun prélèvement · aucun prélèvement » (bug : la raison doublait le dernier prélèvement), en-tête et fil d'Ariane resserrés ;
+aucun débordement. 746 tests | 0 échec (+3) + porte lot 4.143. **Limite** : vérifié en émulation Chrome (IndexedDB réel), pas sur un
+iPhone. **Attention opérateur** : un appareil dont la mémoire est déjà pleine peut devoir vider les données du site (Réglages > Safari >
+Avancé > Données de sites web) puis se reconnecter à la synchro ; ne le faire QU'après avoir vérifié que ses saisies sont dans le cloud.
+
 ## [4.142.0] — 2026-11-09 · plus de Pipeline commercial ; la synchro s'atteint en un clic · Claude
 
 Benjamin : « le pipeline et "les essais qui font les commandes" sont 2 mentions qui décrédibilisent l'outil en le plaçant comme un
