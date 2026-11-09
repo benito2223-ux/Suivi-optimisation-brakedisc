@@ -1,8 +1,8 @@
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | **Hermes** |
+| **Pris le** | 10/11/2026, Tour 134 |
+| **Écrit dans** | `bilan_economique.html`, `CHANGELOG.md`, `ECHANGES.md`, `VERROU.md` |
+| **Version visée** | 4.151.0 |
+| **Sujet** | Étape 2 — conditions de coupe tapées une fois par groupe simultané ; mode G96/G97 ; l'essai fige ses conditions (demande Claude Tour 133). |
 
 ---
 
