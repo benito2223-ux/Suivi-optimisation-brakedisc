@@ -5,6 +5,10 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.150.0] — 2026-11-09 · la mémoire des essais · Claude
+
+Benjamin : « cet outil est la mémoire des tests et optimisations mis en place à Sept-Fons : je veux retrouver toutes les notes et observations de chaque essai » (incident : un texte détaillé sur le talon, HESSAPP OP30, introuvable ; audit cloud = rien de substantiel perdu, copie locale = plus d'historique que le cloud, qui n'en garde que 10 versions par enregistrement). **Écran « Mémoire des essais »** (menu Outils, `ouvrirMemoireEssais`) : `memoireEssais()` aplatit toute l'arborescence (ligne › référence › OP › scénario › essai) avec objectif, observations, conclusion, motif/détail d'arrêt, motif du scénario, opérateur, relevés ; recherche libre, filtre « seulement les essais avec des notes », compteur des essais sans note, export CSV (`memoireCSV`, BOM, sep=;, retours à la ligne aplatis). **Retrouver** : `memoireTextesRetrouves()` compare l'état actuel aux points de reprise (`_history`) et à la sauvegarde (`_backup`) de CE navigateur et liste tout texte écrit puis absent de l'essai (essai supprimé compris) ; `memoireRestaurerTexte()` le remet sans jamais écraser (champ vide = remplacé, rempli = ajouté après « — texte retrouvé — »), avec instantané de secours. 787 tests | 0 échec (+10).
+
 ## [4.149.1] — 2026-11-09 · boutons « Fermer » réparés · Claude
 
 Vu dans la console de Benjamin : `Uncaught ReferenceError: fermerPanneau is not defined`. Six boutons (Fermer/Annuler de la fusion Classeur Matis, Fermer et Restaurer de la fenêtre d'annulation d'un geste, Fermer de la déclinaison d'un scénario) appelaient `fermerPanneau()`, un ancien nom disparu : le clic levait l'erreur et ne fermait rien. Remplacés par `fermerPanneaux()`. Porte `lot4149Fermer` : plus aucun appel à `fermerPanneau(` dans la source. 777 tests | 0 échec.

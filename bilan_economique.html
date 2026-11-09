@@ -2496,6 +2496,7 @@ body:not(.atelier-on) input[type="number"]{ -moz-appearance:number-input; }
   <div class="panel panel-large" id="cataloguePanel" hidden></div>
   <div class="panel panel-large" id="planPanel" hidden></div>
   <div class="panel panel-large" id="visitePanel" hidden></div>
+  <div class="panel panel-large" id="memoirePanel" hidden></div>
   <datalist id="catMabec"></datalist>
   <datalist id="catIso"></datalist>
   <div class="panel panel-large" id="cartePanel" hidden></div>
@@ -14413,6 +14414,10 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.150.0", date:"09/11/2026", points:[
+    "<b>Mémoire des essais.</b> Nouvel écran (menu Outils) qui réunit, essai par essai et sur toutes les lignes, tout ce qui a été écrit : objectif, observations, conclusion, motif et détail d’arrêt. Recherche libre (« talon », « vibration », un nom…), export CSV pour Excel, et repérage des essais sans aucune note.",
+    "<b>Retrouver un texte disparu.</b> L’écran compare l’état actuel avec les points de reprise et la sauvegarde de ce navigateur : tout texte écrit puis disparu est affiché en jaune avec un bouton « Restaurer dans l’essai » (rien n’est jamais écrasé : le texte s’ajoute)."
+  ]},
   { version:"4.149.1", date:"09/11/2026", points:[
     "<b>Boutons « Fermer » réparés.</b> Dans les fenêtres de fusion Classeur Matis, d’annulation d’un geste et de déclinaison d’un scénario, le bouton Fermer (ou Annuler) ne faisait rien : il appelait une fonction qui n’existe plus. Il ferme maintenant la fenêtre."
   ]},
@@ -15290,7 +15295,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.149.1";
+const TOOL_VERSION = "4.150.0";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -18858,6 +18863,165 @@ function ouvrirEconomiesGenerales(){
   const b = document.getElementById("ecoOuvrirPlan");
   if(b) b.addEventListener("click", () => { fermerDialogue(true); ouvrirPlan(); });
   return p;
+}
+
+/* ═══ v4.150 — LA MÉMOIRE DES ESSAIS ═══════════════════════════════════════════
+   Benjamin : « cet outil est la mémoire des tests et optimisations mis en place à Sept-Fons :
+   je veux retrouver toutes les notes et observations de chaque essai ». Un écran qui réunit,
+   essai par essai et dans TOUTE l'arborescence, tout ce qui a été écrit (objectif,
+   observations, conclusion, motif et détail d'arrêt, motif du scénario) — exportable en CSV —
+   et qui compare avec les points de reprise et la sauvegarde de ce navigateur pour
+   RETROUVER un texte qui a disparu (ligne « texte retrouvé » + bouton Restaurer). */
+function memoireNorm(t){ return String(t == null ? "" : t).replace(/\s+/g, " ").trim().toLowerCase(); }
+function memoireEssais(arbre){
+  const out = [];
+  (arbre || lignes).forEach(l => (l.references || []).forEach(r => (r.ops || []).forEach(o => (o.scenarios || []).forEach(sc => (sc.essais || []).forEach(es => {
+    const c = es.cloture || {};
+    out.push({ ligne: l.nom || "", reference: r.nom || "", op: o.nom || "", scenario: sc.name || sc.nom || "", scenarioId: sc.id || "",
+      statut: sc.statut || "", statutMotif: sc.statutMotif || "",
+      essaiId: es.id, titre: es.titre || "", date: es.date || "", operateur: es.operateur || "", equipe: es.equipe || "",
+      releves: (es.prelevements || []).length,
+      but: es.but || "", observations: es.observations || "", conclusion: es.conclusion || "",
+      arretMotif: c.motif ? libelleMotifArret(c.motif) : "", arretDate: c.date || "", arretDetail: c.detail || "" });
+  })))));
+  return out;
+}
+function memoireADuTexte(e){
+  return !!(String(e.but).trim() || String(e.observations).trim() || String(e.conclusion).trim() || String(e.arretDetail).trim() || String(e.statutMotif).trim());
+}
+/* les copies de ce navigateur : points de reprise automatiques + sauvegarde avant le dernier geste risqué */
+function memoireSnapshots(){
+  const res = [];
+  try{ (JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]") || []).forEach(h => {
+    if(h && Array.isArray(h.lignes)) res.push({ label: "point de reprise du " + new Date(h.savedAt).toLocaleString("fr-FR"), lignes: h.lignes });
+  }); }catch(e){}
+  try{ const b = JSON.parse(localStorage.getItem(BACKUP_KEY) || "null");
+    if(b && Array.isArray(b.lignes)) res.push({ label: "sauvegarde « " + (b.label || "avant un geste") + " » du " + new Date(b.savedAt).toLocaleString("fr-FR"), lignes: b.lignes });
+  }catch(e){}
+  return res;
+}
+const MEMOIRE_CHAMPS_RETROUVABLES = [["but", "Objectif"], ["observations", "Observations"], ["conclusion", "Conclusion"], ["arretDetail", "Détail de l'arrêt"]];
+/* un texte écrit dans une copie et absent de l'état actuel du même essai (ou dont l'essai a disparu) */
+function memoireTextesRetrouves(snaps){
+  const actuel = {};
+  memoireEssais().forEach(e => { actuel[e.essaiId] = e; });
+  const vus = new Set(), res = [];
+  (snaps || memoireSnapshots()).forEach(sn => memoireEssais(sn.lignes).forEach(e => {
+    MEMOIRE_CHAMPS_RETROUVABLES.forEach(([champ, lib]) => {
+      const texte = String(e[champ] || "").trim();
+      if(texte.length < 4) return;
+      const cur = actuel[e.essaiId];
+      if(cur && memoireNorm(cur[champ]).indexOf(memoireNorm(texte)) > -1) return;
+      /* déjà contenu ailleurs dans l'essai (ex. restauré dans un autre champ) : pas perdu */
+      if(cur && memoireNorm([cur.but, cur.observations, cur.conclusion, cur.arretDetail].join(" ")).indexOf(memoireNorm(texte)) > -1) return;
+      const cle = e.essaiId + "|" + champ + "|" + memoireNorm(texte);
+      if(vus.has(cle)) return;
+      vus.add(cle);
+      res.push({ essaiId: e.essaiId, titre: e.titre, scenario: e.scenario, ligne: e.ligne, op: e.op, champ, libelle: lib, texte, source: sn.label, essaiExiste: !!cur });
+    });
+  }));
+  return res;
+}
+/* remet un texte retrouvé dans son essai : champ vide = remplacé, champ rempli = on AJOUTE (rien n'est écrasé) */
+function memoireRestaurerTexte(essaiId, champ, texte){
+  let cible = null;
+  lignes.forEach(l => (l.references || []).forEach(r => (r.ops || []).forEach(o => (o.scenarios || []).forEach(sc => (sc.essais || []).forEach(es => { if(es.id === essaiId) cible = es; })))));
+  if(!cible) return false;
+  const t = String(texte || "").trim();
+  if(!t) return false;
+  const champReel = champ === "arretDetail" ? "observations" : champ;
+  const prefixe = champ === "arretDetail" ? "Arrêt : " : "";
+  const cur = String(cible[champReel] || "").trim();
+  if(memoireNorm(cur).indexOf(memoireNorm(t)) > -1) return true;
+  cible[champReel] = cur ? cur + "\n— texte retrouvé —\n" + prefixe + t : prefixe + t;
+  if(typeof toucherEssai === "function") toucherEssai(cible);
+  return true;
+}
+function memoireCSV(essais){
+  const cell = v => { const x = String(v == null ? "" : v).replace(/\r?\n/g, " ⏎ "); return /[";]/.test(x) ? '"' + x.replace(/"/g, '""') + '"' : x; };
+  const L = ["sep=;", "Mémoire des essais - " + new Date().toLocaleDateString("fr-FR"), "",
+    ["Ligne", "Référence", "OP", "Scénario", "Statut du scénario", "Motif du scénario", "Essai", "Date", "Opérateur", "Équipe", "Relevés", "Objectif", "Observations", "Conclusion", "Arrêt", "Date d'arrêt", "Détail de l'arrêt"].join(";")];
+  (essais || memoireEssais()).forEach(e => L.push([e.ligne, e.reference, e.op, e.scenario, e.statut, e.statutMotif, e.titre, e.date, e.operateur, e.equipe, e.releves, e.but, e.observations, e.conclusion, e.arretMotif, e.arretDate, e.arretDetail].map(cell).join(";")));
+  return "\uFEFF" + L.join("\r\n");
+}
+function memoireCorpsHTML(filtre, seulementNotes){
+  const q = memoireNorm(filtre);
+  const tous = memoireEssais();
+  const retrouves = memoireTextesRetrouves();
+  const parEssai = {};
+  retrouves.forEach(t => { (parEssai[t.essaiId] = parEssai[t.essaiId] || []).push(t); });
+  const orphelins = retrouves.filter(t => !t.essaiExiste);
+  const bloc = (t, v) => String(v || "").trim() ? `<div style="margin:4px 0;"><span style="font-size:12px; color:var(--ink-soft);">${t}</span><div style="white-space:pre-wrap;">${escapeAttr(v)}</div></div>` : "";
+  const texteEssai = e => [e.ligne, e.reference, e.op, e.scenario, e.titre, e.but, e.observations, e.conclusion, e.arretDetail, e.arretMotif, e.statutMotif, e.operateur].join(" ");
+  const liste = tous.filter(e => (!seulementNotes || memoireADuTexte(e) || (parEssai[e.essaiId] || []).length) && (!q || memoireNorm(texteEssai(e)).indexOf(q) > -1));
+  const sansNote = tous.filter(e => !memoireADuTexte(e)).length;
+  const carte = e => {
+    const rec = parEssai[e.essaiId] || [];
+    return `<div class="mem-essai" style="border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px 14px; margin:8px 0;">
+      <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;"><b>${escapeAttr(e.titre || "Essai")}</b>
+        <span style="font-size:12.5px; color:var(--ink-soft);">${escapeAttr(e.date || "sans date")}${e.operateur ? " · " + escapeAttr(e.operateur) : ""}${e.equipe ? " · " + escapeAttr(e.equipe) : ""} · ${e.releves} relevé(s)</span></div>
+      <div style="font-size:12.5px; color:var(--ink-soft);">${escapeAttr(e.ligne)} › ${escapeAttr(e.reference)} › ${escapeAttr(e.op)} › ${escapeAttr(e.scenario)}${e.statut ? " · " + escapeAttr(e.statut) : ""}</div>
+      ${bloc("Objectif", e.but)}${bloc("Observations", e.observations)}${bloc("Conclusion", e.conclusion)}
+      ${e.arretMotif ? bloc("Arrêt — " + escapeAttr(e.arretMotif) + (e.arretDate ? " le " + escapeAttr(e.arretDate.split("-").reverse().join("/")) : ""), e.arretDetail || "(pas de détail)") : ""}
+      ${bloc("Motif du scénario", e.statutMotif)}
+      ${memoireADuTexte(e) ? "" : `<div style="color:#999; font-style:italic;">Aucune note saisie sur cet essai.</div>`}
+      ${rec.map(t => `<div style="margin-top:8px; padding:8px 10px; background:#fff7e6; border:1px solid #f0c36d; border-radius:6px;"><div style="font-size:12px; color:#8a5a00;">⟲ Texte retrouvé (${escapeAttr(t.libelle)}) — ${escapeAttr(t.source)}</div>
+          <div style="white-space:pre-wrap;">${escapeAttr(t.texte)}</div>
+          <button type="button" class="ghost small" data-memrestaurer="${escapeAttr(t.essaiId)}|${escapeAttr(t.champ)}" style="margin-top:4px;">Restaurer dans l'essai</button></div>`).join("")}
+    </div>`;
+  };
+  let corps = "", dernierGroupe = "";
+  liste.forEach(e => {
+    const g = e.ligne + " › " + e.reference + " › " + e.op;
+    if(g !== dernierGroupe){ corps += `<h4 style="margin:18px 0 4px; font-size:14px;">${escapeAttr(g)}</h4>`; dernierGroupe = g; }
+    corps += carte(e);
+  });
+  const orph = orphelins.length ? `<h4 style="margin:18px 0 4px; font-size:14px; color:#8a5a00;">⟲ Textes d'essais qui n'existent plus (retrouvés dans les copies de ce navigateur)</h4>` +
+    orphelins.map(t => `<div style="margin:6px 0; padding:8px 10px; background:#fff7e6; border:1px solid #f0c36d; border-radius:6px;"><div style="font-size:12px; color:#8a5a00;">${escapeAttr(t.ligne)} › ${escapeAttr(t.op)} › ${escapeAttr(t.scenario)} › ${escapeAttr(t.titre)} — ${escapeAttr(t.libelle)} — ${escapeAttr(t.source)}</div><div style="white-space:pre-wrap;">${escapeAttr(t.texte)}</div></div>`).join("") : "";
+  return `<p class="panel-hint">${tous.length} essai(s) dans l'outil · ${tous.length - sansNote} avec des notes · ${sansNote} sans aucune note · <b>${retrouves.length}</b> texte(s) retrouvé(s) dans les copies de ce navigateur (${memoireSnapshots().length} copie(s) lue(s)).</p>
+    ${corps || `<p class="panel-hint">Aucun essai ne correspond.</p>`}${orph}`;
+}
+function renderMemoireEssais(){
+  const wrap = document.getElementById("memoirePanel");
+  if(!wrap) return;
+  wrap.innerHTML = `<h3>📓 Mémoire des essais</h3>
+    <div class="simul-actions" style="align-items:center;">
+      <input class="cell" id="memFiltre" style="min-width:240px;" placeholder="Chercher : talon, vibration, SL500, Jonathan…" aria-label="Chercher dans les notes">
+      <label style="display:flex; align-items:center; gap:6px; font-size:13px;"><input type="checkbox" id="memSeulNotes" style="width:auto; min-height:0;" checked> Seulement les essais avec des notes</label>
+      <span style="flex:1"></span>
+      <button class="ghost small" id="memExport">⤵ Exporter en CSV</button>
+      <button class="ghost small" id="memFermer">Fermer</button>
+    </div>
+    <div id="memCorps">${memoireCorpsHTML("", true)}</div>`;
+  const maj = () => {
+    const c = document.getElementById("memCorps");
+    c.innerHTML = memoireCorpsHTML(document.getElementById("memFiltre").value, document.getElementById("memSeulNotes").checked);
+    cabler();
+  };
+  const cabler = () => wrap.querySelectorAll("[data-memrestaurer]").forEach(b => b.addEventListener("click", () => {
+    const [id, champ] = b.getAttribute("data-memrestaurer").split("|");
+    const t = memoireTextesRetrouves().find(x => x.essaiId === id && x.champ === champ);
+    if(!t) return;
+    backupSnapshot("Mémoire des essais : texte retrouvé");
+    if(memoireRestaurerTexte(id, champ, t.texte)){ saveData(); render(); maj(); }
+  }));
+  document.getElementById("memFiltre").addEventListener("input", maj);
+  document.getElementById("memSeulNotes").addEventListener("change", maj);
+  document.getElementById("memFermer").addEventListener("click", () => fermerPanneaux());
+  document.getElementById("memExport").addEventListener("click", () => {
+    const blob = new Blob([memoireCSV()], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "Memoire_des_essais.csv";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  });
+  cabler();
+}
+function ouvrirMemoireEssais(){
+  fermerPanneaux();
+  ouvrirPanneau("memoirePanel");
+  renderMemoireEssais();
 }
 
 /* le bloc « économies » du mode atelier : activé depuis le catalogue (planReglages.ecoAtelier) */
@@ -25592,6 +25756,34 @@ function runTests(){
            [html.indexOf("Économie annuelle de ce scénario") > -1, html.indexOf("+ ") > -1, html.indexOf("€ / pièce") > -1], [true, true, true]);
         ok("atelier : le scénario de référence n'affiche pas d'économie à comparer", atelierEconomieHTML(prod, { outilId: "tEscEP", logementId: "gEscEP" }, ctxE).indexOf("pas d'économie à comparer") > -1, true);
       } finally { lignes = lAvE; catalogue = catAvE; planReglages = regAvE; }
+    }
+    { // v4.150 — la mémoire des essais : tout ce qui est écrit, et ce qui a disparu se retrouve
+      const mkL = essais => normalizeLigne({ id: "lMe", nom: "HESSAPP", references: [ normalizeReference({ id: "rMe", nom: "302x26 RPI", ops: [
+        normalizeOp({ id: "oMe", nom: "OP30", scenarios: [ normalizeScenario({ id: "sMe", name: "Caractérisation KY3500", statutMotif: "Talon", essais }) ] }) ] }) ] });
+      const LONG = "Talon au début de la piste inter à partir du disque 50 : <b>l'insert</b> a bavé, détail complet de ce qui s'est passé.";
+      const essaiAvant = { id: "eMe1", titre: "Essai 1", date: "2026-09-23", operateur: "Jonathan", observations: LONG, conclusion: "", prelevements: [], cloture: { motif: "autre", date: "2026-09-23", detail: "Talon" } };
+      const essaiApres = { id: "eMe1", titre: "Essai 1", date: "2026-09-23", operateur: "Jonathan", observations: "", conclusion: "", prelevements: [], cloture: { motif: "autre", date: "2026-09-23", detail: "Talon" } };
+      const lAvM = lignes; lignes = [ mkL([ essaiApres ]) ];
+      try {
+        const lu = memoireEssais();
+        ok("mémoire : un essai par ligne, avec son chemin et ses notes", [lu.length, lu[0].ligne, lu[0].op, lu[0].scenario, lu[0].arretDetail, lu[0].statutMotif], [1, "HESSAPP", "OP30", "Caractérisation KY3500", "Talon", "Talon"]);
+        const snaps = [ { label: "copie du matin", lignes: [ mkL([ essaiAvant ]) ] } ];
+        const rec = memoireTextesRetrouves(snaps);
+        ok("mémoire : un texte présent dans une copie et absent de l'état actuel est retrouvé", [rec.length, rec[0].champ, rec[0].texte === LONG, rec[0].essaiExiste, rec[0].source], [1, "observations", true, true, "copie du matin"]);
+        ok("mémoire : un texte déjà dans l'essai n'est pas signalé (la courte clôture « Talon » est actuelle)", memoireTextesRetrouves([ { label: "x", lignes: [ mkL([ essaiApres ]) ] } ]).length, 0);
+        const html = memoireCorpsHTML("", true);
+        ok("mémoire : l'écran se rend sans HTML injecté, et la recherche filtre", [html.indexOf("<b>l'insert</b>") === -1, memoireCorpsHTML("zzzabsent", true).indexOf("Aucun essai ne correspond") > -1, memoireCorpsHTML("jonathan", true).indexOf("Essai 1") > -1], [true, true, true]);
+        ok("mémoire : restaurer remet le texte dans l'essai (champ vide : remplacé)", [memoireRestaurerTexte("eMe1", "observations", LONG), lignes[0].references[0].ops[0].scenarios[0].essais[0].observations === LONG], [true, true]);
+        ok("mémoire : une fois restauré, le texte n'est plus « perdu » (idempotent)", [memoireTextesRetrouves(snaps).length, memoireRestaurerTexte("eMe1", "observations", LONG)], [0, true]);
+        const e = lignes[0].references[0].ops[0].scenarios[0].essais[0];
+        e.conclusion = "Ma conclusion"; memoireRestaurerTexte("eMe1", "conclusion", "Un autre texte retrouvé");
+        ok("mémoire : un champ déjà rempli n'est jamais écrasé — le texte retrouvé s'ajoute", e.conclusion.indexOf("Ma conclusion") === 0 && e.conclusion.indexOf("Un autre texte retrouvé") > -1, true);
+        const csv = memoireCSV();
+        ok("mémoire : l'export CSV (BOM, sep=;) porte l'en-tête, la ligne et les notes sur une seule ligne", [csv.charCodeAt(0), csv.indexOf("Objectif;Observations;Conclusion") > -1, csv.split("\r\n").filter(x => x.indexOf("Essai 1") === 0 || x.indexOf(";Essai 1;") > -1).length], [65279, true, 1]);
+        const orphelin = memoireTextesRetrouves([ { label: "vieille copie", lignes: [ mkL([ Object.assign({}, essaiAvant, { id: "eDisparu" }) ]) ] } ]);
+        ok("mémoire : le texte d'un essai qui n'existe plus est retrouvé aussi", [orphelin.some(x => x.champ === "observations" && x.essaiExiste === false), orphelin.every(x => x.essaiExiste === false)], [true, true]);
+        ok("mémoire : un essai sans aucune note est signalé comme tel", memoireADuTexte({ but: "", observations: "", conclusion: "", arretDetail: "", statutMotif: "" }), false);
+      } finally { lignes = lAvM; }
     }
     {
       /* v4.91 — la suggestion sans catalogue : une plaquette saisie ailleurs dans

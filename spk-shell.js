@@ -464,7 +464,8 @@ setTimeout(function(){ requestAnimationFrame(function(){ requestAnimationFrame(f
       { lib: "Vue CPP", sous: "le coût pièce obtenu vs la référence, OP par OP", f: () => window.ouvrirVueCpp && window.ouvrirVueCpp() },
       { lib: "Catalogue", sous: "un MABEC = un prix ; import / export CSV", f: () => window.ouvrirCatalogue && window.ouvrirCatalogue() },
       { lib: "Plan de conversion", sous: "article par article, la cible et le gain", f: () => window.ouvrirPlan && window.ouvrirPlan() },
-      { lib: "Dossier de visite", sous: "ce qui s'est passé depuis la dernière visite", f: () => window.ouvrirVisite && window.ouvrirVisite() }
+      { lib: "Dossier de visite", sous: "ce qui s'est passé depuis la dernière visite", f: () => window.ouvrirVisite && window.ouvrirVisite() },
+      { lib: "Mémoire des essais", sous: "toutes les notes et observations, retrouver un texte disparu", f: () => window.ouvrirMemoireEssais && window.ouvrirMemoireEssais() }
     ];
     const btn = document.createElement("button");
     btn.type = "button";
@@ -707,6 +708,7 @@ setTimeout(function(){ requestAnimationFrame(function(){ requestAnimationFrame(f
     planPanel: "accueilBtn",
     simulPanel: "accueilBtn",
     cataloguePanel: "accueilBtn",
+    memoirePanel: "accueilBtn",
     comparePanel: "accueilBtn",
     historiquePanel: "accueilBtn"
   };
@@ -735,7 +737,7 @@ setTimeout(function(){ requestAnimationFrame(function(){ requestAnimationFrame(f
      Constat Benjamin 22/10 : « l'onglet tableau ne s'affiche plus quand on
      clique dessus » après être passé par le Plan de conversion. Fermés à
      chaque changement d'écran du rail. */
-  const SURFACES_SECONDAIRES = ["planPanel", "simulPanel", "cataloguePanel", "comparePanel", "historiquePanel", "backlogWrap"];
+  const SURFACES_SECONDAIRES = ["planPanel", "simulPanel", "cataloguePanel", "memoirePanel", "comparePanel", "historiquePanel", "backlogWrap"];
   const TOUTES_SURFACES = [];
   Object.keys(SURFACES_DU_BOUTON).forEach((b) => {
     SURFACES_DU_BOUTON[b].forEach((id) => {
