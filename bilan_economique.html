@@ -1476,6 +1476,10 @@ tr.row-bad td{background:var(--gray-50);}
 .essai-obs{width:100%; font-family:var(--font-body); font-size:12.5px; color:var(--ink); background:transparent; border:none; border-radius:var(--radius-sm); padding:8px 6px;}
 .essai-obs:focus{outline:none;}
 .essai-obs::placeholder{color:color-mix(in srgb, var(--amber) 70%, var(--ink-faint));}
+.essai-concl{margin:10px 12px; background:var(--gray-50); border:1px solid color-mix(in srgb, var(--amber) 35%, transparent); border-left:3px solid var(--amber); border-radius:var(--radius-sm); padding:8px 10px;}
+.essai-concl label{display:block; font-size:12px; font-weight:700; color:var(--ink-soft); margin-bottom:4px;}
+.essai-conclusion{width:100%; box-sizing:border-box; min-height:64px; resize:vertical; font-family:var(--font-body); font-size:14px; line-height:1.45; color:var(--ink); background:var(--white,#fff); border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px 10px;}
+.essai-conclusion:focus{outline:2px solid var(--blue); outline-offset:0;}
 .essai-obs-print{font-size:12px; color:var(--ink-soft); padding:6px 12px; font-style:italic; background:var(--gray-50); border-left:3px solid var(--amber); margin:8px 12px;}
 .essai-but-wrap{display:flex; align-items:center; gap:8px; margin:10px 12px 0; background:var(--gray-50); border:1px solid color-mix(in srgb, var(--blue) 35%, transparent); border-left:3px solid var(--blue); border-radius:var(--radius-sm); padding:2px 4px 2px 10px;}
 .essai-but-icon{font-size:13px; color:var(--blue); flex-shrink:0;}
@@ -4164,10 +4168,11 @@ function normalizePlanEntry(p){
 }
 
 function normalizeArticleCat(a){
-  return Object.assign({ mabec: "", iso: "", prix: "", aretes: "", ddv: "",
+  return Object.assign({ mabec: "", iso: "", libelle: "", prix: "", aretes: "", ddv: "",
                          codificationDemandeeLe: "", codifieLe: "" }, a,
     { mabec: String((a && a.mabec) || "").trim().toUpperCase(),
       iso: String((a && a.iso) || "").trim(),
+      libelle: String((a && a.libelle) || "").replace(/\s+/g, " ").trim(),
       prix: (a && a.prix) !== "" && a && a.prix != null ? Number(a.prix) : "",
       codificationDemandeeLe: String((a && a.codificationDemandeeLe) || "").trim(),
       codifieLe: String((a && a.codifieLe) || "").trim() });
@@ -4335,7 +4340,7 @@ function normalizeScenario(sc){
     const photos = (e.photos || []).map(p => Object.assign(
       { id: p.id || ("ph"+Math.random().toString(36).slice(2)), filename:"", addedAt:"", legende:"", crop:null, annotations:[] }, p));
     return Object.assign(
-      { id: e.id || ("e"+Math.random().toString(36).slice(2)), titre:"", date:"", equipe:"", operateur:"", observations:"", maturiteBruts:"", prelevements:[],
+      { id: e.id || ("e"+Math.random().toString(36).slice(2)), titre:"", date:"", equipe:"", operateur:"", observations:"", conclusion:"", maturiteBruts:"", prelevements:[],
         // tracabilite terrain (v3.11) : sans ces defauts, un essai charge depuis un JSON
         // anterieur a cette version porte des champs undefined plutot que des chaines vides
         redigePar:"", dateFin:"", heureDebut:"", heureFin:"", programme:"", programmeGauche:"", programmeDroit:"",
@@ -5465,6 +5470,7 @@ function essaiRapportHTML(sc, essai, photosRap){
   <p style="font-family:\'IBM Plex Mono\',ui-monospace, Menlo, Consolas,monospace; font-size:10.5px; color:var(--ink-faint); margin-top:4px;">Tolérance d'essai : ${escapeAttr(mesureLabel)} ≤ ${fmt(parseFloat(limiteDe(sc)),3)} · Spec usine (OP40, disque fini) : Battement ≤ ${fmt(specsUsine.battement,3)} · VE ≤ ${fmt(specsUsine.ve,3)}</p>
 
   ${essai.observations ? `<h2>Observations</h2><div class="obs-box">${escapeAttr(essai.observations)}</div>` : ""}
+  ${essai.conclusion ? `<h2>Conclusion</h2><div class="obs-box" style="white-space:pre-wrap;">${escapeAttr(essai.conclusion)}</div>` : ""}
 
   ${photosRapportHTML(photosRap)}
 
@@ -10325,6 +10331,13 @@ function essaiCardHTML(sc, essai, interactive){
          value="${escapeAttr(essai.observations)}" placeholder="Observations : mode d'usure, entaille, incident, lot de fonte…"></div>`
     : (essai.observations ? `<div class="essai-obs-print">Observations : ${escapeAttr(essai.observations)}</div>` : "");
 
+  // v4.146 — commentaires et conclusion : un texte libre multi-ligne, TOUJOURS visible (hors du bloc Contexte replié)
+  const conclRow = interactive
+    ? `<div class="essai-concl"><label for="concl-${essai.id}"><span class="essai-obs-icon">✎</span> Commentaires et conclusion</label>
+         <textarea id="concl-${essai.id}" class="essai-conclusion" rows="3" data-id="${sc.id}" data-essai="${essai.id}" data-field="conclusion"
+           placeholder="Ce qu'on retient de cet essai : résultat, cause d'arrêt, décision, suite à donner…">${escapeAttr(essai.conclusion)}</textarea></div>`
+    : (essai.conclusion ? `<div class="essai-obs-print"><b>Conclusion :</b> ${escapeAttr(essai.conclusion)}</div>` : "");
+
   // tracabilite terrain : qui a redige, quand l'essai s'est termine (pas seulement commence),
   // et quel programme CNC tournait — trois infos que le rapport papier de Matis note toujours
   // et qu'aucun champ ne capturait avant la v3.11
@@ -10456,6 +10469,7 @@ function essaiCardHTML(sc, essai, interactive){
       </div>
       ${addPrelBtn}
       <div class="essai-progress-multi">${progressRows || ""}</div>
+      ${conclRow}
       ${interactive ? photosHTML(sc, essai) : ""}
       ${interactive ? marpossHTML(sc, essai) : ""}
   `;
@@ -12652,7 +12666,7 @@ function attachDetailHandlers(sc){
       if(det.open) essaiCtxOuverts.add(cle); else essaiCtxOuverts.delete(cle);
     });
   });
-  root.querySelectorAll("input.cell, input.sc-name, input.cell-cycle, input.limit-label, input.limit-value, input.essai-obs, input.essai-but, select.log-equipe, select.statut-select, input.statut-motif, select.usure-select").forEach(inp => {
+  root.querySelectorAll("input.cell, input.sc-name, input.cell-cycle, input.limit-label, input.limit-value, input.essai-obs, input.essai-but, textarea.essai-conclusion, select.log-equipe, select.statut-select, input.statut-motif, select.usure-select").forEach(inp => {
     inp.addEventListener("change", onInputChange);
     // a chaque caractere : on ecrit juste la valeur (pas de reconstruction de l'ecran).
     // Reconstruire tout l'affichage a chaque frappe (badges, couts, graphique...) rendait
@@ -13107,7 +13121,7 @@ function attachDetailHandlers(sc){
       sc.essais = sc.essais || [];
       const nouvelId = "e"+Math.random().toString(36).slice(2);
       sc.essais.push({ id: nouvelId, titre: "Essai " + (sc.essais.length+1),
-        date: today, equipe: "", operateur: "", but: "", observations: "", maturiteBruts: "",
+        date: today, equipe: "", operateur: "", but: "", observations: "", conclusion: "", maturiteBruts: "",
         params: { logements: snapshotLogements(sc) },
         marposs: { debut:"", fin:"", releves:[] },
         photos: [],
@@ -14351,6 +14365,10 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.146.0", date:"09/11/2026", points:[
+    "<b>Uniformiser les libellés des plaquettes.</b> Dans le Catalogue, chaque article (MABEC) montre tous les libellés qu’il porte dans l’outil et propose le plus fréquent comme « libellé retenu » (modifiable). Un bouton « Uniformiser les libellés » le recopie partout, après simulation et confirmation : ni prix ni essais ne changent.",
+    "<b>Commentaires et conclusion dans chaque essai.</b> Un champ de texte libre, toujours visible sous la progression de l’essai : ce qu’on retient, la cause d’arrêt, la décision, la suite. Il se synchronise avec l’équipe et figure dans le rapport d’essai."
+  ]},
   { version:"4.145.3", date:"09/11/2026", points:[
     "<b>Démarrage sans image parasite.</b> L’écran de chargement reste en place jusqu’à ce que la nouvelle mise en page soit posée : on ne voit plus un instant l’ancienne page avant la bonne."
   ]},
@@ -15205,7 +15223,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.145.3";
+const TOOL_VERSION = "4.146.0";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -18509,7 +18527,8 @@ function catalogueSeed(){
     entrees.sort((a, b) => (b[1] - a[1]) || (b[0] - a[0]));
     const prix = Number(entrees[0][0]);
     const divergent = entrees.length > 1;
-    return normalizeArticleCat({ mabec: e.mabec, iso: [...e.iso].join(" | "),
+    const ancien = (catalogue || []).find(x => x.mabec === e.mabec);
+    return normalizeArticleCat({ mabec: e.mabec, iso: [...e.iso].join(" | "), libelle: ancien ? ancien.libelle : "",
       prix, aretes: valeurModale(e.aretesVus), ddv: valeurModale(e.ddvVus), divergent,
       prixVus: entrees.map(e2 => Number(e2[0])) });
   }).sort((a, b) => a.mabec.localeCompare(b.mabec));
@@ -18542,7 +18561,7 @@ function catalogueCSV(cat){
   const cell = v => /[";\r\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : String(v);
   const L = ["sep=;", "Catalogue plaquettes - " + new Date().toLocaleDateString("fr-FR"), "",
     "MABEC;Libelle ISO;Prix EUR;Aretes;DDV (pieces)"];
-  (cat || catalogue).forEach(a => L.push([a.mabec, a.iso, num(a.prix), num(a.aretes), num(a.ddv)].map(cell).join(";")));
+  (cat || catalogue).forEach(a => L.push([a.mabec, a.libelle || a.iso, num(a.prix), num(a.aretes), num(a.ddv)].map(cell).join(";")));
   return "\uFEFF" + L.join("\r\n");
 }
 
@@ -18584,7 +18603,7 @@ function catalogueDepuisCSV(texte){
     if(!mabec) return;
     if(isNaN(prix) || prix <= 0){ erreurs.push("Ligne " + (idx + 2) + " : prix illisible (" + (c[iP] || "vide") + ")"); return; }
     const n = v => { const f = parseFloat(String(v || "").replace(",", ".")); return isNaN(f) ? "" : f; };
-    cat.push(normalizeArticleCat({ mabec, iso: iI > -1 ? (c[iI] || "") : "", prix,
+    cat.push(normalizeArticleCat({ mabec, iso: iI > -1 ? (c[iI] || "") : "", libelle: (iI > -1 && c[iI] && c[iI].indexOf(" | ") === -1) ? c[iI] : "", prix,
       aretes: iA > -1 ? n(c[iA]) : "", ddv: iD > -1 ? n(c[iD]) : "" }));
   });
   if(!cat.length && !erreurs.length) erreurs.push("Aucune ligne exploitable.");
@@ -18645,6 +18664,56 @@ function suggestionDepuisArbre(mabec, iso){
     prix: valeurModale(e.prixVus), aretes: valeurModale(e.aretesVus), ddv: valeurModale(e.ddvVus) });
 }
 
+/* ═══ v4.146 — UNIFORMISER LES LIBELLÉS DES PLAQUETTES ═════════════════════
+   Une même plaquette (un MABEC) porte souvent plusieurs libellés ISO dans le suivi : « SNGX 120716 S02020 CBN387 »,
+   « sngx120716 S02020  CBN387 »… Le catalogue propose, par MABEC, un « libellé retenu » (le plus fréquent, modifiable) et
+   un geste unique qui le recopie dans tous les logements correspondants — avec simulation, rapport et consentement
+   (§3.2 : jamais en silence). Seule la référence plaquette (logement.ref) change ; ni prix, ni arêtes, ni essais. */
+function libellesVusParMabec(){
+  const vus = {};
+  lignes.forEach(l => (l.references || []).forEach(r => (r.ops || []).forEach(o =>
+    (o.scenarios || []).forEach(sc => (sc.outils || []).forEach(ou => (ou.logements || []).forEach(g => {
+      const mabec = String(g.codeArticle || g.mabec || "").trim().toUpperCase().replace(/\s+/g, " ");
+      const lib = String(g.ref || "").trim();
+      if(!mabec || !lib) return;
+      const e = vus[mabec] = vus[mabec] || {};
+      e[lib] = (e[lib] || 0) + 1;
+    }))))));
+  return vus;
+}
+function libelleMajoritaire(comptes){
+  const brut = s => String(s).replace(/\s+/g, " ").trim();
+  const ent = Object.entries(comptes || {});
+  if(!ent.length) return "";
+  ent.sort((a, b) => (b[1] - a[1])
+    || ((brut(b[0]) === brut(b[0]).toUpperCase() ? 1 : 0) - (brut(a[0]) === brut(a[0]).toUpperCase() ? 1 : 0))
+    || (b[0].length - a[0].length) || (a[0] < b[0] ? -1 : 1));
+  return brut(ent[0][0]);
+}
+function catalogueLibelleRetenu(a, vus){
+  return (a && a.libelle) || libelleMajoritaire((vus || libellesVusParMabec())[a && a.mabec]) || "";
+}
+/* rend { logementsTouches, mabecs:[{mabec, apres, n, avant:[...]}] } ; n'écrit que si appliquer === true */
+function catalogueUniformiserLibelles(appliquer){
+  const vus = libellesVusParMabec();
+  const retenu = {};
+  catalogue.forEach(a => { const l = catalogueLibelleRetenu(a, vus); if(l) retenu[a.mabec] = l; });
+  const rapport = { logementsTouches: 0, mabecs: [] };
+  lignes.forEach(l => (l.references || []).forEach(r => (r.ops || []).forEach(o =>
+    (o.scenarios || []).forEach(sc => (sc.outils || []).forEach(ou => (ou.logements || []).forEach(g => {
+      const mabec = String(g.codeArticle || g.mabec || "").trim().toUpperCase().replace(/\s+/g, " ");
+      const cible = retenu[mabec];
+      if(!cible || String(g.ref || "").trim() === "" || g.ref === cible) return;
+      const avant = g.ref;
+      if(appliquer){ if(g.article === avant) g.article = cible; g.ref = cible; }
+      rapport.logementsTouches++;
+      let e = rapport.mabecs.find(x => x.mabec === mabec);
+      if(!e){ e = { mabec, apres: cible, n: 0, avant: [] }; rapport.mabecs.push(e); }
+      e.n++; if(e.avant.indexOf(avant) === -1) e.avant.push(avant);
+    }))))));
+  return rapport;
+}
+
 function catalogueParIso(iso){
   const n = String(iso || "").trim().toUpperCase().replace(/\s+/g, " ");
   if(!n) return null;
@@ -18682,6 +18751,7 @@ function renderCatalogueDatlists(){
 }
 
 function catalogueRendu(){
+  const vus = libellesVusParMabec();
   if(!catalogue.length) return `<p class="panel-hint">Le catalogue est vide. Trois façons de le remplir : le <b>générer depuis l'outil</b> (un MABEC = un prix, le plus fréquent, divergences signalées), l'<b>importer d'un CSV</b> édité dans Excel, ou les deux — générer, exporter, faire corriger par Matis, réimporter.</p>
     <div class="simul-actions">
       <button class="ghost small" id="catSeed">🌱 Générer depuis l'outil</button>
@@ -18691,6 +18761,7 @@ function catalogueRendu(){
   return `
     <div class="simul-actions">
       <button class="primary small" id="catAppliquer" title="Propage les prix du catalogue dans tous les logements correspondants — avec rapport">✅ Appliquer les prix aux logements</button>
+      <button class="ghost small" id="catUniformiser" title="Recopie le libellé retenu de chaque article dans tous les logements correspondants — simulation, rapport et confirmation avant">🔤 Uniformiser les libellés</button>
       <button class="ghost small" id="catExporter">⤵ Exporter le CSV</button>
       <label class="ghost small" for="catFichier" style="cursor:pointer;">⤴ Importer un CSV…</label>
       <input type="file" id="catFichier" accept=".csv,.txt" hidden>
@@ -18698,10 +18769,11 @@ function catalogueRendu(){
     </div>
     <p class="panel-hint">${catalogue.length} article(s). Un MABEC = un prix — la propagation remplace les prix des logements correspondants, avec rapport. <b>SIMULATION jusqu'à « Appliquer ».</b></p>
     <table class="simul-table">
-      <thead><tr><th>Article (MABEC)</th><th>Libellés ISO vus</th><th>Prix</th><th>Codification Matis</th></tr></thead>
+      <thead><tr><th>Article (MABEC)</th><th>Libellés ISO vus</th><th>Libellé retenu</th><th>Prix</th><th>Codification Matis</th></tr></thead>
       <tbody>${catalogue.map((a, i) => `<tr>
         <td class="mono">${escapeAttr(a.mabec)}</td>
-        <td style="font-size:12px; color:#888;">${escapeAttr(a.iso || "—")}</td>
+        <td style="font-size:12px; color:#888;">${(() => { const v = vus[a.mabec]; const k = v ? Object.keys(v) : []; return k.length ? k.map(x => escapeAttr(x) + (k.length > 1 ? ` <i>×${v[x]}</i>` : "")).join("<br>") + (k.length > 1 ? `<br><span style="color:#b45309;">${k.length} libellés différents</span>` : "") : escapeAttr(a.iso || "—"); })()}</td>
+        <td><input class="cell ref" style="min-width:190px;" data-catlib="${i}" value="${escapeAttr(a.libelle)}" placeholder="${escapeAttr(catalogueLibelleRetenu(a, vus))}" title="Le libellé que tous les logements de cet article porteront après « Uniformiser les libellés ». Vide = le plus fréquent (proposé en grisé)."></td>
         <td class="mono">${a.prix !== "" ? fmt(a.prix, 2) + " €" : "—"}${a.divergent ? ' <span style="color:#b45309;">(prix divergents dans l\'outil — Matis vérifie)</span>' : ""}</td>
         <td><label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--ink-soft);" title="Codification par le service administratif de Matis : prérequis du cycle de commande standard — sans elle, BADP seulement (montants et récurrence limités). L'âge de l'attente est la métrique.">dem.<input type="date" min="2025-01-01" max="2035-12-31" data-catdate="${i}" data-catfield="codificationDemandeeLe" value="${escapeAttr(a.codificationDemandeeLe || "")}"> cod.<input type="date" min="2025-01-01" max="2035-12-31" data-catdate="${i}" data-catfield="codifieLe" value="${escapeAttr(a.codifieLe || "")}">${(() => { const e = etatCodification(a); return e.etat === "codifie" ? ` <span class="pc-stat serie">codifié</span>` : e.etat === "demandee" ? ` <span class="pc-stat attente">${e.jours ?? 0} j</span>` : ""; })()}</label></td>
       </tr>`).join("")}</tbody>
@@ -18718,6 +18790,25 @@ function renderCatalogue(){ renderCatalogueDatlists();
     art[inp.getAttribute("data-catfield")] = inp.value || "";
     saveData(); renderCatalogue();
   }));
+  wrap.querySelectorAll('input[data-catlib]').forEach(inp => inp.addEventListener("change", () => {
+    const art = catalogue[Number(inp.getAttribute("data-catlib"))];
+    if(!art) return;
+    art.libelle = inp.value.replace(/\s+/g, " ").trim();
+    saveData(); renderCatalogue();
+  }));
+  const unif = document.getElementById("catUniformiser");
+  if(unif) unif.addEventListener("click", () => {
+    const sim = catalogueUniformiserLibelles(false);
+    if(!sim.logementsTouches){ dialogueAlerte("Tous les logements portent déjà le libellé retenu de leur article.", "Rien à uniformiser"); return; }
+    const detail = sim.mabecs.slice(0, 10).map(x => `<b>${escapeAttr(x.mabec)}</b> → ${escapeAttr(x.apres)}<br><span style="color:#888;">remplace : ${x.avant.map(escapeAttr).join(" · ")} (${x.n})</span>`).join("<br>") + (sim.mabecs.length > 10 ? "<br>…" : "");
+    Promise.resolve(dialogueConfirmer(`<b>${sim.logementsTouches} logement(s)</b> sur ${sim.mabecs.length} article(s) prendront le libellé retenu. Seule la référence plaquette change (ni prix, ni essais).<br><br>${detail}`,
+      { titre: "Uniformiser les libellés ?", okLabel: "Uniformiser" })).then(ok => {
+        if(!ok) return;
+        backupSnapshot("Catalogue : uniformisation des libellés");
+        catalogueUniformiserLibelles(true);
+        saveData(); render(); renderCatalogue();
+      });
+  });
   const seed = document.getElementById("catSeed");
   if(seed) seed.addEventListener("click", () => {
     backupSnapshot("Catalogue : génération depuis l'outil");
@@ -25195,6 +25286,31 @@ function runTests(){
            catalogueDepuisCSV("MABEC;Prix EUR\nIM02 137 021;nsp").erreurs.length > 0, true);
       } finally { lignes = lAvC; catalogue = []; }
     }
+    { // v4.146 — uniformiser les libellés d'un même MABEC
+      const lU = normalizeLigne({ id: "lUn", nom: "EMAG 1", references: [ normalizeReference({ id: "rUn", nom: "356x26", ops: [
+        normalizeOp({ id: "oUn", nom: "OP10", scenarios: [ normalizeScenario({ id: "scUn", name: "Prod", baseline: true, outils: [
+          { id: "tUn", numero: "T517", logements: [
+            { id: "gU1", nom: "D1", ref: "SNGX 120716 S02020 CBN387", codeArticle: "IM02 209 560", prix: 38, aretes: 4, charniere: 600 },
+            { id: "gU2", nom: "D2", ref: "SNGX 120716 S02020 CBN387", codeArticle: "IM02 209 560", prix: 38, aretes: 4, charniere: 600 },
+            { id: "gU3", nom: "D3", ref: "sngx120716 s02020 cbn387", codeArticle: "im02 209 560", prix: 38, aretes: 4, charniere: 600 },
+            { id: "gU4", nom: "D4", ref: "CNGX 120716", codeArticle: "IM02 137 021", prix: 7.96, aretes: 8, charniere: 150 } ] } ] }) ] }) ] }) ] });
+      const lAvU = lignes, catAvU = catalogue; lignes = [ lU ];
+      try {
+        catalogue = catalogueSeed();
+        const e209 = catalogue.find(a => a.mabec === "IM02 209 560");
+        ok("libellés : le libellé retenu par défaut est le plus fréquent", catalogueLibelleRetenu(e209), "SNGX 120716 S02020 CBN387");
+        const sim = catalogueUniformiserLibelles(false);
+        ok("libellés : la simulation compte sans rien écrire", [sim.logementsTouches, sim.mabecs.length, lignes[0].references[0].ops[0].scenarios[0].outils[0].logements[2].ref], [1, 1, "sngx120716 s02020 cbn387"]);
+        e209.libelle = "SNGX120716 S02020 CBN387";
+        const ap = catalogueUniformiserLibelles(true);
+        const refs = lignes[0].references[0].ops[0].scenarios[0].outils[0].logements.map(g => g.ref);
+        ok("libellés : un libellé saisi s'impose à tous les logements du MABEC, les autres articles ne bougent pas",
+           [ap.logementsTouches, refs], [3, ["SNGX120716 S02020 CBN387", "SNGX120716 S02020 CBN387", "SNGX120716 S02020 CBN387", "CNGX 120716"]]);
+        ok("libellés : relancer ne touche plus rien", catalogueUniformiserLibelles(false).logementsTouches, 0);
+        const rere = catalogueDepuisCSV(catalogueCSV());
+        ok("libellés : le libellé retenu fait l'aller-retour par le CSV", rere.cat.find(x => x.mabec === "IM02 209 560").libelle, "SNGX120716 S02020 CBN387");
+      } finally { lignes = lAvU; catalogue = catAvU; }
+    }
     {
       /* v4.91 — la suggestion sans catalogue : une plaquette saisie ailleurs dans
          le suivi fait foi (le suivi réel n'a jamais eu de catalogue — la
@@ -26227,6 +26343,12 @@ function runTests(){
     ok("pièces : un plan reçu en « §blob§ » devient une référence à ouvrir à la demande ; une photo reste en blob",
        syPjNormaliser({ outils:[{ plan:{ filename:"p.pdf", dataUrl:"§blob§xyz" } }], photo:{ dataUrl:"§blob§aa" } }),
        { outils:[{ plan:{ filename:"p.pdf", dataUrl:"§pj§xyz" } }], photo:{ dataUrl:"§blob§aa" } });
+    { // essai : le champ conclusion existe par défaut, se rend et passe dans le rapport
+      const scT = normalizeScenario({ id: "scConcl", name: "T", essais: [{ id: "eC", titre: "E", prelevements: [] }] });
+      ok("essai : le champ conclusion existe par défaut (vide)", scT.essais[0].conclusion, "");
+      const scT2 = normalizeScenario({ id: "scConcl2", name: "T", essais: [{ id: "eC2", titre: "E", conclusion: "Arrêt : entaille <b>", prelevements: [] }] });
+      ok("essai : une conclusion saisie est conservée", scT2.essais[0].conclusion, "Arrêt : entaille <b>");
+    }
     { // compte rendu de visite : écrire, relire, dater, copier — sans toucher aux vrais réglages
       const sauvePR = planReglages;
       planReglages = { relSpk: 100 };

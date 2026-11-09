@@ -1572,6 +1572,23 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.135.0 : l’essentiel par défaut, Détails, menu Outils, simulateur retiré' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  /* ── v4.146.0 — conclusion d'essai ; uniformiser les libellés ── */
+  (function lot4146Conclusion(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const lire = function(f){ try { return fs.readFileSync(path.join(REPO, f), 'utf8'); } catch (e) { return ''; } };
+    const html = lire('bilan_economique.html');
+    if (html.indexOf('data-field="conclusion"') === -1) echecs.push('le champ conclusion a disparu de l essai');
+    if (html.indexOf('textarea.essai-conclusion') === -1) echecs.push('le champ conclusion n est plus branche a la saisie');
+    if (html.indexOf('<h2>Conclusion</h2>') === -1) echecs.push('la conclusion n est plus dans le rapport d essai');
+    if (html.indexOf('function catalogueUniformiserLibelles(') === -1) echecs.push('l uniformisation des libelles a disparu');
+    if (html.indexOf('id="catUniformiser"') === -1) echecs.push('le bouton Uniformiser les libelles a disparu');
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.146.0 : conclusion d essai, uniformiser les libelles' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   /* ── v4.145.0 — garde-fou contre les suppressions et vidages en masse (incident du 09/11) ── */
   (function lot4145Garde(){
     const fs = require('fs');

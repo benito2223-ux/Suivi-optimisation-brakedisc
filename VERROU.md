@@ -6,6 +6,9 @@
 
 ---
 
+✅ **Verrou pris puis libéré par Claude le 09/11/2026** (Tour 130, branche `ux-rail`, v4.146.0 —
+conclusion d'essai ; uniformiser les libellés). 758 tests | 0 échec.
+
 ✅ **Verrou pris puis libéré par Claude le 09/11/2026** (Tour 129, branche `ux-rail`, v4.145.0 —
 incident de synchro : garde-fous serveur + appli). 751 tests | 0 échec + porte lot 4.145 + 31 contrôles de bout en bout.
 
