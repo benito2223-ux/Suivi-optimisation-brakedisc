@@ -592,9 +592,9 @@
     epurerFiche(); marquerPcb(); epurerAccueil();
   })();
 
-  /* ══ v4.136 — VENDRE : présentation client, pipeline, bilan PDF ══════════════════
+  /* ══ v4.136 — VENDRE : présentation client, bilan PDF ══════════════════
      Le MODE PRÉSENTATION CLIENT se projette chez le client sans risque : lecture
-     seule (le verrou existant), et tout ce qui est commercial s'efface — pipeline,
+     seule (le verrou existant), et tout ce qui est commercial s'efface —
      plan de conversion, catalogue, dossier de visite, prix unitaires des plaquettes,
      menus d'export et d'options. Il reste les PREUVES : réponse, gains, essais,
      courbes, bilan PDF. Il vit le temps de la session (jamais rouvert par surprise). */
@@ -631,21 +631,9 @@
   puce.querySelector(".spk-client-pdf").addEventListener("click", () => { if (typeof window.imprimerBilanClient === "function") window.imprimerBilanClient(); });
   puce.querySelector(".spk-client-quitter").addEventListener("click", () => poserClient(false));
 
-  /* l'écran Pipeline (pour toi seul) */
-  const pipe = document.createElement("div");
-  pipe.className = "panel panel-large spk-pipeline";
-  pipe.id = "spkPipelinePanel";
-  pipe.hidden = true;
-  document.body.appendChild(pipe);
-  function ouvrirPipeline() {
-    pipe.innerHTML = '<h3>Pipeline — les essais qui font les commandes</h3>'
-      + (typeof window.pipelineHTML === "function" ? window.pipelineHTML() : "");
-    if (typeof window.ouvrirPanneau === "function") window.ouvrirPanneau("spkPipelinePanel");
-    else pipe.hidden = false;
-  }
-
-  /* les nouvelles entrées du menu Outils : en tête, le pipeline et le bilan ; en pied,
-     la bascule de présentation. Les entrées commerciales portent data-commercial. */
+  /* les nouvelles entrées du menu Outils : en tête, le bilan ; en pied, la bascule de présentation.
+     Les entrées commerciales portent data-commercial. (v4.142 : l'écran « Pipeline » est retiré — l'outil
+     suit des essais, il ne tient pas un carnet de commandes.) */
   (function () {
     const pop = document.getElementById("spkOutils");
     if (!pop) return;
@@ -662,14 +650,10 @@
       it.addEventListener("click", () => { fermer(); f(); });
       return it;
     };
-    const pipeIt = entree("Pipeline", "potentiel €/an, statut, prochaine action — pour toi seul", () => {
-      if (typeof window.fermerPanneaux === "function") window.fermerPanneaux();
-      ouvrirPipeline();
-    }, true);
     const bilanIt = entree("Bilan client (PDF)", "une page par ligne : avant/après, preuves, gain figé", () => {
       if (typeof window.imprimerBilanClient === "function") window.imprimerBilanClient();
     }, false);
-    titre.after(pipeIt, bilanIt);
+    titre.after(bilanIt);
     [...pop.querySelectorAll("button")].forEach((b) => {
       const lib = (b.querySelector("b") || {}).textContent || "";
       if (/^(Plan de conversion|Catalogue|Dossier de visite)$/.test(lib)) b.setAttribute("data-commercial", "1");

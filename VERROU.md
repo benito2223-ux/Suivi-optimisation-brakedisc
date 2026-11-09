@@ -6,6 +6,9 @@
 
 ---
 
+✅ **Verrou pris puis libéré par Claude le 09/11/2026** (Tour 126, branche `ux-rail`, v4.142.0 —
+plus de Pipeline commercial ; synchro accessible en un clic). 743 tests | 0 échec + porte lot 4.142.
+
 ✅ **Verrou pris puis libéré par Claude le 08/11/2026** (Tour 124, branche `ux-rail`, v4.141.0 —
 synchro v2 : par enregistrement, fusion, hors ligne, équipe par code, espaces prod/dev).
 743 tests | 0 échec + portes + 24 contrôles de bout en bout (deux appareils). **PROD : voir « Faits extérieurs ».**

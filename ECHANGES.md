@@ -195,6 +195,10 @@ Matis doivent tenir le MÊME état (v3) — une correction d'un côté recrée d
 lignées. Consigne Matis : import v3, Remplacer tout, ne pas cliquer la correction.
 
 
+### ▸ Tour 126 — 09/11/2026 — **Claude** (v4.142.0 — plus de Pipeline ; synchro accessible ; branche `ux-rail`)
+
+Benjamin, avant la réunion du matin avec Matis : retirer le Pipeline et « les essais qui font les commandes » (voir CHANGELOG 4.142.0), expliquer où se connecter à Supabase (introuvable : cachée en bas des Options), récap des nouveautés et des points à voir avec Matis. Avant cela, analyse de sa situation de fournisseur à partir de son état (rev433), du pipeline calculé par l'outil et du fichier de consommation du 04/11 : gisement ≈ 0,8 à 1,0 M€/an d'outillage, 7 449 €/an « actés » (≈ 0,7 %), 0/5 essais validé partout, 2 définitions d'« acté » à réconcilier (campagne 7 449 / pipeline 0). **Décision en attente** : même registre « commercial » ailleurs (Bilan client, Plan de conversion, Catalogue, Dossier de visite) — à garder, à neutraliser ou à réserver à ton usage ?
+
 ### ▸ Tour 125 — 08/11/2026 — **Claude** (v4.141.1 — le suivi partagé sur son projet Supabase dédié ; branche `ux-rail`)
 
 Benjamin : « j'ai déjà ce projet supabase : cxjfyaorkkxemjnollnj ». Le projet était INACTIVE puis COMING_UP un long moment (Benjamin l'a réveillé) ; lu en lecture seule avant tout geste : vide, deux comptes confirmés (Benjamin, Matis), règles « tout compte connecté ». Migration `suivi_sync_v2` rejouée, comptes rattachés à l'équipe, règles resserrées, tests SQL et vérification depuis l'extérieur, bascule de l'outil (voir CHANGELOG 4.141.1). Les messages automatiques de ma surveillance de démarrage ne sont pas des réponses de Benjamin : je l'ai écrit et n'ai rien décidé à sa place. **Décisions en attente** : (1) activer « leaked password protection » dans Supabase Auth (tableau de bord) ; (2) contre la mise en pause du plan gratuit : un ping régulier ou un plan payant ; (3) l'ancien projet partagé garde des objets `sync_*` inutilisés (à supprimer sur accord) et l'autre application y a des accès trop ouverts.

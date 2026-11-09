@@ -1572,6 +1572,24 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.135.0 : l’essentiel par défaut, Détails, menu Outils, simulateur retiré' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  /* ── v4.142.0 — plus de Pipeline commercial ; la synchro s'atteint en un clic ── */
+  (function lot4142Credibilite(){
+    const fs = require('fs');
+    const path = require('path');
+    const echecs = [];
+    const REPO = __REPO__;
+    const lire = function(f){ try { return fs.readFileSync(path.join(REPO, f), 'utf8'); } catch (e) { return ''; } };
+    const html = lire('bilan_economique.html'), js = lire('spk-shell.js');
+    if (js.indexOf('ouvrirPipeline') !== -1) echecs.push('l écran Pipeline est revenu dans la coque');
+    if (js.indexOf('entree("Pipeline"') !== -1) echecs.push('l entrée Pipeline est revenue dans le menu Outils');
+    if (js.indexOf('font les commandes') !== -1 || html.indexOf('font les commandes') !== -1) echecs.push('la mention « font les commandes » est revenue');
+    if (html.indexOf('id="synchroBtn"') === -1) echecs.push('le bouton Synchro a disparu du menu');
+    if (html.indexOf('function ouvrirSynchro(') === -1) echecs.push('ouvrirSynchro a disparu');
+    if (html.indexOf('Se connecter"') === -1) echecs.push('la pastille « Se connecter » a disparu');
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'lot 4.142.0 : plus de Pipeline commercial, synchro accessible en un clic' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   /* ── v4.141.0 — synchro v2 : par enregistrement, fusion à trois voies, hors ligne, équipe par code ── */
   (function lot4141Synchro(){
     const fs = require('fs');

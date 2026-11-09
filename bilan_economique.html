@@ -2113,7 +2113,8 @@ body:not(.atelier-on) input[type="number"]{ -moz-appearance:number-input; }
           <button class="ghost" id="searchBtn" title="Rechercher partout : lignes, références, OP, scénarios, essais, projets (Ctrl+K)"><svg class="icon" viewBox="0 0 18 18"><circle cx="8" cy="8" r="4.5"/><path d="m11.5 11.5 4 4" stroke-linecap="round"/></svg>Rechercher</button>
           <button class="ghost" id="nouveautesBtn" title="Ce qui a changé dans les dernières versions de l'outil"><svg class="icon" viewBox="0 0 18 18"><path d="M9 2.5 10.7 6.6 15 7l-3.2 3 .9 4.3L9 12.2 5.3 14.3l.9-4.3L3 7l4.3-.4Z" stroke-linejoin="round"/></svg>Nouveautés</button>
           <div class="tb-grp">Gérer</div>
-          <button class="ghost" id="optionsBtn" title="Activer les modules de calcul complémentaires"><svg class="icon" viewBox="0 0 18 18"><path d="M2.5 5h8M13.5 5h2M2.5 13h2M7.5 13h8" stroke-linecap="round"/><circle cx="11.5" cy="5" r="1.6"/><circle cx="5.5" cy="13" r="1.6"/></svg>Options</button>
+          <button class="ghost" id="optionsBtn" title="Options : réglages, spécifications usine, défauts Marposs, synchro entre appareils, support"><svg class="icon" viewBox="0 0 18 18"><path d="M2.5 5h8M13.5 5h2M2.5 13h2M7.5 13h8" stroke-linecap="round"/><circle cx="11.5" cy="5" r="1.6"/><circle cx="5.5" cy="13" r="1.6"/></svg>Options</button>
+          <button class="ghost" id="synchroBtn" title="Se connecter pour partager le suivi entre vos appareils et ceux de l'équipe (PC, tablette, iPhone)"><svg class="icon" viewBox="0 0 18 18"><path d="M5.5 13.5h7a3 3 0 0 0 .4-5.97A4 4 0 0 0 5.2 7.2 3.2 3.2 0 0 0 5.5 13.5Z" stroke-linecap="round" stroke-linejoin="round"/></svg>Synchro</button>
           <button class="ghost" id="parcoursBtn" title="L'ordre recommandé pour démarrer un suivi : production d'abord, projets ensuite"><svg class="icon" viewBox="0 0 18 18"><path d="M3 9h8M7 5l4 4-4 4M13 3v12" stroke-linecap="round" stroke-linejoin="round"/></svg>Démarrer un suivi</button>
           <button class="ghost" id="backlogBtn" title="Noter une idée ou un problème rencontré sur l'outil"><svg class="icon" viewBox="0 0 18 18"><path d="M9 2.5a4.5 4.5 0 0 0-2.5 8.2c.4.3.6.7.6 1.2v.6h3.8v-.6c0-.5.2-.9.6-1.2A4.5 4.5 0 0 0 9 2.5Z" stroke-linejoin="round"/><path d="M7.2 15h3.6" stroke-linecap="round"/></svg>Suggestions</button>
           <button class="ghost photos-connect-btn" id="photosDirBtn" title="Connecter un dossier local pour les photos d'essai et un backup automatique (Edge/Chrome, version en ligne)"><svg class="icon" viewBox="0 0 18 18"><path d="M2.5 5.5a1 1 0 0 1 1-1H7l1.5 1.8H14.5a1 1 0 0 1 1 1V13a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1V5.5Z" stroke-linejoin="round"/></svg>Dossier local</button>
@@ -14224,6 +14225,10 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.142.0", date:"09/11/2026", points:[
+    "<b>La synchro se trouve enfin facilement.</b> Un bouton <b>Synchro</b> (menu ••• en haut à droite) et la pastille <b>☁ Se connecter</b> en bas de page ouvrent directement la connexion. Avant, elle était tout en bas des Options.",
+    "<b>L’écran « Pipeline » est retiré</b> : l’outil suit des essais et des mesures, il ne tient pas un carnet de commandes."
+  ]},
   { version:"4.141.1", date:"08/11/2026", points:[
     "<b>Le suivi partagé a désormais son propre serveur</b>, séparé des autres applications. Les comptes de Benjamin et de Matis y existent déjà : connectez-vous dans Options → Synchro avec votre e-mail habituel, sans rien recréer."
   ]},
@@ -14268,9 +14273,8 @@ const NOUVEAUTES = [
   { version:"4.136.0", date:"01/11/2026", points:[
     "<b>Le gain se lit en €/an, en trois axes.</b> La Réponse affiche d’abord l’<b>€/an d’outillage</b> (le % dit désormais « sur le coût outil »), puis trois cases séparées : <b>Outil</b> (€/an), <b>Cycle</b> (heures/an et €), <b>Rebut</b> (€/an) — jamais additionnées. Un axe non mesuré le dit au lieu d’afficher 0.",
     "<b>Ailleurs dans l’usine</b> : quand une solution gagne, l’outil cherche où elle peut se reproduire — même pièce sur une autre ligne, ou même plaquette d’origine (MABEC) sur une autre OP — et chiffre une <b>estimation</b> en €/an.",
-    "<b>Pipeline</b> (menu Outils, pour toi seul) : chaque poste en travail, son potentiel €/an, l’acté, les essais conformes, la date du dernier essai et la prochaine action.",
     "<b>Bilan client (PDF)</b> — menu Outils ou Transmettre : une page par ligne, avant/après €/pièce, preuves (essais conformes, période), gain figé, prochaine étape. Rien de commercial dedans.",
-    "<b>Mode présentation client</b> (menu Outils) : lecture seule, et tout ce qui est commercial disparaît de l’écran — pipeline, plan de conversion, catalogue, dossier de visite, prix unitaires des plaquettes, menus d’export. Une pastille en bas donne le Bilan PDF et « Quitter » (le verrou revient à son état d’avant)."
+    "<b>Mode présentation client</b> (menu Outils) : lecture seule, et tout ce qui est commercial disparaît de l’écran — plan de conversion, catalogue, dossier de visite, prix unitaires des plaquettes, menus d’export. Une pastille en bas donne le Bilan PDF et « Quitter » (le verrou revient à son état d’avant)."
   ]},
   { version:"4.135.0", date:"01/11/2026", points:[
     "<b>L’outil s’ouvre sur l’essentiel.</b> Le chiffre, le verdict, le geste suivant — le reste est à un clic : le bouton <b>« Détails ▾ »</b> (à droite du fil d’Ariane) affiche tout, et l’outil s’en souvient sur ce poste. Mesuré : fiche du scénario 162 → 64 mots, Vue d’ensemble 426 → 159, un essai ouvert 33 → 20 boutons.",
@@ -15053,7 +15057,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.141.1";
+const TOOL_VERSION = "4.142.0";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -22048,9 +22052,14 @@ async function cloudSync(raison){ return sySync(raison); }
 function cloudRenduPastille(){
   const el = document.getElementById("footCloud");
   if(!el) return;
-  if(!cloudSession){ el.hidden = true; return; }
-  el.hidden = false;
   el.classList.remove("alerte", "critique");
+  if(!cloudSession){
+    el.hidden = false;
+    el.textContent = "☁ Se connecter";
+    el.title = "Synchro non activée : cliquez pour vous connecter et partager le suivi entre vos appareils";
+    return;
+  }
+  el.hidden = false;
   const s = syResume();
   const err = s.erreur || cloudErreur;
   let txt = "☁ à jour", title = "Synchro du suivi — espace « " + s.espace + " »";
@@ -22154,9 +22163,18 @@ function cloudRenduOptions(){
   z.querySelector("#cloudBtnSortir").addEventListener("click", cloudDeconnexion);
 }
 
+/* v4.142 — la synchro se trouvait tout en bas des Options, derrière ••• → Gérer : on y va directement */
+function ouvrirSynchro(){
+  const b = document.getElementById("optionsBtn");
+  if(b) b.click();
+  cloudRenduOptions();
+  setTimeout(() => { const z = document.getElementById("cloudZone"); if(z) z.scrollIntoView({ block: "start" }); }, 250);
+}
 function cloudDemarrage(){
   const btnOpt = document.getElementById("optionsBtn");
   if(btnOpt) btnOpt.addEventListener("click", cloudRenduOptions);
+  const btnSync = document.getElementById("synchroBtn");
+  if(btnSync) btnSync.addEventListener("click", ouvrirSynchro);
   document.addEventListener("visibilitychange", () => { if(!document.hidden) cloudAuFocus(); });
   window.addEventListener("focus", cloudAuFocus);
   window.addEventListener("online", () => cloudSync("reseau"));
@@ -22164,6 +22182,7 @@ function cloudDemarrage(){
   setInterval(() => { if(!document.hidden && cloudSession) cloudSync("periode"); }, 25000);
   const el = document.getElementById("footCloud");
   if(el) el.addEventListener("click", () => {
+    if(!cloudSession){ ouvrirSynchro(); return; }
     const s = syResume();
     dialogueAlerte(cloudSession
       ? "Synchro : " + (s.erreur || cloudErreur || ("à jour" + (s.dernierOK ? " (dernier échange " + s.dernierOK.toLocaleTimeString("fr-FR") + ")" : ""))) + ".\nEspace « " + s.espace + " ». " + (s.enAttente ? s.enAttente + " enregistrement(s) en attente. " : "") + "Le détail et les actions sont dans Options, section Synchro."

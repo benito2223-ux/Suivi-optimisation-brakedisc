@@ -5,6 +5,19 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.142.0] — 2026-11-09 · plus de Pipeline commercial ; la synchro s'atteint en un clic · Claude
+
+Benjamin : « le pipeline et "les essais qui font les commandes" sont 2 mentions qui décrédibilisent l'outil en le plaçant comme un
+outil commercial — à enlever ». Retirés : l'entrée **Pipeline** du menu Outils (et son libellé « potentiel €/an, statut, prochaine
+action — pour toi seul »), l'écran et son titre « Pipeline — les essais qui font les commandes », la ligne correspondante des
+Nouveautés 4.136 et le mot dans la description du mode présentation client. `pipelineLignes()` / `pipelineHTML()` restent dans le
+code (tests, batterie anti-injection) mais ne sont plus atteignables depuis l'écran. **Non touchés, à décider** : « Bilan client
+(PDF) », « Plan de conversion », « Catalogue », « Dossier de visite », « Mode présentation client » et les €/an de la Réponse,
+qui relèvent du même registre. Synchro : Benjamin ne la trouvait pas — elle était tout en bas du panneau Options, lui-même dans
+••• → Gérer, derrière une infobulle trompeuse (« Activer les modules de calcul complémentaires »). Ajouts : bouton **Synchro** dans
+••• → Gérer, pastille **☁ Se connecter** toujours visible en bas de page (elle était cachée tant qu'on n'était pas connecté),
+`ouvrirSynchro()` qui ouvre Options directement sur la section, infobulle d'Options corrigée. 743 tests | 0 échec + porte lot 4.142.
+
 ## [4.141.1] — 2026-11-08 · le suivi partagé migre sur son projet Supabase dédié · Claude
 
 Benjamin : « j'ai déjà ce projet supabase : cxjfyaorkkxemjnollnj » (`suivi-septfons`, réveillé depuis l'état INACTIVE ; vide :
