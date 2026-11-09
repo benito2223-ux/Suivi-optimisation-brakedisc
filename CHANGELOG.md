@@ -5,6 +5,10 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.145.1] — 2026-11-09 · icône de l'application : le logo « Production Sept-Fons · Kayak industriel » · Claude
+
+Benjamin : « l'app installée sur PC garde le logo SPK ; remplace-le par le logo Kayak, idem pour l'icône PWA iPhone ». `icons/icon-192.png`, `icon-512.png`, `icon-512-maskable.png` (80 % de zone sûre sur fond bleu) et les trois icônes embarquées dans `bilan_economique.html` (favicon 32/192, `apple-touch-icon` 180) viennent du logo déposé à la racine (coins blancs rognés). Cache du service worker v7 → v8 pour que les postes renouvellent l'icône. **Limite** : une application déjà installée garde souvent son ancienne icône (Chrome la rafraîchit seul sous quelques jours ; sur iPhone il faut retirer l'icône de l'écran d'accueil puis refaire « Sur l'écran d'accueil »).
+
 ## [4.145.0] — 2026-11-09 · garde-fou contre les suppressions et vidages en masse (incident de synchro) · Claude
 
 **Incident** : le 09/11 à 06:50 UTC, l'iPhone de Benjamin (mémoire pleine, état local vide mais état de synchro « connu ») a envoyé en quelques

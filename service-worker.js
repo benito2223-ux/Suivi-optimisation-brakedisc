@@ -42,7 +42,7 @@
    pas les autres). Le cache passe en `v6` : l'ancien `v5` est purgé à
    l'activation.
    ============================================================================ */
-const CACHE = "spk-suivi-shell-v7";
+const CACHE = "spk-suivi-shell-v8";
 const SHELL = [
   "./",
   "./index.html",
