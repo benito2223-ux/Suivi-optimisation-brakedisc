@@ -196,6 +196,10 @@ Matis doivent tenir le MÊME état (v3) — une correction d'un côté recrée d
 lignées. Consigne Matis : import v3, Remplacer tout, ne pas cliquer la correction.
 
 
+### ▸ Tour 131 — 09/11/2026 — **Claude** (v4.147.0 — les relevés d'essai suivent leur logement ; branche `ux-rail`)
+
+Voir CHANGELOG 4.147.0. **À savoir** : Matis doit recharger l'appli avant de ressaisir (sa copie locale portait encore les anciens identifiants). L'Essai 2 du 09/11 (6 relevés, T5/T6) a été supprimé à 13:50 depuis son poste ; il vit dans le scénario `smw9c2okt66pv` sous le nom d'Essai 1 (14 relevés) — à confirmer avec lui.
+
 ### ▸ Tour 130 — 09/11/2026 — **Claude** (v4.146.0 — conclusion d'essai ; uniformiser les libellés ; branche `ux-rail`)
 
 Voir CHANGELOG 4.146.0. **À faire avec Matis** : lancer « Uniformiser les libellés » dans le Catalogue après avoir choisi le libellé retenu des 10 articles à libellés multiples (le plus fréquent est proposé) ; vérifier le prix du MABEC aux prix divergents.

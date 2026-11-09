@@ -4265,6 +4265,46 @@ function refLogementEssai(sc, lp){
   const l = o && o.logements.find(x => x.id === lp.logementId);
   return l ? l.ref : "";
 }
+/* v4.147 — les relevés suivent leur logement. Un relevé d'essai désigne son logement par
+   `logementId`. Quand les logements d'un scénario sont recréés (réimport du classeur,
+   « Aligner sur le scénario »…), les anciens identifiants disparaissent : les relevés
+   restaient attachés à un logement fantôme, absents du suivi et de la progression alors
+   que rien n'était perdu (incident Hessapp OP30, 09/11). La correspondance se refait par
+   la POSITION physique (numéro d'outil + nom du logement), la même qui sert à l'affichage. */
+function reporterReleves(es, anciens, courant){
+  const cle = x => (x.outilNumero || "") + "|" + (x.logementNom || "");
+  const map = {};
+  (anciens || []).forEach(a => {
+    if(!a || courant.some(c => c.logementId === a.logementId)) return;
+    const c = courant.find(c => cle(c) === cle(a));
+    if(c) map[a.logementId] = c.logementId;
+  });
+  let n = 0;
+  (es.prelevements || []).forEach(r => { if(map[r.logementId]){ r.logementId = map[r.logementId]; n++; } });
+  return { map: map, n: n };
+}
+/* à chaque chargement : remet à jour les instantanés d'essai restés sur d'anciens
+   identifiants (et leurs relevés). Rend le nombre de liens réparés ; 0 = rien à faire. */
+function rattacherReleves(sc){
+  const courant = snapshotLogements(sc);
+  let total = 0;
+  (sc.essais || []).forEach(es => {
+    const lps = (es.params && es.params.logements) || [];
+    if(!lps.length) return;
+    const res = reporterReleves(es, lps, courant);
+    if(!Object.keys(res.map).length) return;
+    total += res.n;
+    es.params.logements = lps.reduce((acc, lp) => {
+      const nouvelId = res.map[lp.logementId];
+      if(!nouvelId){ acc.push(lp); return acc; }
+      if(acc.concat(lps).some(x => x !== lp && x.logementId === nouvelId)) return acc; // déjà présent : l'ancien doublon tombe
+      const cur = courant.find(c => c.logementId === nouvelId);
+      acc.push(Object.assign({}, lp, { logementId: nouvelId, outilId: cur.outilId }));
+      return acc;
+    }, []);
+  });
+  return total;
+}
 function normalizeScenario(sc){
   // statut de vie : le scenario de reference est par definition ce qui tourne en serie,
   // les autres sont en essai tant qu'on n'a pas tranche
@@ -4372,6 +4412,7 @@ function normalizeScenario(sc){
       }) }
     );
   });
+  rattacherReleves(merged); // v4.147
   merged.scrapLog = (sc.scrapLog || []).map(r => Object.assign({ id: r.id || ("r"+Math.random().toString(36).slice(2)), date:"", equipe:"", produites:"", rebutees:"" }, r));
   // v4.9 — criteres supplementaires generiques (Ra, VE, critere libre...) : le 2e critere
   // historique (une seule colonne) migre une fois pour toutes vers la liste. Fait ici
@@ -13043,7 +13084,9 @@ function attachDetailHandlers(sc){
       if(!es) return;
       dialogueConfirmer("Aligner « " + es.titre + " » sur les conditions actuelles du scénario ?\n\nÀ ne faire que si cet essai a réellement été mené avec ces paramètres.", { titre: "Aligner sur le scénario ?", okLabel: "Aligner" }).then(ok => {
         if(!ok) return;
+        const anciens = (es.params && es.params.logements) || [];
         es.params = { logements: snapshotLogements(sc) };
+        reporterReleves(es, anciens, es.params.logements); // v4.147 : les relevés suivent leur logement
         saveData(); render();
       });
     });
@@ -14365,6 +14408,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.147.0", date:"09/11/2026", points:[
+    "<b>Les relevés ne se perdent plus quand un scénario est recréé.</b> Si les logements d’un scénario sont refaits (réimport du classeur, « Aligner sur le scénario »), les relevés d’un essai restaient accrochés à d’anciens logements : ils n’apparaissaient plus dans le suivi alors qu’ils étaient bien saisis. Ils se rattachent maintenant tout seuls au logement de même position (même outil, même nom), conditions de coupe conservées."
+  ]},
   { version:"4.146.0", date:"09/11/2026", points:[
     "<b>Uniformiser les libellés des plaquettes.</b> Dans le Catalogue, chaque article (MABEC) montre tous les libellés qu’il porte dans l’outil et propose le plus fréquent comme « libellé retenu » (modifiable). Un bouton « Uniformiser les libellés » le recopie partout, après simulation et confirmation : ni prix ni essais ne changent.",
     "<b>Commentaires et conclusion dans chaque essai.</b> Un champ de texte libre, toujours visible sous la progression de l’essai : ce qu’on retient, la cause d’arrêt, la décision, la suite. Il se synchronise avec l’équipe et figure dans le rapport d’essai."
@@ -15223,7 +15269,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.146.0";
+const TOOL_VERSION = "4.147.0";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -26348,6 +26394,29 @@ function runTests(){
       ok("essai : le champ conclusion existe par défaut (vide)", scT.essais[0].conclusion, "");
       const scT2 = normalizeScenario({ id: "scConcl2", name: "T", essais: [{ id: "eC2", titre: "E", conclusion: "Arrêt : entaille <b>", prelevements: [] }] });
       ok("essai : une conclusion saisie est conservée", scT2.essais[0].conclusion, "Arrêt : entaille <b>");
+    }
+    { // v4.147 — les relevés suivent leur logement quand les logements sont recréés (incident Hessapp OP30)
+      const mk = (idT5, idT6) => ({ id: "scRel", name: "T",
+        outils: [ { id: "tN5", numero: "T5", logements: [ { id: idT5, nom: "D1", vc: 650, f: 0.25, charniere: 50 } ] },
+                  { id: "tN6", numero: "T6", logements: [ { id: idT6, nom: "D1", vc: 650, f: 0.25, charniere: 50 } ] } ],
+        essais: [ { id: "eRel", titre: "E",
+          params: { logements: [ { outilId: "tOld5", logementId: "gOld5", outilNumero: "T5", logementNom: "D1", vc: 650, f: 0.25 },
+                                 { outilId: "tOld6", logementId: "gOld6", outilNumero: "T6", logementNom: "D1", vc: 650, f: 0.25 } ] },
+          prelevements: [ { id: "r1", piece: "1", logementId: "gOld5" }, { id: "r2", piece: "1", logementId: "gOld6" }, { id: "r3", piece: "10", logementId: "gOld5" }, { id: "r4", piece: "10", logementId: "gInconnu" } ] } ] });
+      const s = normalizeScenario(mk("gNew5", "gNew6"));
+      const e = s.essais[0];
+      ok("relevés : après recréation des logements, les relevés suivent par position (outil + nom)",
+         e.prelevements.map(r => r.logementId), ["gNew5", "gNew6", "gNew5", "gInconnu"]);
+      ok("relevés : l'instantané de l'essai pointe sur les nouveaux logements, conditions de coupe conservées",
+         e.params.logements.map(l => [l.logementId, l.outilId, l.vc, l.f]), [["gNew5", "tN5", 650, 0.25], ["gNew6", "tN6", 650, 0.25]]);
+      ok("relevés : un relevé sans correspondance n'est pas deviné (reste tel quel)", e.prelevements[3].logementId, "gInconnu");
+      ok("relevés : rien à réparer = 0, et le passage est idempotent", [rattacherReleves(s), rattacherReleves(s)], [0, 0]);
+      const s2 = mk("gOld5", "gNew6"); // un logement garde son identifiant : seul l'autre est rattaché
+      const r2 = normalizeScenario(s2).essais[0];
+      ok("relevés : un logement inchangé garde ses relevés, l'autre est rattaché", r2.prelevements.map(r => r.logementId), ["gOld5", "gNew6", "gOld5", "gInconnu"]);
+      const e3 = { prelevements: [ { logementId: "gA" } ] };
+      ok("relevés : « Aligner sur le scénario » reporte les relevés vers le nouveau logement de même position",
+         [reporterReleves(e3, [ { logementId: "gA", outilNumero: "T5", logementNom: "D1" } ], [ { logementId: "gB", outilNumero: "T5", logementNom: "D1" } ]).n, e3.prelevements[0].logementId], [1, "gB"]);
     }
     { // compte rendu de visite : écrire, relire, dater, copier — sans toucher aux vrais réglages
       const sauvePR = planReglages;
