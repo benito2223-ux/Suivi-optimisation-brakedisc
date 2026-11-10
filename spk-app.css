@@ -988,6 +988,23 @@
     background: var(--amber-bg);
   }
 
+  /* 4.160 — le fond de la fiche d'essai dit la maturité des bruts (bleu = non mûrs, vert = frais, gris = mûrs) ;
+     le statut de conformité reste lu sur le liseré du haut et la pastille. */
+  .essai-card.mat-jeune,
+  .essai-card.mat-jeune > summary {
+    background: color-mix(in srgb, var(--blue) 11%, var(--surface));
+  }
+
+  .essai-card.mat-frais,
+  .essai-card.mat-frais > summary {
+    background: color-mix(in srgb, var(--green) 12%, var(--surface));
+  }
+
+  .essai-card.mat-ok,
+  .essai-card.mat-ok > summary {
+    background: color-mix(in srgb, var(--ink-faint) 11%, var(--surface));
+  }
+
   .essai-tile-title {
     font-family: var(--font-disp);
     font-size: 18px;

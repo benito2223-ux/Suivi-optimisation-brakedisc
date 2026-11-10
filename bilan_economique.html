@@ -853,7 +853,7 @@ details.outil-carte.drag-cible{outline:2px dashed var(--blue); outline-offset:3p
 .cal-j.essai{outline:2px solid var(--blue);} .cal-j.coulee{background:var(--amber-bg); border-color:var(--amber);}
 .cal-leg{font-size:11px; padding:1px 6px; border-radius:999px; border:1px solid var(--border);} .cal-leg.essai{border-color:var(--blue);} .cal-leg.coulee{border-color:var(--amber); background:var(--amber-bg);}
 .mat-badge{font-size:11.5px; font-weight:700; border-radius:999px; padding:1px 9px; border:1px solid var(--border);}
-.mat-badge.ok{color:var(--green); border-color:var(--green);} .mat-badge.jeune{color:var(--red); border-color:var(--red);} .mat-badge.frais{color:var(--amber); background:var(--amber-bg); border-color:var(--amber);}
+.mat-badge.ok{color:var(--ink-soft); border-color:var(--ink-faint);} .mat-badge.jeune{color:var(--blue); border-color:var(--blue);} .mat-badge.frais{color:var(--green); border-color:var(--green);}
 .mat-auto{font-size:10.5px; color:var(--ink-faint); border:1px solid var(--border); border-radius:999px; padding:0 6px;}
 /* v4.155 — écarts avec la référence, sur les tuiles de la composition */
 .ap-ecart{font-size:11px; font-weight:700; color:var(--amber); background:var(--amber-bg); border:1px solid var(--amber); border-radius:999px; padding:1px 8px;}
@@ -1556,6 +1556,10 @@ tr.row-bad td{background:var(--gray-50);}
 .essai-card.risk > summary{background:var(--gray-50);}
 .essai-card.pending > summary{background:var(--gray-50);}
 .essai-card > summary:hover{filter:brightness(.97);}
+/* v4.160 — le fond de la fiche dit la maturité des bruts : bleu = non mûrs, vert = frais, gris = mûrs (ok) */
+.essai-card.mat-jeune, .essai-card.mat-jeune > summary{background:color-mix(in srgb, var(--blue) 11%, var(--surface));}
+.essai-card.mat-frais, .essai-card.mat-frais > summary{background:color-mix(in srgb, var(--green) 12%, var(--surface));}
+.essai-card.mat-ok, .essai-card.mat-ok > summary{background:color-mix(in srgb, var(--ink-faint) 11%, var(--surface));}
 .essai-card > summary:focus-visible{outline:2px solid var(--blue); outline-offset:-2px;}
 .essai-tile-title{font-family:var(--font-disp); font-weight:800; font-size:15px; color:var(--ink);}
 .essai-tile-meta{font-family:var(--font-mono); font-size:11.5px; color:var(--ink-soft);}
@@ -10812,7 +10816,7 @@ function essaiCardHTML(sc, essai, interactive){
   const tileKey = sc.id + "|" + essai.id;
   const tileMeta = [essai.date, essai.equipe].filter(Boolean).join(" · ");
   return `
-    <details class="essai-card ${badgeClass}" data-essai-id="${essai.id}"${essaisOuverts.has(tileKey) ? " open" : ""}>
+    <details class="essai-card ${badgeClass}${(e => e ? " mat-" + e : "")(maturiteValidation(essai.maturiteBruts).etat)}" data-essai-id="${essai.id}"${essaisOuverts.has(tileKey) ? " open" : ""}>
       <summary>
         <span class="essai-tile-title">${escapeAttr(essai.titre || "Essai")}</span>
         ${tileMeta ? `<span class="essai-tile-meta">${escapeAttr(tileMeta)}</span>` : ""}
@@ -15185,6 +15189,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.160.0", date:"10/11/2026", points:[
+    "<b>Le fond de la fiche d'essai dit la maturité des bruts.</b> <b>Bleu</b> : bruts non mûrs (2 jours ou moins) · <b>vert</b> : frais (3 à 4 jours) · <b>gris</b> : mûrs (5 jours ou plus) · aucune teinte tant que la maturité est inconnue. Les pastilles de la ligne de maturité prennent les mêmes couleurs."
+  ]},
   { version:"4.159.1", date:"10/11/2026", points:[
     "<b>La maturité des bruts en trois niveaux.</b> <b>✓ Mûrs</b> à partir de 5 jours, <b>◐ frais</b> de 3 à 4 jours, <b>⚠ non mûrs</b> jusqu'à 2 jours. Les deux seuils se règlent dans la fiche d'essai (« mûrs dès … j · frais dès … j », valables pour tous les essais)."
   ]},
@@ -16114,7 +16121,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.159.1";
+const TOOL_VERSION = "4.160.0";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -28469,6 +28476,7 @@ function runTests(){
         ok("maturité : seuils par défaut 5 et 3", [maturiteSeuils().mur, maturiteSeuils().frais], [5, 3]);
         planReglages = { maturiteMur: 7, maturiteFrais: 4 };
         ok("maturité : les seuils réglés s'appliquent", [maturiteSeuils().mur, maturiteSeuils().frais, niv(6), niv(7), niv(3)], [7, 4, "frais", "ok", "jeune"]);
+        ok("fiche d'essai : le fond porte la maturité (non mûrs = bleu, frais = vert, mûrs = gris), rien si inconnue", [/essai-card [^"]*mat-jeune/.test(essaiCardHTML({ id: "S", outils: [], essais: [], criteresSup: [] }, { id: "E", titre: "e", prelevements: [], maturiteBruts: 2 }, true)), /essai-card [^"]*mat-frais/.test(essaiCardHTML({ id: "S", outils: [], essais: [], criteresSup: [] }, { id: "E", titre: "e", prelevements: [], maturiteBruts: 4 }, true)), /essai-card [^"]*mat-ok/.test(essaiCardHTML({ id: "S", outils: [], essais: [], criteresSup: [] }, { id: "E", titre: "e", prelevements: [], maturiteBruts: 8 }, true)), /essai-card [^"]*mat-/.test(essaiCardHTML({ id: "S", outils: [], essais: [], criteresSup: [] }, { id: "E", titre: "e", prelevements: [], maturiteBruts: "" }, true))], [true, true, true, false]);
         planReglages = { maturiteMur: 3, maturiteFrais: 6 };
         ok("maturité : le seuil « frais » ne dépasse jamais le seuil « mûrs »", [maturiteSeuils().frais, niv(3), niv(2)], [3, "ok", "jeune"]);
         const es = { date: "2026-11-10", jourCoulee: 305, maturiteBruts: "" };
