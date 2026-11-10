@@ -4233,7 +4233,7 @@ setTimeout(function(){document.documentElement.setAttribute("data-pret","1");},5
 recomputeCycles();
 
 function normalizeLogement(l){
-  return Object.assign({ id: l.id || ("g"+Math.random().toString(36).slice(2)), nom:"", ref:"", codeArticle:"",
+  const out = Object.assign({ id: l.id || ("g"+Math.random().toString(36).slice(2)), nom:"", ref:"", codeArticle:"",
     // v4.72.0 — le MABEC est la CLE de raccordement avec le classeur de Matis :
     // « un MABEC = un article = un logement ». Le lecteur de classeur le remontait
     // déjà, mais le modèle n'avait nulle part où le poser : l'information était lue puis perdue.
@@ -4243,6 +4243,15 @@ function normalizeLogement(l){
     prix:"", aretes:8, charniere:"", vc:"", f:"", kappaR:"", rayonBec:"", apPiste:"",
     tempsCoupe:"", tempsDeplacement:"", // mesures machine (s), module "detail du cycle par logement"
     suiviTolerance:true }, l); // la charniere se suit toujours ; la tolerance est desactivable par logement
+  /* v4.158.1 — UNE SEULE VÉRITÉ pour le MABEC : `codeArticle` (le champ qu'on saisit). `mabec` est l'ancien doublon, posé
+     par l'import du classeur de Matis puis copié avec le scénario : quand on changeait la plaquette, codeArticle suivait
+     mais `mabec` gardait celui de la RÉFÉRENCE, et les écrans qui lisent `mabec` d'abord (Vue CPP…) l'affichaient. */
+  return alignerMabecLogement(out);
+}
+function alignerMabecLogement(l){
+  const n = x => String(x == null ? "" : x).replace(/\s+/g, " ").trim().toUpperCase();
+  if(n(l.codeArticle) !== "" && n(l.mabec) !== "" && n(l.codeArticle) !== n(l.mabec)) l.mabec = l.codeArticle;
+  return l;
 }
 /* retrouve un logement par son id, quel que soit l'outil qui le porte */
 function logementParId(sc, logementId){
@@ -14147,6 +14156,7 @@ function writeFieldValue(el){
          muette sur les données réelles tant que personne n'avait généré le
          catalogue. */
       synchroniserPlaquetteLogement(l, field, { ref: avantRef, codeArticle: avantCode });
+      alignerMabecLogement(l);   /* v4.158.1 : le doublon `mabec` ne garde jamais le code de la plaquette précédente */
     }
   } else if(outilId){
     const o = sc.outils.find(x => x.id === outilId);
@@ -15021,6 +15031,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.158.1", date:"10/11/2026", points:[
+    "<b>Le MABEC d'un scénario d'essai n'est plus celui de la référence.</b> Quand on changeait la plaquette d'un logement, le MABEC saisi suivait mais un ancien doublon gardait celui du scénario de référence — et certains écrans (Vue CPP, détail de composition) l'affichaient. Le doublon est maintenant réaligné à chaque saisie <b>et à l'ouverture des données déjà enregistrées</b> : tes essais (EMAG 2 OP40, T548/T549) se réparent d'eux-mêmes au rechargement."
+  ]},
   { version:"4.158.0", date:"10/11/2026", points:[
     "<b>Le fichier central des volumes disques.</b> Menu <b>Outils › Volumes disques</b> : un tableau éditable — une ligne par référence de chaque ligne de production — avec <b>deux colonnes d'années</b> (2025 et 2026, intitulés modifiables), import et export CSV comme le catalogue. <b>Les économies se calculent sur la colonne 1 par défaut</b> (tes volumes actuels y ont été versés : 2025) ; la colonne 2 est une option : en changeant, l'outil montre d'abord combien de références changent de volume. L'année utilisée est dite à côté du volume de production. Modifier le champ « Disques / an » des Options met à jour la colonne de calcul du fichier."
   ]},
@@ -15941,7 +15954,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.158.0";
+const TOOL_VERSION = "4.158.1";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -17546,12 +17559,12 @@ function reparerOutilsD1D2(outils){
        laisser le champ vide. Best effort : absent, ref reste vide. */
     const isoParMabec = {};
     liste.forEach(o => (o.logements || []).forEach(lg => {
-      const m = String(lg.mabec || "").replace(/\s+/g, " ").trim();
+      const m = String(lg.codeArticle || lg.mabec || "").replace(/\s+/g, " ").trim();
       const r = String(lg.ref || "").trim();
       if(m && r && !estCodeMabec(r) && !isoParMabec[m]) isoParMabec[m] = r;
     }));
     logements.forEach(lg => {
-      const m = String(lg.mabec || "").replace(/\s+/g, " ").trim();
+      const m = String(lg.codeArticle || lg.mabec || "").replace(/\s+/g, " ").trim();
       if(m && !String(lg.ref || "").trim() && isoParMabec[m]) lg.ref = isoParMabec[m];
     });
     fusionnes.set(cleId(groupe[0]), { id: groupe[0].id, numero: numero, correcteur: correcteurs.join(", "),
@@ -17725,7 +17738,7 @@ function migrerInversionMabec(){
         lignes.forEach(l2 => (l2.references || []).forEach(r2 => (r2.ops || []).forEach(o2 =>
           (o2.scenarios || []).forEach(sc2 => (sc2.outils || []).forEach(ou =>
             (ou.logements || []).forEach(lg2 => {
-              const m2 = String(lg2.mabec || lg2.codeArticle || "").replace(/\s+/g, " ").trim();
+              const m2 = String(lg2.codeArticle || lg2.mabec || "").replace(/\s+/g, " ").trim();
               const r2v = String(lg2.ref || "").trim();
               if(m2 === mabec && r2v && !estCodeMabec(r2v) && !iso) iso = r2v;
             }))))));
@@ -18876,7 +18889,7 @@ function vueCppData(){
             numero: o.numero, correcteur: o.correcteur || "",
             cout: (o.logements || []).reduce((a, lg) => a + (posCost(lg) || 0), 0),
             logements: (o.logements || []).map(lg => ({
-              nom: lg.nom, mabec: lg.mabec || lg.codeArticle || "", ref: lg.ref || "",
+              nom: lg.nom, mabec: lg.codeArticle || lg.mabec || "", ref: lg.ref || "",
               prix: lg.prix, aretes: lg.aretes, ddv: lg.charniere,
               cout: posCost(lg)
             }))
@@ -28278,6 +28291,16 @@ function runTests(){
         const h2 = atelierHTML();
         ok("fiche atelier : sur T548 (tête) le battement est demandé et l'axe est Exter", [/id="atV"/.test(h2), /atCs_ra_E/.test(h2), /atCs_ra_I/.test(h2)], [true, true, false]);
       } finally { data = dataAv; atelierCtx = aAv2; }
+    }
+    /* v4.158.1 — le doublon `mabec` ne garde plus le code de la plaquette précédente */
+    {
+      const g = normalizeLogement({ id: "g1", nom: "D1", ref: "SNGN 090416 F SL500", codeArticle: "PLA002", mabec: "Z000 513 527", prix: 7.9 });
+      ok("mabec : à la lecture, le doublon périmé (celui de la référence) est réaligné sur le MABEC saisi", [g.codeArticle, g.mabec], ["PLA002", "PLA002"]);
+      ok("mabec : un MABEC ancien seul (sans codeArticle) est conservé", [normalizeLogement({ id: "g2", mabec: "Z000 1" }).mabec, normalizeLogement({ id: "g2", mabec: "Z000 1" }).codeArticle], ["Z000 1", ""]);
+      ok("mabec : même code écrit autrement (casse, espaces) : rien n'est touché", [normalizeLogement({ id: "g3", codeArticle: "z000  513 527", mabec: "Z000 513 527" }).mabec], ["Z000 513 527"]);
+      const l = { id: "g4", ref: "", codeArticle: "", mabec: "Z000 513 527" };
+      l.codeArticle = "IM02 1"; alignerMabecLogement(l);
+      ok("mabec : saisir un nouveau MABEC aligne aussi le doublon", [l.mabec], ["IM02 1"]);
     }
     /* v4.158 — fichier central des volumes disques (2 colonnes d'années) */
     {
