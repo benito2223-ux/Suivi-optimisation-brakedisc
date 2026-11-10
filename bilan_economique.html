@@ -2535,6 +2535,7 @@ input[type="number"]{ -moz-appearance:textfield; appearance:textfield; }
   <div class="panel panel-large" id="vueCppPanel" hidden></div>
   <div class="panel panel-large" id="simulPanel" hidden></div>
   <div class="panel panel-large" id="cataloguePanel" hidden></div>
+  <div class="panel panel-large" id="volumesPanel" hidden></div>
   <div class="panel panel-large" id="planPanel" hidden></div>
   <div class="panel panel-large" id="visitePanel" hidden></div>
   <div class="panel panel-large" id="memoirePanel" hidden></div>
@@ -10764,7 +10765,7 @@ function volumeAnnuelHTML(){
   if(!v) return volumeInvalideHTML();
   const ref = getActiveReference();
   return `<div class="volume-bandeau clickable" title="Cliquer pour modifier le volume annuel de cette référence (Options, champ pré-rempli pour LA référence affichée)">
-    <span class="vb-l">Production annuelle${ref && ref.nom ? " — " + escapeAttr(ref.nom) : ""}</span>
+    <span class="vb-l">Production annuelle${ref && ref.nom ? " — " + escapeAttr(ref.nom) : ""}${volumesAnneeUtilisee() ? " · " + escapeAttr(volumesAnneeUtilisee()) : ""}</span>
     <span class="vb-v">${fmt(v,0)}<small>disques / an</small></span>
     <span class="vb-edit">✎ modifier</span>
   </div>`;
@@ -10780,7 +10781,7 @@ function consommationAnnuelleHTML(sc){
   return `<div class="conso-strip">
     <span class="conso-lab">Consommation annuelle</span>
     <div class="conso-items">${items}</div>
-    <span class="conso-vol">sur ${fmt(an.volume,0)} disques/an</span>
+    <span class="conso-vol">sur ${fmt(an.volume,0)} disques/an${volumesAnneeUtilisee() ? " (" + escapeAttr(volumesAnneeUtilisee()) + ")" : ""}</span>
   </div>`;
 }
 
@@ -14722,7 +14723,11 @@ function appliquerOptions(){
   config.piecesActif = optPieces.checked;
   config.volumeActif = optVolume.checked;
   const ref = getActiveReference();
-  if(ref) enregistrerVolumeAnnuel(ref, optProductionAnnuelle.value === "" ? "" : parseFloat(optProductionAnnuelle.value));
+  if(ref){
+    const vOpt = optProductionAnnuelle.value === "" ? "" : parseFloat(optProductionAnnuelle.value);
+    enregistrerVolumeAnnuel(ref, vOpt);
+    volumesSynchroDepuisRef(ref, vOpt);   /* v4.158 : l'Options écrit dans la colonne de calcul du fichier central */
+  }
   // cout horaire saisi en place (v4.7) : il ecrit dans la ligne active, comme le ferait
   // l'icone ⚙ de son onglet — meme champ, deux portes d'entree, zero changement de format
   const lgOpt = getActiveLigne();
@@ -15016,6 +15021,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.158.0", date:"10/11/2026", points:[
+    "<b>Le fichier central des volumes disques.</b> Menu <b>Outils › Volumes disques</b> : un tableau éditable — une ligne par référence de chaque ligne de production — avec <b>deux colonnes d'années</b> (2025 et 2026, intitulés modifiables), import et export CSV comme le catalogue. <b>Les économies se calculent sur la colonne 1 par défaut</b> (tes volumes actuels y ont été versés : 2025) ; la colonne 2 est une option : en changeant, l'outil montre d'abord combien de références changent de volume. L'année utilisée est dite à côté du volume de production. Modifier le champ « Disques / an » des Options met à jour la colonne de calcul du fichier."
+  ]},
   { version:"4.157.0", date:"10/11/2026", points:[
     "<b>Les signes des économies sont inversés, partout.</b> Une <b>économie</b> s'écrit <b>− 6,4 k€/an</b> (en vert : le coût baisse) et un <b>surcoût</b> <b>+ 6,4 k€/an</b> (en rouge : le coût monte) — plus explicite que l'ancien « + » vert. Même règle pour les heures machine gagnées. Les écarts de coût (pièce, % vs base) gardent leur signe naturel.",
     "<b>Saisir la date ou l'heure d'un essai ne le replie plus.</b> Le bloc « Contexte » de la fiche d'essai se refermait dès qu'un champ était rempli — donc en pleine saisie. Il reste ouvert tant que tu y travailles."
@@ -15933,7 +15941,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.157.0";
+const TOOL_VERSION = "4.158.0";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -20114,6 +20122,263 @@ function renderCatalogue(){ renderCatalogueDatlists();
       (rapport.mabecs.length > 12 ? "\n…" : ""), "Prix propagés");
   });
 }
+/* ═══ v4.158 — LE FICHIER CENTRAL DES VOLUMES DISQUES ═══════════════════════════════════════
+   Décision Benjamin : comme le catalogue des plaquettes, un fichier CENTRAL, éditable dans l'outil et en CSV, mais avec
+   DEUX colonnes d'années (2025 et 2026 par défaut, intitulés modifiables). Les économies se calculent sur la colonne 1
+   (défaut) ou la colonne 2 (option). Une ligne = une référence disque d'une ligne de production (EMAG 1 › 356x26 RPI).
+   Il vit dans planReglages.volumes (il voyage donc avec le suivi, l'import et la synchro, sans nouvelle clé).
+   Le volume que tous les calculs lisent reste `ref.productionAnnuelle` : le fichier central l'ALIMENTE avec la colonne
+   choisie (avec trace, comme à la saisie) — aucun calcul n'est touché. Les volumes déjà saisis sont versés dans la
+   colonne 1 (2025, confirmé par Benjamin). */
+function volCle(ligneNom, refNom){
+  const n = x => String(x || "").trim().toUpperCase().replace(/\s+/g, " ");
+  return n(ligneNom) + "|" + n(refNom);
+}
+function volumesPaires(){
+  const out = [];
+  lignes.forEach(l => (l.references || []).forEach(r => out.push({ cle: volCle(l.nom, r.nom), ligne: l.nom || "", reference: r.nom || "", ref: r })));
+  return out;
+}
+function volumesLire(){
+  const v = (planReglages && planReglages.volumes && typeof planReglages.volumes === "object") ? planReglages.volumes : null;
+  const an = (v && Array.isArray(v.annees)) ? v.annees : [];
+  return { annees: [String(an[0] || "2025"), String(an[1] || "2026")], colonne: (v && v.colonne === 1) ? 1 : 0,
+           valeurs: (v && v.valeurs && typeof v.valeurs === "object") ? v.valeurs : {}, init: !!v };
+}
+function volumesEcrire(vol){
+  planReglages = Object.assign({}, planReglages, { volumes: { annees: vol.annees.slice(), colonne: vol.colonne, valeurs: vol.valeurs } });
+}
+/* amorce le fichier (volumes déjà saisis → colonne active, soit la 1) et y ajoute les références apparues depuis */
+function volumesAssurer(){
+  const vol = volumesLire();
+  let change = !vol.init;
+  volumesPaires().forEach(p => {
+    if(vol.valeurs[p.cle]) return;
+    const cur = (p.ref.productionAnnuelle === "" || p.ref.productionAnnuelle == null) ? "" : p.ref.productionAnnuelle;
+    const v = ["", ""]; v[vol.colonne] = cur;
+    vol.valeurs[p.cle] = v; change = true;
+  });
+  if(change) volumesEcrire(vol);
+  return vol;
+}
+/* "148 942", "148942,0" → 148942 ; "" → "" ; illisible ou négatif → null */
+function volumesNombre(txt){
+  const t = String(txt == null ? "" : txt).replace(/\s/g, "").replace(",", ".");
+  if(t === "") return "";
+  const n = parseFloat(t);
+  return (isNaN(n) || n < 0) ? null : n;
+}
+/* simulation : ce que deviendrait chaque référence si la colonne `colonne` était la colonne de calcul */
+function volumesPlan(vol, colonne){
+  return volumesPaires().map(p => {
+    const brut = (vol.valeurs[p.cle] || ["", ""])[colonne];
+    const n = volumesNombre(brut);
+    const apres = (n === null || n === "") ? "" : n;
+    const avant = (p.ref.productionAnnuelle === undefined || p.ref.productionAnnuelle === null) ? "" : p.ref.productionAnnuelle;
+    return Object.assign({}, p, { avant, apres, change: String(avant) !== String(apres) });
+  });
+}
+function volumesAppliquer(colonne){
+  const vol = volumesAssurer();
+  const plan = volumesPlan(vol, colonne);
+  let changes = 0, sansVolume = 0;
+  plan.forEach(x => { if(x.apres === "") sansVolume++; if(x.change){ enregistrerVolumeAnnuel(x.ref, x.apres); changes++; } });
+  return { changes, sansVolume, total: plan.length, plan };
+}
+/* écrire une cellule du fichier ; la colonne de calcul alimente aussitôt la référence */
+function volumesChanger(cle, colonne, texte){
+  const vol = volumesAssurer();
+  if(!vol.valeurs[cle]) return { ok: false, motif: "référence inconnue" };
+  const n = volumesNombre(texte);
+  if(n === null) return { ok: false, motif: "volume illisible ou négatif" };
+  vol.valeurs[cle] = vol.valeurs[cle].slice(); vol.valeurs[cle][colonne] = n;
+  volumesEcrire(vol);
+  let appliquee = false;
+  if(colonne === vol.colonne){ volumesPaires().filter(p => p.cle === cle).forEach(p => { enregistrerVolumeAnnuel(p.ref, n); appliquee = true; }); }
+  return { ok: true, appliquee };
+}
+function volumesNommerAnnee(i, texte){
+  const vol = volumesAssurer();
+  const t = String(texte || "").trim();
+  if(!t) return { ok: false, motif: "intitulé vide" };
+  vol.annees[i] = t; volumesEcrire(vol);
+  return { ok: true };
+}
+function volumesChoisirColonne(i){
+  const vol = volumesAssurer();
+  vol.colonne = i === 1 ? 1 : 0; volumesEcrire(vol);
+  return volumesAppliquer(vol.colonne);
+}
+/* l'Options écrit aussi dans la colonne de calcul du fichier central (une seule vérité) */
+function volumesSynchroDepuisRef(ref, valeur){
+  const vol = volumesAssurer();
+  volumesPaires().filter(p => p.ref === ref).forEach(p => {
+    vol.valeurs[p.cle] = (vol.valeurs[p.cle] || ["", ""]).slice();
+    vol.valeurs[p.cle][vol.colonne] = (valeur === "" || valeur == null || isNaN(valeur)) ? "" : valeur;
+  });
+  volumesEcrire(vol);
+}
+/* l'année qui chiffre les €/an, dite à côté des chiffres ; vide tant que le fichier n'est pas amorcé */
+function volumesAnneeUtilisee(){
+  const vol = volumesLire();
+  return vol.init ? vol.annees[vol.colonne] : "";
+}
+function volumesCSV(){
+  const vol = volumesAssurer();
+  const cell = v => /[";\r\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : String(v);
+  const L = ["sep=;", "Volumes disques - " + new Date().toLocaleDateString("fr-FR"), "", ["Ligne", "Reference", vol.annees[0], vol.annees[1]].map(cell).join(";")];
+  volumesPaires().forEach(p => {
+    const v = vol.valeurs[p.cle] || ["", ""];
+    L.push([p.ligne, p.reference, v[0], v[1]].map(cell).join(";"));
+  });
+  return "\uFEFF" + L.join("\r\n");
+}
+/* rend { lignes:[{ligne, reference, v:[a,b]}], annees:[a,b]|null, erreurs } ; tolère BOM, sep=;, ; ou , , virgule décimale */
+function volumesDepuisCSV(texte){
+  const brut = String(texte || "").replace(/^\uFEFF/, "").replace(/^sep=[;,]\r?\n/i, "");
+  const L = brut.split(/\r?\n/).filter(x => x.trim());
+  if(!L.length) return { lignes: [], annees: null, erreurs: ["Fichier vide."] };
+  const iE = L.findIndex(x => /ligne/i.test(x) && /r(é|e)f/i.test(x));
+  if(iE === -1) return { lignes: [], annees: null, erreurs: ["Ligne d'en-têtes introuvable (colonnes attendues : Ligne ; Reference ; année 1 ; année 2)."] };
+  const sep = (L[iE].split(";").length >= L[iE].split(",").length) ? ";" : ",";
+  const couper = (ligne) => {
+    const out = []; let cur = "", q = false;
+    for(const ch of ligne){
+      if(ch === '"'){ q = !q; continue; }
+      if(ch === sep && !q){ out.push(cur.trim()); cur = ""; continue; }
+      cur += ch;
+    }
+    out.push(cur.trim());
+    return out;
+  };
+  const ent = couper(L[iE]);
+  const iL = ent.findIndex(h => /ligne/i.test(h)), iR = ent.findIndex(h => /r(é|e)f/i.test(h));
+  const reste = ent.map((h, i) => i).filter(i => i !== iL && i !== iR);
+  if(iL === -1 || iR === -1 || reste.length < 2) return { lignes: [], annees: null, erreurs: ["Il faut quatre colonnes : Ligne ; Reference ; année 1 ; année 2."] };
+  const annees = [ent[reste[0]], ent[reste[1]]];
+  const lignes = [], erreurs = [];
+  L.slice(iE + 1).forEach((ligne, idx) => {
+    const c = couper(ligne);
+    if(!c[iL] && !c[iR]) return;
+    const a = volumesNombre(c[reste[0]]), b = volumesNombre(c[reste[1]]);
+    if(a === null || b === null){ erreurs.push("Ligne " + (iE + idx + 2) + " (" + (c[iL] || "?") + " › " + (c[iR] || "?") + ") : volume illisible."); return; }
+    lignes.push({ ligne: c[iL] || "", reference: c[iR] || "", v: [a, b] });
+  });
+  if(!lignes.length && !erreurs.length) erreurs.push("Aucune ligne exploitable.");
+  return { lignes, annees, erreurs };
+}
+/* verse un fichier dans le fichier central : seules les références CONNUES sont mises à jour (aucune n'est créée) ;
+   rend { misesAJour, inconnues:[…] } et alimente les références si la colonne de calcul change. */
+function volumesImporter(parse){
+  const vol = volumesAssurer();
+  const connues = new Set(volumesPaires().map(p => p.cle));
+  let n = 0; const inconnues = [];
+  parse.lignes.forEach(x => {
+    const cle = volCle(x.ligne, x.reference);
+    if(!connues.has(cle)){ inconnues.push(x.ligne + " › " + x.reference); return; }
+    vol.valeurs[cle] = [x.v[0], x.v[1]]; n++;
+  });
+  if(parse.annees){ vol.annees = [String(parse.annees[0] || vol.annees[0]), String(parse.annees[1] || vol.annees[1])]; }
+  volumesEcrire(vol);
+  const rap = volumesAppliquer(vol.colonne);
+  return { misesAJour: n, inconnues, appliquees: rap.changes };
+}
+function volumesRendu(){
+  const vol = volumesAssurer();
+  const paires = volumesPaires();
+  const somme = c => paires.reduce((a, p) => { const n = volumesNombre((vol.valeurs[p.cle] || ["", ""])[c]); return a + ((n === null || n === "") ? 0 : n); }, 0);
+  const radio = c => `<label style="display:inline-flex; align-items:center; gap:6px; margin-right:16px;"><input type="radio" name="volCol" value="${c}" ${vol.colonne === c ? "checked" : ""} style="width:auto; min-height:0;"> <b>${escapeAttr(vol.annees[c])}</b> <span style="color:var(--ink-soft); font-size:12px;">(colonne ${c + 1}${c === 0 ? ", par défaut" : ", option"})</span></label>`;
+  return `
+    <p class="panel-hint">Le <b>fichier central des volumes</b> : disques par an, pour chaque référence de chaque ligne, sur deux années. Les économies (€/an, plaquettes/an) se calculent sur <b>une seule de ces colonnes</b> à la fois. Modifier une case de la colonne de calcul met la référence à jour tout de suite ; changer de colonne affiche d'abord l'effet. Les intitulés d'années se modifient.</p>
+    <div class="simul-actions" style="align-items:center;">
+      <span style="font-weight:600;">Les économies se calculent sur :</span> ${radio(0)}${radio(1)}
+      <span style="flex:1"></span>
+      <button class="ghost small" id="volExporter">⤵ Exporter le CSV</button>
+      <label class="ghost small" for="volFichier" style="cursor:pointer;">⤴ Importer un CSV…</label>
+      <input type="file" id="volFichier" accept=".csv,.txt" hidden>
+    </div>
+    <div id="volStatut" class="panel-hint" role="status" aria-live="polite" style="min-height:1.4em;"></div>
+    <table class="simul-table">
+      <thead><tr><th>Ligne</th><th>Référence disque</th>
+        <th><input class="cell" style="width:90px; text-align:center; font-weight:700;" data-volannee="0" value="${escapeAttr(vol.annees[0])}" aria-label="Intitulé de la colonne 1"></th>
+        <th><input class="cell" style="width:90px; text-align:center; font-weight:700;" data-volannee="1" value="${escapeAttr(vol.annees[1])}" aria-label="Intitulé de la colonne 2"></th>
+        <th>Utilisé aujourd'hui</th></tr></thead>
+      <tbody>${paires.map(p => {
+        const v = vol.valeurs[p.cle] || ["", ""];
+        const celle = c => `<td class="mono"><input class="cell" style="width:110px; text-align:right; font-family:var(--font-mono);${vol.colonne === c ? " border-color:var(--blue);" : ""}" inputmode="numeric" data-volcle="${escapeAttr(p.cle)}" data-volcol="${c}" value="${v[c] === "" || v[c] == null ? "" : fmt(Number(v[c]), 0).replace(/\s/g, "")}" placeholder="—" aria-label="${escapeAttr(p.ligne + " " + p.reference + " " + vol.annees[c])}"></td>`;
+        const util = (p.ref.productionAnnuelle === "" || p.ref.productionAnnuelle == null) ? "—" : fmt(parseFloat(p.ref.productionAnnuelle), 0);
+        return `<tr><td>${escapeAttr(p.ligne)}</td><td>${escapeAttr(p.reference)}</td>${celle(0)}${celle(1)}<td class="mono" style="color:var(--ink-soft);">${util}</td></tr>`;
+      }).join("")}</tbody>
+      <tfoot><tr><th colspan="2">Total disques / an</th><th class="mono" style="text-align:right;">${fmt(somme(0), 0)}</th><th class="mono" style="text-align:right;">${fmt(somme(1), 0)}</th><th></th></tr></tfoot>
+    </table>`;
+}
+function renderVolumes(){
+  const wrap = document.getElementById("volumesPanel");
+  if(!wrap) return;
+  wrap.innerHTML = `<h3>🗂 Volumes disques — fichier central</h3>` + volumesRendu();
+  const dire = msg => { const s = document.getElementById("volStatut"); if(s) s.textContent = msg; };
+  const apres = (msg) => { saveData(); render(); renderVolumes(); dire(msg); };
+  wrap.querySelectorAll("input[data-volcle]").forEach(inp => inp.addEventListener("change", () => {
+    backupSnapshot("Volumes : saisie");
+    const res = volumesChanger(inp.getAttribute("data-volcle"), Number(inp.getAttribute("data-volcol")), inp.value);
+    if(!res.ok){ renderVolumes(); dire("Saisie refusée (" + res.motif + ") : l'ancienne valeur est conservée."); return; }
+    apres(res.appliquee ? "✓ Volume enregistré et appliqué à la référence (colonne de calcul)." : "✓ Volume enregistré (cette colonne ne sert pas au calcul pour l'instant).");
+  }));
+  wrap.querySelectorAll("input[data-volannee]").forEach(inp => inp.addEventListener("change", () => {
+    const res = volumesNommerAnnee(Number(inp.getAttribute("data-volannee")), inp.value);
+    if(!res.ok){ renderVolumes(); dire("Intitulé refusé (" + res.motif + ")."); return; }
+    apres("✓ Intitulé enregistré.");
+  }));
+  wrap.querySelectorAll('input[name="volCol"]').forEach(r => r.addEventListener("change", () => {
+    const c = Number(r.value);
+    const vol = volumesAssurer();
+    const plan = volumesPlan(vol, c);
+    const nb = plan.filter(x => x.change).length, sans = plan.filter(x => x.apres === "").length;
+    const html = `<p>Les économies se calculeront sur <b>${escapeAttr(vol.annees[c])}</b> (colonne ${c + 1}).</p>
+      <p><b>${nb} référence(s)</b> changent de volume${sans ? `, dont <b>${sans} sans volume</b> dans cette colonne : leurs €/an ne seront plus calculés tant que la case est vide` : ""}.</p>
+      ${plan.filter(x => x.change).slice(0, 12).map(x => `<div style="font-size:13px;">${escapeAttr(x.ligne)} › ${escapeAttr(x.reference)} : ${x.avant === "" ? "—" : fmt(Number(x.avant), 0)} → <b>${x.apres === "" ? "—" : fmt(Number(x.apres), 0)}</b></div>`).join("")}
+      ${nb > 12 ? `<div style="font-size:13px;">… et ${nb - 12} autre(s)</div>` : ""}
+      <p style="color:#888;">Un instantané de secours est pris avant.</p>`;
+    Promise.resolve(dialogueConfirmer("", { titre: "Changer l'année de calcul ?", okLabel: "Changer", html })).then(ok => {
+      if(!ok){ renderVolumes(); return; }
+      backupSnapshot("Volumes : année de calcul " + vol.annees[c]);
+      const rap = volumesChoisirColonne(c);
+      apres("✓ Calcul sur " + volumesLire().annees[c] + " — " + rap.changes + " référence(s) mise(s) à jour" + (rap.sansVolume ? ", " + rap.sansVolume + " sans volume" : "") + ".");
+    });
+  }));
+  const exp = document.getElementById("volExporter");
+  if(exp) exp.addEventListener("click", () => {
+    const blob = new Blob([volumesCSV()], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "Volumes_disques.csv";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  });
+  const fich = document.getElementById("volFichier");
+  if(fich) fich.addEventListener("change", () => {
+    const f = fich.files[0];
+    if(!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const parse = volumesDepuisCSV(reader.result);
+      if(parse.erreurs.length && !parse.lignes.length){ dialogueAlerte(parse.erreurs.map(escapeAttr).join("<br>"), "Import des volumes"); return; }
+      backupSnapshot("Volumes : import CSV");
+      const rap = volumesImporter(parse);
+      const infos = [];
+      if(parse.erreurs.length) infos.push(parse.erreurs.length + " ligne(s) illisible(s) ignorée(s)");
+      if(rap.inconnues.length) infos.push(rap.inconnues.length + " référence(s) inconnue(s) ignorée(s) : " + rap.inconnues.slice(0, 5).join(" ; ") + (rap.inconnues.length > 5 ? "…" : ""));
+      apres("✓ Import : " + rap.misesAJour + " référence(s) mise(s) à jour" + (infos.length ? " — " + infos.join(" — ") : "") + ".");
+    };
+    reader.readAsText(f, "utf-8");
+  });
+}
+function ouvrirVolumes(){
+  fermerPanneaux();
+  ouvrirPanneau("volumesPanel");
+  renderVolumes();
+}
+
 function ouvrirCatalogue(){
   fermerPanneaux();
   ouvrirPanneau("cataloguePanel");
@@ -28013,6 +28278,46 @@ function runTests(){
         const h2 = atelierHTML();
         ok("fiche atelier : sur T548 (tête) le battement est demandé et l'axe est Exter", [/id="atV"/.test(h2), /atCs_ra_E/.test(h2), /atCs_ra_I/.test(h2)], [true, true, false]);
       } finally { data = dataAv; atelierCtx = aAv2; }
+    }
+    /* v4.158 — fichier central des volumes disques (2 colonnes d'années) */
+    {
+      const lAv = lignes, pAv = planReglages;
+      try {
+        const mkR = (id, nom, vol) => ({ id, nom, productionAnnuelle: vol, ops: [] });
+        lignes = [ { id: "L1", nom: "EMAG 1", references: [ mkR("r1", "356x26 RPI", 6781), mkR("r2", "304x28 RPE", "") ] }, { id: "L2", nom: "EMAG 2", references: [ mkR("r3", "356x26 RPI", 3000) ] } ];
+        planReglages = { relSpk: 100 };
+        ok("volumes : avant amorçage, aucune année n'est dite (rien n'a changé pour l'existant)", [volumesAnneeUtilisee(), volumesLire().init], ["", false]);
+        const v0 = volumesAssurer();
+        ok("volumes : l'amorçage verse les volumes saisis dans la colonne 1 (2025) et laisse la colonne 2 vide", [v0.annees.join("/"), v0.colonne, v0.valeurs["EMAG 1|356X26 RPI"].join(","), v0.valeurs["EMAG 2|356X26 RPI"].join(","), v0.valeurs["EMAG 1|304X28 RPE"].join(",")], ["2025/2026", 0, "6781,", "3000,", ","]);
+        ok("volumes : l'année utilisée est dite, et l'amorçage ne change aucun volume", [volumesAnneeUtilisee(), lignes[0].references[0].productionAnnuelle, lignes[1].references[0].productionAnnuelle], ["2025", 6781, 3000]);
+        const r1 = volumesChanger("EMAG 1|356X26 RPI", 1, "7 200");
+        ok("volumes : écrire la colonne 2 ne change pas le volume utilisé (la colonne 1 sert au calcul)", [r1.ok, r1.appliquee, lignes[0].references[0].productionAnnuelle], [true, false, 6781]);
+        const r2 = volumesChanger("EMAG 1|356X26 RPI", 0, "6900");
+        ok("volumes : écrire la colonne de calcul alimente la référence, avec trace", [r2.appliquee, lignes[0].references[0].productionAnnuelle, lignes[0].references[0].volumeHistorique.length], [true, 6900, 1]);
+        ok("volumes : saisie illisible ou négative refusée, rien n'est écrit", [volumesChanger("EMAG 1|356X26 RPI", 0, "abc").ok, volumesChanger("EMAG 1|356X26 RPI", 0, "-5").ok, volumesChanger("INCONNU|X", 0, "1").ok, lignes[0].references[0].productionAnnuelle], [false, false, false, 6900]);
+        volumesChanger("EMAG 2|356X26 RPI", 1, "3500");
+        const sim = volumesPlan(volumesLire(), 1);
+        ok("volumes : la simulation de la colonne 2 dit les références qui changent et celles sans volume", [sim.filter(x => x.change).length, sim.filter(x => x.apres === "").length], [2, 1]);
+        const rc = volumesChoisirColonne(1);
+        ok("volumes : choisir la colonne 2 alimente toutes les références (vide = pas de volume), l'année suit", [rc.changes, rc.sansVolume, lignes[0].references[0].productionAnnuelle, lignes[0].references[1].productionAnnuelle, lignes[1].references[0].productionAnnuelle, volumesAnneeUtilisee()], [2, 1, 7200, "", 3500, "2026"]);
+        volumesChoisirColonne(0);
+        ok("volumes : revenir à la colonne 1 rend les volumes 2025", [lignes[0].references[0].productionAnnuelle, lignes[1].references[0].productionAnnuelle, volumesAnneeUtilisee()], [6900, 3000, "2025"]);
+        volumesSynchroDepuisRef(lignes[1].references[0], 3100);
+        ok("volumes : l'Options écrit dans la colonne de calcul du fichier central", [volumesLire().valeurs["EMAG 2|356X26 RPI"].join(",")], ["3100,3500"]);
+        ok("volumes : renommer une année ; intitulé vide refusé", [volumesNommerAnnee(1, "2026 prév.").ok, volumesLire().annees[1], volumesNommerAnnee(0, "  ").ok], [true, "2026 prév.", false]);
+        const csv = volumesCSV();
+        const lu = volumesDepuisCSV(csv);
+        ok("volumes : le CSV exporté se ré-importe lui-même (en-têtes d'années comprises)", [lu.erreurs.length, lu.lignes.length, lu.annees.join("/"), lu.lignes[0].v.join(",")], [0, 3, "2025/2026 prév.", "6900,7200"]);
+        const parse = volumesDepuisCSV('sep=;\r\nLigne;Reference;2025;2026\r\nEMAG 1;356x26 rpi;"8 000";9000\r\nEMAG 9;999;1;2\r\nEMAG 2;356x26 RPI;abc;5');
+        ok("volumes : import tolérant (casse, espaces, guillemets), ligne illisible signalée", [parse.lignes.length, parse.erreurs.length, parse.lignes[0].v.join(",")], [2, 1, "8000,9000"]);
+        const imp = volumesImporter(parse);
+        ok("volumes : l'import met à jour les références connues, signale les inconnues, n'en crée aucune, alimente la colonne de calcul", [imp.misesAJour, imp.inconnues.join("|"), lignes.length, lignes[0].references[0].productionAnnuelle, volumesLire().valeurs["EMAG 1|356X26 RPI"].join(",")], [1, "EMAG 9 › 999", 2, 8000, "8000,9000"]);
+        ok("volumes : sans en-têtes reconnaissables, l'import dit pourquoi", [volumesDepuisCSV("a;b;c\n1;2;3").erreurs.length, volumesDepuisCSV("").erreurs[0]], [1, "Fichier vide."]);
+        lignes[1].references.push(mkR("r4", "330x14", 2490));
+        const v2 = volumesAssurer();
+        ok("volumes : une référence créée plus tard entre dans le fichier avec son volume dans la colonne de calcul", [v2.valeurs["EMAG 2|330X14"].join(",")], ["2490,"]);
+        ok("volumes : le tableau et le sélecteur se rendent (deux colonnes, total, radios)", [/data-volcol="1"/.test(volumesRendu()), /name="volCol"/.test(volumesRendu()), /Total disques/.test(volumesRendu())], [true, true, true]);
+      } finally { lignes = lAv; planReglages = pAv; }
     }
     /* v4.157 — saisir date/heure dans un essai ne le replie plus */
     {

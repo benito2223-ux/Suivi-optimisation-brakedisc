@@ -463,6 +463,7 @@ setTimeout(function(){ requestAnimationFrame(function(){ requestAnimationFrame(f
       { lib: "Tableau de bord", sous: "les chiffres de toutes les lignes", f: () => { const x = document.getElementById("dashboardBtn"); if (x) x.click(); } },
       { lib: "Vue CPP", sous: "le coût pièce obtenu vs la référence, OP par OP", f: () => window.ouvrirVueCpp && window.ouvrirVueCpp() },
       { lib: "Catalogue", sous: "un MABEC = un prix ; import / export CSV", f: () => window.ouvrirCatalogue && window.ouvrirCatalogue() },
+      { lib: "Volumes disques", sous: "fichier central, deux années ; import / export CSV", f: () => window.ouvrirVolumes && window.ouvrirVolumes() },
       { lib: "Plan de conversion", sous: "article par article, la cible et le gain", f: () => window.ouvrirPlan && window.ouvrirPlan() },
       { lib: "Dossier de visite", sous: "ce qui s'est passé depuis la dernière visite", f: () => window.ouvrirVisite && window.ouvrirVisite() }
     ];
