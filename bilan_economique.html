@@ -7412,14 +7412,14 @@ function coutAnnuelDetailHTML(sc, annuel){
     if(cS.total !== null) corps += ligne("Ce scénario : coût complet pièce × production",
       fmt(cS.total,4) + " € × " + fmt(vol,0) + " = " + euros(cS.total * vol));
     corps += ligne("Gain d'outillage = référence − scénario (plaquettes + pièces)",
-      (annuel.gainAnnuel >= 0 ? "+" : "−") + fmtEuroCourt(Math.abs(annuel.gainAnnuel)) + "/an" +
+      (annuel.gainAnnuel >= 0 ? "−" : "+") + fmtEuroCourt(Math.abs(annuel.gainAnnuel)) + "/an" +
       (annuel.heuresAnnuelles !== undefined ? " · " + (() => { const h = annuel.heuresAnnuelles; const mot = h <= 0 ? "plus rapide" : "plus lent"; return (h<=0?"−":"+") + fmt(Math.abs(h),0) + " h machine/an (" + mot + ")"; })() : ""));
     if(annuel.deltaMachineEurAn !== undefined)
       corps += ligne("Équivalent machine — axe séparé, jamais sommé",
-        (annuel.deltaMachineEurAn >= 0 ? "+" : "−") + fmtEuroCourt(Math.abs(annuel.deltaMachineEurAn)) + "/an");
+        (annuel.deltaMachineEurAn >= 0 ? "−" : "+") + fmtEuroCourt(Math.abs(annuel.deltaMachineEurAn)) + "/an");
     if(annuel.deltaRebutEurAn !== undefined)
       corps += ligne("Équivalent rebut — axe séparé, jamais sommé",
-        (annuel.deltaRebutEurAn >= 0 ? "+" : "−") + fmtEuroCourt(Math.abs(annuel.deltaRebutEurAn)) + "/an");
+        (annuel.deltaRebutEurAn >= 0 ? "−" : "+") + fmtEuroCourt(Math.abs(annuel.deltaRebutEurAn)) + "/an");
     if(annuel.perimetrePartiel && annuel.perimetrePartiel.length)
       corps += ligne("Comparaison hors : " + annuel.perimetrePartiel.join(", "),
         "non chiffrable sur la référence");
@@ -8427,7 +8427,7 @@ function heroReponseHTML(){
        le % dit DE QUOI il est (le coût outil), jamais seul */
     g3 = troisGains(best.sc, base, config, null, null);
     big = (g3 && g3.outil !== null && g3.outil > 0)
-      ? "+" + fmtEuroCourt(g3.outil) + '<small class="hero-unit">/an</small>'
+      ? "−" + fmtEuroCourt(g3.outil) + '<small class="hero-unit">/an</small>'
       : "−" + fmt(Math.abs(ecart), 1) + " %";
     verdict = "<b>" + escapeAttr(best.sc.name) + "</b> est le moins cher";
     sub = ((g3 && g3.outil !== null && g3.outil > 0) ? "−" + fmt(Math.abs(ecart), 1) + " % sur le coût outil · " : "sur le coût outil · ")
@@ -8546,7 +8546,7 @@ function syntheseTableHTML(){
       tCoutTotal: cd.multiPoste ? (cd.total === null ? "—" : fmt(cd.total,4) + " € (" + deltaTotal + ")") : null,
       tCoutOutil: cost === null ? "—" : fmt(cost,4) + " € (" + deltaCost + ")",
       tGain: (an && an.gainAnnuel !== undefined)
-              ? ((an.gainAnnuel>=0?"+":"−") + fmtEuroCourt(Math.abs(an.gainAnnuel)) + " / an")
+              ? ((an.gainAnnuel>=0?"−":"+") + fmtEuroCourt(Math.abs(an.gainAnnuel)) + " / an")
               : (an && an.coutAnnuel !== null ? fmtEuroCourt(an.coutAnnuel) + " / an" : null),
       tArete: fmt(scenarioCostPerEdge(sc), 3) + " €",
       tOutils: nbOutils ? (nbOutils + " / " + nbLogements) : "—",
@@ -8678,7 +8678,7 @@ function cascadeGainHTML(){
     col("Scénario<br>" + escapeAttr(actif.name), ca.total, "tot", fmt(ca.total,2) + " €", "Coût total / pièce du scénario ouvert")
   ].join("");
   const gainHtml = (an && an.gainAnnuel !== undefined)
-    ? `<div class="syn2-wf-card save"><div class="b">${(an.gainAnnuel>=0?"+":"−")}${fmtEuroCourt(Math.abs(an.gainAnnuel))}</div><div class="l">Gain annuel projeté — ${escapeAttr(actif.name)} vs base</div></div>`
+    ? `<div class="syn2-wf-card save"><div class="b">${(an.gainAnnuel>=0?"−":"+")}${fmtEuroCourt(Math.abs(an.gainAnnuel))}</div><div class="l">Gain annuel projeté — ${escapeAttr(actif.name)} vs base</div></div>`
     : "";
   return `
     <div class="synthese-block">
@@ -8853,7 +8853,7 @@ function renderTabs(){
           return `<span class="tag-pill ${dedans ? "on" : ""}"${style} data-projet="${pj.id}" title="${dedans ? "Retirer de" : "Ajouter à"} « ${escapeAttr(pj.nom)} »${ctx}">${dedans ? "✓ " : "+ "}${escapeAttr(pj.nom)}</span>`;
         }).join("")}</span>` : ""}
         ${actif ? "" : `<span class="tc-row"><span class="tc-label">${couts.multiPoste ? "€/pièce total" : "€/pièce"}</span><span class="tc-val">${cRef === null ? "—" : fmt(cRef,4)}</span>${deltaHtml}</span>`}
-        ${!actif && an && an.gainAnnuel !== undefined && Math.abs(an.gainAnnuel) >= 0.5 ? `<span class="tc-row"><span class="tc-label">${an.gainAnnuel>=0?"Gain/an":"Perte/an"}</span><span class="tc-val ${an.gainAnnuel>=0?"tc-gain":"tc-perte"}">${(an.gainAnnuel>=0?"+":"−")+fmtEuroCourt(Math.abs(an.gainAnnuel))}</span></span>` : ""}
+        ${!actif && an && an.gainAnnuel !== undefined && Math.abs(an.gainAnnuel) >= 0.5 ? `<span class="tc-row"><span class="tc-label">${an.gainAnnuel>=0?"Gain/an":"Perte/an"}</span><span class="tc-val ${an.gainAnnuel>=0?"tc-gain":"tc-perte"}">${(an.gainAnnuel>=0?"−":"+")+fmtEuroCourt(Math.abs(an.gainAnnuel))}</span></span>` : ""}
       </button>
     `;
   };
@@ -9157,15 +9157,15 @@ function scenarioBlockHTML(sc, interactive){
         ${sc.baseline || annuel.gainAnnuel === undefined
           ? `<div class="v mid">${annuel.coutAnnuel === null ? "—" : fmtEuroCourt(annuel.coutAnnuel)}</div>
              <div class="foot-sub">${fmt(annuel.volume,0)} disques/an</div>`
-          : `<div class="v mid" style="color:${annuel.gainAnnuel >= 0 ? "var(--on-fill-good)" : "var(--on-fill-bad)"};">${(annuel.gainAnnuel>=0?"+":"−") + fmtEuroCourt(Math.abs(annuel.gainAnnuel))}</div>
+          : `<div class="v mid" style="color:${annuel.gainAnnuel >= 0 ? "var(--on-fill-good)" : "var(--on-fill-bad)"};">${(annuel.gainAnnuel>=0?"−":"+") + fmtEuroCourt(Math.abs(annuel.gainAnnuel))}</div>
              <div class="foot-sub">gain d'outillage sur ${fmt(annuel.volume,0)} disques/an</div>`}
         ${!sc.baseline && annuel.gainMesure !== undefined && annuel.gainMesure !== null
-          ? `<div class="foot-sub" style="color:var(--on-fill-good);"><b>mesuré (min, ${annuel.gainMesureN} essais)</b> : ${(annuel.gainMesure>=0?"+":"−") + fmtEuroCourt(Math.abs(annuel.gainMesure))}/an${annuel.gainMesureBorneInf ? " (≥)" : ""}</div>`
+          ? `<div class="foot-sub" style="color:var(--on-fill-good);"><b>mesuré (min, ${annuel.gainMesureN} essais)</b> : ${(annuel.gainMesure>=0?"−":"+") + fmtEuroCourt(Math.abs(annuel.gainMesure))}/an${annuel.gainMesureBorneInf ? " (≥)" : ""}</div>`
           : (!sc.baseline && annuel.gainVisee !== undefined && annuel.gainVisee !== null ? `<div class="foot-sub" style="color:var(--fill-ink-soft);"><b>objectif, non mesuré</b></div>` : "")}
         ${!sc.baseline && annuel.deltaMachineEurAn !== undefined
-          ? `<div class="foot-sub" title="Le temps machine est un axe séparé — jamais sommé au gain d'outillage.">${(() => { const h = annuel.heuresAnnuelles || 0; const mot = h <= 0 ? "plus rapide" : "plus lent"; return `équivalent machine : ${h<=0?"−":"+"}${fmt(Math.abs(h),0)} h/an (${mot}) · ${(annuel.deltaMachineEurAn>=0?"+":"−") + fmtEuroCourt(Math.abs(annuel.deltaMachineEurAn))}/an`; })()}</div>` : ""}
+          ? `<div class="foot-sub" title="Le temps machine est un axe séparé — jamais sommé au gain d'outillage.">${(() => { const h = annuel.heuresAnnuelles || 0; const mot = h <= 0 ? "plus rapide" : "plus lent"; return `équivalent machine : ${h<=0?"−":"+"}${fmt(Math.abs(h),0)} h/an (${mot}) · ${(annuel.deltaMachineEurAn>=0?"−":"+") + fmtEuroCourt(Math.abs(annuel.deltaMachineEurAn))}/an`; })()}</div>` : ""}
         ${!sc.baseline && annuel.deltaRebutEurAn !== undefined
-          ? `<div class="foot-sub" title="Le rebut est un axe séparé — jamais sommé au gain d'outillage.">équivalent rebut : ${(annuel.deltaRebutEurAn>=0?"+":"−") + fmtEuroCourt(Math.abs(annuel.deltaRebutEurAn))}/an</div>` : ""}
+          ? `<div class="foot-sub" title="Le rebut est un axe séparé — jamais sommé au gain d'outillage.">équivalent rebut : ${(annuel.deltaRebutEurAn>=0?"−":"+") + fmtEuroCourt(Math.abs(annuel.deltaRebutEurAn))}/an</div>` : ""}
         ${(!sc.baseline && !config.coutMachineActif && baseCycle && !isNaN(cyc) && Math.abs(cyc - baseCycle) > 0.5)
           ? `<div class="foot-sub" style="color:var(--on-fill-warn);">⚠ écart de cycle non chiffré ici — activez « Intégrer le temps machine au coût pièce » dans Options</div>` : ""}
         ${(!sc.baseline && annuel && annuel.perimetrePartiel && annuel.perimetrePartiel.includes("temps machine"))
@@ -11129,7 +11129,7 @@ function extrapoleTotalHTML(ex){
     <div style="font-size:12px; color:var(--ink-soft);">SIMULATION — si cette plaquette était déployée au global, à conditions égales · ${nLev} levier${nLev > 1 ? "s" : ""}</div>
     <div style="font-size:19px; font-weight:800; color:${ecart > 0 ? "var(--green)" : ecart < 0 ? "var(--red)" : "var(--ink)"};">${ecart >= 0 ? "−" : "+"}${fmtEuroCourt(Math.abs(Math.round(ecart)))}/an</div>
     <div style="font-size:12px; color:var(--ink-soft);">coût actuel ${fmtEuroCourt(Math.round(ex.totalActuel))}/an → simulé ${fmtEuroCourt(Math.round(ex.totalSimule))}/an · ${ex.usages.length} usage(s) chiffré(s)</div>
-    ${ex.leviersActifs.temps && Math.abs(ex.machineEcartAn) >= 0.5 ? `<div style="font-size:12px; color:var(--ink-soft);">équivalent machine — axe séparé : <b>${ex.machineEcartAn > 0 ? "+" : "−"}${fmtEuroCourt(Math.abs(Math.round(ex.machineEcartAn)))}/an</b> (${ex.machineEcartAn > 0 ? "−" : "+"}${fmt(Math.abs(ex.machineHeuresAn), 0)} h machine/an)</div>` : ""}
+    ${ex.leviersActifs.temps && Math.abs(ex.machineEcartAn) >= 0.5 ? `<div style="font-size:12px; color:var(--ink-soft);">équivalent machine — axe séparé : <b>${ex.machineEcartAn > 0 ? "−" : "+"}${fmtEuroCourt(Math.abs(Math.round(ex.machineEcartAn)))}/an</b> (${ex.machineEcartAn > 0 ? "−" : "+"}${fmt(Math.abs(ex.machineHeuresAn), 0)} h machine/an)</div>` : ""}
     ${ex.cyclesNonChiffres.length ? `<div style="font-size:12px; color:var(--amber);">${ex.cyclesNonChiffres.map(x => escapeAttr(x.usage.ligne + " · " + x.usage.opCode + " — " + x.raison)).join("<br>")}</div>` : ""}
     <div style="font-size:11px; color:var(--ink-faint);"> Simulation prospective : jamais additionnée aux gains actés ou projetés.</div>
   </div>`;
@@ -11337,7 +11337,7 @@ function apercuLogementHTML(sc, o, l, couleur, oi, volume, totalAnnuel, partRef,
       apBadges.push(`<span class="ap-cycle" title="Vc ou f manque d'un côté — rien n'est estimé.">cycle —</span>`);
     }
     if(vpLog.gainOutil !== null)
-      apBadges.push(`<span class="ap-cycle ${vpLog.gainOutil >= 0 ? "rapide" : "lent"}" title="Gain de l'outil = somme de ses leviers (technique, plus productivité si le chrono est complet). C'est lui qui colore la tuile.">${vpLog.gainOutil >= 0 ? "+" : "−"} ${fmtEuroCourt(Math.abs(vpLog.gainOutil))}/an</span>`);
+      apBadges.push(`<span class="ap-cycle ${vpLog.gainOutil >= 0 ? "rapide" : "lent"}" title="Gain de l'outil = somme de ses leviers (technique, plus productivité si le chrono est complet). C'est lui qui colore la tuile.">${vpLog.gainOutil >= 0 ? "−" : "+"} ${fmtEuroCourt(Math.abs(vpLog.gainOutil))}/an</span>`);
   }
   if(ajoutCoutEur)
     apBadges.push(`<span class="ap-hors" title="Cet outil n'existe pas dans la référence : son coût n'est pas un gain de plaquettes — il change le périmètre de la comparaison, et la réconciliation le dit.">ajouté — absent de la référence : ${ajoutCoutEur.complet ? fmtEuroCourt(Math.round(ajoutCoutEur.cout)) + "/an" : "prix ou charnière incomplets"}</span>`);
@@ -11364,12 +11364,12 @@ function apercuLogementHTML(sc, o, l, couleur, oi, volume, totalAnnuel, partRef,
       ${vpLog.parPosition ? `<div class="ap-detail-l"><span>Appariement</span><b>par position — numéro d'outil absent ou en doublon (défaut tracé)</b></div>` : ""}
       ${vpLog.parSecours ? `<div class="ap-detail-l"><span>Appariement</span><b>par secours — noms divergents (même outil, même nombre de logements)</b></div>` : ""}
       ${vpLog.parDonnees ? `<div class="ap-detail-l"><span>Appariement</span><b>par données identiques — prix, arêtes et charnière égaux (même outil)</b></div>` : ""}
-      ${vpLog.technique !== null ? `<div class="ap-detail-l"><span>Levier technique — Δ plaquettes (réf − scénario) × production${vpLog.levier ? " · " + escapeAttr(vpLog.levier) : ""}</span><b>${vpLog.technique >= 0 ? "+" : "−"} ${escapeAttr(fmtEuroCourt(Math.abs(vpLog.technique)))}/an</b></div>`
+      ${vpLog.technique !== null ? `<div class="ap-detail-l"><span>Levier technique — Δ plaquettes (réf − scénario) × production${vpLog.levier ? " · " + escapeAttr(vpLog.levier) : ""}</span><b>${vpLog.technique >= 0 ? "−" : "+"} ${escapeAttr(fmtEuroCourt(Math.abs(vpLog.technique)))}/an</b></div>`
         : `<div class="ap-detail-l"><span>Levier technique</span><b>— prix, arêtes ou charnière incomplets d'un côté</b></div>`}
       ${vp && vp.chronoComplet === false ? `<div class="ap-detail-l"><span>Levier productivité</span><b>hors temps machine — mesures de cycle incomplètes (tout en %, jamais des secondes inventées)</b></div>`
         : (vpLog.simultane && !vpLog.bottleneck ? `<div class="ap-detail-l"><span>Levier productivité</span><b>porté par l'outil le plus long du groupe simultané</b></div>` : "")}
-      ${vpLog.bottleneck && vpLog.prodOutil !== null ? `<div class="ap-detail-l"><span>Levier productivité — Δ temps machine × taux horaire${vpLog.simultane ? " (groupe simultané : le plus long pilote)" : ""}</span><b>${vpLog.prodOutil >= 0 ? "+" : "−"} ${escapeAttr(fmtEuroCourt(Math.abs(vpLog.prodOutil)))}/an</b></div>` : ""}
-      ${vpLog.gainOutil !== null ? `<div class="ap-detail-l ap-detail-total"><span>Gain de l'outil — somme des leviers disponibles</span><b>${vpLog.gainOutil >= 0 ? "+" : "−"} ${escapeAttr(fmtEuroCourt(Math.abs(vpLog.gainOutil)))}/an</b></div>` : ""}` : "";
+      ${vpLog.bottleneck && vpLog.prodOutil !== null ? `<div class="ap-detail-l"><span>Levier productivité — Δ temps machine × taux horaire${vpLog.simultane ? " (groupe simultané : le plus long pilote)" : ""}</span><b>${vpLog.prodOutil >= 0 ? "−" : "+"} ${escapeAttr(fmtEuroCourt(Math.abs(vpLog.prodOutil)))}/an</b></div>` : ""}
+      ${vpLog.gainOutil !== null ? `<div class="ap-detail-l ap-detail-total"><span>Gain de l'outil — somme des leviers disponibles</span><b>${vpLog.gainOutil >= 0 ? "−" : "+"} ${escapeAttr(fmtEuroCourt(Math.abs(vpLog.gainOutil)))}/an</b></div>` : ""}` : "";
   const detailCycle = `
       <div class="ap-detail-sep">Cycle</div>
       <div class="ap-detail-l"><span>Temps de coupe (mesure machine)</span><b>${isNaN(coupe) ? "—" : fmt(coupe,1)+" s"}</b></div>
@@ -11453,7 +11453,7 @@ function compositionApercuHTML(sc){
     return n;
   };
   /* la réconciliation — la contre-mesure de l'incident du 26/10 (T543 D1) */
-  const sgnEuro = v => (v >= 0 ? "+" : "−") + fmtEuroCourt(Math.round(Math.abs(v)));
+  const sgnEuro = v => (v >= 0 ? "−" : "+") + fmtEuroCourt(Math.round(Math.abs(v)));
   const reconcilHtml = (vp && vp.verdict !== null) ? `
       <div class="ap-reconcil" title="Le verdict global se refait en additionnant les tuiles. L'écart résiduel (rebut, pièces détachées, outils sans pendant) sort en clair, jamais masqué (§3.5)."><b>Réconciliation</b> — tuiles ${sgnEuro(vp.sommeTuiles)} · sorties ${sgnEuro(vp.sommeSorties)} · ajouts ${sgnEuro(vp.sommeAjouts)} · non réparti <b>${sgnEuro(vp.nonReparti)}</b> = <b>verdict ${sgnEuro(vp.verdict)}</b> /an${vp.nbParPosition ? ` · ${vp.nbParPosition} outil(s) apparié(s) par position (numéro absent ou en doublon)` : ""}${vp.nbParSecours ? ` · ${vp.nbParSecours} logement(s) apparié(s) par secours (noms divergents)` : ""}${vp.nbParDonnees ? ` · ${vp.nbParDonnees} logement(s) apparié(s) par données identiques` : ""}${vp.chronoComplet ? "" : " · hors temps machine (mesures de cycle incomplètes)"}</div>` : "";
   const total = scenarioCost(sc);
@@ -12320,7 +12320,7 @@ function projetCarteHTML(pj){
           <span><b>${st.essais}</b> essai${st.essais>1?"s":""}</span>
           ${st.enSerie ? `<span class="pj-serie"><b>${st.enSerie}</b> en série</span>` : ""}
         </span>
-        ${st.gainConnu ? `<span class="pj-gain ${st.gain>=0?"pos":"neg"}">${st.gain>=0?"+":"−"}${fmtEuroCourt(Math.abs(st.gain))} / an acquis</span>` : ""}
+        ${st.gainConnu ? `<span class="pj-gain ${st.gain>=0?"pos":"neg"}">${st.gain>=0?"−":"+"}${fmtEuroCourt(Math.abs(st.gain))} / an acquis</span>` : ""}
         ${resp ? `<span class="pj-resp"><span class="pj-resp-puce" style="background:${resp.couleur};"></span>Pilote : ${escapeAttr(resp.nom)}</span>` : ""}
       </button>
       <button class="pj-modifier" data-cfg-projet="${pj.id}">Modifier</button>
@@ -14167,6 +14167,21 @@ function writeFieldValue(el){
 /* au blur (ou Entree/Tab qui en decoule) : on ecrit la valeur finale, on recalcule ce qui
    en depend, on sauvegarde et on reconstruit l'affichage complet (badges, couts, graphique). */
 
+/* v4.157 — LA FICHE D'ESSAI RESTE OUVERTE PENDANT QU'ON Y SAISIT. Le bloc « Contexte » (date, heures, but, observations…)
+   s'ouvre tant que tout est vide et se replie dès qu'un champ est rempli : saisir une date ou une heure le refermait sous
+   les doigts. Toucher un champ d'un essai le marque maintenant « ouvert » (ctx et fiche) AVANT le re-rendu qui suit. */
+function memoriserOuvertureEssai(el){
+  if(!el || typeof el.closest !== "function" || typeof el.getAttribute !== "function") return false;
+  const sId = el.getAttribute("data-id"), eId = el.getAttribute("data-essai");
+  if(!sId || !eId) return false;
+  const cle = sId + "|" + eId;
+  let touche = false;
+  if(el.closest("details.essai-ctx")){ essaiCtxOuverts.add(cle); touche = true; }
+  if(el.closest("details.essai-card")){ essaisOuverts.add(cle); touche = true; }
+  return touche;
+}
+document.addEventListener("focusin", e => memoriserOuvertureEssai(e.target), true);
+document.addEventListener("change", e => memoriserOuvertureEssai(e.target), true);
 /* ---- v4.17 — ne jamais reconstruire l'ecran AU MILIEU d'un clic ----
    Le blur qui declenche `change` se produit pendant le MOUSEDOWN du clic suivant (l'action
    par defaut du mousedown est de deplacer le focus). Un render() immediat remplace alors le
@@ -15001,6 +15016,10 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.157.0", date:"10/11/2026", points:[
+    "<b>Les signes des économies sont inversés, partout.</b> Une <b>économie</b> s'écrit <b>− 6,4 k€/an</b> (en vert : le coût baisse) et un <b>surcoût</b> <b>+ 6,4 k€/an</b> (en rouge : le coût monte) — plus explicite que l'ancien « + » vert. Même règle pour les heures machine gagnées. Les écarts de coût (pièce, % vs base) gardent leur signe naturel.",
+    "<b>Saisir la date ou l'heure d'un essai ne le replie plus.</b> Le bloc « Contexte » de la fiche d'essai se refermait dès qu'un champ était rempli — donc en pleine saisie. Il reste ouvert tant que tu y travailles."
+  ]},
   { version:"4.156.0", date:"10/11/2026", points:[
     "<b>Finition piste inter + exter en simultané : fini les « mesures à saisir » et les doublons.</b> Deux outils qui usinent le même disque en même temps ne mesurent le <b>battement qu'une fois par pièce</b> : un relevé de l'outil suivant n'est plus compté « manquant » quand le battement de la même pièce est saisi sur l'outil de tête (l'essai peut passer conforme). Dans la <b>fiche de relevé</b>, le battement ne se demande que sur l'outil de tête, et <b>chaque outil ne propose que son axe</b> (piste extérieure → Exter, piste intérieure → Inter), déduit de ses relevés ou de sa désignation — les pastilles se retiennent par logement."
   ]},
@@ -15914,7 +15933,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.156.0";
+const TOOL_VERSION = "4.157.0";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -16335,7 +16354,7 @@ function renderVisite(){
     ${visiteRecapHTML()}`;
   /* les gains d'abord — qualifiés, jamais additionnés entre familles */
   const g = d.gains;
-  const ligneGain = (l, badge) => `<tr><td class="mono">${escapeAttr(l.ligne)} · ${escapeAttr(l.opCode)}</td><td>${escapeAttr(l.ref)}</td><td><b>${escapeAttr(l.scenario)}</b></td><td>${badge || ""}</td><td class="mono" style="font-weight:600; color:var(--green);">+ ${fmtEuroCourt(Math.round(l.gain))}<small style="color:var(--ink-faint);"> /an</small></td></tr>`;
+  const ligneGain = (l, badge) => `<tr><td class="mono">${escapeAttr(l.ligne)} · ${escapeAttr(l.opCode)}</td><td>${escapeAttr(l.ref)}</td><td><b>${escapeAttr(l.scenario)}</b></td><td>${badge || ""}</td><td class="mono" style="font-weight:600; color:var(--green);">− ${fmtEuroCourt(Math.round(l.gain))}<small style="color:var(--ink-faint);"> /an</small></td></tr>`;
   h += visiteSectionTitre("Gains en course — " + g.nbEssais + " essai(s) dans le suivi", "actés et possibles ne se somment jamais");
   h += `<table class="simul-table"><thead><tr><th>Poste</th><th>Référence</th><th>Scénario</th><th>État</th><th>Économie</th></tr></thead><tbody>`;
   const badpBadge = l => `<span class="pc-stat attente" title="Achat ponctuel (BADP) : montants et récurrence limités — pas un gain à l'échelle tant que la codification n'est pas accordée.">via BADP${l.codifJours ? " — codification attendue " + l.codifJours + " j" : ""}</span>`;
@@ -18219,8 +18238,8 @@ function fichePosteHTML(t){
 
   /* le pouls, identique à la tuile (D3 : même fonction, même valeur) */
   let pouls = "";
-  if(p.gainActe > 0) pouls += `<span class="fp-acte">${p.gainActe >= 0 ? "+" : "−"}${fmtEuroCourt(Math.abs(p.gainActe))}<small>/an acté</small></span>`;
-  if(p.gainProjete > 0) pouls += `<span class="fp-projete">${p.gainProjete >= 0 ? "+" : "−"}${fmtEuroCourt(Math.abs(p.gainProjete))}<small>/an projeté</small></span>`;
+  if(p.gainActe > 0) pouls += `<span class="fp-acte">${p.gainActe >= 0 ? "−" : "+"}${fmtEuroCourt(Math.abs(p.gainActe))}<small>/an acté</small></span>`;
+  if(p.gainProjete > 0) pouls += `<span class="fp-projete">${p.gainProjete >= 0 ? "−" : "+"}${fmtEuroCourt(Math.abs(p.gainProjete))}<small>/an projeté</small></span>`;
   if(!pouls) pouls = t.etat === "aChiffrer"
     ? `<span class="fp-invite">cible ${fmt(p.cibleCPP, 3)} €<small>— à chiffrer</small></span>`
     : `<span class="fp-vide">aucun gain chiffré</span>`;
@@ -18235,7 +18254,7 @@ function fichePosteHTML(t){
     <div class="fp-ref">
       <span class="fp-ref-nom">${escapeAttr((x.ref && x.ref.nom) || "référence")}</span>
       <span class="statut-pill ${x.serie ? "serie" : "essai"}">${x.serie ? "en production" : statutLabel("essai")}</span>
-      ${x.gainAnnuel ? `<span class="fp-ref-gain">${x.gainAnnuel >= 0 ? "+" : "−"}${fmtEuroCourt(Math.abs(x.gainAnnuel))}/an</span>` : ""}
+      ${x.gainAnnuel ? `<span class="fp-ref-gain">${x.gainAnnuel >= 0 ? "−" : "+"}${fmtEuroCourt(Math.abs(x.gainAnnuel))}/an</span>` : ""}
       ${prog}
     </div>`;}).join("") : `<p class="fp-note">Aucune référence travaille ce poste pour l'instant.</p>`;
 
@@ -18391,10 +18410,10 @@ function carteTuileHTML(t, pjId){
      (« à chiffrer ») ou son silence (opportunité). */
   let pouls = "";
   if(p.gainActe > 0){
-    pouls = `<span class="ca-acte">${p.gainActe >= 0 ? "+" : "−"}${fmtEuroCourt(Math.abs(p.gainActe))}<small>/an acté</small></span>`;
+    pouls = `<span class="ca-acte">${p.gainActe >= 0 ? "−" : "+"}${fmtEuroCourt(Math.abs(p.gainActe))}<small>/an acté</small></span>`;
   }
   if(p.gainProjete > 0){
-    pouls += `<span class="ca-projete">${p.gainProjete >= 0 ? "+" : "−"}${fmtEuroCourt(Math.abs(p.gainProjete))}<small>/an projeté</small></span>`;
+    pouls += `<span class="ca-projete">${p.gainProjete >= 0 ? "−" : "+"}${fmtEuroCourt(Math.abs(p.gainProjete))}<small>/an projeté</small></span>`;
   }
   if(!pouls){
     pouls = t.etat === "aChiffrer"
@@ -18463,7 +18482,7 @@ function renderCarte(){
     return `<section class="ca-ligne" data-ligne-id="${escapeAttr(ligne.id)}">
       <h3 class="ca-ligne-titre">${escapeAttr(nom)}
         <span class="ca-ligne-info">${escapeAttr(infos.join(" · "))}</span>
-        ${gainL > 0 ? `<span class="ca-ligne-gain">+${fmtEuroCourt(gainL)}/an acté</span>` : ""}
+        ${gainL > 0 ? `<span class="ca-ligne-gain">−${fmtEuroCourt(gainL)}/an acté</span>` : ""}
       </h3>
       <div class="ca-grille">${tuilesL.map(t => carteTuileHTML(t, carteFiltreProjetId)).join("")}</div>
     </section>`;
@@ -18667,8 +18686,8 @@ function accueilTuileHTML(gl){
      étiquetés — acté et en cours ne se mélangent pas (§3.4). Un gain nul ne
      s'affiche pas : « 0 € » voudrait dire « rien à gagner » (§3.5). */
   let pouls = "";
-  if(gl.gainActe > 0) pouls += `<span class="ca-acte">+${fmtEuroCourt(gl.gainActe)}<small>/an acté</small></span>`;
-  if(gl.gainProjete > 0) pouls += `<span class="ca-projete">+${fmtEuroCourt(gl.gainProjete)}<small>/an en cours</small></span>`;
+  if(gl.gainActe > 0) pouls += `<span class="ca-acte">−${fmtEuroCourt(gl.gainActe)}<small>/an acté</small></span>`;
+  if(gl.gainProjete > 0) pouls += `<span class="ca-projete">−${fmtEuroCourt(gl.gainProjete)}<small>/an en cours</small></span>`;
 
   /* le coût étiqueté dominante (Q6-B) — ou son absence DITE (Q10).
      4.60.1, revue sur données réelles : deux corrections de conformité —
@@ -18777,8 +18796,8 @@ function accueilMatriceHTML(gls){
       if(p.coutProd > 0 && p.coutEnCours !== undefined && p.coutEnCours < p.coutProd) delta = p.coutProd - p.coutEnCours;
       /* le gain annuel : acté OU projeté, ÉTIQUETÉ — jamais sommés (§3.4) */
       let annuel = "";
-      if(p.gainActe > 0) annuel = `+${fmtEuroCourt(Math.round(p.gainActe))} /an <span class="mx-etq">acté</span>`;
-      else if(p.gainProjete > 0) annuel = `+${fmtEuroCourt(Math.round(p.gainProjete))} /an <span class="mx-etq">projeté</span>`;
+      if(p.gainActe > 0) annuel = `−${fmtEuroCourt(Math.round(p.gainActe))} /an <span class="mx-etq">acté</span>`;
+      else if(p.gainProjete > 0) annuel = `−${fmtEuroCourt(Math.round(p.gainProjete))} /an <span class="mx-etq">projeté</span>`;
       else annuel = `<span class="mx-zero">±0,000 €</span>`;
       const ref = p.refDominante ? p.refDominante.nom : "—";
       const nomMachine = t.poste.nom ? ` · ${t.poste.nom}` : "";
@@ -19601,8 +19620,8 @@ function economiesGeneralesHTML(){
   return `<div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
       ${kpi("Plan de conversion — économie simulée", e.chiffrees.length ? (e.total >= 0 ? "− " : "+ ") + fmtEuroCourt(Math.abs(Math.round(e.total))) + " / an" : "—",
             e.chiffrees.length ? e.chiffrees.length + " article(s) chiffré(s) · " + fmt(Math.abs(e.pct), 0) + " % du coût de ces articles (" + fmtEuroCourt(Math.round(e.base)) + " / an)" : "aucun article chiffré pour l'instant", e.total >= 0 ? "var(--green)" : "var(--red)")}
-      ${kpi("Suivi d'essais — acté (en série)", e.acte > 0 ? "+ " + eur(e.acte) : "—", "gain d'outillage en production")}
-      ${kpi("Suivi d'essais — potentiel", e.potentiel > 0 ? "+ " + eur(e.potentiel) : "—", e.postes + " poste(s) travaillé(s)")}
+      ${kpi("Suivi d'essais — acté (en série)", e.acte > 0 ? "− " + eur(e.acte) : "—", "gain d'outillage en production")}
+      ${kpi("Suivi d'essais — potentiel", e.potentiel > 0 ? "− " + eur(e.potentiel) : "—", e.postes + " poste(s) travaillé(s)")}
     </div>
     ${lignesTab ? `<table class="simul-table"><thead><tr><th>Article (MABEC)</th><th>Plaquette</th><th style="text-align:right;">Prix actuel → cible</th><th style="text-align:right;">Économie / an</th></tr></thead><tbody>${lignesTab}</tbody></table>
       ${e.chiffrees.length > 10 ? `<p class="panel-hint">… et ${e.chiffrees.length - 10} autre(s) article(s).</p>` : ""}`
@@ -19784,7 +19803,7 @@ function atelierEconomieHTML(sc, lp, ctx){
   const annuel = bilanAnnuel(sc, ctx.cfg || null, ctx.ligne || null, ctx.ref || null, ctx.base || undefined);
   if(annuel && annuel.gainAnnuel !== undefined){
     const g = annuel.gainAnnuel;
-    lignesEco.push(`<div class="at-eco-l"><span>Économie annuelle de ce scénario</span><b class="${g >= 0 ? "ok" : "bad"}">${g >= 0 ? "+" : "−"} ${fmtEuroCourt(Math.abs(g))} / an</b></div>`);
+    lignesEco.push(`<div class="at-eco-l"><span>Économie annuelle de ce scénario</span><b class="${g >= 0 ? "ok" : "bad"}">${g >= 0 ? "−" : "+"} ${fmtEuroCourt(Math.abs(g))} / an</b></div>`);
   } else if(sc.baseline){
     lignesEco.push(`<div class="at-eco-l"><span>Scénario de référence</span><b>pas d'économie à comparer</b></div>`);
   } else {
@@ -20473,7 +20492,7 @@ function planPrioritesHTML(recap){
       corps += `<tr>
         <td class="mono">${escapeAttr(x.ligne)} · ${escapeAttr(x.opCode)}${x.scenario ? `<br><span style="font-size:11px; color:var(--ink-faint);">${escapeAttr(x.scenario)}</span>` : ""}</td>
         <td class="mono" title="Coût de production actuel : la base × le volume — l'axe potentiel quand aucun candidat n'existe.">${euro(x.depense)}<small style="color:var(--ink-faint);"> /an</small></td>
-        <td class="mono" style="font-weight:600; color:var(--green);">${x.potentiel != null && x.potentiel > 0 ? "+ " + fmtEuroCourt(Math.round(x.potentiel)) + "<small style='color:var(--ink-faint);'> /an</small>" : "—"}</td>
+        <td class="mono" style="font-weight:600; color:var(--green);">${x.potentiel != null && x.potentiel > 0 ? "− " + fmtEuroCourt(Math.round(x.potentiel)) + "<small style='color:var(--ink-faint);'> /an</small>" : "—"}</td>
         <td style="font-size:12.5px;">${fac}</td>
       </tr>`;
     });
@@ -20521,7 +20540,7 @@ function planScenariosHTML(recap){
          vient du PRIX, en % et en €/an, sur le poste plaquettes. L'interaction
          (les deux leviers se renforcent ou se gênent) vit dans l'info-bulle. */
       const d = l.dec;
-      const sgn = v => v >= 0 ? "+" : "−";
+      const sgn = v => v >= 0 ? "−" : "+";
       const euro = v => sgn(v) + " " + fmtEuroCourt(Math.round(Math.abs(v)));
       let cellVie = "—", cellPrix = "—";
       if(d){
@@ -20536,7 +20555,7 @@ function planScenariosHTML(recap){
         <td><span class="pc-stat ${l.cls}">${l.libelle}</span>${l.codifB}</td>
         <td title="${d ? `Durée de vie effective : ${fmt(d.vBarBase, 0)} → ${fmt(d.vBarCand, 0)} pièces/plaquette. Gain vie seule : ${euro(d.gainVieSeul)} €/an.` : "Décomposition non chiffrable : la base ou le candidat n'a pas de prix et de durée de vie exploitables (jamais un zéro, §3.5)."}">${cellVie}</td>
         <td title="${d ? `Prix plaquette moyen consommée : ${fmt(d.pBarBase, 2)} → ${fmt(d.pBarCand, 2)} €. Gain prix seul : ${euro(d.gainPrixSeul)} €/an. Interaction vie×prix : ${euro(d.interaction)} €/an.` : "Décomposition non chiffrable (§3.5)."}">${cellPrix}</td>
-        <td class="mono" style="font-weight:600; color:${l.grp === 2 ? "var(--green)" : l.grp === 1 ? "var(--blue)" : "var(--ink-soft)"};">+ ${fmtEuroCourt(Math.round(l.gain))}<small style="color:var(--ink-faint);"> /an</small>${badgeCycle}</td>
+        <td class="mono" style="font-weight:600; color:${l.grp === 2 ? "var(--green)" : l.grp === 1 ? "var(--blue)" : "var(--ink-soft)"};">− ${fmtEuroCourt(Math.round(l.gain))}<small style="color:var(--ink-faint);"> /an</small>${badgeCycle}</td>
       </tr>`;
     });
   });
@@ -20738,7 +20757,7 @@ function planBandeauHTML(recap){
       <div class="pc-v">${val}</div>
       <div class="pc-sub">${sub}</div>
     </div>`;
-  const gain = v => `+${fmtEuroCourt(Math.round(v))}<small>/an</small>`;
+  const gain = v => `−${fmtEuroCourt(Math.round(v))}<small>/an</small>`;
   return `<div class="pc-bandeau">
     ${bloc("Gains actés — scénarios passés en série", recap.totalActe ? gain(recap.totalActe) : "—",
       recap.totalActe ? `${recap.nbActe} poste(s) en série : le gain est dans les chiffres de l'usine` : "aucun scénario passé en série pour l'instant")}
@@ -20926,7 +20945,7 @@ function planGraphiquesHTML(recap, lignesPlan){
         ${planParetoSVG(postesGraph, "Base (en série) face à cible (en cours) — €/an", { couleur: "var(--green)", couleur2: "var(--blue)" }) || `<p class="panel-hint">Aucun poste chiffré : les barres apparaîtront dès qu'un scénario sera comparé à sa base.</p>`}
         ${postesGraph.length ? `<table class="simul-table pc-table-donnees">
           <thead><tr><th>Poste</th><th>Acté</th><th>Possible</th></tr></thead>
-          <tbody>${postesGraph.map(l => `<tr><td>${escapeAttr(l.label)}</td><td class="mono">${l.valeur ? "+" + fmtEuroCourt(Math.round(l.valeur)) : "—"}</td><td class="mono">${l.valeur2 ? "+" + fmtEuroCourt(Math.round(l.valeur2)) : "—"}</td></tr>`).join("")}</tbody>
+          <tbody>${postesGraph.map(l => `<tr><td>${escapeAttr(l.label)}</td><td class="mono">${l.valeur ? "−" + fmtEuroCourt(Math.round(l.valeur)) : "—"}</td><td class="mono">${l.valeur2 ? "−" + fmtEuroCourt(Math.round(l.valeur2)) : "—"}</td></tr>`).join("")}</tbody>
         </table>` : ""}
       </div>
     </div>`;
@@ -21483,7 +21502,7 @@ function accueilBandeauHTML(gls){
   const acte = vivantes.reduce((a, gl) => a + (gl.gainActe || 0), 0);
   const nbActe = vivantes.filter(gl => (gl.gainActe || 0) > 0).length;
   const bloc1 = nbActe
-    ? { v: `+${fmtEuroCourt(Math.round(acte))}`, u: "/an",
+    ? { v: `−${fmtEuroCourt(Math.round(acte))}`, u: "/an",
         sub: `sur ${nbActe} ligne${nbActe > 1 ? "s" : ""} qualifiée${nbActe > 1 ? "s" : ""} série` }
     : { v: "—", u: "", sub: "aucun gain acté — premiers passages en série en attente" };
 
@@ -21625,7 +21644,7 @@ function troisGains(sc, base, cfg, ligne, ref){
 function troisGainsHTML(g){
   if(!g) return "";
   if(!g.volume) return `<div class="g3 g3-vide">Pour chiffrer les gains en <b>€/an</b> : saisir la <b>production annuelle</b> de la référence (Options → Volume annuel).</div>`;
-  const signe = v => (v >= 0 ? "+" : "−") + fmtEuroCourt(Math.abs(v)) + "/an";
+  const signe = v => (v >= 0 ? "−" : "+") + fmtEuroCourt(Math.abs(v)) + "/an";
   const cell = (lib, val, sous, cls) => `<div class="g3-c ${cls || ""}"><div class="g3-l">${lib}</div><div class="g3-v">${val}</div><div class="g3-s">${sous}</div></div>`;
   const outil = g.outil === null
     ? cell("Outil", "—", "non comparable (périmètre)", "nd")
@@ -21633,7 +21652,7 @@ function troisGainsHTML(g){
   let cycle;
   if(g.heures === null) cycle = cell("Cycle", "—", "à chiffrer : Vc/f ou cycle en secondes", "nd");
   else {
-    const h = (g.heures >= 0 ? "+" : "−") + fmt(Math.abs(g.heures), 0) + " h/an";
+    const h = (g.heures >= 0 ? "−" : "+") + fmt(Math.abs(g.heures), 0) + " h/an";
     cycle = cell("Cycle", h, g.machine === null ? "temps machine libéré — € : activer le coût machine (Options)" : signe(g.machine) + " de temps machine", g.heures >= 0 ? "ok" : "ko");
   }
   const rebut = g.rebut === null ? cell("Rebut", "—", "non suivi sur ces scénarios", "nd")
@@ -21680,11 +21699,11 @@ function demultiplicationHTML(d, sc){
   const sansVolume = d.cibles.length - chiffrees.length;
   const rows = chiffrees.slice(0, 6).map(c => `<li><b>${escapeAttr(c.ligne)}</b> · ${escapeAttr(c.op)} · ${escapeAttr(c.ref)}
       <span class="dm-motif">${escapeAttr(c.motif)}</span>
-      <span class="dm-v">${"+" + fmtEuroCourt(c.estimation) + "/an"}</span></li>`).join("");
+      <span class="dm-v">${"−" + fmtEuroCourt(c.estimation) + "/an"}</span></li>`).join("");
   return `<section class="dm">
     <div class="dm-t">Ailleurs dans l'usine</div>
     <p class="dm-p">Si <b>${escapeAttr(sc ? sc.name : "cette solution")}</b> se reproduit (−${fmt(d.ratio * 100, 1)} % de coût outil) :
-      <b class="dm-total">${d.total > 0 ? "+" + fmtEuroCourt(d.total) + "/an" : "à chiffrer"}</b> <span class="dm-est">estimation</span></p>
+      <b class="dm-total">${d.total > 0 ? "−" + fmtEuroCourt(d.total) + "/an" : "à chiffrer"}</b> <span class="dm-est">estimation</span></p>
     <ul class="dm-l">${rows}</ul>
     ${chiffrees.length > 6 ? `<p class="dm-p">+ ${chiffrees.length - 6} autre${chiffrees.length - 6 > 1 ? "s postes chiffrés" : " poste chiffré"}</p>` : ""}
     ${sansVolume ? `<p class="dm-p">Volume annuel manquant sur ${sansVolume} poste${sansVolume > 1 ? "s" : ""} concerné${sansVolume > 1 ? "s" : ""} : non compté${sansVolume > 1 ? "s" : ""} dans l'estimation.</p>` : ""}
@@ -21740,7 +21759,7 @@ function pipelineHTML(){
   const actifs = rows.filter(r => r.etat !== "opportunite");
   const dormants = rows.length - actifs.length;
   const somme = k => actifs.reduce((a, r) => a + (r[k] || 0), 0);
-  const eur = v => v > 0 ? "+" + fmtEuroCourt(v) + "/an" : "—";
+  const eur = v => v > 0 ? "−" + fmtEuroCourt(v) + "/an" : "—";
   const tr = actifs.map(r => `<tr class="pl-${r.etat}">
       <td><b>${escapeAttr(r.ligne)}</b><br><small>${escapeAttr(r.opCode)}${r.machine ? " · " + escapeAttr(r.machine) : ""}</small></td>
       <td>${escapeAttr(r.ref || "—")}${r.scenario ? `<br><small>${escapeAttr(r.scenario)}</small>` : ""}</td>
@@ -21805,7 +21824,7 @@ function bilanClientLignes(){
 function bilanClientHTML(){
   const pages = bilanClientLignes();
   const auj = new Date().toLocaleDateString("fr-FR");
-  const eur = v => (v >= 0 ? "+" : "−") + fmtEuroCourt(Math.abs(v)) + "/an";
+  const eur = v => (v >= 0 ? "−" : "+") + fmtEuroCourt(Math.abs(v)) + "/an";
   const prix = v => v === null || v === undefined ? "—" : fmt(v, 4) + " €";
   if(!pages.length) return `<div class="bc-page"><div class="bc-tete"><div class="bc-sur">Bilan d'optimisation</div><h1>Aucune ligne travaillée</h1><div class="bc-date">${auj}</div></div><p>Le bilan s'imprime dès qu'un essai existe sur un poste.</p></div>`;
   return pages.map(p => {
@@ -21813,7 +21832,7 @@ function bilanClientHTML(){
       const g = x.g;
       const axes = !g.volume ? `<p class="bc-nd">Gains en €/an : production annuelle à saisir.</p>` : `<div class="bc-axes">
           <div><span>Outil</span><b>${eur(g.outil)}</b></div>
-          <div><span>Cycle</span><b${g.heures === null ? ' class="nd"' : ""}>${g.heures === null ? "non chiffré" : (g.heures >= 0 ? "+" : "−") + fmt(Math.abs(g.heures), 0) + " h/an" + (g.machine !== null ? " · " + eur(g.machine) : "")}</b></div>
+          <div><span>Cycle</span><b${g.heures === null ? ' class="nd"' : ""}>${g.heures === null ? "non chiffré" : (g.heures >= 0 ? "−" : "+") + fmt(Math.abs(g.heures), 0) + " h/an" + (g.machine !== null ? " · " + eur(g.machine) : "")}</b></div>
           <div><span>Rebut</span><b${g.rebut === null ? ' class="nd"' : ""}>${g.rebut === null ? "non suivi" : eur(g.rebut)}</b></div>
         </div>`;
       const pr = x.preuves.map(v => `<tr><td>${escapeAttr(v.ref)}<br><small>${escapeAttr(v.scenario)}</small></td>
@@ -22045,7 +22064,7 @@ function renderDashboard(){
             : r.dPct === null ? "—"
             : `<span class="delta ${r.dPct < -0.05 ? "neg" : r.dPct > 0.05 ? "pos" : "zero"}">${r.dPct>0?"+":""}${fmt(r.dPct,1)} %</span>`;
           const gainTxt = r.gainAnnuel === null ? "—"
-            : `<b style="color:${r.gainAnnuel >= 0 ? "var(--green)" : "var(--red)"};">${(r.gainAnnuel>=0?"+":"−") + fmtEuroCourt(Math.abs(r.gainAnnuel))}</b>`;
+            : `<b style="color:${r.gainAnnuel >= 0 ? "var(--green)" : "var(--red)"};">${(r.gainAnnuel>=0?"−":"+") + fmtEuroCourt(Math.abs(r.gainAnnuel))}</b>`;
           return `<tr>
             <td><span class="db-sc-nom">${escapeAttr(r.sc.name)}</span>${r.sc.baseline ? ` <span class="db-ref-tag">★</span>` : ""}
                 ${st === "abandonne" && r.sc.statutMotif ? `<div class="db-motif">${escapeAttr(r.sc.statutMotif)}</div>` : ""}</td>
@@ -22093,8 +22112,8 @@ function renderDashboard(){
       <div class="db-kpi"><span class="l">Validées, pas encore en série</span><span class="v">${nbValides}</span></div>
       <div class="db-kpi"><span class="l">Passées en série</span><span class="v">${nbSerie}</span></div>
       ${volumeConnu ? `
-      <div class="db-kpi db-kpi-gain"><span class="l">Gain annuel acquis</span><span class="v" style="color:${gainAcquis>=0?"var(--fill-ink)":"var(--on-fill-bad)"};">${(gainAcquis>=0?"+":"−")+fmtEuroCourt(Math.abs(gainAcquis))}</span><span class="db-kpi-sub">scénarios en série</span></div>
-      <div class="db-kpi db-kpi-gain"><span class="l">Gain annuel à déployer</span><span class="v">${(gainPotentiel>=0?"+":"−")+fmtEuroCourt(Math.abs(gainPotentiel))}</span><span class="db-kpi-sub">validés, pas encore en série</span></div>` : ""}
+      <div class="db-kpi db-kpi-gain"><span class="l">Gain annuel acquis</span><span class="v" style="color:${gainAcquis>=0?"var(--fill-ink)":"var(--on-fill-bad)"};">${(gainAcquis>=0?"−":"+")+fmtEuroCourt(Math.abs(gainAcquis))}</span><span class="db-kpi-sub">scénarios en série</span></div>
+      <div class="db-kpi db-kpi-gain"><span class="l">Gain annuel à déployer</span><span class="v">${(gainPotentiel>=0?"−":"+")+fmtEuroCourt(Math.abs(gainPotentiel))}</span><span class="db-kpi-sub">validés, pas encore en série</span></div>` : ""}
     </div>`;
 
   const filtreHTML = projets.length ? `
@@ -25421,7 +25440,7 @@ function runTests(){
            pr ? [pr.etat, Math.round(pr.potentiel), pr.dernier, pr.conformes !== null] : null, ["encours", 2500, "2026-10-20", true]);
         const bc = bilanClientHTML();
         ok("vendre : bilan client — une page par ligne travaillée, gain outil en €/an, rien de commercial",
-           [bc.split('class="bc-page"').length - 1, bc.includes("EMAG 1"), bc.includes("+2,5 k€/an"), /Plan de conversion|Catalogue/.test(bc)],
+           [bc.split('class="bc-page"').length - 1, bc.includes("EMAG 1"), bc.includes("−2,5 k€/an"), /Plan de conversion|Catalogue/.test(bc)],
            [1, true, true, false]);
       } finally { lignes = lAv; livraisons = lvAv; }
     }
@@ -26636,7 +26655,7 @@ function runTests(){
         planReglages = Object.assign({}, planReglages, { ecoAtelier: true });
         const html = atelierEconomieHTML(essai, lp, ctxE);
         ok("atelier : option allumée = l'économie annuelle du scénario et le coût plaquette par pièce",
-           [html.indexOf("Économie annuelle de ce scénario") > -1, html.indexOf("+ ") > -1, html.indexOf("€ / pièce") > -1], [true, true, true]);
+           [html.indexOf("Économie annuelle de ce scénario") > -1, html.indexOf("− ") > -1, html.indexOf("€ / pièce") > -1], [true, true, true]);
         ok("atelier : le scénario de référence n'affiche pas d'économie à comparer", atelierEconomieHTML(prod, { outilId: "tEscEP", logementId: "gEscEP" }, ctxE).indexOf("pas d'économie à comparer") > -1, true);
       } finally { lignes = lAvE; catalogue = catAvE; planReglages = regAvE; }
     }
@@ -27994,6 +28013,18 @@ function runTests(){
         const h2 = atelierHTML();
         ok("fiche atelier : sur T548 (tête) le battement est demandé et l'axe est Exter", [/id="atV"/.test(h2), /atCs_ra_E/.test(h2), /atCs_ra_I/.test(h2)], [true, true, false]);
       } finally { data = dataAv; atelierCtx = aAv2; }
+    }
+    /* v4.157 — saisir date/heure dans un essai ne le replie plus */
+    {
+      const eAv = new Set(essaisOuverts), cAv = new Set(essaiCtxOuverts);
+      try {
+        essaisOuverts = new Set(); essaiCtxOuverts = new Set();
+        const champ = (attrs, dansCtx, dansCard) => ({ getAttribute: k => attrs[k] || null, closest: sel => (sel === "details.essai-ctx" ? (dansCtx ? {} : null) : (dansCard ? {} : null)) });
+        const heure = champ({ "data-id": "sc1", "data-essai": "e1" }, true, true);
+        ok("essai : toucher l'heure (dans le contexte) garde le contexte ET la fiche ouverts", [memoriserOuvertureEssai(heure), essaiCtxOuverts.has("sc1|e1"), essaisOuverts.has("sc1|e1")], [true, true, true]);
+        ok("essai : un champ hors essai (sans data-essai) ne touche à rien", [memoriserOuvertureEssai(champ({ "data-id": "sc1" }, true, true)), memoriserOuvertureEssai(null), essaisOuverts.size], [false, false, 1]);
+        ok("essai : un champ d'une fiche sans contexte n'ouvre que la fiche", [memoriserOuvertureEssai(champ({ "data-id": "sc2", "data-essai": "e9" }, false, true)), essaiCtxOuverts.has("sc2|e9"), essaisOuverts.has("sc2|e9")], [true, false, true]);
+      } finally { essaisOuverts = eAv; essaiCtxOuverts = cAv; }
     }
     /* v4.155 — la tuile d'outil : écarts avec la référence */
     {
