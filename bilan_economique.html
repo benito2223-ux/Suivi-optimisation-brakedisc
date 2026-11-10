@@ -919,6 +919,11 @@ details.outil-carte.drag-cible{outline:2px dashed var(--blue); outline-offset:3p
 .cond-divergence{font-size:11px; padding:2px 6px;}
 .essai-cond-groupe{display:inline-block; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:2px 6px; margin-right:6px; font-size:12px;}
 .essai-diverge-info{color:var(--ink-soft);}
+/* v4.153 — plaquettes en essai non codées (MABEC provisoire PLA###) */
+.badge-prov{display:inline-block; font:600 10.5px/1 var(--font-sans, inherit); color:var(--amber); background:var(--amber-bg); border:1px solid var(--amber); border-radius:999px; padding:2px 7px;}
+tr.cat-prov td.mono, tr.cat-prov .cell.ref, .cell.mabec-prov{color:var(--amber);}
+.cat-noncodes{margin:0 0 14px; padding:10px 12px; border:1px solid var(--amber); background:var(--amber-bg); border-radius:var(--radius-sm);}
+.cat-noncodes h4{margin:0 0 4px; color:var(--amber);}
 /* Tour 135 — vue plaquette globale */
 .extrapole-lev input{width:110px;}
 [data-extrapole] .simul-table td, [data-extrapole] .simul-table th{font-size:12px; padding:4px 6px;}
@@ -11136,7 +11141,7 @@ function logementBlocHTML(sc, o, l, showFrFa, showCycleDetail){
       <div class="lb-tete">
         ${champHTML("Correcteur <span>D1, D2…</span>", `<input class="cell ref" ${base("nom")} value="${escapeAttr(l.nom)}" placeholder="D1, D2, Bol, Piste…" title="Le N° de correcteur — la position de la plaquette sur le porte-outil : D1, D2… C'est ce que remplissent les excels de Matis (suivi des consommations). Un nom fonctionnel marche aussi (Bol, Piste).">`, "oc-moyen")}
         ${champHTML("Référence plaquette", `<input class="cell ref" ${base("ref")} list="catIso" value="${escapeAttr(l.ref)}" placeholder="CNGX 120716 T02020 LKT640" title="La désignation ISO de la plaquette — l'autocomplete propose celles du catalogue.">`, "oc-large")}
-        ${champHTML("MABEC <span>code article</span>", `<input class="cell ref" ${base("codeArticle")} list="catMabec" value="${escapeAttr(l.codeArticle)}" placeholder="ex. IM02 209 560" title="Le numéro d'article du classeur de Matis (colonne MABEC). L'autocomplete propose ceux du catalogue et remplit prix, arêtes, durée de vie.">`, "oc-moyen")}
+        ${champHTML("MABEC <span>code article</span>", `<input class="cell ref${mabecEstProvisoire(l.codeArticle) ? " mabec-prov" : ""}" ${base("codeArticle")} list="catMabec" value="${escapeAttr(l.codeArticle)}" placeholder="ex. IM02 209 560" title="Le numéro d'article du classeur de Matis (colonne MABEC). L'autocomplete propose ceux du catalogue et remplit prix, arêtes, durée de vie.">`, "oc-moyen")}
         <label class="lb-tol" title="Décoché, ce logement ne suit que la charnière : ses mesures ne font jamais échouer un essai sur la tolérance.">
           <input type="checkbox" data-outil="${o.id}" data-logement="${l.id}" data-field="suiviTolerance" ${l.suiviTolerance !== false ? "checked" : ""}>
           <span>Suivi en tolérance</span>
@@ -14822,6 +14827,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.153.0", date:"10/11/2026", points:[
+    "<b>Les plaquettes en essai, pas encore codées par Matis, entrent au catalogue.</b> Une plaquette testée sans MABEC (la SNGN 090416 F SL500, les LKT640…) n'était jamais vue du catalogue : corriger son prix ne changeait pas le logement. Le catalogue affiche maintenant un encadré <b>« Plaquettes en essai, non codées »</b> : les écritures à la main d'une même plaquette (majuscules, espaces, tirets) sont regroupées, et <b>« Créer l'article provisoire »</b> leur pose un code <b>PLA001, PLA002…</b>, unifie le libellé et applique le prix. Ces lignes sont en <b>ambre avec un badge « non codé »</b>, et proposées dans le logement comme n'importe quel article (taper l'ISO, même écrit autrement, remplit le code et le prix). Quand Matis codifie : tape le <b>vrai MABEC</b> sur la ligne, il remplace le code provisoire partout."
+  ]},
   { version:"4.152.0", date:"10/11/2026", points:[
     "<b>Une plaquette, tous ses usages, son gain au global.</b> Dans le Catalogue (« Où ? »), dans le Plan de conversion (« usages ») et dans « Ailleurs dans l'usine », chaque plaquette (vue MABEC + désignation) montre où elle sert : ligne, référence, OP, quantité de plaquettes par an, coût annuel. Et la simulation « si elle était déployée au global » se chiffre en direct à trois leviers — prix (le point de départ), puis charnière cible, puis temps de coupe. Ce qui manque est nommé (volume, cycle), jamais inventé ; le total porte l'étiquette SIMULATION et ne se mélange jamais aux gains actés.",
     "<b>« Extrapoler avec la vie mesurée ».</b> Dans « Ailleurs dans l'usine », quand un essai a mesuré une durée de vie, un bouton ouvre la simulation globale pré-remplie avec cette charnière mesurée : l'essai validé sur un poste donne aussitôt ce qu'il vaudrait partout où la même plaquette travaille."
@@ -15716,7 +15724,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.152.0";
+const TOOL_VERSION = "4.153.0";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -19244,6 +19252,86 @@ function catalogueAjouterArticle(mabec, libelle, prixTexte){
   catalogue.sort((a, b) => a.mabec.localeCompare(b.mabec));
   return { ok: true, rapport: catalogueAppliquer(null, m) };
 }
+/* ═══ v4.153 — LES PLAQUETTES EN ESSAI, NON CODÉES : un MABEC PROVISOIRE (PLA001, PLA002…) ═══
+   Une plaquette testée avant que Matis ne la codifie n'a pas de MABEC : le catalogue (clé = MABEC) ne la voyait
+   donc jamais, et un prix corrigé ne se propageait pas. Décision Benjamin : on la CRÉE au catalogue sous un code
+   provisoire PLA###, qu'on remplace par le vrai MABEC le jour où il existe. Le regroupement des écritures à la main
+   (« SL500 », « SL 500 », « 090416-F »…) se fait par normIso (aucun séparateur, aucune casse). */
+function mabecEstProvisoire(m){ return /^PLA\d{3,}$/.test(String(m || "").trim().toUpperCase()); }
+function logementNonCode(g){
+  const c = String((g && (g.codeArticle || g.mabec)) || "").trim().toUpperCase();
+  return !c || c === "NC";
+}
+function chaqueLogementDeLArbre(fn){
+  lignes.forEach(l => (l.references || []).forEach(r => (r.ops || []).forEach(o =>
+    (o.scenarios || []).forEach(sc => (sc.outils || []).forEach(ou => (ou.logements || []).forEach(g => fn(g, l, r, o, sc, ou)))))));
+}
+function prochainMabecProvisoire(){
+  let max = 0;
+  const vu = m => { const r = /^PLA(\d{3,})$/.exec(String(m || "").trim().toUpperCase()); if(r) max = Math.max(max, parseInt(r[1], 10)); };
+  catalogue.forEach(a => vu(a.mabec));
+  chaqueLogementDeLArbre(g => vu(g.codeArticle || g.mabec));
+  return "PLA" + String(max + 1).padStart(3, "0");
+}
+/* rend les groupes de logements SANS code (vide ou « NC ») qui portent une désignation ISO,
+   regroupés par normIso, sauf ceux dont la désignation est déjà au catalogue (ils se règlent par « Appliquer »). */
+function plaquettesNonCodees(){
+  const groupes = {};
+  chaqueLogementDeLArbre((g, l, r, o) => {
+    if(!logementNonCode(g)) return;
+    const cle = normIso(g.ref);
+    if(!cle) return;
+    const e = groupes[cle] = groupes[cle] || { cle, libelles: {}, prixVus: {}, n: 0, ou: new Set() };
+    e.n++;
+    const lib = String(g.ref).replace(/\s+/g, " ").trim();
+    e.libelles[lib] = (e.libelles[lib] || 0) + 1;
+    const p = parseFloat(g.prix); if(!isNaN(p) && p > 0) e.prixVus[p] = (e.prixVus[p] || 0) + 1;
+    e.ou.add(String(o.nom || o.code || "OP"));
+  });
+  return Object.values(groupes).map(e => ({
+    cle: e.cle, n: e.n, libelles: Object.keys(e.libelles), libelle: libelleMajoritaire(e.libelles),
+    prixVus: Object.keys(e.prixVus).map(Number).sort((a, b) => a - b), prix: valeurModale(e.prixVus), ou: [...e.ou]
+  })).sort((a, b) => b.n - a.n);
+}
+/* crée l'article provisoire d'un groupe : MABEC PLA### posé sur TOUS ses logements, libellé unifié, prix du catalogue propagé.
+   Rend { ok, mabec, rapport } ; refuse un prix absent/nul (comme catalogueChangerPrix) ou un groupe introuvable. */
+function catalogueCreerProvisoire(cle, libelleTexte, prixTexte){
+  const k = normIso(cle);
+  const prix = catalogueNombre(prixTexte);
+  if(!k) return { ok: false, motif: "désignation vide" };
+  if(prix === null || prix <= 0) return { ok: false, motif: "prix invalide" };
+  const groupe = plaquettesNonCodees().find(x => x.cle === k);
+  if(!groupe) return { ok: false, motif: "aucun logement non codé pour cette désignation" };
+  const libelle = String(libelleTexte || "").replace(/\s+/g, " ").trim() || groupe.libelle;
+  const mabec = prochainMabecProvisoire();
+  chaqueLogementDeLArbre(g => {
+    if(!logementNonCode(g) || normIso(g.ref) !== k) return;
+    g.codeArticle = mabec;
+    g.ref = libelle;
+  });
+  catalogue.push(normalizeArticleCat({ mabec, iso: libelle, libelle, prix: Math.round(prix * 10000) / 10000 }));
+  catalogue.sort((a, b) => a.mabec.localeCompare(b.mabec));
+  return { ok: true, mabec, rapport: catalogueAppliquer(null, mabec) };
+}
+/* le jour où Matis codifie : PLA### → vrai MABEC, sur l'article et sur tous ses logements. */
+function catalogueRemplacerMabec(ancien, nouveauTexte){
+  const a = String(ancien || "").trim().toUpperCase();
+  const n = String(nouveauTexte || "").trim().toUpperCase().replace(/\s+/g, " ");
+  const art = catalogue.find(x => x.mabec === a);
+  if(!art) return { ok: false, motif: "article inconnu" };
+  if(!n) return { ok: false, motif: "MABEC vide" };
+  if(mabecEstProvisoire(n)) return { ok: false, motif: "ce n'est pas un vrai MABEC" };
+  if(catalogue.some(x => x.mabec === n)) return { ok: false, motif: "ce MABEC existe déjà au catalogue" };
+  let touches = 0;
+  chaqueLogementDeLArbre(g => {
+    if(String(g.codeArticle || g.mabec || "").trim().toUpperCase() !== a) return;
+    g.codeArticle = n; touches++;
+  });
+  art.mabec = n;
+  catalogue.sort((x, y) => x.mabec.localeCompare(y.mabec));
+  return { ok: true, logementsTouches: touches };
+}
+
 /* v4.149 — LA VUE GÉNÉRALE DES ÉCONOMIES, depuis le catalogue (l'outil de vente de Benjamin).
    Deux sources, déjà calculées ailleurs, réunies ici sans rien recalculer d'autre :
    · le PLAN DE CONVERSION : économie annuelle simulée si l'on passe aux plaquettes cibles
@@ -19472,7 +19560,9 @@ function atelierEconomieHTML(sc, lp, ctx){
 function catalogueParIso(iso){
   const n = String(iso || "").trim().toUpperCase().replace(/\s+/g, " ");
   if(!n) return null;
-  return catalogue.find(a => String(a.iso || "").toUpperCase().replace(/\s+/g, " ").split(" | ").some(x => x === n)) || null;
+  return catalogue.find(a => String(a.iso || "").toUpperCase().replace(/\s+/g, " ").split(" | ").some(x => x === n))
+      /* v4.153 — repli : « SL 500 », « SL500 », « 090416-F » sont la même plaquette (clé sans séparateur) */
+      || catalogue.find(a => String(a.iso || "").split(" | ").some(x => normIso(x) === normIso(iso))) || null;
 }
 
 function appliquerSuggestionCatalogue(l, entry){
@@ -19505,15 +19595,33 @@ function renderCatalogueDatlists(){
   iso.innerHTML = [...isos].map(x => `<option value="${escapeAttr(x)}">`).join("");
 }
 
+function nonCodesHTML(){
+  const gr = plaquettesNonCodees();
+  if(!gr.length) return "";
+  const pl = prochainMabecProvisoire();
+  return `<div class="cat-noncodes">
+    <h4>🧩 Plaquettes en essai, non codées — ${gr.length} désignation(s)</h4>
+    <p class="panel-hint">Ces logements n'ont pas de MABEC (vide ou « NC »), donc le catalogue ne les voit pas : un prix corrigé ne s'y propage pas. <b>Créer l'article provisoire</b> pose un code <b>${escapeAttr(pl)}</b>, <b>PLA002</b>… sur tous les logements de la désignation (écritures à la main regroupées : majuscules, espaces et tirets ignorés), unifie le libellé et applique le prix. Quand Matis codifie, tape le vrai MABEC sur la ligne de l'article.</p>
+    <table class="simul-table"><thead><tr><th>Libellé retenu</th><th>Écritures vues</th><th>Logements</th><th>Prix vus</th><th>Prix catalogue €</th><th></th></tr></thead>
+    <tbody>${gr.map(g => `<tr>
+      <td><input class="cell ref" style="min-width:230px;" data-nclib="${escapeAttr(g.cle)}" value="${escapeAttr(g.libelle)}" aria-label="Libellé retenu"></td>
+      <td style="font-size:12px; color:var(--ink-soft);">${g.libelles.map(escapeAttr).join("<br>")}</td>
+      <td class="mono">${g.n}</td>
+      <td class="mono">${g.prixVus.length ? g.prixVus.map(x => fmt(x, 2)).join(" · ") : "—"}</td>
+      <td><input class="cell" style="width:84px; font-family:var(--font-mono); text-align:right;" inputmode="decimal" data-ncprix="${escapeAttr(g.cle)}" value="${g.prix !== "" && g.prix != null ? String(g.prix).replace(".", ",") : ""}" placeholder="€" aria-label="Prix catalogue"></td>
+      <td><button type="button" class="primary small" data-nccreer="${escapeAttr(g.cle)}">Créer l'article provisoire</button></td>
+    </tr>`).join("")}</tbody></table></div>`;
+}
+
 function catalogueRendu(){
   const vus = libellesVusParMabec();
-  if(!catalogue.length) return `<p class="panel-hint">Le catalogue est vide. Trois façons de le remplir : le <b>générer depuis l'outil</b> (un MABEC = un prix, le plus fréquent, divergences signalées), l'<b>importer d'un CSV</b> édité dans Excel, ou les deux — générer, exporter, faire corriger par Matis, réimporter.</p>
+  if(!catalogue.length) return nonCodesHTML() + `<p class="panel-hint">Le catalogue est vide. Trois façons de le remplir : le <b>générer depuis l'outil</b> (un MABEC = un prix, le plus fréquent, divergences signalées), l'<b>importer d'un CSV</b> édité dans Excel, ou les deux — générer, exporter, faire corriger par Matis, réimporter.</p>
     <div class="simul-actions">
       <button class="ghost small" id="catSeed">🌱 Générer depuis l'outil</button>
       <label class="ghost small" for="catFichier" style="cursor:pointer;">⤴ Importer un CSV…</label>
       <input type="file" id="catFichier" accept=".csv,.txt" hidden>
     </div>`;
-  return `
+  return nonCodesHTML() + `
     <div class="simul-actions">
       <button class="primary small" id="catAppliquer" title="Propage les prix du catalogue dans tous les logements correspondants — avec rapport">✅ Appliquer les prix aux logements</button>
       <button class="primary small" id="catEconomies" title="Vue générale des économies : plan de conversion (simulé) et suivi d'essais (acté, potentiel)">💶 Voir les économies</button>
@@ -19536,8 +19644,8 @@ function catalogueRendu(){
     <div id="catStatut" class="panel-hint" role="status" aria-live="polite" style="min-height:1.4em;"></div>
     <table class="simul-table">
       <thead><tr><th>Article (MABEC)</th><th>Libellés ISO vus</th><th>Libellé retenu</th><th>Prix</th><th>Codification Matis</th></tr></thead>
-      <tbody>${catalogue.map((a, i) => `<tr>
-        <td class="mono">${escapeAttr(a.mabec)}${a.iso ? `<br><button type="button" class="ghost small" style="margin-top:3px;" data-usages-iso="${escapeAttr(a.iso)}" title="Où cette plaquette est utilisée dans l'usine (ligne, OP, quantité), et l'économie si elle était déployée au global">Où ?</button>` : ""}</td>
+      <tbody>${catalogue.map((a, i) => `<tr${mabecEstProvisoire(a.mabec) ? ' class="cat-prov"' : ""}>
+        <td class="mono">${escapeAttr(a.mabec)}${mabecEstProvisoire(a.mabec) ? `<br><span class="badge-prov" title="Code provisoire : cette plaquette est en essai, pas encore codifiée par Matis.">non codé</span><br><input class="cell" style="width:130px; margin-top:3px;" data-catreel="${i}" placeholder="Vrai MABEC" aria-label="Vrai MABEC de ${escapeAttr(a.mabec)}" title="Le jour où Matis codifie : tape le vrai MABEC ici, il remplace ${escapeAttr(a.mabec)} sur l'article et sur tous ses logements.">` : ""}${a.iso ? `<br><button type="button" class="ghost small" style="margin-top:3px;" data-usages-iso="${escapeAttr(a.iso)}" title="Où cette plaquette est utilisée dans l'usine (ligne, OP, quantité), et l'économie si elle était déployée au global">Où ?</button>` : ""}</td>
         <td style="font-size:12px; color:#888;">${(() => { const v = vus[a.mabec]; const k = v ? Object.keys(v) : []; return k.length ? k.map((x, kk) => `<button type="button" class="ghost small" style="margin:1px 0; text-align:left; white-space:normal;" data-catadopt="${i}|${kk}" title="Adopter ce libellé pour tout l'article">${escapeAttr(x)}${k.length > 1 ? ` <i>×${v[x]}</i>` : ""}</button>`).join("<br>") + (k.length > 1 ? `<br><span style="color:#b45309;">${k.length} libellés différents</span>` : "") : escapeAttr(a.iso || "—"); })()}</td>
         <td><input class="cell ref" style="min-width:230px;" data-catlib="${i}" value="${escapeAttr(catalogueLibelleRetenu(a, vus))}" title="Le libellé de cet article : modifie-le et valide (Entrée) — tous les logements de l'article le prennent aussitôt."></td>
         <td class="mono"><input class="cell" style="width:84px; font-family:var(--font-mono); text-align:right;" type="text" inputmode="decimal" data-catprix="${i}" value="${a.prix !== "" ? String(a.prix).replace(".", ",") : ""}" placeholder="€" title="Modifier le prix : tous les logements de cet article se mettent à jour, et les économies avec."> €${a.divergent ? ' <span style="color:#b45309;">(prix divergents dans l\'outil — Matis vérifie)</span>' : ""}</td>
@@ -19578,6 +19686,23 @@ function renderCatalogue(){ renderCatalogueDatlists();
     const res = catalogueChangerLibelle(i, inp.value);
     const n = res.rapport.logementsTouches;
     apresEdition(art.libelle ? "✓ " + art.mabec + " : « " + art.libelle + " »" + (n ? " — " + n + " logement(s) mis à jour." : " — déjà partout.") : "Libellé vidé : le plus fréquent est proposé.");
+  }));
+  wrap.querySelectorAll('[data-nccreer]').forEach(b => b.addEventListener("click", () => {
+    const cle = b.getAttribute("data-nccreer");
+    const q = attr => Array.from(wrap.querySelectorAll('[' + attr + ']')).find(x => x.getAttribute(attr) === cle);
+    backupSnapshot("Catalogue : article provisoire");
+    const res = catalogueCreerProvisoire(cle, (q("data-nclib") || {}).value, (q("data-ncprix") || {}).value);
+    if(!res.ok){ dire("Création refusée (" + res.motif + ")."); return; }
+    apresEdition("✓ " + res.mabec + " créé — " + res.rapport.logementsTouches + " logement(s) au nouveau prix.");
+  }));
+  wrap.querySelectorAll('input[data-catreel]').forEach(inp => inp.addEventListener("change", () => {
+    const art = catalogue[Number(inp.getAttribute("data-catreel"))];
+    if(!art || !inp.value.trim()) return;
+    const ancien = art.mabec;
+    backupSnapshot("Catalogue : codification " + ancien);
+    const res = catalogueRemplacerMabec(ancien, inp.value);
+    if(!res.ok){ dire("Codification refusée (" + res.motif + ")."); inp.value = ""; return; }
+    apresEdition("✓ " + ancien + " → " + inp.value.trim().toUpperCase() + " — " + res.logementsTouches + " logement(s) mis à jour.");
   }));
   const eco = document.getElementById("catEcoAtelier");
   if(eco) eco.addEventListener("change", () => {
@@ -27405,6 +27530,38 @@ function runTests(){
         const ex0 = extrapoleGlobale(uv, {});
         ok("plaquette : aucun levier → invitation, jamais un total inventé", [/Renseigne au moins un levier/.test(extrapoleTotalHTML(ex0)), extrapoleTotalHTML(ex0).indexOf("SIMULATION — si") === -1], [true, true]);
       } finally { lignes = lAv; }
+    }
+    /* v4.153 — plaquettes en essai non codées : MABEC provisoire PLA### (cas réels : SNGN 090416 F SL500, CNGX/SNGX LKT640) */
+    {
+      const lAv = lignes, cAv = catalogue;
+      const mkG = (id, nom, ref, code, prix) => ({ id, nom, ref, codeArticle: code, prix, aretes: 8, charniere: 50 });
+      try {
+        catalogue = [];
+        lignes = [ { id:"lp", nom:"EMAG 2", references:[ { id:"rp", ops:[ { id:"op", opCode:"OP40", nom:"OP40", scenarios:[ { id:"sp", name:"Prod", outils:[
+          { numero:"T548", logements:[ mkG("a1","D1","SNGN 090416 F SL500","NC",10.97), mkG("a2","Piste","SNGN 090416-F SL500","",9.56), mkG("a3","X","sngn090416f sl 500",undefined,7) ] },
+          { numero:"T549", logements:[ mkG("b1","D1","SNGN 090416 F SL500","NC",9.56), mkG("b2","D2","SNGN090416T00520 SN60","Z000 455 182",10.97), mkG("b3","D3","CNGX 120716 T02020LKT640","",5), mkG("b4","D4","CNGX 120716 T02020 LKT640","",38) ] } ] } ] } ] } ] } ];
+        const gr = plaquettesNonCodees();
+        ok("provisoire : les écritures à la main se regroupent (casse, espaces, tirets) et l'article codé est ignoré", [gr.length, gr.map(x => x.n).join(","), gr.some(x => /SN60/.test(x.cle))], [2, "4,2", false]);
+        ok("provisoire : 'NC' et vide comptent comme non codé ; le libellé retenu est le plus fréquent", [logementNonCode({codeArticle:"NC"}), logementNonCode({codeArticle:""}), logementNonCode({codeArticle:"IM02 1"}), gr[0].libelle], [true, true, false, "SNGN 090416 F SL500"]);
+        const html0 = catalogueRendu();
+        ok("provisoire : le catalogue vide propose de créer les articles non codés", [/Plaquettes en essai, non codées/.test(html0), /data-nccreer/.test(html0)], [true, true]);
+        ok("provisoire : prix refusé si absent ou nul, rien n'est écrit", [catalogueCreerProvisoire("SNGN 090416 F SL500", "", "").ok, catalogueCreerProvisoire("SNGN 090416 F SL500", "", "0").ok, lignes[0].references[0].ops[0].scenarios[0].outils[0].logements[0].codeArticle], [false, false, "NC"]);
+        const r1 = catalogueCreerProvisoire("SNGN 090416 F SL500", "", "7,90");
+        const logs = lignes[0].references[0].ops[0].scenarios[0].outils.flatMap(o => o.logements);
+        ok("provisoire : PLA001 posé sur les 4 logements, libellé unifié, prix 7,90 propagé", [r1.ok, r1.mabec, logs.filter(g => g.codeArticle === "PLA001").length, new Set(logs.filter(g => g.codeArticle === "PLA001").map(g => g.ref)).size, logs.filter(g => g.codeArticle === "PLA001").every(g => g.prix === 7.9)], [true, "PLA001", 4, 1, true]);
+        ok("provisoire : l'article du catalogue est créé et marqué provisoire ; l'article codé SN60 n'est pas touché", [catalogue.length, catalogue[0].mabec, mabecEstProvisoire(catalogue[0].mabec), catalogue[0].prix, logs.find(g => g.id === "b2").codeArticle], [1, "PLA001", true, 7.9, "Z000 455 182"]);
+        const r2 = catalogueCreerProvisoire("CNGX 120716 T02020 LKT640", "CNGX 120716 T02020 LKT640", "5");
+        ok("provisoire : le 2e article prend PLA002 ; le 38 € de la piste passe à 5 € (décision Benjamin)", [r2.mabec, logs.filter(g => g.codeArticle === "PLA002").length, logs.filter(g => g.codeArticle === "PLA002").every(g => g.prix === 5)], ["PLA002", 2, true]);
+        ok("provisoire : plus rien de non codé, plus de panneau", [plaquettesNonCodees().length, nonCodesHTML()], [0, ""]);
+        const nv = { id:"n1", nom:"D1", ref:"sngn 090416-f SL 500", codeArticle:"", prix:"" };
+        ok("provisoire : taper l'ISO (autre écriture) retrouve l'article et propose PLA001 + prix", [catalogueParIso(nv.ref).mabec, appliquerSuggestionCatalogue(nv, catalogueParIso(nv.ref)).join(","), nv.codeArticle, nv.prix], ["PLA001", "codeArticle,prix", "PLA001", 7.9]);
+        ok("provisoire : le catalogue rendu badge la ligne PLA et offre le champ 'Vrai MABEC'", [/badge-prov/.test(catalogueRendu()), /data-catreel/.test(catalogueRendu())], [true, true]);
+        ok("provisoire : regénérer depuis l'outil garde les PLA", [catalogueSeed().map(a => a.mabec).sort().join(",")], ["PLA001,PLA002,Z000 455 182"]);
+        ok("provisoire : codification refusée si MABEC vide, provisoire ou déjà pris", [catalogueRemplacerMabec("PLA001", "").ok, catalogueRemplacerMabec("PLA001", "PLA009").ok, catalogueRemplacerMabec("PLA001", "PLA002").ok, catalogueRemplacerMabec("PLA404", "IM02 1").ok], [false, false, false, false]);
+        const r3 = catalogueRemplacerMabec("PLA001", "im02 198  054");
+        ok("provisoire : le vrai MABEC remplace PLA001 sur l'article et sur ses 4 logements, prix et libellé intacts", [r3.ok, r3.logementsTouches, catalogue.some(a => a.mabec === "IM02 198 054"), catalogue.some(a => a.mabec === "PLA001"), logs.filter(g => g.codeArticle === "IM02 198 054").length, logs.find(g => g.id === "a1").prix], [true, 4, true, false, 4, 7.9]);
+        ok("provisoire : après codification, le prochain code libre reste PLA003", [prochainMabecProvisoire()], ["PLA003"]);
+      } finally { lignes = lAv; catalogue = cAv; }
     }
 
 
