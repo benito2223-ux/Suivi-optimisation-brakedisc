@@ -2713,6 +2713,12 @@ body.spk-has-rail {
   z-index: 80;
 }
 
+/* 4.154 — le dialogue (confirmation, alerte) passe AU-DESSUS des grands panneaux (Catalogue, Plan…) :
+   `.panel` (80) écrasait le z-index 120 de `.panel-dialog` et le dialogue s'ouvrait DERRIÈRE le catalogue. */
+.panel.panel-dialog {
+  z-index: 120;
+}
+
 .panel.panel-large,
 #backlogWrap {
   position: fixed !important;

@@ -14833,6 +14833,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.154.0", date:"10/11/2026", points:[
+    "<b>Supprimer un article du catalogue — avec ses logements en main.</b> Chaque ligne du catalogue a un bouton <b>🗑 Supprimer</b>. Si des logements portent cet article, l'outil les <b>liste</b>, explique ce que serait une suppression sèche (prix qui ne suit plus le catalogue, économies qui ne les comptent plus) et te laisse choisir : les <b>reporter sur un autre article</b> du catalogue (libellé et prix repris) ou les <b>laisser sans code</b>. Un instantané de secours est pris avant. Et « NC » n'est plus jamais un article : « Regénérer depuis l'outil » l'ignore, « Appliquer les prix » ne reprice plus les logements non codés — c'est ce qui faisait apparaître une ligne « NC » au catalogue."
+  ]},
   { version:"4.153.1", date:"10/11/2026", points:[
     "<b>Non codées : tu peux donner le vrai MABEC tout de suite, et l'encadré tient dans l'écran.</b> Chaque ligne de l'encadré « Plaquettes en essai, non codées » a un champ <b>Vrai MABEC</b> : renseigné, l'article est créé sous ce code (pas de PLA) ; si cet article existe déjà au catalogue, les logements y sont <b>rattachés</b> (libellé et prix du catalogue, rien n'est recréé) et la ligne le signale. Vide, c'est toujours un code provisoire PLA###. La mise en page est refaite : chaque plaquette est une carte qui passe à la ligne, le bouton ne déborde plus du cadre ni de la fenêtre."
   ]},
@@ -15733,7 +15736,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.153.1";
+const TOOL_VERSION = "4.154.0";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -19022,7 +19025,7 @@ function catalogueSeed(){
     (o.scenarios || []).forEach(sc => (sc.outils || []).forEach(ou => (ou.logements || []).forEach(g => {
       const mabec = String(g.codeArticle || g.mabec || "").trim().toUpperCase();
       const prix = parseFloat(g.prix);
-      if(!mabec || isNaN(prix) || prix <= 0) return;
+      if(!mabec || logementNonCode(g) || isNaN(prix) || prix <= 0) return;   /* v4.154 : « NC » = non codé, pas un article */
       const e = parMabec[mabec] = parMabec[mabec] || { mabec, iso: new Set(), prixVus: {}, aretesVus: {}, ddvVus: {} };
       if(String(g.ref || "").trim()) e.iso.add(String(g.ref).trim());
       e.prixVus[prix] = (e.prixVus[prix] || 0) + 1;
@@ -19054,6 +19057,7 @@ function catalogueAppliquer(cat, seulMabec){
   lignes.forEach(l => (l.references || []).forEach(r => (r.ops || []).forEach(o =>
     (o.scenarios || []).forEach(sc => (sc.outils || []).forEach(ou => (ou.logements || []).forEach(g => {
       const mabec = String(g.codeArticle || g.mabec || "").trim().toUpperCase();
+      if(logementNonCode(g)) return;   /* v4.154 : un article « NC » du catalogue ne reprix jamais les logements non codés */
       const nouveau = parMabec[mabec];
       if(nouveau === undefined) return;
       const avant = parseFloat(g.prix);
@@ -19314,7 +19318,7 @@ function catalogueCreerProvisoire(cle, libelleTexte, prixTexte, mabecReelTexte){
   const prix = catalogueNombre(prixTexte);
   const reel = String(mabecReelTexte || "").trim().toUpperCase().replace(/\s+/g, " ");
   if(!k) return { ok: false, motif: "désignation vide" };
-  if(reel && mabecEstProvisoire(reel)) return { ok: false, motif: "ce n'est pas un vrai MABEC" };
+  if(reel && (mabecEstProvisoire(reel) || reel === "NC")) return { ok: false, motif: "ce n'est pas un vrai MABEC" };
   const groupe = plaquettesNonCodees().find(x => x.cle === k);
   if(!groupe) return { ok: false, motif: "aucun logement non codé pour cette désignation" };
   const exist = reel ? catalogue.find(a => a.mabec === reel) : null;
@@ -19337,6 +19341,42 @@ function catalogueCreerProvisoire(cle, libelleTexte, prixTexte, mabecReelTexte){
   catalogue.sort((a, b) => a.mabec.localeCompare(b.mabec));
   return { ok: true, mabec, nb, rattache: false, rapport: catalogueAppliquer(null, mabec) };
 }
+/* v4.154 — SUPPRIMER UN ARTICLE DU CATALOGUE. Un article porté par des logements ne disparaît jamais en silence :
+   `catalogueUsagesMabec` les liste (pour l'avertissement), et `catalogueSupprimerArticle` les reporte sur un autre article
+   du catalogue (libellé + prix repris) ou, à défaut, les laisse SANS code (ils retournent dans « non codées »).
+   Le Plan de conversion de l'article supprimé est retiré (il n'a plus de support). */
+function catalogueUsagesMabec(mabec){
+  const m = String(mabec || "").trim().toUpperCase();
+  const out = [];
+  chaqueLogementDeLArbre((g, l, r, o, sc, ou) => {
+    if(String(g.codeArticle || g.mabec || "").trim().toUpperCase() !== m) return;
+    out.push({ ligne: l.nom || "", ref: (r && (r.nom || r.code)) || "", op: o.nom || o.opCode || "", scenario: sc.name || "", outil: ou.numero || "", correcteur: g.nom || "", libelle: g.ref || "" });
+  });
+  return out;
+}
+function catalogueSupprimerArticle(mabec, remplacement){
+  const m = String(mabec || "").trim().toUpperCase();
+  const r = String(remplacement || "").trim().toUpperCase();
+  const art = catalogue.find(a => a.mabec === m);
+  if(!art) return { ok: false, motif: "article inconnu" };
+  if(r === m) return { ok: false, motif: "l'article de remplacement est l'article supprimé" };
+  const cible = r ? catalogue.find(a => a.mabec === r) : null;
+  if(r && !cible) return { ok: false, motif: "article de remplacement inconnu" };
+  let nb = 0;
+  chaqueLogementDeLArbre(g => {
+    if(String(g.codeArticle || g.mabec || "").trim().toUpperCase() !== m) return;
+    if(String(g.mabec || "").trim().toUpperCase() === m) g.mabec = "";
+    g.codeArticle = cible ? cible.mabec : "";
+    if(cible){ const lib = cible.libelle || String(cible.iso || "").split(" | ")[0]; if(lib) g.ref = lib; }
+    nb++;
+  });
+  catalogue = catalogue.filter(a => a.mabec !== m);
+  const avantPlan = plan.length;
+  plan = plan.filter(x => x.mabec !== m);
+  const rapport = cible ? catalogueAppliquer(null, cible.mabec) : { logementsTouches: 0, mabecs: [] };
+  return { ok: true, logements: nb, remplace: cible ? cible.mabec : "", planRetire: avantPlan - plan.length, rapport };
+}
+
 /* le jour où Matis codifie : PLA### → vrai MABEC, sur l'article et sur tous ses logements. */
 function catalogueRemplacerMabec(ancien, nouveauTexte){
   const a = String(ancien || "").trim().toUpperCase();
@@ -19668,13 +19708,14 @@ function catalogueRendu(){
     </div>
     <div id="catStatut" class="panel-hint" role="status" aria-live="polite" style="min-height:1.4em;"></div>
     <table class="simul-table">
-      <thead><tr><th>Article (MABEC)</th><th>Libellés ISO vus</th><th>Libellé retenu</th><th>Prix</th><th>Codification Matis</th></tr></thead>
+      <thead><tr><th>Article (MABEC)</th><th>Libellés ISO vus</th><th>Libellé retenu</th><th>Prix</th><th>Codification Matis</th><th></th></tr></thead>
       <tbody>${catalogue.map((a, i) => `<tr${mabecEstProvisoire(a.mabec) ? ' class="cat-prov"' : ""}>
         <td class="mono">${escapeAttr(a.mabec)}${mabecEstProvisoire(a.mabec) ? `<br><span class="badge-prov" title="Code provisoire : cette plaquette est en essai, pas encore codifiée par Matis.">non codé</span><br><input class="cell" style="width:130px; margin-top:3px;" data-catreel="${i}" placeholder="Vrai MABEC" aria-label="Vrai MABEC de ${escapeAttr(a.mabec)}" title="Le jour où Matis codifie : tape le vrai MABEC ici, il remplace ${escapeAttr(a.mabec)} sur l'article et sur tous ses logements.">` : ""}${a.iso ? `<br><button type="button" class="ghost small" style="margin-top:3px;" data-usages-iso="${escapeAttr(a.iso)}" title="Où cette plaquette est utilisée dans l'usine (ligne, OP, quantité), et l'économie si elle était déployée au global">Où ?</button>` : ""}</td>
         <td style="font-size:12px; color:#888;">${(() => { const v = vus[a.mabec]; const k = v ? Object.keys(v) : []; return k.length ? k.map((x, kk) => `<button type="button" class="ghost small" style="margin:1px 0; text-align:left; white-space:normal;" data-catadopt="${i}|${kk}" title="Adopter ce libellé pour tout l'article">${escapeAttr(x)}${k.length > 1 ? ` <i>×${v[x]}</i>` : ""}</button>`).join("<br>") + (k.length > 1 ? `<br><span style="color:#b45309;">${k.length} libellés différents</span>` : "") : escapeAttr(a.iso || "—"); })()}</td>
         <td><input class="cell ref" style="min-width:230px;" data-catlib="${i}" value="${escapeAttr(catalogueLibelleRetenu(a, vus))}" title="Le libellé de cet article : modifie-le et valide (Entrée) — tous les logements de l'article le prennent aussitôt."></td>
         <td class="mono"><input class="cell" style="width:84px; font-family:var(--font-mono); text-align:right;" type="text" inputmode="decimal" data-catprix="${i}" value="${a.prix !== "" ? String(a.prix).replace(".", ",") : ""}" placeholder="€" title="Modifier le prix : tous les logements de cet article se mettent à jour, et les économies avec."> €${a.divergent ? ' <span style="color:#b45309;">(prix divergents dans l\'outil — Matis vérifie)</span>' : ""}</td>
         <td><label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--ink-soft);" title="Codification par le service administratif de Matis : prérequis du cycle de commande standard — sans elle, BADP seulement (montants et récurrence limités). L'âge de l'attente est la métrique.">dem.<input type="date" min="2025-01-01" max="2035-12-31" data-catdate="${i}" data-catfield="codificationDemandeeLe" value="${escapeAttr(a.codificationDemandeeLe || "")}"> cod.<input type="date" min="2025-01-01" max="2035-12-31" data-catdate="${i}" data-catfield="codifieLe" value="${escapeAttr(a.codifieLe || "")}">${(() => { const e = etatCodification(a); return e.etat === "codifie" ? ` <span class="pc-stat serie">codifié</span>` : e.etat === "demandee" ? ` <span class="pc-stat attente">${e.jours ?? 0} j</span>` : ""; })()}</label></td>
+        <td><button type="button" class="ghost small" data-catsupp="${i}" title="Supprimer cet article du catalogue — l'outil liste d'abord les logements concernés et propose un article de remplacement.">🗑 Supprimer</button></td>
       </tr>`).join("")}</tbody>
     </table>`;
 }
@@ -19719,6 +19760,35 @@ function renderCatalogue(){ renderCatalogueDatlists();
     const res = catalogueCreerProvisoire(cle, (q("data-nclib") || {}).value, (q("data-ncprix") || {}).value, (q("data-ncreel") || {}).value);
     if(!res.ok){ dire("Création refusée (" + res.motif + ")."); return; }
     apresEdition("✓ " + res.mabec + (res.rattache ? " : logements rattachés à l'article du catalogue" : " créé") + " — " + res.nb + " logement(s) codé(s), " + res.rapport.logementsTouches + " au prix changé.");
+  }));
+  wrap.querySelectorAll('[data-catsupp]').forEach(b => b.addEventListener("click", () => {
+    const art = catalogue[Number(b.getAttribute("data-catsupp"))];
+    if(!art) return;
+    const us = catalogueUsagesMabec(art.mabec);
+    const planAssocie = plan.some(x => x.mabec === art.mabec);
+    const autres = catalogue.filter(a => a.mabec !== art.mabec);
+    const liste = us.slice(0, 8).map(u => `<li>${escapeAttr([u.ligne, u.op, u.outil, u.correcteur].filter(Boolean).join(" · "))} <span style="color:#888;">— ${escapeAttr(u.libelle)}</span></li>`).join("") + (us.length > 8 ? `<li>… et ${us.length - 8} autre(s)</li>` : "");
+    const nomArt = escapeAttr(art.mabec) + (art.libelle || art.iso ? " (" + escapeAttr(art.libelle || String(art.iso).split(" | ")[0]) + ")" : "");
+    const html = us.length
+      ? `<p><b>⚠ Cette référence est utilisée par ${us.length} logement(s)</b> : ${nomArt}.</p>
+         <ul style="margin:6px 0 10px 18px;">${liste}</ul>
+         <p>Supprimer l'article <b>sans remplacement</b> les laisserait avec un code introuvable : leur prix ne suivrait plus le catalogue, et les économies, le Plan de conversion et la vue plaquette ne les compteraient plus. Choisis ce qu'ils deviennent :</p>
+         <label style="display:block; margin:8px 0;">Que faire de ces logements ?<br>
+           <select id="catSuppRempl" style="width:100%; max-width:100%; margin-top:4px;">
+             <option value="">Les laisser sans code (ils réapparaissent dans « non codées »)</option>
+             ${autres.map(a => `<option value="${escapeAttr(a.mabec)}">Les reporter sur ${escapeAttr(a.mabec)} — ${escapeAttr(a.libelle || String(a.iso || "").split(" | ")[0] || "sans libellé")}${a.prix !== "" ? " (" + fmt(a.prix, 2) + " €)" : ""}</option>`).join("")}
+           </select></label>
+         <p style="color:#888;">Reporter sur un article reprend son libellé et son prix dans ces logements. Un instantané de secours est pris avant.${planAssocie ? " <b>Le plan de conversion de cet article sera retiré.</b>" : ""}</p>`
+      : `<p>Aucun logement n'utilise ${nomArt}. Il sera simplement retiré du catalogue.${planAssocie ? " Son plan de conversion sera retiré." : ""}</p>`;
+    Promise.resolve(dialogueConfirmer("", { titre: "Supprimer l'article " + art.mabec + " ?", okLabel: "Supprimer", danger: true, html })).then(ok => {
+      if(!ok) return;
+      const sel = document.getElementById("catSuppRempl");
+      const rempl = us.length && sel ? sel.value : "";
+      backupSnapshot("Catalogue : suppression de " + art.mabec);
+      const res = catalogueSupprimerArticle(art.mabec, rempl);
+      if(!res.ok){ dire("Suppression refusée (" + res.motif + ")."); return; }
+      apresEdition("✓ " + art.mabec + " supprimé" + (res.logements ? " — " + res.logements + " logement(s) " + (res.remplace ? "reporté(s) sur " + res.remplace : "laissé(s) sans code") + "." : "."));
+    });
   }));
   wrap.querySelectorAll('input[data-catreel]').forEach(inp => inp.addEventListener("change", () => {
     const art = catalogue[Number(inp.getAttribute("data-catreel"))];
@@ -27590,7 +27660,7 @@ function runTests(){
         const tl = lignes[0].references[0].ops[0].scenarios[0].outils[0].logements;
         tl.push(mkG("c1","D5","CNMX 120716 T02020 LKT640","",6), mkG("c2","D6","cnmx120716t02020lkt640","NC",6));
         const gC = plaquettesNonCodees().find(x => x.cle === "CNMX120716T02020LKT640");
-        ok("vrai MABEC : un groupe sans article au catalogue n'a pas d'existant ; un code provisoire n'est pas un vrai MABEC", [gC.existant, catalogueCreerProvisoire(gC.cle, "", "7,96", "PLA050").ok], ["", false]);
+        ok("vrai MABEC : un groupe sans article au catalogue n'a pas d'existant ; ni un code provisoire ni « NC » ne sont de vrais MABEC", [gC.existant, catalogueCreerProvisoire(gC.cle, "", "7,96", "PLA050").ok, catalogueCreerProvisoire(gC.cle, "", "7,96", "nc").ok], ["", false, false]);
         ok("vrai MABEC : sans article au catalogue, le prix reste obligatoire", [catalogueCreerProvisoire(gC.cle, "", "", "IM02 137 022").ok, tl.find(g => g.id === "c1").codeArticle], [false, ""]);
         const rC = catalogueCreerProvisoire(gC.cle, "", "7,96", "im02 137  022");
         ok("vrai MABEC : l'article est créé SOUS CE MABEC (pas de PLA) et ses 2 logements prennent le prix", [rC.ok, rC.mabec, rC.rattache, tl.filter(g => g.codeArticle === "IM02 137 022").length, tl.find(g => g.id === "c2").prix, catalogue.some(a => a.mabec === "IM02 137 022")], [true, "IM02 137 022", false, 2, 7.96, true]);
@@ -27600,6 +27670,30 @@ function runTests(){
         const rD = catalogueCreerProvisoire(gD.cle, "", "99", "IM02 137 022");
         ok("vrai MABEC : le rattachement reprend le prix et le libellé du catalogue (le 99 tapé est ignoré), sans doublon", [rD.ok, rD.rattache, tl.find(g => g.id === "c3").codeArticle, tl.find(g => g.id === "c3").prix, catalogue.filter(a => a.mabec === "IM02 137 022").length], [true, true, "IM02 137 022", 7.96, 1]);
       } finally { lignes = lAv; catalogue = cAv; }
+    }
+    /* v4.154 — supprimer un article du catalogue (cas réel : une ligne « NC » au catalogue) */
+    {
+      const lAv = lignes, cAv = catalogue, pAv = plan;
+      const mkG = (id, nom, ref, code, prix) => ({ id, nom, ref, codeArticle: code, prix, aretes: 8, charniere: 50 });
+      try {
+        catalogue = [ normalizeArticleCat({ mabec: "NC", iso: "SNGN 090416 F SL500", prix: 10.97 }), normalizeArticleCat({ mabec: "IM02 1", libelle: "CNGX LKT640", prix: 5 }), normalizeArticleCat({ mabec: "Z9", prix: 3 }) ];
+        plan = [ normalizePlanEntry({ mabec: "Z9", isoCible: "X", prixCible: 2, etat: "proposée" }) ];
+        lignes = [ { id:"ls", nom:"EMAG 1", references:[ { id:"rs", ops:[ { id:"os", opCode:"OP40", nom:"OP40", scenarios:[ { id:"ss", name:"Prod", outils:[
+          { numero:"T1", logements:[ mkG("n1","D1","SNGN 090416 F SL500","NC",10.97), mkG("n2","D2","SNGN 090416 F SL500","nc",9.56), mkG("k1","D3","CNGX LKT640","IM02 1",5), mkG("z1","D4","ZZ","Z9",3) ] } ] } ] } ] } ] } ];
+        const L = lignes[0].references[0].ops[0].scenarios[0].outils[0].logements;
+        ok("suppression : « NC » n'est jamais un article — la génération depuis l'outil l'ignore", [catalogueSeed().map(a => a.mabec).sort().join(",")], ["IM02 1,Z9"]);
+        catalogueAppliquer(null);
+        ok("suppression : « Appliquer les prix » ne reprice jamais un logement non codé", [L[0].prix, L[1].prix], [10.97, 9.56]);
+        ok("suppression : les usages d'un article sont listés (casse ignorée), avec leur chemin", [catalogueUsagesMabec("NC").length, catalogueUsagesMabec("nc")[0].ligne, catalogueUsagesMabec("nc")[0].op, catalogueUsagesMabec("IM02 1").length], [2, "EMAG 1", "OP40", 1]);
+        ok("suppression : refus — inconnu, remplaçant inconnu, remplaçant = soi-même ; rien n'est écrit", [catalogueSupprimerArticle("QQ", "").ok, catalogueSupprimerArticle("NC", "XX").ok, catalogueSupprimerArticle("NC", "NC").ok, catalogue.length, L[0].codeArticle], [false, false, false, 3, "NC"]);
+        const r1 = catalogueSupprimerArticle("NC", "IM02 1");
+        ok("suppression : les 2 logements sont reportés sur l'article choisi (libellé et prix repris), l'article NC disparaît", [r1.ok, r1.logements, r1.remplace, L[0].codeArticle, L[1].codeArticle, L[0].ref, L[0].prix, L[1].prix, catalogue.some(a => a.mabec === "NC")], [true, 2, "IM02 1", "IM02 1", "IM02 1", "CNGX LKT640", 5, 5, false]);
+        ok("suppression : le logement d'un autre article n'est pas touché", [L[3].codeArticle, L[3].prix], ["Z9", 3]);
+        const r2 = catalogueSupprimerArticle("Z9", "");
+        ok("suppression sans remplaçant : le logement n'a plus de code, son plan est retiré, il redevient « non codé »", [r2.ok, r2.logements, r2.planRetire, L[3].codeArticle, plan.length, plaquettesNonCodees().map(g => g.cle).join(",")], [true, 1, 1, "", 0, "ZZ"]);
+        const r3 = catalogueSupprimerArticle("IM02 1", "");
+        ok("suppression : le dernier article porté par 3 logements part sans remplaçant, le catalogue est vide", [r3.logements, catalogue.length, plaquettesNonCodees().length], [3, 0, 2]);
+      } finally { lignes = lAv; catalogue = cAv; plan = pAv; }
     }
 
 
