@@ -853,7 +853,7 @@ details.outil-carte.drag-cible{outline:2px dashed var(--blue); outline-offset:3p
 .cal-j.essai{outline:2px solid var(--blue);} .cal-j.coulee{background:var(--amber-bg); border-color:var(--amber);}
 .cal-leg{font-size:11px; padding:1px 6px; border-radius:999px; border:1px solid var(--border);} .cal-leg.essai{border-color:var(--blue);} .cal-leg.coulee{border-color:var(--amber); background:var(--amber-bg);}
 .mat-badge{font-size:11.5px; font-weight:700; border-radius:999px; padding:1px 9px; border:1px solid var(--border);}
-.mat-badge.ok{color:var(--green); border-color:var(--green);} .mat-badge.jeune{color:var(--amber); background:var(--amber-bg); border-color:var(--amber);}
+.mat-badge.ok{color:var(--green); border-color:var(--green);} .mat-badge.jeune{color:var(--red); border-color:var(--red);} .mat-badge.frais{color:var(--amber); background:var(--amber-bg); border-color:var(--amber);}
 .mat-auto{font-size:10.5px; color:var(--ink-faint); border:1px solid var(--border); border-radius:999px; padding:0 6px;}
 /* v4.155 — écarts avec la référence, sur les tuiles de la composition */
 .ap-ecart{font-size:11px; font-weight:700; color:var(--amber); background:var(--amber-bg); border:1px solid var(--amber); border-radius:999px; padding:1px 8px;}
@@ -10483,9 +10483,9 @@ function reattribuerEssai(scSource, essaiId, scCible){
    Sur chaque brut est marqué le JOUR DE L'ANNÉE de sa coulée (1 à 366). L'essai a une date : l'outil en tire son jour de
    l'année (J314 = 10 novembre 2026), et la maturité du brut (âge en jours au moment de l'essai) se CALCULE : on saisit le
    jour marqué sur le brut, plus rien à compter à la main. Le passage d'année est géré (coulée J360, essai le 5 janvier
-   = 10 jours). La maturité est validée contre un SEUIL mini (réglable, 4 jours par défaut — la valeur des essais de
-   référence de l'atelier, à ajuster) : en dessous, l'essai le dit (« bruts jeunes »). Information, jamais un verdict. */
-const MATURITE_SEUIL_DEFAUT = 4;
+   = 10 jours). La maturité est classée en TROIS niveaux (règle Benjamin, seuils réglables) : MÛRS à partir de 5 jours,
+   FRAIS de 3 à 4 jours, NON MÛRS jusqu'à 2 jours. Information, jamais un verdict ni un blocage. */
+const MATURITE_MUR_DEFAUT = 5, MATURITE_FRAIS_DEFAUT = 3;
 function estBissextile(a){ return (a % 4 === 0 && a % 100 !== 0) || a % 400 === 0; }
 function jourDeLAnnee(iso){
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ""));
@@ -10525,16 +10525,19 @@ function dateDeCoulee(dateEssai, jourCoulee){
   const a = parseInt(String(dateEssai).slice(0, 4), 10);
   return jC <= jE ? dateDepuisJour(a, jC) : dateDepuisJour(a - 1, jC);
 }
-function maturiteSeuil(){
-  const v = parseFloat(planReglages && planReglages.maturiteMin);
-  return (!isNaN(v) && v >= 0) ? v : MATURITE_SEUIL_DEFAUT;
+/* les deux seuils, en jours : { mur, frais } (frais ≤ mur toujours) */
+function maturiteSeuils(){
+  const lire = (v, def) => { const n = parseFloat(v); return (!isNaN(n) && n >= 0) ? n : def; };
+  const mur = lire(planReglages && planReglages.maturiteMur, MATURITE_MUR_DEFAUT);
+  const frais = Math.min(lire(planReglages && planReglages.maturiteFrais, MATURITE_FRAIS_DEFAUT), mur);
+  return { mur, frais };
 }
-/* rend { etat: "ok"|"jeune"|null, maturite, seuil } */
-function maturiteValidation(maturite, seuil){
+/* rend { etat: "ok" (mûrs) | "frais" | "jeune" (non mûrs) | null, maturite, mur, frais } */
+function maturiteValidation(maturite, seuils){
   const m = (maturite === "" || maturite == null) ? NaN : parseFloat(maturite);
-  const sv = (seuil === undefined) ? maturiteSeuil() : seuil;
-  if(isNaN(m)) return { etat: null, maturite: null, seuil: sv };
-  return { etat: m >= sv ? "ok" : "jeune", maturite: m, seuil: sv };
+  const sv = seuils || maturiteSeuils();
+  if(isNaN(m)) return { etat: null, maturite: null, mur: sv.mur, frais: sv.frais };
+  return { etat: m >= sv.mur ? "ok" : (m >= sv.frais ? "frais" : "jeune"), maturite: m, mur: sv.mur, frais: sv.frais };
 }
 /* date ou jour de coulée modifié : la maturité se recalcule (sinon la valeur saisie à la main reste) */
 function synchroMaturiteEssai(es){
@@ -10597,8 +10600,8 @@ document.addEventListener("click", (e) => {
 document.addEventListener("change", (e) => {
   const t = e.target;
   if(!t || !t.matches || !t.matches("[data-seuil-maturite]")) return;
-  const v = parseFloat(t.value);
-  planReglages = Object.assign({}, planReglages, { maturiteMin: (isNaN(v) || v < 0) ? MATURITE_SEUIL_DEFAUT : v });
+  const v = parseFloat(t.value), cle = t.getAttribute("data-seuil-maturite") === "frais" ? "maturiteFrais" : "maturiteMur";
+  planReglages = Object.assign({}, planReglages, { [cle]: (isNaN(v) || v < 0) ? (cle === "maturiteFrais" ? MATURITE_FRAIS_DEFAUT : MATURITE_MUR_DEFAUT) : v });
   saveData(); render();
 });
 
@@ -10711,8 +10714,9 @@ function essaiCardHTML(sc, essai, interactive){
         const auto = jC !== null && maturiteDepuisCoulee(essai.date, essai.jourCoulee) !== null;
         const val = maturiteValidation(essai.maturiteBruts);
         const dc = dateDeCoulee(essai.date, essai.jourCoulee);
-        const badge = val.etat === "ok" ? `<span class="mat-badge ok" title="Maturité des bruts ≥ seuil mini">✓ mûrs (≥ ${fmt(val.seuil, 0)} j)</span>`
-          : val.etat === "jeune" ? `<span class="mat-badge jeune" title="Bruts plus jeunes que le seuil mini : l'usure et les efforts peuvent ne pas être comparables à ceux d'essais sur bruts mûrs.">⚠ bruts jeunes (${fmt(val.maturite, 0)} j &lt; ${fmt(val.seuil, 0)} j)</span>` : "";
+        const badge = val.etat === "ok" ? `<span class="mat-badge ok" title="Bruts mûrs : ${fmt(val.mur, 0)} jours ou plus">✓ mûrs (${fmt(val.maturite, 0)} j ≥ ${fmt(val.mur, 0)} j)</span>`
+          : val.etat === "frais" ? `<span class="mat-badge frais" title="Bruts frais : de ${fmt(val.frais, 0)} à ${fmt(val.mur - 1, 0)} jours — pas encore mûrs">◐ frais (${fmt(val.maturite, 0)} j)</span>`
+          : val.etat === "jeune" ? `<span class="mat-badge jeune" title="Bruts non mûrs (moins de ${fmt(val.frais, 0)} jours) : l'usure et les efforts peuvent ne pas être comparables à ceux d'essais sur bruts mûrs.">⚠ non mûrs (${fmt(val.maturite, 0)} j &lt; ${fmt(val.frais, 0)} j)</span>` : "";
         const champMat = (interactive && !auto)
           ? `<input class="cell" style="width:60px; min-width:60px;" type="number" step="1" min="0" data-id="${sc.id}" data-essai="${essai.id}" data-field="maturiteBruts" value="${essai.maturiteBruts ?? ""}">`
           : `<b title="${auto ? "Calculée : date de l'essai − jour de coulée" : ""}">${essai.maturiteBruts === "" || essai.maturiteBruts == null ? "—" : essai.maturiteBruts}</b>`;
@@ -10723,7 +10727,7 @@ function essaiCardHTML(sc, essai, interactive){
         return `${champMat} <span>jour${parseFloat(essai.maturiteBruts) > 1 ? "s" : ""}</span>${auto ? `<span class="mat-auto" title="Calculée automatiquement">calculée</span>` : ""}
           ${coulee}${dc ? `<span style="color:var(--ink-faint);">(coulée le ${dc.split("-").reverse().join("/")})</span>` : ""}
           ${jE !== null ? `<span style="color:var(--ink-faint);" title="Jour de l'année de la date de l'essai">· essai = J${jE}</span>` : ""} ${badge}
-          ${interactive ? `<span style="color:var(--ink-faint);">seuil mini <input class="cell" style="width:48px; min-width:44px;" type="number" step="1" min="0" data-seuil-maturite value="${maturiteSeuil()}" title="Maturité minimale des bruts, en jours — valable pour tous les essais"> j</span>` : ""}`;
+          ${interactive ? `<span style="color:var(--ink-faint);">mûrs dès <input class="cell" style="width:46px; min-width:42px;" type="number" step="1" min="0" data-seuil-maturite="mur" value="${maturiteSeuils().mur}" title="Maturité à partir de laquelle les bruts sont mûrs (jours) — valable pour tous les essais"> j · frais dès <input class="cell" style="width:46px; min-width:42px;" type="number" step="1" min="0" data-seuil-maturite="frais" value="${maturiteSeuils().frais}" title="Maturité à partir de laquelle les bruts sont frais, en dessous : non mûrs (jours)"> j</span>` : ""}`;
       })()}
       <span style="margin-left:auto; color:var(--ink-faint);">Taux hors tolérance de l'essai : <b style="color:var(--ink-soft);">${es.tauxHorsTol === null ? "—" : fmt(es.tauxHorsTol,0) + " %"}</b></span>
     </div>`;
@@ -15181,6 +15185,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.159.1", date:"10/11/2026", points:[
+    "<b>La maturité des bruts en trois niveaux.</b> <b>✓ Mûrs</b> à partir de 5 jours, <b>◐ frais</b> de 3 à 4 jours, <b>⚠ non mûrs</b> jusqu'à 2 jours. Les deux seuils se règlent dans la fiche d'essai (« mûrs dès … j · frais dès … j », valables pour tous les essais)."
+  ]},
   { version:"4.159.0", date:"10/11/2026", points:[
     "<b>Le jour de l'année et la maturité des bruts, calculée.</b> Sur chaque brut est marqué le jour de l'année de sa coulée : dans la fiche d'essai, saisis ce <b>jour de coulée</b> (ou clique-le dans le <b>📅 calendrier</b>, où chaque date porte son numéro J…) — la <b>maturité se calcule</b> toute seule (date de l'essai − jour de coulée, passage d'année géré) et l'outil affiche le jour de l'année de l'essai (« essai = J314 »). Elle est <b>validée contre un seuil mini</b> réglable (4 jours par défaut, à ajuster dans la fiche) : <b>✓ mûrs</b> ou <b>⚠ bruts jeunes</b>. Sans jour de coulée, tu peux toujours saisir la maturité à la main."
   ]},
@@ -16107,7 +16114,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.159.0";
+const TOOL_VERSION = "4.159.1";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -28457,9 +28464,13 @@ function runTests(){
       const pAv = planReglages;
       try {
         planReglages = { relSpk: 100 };
-        ok("maturité : seuil par défaut 4 j ; ≥ seuil = mûrs, en dessous = jeunes, sans valeur = rien", [maturiteSeuil(), maturiteValidation(4).etat, maturiteValidation(3).etat, maturiteValidation("").etat, maturiteValidation(9, 10).etat], [4, "ok", "jeune", null, "jeune"]);
-        planReglages = { maturiteMin: 7 };
-        ok("maturité : le seuil réglé s'applique", [maturiteSeuil(), maturiteValidation(6).etat, maturiteValidation(7).etat], [7, "jeune", "ok"]);
+        const niv = m => maturiteValidation(m).etat;
+        ok("maturité : mûrs dès 5 j, frais de 3 à 4 j, non mûrs jusqu'à 2 j (règle Benjamin), sans valeur = rien", [niv(5), niv(9), niv(4), niv(3), niv(2), niv(0), niv(""), niv(null)], ["ok", "ok", "frais", "frais", "jeune", "jeune", null, null]);
+        ok("maturité : seuils par défaut 5 et 3", [maturiteSeuils().mur, maturiteSeuils().frais], [5, 3]);
+        planReglages = { maturiteMur: 7, maturiteFrais: 4 };
+        ok("maturité : les seuils réglés s'appliquent", [maturiteSeuils().mur, maturiteSeuils().frais, niv(6), niv(7), niv(3)], [7, 4, "frais", "ok", "jeune"]);
+        planReglages = { maturiteMur: 3, maturiteFrais: 6 };
+        ok("maturité : le seuil « frais » ne dépasse jamais le seuil « mûrs »", [maturiteSeuils().frais, niv(3), niv(2)], [3, "ok", "jeune"]);
         const es = { date: "2026-11-10", jourCoulee: 305, maturiteBruts: "" };
         ok("essai : la maturité se recalcule depuis la date et le jour de coulée", [synchroMaturiteEssai(es), es.maturiteBruts], [true, 9]);
         es.date = "2026-11-12"; synchroMaturiteEssai(es);
