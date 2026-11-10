@@ -19601,7 +19601,7 @@ function nonCodesHTML(){
   const pl = prochainMabecProvisoire();
   return `<div class="cat-noncodes">
     <h4>🧩 Plaquettes en essai, non codées — ${gr.length} désignation(s)</h4>
-    <p class="panel-hint">Ces logements n'ont pas de MABEC (vide ou « NC »), donc le catalogue ne les voit pas : un prix corrigé ne s'y propage pas. <b>Créer l'article provisoire</b> pose un code <b>${escapeAttr(pl)}</b>, <b>PLA002</b>… sur tous les logements de la désignation (écritures à la main regroupées : majuscules, espaces et tirets ignorés), unifie le libellé et applique le prix. Quand Matis codifie, tape le vrai MABEC sur la ligne de l'article.</p>
+    <p class="panel-hint">Ces logements n'ont pas de MABEC (vide ou « NC »), donc le catalogue ne les voit pas : un prix corrigé ne s'y propage pas. <b>Créer l'article provisoire</b> pose un code provisoire <b>PLA###</b> (prochain : <b>${escapeAttr(pl)}</b>) sur tous les logements de la désignation (écritures à la main regroupées : majuscules, espaces et tirets ignorés), unifie le libellé et applique le prix. Quand Matis codifie, tape le vrai MABEC sur la ligne de l'article.</p>
     <table class="simul-table"><thead><tr><th>Libellé retenu</th><th>Écritures vues</th><th>Logements</th><th>Prix vus</th><th>Prix catalogue €</th><th></th></tr></thead>
     <tbody>${gr.map(g => `<tr>
       <td><input class="cell ref" style="min-width:230px;" data-nclib="${escapeAttr(g.cle)}" value="${escapeAttr(g.libelle)}" aria-label="Libellé retenu"></td>
