@@ -843,6 +843,18 @@ details.outil-carte.drag-cible{outline:2px dashed var(--blue); outline-offset:3p
   border-radius:var(--radius-sm); padding:1px 6px;}
 .os-desc{font-size:13px; color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:34ch;}
 .os-logements{font-family:var(--font-mono); font-size:12px; color:var(--ink-faint);}
+/* v4.159 — calendrier des jours de l'année + maturité des bruts */
+.cal-entete{display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;}
+.cal-sem, .cal-grille{display:grid; grid-template-columns:repeat(7, 1fr); gap:3px; text-align:center;}
+.cal-sem span{font-size:11px; color:var(--ink-faint); font-weight:600;}
+.cal-j{display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:44px; padding:2px 0; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); cursor:pointer; line-height:1.15;}
+.cal-j b{font-size:14px; color:var(--ink);} .cal-j small{font-size:10px; color:var(--ink-faint); font-family:var(--font-mono);}
+.cal-j:hover{background:var(--surface-alt);}
+.cal-j.essai{outline:2px solid var(--blue);} .cal-j.coulee{background:var(--amber-bg); border-color:var(--amber);}
+.cal-leg{font-size:11px; padding:1px 6px; border-radius:999px; border:1px solid var(--border);} .cal-leg.essai{border-color:var(--blue);} .cal-leg.coulee{border-color:var(--amber); background:var(--amber-bg);}
+.mat-badge{font-size:11.5px; font-weight:700; border-radius:999px; padding:1px 9px; border:1px solid var(--border);}
+.mat-badge.ok{color:var(--green); border-color:var(--green);} .mat-badge.jeune{color:var(--amber); background:var(--amber-bg); border-color:var(--amber);}
+.mat-auto{font-size:10.5px; color:var(--ink-faint); border:1px solid var(--border); border-radius:999px; padding:0 6px;}
 /* v4.155 — écarts avec la référence, sur les tuiles de la composition */
 .ap-ecart{font-size:11px; font-weight:700; color:var(--amber); background:var(--amber-bg); border:1px solid var(--amber); border-radius:999px; padding:1px 8px;}
 .ap-ecart-ok{font-size:11px; color:var(--ink-faint);}
@@ -4439,7 +4451,7 @@ function normalizeScenario(sc){
     const photos = (e.photos || []).map(p => Object.assign(
       { id: p.id || ("ph"+Math.random().toString(36).slice(2)), filename:"", addedAt:"", legende:"", crop:null, annotations:[] }, p));
     return Object.assign(
-      { id: e.id || ("e"+Math.random().toString(36).slice(2)), titre:"", date:"", equipe:"", operateur:"", observations:"", conclusion:"", maturiteBruts:"", prelevements:[],
+      { id: e.id || ("e"+Math.random().toString(36).slice(2)), titre:"", date:"", equipe:"", operateur:"", observations:"", conclusion:"", maturiteBruts:"", jourCoulee:"", prelevements:[],
         // tracabilite terrain (v3.11) : sans ces defauts, un essai charge depuis un JSON
         // anterieur a cette version porte des champs undefined plutot que des chaines vides
         redigePar:"", dateFin:"", heureDebut:"", heureFin:"", programme:"", programmeGauche:"", programmeDroit:"",
@@ -5552,7 +5564,7 @@ function essaiRapportHTML(sc, essai, photosRap){
     <div><div class="l">Équipe</div><div class="v">${escapeAttr(essai.equipe) || "—"}</div></div>
     <div><div class="l">Opérateur</div><div class="v">${escapeAttr(essai.operateur) || "—"}</div></div>
     <div><div class="l">Rédigé par</div><div class="v">${escapeAttr(essai.redigePar) || "—"}</div></div>
-    <div><div class="l">Maturité des bruts</div><div class="v">${essai.maturiteBruts === "" || essai.maturiteBruts == null ? "—" : essai.maturiteBruts + " jour(s)"}</div></div>
+    <div><div class="l">Maturité des bruts</div><div class="v">${essai.maturiteBruts === "" || essai.maturiteBruts == null ? "—" : essai.maturiteBruts + " jour(s)"}${jourCouleeValide(essai.jourCoulee) !== null ? " (coulée J" + jourCouleeValide(essai.jourCoulee) + ")" : ""}</div></div>
     ${sc.emag1
       ? `<div><div class="l">Programme</div><div class="v">Gauche : ${escapeAttr(essai.programmeGauche) || "—"} · Droit : ${escapeAttr(essai.programmeDroit) || "—"}</div></div>`
       : (essai.programme ? `<div><div class="l">Programme</div><div class="v">${escapeAttr(essai.programme)}</div></div>` : "")}
@@ -10467,6 +10479,129 @@ function reattribuerEssai(scSource, essaiId, scCible){
   return essai;
 }
 
+/* ═══ v4.159 — LE JOUR DE L'ANNÉE ET LA MATURITÉ DES BRUTS, CALCULÉE ═════════════════════════════════
+   Sur chaque brut est marqué le JOUR DE L'ANNÉE de sa coulée (1 à 366). L'essai a une date : l'outil en tire son jour de
+   l'année (J314 = 10 novembre 2026), et la maturité du brut (âge en jours au moment de l'essai) se CALCULE : on saisit le
+   jour marqué sur le brut, plus rien à compter à la main. Le passage d'année est géré (coulée J360, essai le 5 janvier
+   = 10 jours). La maturité est validée contre un SEUIL mini (réglable, 4 jours par défaut — la valeur des essais de
+   référence de l'atelier, à ajuster) : en dessous, l'essai le dit (« bruts jeunes »). Information, jamais un verdict. */
+const MATURITE_SEUIL_DEFAUT = 4;
+function estBissextile(a){ return (a % 4 === 0 && a % 100 !== 0) || a % 400 === 0; }
+function jourDeLAnnee(iso){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ""));
+  if(!m) return null;
+  const a = +m[1], mo = +m[2], j = +m[3];
+  if(mo < 1 || mo > 12 || j < 1) return null;
+  const jm = [31, estBissextile(a) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  if(j > jm[mo - 1]) return null;
+  return jm.slice(0, mo - 1).reduce((x, y) => x + y, 0) + j;
+}
+function dateDepuisJour(annee, jour){
+  const a = parseInt(annee, 10), n = parseInt(jour, 10);
+  if(isNaN(a) || isNaN(n) || n < 1 || n > (estBissextile(a) ? 366 : 365)) return null;
+  const jm = [31, estBissextile(a) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  let r = n, mo = 0;
+  while(r > jm[mo]){ r -= jm[mo]; mo++; }
+  return a + "-" + String(mo + 1).padStart(2, "0") + "-" + String(r).padStart(2, "0");
+}
+function jourCouleeValide(j){
+  const n = parseFloat(j);
+  return (j !== "" && j != null && Number.isInteger(n) && n >= 1 && n <= 366) ? n : null;
+}
+/* maturité = jours entre la coulée et l'essai ; une coulée « dans le futur » de l'année est celle de l'année d'avant */
+function maturiteDepuisCoulee(dateEssai, jourCoulee){
+  const jE = jourDeLAnnee(dateEssai), jC = jourCouleeValide(jourCoulee);
+  if(jE === null || jC === null) return null;
+  if(jC <= jE) return jE - jC;
+  const aPrec = parseInt(String(dateEssai).slice(0, 4), 10) - 1;
+  const nbPrec = estBissextile(aPrec) ? 366 : 365;
+  if(jC > nbPrec) return null;
+  return (nbPrec - jC) + jE;
+}
+/* la date de coulée que dit ce jour marqué (déduite de la date de l'essai) */
+function dateDeCoulee(dateEssai, jourCoulee){
+  const jE = jourDeLAnnee(dateEssai), jC = jourCouleeValide(jourCoulee);
+  if(jE === null || jC === null) return null;
+  const a = parseInt(String(dateEssai).slice(0, 4), 10);
+  return jC <= jE ? dateDepuisJour(a, jC) : dateDepuisJour(a - 1, jC);
+}
+function maturiteSeuil(){
+  const v = parseFloat(planReglages && planReglages.maturiteMin);
+  return (!isNaN(v) && v >= 0) ? v : MATURITE_SEUIL_DEFAUT;
+}
+/* rend { etat: "ok"|"jeune"|null, maturite, seuil } */
+function maturiteValidation(maturite, seuil){
+  const m = (maturite === "" || maturite == null) ? NaN : parseFloat(maturite);
+  const sv = (seuil === undefined) ? maturiteSeuil() : seuil;
+  if(isNaN(m)) return { etat: null, maturite: null, seuil: sv };
+  return { etat: m >= sv ? "ok" : "jeune", maturite: m, seuil: sv };
+}
+/* date ou jour de coulée modifié : la maturité se recalcule (sinon la valeur saisie à la main reste) */
+function synchroMaturiteEssai(es){
+  const m = maturiteDepuisCoulee(es.date, es.jourCoulee);
+  if(m !== null){ es.maturiteBruts = m; return true; }
+  return false;
+}
+const MOIS_FR = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+/* une grille de mois (lundi en premier) : chaque case porte le jour du mois ET son jour de l'année */
+function calendrierMoisHTML(annee, mois, dateEssai, jourCoulee){
+  const premier = new Date(Date.UTC(annee, mois, 1));
+  const decal = (premier.getUTCDay() + 6) % 7;
+  const nb = new Date(Date.UTC(annee, mois + 1, 0)).getUTCDate();
+  const dEss = dateEssai || "", dCou = dateDeCoulee(dateEssai, jourCoulee) || "";
+  let cases = "";
+  for(let i = 0; i < decal; i++) cases += `<span></span>`;
+  for(let j = 1; j <= nb; j++){
+    const iso = annee + "-" + String(mois + 1).padStart(2, "0") + "-" + String(j).padStart(2, "0");
+    const doy = jourDeLAnnee(iso);
+    const cl = "cal-j" + (iso === dEss ? " essai" : "") + (iso === dCou ? " coulee" : "");
+    cases += `<button type="button" class="${cl}" data-cal-jour="${doy}" title="${j} ${MOIS_FR[mois]} ${annee} = jour ${doy}"><b>${j}</b><small>J${doy}</small></button>`;
+  }
+  return `<div class="cal-entete"><button type="button" class="ghost small" data-cal-nav="-1" aria-label="Mois précédent">‹</button>
+      <b>${MOIS_FR[mois]} ${annee}</b><button type="button" class="ghost small" data-cal-nav="1" aria-label="Mois suivant">›</button></div>
+    <div class="cal-sem"><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
+    <div class="cal-grille">${cases}</div>
+    <p class="panel-hint" style="margin:8px 0 0;">Chaque case porte son <b>jour de l'année</b> (J…). Clique le jour de coulée marqué sur le brut : la maturité se calcule. <span class="cal-leg essai">jour de l'essai</span> <span class="cal-leg coulee">jour de coulée</span></p>`;
+}
+async function ouvrirCalendrierCoulee(scId, essaiId){
+  const sc = data.find(x => x.id === scId);
+  const es = sc && (sc.essais || []).find(e => e.id === essaiId);
+  if(!es) return;
+  const base = es.date && jourDeLAnnee(es.date) ? es.date : new Date().toISOString().slice(0, 10);
+  let annee = parseInt(base.slice(0, 4), 10), mois = parseInt(base.slice(5, 7), 10) - 1;
+  const rendre = () => {
+    const corps = document.getElementById("dialogBody");
+    corps.innerHTML = calendrierMoisHTML(annee, mois, es.date, es.jourCoulee);
+    corps.querySelectorAll("[data-cal-nav]").forEach(b => b.addEventListener("click", () => {
+      mois += parseInt(b.getAttribute("data-cal-nav"), 10);
+      if(mois < 0){ mois = 11; annee--; } else if(mois > 11){ mois = 0; annee++; }
+      rendre();
+    }));
+    corps.querySelectorAll("[data-cal-jour]").forEach(b => b.addEventListener("click", () => {
+      es.jourCoulee = parseInt(b.getAttribute("data-cal-jour"), 10);
+      synchroMaturiteEssai(es);
+      toucherEssai(es);
+      saveData();
+      fermerDialogue(true);
+      render();
+    }));
+  };
+  const p = ouvrirDialogue({ titre: "Calendrier — jour de l'année", html: "", sansAnnuler: true });
+  rendre();
+  await p;
+}
+document.addEventListener("click", (e) => {
+  const b = e.target.closest && e.target.closest("[data-calendrier-coulee]");
+  if(b) ouvrirCalendrierCoulee(b.getAttribute("data-id"), b.getAttribute("data-essai"));
+});
+document.addEventListener("change", (e) => {
+  const t = e.target;
+  if(!t || !t.matches || !t.matches("[data-seuil-maturite]")) return;
+  const v = parseFloat(t.value);
+  planReglages = Object.assign({}, planReglages, { maturiteMin: (isNaN(v) || v < 0) ? MATURITE_SEUIL_DEFAUT : v });
+  saveData(); render();
+});
+
 function essaiCardHTML(sc, essai, interactive){
   const es = essaiStats(sc, essai);
   const badgeClass = es.status === "ok" ? "ok" : es.status === "bad" ? "risk" : es.status === "arrete" ? "arrete" : "pending";
@@ -10569,12 +10704,27 @@ function essaiCardHTML(sc, essai, interactive){
             : `<span class="essai-diverge essai-diverge-info">ℹ le scénario a changé depuis cet essai (${escapeAttr(diverge.join(" · "))}) — l'essai garde ses conditions${interactive ? ` <button class="ghost small essai-refaire" data-id="${sc.id}" data-essai="${essai.id}" title="Créer un nouvel essai, dans ce scénario, avec les conditions actuelles">Nouvel essai avec les conditions actuelles</button>` : ""}</span>`)
         : ""}
     </div>
-    <div class="essai-params">
+    <div class="essai-params" style="flex-wrap:wrap;">
       <span>Maturité des bruts —</span>
-      ${interactive
-        ? `<input class="cell" style="width:60px; min-width:60px;" type="number" step="1" min="0" data-id="${sc.id}" data-essai="${essai.id}" data-field="maturiteBruts" value="${essai.maturiteBruts ?? ""}">`
-        : `<b>${essai.maturiteBruts === "" || essai.maturiteBruts == null ? "—" : essai.maturiteBruts}</b>`}
-      <span>jour${parseFloat(essai.maturiteBruts) > 1 ? "s" : ""}</span>
+      ${(() => {
+        const jE = jourDeLAnnee(essai.date), jC = jourCouleeValide(essai.jourCoulee);
+        const auto = jC !== null && maturiteDepuisCoulee(essai.date, essai.jourCoulee) !== null;
+        const val = maturiteValidation(essai.maturiteBruts);
+        const dc = dateDeCoulee(essai.date, essai.jourCoulee);
+        const badge = val.etat === "ok" ? `<span class="mat-badge ok" title="Maturité des bruts ≥ seuil mini">✓ mûrs (≥ ${fmt(val.seuil, 0)} j)</span>`
+          : val.etat === "jeune" ? `<span class="mat-badge jeune" title="Bruts plus jeunes que le seuil mini : l'usure et les efforts peuvent ne pas être comparables à ceux d'essais sur bruts mûrs.">⚠ bruts jeunes (${fmt(val.maturite, 0)} j &lt; ${fmt(val.seuil, 0)} j)</span>` : "";
+        const champMat = (interactive && !auto)
+          ? `<input class="cell" style="width:60px; min-width:60px;" type="number" step="1" min="0" data-id="${sc.id}" data-essai="${essai.id}" data-field="maturiteBruts" value="${essai.maturiteBruts ?? ""}">`
+          : `<b title="${auto ? "Calculée : date de l'essai − jour de coulée" : ""}">${essai.maturiteBruts === "" || essai.maturiteBruts == null ? "—" : essai.maturiteBruts}</b>`;
+        const coulee = interactive
+          ? `<span>· coulée J</span><input class="cell" style="width:64px; min-width:56px;" type="number" step="1" min="1" max="366" placeholder="1–366" title="Le jour de l'année marqué sur le brut (1 à 366)" data-id="${sc.id}" data-essai="${essai.id}" data-field="jourCoulee" value="${essai.jourCoulee ?? ""}">
+             <button type="button" class="ghost small" data-calendrier-coulee data-id="${sc.id}" data-essai="${essai.id}" title="Calendrier : chaque jour porte son numéro de jour de l'année — cliquer le jour de coulée">📅</button>`
+          : (jC !== null ? `<span>· coulée J${jC}</span>` : "");
+        return `${champMat} <span>jour${parseFloat(essai.maturiteBruts) > 1 ? "s" : ""}</span>${auto ? `<span class="mat-auto" title="Calculée automatiquement">calculée</span>` : ""}
+          ${coulee}${dc ? `<span style="color:var(--ink-faint);">(coulée le ${dc.split("-").reverse().join("/")})</span>` : ""}
+          ${jE !== null ? `<span style="color:var(--ink-faint);" title="Jour de l'année de la date de l'essai">· essai = J${jE}</span>` : ""} ${badge}
+          ${interactive ? `<span style="color:var(--ink-faint);">seuil mini <input class="cell" style="width:48px; min-width:44px;" type="number" step="1" min="0" data-seuil-maturite value="${maturiteSeuil()}" title="Maturité minimale des bruts, en jours — valable pour tous les essais"> j</span>` : ""}`;
+      })()}
       <span style="margin-left:auto; color:var(--ink-faint);">Taux hors tolérance de l'essai : <b style="color:var(--ink-soft);">${es.tauxHorsTol === null ? "—" : fmt(es.tauxHorsTol,0) + " %"}</b></span>
     </div>`;
 
@@ -14141,7 +14291,7 @@ function writeFieldValue(el){
     if(row){ row[field] = val; toucherEssai(es); }
   } else if(essaiId){
     const es = sc.essais.find(e => e.id === essaiId);
-    if(es){ es[field] = val; toucherEssai(es); }
+    if(es){ es[field] = val; toucherEssai(es); if(field === "date" || field === "jourCoulee") synchroMaturiteEssai(es); }
   } else if(outilId && logementId){
     const o = sc.outils.find(x => x.id === outilId);
     const l = o && o.logements.find(x => x.id === logementId);
@@ -15031,6 +15181,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.159.0", date:"10/11/2026", points:[
+    "<b>Le jour de l'année et la maturité des bruts, calculée.</b> Sur chaque brut est marqué le jour de l'année de sa coulée : dans la fiche d'essai, saisis ce <b>jour de coulée</b> (ou clique-le dans le <b>📅 calendrier</b>, où chaque date porte son numéro J…) — la <b>maturité se calcule</b> toute seule (date de l'essai − jour de coulée, passage d'année géré) et l'outil affiche le jour de l'année de l'essai (« essai = J314 »). Elle est <b>validée contre un seuil mini</b> réglable (4 jours par défaut, à ajuster dans la fiche) : <b>✓ mûrs</b> ou <b>⚠ bruts jeunes</b>. Sans jour de coulée, tu peux toujours saisir la maturité à la main."
+  ]},
   { version:"4.158.1", date:"10/11/2026", points:[
     "<b>Le MABEC d'un scénario d'essai n'est plus celui de la référence.</b> Quand on changeait la plaquette d'un logement, le MABEC saisi suivait mais un ancien doublon gardait celui du scénario de référence — et certains écrans (Vue CPP, détail de composition) l'affichaient. Le doublon est maintenant réaligné à chaque saisie <b>et à l'ouverture des données déjà enregistrées</b> : tes essais (EMAG 2 OP40, T548/T549) se réparent d'eux-mêmes au rechargement."
   ]},
@@ -15954,7 +16107,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.158.1";
+const TOOL_VERSION = "4.159.0";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -28291,6 +28444,32 @@ function runTests(){
         const h2 = atelierHTML();
         ok("fiche atelier : sur T548 (tête) le battement est demandé et l'axe est Exter", [/id="atV"/.test(h2), /atCs_ra_E/.test(h2), /atCs_ra_I/.test(h2)], [true, true, false]);
       } finally { data = dataAv; atelierCtx = aAv2; }
+    }
+    /* v4.159 — jour de l'année et maturité des bruts */
+    {
+      ok("jour de l'année : 10 novembre 2026 = J314 ; 1er janvier = J1 ; 31 décembre 2026 = J365 ; bissextile 2028 = J366", [jourDeLAnnee("2026-11-10"), jourDeLAnnee("2026-01-01"), jourDeLAnnee("2026-12-31"), jourDeLAnnee("2028-12-31")], [314, 1, 365, 366]);
+      ok("jour de l'année : date impossible ou illisible = rien", [jourDeLAnnee("2026-02-30"), jourDeLAnnee("2027-13-01"), jourDeLAnnee(""), jourDeLAnnee("10/11/2026")], [null, null, null, null]);
+      ok("jour → date : J305 de 2026 = 1er novembre ; J60 de 2028 (bissextile) = 29 février ; J366 refusé en 2026", [dateDepuisJour(2026, 305), dateDepuisJour(2028, 60), dateDepuisJour(2026, 366), dateDepuisJour(2026, 0)], ["2026-11-01", "2028-02-29", null, null]);
+      ok("maturité : essai le 10/11 (J314), coulée J305 = 9 jours ; même jour = 0", [maturiteDepuisCoulee("2026-11-10", 305), maturiteDepuisCoulee("2026-11-10", 314)], [9, 0]);
+      ok("maturité : passage d'année — essai le 5 janvier 2026 (J5), coulée J360 (2025) = 10 jours", [maturiteDepuisCoulee("2026-01-05", 360), maturiteDepuisCoulee("2025-01-05", 360)], [10, 11]);
+      ok("maturité : jour de coulée invalide (0, 367, 12,5, vide) ou date vide = rien", [maturiteDepuisCoulee("2026-11-10", 0), maturiteDepuisCoulee("2026-11-10", 367), maturiteDepuisCoulee("2026-11-10", 12.5), maturiteDepuisCoulee("2026-11-10", ""), maturiteDepuisCoulee("", 305)], [null, null, null, null, null]);
+      ok("coulée : la date que dit le jour marqué, l'année d'avant si le jour est « dans le futur »", [dateDeCoulee("2026-11-10", 305), dateDeCoulee("2026-01-05", 360)], ["2026-11-01", "2025-12-26"]);
+      const pAv = planReglages;
+      try {
+        planReglages = { relSpk: 100 };
+        ok("maturité : seuil par défaut 4 j ; ≥ seuil = mûrs, en dessous = jeunes, sans valeur = rien", [maturiteSeuil(), maturiteValidation(4).etat, maturiteValidation(3).etat, maturiteValidation("").etat, maturiteValidation(9, 10).etat], [4, "ok", "jeune", null, "jeune"]);
+        planReglages = { maturiteMin: 7 };
+        ok("maturité : le seuil réglé s'applique", [maturiteSeuil(), maturiteValidation(6).etat, maturiteValidation(7).etat], [7, "jeune", "ok"]);
+        const es = { date: "2026-11-10", jourCoulee: 305, maturiteBruts: "" };
+        ok("essai : la maturité se recalcule depuis la date et le jour de coulée", [synchroMaturiteEssai(es), es.maturiteBruts], [true, 9]);
+        es.date = "2026-11-12"; synchroMaturiteEssai(es);
+        ok("essai : changer la date de l'essai met la maturité à jour", [es.maturiteBruts], [11]);
+        const man = { date: "2026-11-10", jourCoulee: "", maturiteBruts: 5 };
+        ok("essai : sans jour de coulée, la maturité saisie à la main n'est jamais touchée", [synchroMaturiteEssai(man), man.maturiteBruts], [false, 5]);
+        const h = calendrierMoisHTML(2026, 10, "2026-11-10", 305);
+        ok("calendrier : novembre 2026 — 30 jours, J305 (1er) à J334, jour d'essai et jour de coulée repérés", [(h.match(/data-cal-jour=/g) || []).length, /data-cal-jour="305"/.test(h), /data-cal-jour="334"/.test(h), /cal-j essai"/.test(h), /cal-j coulee"/.test(h)], [30, true, true, true, true]);
+        ok("calendrier : le 1er novembre 2026 est un dimanche (6 cases vides avant, lundi en premier)", [(h.split('<div class="cal-grille">')[1].match(/^(<span><\/span>)*/)[0].match(/<span><\/span>/g) || []).length], [6]);
+      } finally { planReglages = pAv; }
     }
     /* v4.158.1 — le doublon `mabec` ne garde plus le code de la plaquette précédente */
     {
