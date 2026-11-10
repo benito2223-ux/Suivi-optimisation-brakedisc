@@ -843,6 +843,17 @@ details.outil-carte.drag-cible{outline:2px dashed var(--blue); outline-offset:3p
   border-radius:var(--radius-sm); padding:1px 6px;}
 .os-desc{font-size:13px; color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:34ch;}
 .os-logements{font-family:var(--font-mono); font-size:12px; color:var(--ink-faint);}
+/* v4.155 — écarts avec la référence, sur les tuiles de la composition */
+.ap-ecart{font-size:11px; font-weight:700; color:var(--amber); background:var(--amber-bg); border:1px solid var(--amber); border-radius:999px; padding:1px 8px;}
+.ap-ecart-ok{font-size:11px; color:var(--ink-faint);}
+.ap-ec-diff{font-size:12px; color:var(--amber); font-weight:600; margin:2px 0 4px; overflow-wrap:anywhere;}
+/* v4.155 — écarts avec la référence, sur la ligne de la tuile */
+.os-ecarts{flex:1 1 100%; display:flex; flex-wrap:wrap; gap:4px 8px; align-items:center; font-size:12px; padding-left:28px;}
+.ec-chip{background:var(--amber-bg); border:1px solid var(--amber); color:var(--ink); border-radius:999px; padding:2px 9px; line-height:1.5; max-width:100%; overflow-wrap:anywhere;}
+.ec-diff{color:var(--amber); font-weight:700;}
+.ec-ancienne{color:var(--ink-faint); font-style:normal;}
+.ec-muted, .ec-ok{color:var(--ink-faint);}
+.ec-nouveau{font-style:normal; font-size:10.5px; font-weight:700; text-transform:uppercase; color:var(--amber);}
 .os-plan{font-family:var(--font-mono); font-size:11px; font-weight:500; color:var(--teal);
   background:var(--surface-alt); border-radius:var(--radius-sm); padding:2px 7px;}
 .os-cout{margin-left:auto; font-family:var(--font-disp); font-weight:800; font-size:16px;
@@ -11189,6 +11200,11 @@ function logementBlocHTML(sc, o, l, showFrFa, showCycleDetail){
    duree de vie, a quelles conditions, pour combien. Ce qui manque est signale ici plutot
    que decouvert plus tard dans un calcul qui ne tombe pas. */
 function apercuLogementHTML(sc, o, l, couleur, oi, volume, totalAnnuel, partRef, vp, ajoutCoutEur, sortieInfos){
+  /* v4.155 — ce que cet essai change par rapport à la référence ★ (lecture seule) */
+  const ecRef = scenarioReferenceDe(data);
+  const ecOutil = ecartsOutilVsReference(ecRef, sc, o);
+  const ecLog = ecOutil ? (ecOutil.logements.find(x => x.l === l) || null) : null;
+  const ecNom = escapeAttr((ecRef && ecRef.name) || "référence");
   const pc = posCost(l);
   // Deux causes distinctes a un cout qui ne tombe pas, et il faut les nommer separement :
   // une case vide (on n'a pas encore saisi) et une valeur saisie mais inexploitable (0 arete,
@@ -11262,6 +11278,12 @@ function apercuLogementHTML(sc, o, l, couleur, oi, volume, totalAnnuel, partRef,
     apBadges.push(`<span class="ap-hors" title="Cet outil n'existe pas dans la référence : son coût n'est pas un gain de plaquettes — il change le périmètre de la comparaison, et la réconciliation le dit.">ajouté — absent de la référence : ${ajoutCoutEur.complet ? fmtEuroCourt(Math.round(ajoutCoutEur.cout)) + "/an" : "prix ou charnière incomplets"}</span>`);
   if(sortieInfos && sortieInfos.length)
     apBadges.push(`<span class="ap-hors" title="Cet outil a été retiré de ces scénarios : leur verdict porte la ligne « dont sorties du scénario » qui le nomme.">sorti de : ${sortieInfos.map(s => escapeAttr(s.nom) + " (" + fmtEuroCourt(Math.round(s.cout)) + "/an)").join(", ")}</span>`);
+  if(ecLog){
+    if(ecOutil.etat === "nouveau") apBadges.push(`<span class="ap-ecart" title="Cet outil n'existe pas dans « ${ecNom} »">outil nouveau</span>`);
+    else if(ecLog.nouveau) apBadges.push(`<span class="ap-ecart" title="Ce logement n'existe pas dans « ${ecNom} »">logement nouveau</span>`);
+    else if(ecLog.modifie) apBadges.push(`<span class="ap-ecart" title="Modifié par rapport à « ${ecNom} »">modifié vs réf.</span>`);
+    else apBadges.push(`<span class="ap-ecart-ok" title="Mêmes plaquette, conditions de coupe et charnière que « ${ecNom} »">= réf.</span>`);
+  }
   /* le dégradé rouge → vert porte le gain €/an de l'outil (le verdict
      financier) ; 0 = gris neutre, jamais imprimé (règle des couleurs de ligne) */
   const gainCouleur = (() => {
@@ -11299,8 +11321,9 @@ function apercuLogementHTML(sc, o, l, couleur, oi, volume, totalAnnuel, partRef,
         <span class="ap-logement">${escapeAttr(l.nom || "logement sans nom")}</span>
         ${l.suiviTolerance === false ? `<span class="ap-flag" title="Ce logement ne suit que la charnière : ses mesures ne font pas échouer un essai sur la tolérance.">charnière seule</span>` : ""}
       </div>
-      <div class="ap-ref">${l.ref ? escapeAttr(l.ref) : `<em>référence plaquette non renseignée</em>`}</div>
+      <div class="ap-ref">${l.ref ? escapeAttr(l.ref) : `<em>référence plaquette non renseignée</em>`}${ecLog && ecLog.rl && ecLog.champs.indexOf("ref") !== -1 ? ` <span class="ec-ancienne">(réf. : ${escapeAttr(ecLog.rl.ref || "—")})</span>` : ""}</div>
       ${apBadges.length ? `<div class="ap-badges">${apBadges.join("")}</div>` : ""}
+      ${ecLog && ecLog.modifie && ecartResume(ecLog) ? `<div class="ap-ec-diff" title="Valeurs de « ${ecNom} » → valeurs de cet essai">${escapeAttr(ecartResume(ecLog))}</div>` : ""}
       <div class="ap-chiffres">
         <div class="ap-c"><span class="ap-l">Charnière</span><span class="ap-v">${l.charniere === "" || l.charniere == null ? "—" : fmt(parseFloat(l.charniere),0)}<small>p/arête</small></span>
           ${reel ? `<span class="ap-reel ${!reel.borneInf && !isNaN(parseFloat(l.charniere)) && reel.moyenne < parseFloat(l.charniere) - 0.5 ? "bad" : ""}">${reel.borneInf ? "≥ " : ""}${fmt(reel.moyenne,0)} réel</span>` : ""}</div>
@@ -12016,6 +12039,69 @@ function copierOutilsDeProduction(sc, ids){
   return n;
 }
 
+/* ═══ v4.155 — LA TUILE D'OUTIL DIT CE QUI A CHANGÉ PAR RAPPORT À LA RÉFÉRENCE ═══════════════════════
+   Un essai ne touche souvent qu'un ou deux logements. La tuile (ligne visible, repliée) compare l'outil au scénario
+   de RÉFÉRENCE (la ★, le classeur de Matis) : outils et logements identiques = grisés « = référence » ; modifiés =
+   en évidence, avec la plaquette, les conditions de coupe (Vc ou S, f, ap, κr) et la charnière VISÉE ; chaque valeur
+   qui diffère de la référence est surlignée. Lecture seule : rien n'est écrit. (Jamais de K ni de puissance — §2.6.) */
+const ECART_CHAMPS = ["ref", "codeArticle", "aretes", "charniere", "vc", "f", "kappaR", "rayonBec", "apPiste", "modeVitesse", "sBroche"];
+function ecartValeur(k, v){
+  if(k === "ref") return normIso(v);
+  if(k === "codeArticle") return String(v == null ? "" : v).trim().toUpperCase().replace(/\s+/g, " ");
+  if(k === "modeVitesse") return String(v || "G96");
+  if(v === "" || v == null) return "";
+  const n = parseFloat(String(v).replace(",", "."));
+  return isNaN(n) ? String(v).trim().toUpperCase() : n;
+}
+/* rend null (rien à comparer : pas de référence, ou c'est la référence), sinon
+   { etat: "identique"|"modifie"|"nouveau", logements:[{ nom, modifie, nouveau, champs:[clés qui diffèrent], l, rl }], retires:[noms] } */
+function ecartsOutilVsReference(refSc, sc, o){
+  if(!refSc || !sc || refSc === sc || sc.baseline || refSc.id === sc.id) return null;
+  const cle = x => String(x || "").trim().toUpperCase();
+  const idx = (sc.outils || []).indexOf(o);
+  const ro = (refSc.outils || []).find(x => cle(o.numero) && cle(x.numero) === cle(o.numero)) || (!cle(o.numero) ? (refSc.outils || [])[idx] : null) || null;
+  if(!ro) return { etat: "nouveau", logements: (o.logements || []).map(l => ({ nom: l.nom, modifie: true, nouveau: true, champs: [], l, rl: null })), retires: [] };
+  const logs = (o.logements || []).map((l, i) => {
+    const rl = (ro.logements || []).find(x => cle(l.nom) && cle(x.nom) === cle(l.nom)) || (!cle(l.nom) ? (ro.logements || [])[i] : null) || null;
+    if(!rl) return { nom: l.nom, modifie: true, nouveau: true, champs: [], l, rl: null };
+    const champs = ECART_CHAMPS.filter(k => ecartValeur(k, l[k]) !== ecartValeur(k, rl[k]));
+    return { nom: l.nom, modifie: champs.length > 0, nouveau: false, champs, l, rl };
+  });
+  const retires = (ro.logements || []).filter(x => !(o.logements || []).some(l => cle(l.nom) === cle(x.nom))).map(x => x.nom || "—");
+  const modifie = logs.some(x => x.modifie) || retires.length > 0;
+  return { etat: modifie ? "modifie" : "identique", logements: logs, retires };
+}
+/* « Vc 350 → 400 · charnière 300 → 120 » : seulement les valeurs qui diffèrent de la référence (hors plaquette, dite à part). */
+const ECART_LIBELLES = { codeArticle: "MABEC", aretes: "arêtes", charniere: "charnière visée", vc: "Vc", f: "f", kappaR: "κr", rayonBec: "rε", apPiste: "ap", modeVitesse: "mode", sBroche: "S" };
+function ecartResume(entree){
+  if(!entree || !entree.rl) return "";
+  const v = x => (x === "" || x == null) ? "—" : String(x).replace(".", ",");
+  return entree.champs.filter(k => k !== "ref" && ECART_LIBELLES[k]).map(k => ECART_LIBELLES[k] + " " + v(entree.rl[k]) + " → " + v(entree.l[k])).join(" · ");
+}
+function ecartsOutilHTML(refSc, sc, o){
+  const e = ecartsOutilVsReference(refSc, sc, o);
+  if(!e) return "";
+  const nomRef = escapeAttr((refSc && refSc.name) || "référence");
+  if(e.etat === "identique") return `<span class="os-ecarts"><span class="ec-ok" title="Mêmes plaquettes, conditions de coupe et charnière que « ${nomRef} »">= référence</span></span>`;
+  const n = v => String(v).replace(".", ",");
+  const cond = (l, rl, ch) => {
+    const d = k => ch.indexOf(k) !== -1;
+    const m = (k, lib, val, unite) => (val === "" || val == null) ? "" : `<span class="${d(k) ? "ec-diff" : ""}">${lib} ${n(val)}${unite || ""}</span>`;
+    const vit = (l.modeVitesse === "G97") ? m("sBroche", "S", l.sBroche, " tr/min") : m("vc", "Vc", l.vc, " m/min");
+    return [vit, m("f", "f", l.f, " mm/tr"), m("apPiste", "ap", l.apPiste, " mm"), m("kappaR", "κr", l.kappaR, "°"), m("charniere", "charnière visée", l.charniere)].filter(Boolean).join(" · ");
+  };
+  const chips = e.logements.map(x => {
+    if(!x.modifie) return `<span class="ec-muted" title="Identique à « ${nomRef} »">${escapeAttr(x.nom || "—")} = réf.</span>`;
+    const l = x.l, ch = x.champs;
+    const plaq = (ch.indexOf("ref") !== -1 || x.nouveau)
+      ? `<b class="ec-diff">${escapeAttr(l.ref || "plaquette ?")}</b>${x.rl && x.rl.ref ? ` <i class="ec-ancienne">(réf. : ${escapeAttr(x.rl.ref)})</i>` : ""}`
+      : escapeAttr(l.ref || "");
+    return `<span class="ec-chip" title="${x.nouveau ? "Logement absent de la référence « " + nomRef + " »" : "Modifié par rapport à « " + nomRef + " »"}"><b>${escapeAttr(l.nom || "—")}</b>${x.nouveau ? ` <em class="ec-nouveau">nouveau</em>` : ""} · ${plaq}${cond(l, x.rl, ch) ? " · " + cond(l, x.rl, ch) : ""}</span>`;
+  }).join("");
+  const retires = e.retires.length ? `<span class="ec-muted" title="Présent dans la référence, absent ici">retiré : ${e.retires.map(escapeAttr).join(", ")}</span>` : "";
+  return `<span class="os-ecarts">${e.etat === "nouveau" ? `<em class="ec-nouveau" title="Cet outil n'existe pas dans « ${nomRef} »">outil nouveau</em>` : ""}${chips}${retires}</span>`;
+}
+
 function outilCarteHTML(sc, o, oi, showFrFa, showCycleDetail){
   const couleur = OUTIL_COLORS[oi % OUTIL_COLORS.length];
   const base = (field) => `data-id="${sc.id}" data-outil="${o.id}" data-field="${field}"`;
@@ -12038,6 +12124,7 @@ function outilCarteHTML(sc, o, oi, showFrFa, showCycleDetail){
         ${oi > 0 && o.simultaneAvecPrecedent ? `<span class="os-sim" title="Cet outil usine en même temps que le précédent — leurs temps ne s'additionnent pas, le groupe vaut le plus long.">⇉ simultané</span>` : ""}
         ${o.plan ? `<span class="os-plan" title="Un plan est joint à cet outil">${(o.plan.mime||"").startsWith("image/") ? "🖼" : "📄"} plan</span>` : ""}
         ${aDesCouts ? `<span class="os-cout">${fmt(coutOutil,4)} <small>€/pièce</small></span>` : ""}
+        ${ecartsOutilHTML(scenarioReferenceDe(data), sc, o)}
         <button class="ghost outil-supp" data-id="${sc.id}" data-outil="${o.id}" title="Supprimer intégralement cet outil et tous ses logements">🗑 Supprimer l'outil</button>
       </summary>
       <div class="outil-corps">
@@ -14093,7 +14180,15 @@ document.getElementById("lockBtn").addEventListener("click", toggleLock);
 /* v4.140 — créer un scénario EN DIRECT, à l'atelier (tablette, iPhone) : le plus souvent on teste une VARIANTE de
    ce qui tourne (même outil, un paramètre qui change). « Variante » copie les outils et les conditions SANS les
    essais (« Dupliquer » copie aussi les mesures). Sur écran tactile ou étroit, « + Scénario » propose le choix. */
-function creerVariante(sc, nom){
+/* v4.155 — le scénario de RÉFÉRENCE d'une OP : la ★ (le classeur de Matis), sinon la prod du jour (règle 4.114).
+   C'est la base par défaut d'un nouvel essai ET ce à quoi la tuile d'outil compare. */
+function scenarioReferenceDe(scenarios){
+  const scs = scenarios || [];
+  return scs.find(x => x.baseline) || scenarioProductionOp({ scenarios: scs }) || null;
+}
+/* copie PURE d'un scénario pour un nouvel essai : mêmes outils, logements et conditions, SANS essais ni rebuts,
+   avec de nouveaux identifiants (aucun logement n'est partagé avec la source). */
+function copierScenarioSansEssais(sc, nom){
   const copy = JSON.parse(JSON.stringify(sc));
   copy.id = uid("s");
   copy.name = (nom || "").trim() || (sc.name + " — variante");
@@ -14103,6 +14198,10 @@ function creerVariante(sc, nom){
     id: "t" + Math.random().toString(36).slice(2),
     logements: (o.logements || []).map(l => Object.assign({}, l, { id: "g" + Math.random().toString(36).slice(2) }))
   }));
+  return copy;
+}
+function creerVariante(sc, nom){
+  const copy = copierScenarioSansEssais(sc, nom);
   const idx = data.findIndex(x => x.id === sc.id);
   data.splice(idx + 1, 0, copy);
   activeId = copy.id;
@@ -14116,12 +14215,19 @@ function modeRapide(){
   try{ return matchMedia("(pointer: coarse)").matches || innerWidth <= 820; }catch(e){ return false; }
 }
 async function nouveauScenarioRapide(){
-  const sc = data.find(x => x.id === activeId);
+  /* v4.155 — la composition des outils reste celle de la RÉFÉRENCE par défaut (un essai ne change que ce qu'on
+     modifie, souvent 1 ou 2 logements) ; la changer, ou partir de zéro, est une option. */
+  const ref = scenarioReferenceDe(data);
+  const autres = data.filter(x => !ref || x.id !== ref.id);
+  const nomCopie = x => (x && x.name) || "sans nom";
   const html = '<div class="nv-choix">' +
-    (sc ? '<label class="nv-opt"><input type="radio" name="nvScenType" value="variante" checked><span><b>Variante du scénario actuel</b><br><small>mêmes outils et conditions, sans les essais</small></span></label>' : "") +
-    '<label class="nv-opt"><input type="radio" name="nvScenType" value="vide"' + (sc ? "" : " checked") + '><span><b>Scénario vide</b><br><small>à remplir de zéro</small></span></label></div>';
-  const defaut = n => (n === "variante" && sc) ? sc.name + " — variante" : "Nouveau scénario";
-  const p = ouvrirDialogue({ titre: "Nouveau scénario", html, saisie: defaut(sc ? "variante" : "vide"), placeholder: "Nom du scénario", okLabel: "Créer" });
+    (ref ? '<label class="nv-opt"><input type="radio" name="nvScenType" value="reference" checked><span><b>Comme la référence ★ « ' + escapeAttr(nomCopie(ref)) + ' »</b> <small>(par défaut)</small><br><small>mêmes outils, logements et conditions de coupe, sans les essais — tu ne modifies que ce qui change</small></span></label>' : '') +
+    (autres.length ? '<label class="nv-opt"><input type="radio" name="nvScenType" value="autre"' + (ref ? "" : " checked") + '><span><b>Comme un autre scénario</b><br><select id="nvScenSource" style="max-width:100%; margin-top:4px;">' +
+      autres.map(x => '<option value="' + escapeAttr(x.id) + '"' + (x.id === activeId ? " selected" : "") + '>' + escapeAttr(nomCopie(x)) + '</option>').join("") + '</select></span></label>' : '') +
+    '<label class="nv-opt"><input type="radio" name="nvScenType" value="vide"' + (ref || autres.length ? "" : " checked") + '><span><b>Scénario vide</b><br><small>à remplir de zéro</small></span></label></div>';
+  const defaut = n => n === "vide" ? "Nouveau scénario" : "Nouvel essai";
+  const premier = ref ? "reference" : (autres.length ? "autre" : "vide");
+  const p = ouvrirDialogue({ titre: "Nouveau scénario", html, saisie: defaut(premier), placeholder: "Nom du scénario", okLabel: "Créer" });
   const input = document.getElementById("dialogInput");
   let precedent = input.value;
   document.querySelectorAll('#dialogBody input[name="nvScenType"]').forEach(r => r.addEventListener("change", () => {
@@ -14129,10 +14235,13 @@ async function nouveauScenarioRapide(){
     if(input.value === precedent) input.value = nouveau;
     precedent = nouveau;
   }));
+  const sel = document.getElementById("nvScenSource");
+  if(sel) sel.addEventListener("change", () => { const r = document.querySelector('#dialogBody input[name="nvScenType"][value="autre"]'); if(r){ r.checked = true; r.dispatchEvent(new Event("change")); } });
   const nom = await p;
   if(nom === null || nom === false || nom === undefined) return;
   const choix = (document.querySelector('#dialogBody input[name="nvScenType"]:checked') || {}).value;
-  if(choix === "variante" && sc) creerVariante(sc, nom); else ajouterScenarioVide(nom);
+  const source = choix === "reference" ? ref : (choix === "autre" ? data.find(x => x.id === ((document.getElementById("nvScenSource") || {}).value)) : null);
+  if(source) creerVariante(source, nom); else ajouterScenarioVide(nom);
 }
 function ajouterScenarioVide(nom){
   const l = getActiveLigne();
@@ -14156,7 +14265,7 @@ function ajouterScenarioVide(nom){
   saveData(); render();
 }
 document.getElementById("addBtn").addEventListener("click", () => {
-  if(modeRapide()) nouveauScenarioRapide(); else ajouterScenarioVide();
+  nouveauScenarioRapide();   /* v4.155 : le choix (référence par défaut / autre / vide) sur tous les écrans */
 });
 
 document.getElementById("resetBtn").addEventListener("click", () => {
@@ -14827,6 +14936,10 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.155.0", date:"10/11/2026", points:[
+    "<b>Un nouveau scénario reprend la composition de la référence.</b> « + Scénario » propose maintenant, sur tous les écrans, <b>Comme la référence ★ (Classeur Matis)</b> — par défaut : mêmes outils, logements et conditions de coupe, sans les essais, tu ne modifies que ce qui change —, <b>Comme un autre scénario</b> (une liste) ou <b>Scénario vide</b>. Fini le scénario qui arrive sans outil.",
+    "<b>La tuile de l'outil dit ce qui a changé.</b> Sur la ligne de chaque outil d'un scénario d'essai, comparée à la référence ★ : <b>= référence</b> (grisé) si rien ne change, sinon les logements modifiés en évidence avec leur <b>plaquette</b> (et l'ancienne, en petit), les <b>conditions de coupe</b> (Vc ou S, f, ap, κr) et la <b>charnière visée</b> ; chaque valeur qui diffère est surlignée. Un outil absent de la référence est signalé « outil nouveau »."
+  ]},
   { version:"4.154.1", date:"10/11/2026", points:[
     "<b>Changer la plaquette d'un logement met le MABEC à jour.</b> Avant, modifier l'ISO laissait le MABEC (et son prix) de la plaquette précédente. Maintenant : vers une plaquette <b>connue</b>, le MABEC, le prix, les arêtes et la charnière de la nouvelle suivent ; vers une plaquette <b>inconnue</b>, le MABEC est vidé (il n'était plus le bon) et le logement apparaît dans « Plaquettes en essai, non codées » ; et si tu tapes un <b>MABEC connu</b>, l'ISO suit. Corriger une faute de frappe dans l'ISO (casse, espaces) ne change rien."
   ]},
@@ -15733,7 +15846,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.154.1";
+const TOOL_VERSION = "4.155.0";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -19149,13 +19262,14 @@ function catalogueSuggestion(mabec){
    seule : rien n'est écrit dans le suivi, le panneau Catalogue reste l'endroit
    qui persiste. Recherche par MABEC (string, insensible casse/espaces) quand
    `mabec` est fourni, par ISO exact sinon. Renvoie une entree catalogue ou null. */
-function suggestionDepuisArbre(mabec, iso){
+function suggestionDepuisArbre(mabec, iso, exclure){   /* v4.155 : `exclure` = le logement en cours de saisie (il ne se suggère pas lui-même) */
   const nm = String(mabec || "").trim().toUpperCase().replace(/\s+/g, " ");
   const ni = String(iso || "").trim().toUpperCase().replace(/\s+/g, " ");
   if(!nm && !ni) return null;
   const vus = {};
   lignes.forEach(l => (l.references || []).forEach(r => (r.ops || []).forEach(o =>
     (o.scenarios || []).forEach(sc => (sc.outils || []).forEach(ou => (ou.logements || []).forEach(g => {
+      if(exclure && g === exclure) return;
       const gm = String(g.codeArticle || g.mabec || "").trim().toUpperCase().replace(/\s+/g, " ");
       const gi = String(g.ref || "").trim().toUpperCase().replace(/\s+/g, " ");
       if(nm ? (gm !== nm) : (gi !== ni)) return;
@@ -19662,7 +19776,7 @@ function synchroniserPlaquetteLogement(l, field, avant){
   if(field === "ref"){
     const val = String(l.ref || "");
     const plaquetteChange = normIso(avant.ref) !== "" && normIso(avant.ref) !== normIso(val);
-    const ent = catalogueParIso(val) || suggestionDepuisArbre(null, val);
+    const ent = catalogueParIso(val) || suggestionDepuisArbre(null, val, l);
     if(ent) return appliquerSuggestionCatalogue(l, ent, { nouvellePlaquette: plaquetteChange });
     if(plaquetteChange && normIso(val) !== "" && String(l.codeArticle || "").trim() !== ""){
       l.codeArticle = ""; if(String(l.mabec || "").trim()) l.mabec = "";
@@ -19672,7 +19786,7 @@ function synchroniserPlaquetteLogement(l, field, avant){
   }
   if(field === "codeArticle"){
     const val = String(l.codeArticle || "");
-    const ent = catalogueSuggestion(val) || suggestionDepuisArbre(val, null);
+    const ent = catalogueSuggestion(val) || suggestionDepuisArbre(val, null, l);
     if(!ent) return [];
     const codeChange = String(avant.codeArticle || "").trim().toUpperCase().replace(/\s+/g, " ") !== val.trim().toUpperCase().replace(/\s+/g, " ");
     return appliquerSuggestionCatalogue(l, ent, { remplacerIso: codeChange, nouvellePlaquette: codeChange && String(avant.codeArticle || "").trim() !== "" });
@@ -27747,7 +27861,54 @@ function runTests(){
         ok("plaquette change : MABEC inconnu — rien n'est inventé, l'ISO reste", [g.ref, g.prix], ["SNGN 090416T00520 SN60", 10.97]);
         g = { nom: "D1", ref: "", codeArticle: "", prix: "", aretes: "", charniere: "" }; g.codeArticle = "PLA001"; synchroniserPlaquetteLogement(g, "codeArticle", { ref: "", codeArticle: "" });
         ok("plaquette change : saisie initiale par le MABEC — l'ISO, le prix, les arêtes se remplissent", [g.ref, g.prix, g.aretes, g.charniere], ["SNGN 090416 F SL500", 7.9, 4, 120]);
+        /* le logement est DANS l'arbre au moment de la saisie : il ne doit pas se suggérer lui-même (bug vu à l'écran) */
+        catalogue = [];
+        const gArbre = { nom: "Bol", ref: "Plaquette exemple A", codeArticle: "IM02 777 001", prix: 30, aretes: 8, charniere: 100 };
+        lignes = [ { id: "lt", nom: "L", references: [ { id: "rt", ops: [ { id: "ot", scenarios: [ { id: "st", outils: [ { id: "tt", numero: "T1", logements: [ gArbre ] } ] } ] } ] } ] } ];
+        gArbre.ref = "SNGN 090416 F SL500"; synchroniserPlaquetteLogement(gArbre, "ref", { ref: "Plaquette exemple A", codeArticle: "IM02 777 001" });
+        ok("plaquette change : dans l'arbre, un ISO inconnu vide quand même le MABEC (le logement ne se suggère pas lui-même)", [gArbre.codeArticle, gArbre.prix], ["", 30]);
+        const gAutre = { nom: "D1", ref: "SNGN 090416 F SL500", codeArticle: "PLA005", prix: 7.9, aretes: 4, charniere: 120 };
+        lignes[0].references[0].ops[0].scenarios[0].outils[0].logements.push(gAutre);
+        gArbre.ref = "Plaquette exemple A"; gArbre.codeArticle = "IM02 777 001";
+        gArbre.ref = "sngn 090416 f sl500"; synchroniserPlaquetteLogement(gArbre, "ref", { ref: "Plaquette exemple A", codeArticle: "IM02 777 001" });
+        ok("plaquette change : une plaquette déjà saisie AILLEURS dans le suivi donne son MABEC et son prix", [gArbre.codeArticle, gArbre.prix, gArbre.aretes], ["PLA005", 7.9, 4]);
       } finally { lignes = lAv; catalogue = cAv; }
+    }
+    /* v4.155 — un nouveau scénario reprend la composition de la RÉFÉRENCE ★ par défaut */
+    {
+      const mkS = (id, name, extra) => Object.assign({ id, name, baseline: false, statut: "essai", essais: [], scrapLog: [], outils: [ { id: "t" + id, numero: "T548", logements: [ { id: "g" + id, nom: "D1", ref: "SNGN 090416T00520 SN60", codeArticle: "Z000 455 182", prix: 10.97, vc: 350, f: 0.12 } ] } ] }, extra || {});
+      const star = mkS("sA", "Classeur Matis", { baseline: true, statut: "serie" });
+      const prod = mkS("sB", "Process actuel - finit", { statut: "serie" });
+      const essai = mkS("sC", "Essai en cours", {});
+      ok("référence : la ★ passe avant la série du jour", [scenarioReferenceDe([prod, star, essai]).id, scenarioReferenceDe([prod, essai]).id, scenarioReferenceDe([essai]), scenarioReferenceDe([])], ["sA", "sB", null, null]);
+      star.essais = [ { id: "e1", prelevements: [] } ]; star.scrapLog = [ { id: "r1" } ];
+      const cp = copierScenarioSansEssais(star, "");
+      ok("copie pour un essai : mêmes outils/logements/conditions, sans essais ni rebuts, jamais ★, nom par défaut", [cp.outils[0].numero, cp.outils[0].logements[0].ref, cp.outils[0].logements[0].vc, cp.essais.length, cp.scrapLog.length, cp.baseline, cp.statut, cp.name], ["T548", "SNGN 090416T00520 SN60", 350, 0, 0, false, "essai", "Classeur Matis — variante"]);
+      ok("copie pour un essai : aucun identifiant partagé avec la source (modifier la copie ne touche pas la référence)", [cp.id !== star.id, cp.outils[0].id !== star.outils[0].id, cp.outils[0].logements[0].id !== star.outils[0].logements[0].id, (cp.outils[0].logements[0].ref = "AUTRE", star.outils[0].logements[0].ref)], [true, true, true, "SNGN 090416T00520 SN60"]);
+      ok("copie pour un essai : le nom saisi est gardé ; la source garde ses essais", [copierScenarioSansEssais(star, "Mon essai").name, star.essais.length], ["Mon essai", 1]);
+    }
+    /* v4.155 — la tuile d'outil : écarts avec la référence */
+    {
+      const lg = (nom, ref, extra) => Object.assign({ id: "g" + nom + ref, nom, ref, codeArticle: "Z1", prix: 10, aretes: 8, charniere: 300, vc: 350, f: 0.12, apPiste: 0.5, kappaR: 45 }, extra || {});
+      const ref = { id: "R", name: "Classeur Matis", baseline: true, outils: [ { id: "tr1", numero: "T548", logements: [ lg("D1", "SNGN 090416T00520 SN60"), lg("D2", "SNGN 090416T00520 SN60") ] }, { id: "tr2", numero: "T549", logements: [ lg("D1", "CNGX 120716 T02020 LKT640") ] } ] };
+      const sc = { id: "E", name: "Essai", baseline: false, outils: [
+        { id: "te1", numero: "T548", logements: [ lg("D1", "SNGN 090416 F SL500", { vc: 400, charniere: 120 }), lg("D2", "sngn090416t00520  sn60") ] },
+        { id: "te2", numero: "t549", logements: [ lg("D1", "cngx120716t02020lkt640") ] },
+        { id: "te3", numero: "T550", logements: [ lg("D1", "KY3500") ] } ] };
+      ok("tuile : pas de comparaison sur la référence elle-même, ni sans référence", [ecartsOutilVsReference(ref, ref, ref.outils[0]), ecartsOutilVsReference(null, sc, sc.outils[0]), ecartsOutilHTML(null, sc, sc.outils[0])], [null, null, ""]);
+      const e1 = ecartsOutilVsReference(ref, sc, sc.outils[0]);
+      ok("tuile : T548 modifié — seul D1 diffère (plaquette, Vc, charnière) ; D2, écrit autrement, est identique", [e1.etat, e1.logements.map(x => x.modifie).join(","), e1.logements[0].champs.join(",")], ["modifie", "true,false", "ref,charniere,vc"]);
+      const e2 = ecartsOutilVsReference(ref, sc, sc.outils[1]);
+      ok("tuile : T549 retrouvé malgré la casse du numéro, et identique à la référence", [e2.etat, ecartsOutilHTML(ref, sc, sc.outils[1]).includes("= référence")], ["identique", true]);
+      const e3 = ecartsOutilVsReference(ref, sc, sc.outils[2]);
+      ok("tuile : T550 absent de la référence = outil nouveau", [e3.etat, e3.logements[0].nouveau, ecartsOutilHTML(ref, sc, sc.outils[2]).includes("outil nouveau")], ["nouveau", true, true]);
+      const h1 = ecartsOutilHTML(ref, sc, sc.outils[0]);
+      ok("tuile : le logement modifié montre la plaquette, l'ancienne, Vc, f, ap et la charnière visée ; D2 est grisé", [h1.includes("SNGN 090416 F SL500"), h1.includes("réf. : SNGN 090416T00520 SN60"), /ec-diff">Vc 400/.test(h1), /ec-diff">charnière visée 120/.test(h1), h1.includes("f 0,12"), h1.includes("ap 0,5"), h1.includes("D2 = réf.")], [true, true, true, true, true, true, true]);
+      ok("tuile : jamais de K ni de puissance dans l'affichage (règle de confidentialité du moteur thermique)", [/\bK\b\s*=|P_req|puissance/i.test(h1 + ecartsOutilHTML(ref, sc, sc.outils[1]))], [false]);
+      const sc2 = { id: "E2", name: "Essai 2", outils: [ { id: "tx", numero: "T548", logements: [ lg("D1", "SNGN 090416T00520 SN60", { modeVitesse: "G97", sBroche: 900, vc: "" }) ] } ] };
+      const h2 = ecartsOutilHTML(ref, sc2, sc2.outils[0]);
+      ok("tuile composition : le résumé n'écrit que les valeurs qui diffèrent (ancienne → nouvelle), jamais la plaquette", [ecartResume(e1.logements[0]), ecartResume(e1.logements[1]), ecartResume(null)], ["charnière visée 300 → 120 · Vc 350 → 400", "", ""]);
+      ok("tuile : en G97 la vitesse affichée est S (tr/min), un logement retiré est signalé", [h2.includes("S 900 tr/min"), h2.includes("retiré : D2")], [true, true]);
     }
 
 
