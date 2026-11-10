@@ -922,7 +922,13 @@ details.outil-carte.drag-cible{outline:2px dashed var(--blue); outline-offset:3p
 /* v4.153 — plaquettes en essai non codées (MABEC provisoire PLA###) */
 .badge-prov{display:inline-block; font:600 10.5px/1 var(--font-sans, inherit); color:var(--amber); background:var(--amber-bg); border:1px solid var(--amber); border-radius:999px; padding:2px 7px;}
 tr.cat-prov td.mono, tr.cat-prov .cell.ref, .cell.mabec-prov{color:var(--amber);}
-.cat-noncodes{margin:0 0 14px; padding:10px 12px; border:1px solid var(--amber); background:var(--amber-bg); border-radius:var(--radius-sm);}
+.cat-noncodes{margin:0 0 14px; padding:10px 12px; border:1px solid var(--amber); background:var(--amber-bg); border-radius:var(--radius-sm); max-width:100%; box-sizing:border-box;}
+.cat-nc-ligne{display:flex; flex-wrap:wrap; align-items:flex-end; gap:8px 12px; padding:10px 0; border-top:1px solid color-mix(in srgb, var(--amber) 35%, transparent);}
+.cat-nc-champ{display:flex; flex-direction:column; gap:3px; font-size:12px; color:var(--ink-soft); min-width:0;}
+.cat-nc-champ input{width:100%; box-sizing:border-box; min-width:0; border:1px solid var(--border); background:var(--surface, #fff); border-radius:var(--radius-sm); padding:6px 8px;}
+.cat-nc-lib{flex:2 1 260px;} .cat-nc-mabec{flex:1 1 170px;} .cat-nc-prix{flex:0 1 90px;}
+.cat-nc-btn{flex:0 1 auto; max-width:100%; white-space:normal; line-height:1.25;}
+.cat-nc-info{flex:1 1 100%; font-size:12px; color:var(--ink-soft); overflow-wrap:anywhere;}
 .cat-noncodes h4{margin:0 0 4px; color:var(--amber);}
 /* Tour 135 — vue plaquette globale */
 .extrapole-lev input{width:110px;}
@@ -14827,6 +14833,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.153.1", date:"10/11/2026", points:[
+    "<b>Non codées : tu peux donner le vrai MABEC tout de suite, et l'encadré tient dans l'écran.</b> Chaque ligne de l'encadré « Plaquettes en essai, non codées » a un champ <b>Vrai MABEC</b> : renseigné, l'article est créé sous ce code (pas de PLA) ; si cet article existe déjà au catalogue, les logements y sont <b>rattachés</b> (libellé et prix du catalogue, rien n'est recréé) et la ligne le signale. Vide, c'est toujours un code provisoire PLA###. La mise en page est refaite : chaque plaquette est une carte qui passe à la ligne, le bouton ne déborde plus du cadre ni de la fenêtre."
+  ]},
   { version:"4.153.0", date:"10/11/2026", points:[
     "<b>Les plaquettes en essai, pas encore codées par Matis, entrent au catalogue.</b> Une plaquette testée sans MABEC (la SNGN 090416 F SL500, les LKT640…) n'était jamais vue du catalogue : corriger son prix ne changeait pas le logement. Le catalogue affiche maintenant un encadré <b>« Plaquettes en essai, non codées »</b> : les écritures à la main d'une même plaquette (majuscules, espaces, tirets) sont regroupées, et <b>« Créer l'article provisoire »</b> leur pose un code <b>PLA001, PLA002…</b>, unifie le libellé et applique le prix. Ces lignes sont en <b>ambre avec un badge « non codé »</b>, et proposées dans le logement comme n'importe quel article (taper l'ISO, même écrit autrement, remplit le code et le prix). Quand Matis codifie : tape le <b>vrai MABEC</b> sur la ligne, il remplace le code provisoire partout."
   ]},
@@ -15724,7 +15733,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.153.0";
+const TOOL_VERSION = "4.153.1";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -19288,30 +19297,45 @@ function plaquettesNonCodees(){
     const p = parseFloat(g.prix); if(!isNaN(p) && p > 0) e.prixVus[p] = (e.prixVus[p] || 0) + 1;
     e.ou.add(String(o.nom || o.code || "OP"));
   });
+  const dejaAuCatalogue = cle => catalogue.find(a => String(a.iso || "").split(" | ").some(x => normIso(x) === cle));
   return Object.values(groupes).map(e => ({
+    existant: (dejaAuCatalogue(e.cle) || {}).mabec || "",
     cle: e.cle, n: e.n, libelles: Object.keys(e.libelles), libelle: libelleMajoritaire(e.libelles),
     prixVus: Object.keys(e.prixVus).map(Number).sort((a, b) => a - b), prix: valeurModale(e.prixVus), ou: [...e.ou]
   })).sort((a, b) => b.n - a.n);
 }
-/* crée l'article provisoire d'un groupe : MABEC PLA### posé sur TOUS ses logements, libellé unifié, prix du catalogue propagé.
-   Rend { ok, mabec, rapport } ; refuse un prix absent/nul (comme catalogueChangerPrix) ou un groupe introuvable. */
-function catalogueCreerProvisoire(cle, libelleTexte, prixTexte){
+/* crée l'article d'un groupe : MABEC PLA### posé sur TOUS ses logements, libellé unifié, prix du catalogue propagé.
+   v4.153.1 : si le vrai MABEC est déjà connu (`mabecReelTexte`), l'article est créé SOUS CE MABEC (pas de PLA) ; s'il existe
+   déjà au catalogue, les logements y sont RATTACHÉS (libellé et prix du catalogue, rien n'est recréé).
+   Rend { ok, mabec, rapport, rattache } ; refuse un prix absent/nul pour un article neuf, un groupe introuvable,
+   ou un « vrai » MABEC qui est un code provisoire. */
+function catalogueCreerProvisoire(cle, libelleTexte, prixTexte, mabecReelTexte){
   const k = normIso(cle);
   const prix = catalogueNombre(prixTexte);
+  const reel = String(mabecReelTexte || "").trim().toUpperCase().replace(/\s+/g, " ");
   if(!k) return { ok: false, motif: "désignation vide" };
-  if(prix === null || prix <= 0) return { ok: false, motif: "prix invalide" };
+  if(reel && mabecEstProvisoire(reel)) return { ok: false, motif: "ce n'est pas un vrai MABEC" };
   const groupe = plaquettesNonCodees().find(x => x.cle === k);
   if(!groupe) return { ok: false, motif: "aucun logement non codé pour cette désignation" };
-  const libelle = String(libelleTexte || "").replace(/\s+/g, " ").trim() || groupe.libelle;
-  const mabec = prochainMabecProvisoire();
+  const exist = reel ? catalogue.find(a => a.mabec === reel) : null;
+  if(!exist && (prix === null || prix <= 0)) return { ok: false, motif: "prix invalide" };
+  const libTape = String(libelleTexte || "").replace(/\s+/g, " ").trim() || groupe.libelle;
+  const libelle = exist ? (exist.libelle || String(exist.iso || "").split(" | ")[0] || libTape) : libTape;
+  const mabec = reel || prochainMabecProvisoire();
+  let nb = 0;
   chaqueLogementDeLArbre(g => {
     if(!logementNonCode(g) || normIso(g.ref) !== k) return;
     g.codeArticle = mabec;
     g.ref = libelle;
+    nb++;
   });
+  if(exist){
+    if(!(exist.prix > 0) && prix > 0) exist.prix = Math.round(prix * 10000) / 10000;
+    return { ok: true, mabec, nb, rattache: true, rapport: catalogueAppliquer(null, mabec) };
+  }
   catalogue.push(normalizeArticleCat({ mabec, iso: libelle, libelle, prix: Math.round(prix * 10000) / 10000 }));
   catalogue.sort((a, b) => a.mabec.localeCompare(b.mabec));
-  return { ok: true, mabec, rapport: catalogueAppliquer(null, mabec) };
+  return { ok: true, mabec, nb, rattache: false, rapport: catalogueAppliquer(null, mabec) };
 }
 /* le jour où Matis codifie : PLA### → vrai MABEC, sur l'article et sur tous ses logements. */
 function catalogueRemplacerMabec(ancien, nouveauTexte){
@@ -19601,16 +19625,17 @@ function nonCodesHTML(){
   const pl = prochainMabecProvisoire();
   return `<div class="cat-noncodes">
     <h4>🧩 Plaquettes en essai, non codées — ${gr.length} désignation(s)</h4>
-    <p class="panel-hint">Ces logements n'ont pas de MABEC (vide ou « NC »), donc le catalogue ne les voit pas : un prix corrigé ne s'y propage pas. <b>Créer l'article provisoire</b> pose un code provisoire <b>PLA###</b> (prochain : <b>${escapeAttr(pl)}</b>) sur tous les logements de la désignation (écritures à la main regroupées : majuscules, espaces et tirets ignorés), unifie le libellé et applique le prix. Quand Matis codifie, tape le vrai MABEC sur la ligne de l'article.</p>
-    <table class="simul-table"><thead><tr><th>Libellé retenu</th><th>Écritures vues</th><th>Logements</th><th>Prix vus</th><th>Prix catalogue €</th><th></th></tr></thead>
-    <tbody>${gr.map(g => `<tr>
-      <td><input class="cell ref" style="min-width:230px;" data-nclib="${escapeAttr(g.cle)}" value="${escapeAttr(g.libelle)}" aria-label="Libellé retenu"></td>
-      <td style="font-size:12px; color:var(--ink-soft);">${g.libelles.map(escapeAttr).join("<br>")}</td>
-      <td class="mono">${g.n}</td>
-      <td class="mono">${g.prixVus.length ? g.prixVus.map(x => fmt(x, 2)).join(" · ") : "—"}</td>
-      <td><input class="cell" style="width:84px; font-family:var(--font-mono); text-align:right;" inputmode="decimal" data-ncprix="${escapeAttr(g.cle)}" value="${g.prix !== "" && g.prix != null ? String(g.prix).replace(".", ",") : ""}" placeholder="€" aria-label="Prix catalogue"></td>
-      <td><button type="button" class="primary small" data-nccreer="${escapeAttr(g.cle)}">Créer l'article provisoire</button></td>
-    </tr>`).join("")}</tbody></table></div>`;
+    <p class="panel-hint">Ces logements n'ont pas de MABEC (vide ou « NC »), donc le catalogue ne les voit pas : un prix corrigé ne s'y propage pas. Deux cas par ligne :
+      <b>le vrai MABEC est connu</b> → tape-le dans « Vrai MABEC » : l'article est créé sous ce code (ou, s'il existe déjà au catalogue, les logements y sont rattachés) ;
+      <b>pas encore codifiée</b> → laisse « Vrai MABEC » vide : l'article prend un code provisoire <b>PLA###</b> (prochain : <b>${escapeAttr(pl)}</b>), à remplacer plus tard par le vrai.
+      Les écritures à la main d'une même plaquette sont regroupées (majuscules, espaces et tirets ignorés) et le libellé est unifié.</p>
+    ${gr.map(g => `<div class="cat-nc-ligne">
+      <label class="cat-nc-champ cat-nc-lib">Libellé retenu<input class="cell ref" data-nclib="${escapeAttr(g.cle)}" value="${escapeAttr(g.libelle)}"></label>
+      <label class="cat-nc-champ cat-nc-mabec">Vrai MABEC<input class="cell" data-ncreel="${escapeAttr(g.cle)}" value="${escapeAttr(g.existant)}" placeholder="si connu — sinon provisoire"></label>
+      <label class="cat-nc-champ cat-nc-prix">Prix €<input class="cell" inputmode="decimal" data-ncprix="${escapeAttr(g.cle)}" value="${g.prix !== "" && g.prix != null ? String(g.prix).replace(".", ",") : ""}" placeholder="€"></label>
+      <button type="button" class="primary small cat-nc-btn" data-nccreer="${escapeAttr(g.cle)}">${g.existant ? "Rattacher à " + escapeAttr(g.existant) : "Créer l'article"}</button>
+      <div class="cat-nc-info">${g.n} logement(s) · ${g.ou.map(escapeAttr).join(", ")} · prix vus : ${g.prixVus.length ? g.prixVus.map(x => fmt(x, 2)).join(" · ") : "—"} · écrit : ${g.libelles.map(escapeAttr).join(" | ")}${g.existant ? ` · <b>déjà au catalogue sous ${escapeAttr(g.existant)}</b>` : ""}</div>
+    </div>`).join("")}</div>`;
 }
 
 function catalogueRendu(){
@@ -19690,10 +19715,10 @@ function renderCatalogue(){ renderCatalogueDatlists();
   wrap.querySelectorAll('[data-nccreer]').forEach(b => b.addEventListener("click", () => {
     const cle = b.getAttribute("data-nccreer");
     const q = attr => Array.from(wrap.querySelectorAll('[' + attr + ']')).find(x => x.getAttribute(attr) === cle);
-    backupSnapshot("Catalogue : article provisoire");
-    const res = catalogueCreerProvisoire(cle, (q("data-nclib") || {}).value, (q("data-ncprix") || {}).value);
+    backupSnapshot("Catalogue : article non codé");
+    const res = catalogueCreerProvisoire(cle, (q("data-nclib") || {}).value, (q("data-ncprix") || {}).value, (q("data-ncreel") || {}).value);
     if(!res.ok){ dire("Création refusée (" + res.motif + ")."); return; }
-    apresEdition("✓ " + res.mabec + " créé — " + res.rapport.logementsTouches + " logement(s) au nouveau prix.");
+    apresEdition("✓ " + res.mabec + (res.rattache ? " : logements rattachés à l'article du catalogue" : " créé") + " — " + res.nb + " logement(s) codé(s), " + res.rapport.logementsTouches + " au prix changé.");
   }));
   wrap.querySelectorAll('input[data-catreel]').forEach(inp => inp.addEventListener("change", () => {
     const art = catalogue[Number(inp.getAttribute("data-catreel"))];
@@ -27561,6 +27586,19 @@ function runTests(){
         const r3 = catalogueRemplacerMabec("PLA001", "im02 198  054");
         ok("provisoire : le vrai MABEC remplace PLA001 sur l'article et sur ses 4 logements, prix et libellé intacts", [r3.ok, r3.logementsTouches, catalogue.some(a => a.mabec === "IM02 198 054"), catalogue.some(a => a.mabec === "PLA001"), logs.filter(g => g.codeArticle === "IM02 198 054").length, logs.find(g => g.id === "a1").prix], [true, 4, true, false, 4, 7.9]);
         ok("provisoire : après codification, le prochain code libre reste PLA003", [prochainMabecProvisoire()], ["PLA003"]);
+        /* v4.153.1 — le vrai MABEC est déjà connu : création sous ce code, ou rattachement à l'article existant */
+        const tl = lignes[0].references[0].ops[0].scenarios[0].outils[0].logements;
+        tl.push(mkG("c1","D5","CNMX 120716 T02020 LKT640","",6), mkG("c2","D6","cnmx120716t02020lkt640","NC",6));
+        const gC = plaquettesNonCodees().find(x => x.cle === "CNMX120716T02020LKT640");
+        ok("vrai MABEC : un groupe sans article au catalogue n'a pas d'existant ; un code provisoire n'est pas un vrai MABEC", [gC.existant, catalogueCreerProvisoire(gC.cle, "", "7,96", "PLA050").ok], ["", false]);
+        ok("vrai MABEC : sans article au catalogue, le prix reste obligatoire", [catalogueCreerProvisoire(gC.cle, "", "", "IM02 137 022").ok, tl.find(g => g.id === "c1").codeArticle], [false, ""]);
+        const rC = catalogueCreerProvisoire(gC.cle, "", "7,96", "im02 137  022");
+        ok("vrai MABEC : l'article est créé SOUS CE MABEC (pas de PLA) et ses 2 logements prennent le prix", [rC.ok, rC.mabec, rC.rattache, tl.filter(g => g.codeArticle === "IM02 137 022").length, tl.find(g => g.id === "c2").prix, catalogue.some(a => a.mabec === "IM02 137 022")], [true, "IM02 137 022", false, 2, 7.96, true]);
+        tl.push(mkG("c3","D7","CNMX 120716 T02020  LKT640","",6.5));
+        const gD = plaquettesNonCodees().find(x => x.cle === "CNMX120716T02020LKT640");
+        ok("vrai MABEC : un nouveau logement de la même désignation est signalé « déjà au catalogue »", [gD.existant, /Rattacher à IM02 137 022/.test(nonCodesHTML()), /cat-nc-ligne/.test(nonCodesHTML())], ["IM02 137 022", true, true]);
+        const rD = catalogueCreerProvisoire(gD.cle, "", "99", "IM02 137 022");
+        ok("vrai MABEC : le rattachement reprend le prix et le libellé du catalogue (le 99 tapé est ignoré), sans doublon", [rD.ok, rD.rattache, tl.find(g => g.id === "c3").codeArticle, tl.find(g => g.id === "c3").prix, catalogue.filter(a => a.mabec === "IM02 137 022").length], [true, true, "IM02 137 022", 7.96, 1]);
       } finally { lignes = lAv; catalogue = cAv; }
     }
 
