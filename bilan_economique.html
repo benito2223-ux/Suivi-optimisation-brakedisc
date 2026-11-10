@@ -6500,7 +6500,18 @@ function essaiStats(sc, essai){
   const badCount = evaluated.filter(r => checkConform(sc,r) === false).length;
   const anyBad = badCount > 0;
   const tauxHorsTol = evaluated.length ? (badCount / evaluated.length) * 100 : null;
-  const manquantes = prelsTolerance.length - evaluated.length;
+  /* v4.156 — deux outils SIMULTANÉS (finition piste inter + piste exter) usinent le MÊME disque : le battement se
+     mesure UNE fois par pièce pour le groupe. Un relevé de membre sans battement n'est donc pas « manquant » quand un
+     autre membre du groupe en porte un pour la même pièce (il reste « non évalué » sur le battement). */
+  const groupeDeLogement = new Map();
+  groupesSimultanes(sc).forEach((g, gi) => g.forEach(o => (o.logements || []).forEach(l => groupeDeLogement.set(l.id, gi))));
+  const battementPartage = r => {
+    const gi = groupeDeLogement.get(r.logementId);
+    if(gi === undefined) return false;
+    const p = parseFloat(r.piece);
+    return !isNaN(p) && prelsTolerance.some(x => x !== r && groupeDeLogement.get(x.logementId) === gi && parseFloat(x.piece) === p && checkConformPrincipal(sc, x) !== null);
+  };
+  const manquantes = prelsTolerance.filter(r => checkConform(sc, r) === null && !battementPartage(r)).length;
   const pieceVals = prels.map(r => parseFloat(r.piece)).filter(v => !isNaN(v));
   const lastPiece = pieceVals.length ? Math.max(...pieceVals) : null;
 
@@ -6711,6 +6722,52 @@ function atelierProchainePiece(essai, logementId){
   })();
   return last === null ? 1 : last + (pas > 0 ? pas : 10);
 }
+/* v4.156 — LA FICHE DE RELEVÉ NE RÉPÈTE PLUS LES AXES. Chaque outil mesure SON axe (T548 = piste extérieure → Exter,
+   T549 = piste intérieure → Inter) : les pastilles d'axes sont mémorisées PAR LOGEMENT, avec un défaut tiré (1) des
+   relevés déjà saisis pour ce logement, sinon (2) de la désignation de l'outil (« intérieure » / « extérieure »,
+   « droite » / « gauche ») ; sans indice, tous les axes restent proposés. Retour : { "batt": {D,G}, "cs_<id>": {axe:bool} }. */
+function axesParDefautLogement(sc, essai, o, l){
+  const out = {};
+  const rows = (essai.prelevements || []).filter(r => l && r.logementId === l.id);
+  const texte = [o && o.description, o && o.numero, l && l.nom].filter(Boolean).join(" ");
+  const indice = (axes) => {
+    const t = texte.toLowerCase();
+    const hits = axes.filter(ax =>
+      (ax === "I" && /int(é|e)rieur|\binter\b|\bint\b/.test(t)) || (ax === "E" && /ext(é|e)rieur|\bexter\b|\bext\b/.test(t)) ||
+      (ax === "D" && /droit/.test(t)) || (ax === "G" && /gauch/.test(t)));
+    return hits.length === 1 ? hits : null;
+  };
+  const poser = (cle, axes, vus) => {
+    const choisis = vus.length ? vus : (indice(axes) || []);
+    if(choisis.length && choisis.length < axes.length) out[cle] = Object.fromEntries(axes.map(ax => [ax, choisis.indexOf(ax) !== -1]));
+  };
+  if(sc.battActif !== false && battCotesDe(sc) === "DG")
+    poser("batt", ["D", "G"], ["D", "G"].filter(ax => rows.some(r => (ax === "D" ? r.battD : r.battG) !== "" && (ax === "D" ? r.battD : r.battG) != null)));
+  criteresSupActifs(sc).forEach(c => {
+    const axes = axesDe(c);
+    if(axes.length > 1) poser("cs_" + c.id, axes, axes.filter(ax => rows.some(r => r.valeurs && r.valeurs[c.id] && r.valeurs[c.id][ax] !== "" && r.valeurs[c.id][ax] != null)));
+  });
+  return out;
+}
+/* les pastilles actives d'UN logement : le défaut ci-dessus, recouvert par ce que l'utilisateur a basculé à la main */
+function axesOnPourLogement(sc, essai, logementId){
+  const o = (sc.outils || []).find(x => (x.logements || []).some(l => l.id === logementId));
+  const l = o && o.logements.find(x => x.id === logementId);
+  const defaut = axesParDefautLogement(sc, essai, o, l);
+  const manuel = ((atelierCtx && atelierCtx.axesOnLog) || {})[logementId] || {};
+  const out = {};
+  new Set([...Object.keys(defaut), ...Object.keys(manuel)]).forEach(k => { out[k] = Object.assign({}, defaut[k], manuel[k]); });
+  return out;
+}
+/* le battement d'un groupe simultané se saisit UNE fois par pièce, sur l'outil de tête : rend { tete, nom } pour un
+   membre qui n'est PAS la tête (son écran n'a pas de battement), sinon null. */
+function battementSurLaTete(sc, logementId){
+  const g = groupesSimultanes(sc).find(gr => gr.some(o => (o.logements || []).some(l => l.id === logementId)));
+  if(!g || g.length < 2) return null;
+  const tete = g[0];
+  if((tete.logements || []).some(l => l.id === logementId)) return null;
+  return { numero: tete.numero || "outil de tête", logement: ((tete.logements || [])[0] || {}).nom || "" };
+}
 function atelierHTML(){
   if(!atelierCtx) return "";
   const sc = data.find(s => s.id === atelierCtx.scId);
@@ -6755,16 +6812,20 @@ function atelierHTML(){
   // caché ne rend pas de champ ; le contrôle de conformité filtrait déjà les
   // côtés vides, la donnée ne change pas de forme.
   const cotesAt = battCotesDe(sc);
-  const on = atelierCtx.axesOn || {};
+  const on = axesOnPourLogement(sc, essai, atelierCtx.logementId);
   if(atelierCtx.usure === undefined) atelierCtx.usure = "";
-  const chipAxes = (groupe, axes) => `<div class="at-groupe"><span class="at-groupe-label">${groupe}</span><span class="at-points-row">${axes.map(ax =>
-    `<button class="at-pm ${axesActifs(axes, on[groupe]).includes(ax) ? "actif" : ""}" data-at-axe="${groupe}" data-at-axeval="${ax}">${AXE_LABELS[ax] || ax}</button>`).join("")}</span></div>`;
+  /* v4.156 — la pastille et le champ lisent la MÊME clé (`cle` : « batt » ou « cs_<id> ») : avant, la pastille se rangeait
+     sous son libellé et le champ lisait une autre clé — basculer un axe ne cachait jamais rien (doublons Inter/Exter). */
+  const chipAxes = (groupe, axes, cle) => `<div class="at-groupe"><span class="at-groupe-label">${groupe}</span><span class="at-points-row">${axes.map(ax =>
+    `<button class="at-pm ${axesActifs(axes, on[cle]).includes(ax) ? "actif" : ""}" data-at-axe="${cle}" data-at-axeval="${ax}">${AXE_LABELS[ax] || ax}</button>`).join("")}</span></div>`;
   const champs = [];
-  if(sc.battActif !== false){
+  const surTete = sc.battActif !== false ? battementSurLaTete(sc, atelierCtx.logementId) : null;
+  if(surTete) champs.push(`<div class="at-champ"><label>${escapeAttr(libelleDe(sc))}</label><span style="font-size:13px; color:var(--ink-soft);">Une seule mesure par pièce pour le groupe simultané : à saisir sur <b>${escapeAttr(surTete.numero)}${surTete.logement ? " " + escapeAttr(surTete.logement) : ""}</b>.</span></div>`);
+  if(sc.battActif !== false && !surTete){
     const maxBatt = (Math.max(parseFloat(limiteDe(sc)) || 0.12, 0.12) * 10).toFixed(3);
       if(cotesAt === "mono") champs.push(`<div class="at-champ"><label>${escapeAttr(libelleDe(sc))}</label><input type="number" step="0.001" inputmode="decimal" min="0" max="${maxBatt}" id="atV" placeholder="0,000"></div>`);
     else {
-      if(cotesAt === "DG") champs.push(chipAxes("Côtés mesurés", ["D","G"]));
+      if(cotesAt === "DG") champs.push(chipAxes("Côtés mesurés", ["D","G"], "batt"));
       const axesB = axesActifs(["D","G"], on.batt).filter(ax => cotesAt === "DG" ? true : ax === cotesAt);
       if(axesB.includes("D")) champs.push(`<div class="at-champ"><label>Droite</label><input type="number" step="0.001" inputmode="decimal" min="0" max="${maxBatt}" id="atD" placeholder="0,000"></div>`);
       if(axesB.includes("G")) champs.push(`<div class="at-champ"><label>Gauche</label><input type="number" step="0.001" inputmode="decimal" min="0" max="${maxBatt}" id="atG" placeholder="0,000"></div>`);
@@ -6772,7 +6833,7 @@ function atelierHTML(){
   }
   criteresSupActifs(sc).forEach(c => {
     const axes = axesDe(c);
-    if(axes.length > 1) champs.push(chipAxes(`${escapeAttr(c.label || "critère")} — axes mesurés`, axes));
+    if(axes.length > 1) champs.push(chipAxes(`${escapeAttr(c.label || "critère")} — axes mesurés`, axes, "cs_" + c.id));
     axesActifs(axes, on["cs_" + c.id]).forEach(ax => {
       const suf = ax === "v" ? "" : " " + (AXE_LABELS[ax] || ax);
       champs.push(`<div class="at-champ"><label>${escapeAttr(c.label || "critère")}${suf}</label><input type="number" step="0.001" inputmode="decimal" id="atCs_${c.id}_${ax}" placeholder="0,000"></div>`);
@@ -6878,8 +6939,12 @@ function renderAtelier(){
      n'est simplement pas rendu, et la conformité filtrait déjà les vides. */
   el.querySelectorAll("[data-at-axe]").forEach(b => b.addEventListener("click", () => {
     const g = b.getAttribute("data-at-axe"), ax = b.getAttribute("data-at-axeval");
-    const on = atelierCtx.axesOn = atelierCtx.axesOn || {};
-    const etat = on[g] = on[g] || {};
+    const lid = atelierCtx.logementId;
+    const sc0 = data.find(s => s.id === atelierCtx.scId), es0 = sc0 && (sc0.essais || []).find(e => e.id === atelierCtx.essaiId);
+    const parLog = (atelierCtx.axesOnLog = atelierCtx.axesOnLog || {});
+    const manuel = parLog[lid] = parLog[lid] || {};
+    /* l'état de départ = ce qui est affiché (défaut inféré compris), pour que le basculement parte de ce que l'on voit */
+    const etat = manuel[g] = manuel[g] || Object.assign({}, (sc0 && es0 ? axesOnPourLogement(sc0, es0, lid) : {})[g]);
     if(etat[ax] !== false){
       const freres = Array.from(el.querySelectorAll('[data-at-axe="' + g + '"]'))
         .map(x => x.getAttribute("data-at-axeval")).filter(a => a !== ax);
@@ -6951,7 +7016,7 @@ function renderAtelier(){
   if(premier) premier.focus();
 }
 function ouvrirAtelier(scId, essaiId){
-  atelierCtx = { scId, essaiId, logementId:"", pointMesure:"", axesOn:{} };
+  atelierCtx = { scId, essaiId, logementId:"", pointMesure:"", axesOn:{}, axesOnLog:{} };
   const el = document.getElementById("atelierPanel");
   el.hidden = false;
   document.body.classList.add("atelier-on");
@@ -14936,6 +15001,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.156.0", date:"10/11/2026", points:[
+    "<b>Finition piste inter + exter en simultané : fini les « mesures à saisir » et les doublons.</b> Deux outils qui usinent le même disque en même temps ne mesurent le <b>battement qu'une fois par pièce</b> : un relevé de l'outil suivant n'est plus compté « manquant » quand le battement de la même pièce est saisi sur l'outil de tête (l'essai peut passer conforme). Dans la <b>fiche de relevé</b>, le battement ne se demande que sur l'outil de tête, et <b>chaque outil ne propose que son axe</b> (piste extérieure → Exter, piste intérieure → Inter), déduit de ses relevés ou de sa désignation — les pastilles se retiennent par logement."
+  ]},
   { version:"4.155.0", date:"10/11/2026", points:[
     "<b>Un nouveau scénario reprend la composition de la référence.</b> « + Scénario » propose maintenant, sur tous les écrans, <b>Comme la référence ★ (Classeur Matis)</b> — par défaut : mêmes outils, logements et conditions de coupe, sans les essais, tu ne modifies que ce qui change —, <b>Comme un autre scénario</b> (une liste) ou <b>Scénario vide</b>. Fini le scénario qui arrive sans outil.",
     "<b>La tuile de l'outil dit ce qui a changé.</b> Sur la ligne de chaque outil d'un scénario d'essai, comparée à la référence ★ : <b>= référence</b> (grisé) si rien ne change, sinon les logements modifiés en évidence avec leur <b>plaquette</b> (et l'ancienne, en petit), les <b>conditions de coupe</b> (Vc ou S, f, ap, κr) et la <b>charnière visée</b> ; chaque valeur qui diffère est surlignée. Un outil absent de la référence est signalé « outil nouveau »."
@@ -15846,7 +15914,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.155.0";
+const TOOL_VERSION = "4.156.0";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -27886,6 +27954,46 @@ function runTests(){
       ok("copie pour un essai : mêmes outils/logements/conditions, sans essais ni rebuts, jamais ★, nom par défaut", [cp.outils[0].numero, cp.outils[0].logements[0].ref, cp.outils[0].logements[0].vc, cp.essais.length, cp.scrapLog.length, cp.baseline, cp.statut, cp.name], ["T548", "SNGN 090416T00520 SN60", 350, 0, 0, false, "essai", "Classeur Matis — variante"]);
       ok("copie pour un essai : aucun identifiant partagé avec la source (modifier la copie ne touche pas la référence)", [cp.id !== star.id, cp.outils[0].id !== star.outils[0].id, cp.outils[0].logements[0].id !== star.outils[0].logements[0].id, (cp.outils[0].logements[0].ref = "AUTRE", star.outils[0].logements[0].ref)], [true, true, true, "SNGN 090416T00520 SN60"]);
       ok("copie pour un essai : le nom saisi est gardé ; la source garde ses essais", [copierScenarioSansEssais(star, "Mon essai").name, star.essais.length], ["Mon essai", 1]);
+    }
+    /* v4.156 — finition piste inter + exter en simultané : battement partagé, axes par logement */
+    {
+      const sc = { id: "S", name: "Essai SL500", emag1: false, battActif: true, limitValue: 0.04, validationThreshold: 5,
+        criteresSup: [ { id: "ra", label: "Ra (µm)", actif: true, axes: ["I", "E"] } ],
+        outils: [
+          { id: "o548", numero: "T548", description: "Outil finition piste extérieure ", logements: [ { id: "l548", nom: "D1", ref: "SNGN 090416 F SL500", charniere: 50, suiviTolerance: true } ] },
+          { id: "o549", numero: "T549", description: "Outil finition piste intérieure ", simultaneAvecPrecedent: true, logements: [ { id: "l549", nom: "D1", ref: "SNGN 090416 F SL500", charniere: 50, suiviTolerance: true } ] } ],
+        essais: [] };
+      const rows = []; [1, 5, 10, 50].forEach(p => { rows.push({ id: "a" + p, logementId: "l548", piece: String(p), batt: 0.03, battD: "", battG: "", valeurs: { ra: { E: 4.7 } } }); rows.push({ id: "b" + p, logementId: "l549", piece: p, batt: "", battD: "", battG: "", valeurs: { ra: { I: 5.2 } } }); });
+      const essai = { id: "E", titre: "Essai 1", prelevements: rows, params: { logements: [ { logementId: "l548", outilId: "o548", charniere: 50 }, { logementId: "l549", outilId: "o549", charniere: 50 } ] } };
+      sc.essais = [essai];
+      const st = essaiStats(sc, essai);
+      ok("simultané : le battement mesuré une fois par pièce sur T548 ne laisse plus de « mesure à saisir » sur T549", [st.manquantes, st.status, st.evaluatedCount, st.badCount], [0, "ok", 4, 0]);
+      sc.outils[1].simultaneAvecPrecedent = false;
+      ok("hors groupe simultané : sans battement, les 4 relevés de T549 restent « à saisir » (comportement inchangé)", [essaiStats(sc, essai).manquantes, essaiStats(sc, essai).status], [4, "pending"]);
+      sc.outils[1].simultaneAvecPrecedent = true;
+      const decale = { id: "E2", titre: "E2", prelevements: rows.map(r => r.logementId === "l549" ? Object.assign({}, r, { piece: String(parseFloat(r.piece) + 1) }) : r), params: essai.params };
+      ok("simultané : un relevé de membre à une AUTRE pièce que le battement n'est pas excusé", [essaiStats(sc, decale).manquantes], [4]);
+      ok("fiche atelier : le membre qui n'est pas la tête n'a pas de battement ; la tête, si", [battementSurLaTete(sc, "l549").numero, battementSurLaTete(sc, "l548"), battementSurLaTete(sc, "inconnu")], ["T548", null, null]);
+      const d548 = axesParDefautLogement(sc, { prelevements: [] }, sc.outils[0], sc.outils[0].logements[0]);
+      const d549 = axesParDefautLogement(sc, { prelevements: [] }, sc.outils[1], sc.outils[1].logements[0]);
+      ok("fiche atelier : sans relevé, l'axe se déduit de la désignation (extérieure → Exter seul, intérieure → Inter seul)", [JSON.stringify(d548.cs_ra), JSON.stringify(d549.cs_ra)], ['{"I":false,"E":true}', '{"I":true,"E":false}']);
+      ok("fiche atelier : avec des relevés, l'axe vient de ce qui est déjà saisi, pas de la désignation", [JSON.stringify(axesParDefautLogement(sc, essai, { description: "" }, sc.outils[1].logements[0]).cs_ra)], ['{"I":true,"E":false}']);
+      ok("fiche atelier : aucun indice, aucun relevé → tous les axes restent proposés", [JSON.stringify(axesParDefautLogement(sc, { prelevements: [] }, { numero: "T9", description: "" }, { id: "x", nom: "D1" }))], ["{}"]);
+      const aAv = atelierCtx;
+      try {
+        atelierCtx = { logementId: "l549", axesOnLog: { l549: { cs_ra: { E: true } } } };
+        ok("fiche atelier : une bascule manuelle recouvre le défaut, pour ce logement seulement", [JSON.stringify(axesOnPourLogement(sc, { prelevements: [] }, "l549").cs_ra), JSON.stringify(axesOnPourLogement(sc, { prelevements: [] }, "l548").cs_ra)], ['{"I":true,"E":true}', '{"I":false,"E":true}']);
+      } finally { atelierCtx = aAv; }
+      const dataAv = data, aAv2 = atelierCtx;
+      try {
+        data = [sc]; atelierCtx = { scId: "S", essaiId: "E", logementId: "l549", pointMesure: "", axesOnLog: {} };
+        const h = atelierHTML();
+        ok("fiche atelier : sur T549, la pastille Inter est active, Exter éteinte, et UN seul champ Ra (plus de doublon)", [/at-pm actif" data-at-axe="cs_ra" data-at-axeval="I"/.test(h), /at-pm " data-at-axe="cs_ra" data-at-axeval="E"/.test(h), (h.match(/id="atCs_ra_/g) || []).length, /atCs_ra_I/.test(h)], [true, true, 1, true]);
+        ok("fiche atelier : sur T549 (non-tête) pas de champ battement, la consigne renvoie à T548", [/id="atV"/.test(h), /à saisir sur <b>T548/.test(h)], [false, true]);
+        atelierCtx.logementId = "l548";
+        const h2 = atelierHTML();
+        ok("fiche atelier : sur T548 (tête) le battement est demandé et l'axe est Exter", [/id="atV"/.test(h2), /atCs_ra_E/.test(h2), /atCs_ra_I/.test(h2)], [true, true, false]);
+      } finally { data = dataAv; atelierCtx = aAv2; }
     }
     /* v4.155 — la tuile d'outil : écarts avec la référence */
     {
