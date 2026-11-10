@@ -13984,6 +13984,7 @@ function writeFieldValue(el){
     const o = sc.outils.find(x => x.id === outilId);
     const l = o && o.logements.find(x => x.id === logementId);
     if(l){
+      const avantRef = l.ref, avantCode = l.codeArticle;
       l[field] = val;
       /* v4.89 — LA SUGGESTION : MABEC ou ISO saisi → le catalogue remplit le
          prix (toujours), l'ISO, les arêtes et la DDV (si vides). Ce qui est
@@ -13992,14 +13993,7 @@ function writeFieldValue(el){
          suivi (plaquettes saisies ailleurs), sinon la suggestion restait
          muette sur les données réelles tant que personne n'avait généré le
          catalogue. */
-      const ent = (field === "codeArticle")
-        ? (catalogueSuggestion(String(val || "")) || suggestionDepuisArbre(String(val || ""), null))
-        : null;
-      const entIso = (field === "ref")
-        ? (catalogueParIso(String(val || "")) || suggestionDepuisArbre(null, String(val || "")))
-        : null;
-      const cible = ent || entIso;
-      if(cible) appliquerSuggestionCatalogue(l, cible);
+      synchroniserPlaquetteLogement(l, field, { ref: avantRef, codeArticle: avantCode });
     }
   } else if(outilId){
     const o = sc.outils.find(x => x.id === outilId);
@@ -14833,6 +14827,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.154.1", date:"10/11/2026", points:[
+    "<b>Changer la plaquette d'un logement met le MABEC à jour.</b> Avant, modifier l'ISO laissait le MABEC (et son prix) de la plaquette précédente. Maintenant : vers une plaquette <b>connue</b>, le MABEC, le prix, les arêtes et la charnière de la nouvelle suivent ; vers une plaquette <b>inconnue</b>, le MABEC est vidé (il n'était plus le bon) et le logement apparaît dans « Plaquettes en essai, non codées » ; et si tu tapes un <b>MABEC connu</b>, l'ISO suit. Corriger une faute de frappe dans l'ISO (casse, espaces) ne change rien."
+  ]},
   { version:"4.154.0", date:"10/11/2026", points:[
     "<b>Supprimer un article du catalogue — avec ses logements en main.</b> Chaque ligne du catalogue a un bouton <b>🗑 Supprimer</b>. Si des logements portent cet article, l'outil les <b>liste</b>, explique ce que serait une suppression sèche (prix qui ne suit plus le catalogue, économies qui ne les comptent plus) et te laisse choisir : les <b>reporter sur un autre article</b> du catalogue (libellé et prix repris) ou les <b>laisser sans code</b>. Un instantané de secours est pris avant. Et « NC » n'est plus jamais un article : « Regénérer depuis l'outil » l'ignore, « Appliquer les prix » ne reprice plus les logements non codés — c'est ce qui faisait apparaître une ligne « NC » au catalogue."
   ]},
@@ -15736,7 +15733,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.154.0";
+const TOOL_VERSION = "4.154.1";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -19629,8 +19626,9 @@ function catalogueParIso(iso){
       || catalogue.find(a => String(a.iso || "").split(" | ").some(x => normIso(x) === normIso(iso))) || null;
 }
 
-function appliquerSuggestionCatalogue(l, entry){
+function appliquerSuggestionCatalogue(l, entry, opts){
   if(!l || !entry) return [];
+  opts = opts || {};
   const mods = [];
   const vide = v => v === "" || v == null;
   const isoUnique = (entry.iso && entry.iso.indexOf(" | ") === -1) ? entry.iso : "";
@@ -19643,10 +19641,43 @@ function appliquerSuggestionCatalogue(l, entry){
   };
   poser("codeArticle", entry.mabec, true);
   poser("prix", entry.prix, true);
-  poser("ref", isoUnique, false);
-  poser("aretes", entry.aretes, false);
-  poser("charniere", entry.ddv, false);
+  /* v4.154.1 — MABEC changé vers un article connu : l'ISO suit (un MABEC = un article) ; plaquette changée : arêtes et
+     charnière de la nouvelle plaquette remplacent celles de l'ancienne (sinon elles restent « si vides »). */
+  if(opts.remplacerIso) poser("ref", entry.libelle || isoUnique, true); else poser("ref", isoUnique, false);
+  poser("aretes", entry.aretes, !!opts.nouvellePlaquette);
+  poser("charniere", entry.ddv, !!opts.nouvellePlaquette);
   return mods;
+}
+/* v4.154.1 — LA PLAQUETTE D'UN LOGEMENT CHANGE : le MABEC suit. Bug vu à l'atelier : on changeait l'ISO d'un logement,
+   le MABEC (et son prix) restaient ceux de la plaquette précédente — les économies comptaient la mauvaise plaquette.
+   `avant` = { ref, codeArticle } AVANT la saisie. Rend la liste des champs modifiés par la synchro.
+   · ISO saisi, MÊME plaquette (clé sans séparateur ni casse) ou ISO d'abord vide : comportement 4.89 inchangé ;
+   · ISO saisi, AUTRE plaquette connue (catalogue ou suivi) : MABEC, prix, arêtes et charnière de la nouvelle ;
+   · ISO saisi, AUTRE plaquette inconnue : le MABEC est VIDÉ (il appartenait à l'ancienne) — le logement retombe dans
+     « non codées » (code provisoire PLA### ou vrai MABEC) ; prix, arêtes, charnière restent, visibles ;
+   · MABEC saisi, article connu et différent : l'ISO suit. */
+function synchroniserPlaquetteLogement(l, field, avant){
+  if(!l) return [];
+  avant = avant || {};
+  if(field === "ref"){
+    const val = String(l.ref || "");
+    const plaquetteChange = normIso(avant.ref) !== "" && normIso(avant.ref) !== normIso(val);
+    const ent = catalogueParIso(val) || suggestionDepuisArbre(null, val);
+    if(ent) return appliquerSuggestionCatalogue(l, ent, { nouvellePlaquette: plaquetteChange });
+    if(plaquetteChange && normIso(val) !== "" && String(l.codeArticle || "").trim() !== ""){
+      l.codeArticle = ""; if(String(l.mabec || "").trim()) l.mabec = "";
+      return ["codeArticle"];
+    }
+    return [];
+  }
+  if(field === "codeArticle"){
+    const val = String(l.codeArticle || "");
+    const ent = catalogueSuggestion(val) || suggestionDepuisArbre(val, null);
+    if(!ent) return [];
+    const codeChange = String(avant.codeArticle || "").trim().toUpperCase().replace(/\s+/g, " ") !== val.trim().toUpperCase().replace(/\s+/g, " ");
+    return appliquerSuggestionCatalogue(l, ent, { remplacerIso: codeChange, nouvellePlaquette: codeChange && String(avant.codeArticle || "").trim() !== "" });
+  }
+  return [];
 }
 
 function renderCatalogueDatlists(){
@@ -27694,6 +27725,29 @@ function runTests(){
         const r3 = catalogueSupprimerArticle("IM02 1", "");
         ok("suppression : le dernier article porté par 3 logements part sans remplaçant, le catalogue est vide", [r3.logements, catalogue.length, plaquettesNonCodees().length], [3, 0, 2]);
       } finally { lignes = lAv; catalogue = cAv; plan = pAv; }
+    }
+    /* v4.154.1 — changer la plaquette d'un logement : le MABEC suit (bug : il gardait celui de la plaquette précédente) */
+    {
+      const lAv = lignes, cAv = catalogue;
+      try {
+        catalogue = [ normalizeArticleCat({ mabec: "IM02 1", iso: "SNGN 090416T00520 SN60", prix: 10.97, aretes: 8, ddv: 300 }), normalizeArticleCat({ mabec: "PLA001", iso: "SNGN 090416 F SL500", libelle: "SNGN 090416 F SL500", prix: 7.9, aretes: 4, ddv: 120 }) ];
+        lignes = [];
+        const mk = () => ({ nom: "D1", ref: "SNGN 090416T00520 SN60", codeArticle: "IM02 1", prix: 10.97, aretes: 8, charniere: 300 });
+        let g = mk(); g.ref = "SNGN 090416 F SL500"; synchroniserPlaquetteLogement(g, "ref", { ref: "SNGN 090416T00520 SN60", codeArticle: "IM02 1" });
+        ok("plaquette change : ISO vers une plaquette connue — MABEC, prix, arêtes et charnière de la nouvelle", [g.codeArticle, g.prix, g.aretes, g.charniere], ["PLA001", 7.9, 4, 120]);
+        g = mk(); g.ref = "CNGX 120716 LKT640 inconnue"; const m1 = synchroniserPlaquetteLogement(g, "ref", { ref: "SNGN 090416T00520 SN60", codeArticle: "IM02 1" });
+        ok("plaquette change : ISO inconnu — le MABEC de l'ancienne est VIDÉ, le reste est gardé et visible", [g.codeArticle, g.prix, g.aretes, g.charniere, m1.join(",")], ["", 10.97, 8, 300, "codeArticle"]);
+        g = mk(); g.ref = "sngn090416t00520  sn60"; synchroniserPlaquetteLogement(g, "ref", { ref: "SNGN 090416T00520 SN60", codeArticle: "IM02 1" });
+        ok("plaquette change : une retouche d'écriture (casse, espaces) n'est pas un changement de plaquette", [g.codeArticle, g.aretes, g.charniere], ["IM02 1", 8, 300]);
+        g = { nom: "D1", ref: "", codeArticle: "IM02 1", prix: 5 }; g.ref = "n'importe quoi inconnu"; synchroniserPlaquetteLogement(g, "ref", { ref: "", codeArticle: "IM02 1" });
+        ok("plaquette change : un ISO d'abord vide (saisie initiale) ne vide jamais le MABEC déjà tapé", [g.codeArticle], ["IM02 1"]);
+        g = mk(); g.codeArticle = "PLA001"; synchroniserPlaquetteLogement(g, "codeArticle", { ref: "SNGN 090416T00520 SN60", codeArticle: "IM02 1" });
+        ok("plaquette change : MABEC vers un article connu — l'ISO, le prix, les arêtes et la charnière suivent", [g.ref, g.prix, g.aretes, g.charniere], ["SNGN 090416 F SL500", 7.9, 4, 120]);
+        g = mk(); g.codeArticle = "ZZ 999 inconnu"; synchroniserPlaquetteLogement(g, "codeArticle", { ref: "SNGN 090416T00520 SN60", codeArticle: "IM02 1" });
+        ok("plaquette change : MABEC inconnu — rien n'est inventé, l'ISO reste", [g.ref, g.prix], ["SNGN 090416T00520 SN60", 10.97]);
+        g = { nom: "D1", ref: "", codeArticle: "", prix: "", aretes: "", charniere: "" }; g.codeArticle = "PLA001"; synchroniserPlaquetteLogement(g, "codeArticle", { ref: "", codeArticle: "" });
+        ok("plaquette change : saisie initiale par le MABEC — l'ISO, le prix, les arêtes se remplissent", [g.ref, g.prix, g.aretes, g.charniere], ["SNGN 090416 F SL500", 7.9, 4, 120]);
+      } finally { lignes = lAv; catalogue = cAv; }
     }
 
 
