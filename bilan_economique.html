@@ -587,7 +587,7 @@ button.primary .icon, button.save .icon{stroke-width:1.8;}
 #saveStatus{
   display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px;
   border-radius:50%; border:1px solid var(--border); background:var(--surface-alt);
-  font-size:0; line-height:0; color:transparent; cursor:help; flex:0 0 auto;
+  font-size:0; line-height:0; color:transparent; cursor:pointer; flex:0 0 auto;
 }
 #saveStatus::before{content:""; display:block; width:8px; height:8px; border-radius:50%; background:var(--ink-faint);}
 #saveStatus.dirty::before{background:var(--amber);}
@@ -4972,7 +4972,15 @@ tryReconnectPhotosDir();
 function updateSaveUI(){
   const status = document.getElementById("saveStatus");
   if(!status) return;
-  const setMsg = (msg) => { status.title = msg; status.setAttribute("aria-label", msg); };
+  /* 4.160.3 : la pastille agit — un clic exporte (c'est ce qu'elle réclame quand elle dit « non exporté »). */
+  if(!status.dataset.clic){
+    status.dataset.clic = "1";
+    status.setAttribute("role", "button"); status.tabIndex = 0;
+    const exporter = () => { const b = document.getElementById("exportBtn"); if(b) b.click(); };
+    status.addEventListener("click", exporter);
+    status.addEventListener("keydown", (e) => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); exporter(); } });
+  }
+  const setMsg = (msg) => { msg += " — cliquer pour exporter une sauvegarde"; status.title = msg; status.setAttribute("aria-label", msg); };
   const heure = lastSavedAt ? lastSavedAt.toLocaleTimeString("fr-FR", {hour:"2-digit", minute:"2-digit"}) : null;
   if(!storageOk){
     setMsg(unexported
@@ -15189,6 +15197,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.160.3", date:"11/11/2026", points:[
+    "<b>La pastille d'enregistrement en haut à droite sert enfin à quelque chose.</b> Elle indiquait seulement l'état au survol. Un clic exporte maintenant la sauvegarde (le fichier à archiver), puisque c'est ce qu'elle réclame quand elle dit « non exporté »."
+  ]},
   { version:"4.160.2", date:"11/11/2026", points:[
     "<b>Plus de reste de l'ancienne mise en page au démarrage.</b> L'écran de chargement (logo) n'apparaissait jamais : il était posé au mauvais endroit du fichier. On entrevoyait donc un instant l'ancienne en-tête avant que le rail ne se mette en place. Il est maintenant en place et couvre ce moment."
   ]},
@@ -16127,7 +16138,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.160.2";
+const TOOL_VERSION = "4.160.3";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */

@@ -5,6 +5,10 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.160.3] — 2026-11-11 · la pastille d'enregistrement exporte au clic · Claude
+
+Benjamin : le point en haut à droite (curseur « ? » au survol) n'a aucun effet. C'est `#saveStatus` : indicateur d'état (ambre = enregistré dans ce navigateur, non exporté ; vert = exporté ; rouge = sauvegarde bloquée) qui n'avait qu'une info-bulle. **Décision** : un clic lance l'export de la sauvegarde (même action que Transmettre › exporter), au clavier aussi (Entrée / Espace) ; curseur main, info-bulle complétée « cliquer pour exporter une sauvegarde ».
+
 ## [4.160.2] — 2026-11-11 · l'écran de chargement s'affiche enfin, plus de reste de l'ancienne mise en page · Claude
 
 Benjamin : « encore des spectres de l'ancien design au démarrage ». **Cause réelle** (mesurée image par image dans Chrome) : l'écran de chargement du 4.127 n'a jamais existé dans la page. Le fichier n'a pas de vraie balise `<body>` (le corps commence implicitement à `.wrap`) ; le `<div id="spkBoot">` avait été inséré après la première balise `<body>` du fichier, qui est dans le gabarit du rapport de validation (une chaîne JavaScript). Résultat : aucun écran couvrant, donc l'ancienne en-tête et l'ancienne barre d'outils se voyaient quelques images avant que la coque pose le rail — les 4.145.2 et 4.145.3 corrigeaient le bon mécanisme, sur un écran absent. **Correctif** : le div est posé juste avant `.wrap` (vrai début du corps) et retiré du gabarit du rapport (où il traînait aussi). Mesure après : écran de chargement affiché dès la première image, rail déjà posé dessous, plus aucune image avec l'ancienne barre d'outils. Nouvelle porte dans `build_harness.py` : l'écran de boot doit précéder `.wrap` et n'exister qu'une fois.
