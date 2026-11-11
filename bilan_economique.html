@@ -15189,6 +15189,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.160.1", date:"11/11/2026", points:[
+    "<b>Le Plan de conversion ne compte plus deux fois la même consommation.</b> Un ancien fichier Pareto donnait la consommation de l'EMAG sous deux angles, par OP (OP 10 à 40) et par machine (EMAG 1 à 3). Quand les deux sont présents, la vue machine est retenue et la vue OP est décochée d'office ; un fichier en vue OP seule est signalé à la lecture."
+  ]},
   { version:"4.160.0", date:"10/11/2026", points:[
     "<b>Le fond de la fiche d'essai dit la maturité des bruts.</b> <b>Bleu</b> : bruts non mûrs (2 jours ou moins) · <b>vert</b> : frais (3 à 4 jours) · <b>gris</b> : mûrs (5 jours ou plus) · aucune teinte tant que la maturité est inconnue. Les pastilles de la ligne de maturité prennent les mêmes couleurs."
   ]},
@@ -16121,7 +16124,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.160.0";
+const TOOL_VERSION = "4.160.1";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -20621,11 +20624,19 @@ function normalizeConso2025(c){
   const sections = [...new Set(Object.values(parMabec).flatMap(e => Object.keys(e.parSection)))].sort();
   return { lueLe: String(c.lueLe || ""), fichier: String(c.fichier || ""), sections, parMabec };
 }
+/* v4.160.1 — une même consommation peut arriver en deux vues (OP 10-40 ET EMAG 1-3 :
+   OP 10+20+30+40 = EMAG 1+2+3). Si les deux coexistent, la vue machine est retenue
+   par défaut : la vue OP ne se compte jamais en plus (double comptage). */
+function conso2025SectionsParDefaut(c){
+  const secs = (c || conso2025 || {}).sections || [];
+  const doublon = secs.some(s => /^OP \d+$/.test(s)) && secs.some(s => /^EMAG \d+$/.test(s));
+  return doublon ? secs.filter(s => !/^OP \d+$/.test(s)) : secs.slice();
+}
 function conso2025SectionsActives(){
   if(!conso2025) return [];
   return conso2025SectionsOn
     ? conso2025.sections.filter(s => conso2025SectionsOn.has(s))
-    : conso2025.sections.slice();
+    : conso2025SectionsParDefaut();
 }
 function conso2025Somme(e){
   const actives = conso2025SectionsActives();
@@ -21454,7 +21465,7 @@ function planControlesHTML(){
     ${modeAnnuel && conso2025 ? `
     <div class="simul-controles" style="flex-wrap:wrap; gap:6px 14px;">
       <span style="font-weight:600;">Postes comptés :</span>
-      ${sectionsTot.map(([s, tot]) => `<label style="cursor:pointer; font-size:13px;" title="Décoche un poste pour le sortir de la base (vue OP vs vue machine : vérifie qu'aucun poste ne se recoupe)."><input type="checkbox" data-sec2025="${escapeAttr(s)}" ${!conso2025SectionsOn || conso2025SectionsOn.has(s) ? "checked" : ""}> ${escapeAttr(s)} <span style="color:#888;">${fmtEuroCourt(Math.round(tot))} €</span></label>`).join("")}
+      ${sectionsTot.map(([s, tot]) => `<label style="cursor:pointer; font-size:13px;" title="Décoche un poste pour le sortir de la base (vue OP vs vue machine : vérifie qu'aucun poste ne se recoupe)."><input type="checkbox" data-sec2025="${escapeAttr(s)}" ${conso2025SectionsActives().includes(s) ? "checked" : ""}> ${escapeAttr(s)} <span style="color:#888;">${fmtEuroCourt(Math.round(tot))} €</span></label>`).join("")}
     </div>
     <p class="panel-hint">Base réelle : le coût 2025 de chaque article. Joue sur le <b>prix cible</b> ou la <b>durée de vie</b> de chaque ligne du tableau : la barre grise (coût 2025) face à la verte (coût simulé), le total et le graphique suivent à la frappe. Un article sans prix actuel connu (hors catalogue) n'est pas simulé.</p>` : ""}
     ${modeReel && consoReelle ? `<p class="panel-hint">⚠ Consommation réelle = une semaine de tes classeurs × 52 (régime supposé constant). Les articles sans consommation lue perdent leur gain — jamais complétés en silence (§3.5).</p>` : ""}`;
@@ -21665,7 +21676,8 @@ function renderPlan(){
      machine : le fichier peut les recouper, c'est Benjamin qui tranche) */
   wrap.querySelectorAll('input[data-sec2025]').forEach(cb => cb.addEventListener("change", () => {
     const on = new Set([...wrap.querySelectorAll('input[data-sec2025]:checked')].map(x => x.getAttribute("data-sec2025")));
-    conso2025SectionsOn = (on.size === conso2025.sections.length) ? null : on;
+    { const def = conso2025SectionsParDefaut();
+      conso2025SectionsOn = (on.size === def.length && def.every(x => on.has(x))) ? null : on; }
     renderPlan();
   }));
   const fich25 = document.getElementById("consoFichier2025");
@@ -21680,7 +21692,10 @@ function renderPlan(){
       conso2025SectionsOn = null;
       planSource = "annuel";
       saveData();
-      dialogueAlerte(`${Object.keys(lu.parMabec).length} article(s) sur ${lu.sections.length} poste(s) : ${lu.sections.join(", ")}.\n\nLe Plan de conversion calcule maintenant sur cette base réelle — elle voyage avec le suivi (exports, import, cloud).`, "Consommations 2025 lues");
+      const avertOP = conso2025SectionsParDefaut().length < lu.sections.length
+        ? "\n\n⚠ Ce fichier contient la vue OP (OP 10-40) ET la vue machine (EMAG) : c'est la même consommation. La vue OP est décochée pour ne pas compter l'EMAG deux fois."
+        : (lu.sections.some(x => /^OP \d+$/.test(x)) ? "\n\n⚠ Ce fichier est en vue OP (OP 10-40) : les EMAG n'y apparaissent pas par machine. Demande à Matis la vue par machine (EMAG 1/2/3)." : "");
+      dialogueAlerte(`${Object.keys(lu.parMabec).length} article(s) sur ${lu.sections.length} poste(s) : ${lu.sections.join(", ")}.${avertOP}\n\nLe Plan de conversion calcule maintenant sur cette base réelle — elle voyage avec le suivi (exports, import, cloud).`, "Consommations 2025 lues");
     }catch(err){ dialogueAlerte("Lecture impossible : " + err.message, "Consommations annuelles"); }
     renderPlan();
   });
@@ -26829,6 +26844,14 @@ function runTests(){
         conso2025 = normalizeConso2025({ lueLe: "24/10/2026", fichier: "test.xlsx",
           parMabec: { "IM02 000 001": { parSection: { "OP 10": 5000 } }, "EMBOUT D13": { parSection: { "OP 10": 1831 } } } });
         const d2 = planPrioritesData(recap);
+        const dblAv = conso2025;
+        conso2025 = normalizeConso2025({ lueLe: "x", fichier: "t.xlsx", parMabec: { "A": { parSection: { "OP 10": 100, "EMAG 1": 100 } } } });
+        const defDbl = conso2025SectionsParDefaut(), totDbl = conso2025Somme(conso2025.parMabec["A"]);
+        conso2025 = normalizeConso2025({ lueLe: "x", fichier: "t.xlsx", parMabec: { "A": { parSection: { "OP 10": 100, "PCI 4": 50 } } } });
+        const defOP = conso2025SectionsParDefaut();
+        conso2025 = dblAv;
+        ok("conso 2025 : OP et EMAG ensemble → la vue OP n'est pas comptée en plus ; OP seul reste lu",
+           [defDbl.join("|"), totDbl, defOP.join("|")], ["EMAG 1", 100, "OP 10|PCI 4"]);
         conso2025 = cAv;
         ok("priorités : l'univers plaquettes — l'EMBOUT (sans lien outillage) sort sur la ligne explicite, l'article outillé reste dedans",
            [d2.horsArticles.length, d2.horsArticles[0].mabec, d2.horsTotal > 0], [1, "EMBOUT D13", true]);

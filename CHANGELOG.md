@@ -5,6 +5,10 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.160.1] — 2026-11-11 · le Plan de conversion ne compte plus la vue OP en plus de la vue machine · Claude
+
+Benjamin : des postes OP 10-40 apparaissaient parmi les cases « Postes comptés » du Plan de conversion. **Constat** (parseur de l'outil lancé sur les vrais fichiers, lecture seule) : l'ancien Pareto du 14/10 est en vue OP (OP 10 à 40, + PCI, WEISSER, HESSAPP), le fichier MAJ du 20/10 en vue machine (EMAG 1 à 3) ; OP 10+20+30+40 = EMAG 1+2+3 = 311 400 EUR. Le parseur lisait bien le fichier : c'est le fichier qui portait deux vues possibles. **Correctif** : `conso2025SectionsParDefaut` — si des postes OP et EMAG coexistent, la vue OP est exclue par défaut du calcul et des cases (jamais comptée en plus) ; à la lecture d'un fichier, message dédié (vue OP + machine : OP décochée ; vue OP seule : demander la vue machine à Matis). Un fichier en vue OP seule reste lu tel quel. 912 tests (+1).
+
 ## [4.160.0] — 2026-11-10 · le fond de la fiche d'essai dit la maturité des bruts · Claude
 
 Benjamin : colorer le fond de la fiche d'essai en bleu, vert ou gris selon la maturité — bleu = non mûrs, vert = frais, gris = ok (mûrs). La fiche porte une classe `mat-jeune` / `mat-frais` / `mat-ok` (rien si la maturité est inconnue), teintée à 11-12 % de la couleur dans le fond de la fiche ET de sa barre repliée (`spk-app.css` colorait déjà la barre selon la conformité : la teinte de maturité passe devant, la conformité reste lue sur le liseré du haut et la pastille « ✓ Conforme »). Les pastilles de la ligne de maturité reprennent les mêmes couleurs (non mûrs bleu, frais vert, mûrs gris). 911 tests | 0 échec (+1) ; vérifié dans Chrome (fonds calculés pour 2 j, 4 j, 8 j et sans valeur ; capture : fiche repliée teintée en vert pour 4 j).
