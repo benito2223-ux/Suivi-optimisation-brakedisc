@@ -1931,6 +1931,11 @@ try {
         echecs.push('l écran de boot a disparu');
       if (html.indexOf('html:not([data-pret]) body') !== -1)
         echecs.push('l ancien masquage visibility:hidden traîne encore');
+      /* 4.160.2 : l'écran de boot doit ouvrir le VRAI corps du document, juste avant .wrap — pas
+         dans un gabarit de rapport (il y était : il ne s'est jamais affiché, l'ancienne mise en page se voyait) */
+      { const iBoot = html.indexOf('<div id="spkBoot"'), iWrap = html.indexOf('<div class="wrap" role="main">');
+        if (iBoot < 0 || iWrap < 0 || iBoot > iWrap || html.indexOf('<div id="spkBoot"', iBoot + 1) !== -1 || iWrap - iBoot > 20000)
+          echecs.push('l écran de boot n est pas posé juste avant .wrap (il ne s affiche pas)'); }
       /* les cibles tactiles et les tailles minimales sont dans la surcharge */
       const iAt = html.indexOf('html[data-mode="atelier"]');
       if (iAt >= 0) {
