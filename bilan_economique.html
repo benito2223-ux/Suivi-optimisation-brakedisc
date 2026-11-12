@@ -2252,14 +2252,16 @@ input[type="number"]{ -moz-appearance:textfield; appearance:textfield; }
 
     <div class="opt-section">Coûts</div>
 
-    <label class="opt-row">
+    <p class="opt-note" id="optAxesLigneNote">Depuis la 4.162, le <b>temps machine</b> et le <b>coût du rebut</b> ne se règlent plus ici : ils dépendent de la ligne entière (coût horaire complet, goulot, stock entre les OP, valeur du disque à chaque OP) et se chiffrent dans <b>Outils › Économie de la ligne</b>. La fiche compare l'outillage : plaquettes et pièces détachées.</p>
+
+    <label class="opt-row" id="optCoutRebutRow" hidden style="display:none">
       <input type="checkbox" id="optCoutRebut">
       <span>
         <b>Intégrer le coût du rebut <i class="opt-scope">OP</i></b>
         <em>Ajoute le coût des disques rebutés au coût pièce. Sans lui, seul le prix plaquette est comparé — un écart de rebut de 1 % peut à lui seul annuler le gain outil.</em>
       </span>
     </label>
-    <div class="opt-field" id="optCoutRebutField">
+    <div class="opt-field" id="optCoutRebutField" hidden>
       <label for="optCoutDisque">Coût d'un disque rebuté (€)</label>
       <input type="number" step="0.5" min="0" id="optCoutDisque" placeholder="ex. 14">
       <span class="opt-note">Matière + valeur ajoutée perdue à l'OP40.</span>
@@ -2273,7 +2275,7 @@ input[type="number"]{ -moz-appearance:textfield; appearance:textfield; }
       </span>
     </label>
 
-    <label class="opt-row">
+    <label class="opt-row" id="optCoutMachineRow" hidden style="display:none">
       <input type="checkbox" id="optCoutMachine">
       <span>
         <b>Intégrer le temps machine au coût pièce <i class="opt-scope">OP</i></b>
@@ -2285,7 +2287,7 @@ input[type="number"]{ -moz-appearance:textfield; appearance:textfield; }
       <input type="number" step="0.1" min="0" id="optCycleRefSec" placeholder="ex. 42">
       <span class="opt-note">Mesuré machine sur le scénario marqué ★.</span>
     </div>
-    <div class="opt-field" id="optCoutMachineField">
+    <div class="opt-field" id="optCoutMachineField" hidden>
       <div class="opt-statut ko" id="optCoutMachineStatut" hidden></div>
       <label for="optCoutHoraire">Coût horaire de la ligne (€/h) <i class="opt-scope">Ligne</i></label>
       <input type="number" step="0.5" min="0" id="optCoutHoraire" placeholder="ex. 45">
@@ -7089,8 +7091,18 @@ function tauxRebutDe(sc){
 }
 
 /* ---- modules optionnels ---- */
+/* v4.162 — DÉCISION BENJAMIN (12/11) : le temps machine et le coût du rebut QUITTENT la
+   fiche du poste. Ils dépendent de la ligne (coût horaire complet, goulot, stock entre
+   OP, valeur du disque à chaque stade) et seront chiffrés en un seul endroit : le moteur
+   de la ligne (Outils › Économie de la ligne). La fiche redevient purement « plaquette » :
+   outillage + pièces détachées. Les réglages des OP (coutMachineActif, coutRebutActif,
+   coutDisque) sont CONSERVÉS dans les données mais n'ont plus d'effet — rien n'est perdu,
+   la porte se rouvre en passant ce drapeau à true. Le journal de rebut et le taux saisi
+   restent : ils servent au suivi qualité de l'essai, sans euros. */
+let AXES_LIGNE_DANS_FICHE = false;   /* let : la suite intégrée l'ouvre le temps de vérifier les formules conservées */
 function coutRebutPiece(sc, cfg){
   cfg = cfg || config;
+  if(!AXES_LIGNE_DANS_FICHE) return null;
   if(!cfg.coutRebutActif) return null;
   const cd = parseFloat(cfg.coutDisque);
   const tr = tauxRebutDe(sc);
@@ -7191,6 +7203,7 @@ function cadenceHeure(sc, cfg){
    en plaquettes mais plus lent, et un scenario rapide mais gourmand en outil */
 function coutMachinePiece(sc, cfg, ligne){
   cfg = cfg || config;
+  if(!AXES_LIGNE_DANS_FICHE) return null;   /* v4.162 : voir AXES_LIGNE_DANS_FICHE */
   if(!cfg.coutMachineActif) return null;
   const l = ligne || getActiveLigne();
   const taux = l ? parseFloat(l.coutHoraire) : NaN;
@@ -7593,7 +7606,7 @@ function verdictParOutil(sc, cfg, ligne, ref, baseCmp){
   const chronoComplet = cycleDetailStatus(base, cfg).complete && cycleDetailStatus(sc, cfg).complete;
   const lg = ligne || getActiveLigne();
   const tBrut = lg ? parseFloat(lg.coutHoraire) : NaN;
-  const taux = (chronoComplet && !isNaN(tBrut) && tBrut > 0) ? tBrut : null;
+  const taux = (AXES_LIGNE_DANS_FICHE && chronoComplet && !isNaN(tBrut) && tBrut > 0) ? tBrut : null;
   const tempsOutil = o => {
     let s = 0, n = 0;
     (o.logements || []).forEach(l => { const c = parseFloat(l.tempsCoupe); if(!isNaN(c)){ s += c; n++; } });
@@ -7762,7 +7775,7 @@ function seuilBascule(sc, cfg, ligne){
   const res = { gain: cBase.total - cSc.total };
   const l = ligne || getActiveLigne();
   const taux = l ? parseFloat(l.coutHoraire) : NaN;
-  if(cfg.coutMachineActif && !isNaN(taux) && taux > 0){
+  if(AXES_LIGNE_DANS_FICHE && cfg.coutMachineActif && !isNaN(taux) && taux > 0){
     /* v4.128 (LOT 3) : l'axe outillage — la marge compare l'outillage des deux côtés. */
     const autres = (cSc.plaquettes||0) + (cSc.pieces||0);
     const marge = cBase.total - autres;
@@ -9128,10 +9141,10 @@ function scenarioBlockHTML(sc, interactive){
         : "outils en série — les temps s'additionnent"}</div>`
     : "";
   const tauxLigne = (() => { const lg = getActiveLigne(); const t = lg ? parseFloat(lg.coutHoraire) : NaN; return isNaN(t) ? null : t; })();
-  const coutMachPiece = (tauxLigne !== null && secs !== null) ? (tauxLigne/3600)*secs : null;
+  const coutMachPiece = (AXES_LIGNE_DANS_FICHE && tauxLigne !== null && secs !== null) ? (tauxLigne/3600)*secs : null;
   const cycleMachineLine = coutMachPiece !== null
     ? `<div class="foot-sub">${fmt(coutMachPiece,4)} € machine/pièce${config.coutMachineActif ? "" : " · affiché, non pondéré (option inactive)"}</div>`
-    : (config.coutMachineActif ? `<div class="foot-sub" style="color:var(--on-fill-warn);">taux horaire de la ligne non renseigné — le temps machine ne peut pas être chiffré</div>` : "");
+    : (AXES_LIGNE_DANS_FICHE && config.coutMachineActif ? `<div class="foot-sub" style="color:var(--on-fill-warn);">taux horaire de la ligne non renseigné — le temps machine ne peut pas être chiffré</div>` : "");
   // recomputeCycles() ne peut rien recalculer sans Vc/f exploitables sur la reference : le
   // dire, plutot que laisser un indice fige sans explication (cas silencieux avant ce fix)
   const baseLogCycle = sc.baseline ? null : (base ? logementCycle(base) : null);
@@ -9203,7 +9216,7 @@ function scenarioBlockHTML(sc, interactive){
           ? `<div class="foot-sub" title="Le temps machine est un axe séparé — jamais sommé au gain d'outillage.">${(() => { const h = annuel.heuresAnnuelles || 0; const mot = h <= 0 ? "plus rapide" : "plus lent"; return `équivalent machine : ${h<=0?"−":"+"}${fmt(Math.abs(h),0)} h/an (${mot}) · ${(annuel.deltaMachineEurAn>=0?"−":"+") + fmtEuroCourt(Math.abs(annuel.deltaMachineEurAn))}/an`; })()}</div>` : ""}
         ${!sc.baseline && annuel.deltaRebutEurAn !== undefined
           ? `<div class="foot-sub" title="Le rebut est un axe séparé — jamais sommé au gain d'outillage.">équivalent rebut : ${(annuel.deltaRebutEurAn>=0?"−":"+") + fmtEuroCourt(Math.abs(annuel.deltaRebutEurAn))}/an</div>` : ""}
-        ${(!sc.baseline && !config.coutMachineActif && baseCycle && !isNaN(cyc) && Math.abs(cyc - baseCycle) > 0.5)
+        ${(AXES_LIGNE_DANS_FICHE && !sc.baseline && !config.coutMachineActif && baseCycle && !isNaN(cyc) && Math.abs(cyc - baseCycle) > 0.5)
           ? `<div class="foot-sub" style="color:var(--on-fill-warn);">⚠ écart de cycle non chiffré ici — activez « Intégrer le temps machine au coût pièce » dans Options</div>` : ""}
         ${(!sc.baseline && annuel && annuel.perimetrePartiel && annuel.perimetrePartiel.includes("temps machine"))
           ? `<div class="foot-sub" style="color:var(--on-fill-warn);">Gain annuel hors temps machine — la référence n'a pas de cycle chiffrable · renseigne le cycle de référence en secondes pour une comparaison tout compris</div>` : ""}
@@ -9346,8 +9359,9 @@ function scenarioBlockHTML(sc, interactive){
   const moduleRebutOK = config.coutRebutActif && !isNaN(parseFloat(config.coutDisque));
   const rebutAnnuelNote = !interactive ? "" : `<span class="rebut-source ${trAnnuel && trAnnuel.source === "saisi" ? "ok" : ""}">${
     trAnnuel && trAnnuel.source === "saisi"
-      ? "fait foi — retenu pour le bilan" +
-        (moduleRebutOK ? "" : " · pour qu'il pèse : activer « Coût de rebut » et le prix du disque dans Options")
+      ? (AXES_LIGNE_DANS_FICHE
+          ? "fait foi — retenu pour le bilan" + (moduleRebutOK ? "" : " · pour qu'il pèse : activer « Coût de rebut » et le prix du disque dans Options")
+          : "fait foi pour le suivi qualité · le coût du rebut se chiffre dans Outils › Économie de la ligne")
       : trAnnuel
         ? "non saisi — le taux calculé du journal (" + fmt(trAnnuel.taux,1) + " %) est retenu"
         : "non saisi — le taux du journal s'appliquera dès qu'une ligne existe"
@@ -14789,9 +14803,10 @@ function majStatutCoutMachine(){
   }
 }
 function majChampsOptions(){
-  document.getElementById("optCoutRebutField").classList.toggle("on", optCoutRebut.checked);
-  document.getElementById("optCycleRefField").classList.toggle("on", optCycleSec.checked || optCoutMachine.checked);
-  document.getElementById("optCoutMachineField").classList.toggle("on", optCoutMachine.checked);
+  /* v4.162 : porte fermée, les champs des axes de ligne restent masqués même si l'OP avait l'option */
+  document.getElementById("optCoutRebutField").classList.toggle("on", AXES_LIGNE_DANS_FICHE && optCoutRebut.checked);
+  document.getElementById("optCycleRefField").classList.toggle("on", optCycleSec.checked || (AXES_LIGNE_DANS_FICHE && optCoutMachine.checked));
+  document.getElementById("optCoutMachineField").classList.toggle("on", AXES_LIGNE_DANS_FICHE && optCoutMachine.checked);
   document.getElementById("optVolumeField").classList.toggle("on", optVolume.checked);
   majStatutCoutMachine();
 }
@@ -15200,6 +15215,11 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.162.0", date:"12/11/2026", points:[
+    "<b>La fiche du poste redevient « plaquette ».</b> Elle compare l'outillage : prix, arêtes, charnière, pièces détachées. Le temps machine et le coût du rebut n'y sont plus chiffrés.",
+    "Pourquoi : ces deux coûts dépendent de toute la ligne (coût horaire complet, goulot, stock entre les OP, valeur du disque à chaque OP). Ils seront chiffrés à un seul endroit, Outils › Économie de la ligne, pour qu'il n'y ait jamais deux chiffres différents pour la même chose.",
+    "Rien n'est perdu : vos réglages et le journal de rebut restent enregistrés. Le taux de rebut d'un essai reste affiché pour le suivi qualité."
+  ]},
   { version:"4.161.0", date:"12/11/2026", points:[
     "<b>Nouveau : Outils › Économie de la ligne.</b> Pour chiffrer le vrai coût par disque bon (arrêts de changement de plaquette, goulot, rebut), l'outil a besoin d'informations qu'il n'a pas encore. Cet écran les demande une à une, en commençant par celles qui conditionnent tout le reste.",
     "Une jauge dit, pour chaque ligne et référence, quelle part de ce que le calcul attend est déjà connue. Ce qui se complète dans la fiche du poste (un prix ou une charnière manquants) est listé à part.",
@@ -16146,7 +16166,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.161.0";
+const TOOL_VERSION = "4.162.0";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -22783,6 +22803,8 @@ function troisGainsHTML(g){
   }
   const rebut = g.rebut === null ? cell("Rebut", "—", "non suivi sur ces scénarios", "nd")
     : cell("Rebut", signe(g.rebut), "pièces non conformes évitées", g.rebut >= 0 ? "ok" : "ko");
+  if(!AXES_LIGNE_DANS_FICHE)
+    return `<div class="g3">${outil}<div class="g3-note">Temps machine et rebut : chiffrés à l'échelle de la ligne, dans Outils › Économie de la ligne.</div></div>`;
   return `<div class="g3">${outil}${cycle}${rebut}<div class="g3-note">Trois axes séparés — jamais additionnés.</div></div>`;
 }
 
@@ -25076,6 +25098,12 @@ const PROMESSES_UI = [
 
 function runTests(){
   const T = [];
+  /* v4.162 — les tests écrits avant le retrait des axes vérifient les FORMULES du temps
+     machine et du rebut : elles restent dans le code (la porte se rouvre d'un drapeau),
+     donc on les vérifie porte ouverte. Le comportement porte fermée — celui que voit
+     l'utilisateur — est vérifié à la fin, bloc « 4.162 ». */
+  const axesAvantTests = AXES_LIGNE_DANS_FICHE;
+  AXES_LIGNE_DANS_FICHE = true;
   const ok = (nom, recu, attendu, tol) => {
     let pass;
     if(typeof attendu === "number" && typeof recu === "number"){
@@ -29527,6 +29555,25 @@ function runTests(){
       importEnAttente = sauves.importEnAttente;
       unexported = sauves.unexported;
     }
+  }
+
+  // ---- v4.162 : porte fermée — la fiche ne chiffre plus ni temps machine ni rebut ----
+  AXES_LIGNE_DANS_FICHE = false;
+  try {
+    const lg = normalizeLigne({ id:"lx", nom:"LX", coutHoraire:"45" });
+    const cfgOn = Object.assign({}, defaultConfig, { coutMachineActif:true, coutRebutActif:true, coutDisque:"14", cycleRefSec:"42", volumeActif:true });
+    const sc = normalizeScenario({ id:"sx", name:"X", cycle:100, tauxRebutAnnuel:"2",
+      outils:[{ id:"o1", numero:"T1", logements:[{ id:"g1", nom:"L1", prix:10, aretes:4, charniere:50, tempsCoupe:30 }] }] });
+    ok("4.162 : temps machine retiré de la fiche, même avec l'ancien réglage actif", coutMachinePiece(sc, cfgOn, lg), null);
+    ok("4.162 : coût du rebut retiré de la fiche, même avec l'ancien réglage actif", coutRebutPiece(sc, cfgOn), null);
+    const cd = coutsDetail(sc, cfgOn, lg);
+    ok("4.162 : le coût pièce de la fiche = outillage seul (prix / arêtes / charnière)", [cd.total, cd.machine, cd.rebut, cd.cumul], [10 / (4 * 50), null, null, 10 / (4 * 50)]);
+    const g3 = troisGainsHTML({ volume:100000, outil:1200, heures:-30, machine:-400, rebut:250, partiel:[] });
+    ok("4.162 : les trois gains n'affichent plus que l'outil, et disent où sont passés temps et rebut",
+      [/g3-l">Cycle/.test(g3), /g3-l">Rebut/.test(g3), /g3-l">Outil/.test(g3), /Économie de la ligne/.test(g3)], [false, false, true, true]);
+    ok("4.162 : les réglages d'avant restent dans les données (rien de perdu)", [cfgOn.coutMachineActif, cfgOn.coutRebutActif, cfgOn.coutDisque], [true, true, "14"]);
+  } finally {
+    AXES_LIGNE_DANS_FICHE = axesAvantTests;
   }
 
   /* v4.66.0 — on RECALCULE le nombre d'échecs au moment du retour.

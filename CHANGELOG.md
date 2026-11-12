@@ -5,6 +5,16 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.162.0] — 2026-11-12 · le temps machine et le rebut quittent la fiche du poste · Claude
+
+Décision Benjamin (12/11) : séparer le travail du quotidien (prix plaquette contre concurrent, charnière, essais) de la vue d'ensemble. La fiche redevient purement « plaquette » (outillage + pièces détachées) ; le temps machine et le coût du rebut dépendent de la ligne entière et seront chiffrés en un seul endroit, le moteur de la ligne (Outils › Économie de la ligne), au lot 2. Sans ça, l'outil aurait eu deux façons de chiffrer le rebut et le temps, dont une sur des bases fausses (32 €/h non qualifié, « coût disque » qui ne suit pas la gamme).
+
+- Une porte, `AXES_LIGNE_DANS_FICHE = false` : `coutMachinePiece` et `coutRebutPiece` rendent `null` ; tout ce qui en découle se tait (coût pièce, cascade, bilan annuel, « équivalent machine / rebut »), plus le levier productivité par outil, le cycle max du seuil de bascule et le « € machine/pièce » du pied de cycle.
+- Les trois gains n'affichent plus que l'outil, avec une phrase qui dit où sont passés temps et rebut. Options : les deux interrupteurs et leurs champs sont masqués, une note explique pourquoi.
+- **Rien n'est perdu** : `coutMachineActif`, `coutRebutActif` et `coutDisque` restent dans les données ; le journal de rebut et le taux saisi restent, pour le suivi qualité (la note dit « fait foi pour le suivi qualité »). Les formules restent écrites : les tests d'avant les vérifient porte ouverte, 5 nouveaux tests vérifient la porte fermée.
+- **Pas touché** : la simulation prospective de la vue plaquette globale (levier « cycle », Tour 135) chiffre encore un équivalent machine quand on active ce levier. C'est un écran de vue d'ensemble ; il passera par le moteur de la ligne au lot 2.
+- 951 tests | 0 échec (+5).
+
 ## [4.161.0] — 2026-11-12 · l'économie de la ligne entre dans l'outil : les réponses que le calcul attend · Claude
 
 Décision Benjamin (12/11) : le moteur économique de la ligne, prototypé à part (« V2 », branche `v2`), **entre dans V1** au lieu de vivre dans une deuxième application (pas de double saisie, synchro / iPhone / export déjà là). Il entrera en **remplaçant** les calculs de gain concurrents, pas en s'y ajoutant (ni module optionnel, ni menu dépliable de plus). Ce lot réunit les données ; il ne calcule encore aucun euro.
