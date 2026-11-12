@@ -1,8 +1,8 @@
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | **Claude** (Tour 136) |
+| **Pris le** | 12/11/2026 |
+| **Écrit dans** | `bilan_economique.html`, `outils/build-coque.mjs`, `service-worker.js`, nouveau `moteur-ligne.js` |
+| **Version visée** | 4.161.0 |
+| **Sujet** | *Le moteur économique de la ligne (ex-V2) entre dans V1 : nouveaux champs par ligne / référence / OP, écran « À compléter » dans le rail. Hermes : ne pas écrire dans ces fichiers avant la libération.* |
 
 ---
 
