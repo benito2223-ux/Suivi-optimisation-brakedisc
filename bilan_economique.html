@@ -2552,6 +2552,7 @@ input[type="number"]{ -moz-appearance:textfield; appearance:textfield; }
   <div class="panel panel-large" id="vueCppPanel" hidden></div>
   <div class="panel panel-large" id="simulPanel" hidden></div>
   <div class="panel panel-large" id="cataloguePanel" hidden></div>
+  <div class="panel panel-large" id="economiePanel" hidden></div>
   <div class="panel panel-large" id="volumesPanel" hidden></div>
   <div class="panel panel-large" id="planPanel" hidden></div>
   <div class="panel panel-large" id="visitePanel" hidden></div>
@@ -3729,7 +3730,9 @@ function normalizeReference(r){
   return { id: r.id || ("r"+Math.random().toString(36).slice(2)), nom: r.nom || "",
            productionAnnuelle: r.productionAnnuelle ?? "",
            cibleCPP: r.cibleCPP ?? "", // v4.46.1 — cible de coût pièce du site (excel suivi consommations), lue par le tableau de bord
-           ops };
+           ops,
+           /* v4.161 — les réponses « économie de la ligne » (valeur du brut) : sans cette ligne, elles disparaissaient au rechargement */
+           ...(r.economie && typeof r.economie === "object" ? { economie: r.economie } : {}) };
 }
 /* ============================================================================
    PROJETS COMME ETIQUETTES, PAS COMME PROPRIETAIRES (v4.1)
@@ -15197,6 +15200,11 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.161.0", date:"12/11/2026", points:[
+    "<b>Nouveau : Outils › Économie de la ligne.</b> Pour chiffrer le vrai coût par disque bon (arrêts de changement de plaquette, goulot, rebut), l'outil a besoin d'informations qu'il n'a pas encore. Cet écran les demande une à une, en commençant par celles qui conditionnent tout le reste.",
+    "Une jauge dit, pour chaque ligne et référence, quelle part de ce que le calcul attend est déjà connue. Ce qui se complète dans la fiche du poste (un prix ou une charnière manquants) est listé à part.",
+    "Les réponses sont enregistrées dans le suivi et synchronisées comme le reste. Le chiffrage en euros arrive à la prochaine version."
+  ]},
   { version:"4.160.3", date:"11/11/2026", points:[
     "<b>La pastille d'enregistrement en haut à droite sert enfin à quelque chose.</b> Elle indiquait seulement l'état au survol. Un clic exporte maintenant la sauvegarde (le fichier à archiver), puisque c'est ce qu'elle réclame quand elle dit « non exporté »."
   ]},
@@ -16138,7 +16146,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.160.3";
+const TOOL_VERSION = "4.161.0";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -20576,6 +20584,650 @@ function ouvrirVolumes(){
   renderVolumes();
 }
 
+/* v4.161 — MOTEUR ÉCONOMIQUE DE LA LIGNE (ex-prototype « V2 »). Fonctions pures uniquement : ni DOM, ni stockage, ni horloge.
+   Tout chiffre affiché par V2 doit sortir d'ici (spec V2 §3). Lot 1 : la
+   construction du modèle (import V1 + saisies V2), la provenance de chaque
+   paramètre et la liste ordonnée des questions à poser à Matis. Le calcul du
+   coût par disque bon (§3.1 à 3.7) arrive au lot 2. */
+const MoteurLigne = (function () {
+  "use strict";
+
+  /* ---------- paramètre avec provenance (spec §4) ----------
+     v   : la valeur (null = inconnue)
+     src : "mesure" | "saisi" | "v1" | null
+     Un paramètre sans valeur n'a pas de source : il manque, point. */
+  const SOURCES = ["mesure", "saisi", "v1"];
+  const NIVEAU = { mesure: 1, saisi: 2, v1: 3 };
+
+  function param(v, src, extra) {
+    const vide = v === null || v === undefined || v === "" || (typeof v === "number" && isNaN(v));
+    const p = { v: vide ? null : v, src: vide ? null : (SOURCES.indexOf(src) >= 0 ? src : null) };
+    if (extra) Object.keys(extra).forEach(k => { if (extra[k] !== undefined) p[k] = extra[k]; });
+    return p;
+  }
+  function connu(p) { return !!p && p.v !== null; }
+
+  function nombre(v) {
+    if (v === null || v === undefined || v === "") return null;
+    const n = typeof v === "number" ? v : parseFloat(String(v).replace(",", "."));
+    return isNaN(n) ? null : n;
+  }
+  function positif(v) { const n = nombre(v); return n !== null && n > 0 ? n : null; }
+
+  /* ---------- clés des saisies V2 ----------
+     Les saisies sont rangées à part de l'import, sur les identifiants V1 :
+     un nouvel export V1 réimporté ne les écrase jamais. */
+  function cle(type, id, champ) { return type + ":" + id + ":" + champ; }
+
+  /* La saisie V2 l'emporte sur l'import V1. */
+  function resoudre(importe, saisies, k, convertir) {
+    const s = saisies && saisies[k];
+    if (s && s.v !== null && s.v !== undefined && s.v !== "") {
+      const v = convertir ? convertir(s.v) : s.v;
+      if (v !== null) return param(v, s.src === "mesure" ? "mesure" : "saisi", { le: s.le, note: s.note });
+    }
+    return importe || param(null);
+  }
+
+  /* ---------- règle V1 des groupes simultanés (reprise de groupesSimultanes) ----------
+     Un outil coché « simultané avec le précédent » rejoint le groupe de son voisin. */
+  function groupesSimultanes(outils) {
+    const groupes = [];
+    let courant = null;
+    (outils || []).forEach(o => {
+      if (o.simultane && courant) courant.push(o);
+      else { courant = [o]; groupes.push(courant); }
+    });
+    return groupes;
+  }
+
+  /* Cycle mesuré depuis les temps de coupe par logement : tout ou rien, comme V1
+     (cycleDetailStatus). Dans un outil, les logements s'enchaînent ; un groupe vaut
+     son outil le plus long ; le cycle est la somme des groupes. */
+  function cycleDepuisTempsCoupe(outils) {
+    let total = 0, remplis = 0;
+    const tempsOutil = new Map();
+    (outils || []).forEach(o => {
+      let s = 0;
+      (o.logements || []).forEach(l => {
+        total++;
+        const t = nombre(l.tempsCoupe);
+        if (t !== null) { remplis++; s += t; }
+      });
+      tempsOutil.set(o, s);
+    });
+    if (!total || remplis !== total) return null;
+    return groupesSimultanes(outils).reduce((acc, g) => acc + Math.max(...g.map(o => tempsOutil.get(o))), 0);
+  }
+
+  /* ---------- montage en service ----------
+     V1 peut porter plusieurs scénarios « serie » sur une OP (la référence importée du
+     classeur + un process passé en série depuis). Une saisie V2 tranche ; sinon le
+     plus récent passé en série est retenu À TITRE PROVISOIRE et la question est posée. */
+  function montageEnService(op, saisies) {
+    const series = op.montages.filter(m => m.statut === "serie");
+    const choix = saisies && saisies[cle("op", op.id, "montageEnService")];
+    if (choix && op.montages.some(m => m.id === choix.v)) {
+      return { id: choix.v, src: "saisi", ambigu: false, nbSeries: series.length };
+    }
+    if (!series.length) return { id: null, src: null, ambigu: false, nbSeries: 0 };
+    if (series.length === 1) return { id: series[0].id, src: "v1", ambigu: false, nbSeries: 1 };
+    const date = m => m.statutDate || "";
+    const recent = series.slice().sort((a, b) => date(b).localeCompare(date(a)) || (a.baseline ? 1 : 0) - (b.baseline ? 1 : 0))[0];
+    return { id: recent.id, src: "v1", ambigu: true, nbSeries: series.length };
+  }
+
+  /* ---------- construction du modèle : import V1 × saisies V2 ---------- */
+  function construireModele(importV1, saisies) {
+    saisies = saisies || {};
+    const nb = v => nombre(v);
+    const lignes = (importV1.lignes || []).map(l => {
+      const coutHoraireV1 = param(positif(l.coutHoraire), "v1");
+      const ligne = {
+        id: l.id, nom: l.nom,
+        coutHoraireV1,
+        /* le coût horaire COMPLET ne vient jamais de V1 tel quel (D4) : V1 ne dit pas
+           ce que ses 32 €/h contiennent. Il faut une saisie, ou une confirmation. */
+        coutHoraire: resoudre(param(null), saisies, cle("ligne", l.id, "coutHoraire"), positif),
+        references: []
+      };
+      ligne.references = (l.references || []).map(r => {
+        const ref = {
+          id: r.id, nom: r.nom,
+          volumeAnnuel: param(positif(r.volumeAnnuel), "v1"),
+          valeurBrut: resoudre(param(null), saisies, cle("ref", r.id, "valeurBrut"), positif),
+          ops: []
+        };
+        const ops = (r.ops || []).slice().sort((a, b) => (nb(a.ordre) ?? 1e9) - (nb(b.ordre) ?? 1e9));
+        ref.ops = ops.map((o, i) => construireOp(o, i === ops.length - 1, saisies));
+        return ref;
+      });
+      return ligne;
+    });
+    return { source: importV1.source || null, lignes };
+  }
+
+  function construireOp(o, derniere, saisies) {
+    const op = {
+      id: o.id, nom: o.nom, ordre: nombre(o.ordre), derniere,
+      montages: o.montages || [],
+      nbEssais: o.nbEssais || 0, nbPrelevements: o.nbPrelevements || 0,
+      coutDisqueV1: param(positif(o.coutDisqueV1), "v1")
+    };
+    const ms = montageEnService(op, saisies);
+    op.montageEnService = ms;
+    const montage = op.montages.find(m => m.id === ms.id) || null;
+    op.montage = montage;
+
+    /* cycle : mesuré (temps de coupe complets) > cycle de référence V1 > saisie V2.
+       Une saisie V2 l'emporte toujours — c'est Matis qui a le dernier mot. */
+    let cycleImporte = param(null);
+    const mesure = montage ? cycleDepuisTempsCoupe(montage.outils) : null;
+    if (mesure !== null) cycleImporte = param(mesure, "mesure", { note: "somme des temps de coupe V1" });
+    else if (positif(o.cycleRefSec) !== null) cycleImporte = param(positif(o.cycleRefSec), "v1", { note: "cycle de référence V1" });
+    op.cycleSec = resoudre(cycleImporte, saisies, cle("op", o.id, "cycleSec"), positif);
+
+    op.machines = resoudre(param(null), saisies, cle("op", o.id, "machines"), v => { const n = positif(v); return n !== null && Number.isInteger(n) ? n : null; });
+    op.tChangementMin = resoudre(param(null), saisies, cle("op", o.id, "tChangementMin"), positif);
+    op.changementsGroupes = resoudre(param(null), saisies, cle("op", o.id, "changementsGroupes"), v => ["separes", "ensemble", "partiel"].indexOf(v) >= 0 ? v : null);
+    op.tamponAval = derniere ? null : resoudre(param(null), saisies, cle("op", o.id, "tamponAval"), v => v === true || v === false ? v : null);
+    op.rebutOutilPct = resoudre(param(null), saisies, cle("op", o.id, "rebutOutilPct"), v => { const n = nombre(v); return n !== null && n >= 0 && n <= 100 ? n : null; });
+
+    /* paramètres d'outillage du montage en service : ils se corrigent dans la fiche du poste */
+    op.logements = [];
+    if (montage) montage.outils.forEach(t => (t.logements || []).forEach(lg => {
+      op.logements.push({
+        id: lg.id, nom: lg.nom, outil: t.numero,
+        prix: param(positif(lg.prix), "v1"),
+        aretes: param(positif(lg.aretes), "v1"),
+        charniere: param(positif(lg.charniere), "v1")
+      });
+    }));
+    return op;
+  }
+
+  /* ---------- les questions (spec §6) ----------
+     Ordre PROVISOIRE (lot 1) : par famille, de ce qui conditionne tout le reste vers
+     ce qui affine. Au lot 2, le tri se fera par poids en €/an sur la décision. */
+  const FAMILLES = [
+    { id: "montage",   rang: 1, titre: "Montage en service" },
+    { id: "outillage", rang: 2, titre: "Outillage (fiche du poste)" },
+    { id: "cout",      rang: 3, titre: "Coût horaire de la ligne" },
+    { id: "debit",     rang: 4, titre: "Débit et goulot" },
+    { id: "tampon",    rang: 5, titre: "Stock entre les OP" },
+    { id: "arret",     rang: 6, titre: "Arrêts de changement" },
+    { id: "valeur",    rang: 7, titre: "Valeur du disque" },
+    { id: "rebut",     rang: 8, titre: "Rebut" },
+    { id: "volume",    rang: 9, titre: "Volume (sur la référence)" }
+  ];
+  const RANG = Object.fromEntries(FAMILLES.map(f => [f.id, f.rang]));
+
+  function questionsReference(ligne, ref) {
+    const qs = [];
+    const add = q => qs.push(Object.assign({ ou: "v2" }, q));
+
+    if (!connu(ligne.coutHoraire)) add({
+      famille: "cout", cle: cle("ligne", ligne.id, "coutHoraire"), type: "nombre", unite: "€/h",
+      cible: ligne.nom,
+      texte: "Quel est le coût horaire complet de la ligne " + ligne.nom + " (machines, opérateurs et frais) ?",
+      aide: connu(ligne.coutHoraireV1)
+        ? "Le champ coût horaire de la ligne dit " + ligne.coutHoraireV1.v + " €/h. Si c'est la main-d'œuvre seule, il manque les machines et les frais."
+        : "Le champ coût horaire de la ligne est vide.",
+      confirmer: connu(ligne.coutHoraireV1) ? ligne.coutHoraireV1.v : null
+    });
+    if (!connu(ref.volumeAnnuel)) add({
+      famille: "volume", ou: "v1", cible: ref.nom,
+      texte: "Le volume annuel de la référence " + ref.nom + " manque.",
+      aide: "À renseigner sur la référence (production annuelle), ou dans Outils › Volumes disques."
+    });
+    if (!connu(ref.valeurBrut)) add({
+      famille: "valeur", cle: cle("ref", ref.id, "valeurBrut"), type: "nombre", unite: "€",
+      cible: ref.nom,
+      texte: "Combien vaut un disque brut " + ref.nom + " à l'entrée de la ligne ?",
+      aide: "Prix du brut de fonderie. V2 en déduit la valeur du disque à chaque OP pour chiffrer le rebut."
+    });
+
+    ref.ops.forEach(op => {
+      const cible = op.nom;
+      if (op.montageEnService.ambigu) add({
+        famille: "montage", cle: cle("op", op.id, "montageEnService"), type: "choix", cible,
+        texte: "En " + op.nom + ", " + op.montageEnService.nbSeries + " montages sont marqués « en série ». Lequel tourne aujourd'hui ?",
+        aide: "Retenu pour l'instant : le plus récemment passé en série.",
+        defaut: op.montageEnService.id,
+        options: op.montages.filter(m => m.statut === "serie").map(m => ({ v: m.id, libelle: m.nom + (m.statutDate ? " (série le " + m.statutDate + ")" : "") }))
+      });
+      if (!op.montage) add({
+        famille: "montage", ou: "v1", cible,
+        texte: "Aucun montage n'est marqué « en série » en " + op.nom + ".",
+        aide: "Dans la fiche du poste, passer en série le montage qui tourne."
+      });
+      const trous = op.logements.filter(l => !connu(l.prix) || !connu(l.aretes) || !connu(l.charniere));
+      if (trous.length) add({
+        famille: "outillage", ou: "v1", cible,
+        texte: "En " + op.nom + ", " + trous.length + " logement" + (trous.length > 1 ? "s" : "") + " du montage en service " + (trous.length > 1 ? "n'ont" : "n'a") + " pas prix, arêtes et charnière complets.",
+        aide: trous.map(l => (l.outil ? l.outil + " · " : "") + (l.nom || "logement") + " : manque " +
+          [!connu(l.prix) && "prix", !connu(l.aretes) && "arêtes", !connu(l.charniere) && "charnière"].filter(Boolean).join(", ")).join(" ; ")
+      });
+      if (!connu(op.machines)) add({
+        famille: "debit", cle: cle("op", op.id, "machines"), type: "entier", unite: "machine(s)", cible,
+        texte: "Combien de machines font l'" + op.nom + " en parallèle sur cette ligne ?",
+        aide: "Si deux machines se partagent l'OP, sa capacité double."
+      });
+      if (!connu(op.cycleSec)) add({
+        famille: "debit", cle: cle("op", op.id, "cycleSec"), type: "nombre", unite: "s", cible,
+        texte: "Quel est le temps de cycle de l'" + op.nom + ", d'une pièce à la suivante ?",
+        aide: "Chargement et déchargement compris. C'est lui qui désigne le goulot de la ligne."
+      });
+      if (!op.derniere && !connu(op.tamponAval)) add({
+        famille: "tampon", cle: cle("op", op.id, "tamponAval"), type: "ouinon", cible,
+        texte: "Entre l'" + op.nom + " et l'OP suivante, y a-t-il un stock de disques qui laisse l'OP suivante travailler quand l'" + op.nom + " s'arrête ?",
+        aide: "Sans stock, un changement de plaquette en " + op.nom + " arrête toute la ligne."
+      });
+      if (!connu(op.tChangementMin)) add({
+        famille: "arret", cle: cle("op", op.id, "tChangementMin"), type: "nombre", unite: "min", cible,
+        texte: "Combien de temps la machine est-elle arrêtée pour un changement de plaquette en " + op.nom + " ?",
+        aide: "Du stop machine au redémarrage en série : démontage, montage, correcteur et contrôle de la première pièce."
+      });
+      if (op.logements.length > 1 && !connu(op.changementsGroupes)) add({
+        famille: "arret", cle: cle("op", op.id, "changementsGroupes"), type: "choix", cible,
+        texte: "En " + op.nom + ", les plaquettes sont-elles changées au même arrêt ou chacune à son tour ?",
+        aide: "Grouper les changements fait un seul arrêt pour plusieurs plaquettes.",
+        options: [
+          { v: "separes", libelle: "Chacune à son tour" },
+          { v: "ensemble", libelle: "Toutes au même arrêt" },
+          { v: "partiel", libelle: "Certaines ensemble" }
+        ]
+      });
+      if (!connu(op.rebutOutilPct)) add({
+        famille: "rebut", cle: cle("op", op.id, "rebutOutilPct"), type: "nombre", unite: "%", cible,
+        texte: "Quel pourcentage des disques est rebuté en " + op.nom + " à cause de l'outil (usure, casse, cote) ?",
+        aide: "Sans compter les défauts du brut (fonderie) : ceux-là ne sont pas imputés à la plaquette."
+      });
+    });
+
+    return qs.sort((a, b) => RANG[a.famille] - RANG[b.famille]);
+  }
+
+  /* ---------- complétude : ce que V2 sait vs ce qu'il lui faut ---------- */
+  function completude(ligne, ref) {
+    const champs = [];
+    const compte = (p) => champs.push(connu(p));
+    compte(ligne.coutHoraire);
+    compte(ref.volumeAnnuel);
+    compte(ref.valeurBrut);
+    ref.ops.forEach(op => {
+      champs.push(!!op.montage && !op.montageEnService.ambigu);
+      [op.machines, op.cycleSec, op.tChangementMin, op.rebutOutilPct].forEach(compte);
+      if (!op.derniere) compte(op.tamponAval);
+      if (op.logements.length > 1) compte(op.changementsGroupes);
+      op.logements.forEach(l => champs.push(connu(l.prix) && connu(l.aretes) && connu(l.charniere)));
+    });
+    const ok = champs.filter(Boolean).length;
+    return { connus: ok, total: champs.length, pct: champs.length ? Math.round(100 * ok / champs.length) : 0 };
+  }
+
+  /* niveau de confiance d'un ensemble de paramètres : le plus faible l'emporte (§4) */
+  function confiance(params) {
+    let pire = 0;
+    for (const p of params) {
+      if (!connu(p)) return null;
+      pire = Math.max(pire, NIVEAU[p.src] || 3);
+    }
+    return pire ? Object.keys(NIVEAU).find(k => NIVEAU[k] === pire) : null;
+  }
+
+  const api = {
+    param, connu, nombre, cle, resoudre, groupesSimultanes, cycleDepuisTempsCoupe,
+    montageEnService, construireModele, questionsReference, completude, confiance, FAMILLES
+  };
+  return api;
+})();
+
+/* v4.161 — lecture de l'arbre du suivi pour le moteur de la ligne (ex-« import V1 » du prototype). Lit l'arbre vivant ou un export (« Suivi d'optimisation »). Fonction pure : elle lit
+   l'objet JSON exporté par V1 et n'en garde que ce dont le modèle V2 a besoin.
+   Photos, plans, relevés Marposs et le reste restent dans V1 (spec §9) : le
+   résultat est petit et se range sans risque dans le stockage du navigateur.
+   V2 ne réécrit JAMAIS un export V1. */
+const ImportLigne = (function () {
+  "use strict";
+
+  class ErreurImport extends Error {}
+
+  function texte(v) { return v === null || v === undefined ? "" : String(v).trim(); }
+
+  function importerV1(exp) {
+    if (!exp || typeof exp !== "object" || !Array.isArray(exp.lignes)) {
+      throw new ErreurImport("Ce fichier n'est pas un export du Suivi d'optimisation (V1) : il n'a pas de lignes de production.");
+    }
+    const source = {
+      outil: texte(exp.outil) || null,
+      toolVersion: texte(exp.toolVersion) || null,
+      revision: exp.revision ?? null,
+      exporteLe: texte(exp.exporteLe) || null,
+      exportePar: texte(exp.exportePar) || null
+    };
+    let nbScenarios = 0, nbPrelevements = 0;
+    const lignes = exp.lignes.map(l => ({
+      id: l.id, nom: texte(l.nom) || "(ligne sans nom)",
+      coutHoraire: l.coutHoraire ?? null,
+      references: (l.references || []).map(r => ({
+        id: r.id, nom: texte(r.nom) || "(référence sans nom)",
+        volumeAnnuel: r.productionAnnuelle ?? null,
+        ops: (r.ops || []).map(o => {
+          const scenarios = o.scenarios || [];
+          nbScenarios += scenarios.length;
+          const essais = scenarios.flatMap(s => s.essais || []);
+          const prel = essais.reduce((n, e) => n + (e.prelevements || []).length, 0);
+          nbPrelevements += prel;
+          const cfg = o.config || {};
+          return {
+            id: o.id, nom: texte(o.nom) || "(OP sans nom)", ordre: o.ordre ?? null,
+            cycleRefSec: cfg.cycleRefSec ?? null,
+            coutDisqueV1: cfg.coutDisque ?? null,
+            nbEssais: essais.length, nbPrelevements: prel,
+            montages: scenarios.map(s => ({
+              id: s.id, nom: texte(s.name || s.nom) || "(scénario sans nom)",
+              statut: s.statut || null, statutDate: s.statutDate || null, baseline: !!s.baseline,
+              outils: (s.outils || []).map(t => ({
+                id: t.id, numero: texte(t.numero), simultane: !!t.simultaneAvecPrecedent,
+                logements: (t.logements || []).map(lg => ({
+                  id: lg.id, nom: texte(lg.nom), ref: texte(lg.ref),
+                  prix: lg.prix ?? null, aretes: lg.aretes ?? null, charniere: lg.charniere ?? null,
+                  tempsCoupe: lg.tempsCoupe ?? null
+                }))
+              }))
+            }))
+          };
+        })
+      }))
+    }));
+    return {
+      format: "spk-v2-import", version: 1, source, lignes,
+      resume: {
+        lignes: lignes.length,
+        references: lignes.reduce((n, l) => n + l.references.length, 0),
+        ops: lignes.reduce((n, l) => n + l.references.reduce((m, r) => m + r.ops.length, 0), 0),
+        scenarios: nbScenarios, prelevements: nbPrelevements
+      }
+    };
+  }
+
+  /* Les saisies V2 dont l'identifiant n'existe plus dans le nouvel import (OP ou
+     ligne supprimée dans V1) : on les garde, mais on le dit. */
+  function saisiesOrphelines(importV2, saisies) {
+    const ids = new Set();
+    importV2.lignes.forEach(l => {
+      ids.add("ligne:" + l.id);
+      l.references.forEach(r => {
+        ids.add("ref:" + r.id);
+        r.ops.forEach(o => ids.add("op:" + o.id));
+      });
+    });
+    return Object.keys(saisies || {}).filter(k => !ids.has(k.split(":").slice(0, 2).join(":")));
+  }
+
+  const api = { importerV1, saisiesOrphelines, ErreurImport };
+  return api;
+})();
+
+/* ═══ v4.161 — L'ÉCONOMIE DE LA LIGNE : les réponses que le calcul attend ═══
+   Décision Benjamin (12/11) : le moteur économique de la ligne (prototypé à part
+   sous le nom « V2 ») entre DANS l'outil — pas d'application séparée, pas de
+   double saisie. Les réponses sont rangées sur l'objet qu'elles décrivent
+   (ligne.economie, reference.economie, op.economie), donc sauvegardées,
+   exportées et synchronisées comme tout le reste (la synchro transporte les
+   objets ligne / référence / OP entiers et fusionne clé par clé).
+   Forme d'une réponse : { v, le:"AAAA-MM-JJ", note? }.
+   Ce lot ne calcule encore aucun euro : il réunit les données. Le coût par
+   disque bon (arrêts de changement, goulot, rebut par stade) arrive au lot
+   suivant, et il REMPLACERA les définitions concurrentes du gain au lieu de
+   s'y ajouter. Spec : SPEC_V2_MODELE_LIGNE (branche v2). Aucun K, aucun P. */
+function economieObjet(type, id, arbre){
+  for(const l of (arbre || lignes)){
+    if(type === "ligne" && l.id === id) return l;
+    for(const r of (l.references || [])){
+      if(type === "ref" && r.id === id) return r;
+      for(const o of (r.ops || [])) if(type === "op" && o.id === id) return o;
+    }
+  }
+  return null;
+}
+function economieSaisies(arbre){
+  const s = {};
+  const prendre = (type, obj) => {
+    const e = obj && obj.economie;
+    if(!e || typeof e !== "object") return;
+    Object.keys(e).forEach(ch => { if(e[ch] && typeof e[ch] === "object") s[MoteurLigne.cle(type, obj.id, ch)] = e[ch]; });
+  };
+  (arbre || lignes).forEach(l => {
+    prendre("ligne", l);
+    (l.references || []).forEach(r => { prendre("ref", r); (r.ops || []).forEach(o => prendre("op", o)); });
+  });
+  return s;
+}
+/* sans argument : l'arbre vivant (l'OP active recopiée d'abord, comme saveData) */
+function economieModele(arbre){
+  if(!arbre && typeof syncActiveOp === "function") syncActiveOp();
+  const src = arbre || lignes;
+  const imp = ImportLigne.importerV1({ lignes: src, toolVersion: TOOL_VERSION });
+  return MoteurLigne.construireModele(imp, economieSaisies(src));
+}
+/* écrit (ou efface, valeur vide) UNE réponse ; rend false si la cible n'existe plus */
+function economieEcrire(cle, valeur, note, arbre){
+  const morceaux = String(cle).split(":");
+  const obj = economieObjet(morceaux[0], morceaux[1], arbre);
+  const champ = morceaux[2];
+  if(!obj || !champ) return false;
+  const e = Object.assign({}, obj.economie || {});
+  if(valeur === null || valeur === undefined || valeur === "") delete e[champ];
+  else e[champ] = Object.assign({ v: valeur, le: new Date().toISOString().slice(0, 10) }, note ? { note } : {});
+  obj.economie = e;
+  return true;
+}
+
+let economieSel = null;               /* périmètre propre au panneau : { ligne, ref } */
+const economiePassees = new Set();    /* « plus tard » : le temps de la session */
+const ECO_LIB_SRC = { mesure: "mesuré", saisi: "saisi", v1: "suivi" };
+
+function ouvrirEconomie(){
+  fermerPanneaux();
+  ouvrirPanneau("economiePanel");
+  renderEconomie();
+}
+function economiePerimetre(modele){
+  const sel = economieSel || { ligne: activeLigneId, ref: activeReferenceId };
+  let ligne = modele.lignes.find(l => l.id === sel.ligne) || modele.lignes.find(l => l.references.length);
+  if(!ligne) return { ligne: null, ref: null };
+  const ref = ligne.references.find(r => r.id === sel.ref) || ligne.references[0] || null;
+  return { ligne, ref };
+}
+function renderEconomie(message){
+  const wrap = document.getElementById("economiePanel");
+  if(!wrap) return;
+  const modele = economieModele();
+  const { ligne, ref } = economiePerimetre(modele);
+  const titre = `<h3>💶 Économie de la ligne — à compléter</h3>`;
+  if(!ligne || !ref){ wrap.innerHTML = titre + `<p class="panel-hint">Aucune ligne n'a encore de référence.</p>`; return; }
+  const qs = MoteurLigne.questionsReference(ligne, ref);
+  const qsIci = qs.filter(q => q.ou === "v2");
+  const qsFiche = qs.filter(q => q.ou === "v1");
+  const aPoser = qsIci.filter(q => !economiePassees.has(q.cle)).concat(qsIci.filter(q => economiePassees.has(q.cle)));
+  const comp = MoteurLigne.completude(ligne, ref);
+  wrap.innerHTML = titre +
+    `<p class="panel-hint">Ce que le calcul du <b>coût par disque bon</b> attend : arrêts de changement, goulot, rebut, valeur du disque. Les réponses sont enregistrées dans le suivi et synchronisées comme le reste. Le chiffrage en euros arrive à la version suivante.</p>` +
+    economieBlocPerimetre(modele, ligne, ref, comp) +
+    `<p class="eco-statut" id="ecoStatut" role="status" aria-live="polite">${message ? escapeAttr(message) : ""}</p>` +
+    economieBlocQuestion(aPoser[0], qsIci.length) +
+    economieBlocListe(aPoser.slice(1), qsFiche) +
+    economieBlocSait(ligne, ref);
+  economieBrancher(ligne, ref, aPoser[0]);
+}
+function ecoBadge(p){
+  return p && p.src ? `<span class="eco-src eco-src-${p.src}"${p.note ? ` title="${escapeAttr(p.note)}"` : ""}>${ECO_LIB_SRC[p.src]}</span>` : "";
+}
+function ecoVal(p, unite, dec){
+  if(!p || p.v === null) return `<span class="eco-manque">manque</span>`;
+  const v = typeof p.v === "number" ? fmt(p.v, Number.isInteger(p.v) ? 0 : (dec ?? 2)) : escapeAttr(p.v);
+  return `${v}${unite ? " " + escapeAttr(unite) : ""} ${ecoBadge(p)}`;
+}
+function economieBlocPerimetre(modele, ligne, ref, comp){
+  const optsL = modele.lignes.map(l => `<option value="${escapeAttr(l.id)}"${l.id === ligne.id ? " selected" : ""}>${escapeAttr(l.nom)}</option>`).join("");
+  const optsR = ligne.references.map(r => `<option value="${escapeAttr(r.id)}"${r.id === ref.id ? " selected" : ""}>${escapeAttr(r.nom)}</option>`).join("");
+  const reste = comp.total - comp.connus;
+  return `<div class="eco-perimetre">
+      <label>Ligne <select id="ecoLigne">${optsL}</select></label>
+      <label>Référence <select id="ecoRef">${optsR}</select></label>
+    </div>
+    <div class="eco-jauge" role="img" aria-label="Complétude ${comp.pct} %"><div style="width:${comp.pct}%"></div></div>
+    <div class="eco-jauge-texte"><span>${escapeAttr(ligne.nom)} › ${escapeAttr(ref.nom)} : <b>${comp.pct} %</b> de ce que le calcul attend est connu</span>
+      <span>${comp.connus} / ${comp.total} · ${reste} manquant${reste > 1 ? "s" : ""}</span></div>`;
+}
+function economieBlocQuestion(q, nb){
+  if(!q) return `<div class="eco-question eco-fini"><b>Plus rien à demander ici pour ce périmètre.</b>
+    S'il reste des points, ils se complètent dans la fiche du poste ou sur la référence (liste ci-dessous).</div>`;
+  const fam = MoteurLigne.FAMILLES.find(f => f.id === q.famille);
+  let champ = "";
+  if(q.type === "nombre" || q.type === "entier"){
+    champ = `<div class="eco-reponse">
+      <input id="ecoRep" type="text" inputmode="decimal" autocomplete="off" aria-label="${escapeAttr(q.texte)}" placeholder="${q.type === "entier" ? "ex. 1" : "valeur"}">
+      <span class="eco-unite">${escapeAttr(q.unite || "")}</span>
+      <button class="primary" id="ecoValider" type="button">Enregistrer</button>
+      ${q.confirmer !== null && q.confirmer !== undefined ? `<button class="ghost" id="ecoConfirmer" type="button">${fmt(q.confirmer, 0)} ${escapeAttr(q.unite)} est bien le coût complet</button>` : ""}
+      <button class="ghost" id="ecoPasser" type="button">Plus tard</button>
+    </div>`;
+  } else if(q.type === "ouinon"){
+    champ = `<div class="eco-reponse">
+      <button class="primary" data-eco-ouinon="true" type="button">Oui, il y a un stock</button>
+      <button class="primary" data-eco-ouinon="false" type="button">Non, pas de stock</button>
+      <button class="ghost" id="ecoPasser" type="button">Je ne sais pas encore</button>
+    </div>`;
+  } else if(q.type === "choix"){
+    const coche = q.options.some(o => o.v === q.defaut) ? q.defaut : null;
+    champ = `<div class="eco-options" role="radiogroup" aria-label="${escapeAttr(q.texte)}">${q.options.map(o =>
+      `<label><input type="radio" name="ecoRep" value="${escapeAttr(o.v)}"${o.v === coche ? " checked" : ""}> ${escapeAttr(o.libelle)}</label>`).join("")}</div>
+      <div class="eco-reponse"><button class="primary" id="ecoValider" type="button">Enregistrer</button>
+      <button class="ghost" id="ecoPasser" type="button">Plus tard</button></div>`;
+  }
+  return `<div class="eco-question">
+    <div class="eco-famille">${escapeAttr(fam.titre)} · ${escapeAttr(q.cible)} · question 1 sur ${nb}</div>
+    <p class="eco-texte">${escapeAttr(q.texte)}</p>
+    <p class="eco-aide">${escapeAttr(q.aide)}</p>
+    ${champ}
+  </div>`;
+}
+function economieBlocListe(suivantes, qsFiche){
+  if(!suivantes.length && !qsFiche.length) return "";
+  let html = `<details class="eco-liste"${suivantes.length <= 6 ? " open" : ""}><summary>Ensuite : ${suivantes.length} question${suivantes.length > 1 ? "s" : ""}${qsFiche.length ? ` · ${qsFiche.length} point${qsFiche.length > 1 ? "s" : ""} à compléter dans la fiche` : ""}</summary>`;
+  let fam = null;
+  suivantes.forEach(q => {
+    if(q.famille !== fam){ fam = q.famille; html += `<div class="eco-groupe">${escapeAttr(MoteurLigne.FAMILLES.find(f => f.id === fam).titre)}</div>`; }
+    html += `<div class="eco-q"><span class="eco-cible">${escapeAttr(q.cible)}</span><span>${escapeAttr(q.texte)}</span>
+      <button class="ghost" data-eco-avancer="${escapeAttr(q.cle)}" type="button">Répondre</button></div>`;
+  });
+  if(qsFiche.length){
+    html += `<div class="eco-groupe">À compléter dans la fiche du poste ou sur la référence</div>` +
+      qsFiche.map(q => `<div class="eco-q eco-q-fiche"><span class="eco-cible">${escapeAttr(q.cible)}</span><span>${escapeAttr(q.texte)}<small>${escapeAttr(q.aide)}</small></span></div>`).join("");
+  }
+  html += `<p class="panel-hint">Ordre provisoire : de ce qui conditionne tout le calcul vers ce qui l'affine. Avec le chiffrage, les questions seront triées par leur poids en €/an sur la décision.</p></details>`;
+  return html;
+}
+function economieBlocSait(ligne, ref){
+  const ops = ref.ops.map(op => {
+    const lgOk = op.logements.filter(l => MoteurLigne.connu(l.prix) && MoteurLigne.connu(l.aretes) && MoteurLigne.connu(l.charniere)).length;
+    const ms = op.montage
+      ? `${escapeAttr(op.montage.nom)}${op.montageEnService.ambigu ? ` <span class="eco-src eco-provisoire" title="${op.montageEnService.nbSeries} montages en série">à confirmer</span>` : ecoBadge({ src: op.montageEnService.src })}`
+      : `<span class="eco-manque">aucun en série</span>`;
+    const stock = op.derniere ? "—" : (op.tamponAval && op.tamponAval.v !== null ? (op.tamponAval.v ? "oui" : "non") + " " + ecoBadge(op.tamponAval) : `<span class="eco-manque">manque</span>`);
+    const groupes = { separes: "chacune", ensemble: "ensemble", partiel: "en partie" };
+    return `<tr><td><b>${escapeAttr(op.nom)}</b></td><td>${ms}</td><td class="eco-num">${lgOk} / ${op.logements.length}</td>
+      <td class="eco-num">${ecoVal(op.cycleSec, "s", 1)}</td><td class="eco-num">${ecoVal(op.machines)}</td>
+      <td class="eco-num">${ecoVal(op.tChangementMin, "min", 1)}${op.changementsGroupes && op.changementsGroupes.v ? `<br><small>${groupes[op.changementsGroupes.v]}</small>` : ""}</td>
+      <td class="eco-num">${stock}</td><td class="eco-num">${ecoVal(op.rebutOutilPct, "%", 2)}</td>
+      <td class="eco-num">${op.nbEssais} / ${op.nbPrelevements}</td>
+      <td>${economieEffacables(op)}</td></tr>`;
+  }).join("");
+  const disques = ref.ops.filter(o => MoteurLigne.connu(o.coutDisqueV1));
+  return `<details class="eco-sait"><summary>Ce que le calcul sait déjà</summary>
+    <div class="eco-defile"><table class="eco-table"><tbody>
+      <tr><td>Coût horaire complet de ${escapeAttr(ligne.nom)}</td><td class="eco-num">${ecoVal(ligne.coutHoraire, "€/h")}</td>
+        <td>${MoteurLigne.connu(ligne.coutHoraireV1) ? `champ « coût horaire » de la ligne : ${fmt(ligne.coutHoraireV1.v, 0)} €/h, sans dire ce qu'il contient` : ""}${economieEffacable("ligne", ligne.id, "coutHoraire", ligne.coutHoraire)}</td></tr>
+      <tr><td>Volume annuel ${escapeAttr(ref.nom)}</td><td class="eco-num">${ecoVal(ref.volumeAnnuel, "disques/an", 0)}</td><td></td></tr>
+      <tr><td>Valeur du disque brut</td><td class="eco-num">${ecoVal(ref.valeurBrut, "€")}</td>
+        <td>${disques.length ? "« coût disque » des options du poste (" + disques.map(o => escapeAttr(o.nom) + " " + fmt(o.coutDisqueV1.v, 2) + " €").join(", ") + ") non repris : ces valeurs ne suivent pas la gamme" : ""}${economieEffacable("ref", ref.id, "valeurBrut", ref.valeurBrut)}</td></tr>
+    </tbody></table></div>
+    <div class="eco-defile"><table class="eco-table">
+      <thead><tr><th>OP</th><th>Montage en service</th><th>Logements complets</th><th>Cycle</th><th>Machines</th><th>Arrêt au changement</th><th>Stock aval</th><th>Rebut outil</th><th>Essais / prélèv.</th><th></th></tr></thead>
+      <tbody>${ops}</tbody></table></div>
+    <p class="panel-hint">Provenance : <span class="eco-src eco-src-mesure">mesuré</span> temps de coupe complets · <span class="eco-src eco-src-saisi">saisi</span> réponse donnée ici · <span class="eco-src eco-src-v1">suivi</span> repris des fiches sans revalidation.</p>
+  </details>`;
+}
+/* une réponse se corrige en l'effaçant : la question revient */
+function economieEffacable(type, id, champ, p){
+  return p && p.src === "saisi" ? ` <button class="ghost eco-effacer" data-eco-effacer="${escapeAttr(MoteurLigne.cle(type, id, champ))}" type="button" title="Effacer cette réponse : la question reviendra">effacer</button>` : "";
+}
+function economieEffacables(op){
+  const n = ["montageEnService", "machines", "cycleSec", "tChangementMin", "changementsGroupes", "tamponAval", "rebutOutilPct"]
+    .filter(ch => { const p = ch === "montageEnService" ? (op.montageEnService.src === "saisi" ? { src: "saisi" } : null) : op[ch]; return p && p.src === "saisi"; });
+  return n.length ? `<button class="ghost eco-effacer" data-eco-effacer-op="${escapeAttr(op.id)}" type="button" title="Effacer les ${n.length} réponse(s) de cette OP">effacer (${n.length})</button>` : "";
+}
+function economieEnregistrer(q, valeur, note){
+  if(!economieEcrire(q.cle, valeur, note)){ renderEconomie("Enregistrement impossible : cet élément n'existe plus."); return; }
+  economiePassees.delete(q.cle);
+  saveData();
+  renderEconomie("✓ Enregistré.");
+  const champ = document.getElementById("ecoRep");
+  if(champ) champ.focus();
+}
+function economieBrancher(ligne, ref, q){
+  const $ = id => document.getElementById(id);
+  const wrap = $("economiePanel");
+  $("ecoLigne").addEventListener("change", e => { economieSel = { ligne: e.target.value }; renderEconomie(); });
+  $("ecoRef").addEventListener("change", e => { economieSel = { ligne: ligne.id, ref: e.target.value }; renderEconomie(); });
+  wrap.querySelectorAll("[data-eco-avancer]").forEach(b => b.addEventListener("click", () => {
+    const cible = b.getAttribute("data-eco-avancer");
+    for(const x of MoteurLigne.questionsReference(ligne, ref).filter(x => x.ou === "v2")){ if(x.cle === cible) break; economiePassees.add(x.cle); }
+    economiePassees.delete(cible);
+    renderEconomie();
+    const champ = $("ecoRep") || wrap.querySelector(".eco-question button, .eco-question input");
+    if(champ) champ.focus();
+  }));
+  wrap.querySelectorAll("[data-eco-effacer]").forEach(b => b.addEventListener("click", () => {
+    economieEcrire(b.getAttribute("data-eco-effacer"), null); saveData(); renderEconomie("Réponse effacée : la question est revenue.");
+  }));
+  wrap.querySelectorAll("[data-eco-effacer-op]").forEach(b => b.addEventListener("click", () => {
+    const op = economieObjet("op", b.getAttribute("data-eco-effacer-op"));
+    if(op){ op.economie = {}; saveData(); }
+    renderEconomie("Réponses de l'OP effacées : les questions sont revenues.");
+  }));
+  if(!q) return;
+  if($("ecoPasser")) $("ecoPasser").addEventListener("click", () => { economiePassees.add(q.cle); renderEconomie(); });
+  if($("ecoConfirmer")) $("ecoConfirmer").addEventListener("click", () => economieEnregistrer(q, q.confirmer, "coût horaire de la ligne confirmé comme coût complet"));
+  wrap.querySelectorAll("[data-eco-ouinon]").forEach(b => b.addEventListener("click", () => economieEnregistrer(q, b.getAttribute("data-eco-ouinon") === "true")));
+  const champ = $("ecoRep");
+  const valider = () => {
+    if(q.type === "choix"){
+      const c = wrap.querySelector('input[name="ecoRep"]:checked');
+      if(c) economieEnregistrer(q, c.value); else renderEconomieStatut("Choisissez une réponse.");
+      return;
+    }
+    const n = MoteurLigne.nombre(champ.value);
+    const msg = economieRefus(q, n);
+    if(msg){ renderEconomieStatut(msg); champ.focus(); return; }
+    economieEnregistrer(q, n);
+  };
+  if($("ecoValider")) $("ecoValider").addEventListener("click", valider);
+  if(champ) champ.addEventListener("keydown", e => { if(e.key === "Enter") valider(); });
+}
+/* pure : le motif du refus d'une saisie numérique, ou "" si elle est acceptée */
+function economieRefus(q, n){
+  if(q.type === "entier") return (n === null || !Number.isInteger(n) || n < 1) ? "Un nombre entier, au moins 1." : "";
+  if(q.unite === "%") return (n === null || n < 0 || n > 100) ? "Un pourcentage entre 0 et 100." : "";
+  return (n === null || n <= 0) ? "Un nombre positif, s'il vous plaît." : "";
+}
+function renderEconomieStatut(msg){ const s = document.getElementById("ecoStatut"); if(s) s.textContent = msg; }
+
+
+
 function ouvrirCatalogue(){
   fermerPanneaux();
   ouvrirPanneau("cataloguePanel");
@@ -24393,6 +25045,7 @@ const PROMESSES_UI = [
   { porte:"🔍 Vue CPP (accueil et fiche poste)", fns:["ouvrirVueCpp", "renderVueCpp"] },
   { porte:"💰 Simulateur prix (accueil)", fns:["ouvrirSimul", "renderSimul", "plaquettesCommunes", "simulHTML", "simulRecalcul"] },
   { porte:"⇄ Réattribuer un essai", fns:["reattribuerEssai"] },
+  { porte:"💶 Économie de la ligne (Outils)", fns:["ouvrirEconomie", "renderEconomie", "economieModele", "economieEcrire", "economieSaisies"] },
   { porte:"📚 Catalogue (accueil)", fns:["ouvrirCatalogue", "renderCatalogue", "catalogueSeed", "catalogueAppliquer", "catalogueCSV", "catalogueDepuisCSV"] },
   { porte:"⚔️ Plan de conversion (accueil)", fns:["ouvrirPlan", "renderPlan", "planLignes", "planHTML", "planCSV"] },
   { porte:"Carte atelier (barre, accueil, fiche)", fns:["ouvrirCarte", "renderCarte", "scenariosPostes", "renderFichePoste", "ouvrirPosteDepuisFiche"] },
@@ -24436,6 +25089,85 @@ function runTests(){
     but:"", maturiteBruts:"", prelevements:prels, params:{logements:[]},
     marposs:{debut:"",fin:"",releves:[]}, photos:[] });
   const prel = (id, piece, batt) => ({ id, piece, batt, battD:"", battG:"", logementId:"", pointMesure:"" });
+
+  // ---- v4.161 : l'économie de la ligne — le moteur, les réponses, leur voyage (sauvegarde, synchro) ----
+  {
+    const M = MoteurLigne;
+    /* arbre synthétique au format du suivi : OP désordonnées ; OP10 temps de coupe
+       complets avec un outil simultané ; OP20 deux montages en série ; OP30 un trou de prix */
+    const arbre = () => [{
+      id:"L1", nom:"LIGNE TEST", coutHoraire:"32", references:[{
+        id:"R1", nom:"300x20 TEST", productionAnnuelle:"100000", ops:[
+          { id:"O30", nom:"OP30", ordre:30, config:{}, scenarios:[{ id:"S30", name:"Classeur", statut:"serie", baseline:true,
+            outils:[{ id:"T1", numero:"T301", logements:[{ id:"g1", nom:"D1", prix:"", aretes:4, charniere:100 }, { id:"g2", nom:"D2", prix:10, aretes:4, charniere:100 }] }] }] },
+          { id:"O10", nom:"OP10", ordre:10, config:{ cycleRefSec:40, coutDisque:27.52 }, scenarios:[{ id:"S10", name:"Classeur", statut:"serie", baseline:true,
+            outils:[
+              { id:"T1", numero:"T101", logements:[{ id:"a", nom:"Bol", prix:38, aretes:8, charniere:75, tempsCoupe:10 }, { id:"b", nom:"Piste", prix:38, aretes:8, charniere:75, tempsCoupe:5 }] },
+              { id:"T2", numero:"T102", simultaneAvecPrecedent:true, logements:[{ id:"c", nom:"L1", prix:5, aretes:8, charniere:150, tempsCoupe:12 }] },
+              { id:"T3", numero:"T103", logements:[{ id:"d", nom:"L1", prix:5, aretes:8, charniere:150, tempsCoupe:8 }] }],
+            essais:[{ id:"e1", prelevements:[{ id:"p1", piece:10 }, { id:"p2", piece:20 }] }] }] },
+          { id:"O20", nom:"OP20", ordre:20, config:{ cycleRefSec:42 }, scenarios:[
+            { id:"S20a", name:"Classeur", statut:"serie", baseline:true, outils:[{ id:"T1", numero:"T201", logements:[{ id:"x", nom:"D1", prix:9.56, aretes:8, charniere:30 }] }] },
+            { id:"S20b", name:"Process actuel", statut:"serie", statutDate:"2026-09-22", outils:[{ id:"T1", numero:"T201", logements:[{ id:"y", nom:"Piste", prix:9.56, aretes:8, charniere:30 }] }] },
+            { id:"S20c", name:"Essai", statut:"essai", statutDate:"2026-09-25", outils:[] }] }
+        ] }] }];
+    const piloteDe = (a) => { const m = economieModele(a); return { ligne: m.lignes[0], ref: m.lignes[0].references[0] }; };
+    const opDe = (ref, nom) => ref.ops.find(o => o.nom === nom);
+
+    let P = piloteDe(arbre());
+    ok("économie : les OP sont rangées dans l'ordre de la gamme", P.ref.ops.map(o => o.nom), ["OP10", "OP20", "OP30"]);
+    ok("économie : temps de coupe complets → cycle mesuré, groupe simultané = son outil le plus long (15 + 8)", opDe(P.ref, "OP10").cycleSec.v, 23);
+    ok("économie : cycle mesuré marqué « mesure »", opDe(P.ref, "OP10").cycleSec.src, "mesure");
+    ok("économie : sans temps de coupe, le cycle de référence des options sert, marqué suivi", [opDe(P.ref, "OP20").cycleSec.v, opDe(P.ref, "OP20").cycleSec.src], [42, "v1"]);
+    ok("économie : tout ou rien — un temps de coupe manquant ne donne pas de cycle partiel", M.cycleDepuisTempsCoupe([{ logements:[{ tempsCoupe:10 }, { tempsCoupe:"" }] }]), null);
+    ok("économie : deux montages en série → ambigu, le plus récent retenu à titre provisoire", [opDe(P.ref, "OP20").montageEnService.ambigu, opDe(P.ref, "OP20").montageEnService.id], [true, "S20b"]);
+    ok("économie : le coût horaire de la ligne n'est jamais pris pour un coût complet sans confirmation", [P.ligne.coutHoraireV1.v, P.ligne.coutHoraire.v], [32, null]);
+    const qs = M.questionsReference(P.ligne, P.ref);
+    ok("économie : la première question est le montage ambigu", qs[0].famille, "montage");
+    ok("économie : la question du montage coche le montage provisoire, ne propose que les montages en série", [qs[0].defaut, qs[0].options.map(o => o.v)], ["S20b", ["S20a", "S20b"]]);
+    ok("économie : questions rangées par famille", (() => { const r = qs.map(q => M.FAMILLES.find(f => f.id === q.famille).rang); return r.every((x, i) => !i || r[i - 1] <= x); })(), true);
+    ok("économie : le trou de prix est renvoyé vers la fiche, avec son détail", (() => { const q = qs.find(q => q.famille === "outillage"); return q && q.ou === "v1" && /T301 · D1 : manque prix/.test(q.aide); })(), true);
+    ok("économie : pas de question de stock après la dernière OP", qs.some(q => q.cle === M.cle("op", "O30", "tamponAval")), false);
+    ok("économie : le coût horaire propose de confirmer la valeur de la ligne", qs.find(q => q.famille === "cout").confirmer, 32);
+
+    // les réponses, rangées sur les objets
+    const a = arbre();
+    ok("économie : écrire une réponse sur une OP", economieEcrire(M.cle("op", "O20", "montageEnService"), "S20a", null, a), true);
+    economieEcrire(M.cle("op", "O10", "machines"), 2, null, a);
+    economieEcrire(M.cle("op", "O10", "tamponAval"), false, null, a);
+    economieEcrire(M.cle("ligne", "L1", "coutHoraire"), 32, "confirmé", a);
+    economieEcrire(M.cle("ref", "R1", "valeurBrut"), 18.5, null, a);
+    ok("économie : une réponse porte sa valeur et sa date", [a[0].references[0].ops.find(o => o.id === "O10").economie.machines.v, /^\d{4}-\d\d-\d\d$/.test(a[0].references[0].ops.find(o => o.id === "O10").economie.machines.le)], [2, true]);
+    ok("économie : une cible disparue est refusée", economieEcrire(M.cle("op", "DISPARUE", "machines"), 1, null, a), false);
+    P = piloteDe(a);
+    ok("économie : la réponse sur le montage lève l'ambiguïté et change l'outillage lu", [opDe(P.ref, "OP20").montageEnService.ambigu, opDe(P.ref, "OP20").logements[0].nom], [false, "D1"]);
+    ok("économie : « non » est une réponse (stock aval)", opDe(P.ref, "OP10").tamponAval.v, false);
+    ok("économie : les réponses sont marquées saisies", [P.ligne.coutHoraire.src, P.ref.valeurBrut.v, opDe(P.ref, "OP10").machines.src], ["saisi", 18.5, "saisi"]);
+    const qs2 = M.questionsReference(P.ligne, P.ref);
+    ok("économie : une question répondue disparaît", [qs2.some(q => q.famille === "montage"), qs2.some(q => q.cle === M.cle("op", "O10", "machines")), qs2.some(q => q.famille === "cout")], [false, false, false]);
+    const c0 = M.completude(...Object.values(piloteDe(arbre()))), c1 = M.completude(P.ligne, P.ref);
+    ok("économie : la complétude progresse avec les réponses", c1.connus > c0.connus && c1.pct > c0.pct, true);
+    economieEcrire(M.cle("op", "O10", "machines"), "", null, a);
+    ok("économie : une réponse vide efface (la question revient)", a[0].references[0].ops.find(o => o.id === "O10").economie.machines, undefined);
+    ok("économie : refus d'une saisie — machines 1,5 / pourcentage 120 / cycle 0", [
+      economieRefus({ type:"entier" }, 1.5), economieRefus({ type:"nombre", unite:"%" }, 120), economieRefus({ type:"nombre", unite:"s" }, 0), economieRefus({ type:"nombre", unite:"s" }, 38.5)],
+      ["Un nombre entier, au moins 1.", "Un pourcentage entre 0 et 100.", "Un nombre positif, s'il vous plaît.", ""]);
+    ok("économie : virgule décimale acceptée", M.nombre("13,73"), 13.73);
+    ok("économie : la confiance d'un ensemble est celle du plus faible", [M.confiance([M.param(1, "mesure"), M.param(2, "saisi")]), M.confiance([M.param(1, "mesure"), M.param(null)])], ["saisi", null]);
+
+    // le voyage : normalisation (rechargement, import) et synchro
+    const n = normalizeLigne(JSON.parse(JSON.stringify(a[0])));
+    ok("économie : la normalisation garde les réponses de la ligne, de la référence et de l'OP",
+      [n.economie.coutHoraire.v, n.references[0].economie && n.references[0].economie.valeurBrut.v, n.references[0].ops.find(o => o.id === "O20").economie.montageEnService.v], [32, 18.5, "S20a"]);
+    ok("économie : une référence sans réponse n'en reçoit pas d'office", "economie" in normalizeReference({ id:"Rx", nom:"x", ops:[] }), false);
+    const dec = syDecouper({ lignes: a });
+    const parts = {}; Object.keys(dec.shards).forEach(k => { parts[k] = dec.shards[k].body; });
+    const re = syAssembler(parts).lignes[0];
+    ok("économie : la synchro transporte les réponses (découpage puis réassemblage)",
+      [re.economie.coutHoraire.v, re.references[0].economie.valeurBrut.v, re.references[0].ops.find(o => o.id === "O10").economie.tamponAval.v], [32, 18.5, false]);
+    const fus = syFusion({ economie:{} }, { economie:{ machines:{ v:1 } } }, { economie:{ cycleSec:{ v:40 } } }, [], "", "local");
+    ok("économie : deux réponses différentes saisies sur deux appareils se cumulent à la fusion", [fus.economie.machines.v, fus.economie.cycleSec.v], [1, 40]);
+  }
 
   // ---- v4.137 : suivi Marposs — date JJ/MM/AA HH:MM:SS, minuit, tolerance Marposs, CSV ----
   {

@@ -454,6 +454,7 @@ setTimeout(function(){ requestAnimationFrame(function(){ requestAnimationFrame(f
      avoir refermé l'écran en cours (les écrans restent exclusifs). */
   (function () {
     const OUTILS = [
+      { lib: "Économie de la ligne", sous: "ce que le coût par disque bon attend : arrêts, goulot, rebut", f: () => window.ouvrirEconomie && window.ouvrirEconomie() },
       { lib: "Carte atelier", sous: "chaque machine, son état, sa fiche", f: () => window.ouvrirCarte && window.ouvrirCarte() },
       { lib: "Livraisons", sous: "figer les gains du jour dans un document daté", f: () => {
           if (window.ouvrirCarte) window.ouvrirCarte();
@@ -708,6 +709,7 @@ setTimeout(function(){ requestAnimationFrame(function(){ requestAnimationFrame(f
     planPanel: "accueilBtn",
     simulPanel: "accueilBtn",
     cataloguePanel: "accueilBtn",
+    economiePanel: "accueilBtn",
     comparePanel: "accueilBtn",
     historiquePanel: "accueilBtn"
   };
@@ -736,7 +738,7 @@ setTimeout(function(){ requestAnimationFrame(function(){ requestAnimationFrame(f
      Constat Benjamin 22/10 : « l'onglet tableau ne s'affiche plus quand on
      clique dessus » après être passé par le Plan de conversion. Fermés à
      chaque changement d'écran du rail. */
-  const SURFACES_SECONDAIRES = ["planPanel", "simulPanel", "cataloguePanel", "comparePanel", "historiquePanel", "backlogWrap"];
+  const SURFACES_SECONDAIRES = ["planPanel", "simulPanel", "cataloguePanel", "economiePanel", "comparePanel", "historiquePanel", "backlogWrap"];
   const TOUTES_SURFACES = [];
   Object.keys(SURFACES_DU_BOUTON).forEach((b) => {
     SURFACES_DU_BOUTON[b].forEach((id) => {

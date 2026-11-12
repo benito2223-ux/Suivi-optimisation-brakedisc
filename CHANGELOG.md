@@ -5,6 +5,16 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.161.0] — 2026-11-12 · l'économie de la ligne entre dans l'outil : les réponses que le calcul attend · Claude
+
+Décision Benjamin (12/11) : le moteur économique de la ligne, prototypé à part (« V2 », branche `v2`), **entre dans V1** au lieu de vivre dans une deuxième application (pas de double saisie, synchro / iPhone / export déjà là). Il entrera en **remplaçant** les calculs de gain concurrents, pas en s'y ajoutant (ni module optionnel, ni menu dépliable de plus). Ce lot réunit les données ; il ne calcule encore aucun euro.
+
+- **Moteur** (`MoteurLigne`, fonctions pures dans le fichier) : chaque paramètre porte sa provenance (mesuré / saisi / suivi) ; cycle mesuré depuis les temps de coupe (règle des groupes simultanés, tout ou rien), à défaut cycle de référence des options ; montage en service (plusieurs « serie » sur une OP → le plus récent est retenu à titre provisoire et la question est posée) ; le coût horaire de la ligne n'est jamais pris pour un coût complet sans confirmation (D4) ; le « coût disque » des options n'est pas repris (27,52 € en OP10, 13,73 € en OP40 sur EMAG 1 / 356x26 : il ne suit pas la gamme) ; complétude et liste ordonnée des questions. `ImportLigne` lit l'arbre vivant.
+- **Données** : `ligne.economie` (coût horaire complet), `reference.economie` (valeur du brut), `op.economie` (montage en service, machines en parallèle, cycle, arrêt au changement, changements groupés, stock aval, rebut outil). Une réponse = `{ v, le, note? }`. **Correctif au passage** : `normalizeReference` ne gardait que ses champs connus ; une réponse posée sur une référence aurait disparu au rechargement.
+- **Synchro** : rien à changer côté serveur (l'arbre ligne / référence / OP voyage entier et fusionne clé par clé) ; testé : découpage + réassemblage, et deux réponses saisies sur deux appareils se cumulent.
+- **Écran** : Outils › Économie de la ligne — périmètre (ligne active par défaut), jauge de complétude, une question à la fois (Entrée valide, « plus tard »), la suite repliée par famille, les points à compléter dans la fiche du poste à part, « Ce que le calcul sait déjà » avec la provenance et l'effacement d'une réponse. Sur l'export de Matis du 09/11 (EMAG 1 / 356x26) : 44 % connu, 25 questions, OP40 ambiguë (2 montages en série, le plus récent a 3 logements sans prix ni charnière).
+- 946 tests | 0 échec (+34) ; vérifié dans le navigateur sur une copie locale de l'export du 09/11 (réponses enregistrées, rechargement, format téléphone 375 px).
+
 ## [4.160.3] — 2026-11-11 · la pastille d'enregistrement exporte au clic · Claude
 
 Benjamin : le point en haut à droite (curseur « ? » au survol) n'a aucun effet. C'est `#saveStatus` : indicateur d'état (ambre = enregistré dans ce navigateur, non exporté ; vert = exporté ; rouge = sauvegarde bloquée) qui n'avait qu'une info-bulle. **Décision** : un clic lance l'export de la sauvegarde (même action que Transmettre › exporter), au clavier aussi (Entrée / Espace) ; curseur main, info-bulle complétée « cliquer pour exporter une sauvegarde ».
