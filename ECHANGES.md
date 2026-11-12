@@ -25,6 +25,7 @@
 
 | 10/11 | **DEV + PROD 4.151.0 — étape 2 : les conditions de coupe se tapent une fois** (ordre de Benjamin : « fini tout et déploie en prod et dev je te fais confiance »). | suivi-optimisation-projet.surge.sh · suivi-optimisation-septfons.surge.sh | ✅ curl : DEV et PROD servent 4.151.0, empreinte `83056957…` identique au `dist/` sur les deux domaines, `version.json` = 4.151.0, ECHANGES en 404 ; 803 tests \| 0 échec + « tout est vert » au harnais sur le dist final (Hermes, Tour 134) |
 
+| D1–D5 (12/11) | **Économie de la ligne : cinq questions avant le chiffrage (lot 2).** D1 : le temps gagné vaut-il de l'argent (ligne saturée, heures supprimables) ? D2 : stock tampon entre les OP, ou ligne synchrone ? D3 : le rebut est-il connu par OP et par cause ? D4 : les 32 €/h sont-ils un coût complet ou la main-d'œuvre seule ? D5 : Matis peut-il changer une charnière sans l'accord de Stellantis ? D2 et D4 sont déjà posées à Matis dans l'écran ; D1, D3 et D5 se tranchent de vive voix. **Le lot 2 attend D1, D2 et D4.** | Claude (Tour 136) | ⏳ à trancher |
 | Q1 | Z Code peut-il écrire et commiter directement dans ce dépôt ? (voir question ci-dessous) | Hermes | ✅ tranché — oui (Tour 2, 30/09) |
 | Q2 | Décision 2 version : la production réelle devient-elle une entité ? On a la première mesure (écart +57 %) mais **un seul point de mesure** — il faut 2-3 mois de classeur pour trancher | Hermes | ✅ tranché (30/09, Benjamin) — reste un **constat lu à la demande** (écran Réel / Théorique), pas une entité ; les relevés continuent d'accumuler la mesure |
 | Q3 | Le projet « Coût et qualité EMAG 1 » : peut-il accueillir une 2ᵉ ligne, ou reste-t-il mono-ligne ? | Benjamin | ✅ tranché — mono-ligne, blocage (4.55.1) |
@@ -54,6 +55,8 @@
 
 | Date | Acte | Où | Vérifié |
 |---|---|---|---|
+| 12/11 | **DEV 4.161.0 — l'économie de la ligne entre dans l'outil** (ordre de Benjamin : « on fait évoluer la V1 de l'intérieur […] et publie en ligne sur la branche dev »). Outils › Économie de la ligne ; aucun euro calculé pour l'instant. Au passage, `/v2/` (prototype séparé publié le 11/11) disparaît de la DEV : il est abandonné, voir Tour 136. **PROD non touchée.** | suivi-optimisation-projet.surge.sh | ✅ curl : DEV sert 4.161.0 ; `bilan_economique.html` (`bcb1cd8d…`), `spk-shell.js`, `spk-app.css`, `index.html` et le SW sont identiques au `dist/` ; CHANGELOG, ECHANGES et `v2/` en 404 ; PROD toujours en 4.160.2 ; écran ouvert en ligne sans erreur console ; 946 tests \| 0 échec (Claude, Tour 136). Non fait : poste de Matis ; branches git `dev` et `main` non réalignées ; rien poussé |
+| 11/11 | **DEV : prototype « V2 » publié dans `/v2/`**, à côté de la 4.160.2 republiée à l'identique. Retiré le 12/11 par la publication de la 4.161.0 (décision : pas d'application séparée). | suivi-optimisation-projet.surge.sh/v2/ | ✅ curl le 11/11 ; retiré le 12/11 |
 | 09/11 | **DEV + PROD 4.150.1 — détails d'affichage** (ordre de Benjamin : « commit deploie »). Unité des en-têtes (« Ra (µm) » ne s'affiche plus « RA (MM) »), « Hors course » à la place de « FAILED », plus de « Gain/an +0 € », volumes manquants comptés en une ligne, flèches des champs retirées. Format de données inchangé. | suivi-optimisation-projet.surge.sh · suivi-optimisation-septfons.surge.sh | ✅ curl : DEV et PROD servent 4.150.1, 1 833 101 o, empreinte `5539c852…` identique au `dist/` sur les deux domaines, `version.json` = 4.150.1, SW 200, CHANGELOG/ECHANGES 404 ; PROD ouverte dans Chrome en lecture seule : 86 scénarios, 16 essais, 192 relevés, 0 erreur console ; 790 tests \| 0 échec (Claude, Tour 133). Non fait : format téléphone, bascule du poste de Matis |
 | 09/11 | **DEV + PROD 4.142.0 — plus de Pipeline commercial ; synchro accessible en un clic** (demande de Benjamin avant la réunion du matin avec Matis). | suivi-optimisation-projet.surge.sh · suivi-optimisation-septfons.surge.sh | ✅ curl : DEV et PROD servent 4.142.0, 1 595 695 o, empreinte `a22f46f0…` identique au `dist/` LF, `version.json` = 4.142.0, plus aucune mention « font les commandes » dans la coque servie ; 743 tests \| 0 échec (Claude, Tour 126) |
 | 08/11 | **DEV + PROD 4.141.1 — l'outil pointe sur le projet Supabase dédié `suivi-septfons`** (Benjamin : « j'ai déjà ce projet supabase », carte blanche sur la partie Supabase). Rien n'avait été synchronisé sur l'ancien projet : aucune donnée à reprendre. | suivi-optimisation-projet.surge.sh · suivi-optimisation-septfons.surge.sh | ✅ curl : DEV et PROD servent 4.141.1, 1 594 362 o, empreinte `3f72fa92…` identique au `dist/` LF, `version.json` = 4.141.1, la PROD référence le nouveau projet et plus l'ancien ; 743 tests \| 0 échec (Claude, Tour 125). Non fait : connexion réelle (geste des utilisateurs) |
@@ -201,6 +204,30 @@ un étage à vérifier, et on vient d'en sortir ; (3) la convergence : Benjamin 
 Matis doivent tenir le MÊME état (v3) — une correction d'un côté recrée deux
 lignées. Consigne Matis : import v3, Remplacer tout, ne pas cliquer la correction.
 
+
+### ▸ Tour 136 — 12/11/2026 — **Claude** (4.161.0 — l'économie de la ligne entre dans l'outil ; branche `ux-rail`)
+
+**Le cap (Benjamin, 11 et 12/11)** : faire de l'outil un outil de **décision économique** pour Matis. Le chiffre qui compte devient le **coût par disque bon de la ligne** : outillage + arrêts de changement de plaquette + temps de ligne au goulot + rebut valorisé au stade de l'OP + pièces détachées. Le levier visé : une plaquette plus chère, qui s'arrête moins souvent et fait moins de rebut, peut coûter moins cher au total. Spec complète : `v2/SPEC.md` sur la branche `v2` (modèle, formules, règles de prudence, décisions D1 à D5).
+
+**Le chemin pris, et pourquoi** : un prototype séparé (« V2 », branche `v2`, worktree `.worktrees/v2`) a été construit le 11/11, puis **abandonné le 12/11**. Deux outils, c'est une double saisie pour Matis, une double visite pour Benjamin, et tout ce que V1 a déjà (synchro, iPhone, export, dossier de visite) à refaire. Décision : **le moteur entre dans V1 et remplacera les calculs de gain concurrents** (les quatre définitions de « l'économie acquise » relevées par Hermes au Tour 132), **sans s'y ajouter** : ni module optionnel, ni menu dépliable de plus, qui ferait une cinquième vérité. La branche `v2` reste comme archive du prototype et de la spec ; rien n'est à y fusionner.
+
+**Livré en 4.161.0 (lot 1 : réunir les données, aucun euro pour l'instant)**
+- `MoteurLigne` et `ImportLigne` : fonctions pures dans `bilan_economique.html`, juste avant `ouvrirCatalogue`. Chaque paramètre porte sa provenance (`mesure`, `saisi`, ou `v1` = repris des fiches). Le moteur calcule le cycle depuis les temps de coupe (tout ou rien, groupes simultanés), choisit le montage en service, mesure la complétude et ordonne les questions.
+- **Format des données** : `ligne.economie.coutHoraire`, `reference.economie.valeurBrut`, `op.economie.{montageEnService, machines, cycleSec, tChangementMin, changementsGroupes, tamponAval, rebutOutilPct}`. Chaque réponse vaut `{ v, le, note? }`. On n'y accède que par `economieModele()` et `economieEcrire(cle, valeur)` (clé `type:id:champ`).
+- `normalizeReference` garde désormais `economie` : elle jetait tout champ inconnu.
+- Écran : Outils › Économie de la ligne (`ouvrirEconomie`, panneau `economiePanel`, styles `#economiePanel` dans `spk-app.css`, surface secondaire déclarée dans `spk-shell.js`).
+- Synchro : rien à changer côté serveur, l'arbre voyage entier et fusionne clé par clé. C'est testé.
+- 946 tests | 0 échec (+34, bloc « économie : » de `runTests`).
+
+**Pour Hermes : les règles du chantier**
+1. **Aucun euro calculé hors de `MoteurLigne`.** Le lot 2 ajoutera le coût par disque bon dans le moteur, puis **rebranchera** `gainPoste`, `campagneCollecter`, `planRecapGains` et le bandeau de l'accueil sur **une seule** fonction de gain. Chaque écart de chiffre visible par Matis doit être expliqué avant publication.
+2. **Ne jamais lire `economie` directement** dans un écran : passer par `economieModele()`.
+3. Les règles de prudence de la spec ne se négocient pas : un poste incomplet n'est jamais sommé ; la charnière économique ne dépasse jamais la charnière prouvée par essai ; un gain de cycle hors goulot vaut 0 € (il s'affiche en capacité libérée).
+4. **K et P** : rien de tout cela dans ce moteur, jamais.
+
+**Constat sur l'export de Matis du 09/11 (EMAG 1 / 356x26, la ligne pilote)** : 44 % de ce que le calcul attend est connu, et il reste 25 questions. L'OP40 porte deux montages « en série », et le plus récent a 3 logements sans prix ni charnière. Le « coût disque » vaut 27,52 € en OP10 et 13,73 € en OP40 : il ne suit pas la gamme, donc il n'est pas repris. Aucun temps de coupe ni taux de rebut n'est saisi nulle part.
+
+**Prochain lot (2)** : coût par disque bon et goulot sur la ligne pilote, contrôle croisé au centime avec le coût outillage actuel, puis fusion des quatre définitions du gain. Il attend D1, D2 et D4 (tableau des décisions).
 
 ### ▸ Tour 135 — 10/11/2026 — **Hermes** (4.152.0 — la vue plaquette globale : où elle sert, ce qu'elle rapporte déployée au global ; branche `ux-rail`)
 

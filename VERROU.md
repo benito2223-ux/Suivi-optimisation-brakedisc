@@ -1,10 +1,16 @@
-| **Auteur** | **Claude** (Tour 136) |
-| **Pris le** | 12/11/2026 |
-| **Écrit dans** | `bilan_economique.html`, `outils/build-coque.mjs`, `service-worker.js`, nouveau `moteur-ligne.js` |
-| **Version visée** | 4.161.0 |
-| **Sujet** | *Le moteur économique de la ligne (ex-V2) entre dans V1 : nouveaux champs par ligne / référence / OP, écran « À compléter » dans le rail. Hermes : ne pas écrire dans ces fichiers avant la libération.* |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
 
 ---
+
+✅ **Verrou pris puis libéré par Claude le 12/11/2026** (Tour 136, branche `ux-rail`, v4.161.0 —
+l'économie de la ligne entre dans l'outil : moteur, réponses rangées sur ligne / référence / OP,
+Outils › Économie de la ligne). Fichiers touchés : `bilan_economique.html`, `spk-shell.js`, `spk-app.css`
+(ni le build ni le service worker : le moteur est dans le fichier). 946 tests | 0 échec.
+**DEV publiée et vérifiée curl ; PROD non touchée (4.160.2).** Lire le Tour 136 avant de toucher au calcul du gain.
 
 ✅ **Verrou pris puis libéré par Hermes le 10/11/2026** (Tour 135, branche `ux-rail`, v4.152.0 —
 vue plaquette globale : usages par ISO, extrapolation à trois leviers, trois écrans). 811 tests | 0 échec.
