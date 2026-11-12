@@ -1,10 +1,14 @@
-| **Auteur** | **Claude** (Tour 137) |
-| **Pris le** | 12/11/2026 |
-| **Écrit dans** | `bilan_economique.html` |
-| **Version visée** | 4.162.0 |
-| **Sujet** | *Les axes temps machine et rebut quittent la fiche du poste (décision Benjamin 12/11) : ils vivront dans Économie de la ligne. Puis gel de l'outil. Hermes : ne pas écrire avant la libération.* |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
 
 ---
+
+✅ **Verrou pris puis libéré par Claude le 12/11/2026** (Tour 137, branche `ux-rail`, v4.162.0 —
+les axes temps machine et rebut quittent la fiche du poste ; **gel de l'outil** décidé par Benjamin,
+voir Tour 137). 951 tests | 0 échec. **Publication DEV + PROD : sur le feu vert de Benjamin** (voir Faits extérieurs). **Outil gelé** : correctifs bloquants seulement, chacun avec son verrou ; reprise = lot 2.
 
 ✅ **Verrou pris puis libéré par Claude le 12/11/2026** (Tour 136, branche `ux-rail`, v4.161.0 —
 l'économie de la ligne entre dans l'outil : moteur, réponses rangées sur ligne / référence / OP,

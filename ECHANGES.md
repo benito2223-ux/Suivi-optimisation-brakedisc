@@ -206,6 +206,23 @@ Matis doivent tenir le MÊME état (v3) — une correction d'un côté recrée d
 lignées. Consigne Matis : import v3, Remplacer tout, ne pas cliquer la correction.
 
 
+### ▸ Tour 137 — 12/11/2026 — **Claude** (4.162.0 — le temps machine et le rebut quittent la fiche ; **gel de l'outil** ; branche `ux-rail`)
+
+**Décision de Benjamin** : séparer le travail du quotidien (prix plaquette contre concurrent, charnière, essais) de la vue d'ensemble. La fiche du poste redevient purement « plaquette » (outillage + pièces détachées). Le temps machine et le coût du rebut dépendent de la ligne entière : ils seront chiffrés au seul endroit prévu pour ça, le moteur de la ligne (lot 2).
+
+**Fait** : une porte, `AXES_LIGNE_DANS_FICHE = false`. `coutMachinePiece` et `coutRebutPiece` rendent `null`, donc le coût pièce, la cascade, le bilan annuel, les « équivalent machine / rebut », le levier productivité par outil, le cycle max du seuil de bascule et le « € machine/pièce » du pied de cycle se taisent. Les trois gains n'affichent plus que l'outil, avec une phrase de renvoi. Dans les Options, les deux interrupteurs sont masqués et une note explique pourquoi. **Le gain annuel ne bouge pas** : il a toujours été l'écart d'outillage (`bilanAnnuel`, `perimetreCompare(…, ["plaquettes","pieces"])`). Vérifié sur l'export de Matis : EMAG 1 / 356x26 OP40, l'essai SL500 reste à −12,2 k€/an.
+
+**Rien n'est perdu** : `coutMachineActif`, `coutRebutActif` et `coutDisque` restent dans les données ; le journal de rebut et le taux saisi restent, pour le suivi qualité. Les formules restent écrites : `runTests` ouvre la porte le temps des tests d'avant, et 5 tests « 4.162 » vérifient la porte fermée. 951 tests | 0 échec.
+
+**Pas touché, à reprendre au lot 2** : la simulation prospective de la vue plaquette globale (levier « cycle », Tour 135) chiffre encore un équivalent machine avec `lg.coutHoraire` quand on active ce levier. C'est un écran de vue d'ensemble : il doit passer par `MoteurLigne`, pas garder son propre calcul.
+
+**Piège rencontré** : le build refuse un dist qui contient le mot « runTests » hors du bloc de tests (étape 5 bis). Un commentaire qui le citait hors du bloc a bloqué le build ; il est reformulé. Et `sed -i` de Git Bash réécrit le fichier en LF : préférer Python pour les retouches.
+
+**GEL DE L'OUTIL (Benjamin, 12/11) : « on fige l'outil, on avance dans le travail à l'atelier ».**
+- Plus aucune nouvelle fonctionnalité. Seuls les correctifs bloquants signalés par Matis ou Benjamin sont admis, chacun avec son verrou.
+- La reprise, c'est le lot 2 (coût par disque bon, goulot, une seule fonction de gain). Il ne démarre que quand Matis a répondu à D1, D2 et D4 et a renseigné les 4 OP d'EMAG 1 / 356x26 dans Outils › Économie de la ligne.
+- Email récapitulatif pour Matis : `EMAIL_MATIS_2026-11-12_recap.md` (non versionné, envoyé par Benjamin).
+
 ### ▸ Tour 136 — 12/11/2026 — **Claude** (4.161.0 — l'économie de la ligne entre dans l'outil ; branche `ux-rail`)
 
 **Le cap (Benjamin, 11 et 12/11)** : faire de l'outil un outil de **décision économique** pour Matis. Le chiffre qui compte devient le **coût par disque bon de la ligne** : outillage + arrêts de changement de plaquette + temps de ligne au goulot + rebut valorisé au stade de l'OP + pièces détachées. Le levier visé : une plaquette plus chère, qui s'arrête moins souvent et fait moins de rebut, peut coûter moins cher au total. Spec complète : `v2/SPEC.md` sur la branche `v2` (modèle, formules, règles de prudence, décisions D1 à D5).
