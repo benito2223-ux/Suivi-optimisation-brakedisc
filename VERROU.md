@@ -1,8 +1,8 @@
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | **Claude** (Tour 137) |
+| **Pris le** | 12/11/2026 |
+| **Écrit dans** | `bilan_economique.html` |
+| **Version visée** | 4.162.0 |
+| **Sujet** | *Les axes temps machine et rebut quittent la fiche du poste (décision Benjamin 12/11) : ils vivront dans Économie de la ligne. Puis gel de l'outil. Hermes : ne pas écrire avant la libération.* |
 
 ---
 
