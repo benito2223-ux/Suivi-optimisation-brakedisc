@@ -661,7 +661,7 @@ async function flusherJournal(){
   try{
     const batch = queue.slice(0, 50);
     const payload = batch.map(e => ({
-      ts: e.ts, equipe: e.equipe, ligne: e.ligne, reference: e.reference, op: e.op,
+      id_local: e.localId, ts: e.ts, equipe: e.equipe, ligne: e.ligne, reference: e.reference, op: e.op,
       type: e.type, element: e.element, attendu: e.attendu, releve: e.releve,
       statut: e.statut, commentaire: e.commentaire || "", version_reference: e.version_reference || 1
     }));
@@ -983,7 +983,7 @@ rendre();
 synchroniser(Boolean(snapshot));
 
 /* ====== PWA : installation, hors ligne, mise à jour ====== */
-const BUILD = "2026-11-24.3";
+const BUILD = "2026-11-24.4";
 if("serviceWorker" in navigator){ navigator.serviceWorker.register("./service-worker.js", { updateViaCache: "none" }).catch(() => {}); }
 fetch("checkup-version.json", { cache: "no-store" }).then(r => r.ok ? r.json() : null).then(j => {
   if(j && j.build && j.build !== BUILD && location.search.indexOf("b=" + j.build) === -1){
