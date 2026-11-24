@@ -7473,3 +7473,6 @@ Demande de Benjamin après la saisie des temps de coupe EMAG 2 : le statut du sc
 **DEV + PROD 4.162.2** (phrase de Benjamin : « commit et deploie bro ») : tuile « Temps de coupe pure » sur le scénario. curl : version 4.162.2 et `bilan_economique.html` identique au dist (`55c3cbb8…`) sur les deux domaines. Pas vérifié à l écran sur les vraies données.
 
 **DEV + PROD 4.162.3** (phrase de Benjamin : « commit et deploie bro ») : tuile de coupe pure en barres classées. curl : version et `bilan_economique.html` identiques au dist sur les deux domaines (eca85a121825). Pas vérifié à l écran sur les vraies données.
+
+**DEV + PROD 4.162.4** (phrase de Benjamin : « commit et deploie bro ») : temps de coupe des essais déduits de la référence. curl : version et `bilan_economique.html` identiques au dist sur les deux domaines (874edeb58b9b). Pas vérifié à l écran sur les vraies données.
+**Donnée (cloud prod, 24/11)** : essai « SNGN090416T00520 SN60 G97 S700 0,25 » (OP40, shard smv7vqvfm9ryk, rev 17 → 18) : T548 D1 et T549 D1 passés en mode G97, sBroche 700, tempsCoupe 24,5 s (temps du programme en G97 S700 F0,25, calculé par scripts/spf_temps.py). Reste du shard inchangé (5 outils, premier outil vide conservé).
