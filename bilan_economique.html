@@ -7151,11 +7151,21 @@ function cycleDetailStatus(sc, cfg){
   const outils = sc.outils || [];
   let filled = 0, total = 0;
   /* Tour 134 : la répartition simultané/série vit dans groupesSimultanes() — une seule définition */
-  const tempsParOutil = outils.map(o => {
+  /* v4.162.4 — scénario d'essai : le temps d'un logement non saisi se déduit de la référence
+     (voir tempsCoupeDeduit). Rien n'est stocké : c'est recalculé à l'affichage, donc valable
+     aussi pour les scénarios déjà saisis. */
+  const baseRef = (!sc.baseline && typeof data !== "undefined" && Array.isArray(data) && data.includes(sc)) ? baselineScenario() : null;
+  let calcules = 0; const incomputables = [];
+  const tempsParOutil = outils.map((o, oi) => {
     let s = 0;
     (o.logements||[]).forEach(l => {
       total++;
-      const c = parseFloat(l.tempsCoupe);
+      let c = parseFloat(l.tempsCoupe);
+      if(isNaN(c) && baseRef){
+        const d = tempsCoupeDeduit(baseRef, o, l, (baseRef.outils||[]).length === outils.length ? oi : undefined);
+        if(d.secs !== null){ c = d.secs; calcules++; }
+        else if(d.raison) incomputables.push((o.numero || "?") + " " + (l.nom || "") + " — " + d.raison);
+      }
       if(!isNaN(c)){ filled++; s += c; }
     });
     return s;
@@ -7165,7 +7175,33 @@ function cycleDetailStatus(sc, cfg){
   const denom = groupes.reduce((acc,g) => acc + Math.max(...g), 0);
   const secs = complete ? denom : null;
   return { actif: !!(cfg && cfg.cycleDetailActif), complete, filled, total, secs,
-           nbGroupes: groupes.length, nbOutils: outils.length };
+           nbGroupes: groupes.length, nbOutils: outils.length, calcules, incomputables };
+}
+/* v4.162.4 — le trajet de l'outil ne change jamais d'un scénario à l'autre : seul le rythme change.
+   - logement non suivi, ou mêmes Vc / f / mode / tr/min que la référence : même temps ;
+   - G96 des deux côtés : t' = t × (f0 × Vc0) / (f1 × Vc1) ;
+   - dès qu'un côté est en G97 : t' = t × (f0 × S0) / (f1 × S1), à condition que les deux tr/min soient
+     saisis (en G96 sur la référence, « tr/min » = tr/min moyen équivalent). Sinon on ne devine pas : la raison est rendue. */
+function tempsCoupeDeduit(base, o, l, rang){
+  let ob = (base.outils||[]).find(x => x.numero && o.numero && x.numero === o.numero);
+  /* outil d'essai d'un autre numéro (autre plaquette/porte-outil sur le même poste) : à rang égal, même poste */
+  if(!ob && rang !== undefined && !(base.outils||[]).some(x => x.numero && x.numero === o.numero)) ob = (base.outils||[])[rang];
+  const lb = ob && (ob.logements||[]).find(x => (x.nom||"") === (l.nom||""));
+  if(!lb) return { secs:null, raison:"" };
+  const t0 = parseFloat(lb.tempsCoupe);
+  if(isNaN(t0)) return { secs:null, raison:"" };
+  if(l.suiviTolerance === false) return { secs:t0, origine:"copie" };
+  const n = v => { const x = parseFloat(v); return isNaN(x) ? null : x; };
+  const m0 = lb.modeVitesse === "G97" ? "G97" : "G96", m1 = l.modeVitesse === "G97" ? "G97" : "G96";
+  const vc0 = n(lb.vc), vc1 = n(l.vc), f0 = n(lb.f), f1 = n(l.f), s0 = n(lb.sBroche), s1 = n(l.sBroche);
+  if(m0 === "G96" && m1 === "G96"){
+    if(vc0 === vc1 && f0 === f1) return { secs:t0, origine:"copie" };
+    if(!vc0 || !vc1 || !f0 || !f1) return { secs:null, raison:"Vc / f à renseigner" };
+    return { secs: t0 * (f0*vc0) / (f1*vc1), origine:"calcule" };
+  }
+  if(m0 === m1 && vc0 === vc1 && f0 === f1 && s0 === s1) return { secs:t0, origine:"copie" };
+  if(!s0 || !s1 || !f0 || !f1) return { secs:null, raison:"G97 : tr/min de la référence et de l'essai à renseigner" };
+  return { secs: t0 * (f0*s0) / (f1*s1), origine:"calcule" };
 }
 /* statut affiché sous la composition du scenario : dit clairement quel calcul est
    REELLEMENT utilise pour ce scenario, puisque le detail par logement retombe
@@ -9307,6 +9343,8 @@ function scenarioBlockHTML(sc, interactive){
           <div style="font-size:26px;font-weight:800;line-height:1.1;">${val}<small style="font-size:14px;font-weight:700;"> s</small></div>
           ${delta ? `<div style="font-weight:700;">${delta}</div>` : ""}
           ${stCycle.complete ? "" : `<div style="color:#8a4b00;font-weight:700;">${stCycle.filled}/${stCycle.total} logements renseignés</div>`}
+          ${stCycle.calcules ? `<div style="font-weight:700;color:#1d4f91;" title="Temps déduits de la référence : le trajet de l'outil ne change pas, seul le rythme (Vc, f, tr/min) change.">≈ ${stCycle.calcules} logement${stCycle.calcules>1?"s":""} calculé${stCycle.calcules>1?"s":""} depuis la référence</div>` : ""}
+          ${(stCycle.incomputables||[]).length ? `<div style="color:#8a4b00;font-weight:700;">⚠ ${stCycle.incomputables.map(escapeAttr).join(" · ")}</div>` : ""}
           <div style="margin-top:6px;">${bars}</div>
           ${tot}${note}
         </div>
@@ -15296,6 +15334,10 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.162.4", date:"24/11/2026", points:[
+    "<b>Les temps de coupe des scénarios d'essai se calculent tout seuls.</b> Logement non suivi ou mêmes conditions que la référence : même temps. Vc ou avance différents : le temps est recalculé. Valable aussi pour les essais déjà saisis, rien n'est écrasé.",
+    "En G97, l'outil demande les tr/min de la référence et de l'essai avant de calculer ; sans eux il le dit au lieu de deviner. La tuile indique combien de logements sont calculés."
+  ]},
   { version:"4.162.3", date:"24/11/2026", points:[
     "<b>La tuile « Temps de coupe pure » devient un graphique.</b> Une barre par OP, colorée selon le classement (rouge = la plus longue, vert au milieu, bleu = la plus courte), police foncée sur fond blanc.",
     "La place du « hors coupe » est prête (partie hachurée) : dès qu'il sera renseigné, le classement se fera sur le temps complet."
@@ -16258,7 +16300,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.162.3";
+const TOOL_VERSION = "4.162.4";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -26314,6 +26356,18 @@ function runTests(){
          /1 groupe d.outils simultanés/.test(cycleDetailStatusHTML(mig)), true);
       ok("4.162.1 : le statut dit « temps de coupe pure » et plus « mesures machine »",
          /temps de coupe pure de l.OP : 10,0 s/.test(cycleDetailStatusHTML(mig)) && !/mesures machine/.test(cycleDetailStatusHTML(mig)), true);
+      {
+        const bs = { outils:[{ numero:"T549", logements:[{ nom:"D1", vc:"600", f:"0.3", tempsCoupe:"21.8" }] }] };
+        const oo = { numero:"T549" };
+        const d = (l) => tempsCoupeDeduit(bs, oo, l);
+        ok("4.162.4 : mêmes conditions -> même temps (copie)", d({ nom:"D1", vc:"600", f:"0.3" }).secs, 21.8);
+        ok("4.162.4 : logement non suivi -> temps de la référence", d({ nom:"D1", vc:"900", f:"0.1", suiviTolerance:false }).secs, 21.8);
+        ok("4.162.4 : G96, Vc 700 f 0,25 -> t × (f0·Vc0)/(f1·Vc1)", Math.round(d({ nom:"D1", vc:"700", f:"0.25" }).secs*10)/10, 22.4);
+        ok("4.162.4 : G97 sans tr/min -> pas de calcul, raison dite", /tr\/min/.test(d({ nom:"D1", vc:"700", f:"0.25", modeVitesse:"G97" }).raison), true);
+        const bs2 = { outils:[{ numero:"T549", logements:[{ nom:"D1", f:"0.3", sBroche:"600", tempsCoupe:"20" }] }] };
+        ok("4.162.4 : G97 avec les deux tr/min -> t × (f0·S0)/(f1·S1)", Math.round(tempsCoupeDeduit(bs2, oo, { nom:"D1", f:"0.25", modeVitesse:"G97", sBroche:"700" }).secs*100)/100, 20.57);
+        ok("4.162.4 : logement absent de la référence -> rien", d({ nom:"D9", vc:"600", f:"0.3" }).secs, null);
+      }
     }
 
     /* ---- v4.49.1 : fusion insensible a l'ordre des clés ---- */

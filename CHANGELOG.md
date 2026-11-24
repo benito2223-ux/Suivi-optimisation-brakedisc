@@ -5,6 +5,10 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.162.4] — 2026-11-24 · les temps de coupe des essais se déduisent de la référence · Claude
+
+Décision Benjamin (24/11) : le trajet de l'outil ne change jamais, seul le rythme change ; la broche n'est jamais limitée ; le G97 exige les tr/min. Un logement de scénario d'essai sans temps saisi prend : le temps de la référence (logement non suivi ou mêmes conditions) ; t × (f0·Vc0)/(f1·Vc1) en G96 ; t × (f0·S0)/(f1·S1) dès qu'un côté est en G97 si les deux tr/min sont saisis, sinon rien et la raison est affichée sur la tuile. Rien n'est stocké (calcul à l'affichage) : les scénarios déjà saisis en profitent d'office, un temps saisi à la main prime toujours. La tuile dit « ≈ n logements calculés depuis la référence ». Appariement par numéro d'outil + nom de logement. 958 tests | 0 échec (+6). Non déployé.
+
 ## [4.162.3] — 2026-11-24 · la tuile de coupe pure devient un graphique · Claude
 
 Retour Benjamin sur 4.162.2 (police trop claire) : la tuile est posée sur un cartouche blanc à texte foncé, une barre par OP, longueur = temps, couleur au classement (rouge = la plus longue, vert au milieu, bleu = la plus courte), OP affichée cerclée. La place du hors-coupe est réservée (segment hachuré, lu dans `horsCoupe` de l'OP, **pas encore saisissable** : lot 2) ; quand toutes les OP l'ont, le classement se fait sur coupe + hors coupe. Affichage seul. 952 tests | 0 échec. Non déployé.

@@ -6,6 +6,10 @@
 
 ---
 
+✅ **Verrou pris puis libéré par Claude le 24/11/2026** (v4.162.4) — temps de coupe des essais déduits de la référence. 958 tests | 0 échec. Non déployé.
+
+---
+
 ✅ **Verrou pris puis libéré par Claude le 24/11/2026** (v4.162.3) — tuile de coupe pure en barres classées. 952 tests | 0 échec. Non déployé.
 
 ---
