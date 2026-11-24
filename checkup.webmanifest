@@ -1,0 +1,17 @@
+{
+  "name": "Contrôle de prise de poste",
+  "short_name": "Contrôle",
+  "description": "Contrôle des charnières et du potentiomètre en début d'équipe",
+  "id": "checkup-septfons",
+  "start_url": "./checkup.html",
+  "scope": "./checkup.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#0f1317",
+  "background_color": "#0f1317",
+  "icons": [
+    { "src": "icons/checkup-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/checkup-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/checkup-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

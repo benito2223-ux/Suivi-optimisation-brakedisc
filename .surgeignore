@@ -10,3 +10,10 @@
 !icons/icon-192.png
 !icons/icon-512.png
 !icons/icon-512-maskable.png
+# Controle de prise de poste (PWA separee, meme domaine)
+!checkup.html
+!checkup.webmanifest
+!checkup-version.json
+!icons/checkup-192.png
+!icons/checkup-512.png
+!icons/checkup-512-maskable.png

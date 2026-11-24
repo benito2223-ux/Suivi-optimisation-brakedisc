@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="fr">
+<!--
+  Contrôle de prise de poste — conception, architecture et développement : Benjamin Rouquette.
+  © 2026 Benjamin Rouquette. Tous droits réservés.
+  Le contenu métier affiché (références, conditions de coupe, charnières) reste confidentiel
+  et appartient à ses auteurs ; il ne vaut pas cession des droits sur le code qui le porte.
+-->
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0f14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Contrôle">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="checkup.webmanifest">
+<link rel="icon" type="image/png" href="icons/checkup-192.png">
+<link rel="apple-touch-icon" href="icons/checkup-192.png">
+<title>Contrôle de prise de poste — MAQUETTE</title>
+<style>
+:root{
+  /* design system de l'outil principal (thème nuit) : mêmes jetons, rayon 3 px, rouge en accent seulement */
+  --bg:#0f1317; --card:#181d22; --card2:#212831; --ink:#f1f4f7; --soft:#c3ccd5;
+  --ok:#4ecb87; --okbg:#12331f; --ec:#eba53f; --ecbg:#3a2a0f; --line:#3a434d; --blue:#5ba4f5; --blue-bg:#16304f;
+  --red:#E2001A; --r:3px;
+  --cond:"Open Sans Condensed","Arial Narrow","Roboto Condensed",system-ui,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:600 22px/1.25 "Open Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{padding-bottom:120px;max-width:720px;margin:0 auto}
+button{font:inherit;color:inherit;border:0;border-radius:var(--r);min-height:72px;padding:0 20px;background:var(--card2);cursor:pointer}
+button:active{transform:scale(.98)}
+.rn,.big,.t1,.rv b,.sheet h2{font-family:var(--cond);font-weight:700}
+header{position:sticky;top:0;z-index:5;background:var(--card);padding:12px 14px;border-top:4px solid var(--blue);border-bottom:2px solid var(--line);display:flex;gap:12px;align-items:center}
+header .ttl::before{content:"";display:block;width:32px;height:4px;background:var(--red);margin-bottom:6px}
+.ipfoot{margin:28px 0 8px;text-align:center;font-size:15px;font-weight:400;color:var(--soft);line-height:1.5}
+header .back{min-width:72px;font-size:30px;padding:0}
+header .ttl{flex:1;min-width:0}
+header .t1{font-size:26px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header .t2{font-size:17px;color:var(--soft);font-weight:600}
+.badge{background:var(--card2);border-radius:var(--r);padding:6px 12px;font-size:17px;color:var(--soft);white-space:nowrap}
+main{padding:14px}
+.demo{background:#3a2a00;color:#ffd77a;border-radius:var(--r);padding:10px 14px;font-size:16px;margin-bottom:14px}
+.big{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:96px;margin-bottom:14px;background:var(--card);font-size:30px;font-weight:800;text-align:left;border:2px solid var(--line)}
+.big small{display:block;font-size:17px;color:var(--soft);font-weight:600;margin-top:4px}
+.big .st{font-size:28px;font-weight:800;min-width:96px;text-align:right}
+.big.done{background:var(--okbg);border-color:var(--ok)}
+.big.done .st{color:var(--ok)}
+.big.partial .st{color:var(--blue)}
+.big.alert{border-color:var(--ec)}
+.big.alert .st{color:var(--ec)}
+.pot{background:var(--card);border:2px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px}
+.row{background:var(--card);border:2px solid var(--line);border-radius:var(--r);padding:12px;margin-bottom:12px}
+.row.s-ok,.pot.s-ok{background:var(--okbg);border-color:var(--ok)}
+.row.s-ec,.pot.s-ec{background:var(--ecbg);border-color:var(--ec)}
+.rtop{display:flex;gap:12px;align-items:center}
+.rinfo{flex:1;min-width:0;padding:4px 2px}
+.rn{font-size:28px;font-weight:800}
+.rv{font-size:20px;color:var(--soft)}
+.rv b{font-size:40px;color:var(--ink);font-weight:800;margin-right:6px}
+.rv .old{text-decoration:line-through;font-size:22px;margin-left:8px}
+.rbtn{display:flex;gap:10px}
+.rbtn button{min-width:84px;font-size:38px;font-weight:800;padding:0}
+.bok{background:var(--ok);color:#04210f}
+.bec{background:var(--ec);color:#2b1a00}
+.row.s-ok .bok{background:#0b2a18;color:var(--ok);border:3px solid var(--ok)}
+.detail{margin-top:10px;padding-top:10px;border-top:2px dashed var(--line);font-size:20px;color:var(--soft);line-height:1.5}
+.detail b{color:var(--ink)}
+.note{margin-top:8px;font-size:18px;color:var(--ec)}
+.handle{font-size:38px;color:var(--soft);padding:0 8px;touch-action:none;user-select:none;min-width:56px;text-align:center}
+.row.drag{opacity:.7;border-color:var(--blue);transform:scale(1.02)}
+.foot{position:fixed;left:0;right:0;bottom:0;background:linear-gradient(transparent,var(--bg) 40%);padding:16px 14px calc(14px + env(safe-area-inset-bottom));max-width:720px;margin:0 auto}
+.foot button{width:100%;background:var(--card2);border:2px solid var(--line)}
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:20;display:flex;align-items:flex-end}
+.sheet{background:var(--card);width:100%;max-width:720px;margin:0 auto;border-radius:var(--r);padding:20px 16px calc(20px + env(safe-area-inset-bottom));border-top:3px solid var(--ec)}
+.sheet h2{margin:0 0 6px;font-size:28px}
+.sheet .ref{color:var(--soft);font-size:20px;margin-bottom:14px}
+.sheet label{display:block;font-size:20px;color:var(--soft);margin:12px 0 6px}
+.sheet input,.sheet textarea{width:100%;font:inherit;font-size:34px;font-weight:800;color:var(--ink);background:var(--bg);border:3px solid var(--line);border-radius:var(--r);padding:12px 14px}
+.sheet textarea{font-size:22px;font-weight:600;min-height:110px}
+.sheet input:focus,.sheet textarea:focus{outline:0;border-color:var(--ec)}
+.sheet .err{color:#ff7b7b;min-height:26px;font-size:19px;margin-top:6px}
+.sheet .acts{display:flex;gap:12px;margin-top:8px}
+.sheet .acts button{flex:1;font-size:26px;font-weight:800}
+.log{background:var(--card);border-left:8px solid var(--ok);border-radius:var(--r);padding:10px 14px;margin-bottom:10px;font-size:18px;line-height:1.4}
+.log.ec{border-left-color:var(--ec)}
+.log.an{border-left-color:var(--soft);opacity:.7}
+.log b{font-size:20px}
+.log .m{color:var(--soft)}
+</style>
+</head>
+<body>
+<header id="hd"></header>
+<main id="mn"></main>
+<div id="ft"></div>
+<div id="sh"></div>
+
+<script>
+/* ====== DONNÉES DE DÉMO — reprises des références « Classeur Matis » (EMAG 1 356x26 RPI et PCI 4 268x12).
+   En vrai : instantané « publié pour l'atelier » lu dans Supabase. Colonnes de chaque rangée :
+   [outil, logement, plaquette, MABEC, charnière (pièces / arête), Vc, f, mode, tr/min] ============ */
+const DATA = [
+ {nom:"EMAG 1", refs:[{nom:"356x26 RPI", ops:[
+  {nom:"OP10", rows:[["T517","D2","CNGX 120716 S02020 CBN387","IM02 209 560",600,900,0.43],["T517","D1","SNGX 120716 S02020 CBN387","IM02 198 054",600,900,0.45],["T519","D2","CNGX 120716 S02020 CBN387","IM02 209 560",600,"",0.35,"G97",2200],["T519","D1","SNGX 120716 S02020 CBN387","IM02 198 054",600,800,0.6],["T50013","D1","CNMX120716T02020 KY3500","IM02 137 022",75,900,0.45],["T50013","D2","SNMX120716T02020 KY3500","IM02 137 021",75,500,0.35]]},
+  {nom:"OP20", rows:[["T521","D2","SNMX120716T03030 SL506","Z000 546 266",150,800,0.5],["T521","D1","SNMX120716T03030 SL506","Z000 546 266",2400,800,0.45],["T529","D1","CNMX120716T03030 SL506","Z000 546 265",150,850,0.6],["T5211","D2","CNMX120716T03030 SL506","Z000 546 265",150,800,0.4],["T525","D1","RCGX090700T03030 SL500","Z000 544 318",150,650,0.3]]},
+  {nom:"OP30", rows:[["T533","Logement 1","KTFSS7041640FEG KCK10A","",1500,"",0.2,"G97",3700],["T535","Logement 1","TPGX0902ZPRGD","IM02 137 019",4000,"",0.4,"G97",2300]]},
+  {nom:"OP40", rows:[["T546","D1","CNMA120416 WK05CT","Z000 548 367",60,400,0.35],["T548","D1","DWG 1743941R01 KY3500","Z000 513 527",50,"",""],["T549","D1","DWG 1743941R01 KY3500","Z000 513 527",50,650,0.35],["T543","D2","SNGN090416T00520 SN60","Z000 455 182",300,600,0.25],["T543","D1","TNGN160416T93Z050 SL506","Z000 519 285",30,600,0.32]]}
+ ]}]},
+ {nom:"PCI 4", refs:[{nom:"268x12", ops:[
+  {nom:"OP10", rows:[["T6103","T0303","CNMX120716T02020 KY3500","IM02 137 022",150,750,0.6],["T6103","T0313","CNMX120716T02020 KY3500","IM02 137 022",150,900,0.6],["T6101","T0101","SNMX120716T02020 KY3500","IM02 137 021",150,850,0.6],["T6101","T0111","SNMX120716T02020 KY3500","IM02 137 021",150,850,0.6],["T6105","T0515","SNMX120716T02020 KY3500","IM02 137 021",100,850,0.45],["T6105","T0525","SNMX120716T02020 KY3500","IM02 137 021",100,700,0.25]]},
+  {nom:"OP20", rows:[["T6203","T0303","CNMX120716T02020 KY3500","IM02 137 022",150,850,0.5],["T6203","T0313","CNMX120716T02020 KY3500","IM02 137 022",150,"",""],["T6201","T0101","SNMX120716T02020 KY3500","IM02 137 021",150,"",0.35,"G97",600],["T6201","T0111","SNMX120716T02020 KY3500","IM02 137 021",150,"",0.6,"G97",600],["T6207","T0717","SNMX120716T02020 KY3500","IM02 137 021",300,700,0.4]]},
+  {nom:"OP30", rows:[["T6305","Logement 1","EMBOUT D8,6","",1500,"",0.15,"G97",3700],["T6305","Logement 2","Plaquette fraisurage","IM02 151 674",1500,"",0.15,"G97",3700],["T6304","Logement 1","EMBOUT D13,3","",1500,"",0.2,"G97",2400],["T6304","Logement 2","TPGX0902ZPRGD","IM02 137 019",1500,"",0.2,"G97",2800]]},
+  {nom:"OP40", rows:[["T6407","T0707","DWG 1743941R01 KY3500","Z000 513 527",50,500,0.4],["T6417","T0707","DWG 1743941R01 KY3500","Z000 513 527",50,500,0.4],["T6401","T0101","SNGN090412S02025 KYHK15B","IM02 137 023",150,600,0.3],["T6401","T0111","TNGN110416T01020 KY3500","IM02 140 677",150,500,0.3]]}
+ ]}]}
+];
+
+/* ====== utilitaires ====== */
+const $ = id => document.getElementById(id);
+const IP = '<div class="ipfoot">Conception et développement : <b>Benjamin Rouquette</b><br>© 2026 — tous droits réservés · contenu confidentiel, reproduction interdite</div>';
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) || d; } catch(e){ return d; } };
+const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} };
+const pad = n => String(n).padStart(2, "0");
+
+function equipe(){            /* 5h-13h matin, 13h-21h après-midi, 21h-5h nuit (la nuit appartient au jour de son début) */
+  const d = new Date(), h = d.getHours();
+  let nom = h >= 5 && h < 13 ? "Matin" : h >= 13 && h < 21 ? "Après-midi" : "Nuit";
+  const j = new Date(d); if(h < 5) j.setDate(j.getDate() - 1);
+  return { nom, cle: j.getFullYear() + "-" + pad(j.getMonth() + 1) + "-" + pad(j.getDate()) + "|" + nom };
+}
+
+let V = { ligne: null, op: null, organiser: false, ouvert: null, journal: false };
+let checks = load("cu_checks", {});     /* { cleEquipe|opId|id : {statut, releve, comm} } */
+let ordre  = load("cu_order", {});      /* { opId : [ids dans l'ordre du pupitre] } */
+let journal = load("cu_log", []);
+
+const potRef = () => /^EMAG/i.test(V.ligne.nom) ? 120 : 100;   /* EMAG : 120 % = valeurs nominales */
+const opId = () => V.ligne.nom + "/" + V.ref.nom + "/" + V.op.nom;
+const rowId = r => r[0] + "·" + r[1];
+const kk = (id) => equipe().cle + "|" + opId() + "|" + id;
+const kkOp = (ligne, ref, op, id) => equipe().cle + "|" + ligne.nom + "/" + ref.nom + "/" + op.nom + "|" + id;
+
+function trace(type, id, attendu, releve, statut, comm){
+  const q = equipe();
+  journal.push({ ts: new Date().toISOString(), equipe: q.nom, ligne: V.ligne.nom, reference: V.ref.nom, op: V.op.nom,
+                 type, element: id, attendu, releve, statut, commentaire: comm || "" });
+  save("cu_log", journal);
+}
+
+function lignesOp(){          /* rangées dans l'ordre du pupitre enregistré */
+  const base = V.op.rows, o = ordre[opId()];
+  if(!o) return base.slice();
+  const m = new Map(base.map(r => [rowId(r), r]));
+  const out = o.filter(i => m.has(i)).map(i => m.get(i));
+  base.forEach(r => { if(!o.includes(rowId(r))) out.push(r); });
+  return out;
+}
+function avancement(ligne, ref, op){
+  const ids = op.rows.map(rowId).concat(["pot"]);
+  let ok = 0, ec = 0;
+  ids.forEach(i => { const c = checks[kkOp(ligne, ref, op, i)]; if(c){ if(c.statut === "ok") ok++; else ec++; } });
+  return { fait: ok + ec, total: ids.length, ec };
+}
+
+/* ====== écrans ====== */
+function header(t1, t2, back){
+  const q = equipe();
+  $("hd").innerHTML = (back ? '<button class="back" data-act="back" aria-label="Retour">‹</button>' : "") +
+    '<div class="ttl"><div class="t1">' + esc(t1) + '</div><div class="t2">' + esc(t2) + '</div></div><div class="badge">' + esc(q.nom) + '</div>';
+}
+function rendre(){
+  if(V.journal) return ecranJournal();
+  if(!V.ligne) return ecranLignes();
+  if(!V.op) return ecranOps();
+  return ecranListe();
+}
+function ecranLignes(){
+  header("Contrôle de prise de poste", "Choisir la ligne", false);
+  $("mn").innerHTML = '<div class="demo">MAQUETTE — données figées, rien n\'est envoyé. Les ✓ et écarts restent dans ce téléphone.</div>' +
+    DATA.map((l, i) => '<button class="big" data-act="ligne" data-i="' + i + '">' + esc(l.nom) + '<small>' + l.refs.map(r => esc(r.nom)).join(" · ") + '</small></button>').join("");
+  $("mn").innerHTML += IP;
+  $("ft").innerHTML = '<div class="foot"><button data-act="journal">Journal des écarts (aperçu)</button></div>';
+}
+function ecranOps(){
+  const ref = V.ref;
+  header(V.ligne.nom, ref.nom + " — choisir l'OP", true);
+  $("mn").innerHTML = ref.ops.map((op, i) => {
+    const a = avancement(V.ligne, ref, op);
+    const cls = a.fait === a.total ? (a.ec ? "alert" : "done") : (a.fait ? "partial" : "");
+    return '<button class="big ' + cls + '" data-act="op" data-i="' + i + '">' + esc(op.nom) +
+      '<small>' + op.rows.length + ' logements</small><span class="st">' + (a.fait === a.total ? (a.ec ? "⚠ " : "✓ ") : "") + a.fait + '/' + a.total + '</span></button>';
+  }).join("");
+  $("ft").innerHTML = "";
+}
+function ligneHTML(r){
+  const id = rowId(r), c = checks[kk(id)], s = c ? (c.statut === "ok" ? "s-ok" : "s-ec") : "";
+  const open = V.ouvert === id;
+  let cond = "";
+  if(open){
+    const vit = r[7] === "G97" ? "G97 · <b>" + r[8] + "</b> tr/min" : (r[5] !== "" ? "Vc <b>" + r[5] + "</b> m/min" : "—");
+    cond = '<div class="detail">Plaquette <b>' + esc(r[2]) + '</b><br>MABEC <b>' + esc(r[3] || "—") + '</b><br>' + vit +
+           (r[6] !== "" ? ' · f <b>' + String(r[6]).replace(".", ",") + '</b> mm/tr' : "") + '</div>';
+  }
+  let val = '<b>' + r[4] + '</b> pièces / arête';
+  if(c && c.statut === "ecart") val = '<b style="color:var(--ec)">' + esc(c.releve) + '</b> relevé<span class="old">' + r[4] + '</span>';
+  const note = (c && c.statut === "ecart" && c.comm) ? '<div class="note">« ' + esc(c.comm) + ' »</div>' : "";
+  const btns = V.organiser ? '<div class="handle" data-handle="1" aria-label="Déplacer">≡</div>' :
+    '<div class="rbtn"><button class="bec" data-act="ecart" data-id="' + esc(id) + '" aria-label="Charnière modifiée">≠</button><button class="bok" data-act="ok" data-id="' + esc(id) + '" aria-label="Conforme">✓</button></div>';
+  return '<div class="row ' + s + '" data-id="' + esc(id) + '"><div class="rtop"><div class="rinfo" data-act="detail" data-id="' + esc(id) + '"><div class="rn">' + esc(r[0]) + ' · ' + esc(r[1]) + '</div><div class="rv">' + val + '</div></div>' + btns + '</div>' + note + cond + '</div>';
+}
+function potHTML(){
+  const c = checks[kk("pot")], s = c ? (c.statut === "ok" ? "s-ok" : "s-ec") : "";
+  const val = c && c.statut === "ecart" ? '<b style="color:var(--ec)">' + esc(c.releve) + ' %</b>' : '<b>' + potRef() + '</b> %';
+  const note = (c && c.statut === "ecart" && c.comm) ? '<div class="note">« ' + esc(c.comm) + ' »</div>' : "";
+  const btns = V.organiser ? "" : '<div class="rbtn"><button class="bec" data-act="ecart" data-id="pot">≠</button><button class="bok" data-act="ok" data-id="pot">✓</button></div>';
+  return '<div class="pot ' + s + '"><div class="rtop"><div class="rinfo"><div class="rn">Potentiomètre</div><div class="rv">doit être à ' + val + '</div></div>' + btns + '</div>' + note + '</div>';
+}
+function ecranListe(){
+  header(V.op.nom, V.ligne.nom + " › " + V.ref.nom, true);
+  $("mn").innerHTML = (V.organiser ? '<div class="demo">Mode « Organiser » : tenir ≡ et glisser pour ranger comme au pupitre.</div>' : potHTML()) +
+    '<div id="lst">' + lignesOp().map(ligneHTML).join("") + '</div>';
+  $("ft").innerHTML = '<div class="foot"><button data-act="organiser">' + (V.organiser ? "✔ Terminer l'organisation" : "↕ Organiser l'ordre") + '</button></div>';
+}
+function ecranJournal(){
+  header("Journal des écarts", "aperçu de ce que reçoit l'outil principal", true);
+  const L = journal.slice().reverse();
+  $("mn").innerHTML = L.length ? L.map(e => {
+    const cls = e.statut === "ecart" ? "ec" : e.statut === "annule" ? "an" : "";
+    const d = new Date(e.ts), h = pad(d.getDate()) + "/" + pad(d.getMonth() + 1) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes());
+    const t = e.statut === "ecart" ? "ÉCART " : e.statut === "annule" ? "Annulé " : "Conforme ";
+    return '<div class="log ' + cls + '"><b>' + t + esc(e.element) + '</b> — ' + esc(e.ligne) + ' › ' + esc(e.reference) + ' › ' + esc(e.op) +
+      '<div class="m">' + h + ' · équipe ' + esc(e.equipe) + (e.statut === "ecart" ? ' · attendu ' + esc(e.attendu) + ' → relevé ' + esc(e.releve) : "") + '</div>' +
+      (e.commentaire ? '<div>« ' + esc(e.commentaire) + ' »</div>' : "") + '</div>';
+  }).join("") : '<div class="demo">Aucun enregistrement pour l\'instant.</div>';
+  $("ft").innerHTML = '<div class="foot"><button data-act="vider">Vider la démo</button></div>';
+}
+
+/* ====== feuille « charnière modifiée » ====== */
+function feuilleEcart(id){
+  const pot = id === "pot";
+  const r = pot ? null : V.op.rows.find(x => rowId(x) === id);
+  const att = pot ? potRef() + " %" : r[4] + " pièces / arête";
+  $("sh").innerHTML = '<div class="sheet-bg"><div class="sheet"><h2>' + (pot ? "Potentiomètre modifié" : esc(id) + " — charnière modifiée") + '</h2>' +
+    '<div class="ref">Référence : <b>' + att + '</b></div>' +
+    '<label for="fv">' + (pot ? "Valeur lue (%)" : "Nouvelle charnière lue (pièces / arête)") + '</label><input id="fv" type="number" inputmode="numeric" min="0" autocomplete="off">' +
+    '<label for="fc">Commentaire</label><textarea id="fc" placeholder="Pourquoi ? Qui est prévenu ?"></textarea>' +
+    '<div class="err" id="fe"></div><div class="acts"><button data-act="fermer">Annuler</button><button class="bec" data-act="enreg" data-id="' + esc(id) + '">Enregistrer</button></div></div></div>';
+  setTimeout(() => $("fv").focus(), 50);
+}
+
+/* ====== actions ====== */
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-act]"); if(!b) return;
+  const a = b.getAttribute("data-act"), id = b.getAttribute("data-id");
+  if(a === "ligne"){ V.ligne = DATA[+b.getAttribute("data-i")]; V.ref = V.ligne.refs[0]; V.op = null; }
+  else if(a === "op"){ V.op = V.ref.ops[+b.getAttribute("data-i")]; V.organiser = false; V.ouvert = null; }
+  else if(a === "back"){ if(V.journal) V.journal = false; else if(V.op){ V.op = null; V.organiser = false; } else V.ligne = null; }
+  else if(a === "journal"){ V.journal = true; }
+  else if(a === "vider"){ if(confirm("Effacer les ✓ et le journal de la démo ?")){ checks = {}; journal = []; save("cu_checks", checks); save("cu_log", journal); } }
+  else if(a === "detail"){ V.ouvert = V.ouvert === id ? null : id; }
+  else if(a === "organiser"){ V.organiser = !V.organiser; }
+  else if(a === "ok"){
+    const k = kk(id), pot = id === "pot", r = pot ? null : V.op.rows.find(x => rowId(x) === id), att = pot ? potRef() + " %" : String(r[4]);
+    if(checks[k]){ delete checks[k]; trace(pot ? "potentiometre" : "charniere", id, att, "", "annule"); }
+    else { checks[k] = { statut: "ok" }; trace(pot ? "potentiometre" : "charniere", id, att, att, "ok"); }
+    save("cu_checks", checks);
+  }
+  else if(a === "ecart"){ feuilleEcart(id); return; }
+  else if(a === "fermer"){ $("sh").innerHTML = ""; return; }
+  else if(a === "enreg"){
+    const pot = id === "pot", r = pot ? null : V.op.rows.find(x => rowId(x) === id), att = pot ? String(potRef()) : String(r[4]);
+    const v = $("fv").value.trim(), c = $("fc").value.trim();
+    if(v === "" || isNaN(Number(v))){ $("fe").textContent = "Saisir la valeur lue."; return; }
+    if(v === att){ $("fe").textContent = "Identique à la référence : utiliser ✓."; return; }
+    checks[kk(id)] = { statut: "ecart", releve: v, comm: c };
+    trace(pot ? "potentiometre" : "charniere", id, att, v, "ecart", c);
+    save("cu_checks", checks); $("sh").innerHTML = "";
+  }
+  rendre();
+});
+
+/* glisser-déposer : on tient ≡ et on glisse (mode Organiser) */
+let drag = null;
+document.addEventListener("pointerdown", e => {
+  const h = e.target.closest("[data-handle]"); if(!h) return;
+  drag = h.closest(".row"); drag.classList.add("drag"); h.setPointerCapture(e.pointerId); e.preventDefault();
+});
+document.addEventListener("pointermove", e => {
+  if(!drag) return;
+  const lst = $("lst"), rows = [...lst.children].filter(x => x !== drag);
+  const after = rows.find(x => { const r = x.getBoundingClientRect(); return e.clientY < r.top + r.height / 2; });
+  if(after) lst.insertBefore(drag, after); else lst.appendChild(drag);
+});
+document.addEventListener("pointerup", () => {
+  if(!drag) return;
+  drag.classList.remove("drag"); drag = null;
+  ordre[opId()] = [...$("lst").children].map(x => x.getAttribute("data-id")); save("cu_order", ordre);
+});
+rendre();
+
+/* ====== PWA : installation, hors ligne, mise à jour ======
+   Le service worker du site (même fichier que l'outil principal, jamais modifié ici) sert cette page
+   « cache d'abord ». Pour qu'une nouvelle version arrive quand même : checkup-version.json (jamais mis
+   en cache par ce service worker) donne le numéro de build ; s'il diffère de celui de la page, on
+   recharge sur une adresse neuve (?b=…), donc hors du cache. */
+const BUILD = "2026-11-24.1";
+if("serviceWorker" in navigator){ navigator.serviceWorker.register("./service-worker.js", { updateViaCache: "none" }).catch(() => {}); }
+fetch("checkup-version.json", { cache: "no-store" }).then(r => r.ok ? r.json() : null).then(j => {
+  if(j && j.build && j.build !== BUILD && location.search.indexOf("b=" + j.build) === -1){
+    location.replace("checkup.html?b=" + encodeURIComponent(j.build));
+  }
+}).catch(() => {});
+</script>
+</body>
+</html>
