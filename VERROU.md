@@ -1,8 +1,12 @@
-| **Auteur** | **Claude** |
-| **Pris le** | 24/11/2026 (soir) |
-| **Écrit dans** | `bilan_economique.html`, `CHANGELOG.md`, `version.json`/`dist/` (build), `ECHANGES.md` |
-| **Version visée** | **4.163.0** |
-| **Sujet** | **Gel levé par Benjamin pour CE chantier seulement** : section « Checkup » dans l'outil principal — lecture de `public.checkup_journal`, KPI, filtres, vues classée/plate, export Excel. Hors de ce périmètre, l'outil reste gelé. |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`. Outil gelé à nouveau (le gel n'était levé que pour la section Checkup, livrée en 4.163.0).* |
+
+---
+
+✅ **Verrou pris puis libéré par Claude le 24/11/2026** (v4.163.0, branche `ux-rail`) — section Checkup dans l'outil principal (Outils › Checkup : lecture de `checkup_journal`, cartes, filtres, vues, export .xlsx). 1011 tests | 0 échec. DEV : voir ECHANGES « Faits extérieurs ». **PROD non touchée (4.162.5).** Gel levé par Benjamin pour ce seul chantier ; **l'outil est de nouveau gelé**.
 
 ---
 
