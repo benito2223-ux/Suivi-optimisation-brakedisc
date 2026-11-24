@@ -7476,3 +7476,5 @@ Demande de Benjamin après la saisie des temps de coupe EMAG 2 : le statut du sc
 
 **DEV + PROD 4.162.4** (phrase de Benjamin : « commit et deploie bro ») : temps de coupe des essais déduits de la référence. curl : version et `bilan_economique.html` identiques au dist sur les deux domaines (874edeb58b9b). Pas vérifié à l écran sur les vraies données.
 **Donnée (cloud prod, 24/11)** : essai « SNGN090416T00520 SN60 G97 S700 0,25 » (OP40, shard smv7vqvfm9ryk, rev 17 → 18) : T548 D1 et T549 D1 passés en mode G97, sBroche 700, tempsCoupe 24,5 s (temps du programme en G97 S700 F0,25, calculé par scripts/spf_temps.py). Reste du shard inchangé (5 outils, premier outil vide conservé).
+
+**DEV + PROD 4.162.5** (phrase de Benjamin : « go fais le, commit et deploie bro ») : un temps copié de la référence (scénario dupliqué) est recalculé quand Vc / f / tr/min changent. curl : version et `bilan_economique.html` identiques au dist sur les deux domaines (fcd27e5a171a). Pas vérifié à l écran sur les vraies données. Un premier passage du harnais a donné 1 échec, non reproduit sur 4 passages suivants (960 tests | 0 échec) : cause non identifiée.
