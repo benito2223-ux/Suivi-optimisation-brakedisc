@@ -7524,3 +7524,6 @@ Cause du manque d'OP vu par Benjamin dans le checkup : l'arborescence cloud avai
 
 **Code checkup 2026-11-24.3** (non déployé) : `garantir10Lignes` **fusionne** les lignes de même nom (références additionnées ; deux références de même nom réunissent leurs OP) au lieu d'écraser. Testé en isolation (cas à deux « EMAG 1 »). Reste à déployer sur feu vert.
 **Manques de donnée restants** (pas des bugs) : HESSAPP — 40 rangées sans charnière (266x13, 266x22, 283x26) ; EMAG 2 DP 290x12 — 15 rangées ; HESSAPP 302x26 « OP 25 » sans scénario.
+
+### Faits extérieurs — 24/11/2026 (checkup 2026-11-24.3, publication Surge)
+**Publication de `checkup.html` 2026-11-24.3** (commit `abc44cd`, phrase de Benjamin : « Oui, déploie ») sur suivi-optimisation-septfons.surge.sh. Dossier de préparation = les 10 fichiers en ligne (curl) + 6 fichiers du checkup, supprimé après. curl : **les 10 fichiers de l'outil principal identiques octet pour octet** avant/après ; les 6 fichiers du checkup en 200 et identiques au local ; `checkup-version.json` = 2026-11-24.3 ; VERROU / ECHANGES / BRIEFING en 404. Non vérifié à l'écran sur un téléphone.
