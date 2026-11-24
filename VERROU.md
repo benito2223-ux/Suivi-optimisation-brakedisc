@@ -6,6 +6,10 @@
 
 ---
 
+✅ **Verrou pris puis libéré par Claude le 24/11/2026** (v4.162.3) — tuile de coupe pure en barres classées. 952 tests | 0 échec. Non déployé.
+
+---
+
 ✅ **Verrou pris puis libéré par Claude le 24/11/2026** (v4.162.1, branche `ux-rail`) — le statut du scénario dit « temps de coupe pure » et affiche la coupe de chaque OP + le total (demande de Benjamin). 952 tests | 0 échec. Non déployé, non commité. **Outil toujours gelé** hors cette demande.
 
 ---

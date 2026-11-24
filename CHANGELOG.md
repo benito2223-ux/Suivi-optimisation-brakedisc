@@ -5,6 +5,10 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.162.3] — 2026-11-24 · la tuile de coupe pure devient un graphique · Claude
+
+Retour Benjamin sur 4.162.2 (police trop claire) : la tuile est posée sur un cartouche blanc à texte foncé, une barre par OP, longueur = temps, couleur au classement (rouge = la plus longue, vert au milieu, bleu = la plus courte), OP affichée cerclée. La place du hors-coupe est réservée (segment hachuré, lu dans `horsCoupe` de l'OP, **pas encore saisissable** : lot 2) ; quand toutes les OP l'ont, le classement se fait sur coupe + hors coupe. Affichage seul. 952 tests | 0 échec. Non déployé.
+
 ## [4.162.2] — 2026-11-24 · le temps de coupe pure a sa tuile sur le scénario · Claude
 
 Retour Benjamin sur 4.162.1 : la ligne était dans un dépliant, invisible. Une tuile « Temps de coupe pure » rejoint la bande de chiffres du scénario (à côté du gain annuel) : valeur de l'OP, écart à la référence, chaque OP de la ligne (l'OP affichée soulignée), total par disque. Incomplet : « — » et le nombre de logements manquants. Affichage seul. 952 tests | 0 échec. Non déployé.
