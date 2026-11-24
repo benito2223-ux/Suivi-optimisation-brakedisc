@@ -5,6 +5,18 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.163.0] — 2026-11-24 · section Checkup : les relevés de charnières de l'atelier, consultés et exportés en Excel · Claude
+
+Demande Benjamin (24/11), gel de l'outil levé pour ce seul chantier : l'application « Contrôle de prise de poste » enregistre chaque ✓ / écart dans `public.checkup_journal` ; l'outil principal doit permettre de le consulter, le filtrer et l'exporter.
+
+- **Outils › Checkup** (nouvelle entrée du menu Outils, panneau plein écran comme Volumes disques). Lecture directe du journal Supabase par la session cloud existante (lecture réservée aux membres) ; états dits clairement : pas connecté, compte non membre, table absente, journal vide, aucun résultat avec les filtres.
+- **Trois cartes** : écarts actifs (le dernier relevé de chaque élément décide ; charnières / potentiomètres) sur le nombre de relevés ; contrôles réalisés (une OP, une équipe, un jour d'équipe ; par équipe et par ligne) ; récidives (même élément en écart au moins deux fois).
+- **Filtres** : ligne (les 10), référence et OP (qui dépendent de la ligne), équipe Matin / Après-midi / Nuit, statut (Tous / Écarts seuls / Conformes / Annulés), période (Aujourd'hui / 7 jours / 30 jours / Tout).
+- **Deux vues** : classée Ligne › Référence › OP (dépliants, relevés du plus récent au plus ancien) ou tableau plat. Colonnes : date et heure, équipe, élément, attendu, relevé, écart, statut, commentaire, version de référence.
+- **Export Excel** : un vrai `.xlsx` (OOXML écrit sans bibliothèque, zip sans compression, CRC vérifiés) — dates et heures de vraies valeurs Excel, écarts et valeurs en nombres, en-tête figé avec filtre automatique, 14 colonnes demandées. Le fichier suit les filtres de l'écran.
+- Écran en lecture seule : rien n'est écrit dans le journal depuis l'outil principal. Aucune mention de marque, aucun K ni P, aucun coût.
+- Tests : contrôles dédiés (valeurs, filtres, cartes, classement, zip / OOXML relu, écran) et une porte de hors-suite. Voir ECHANGES.
+
 ## [4.162.5] — 2026-11-24 · un scénario dupliqué recalcule ses temps de coupe · Claude
 
 Retour Benjamin : un scénario EMAG2 dupliqué avec des Vc bien plus hautes sur T521 gardait les temps de la référence. Cause : la duplication copie `tempsCoupe`, que 4.162.4 prenait pour une saisie prioritaire. Règle : un temps strictement égal à celui du logement de la référence, alors que Vc / f / tr/min ont changé, est une copie et se recalcule ; un temps différent reste une saisie. Aucune donnée modifiée. 960 tests | 0 échec (+2).

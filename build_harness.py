@@ -2582,6 +2582,25 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'coque 4.100 : la coque est dans le repo git, le rail reste visible et repliable (12 points verifies dans les fichiers reels)' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  /* v4.163.0 — LA SECTION CHECKUP EST CABLEE ET SANS MARQUE.
+     Le panneau existe, le menu Outils l ouvre, le bloc de code ne cite ni la marque ni la maison mere. */
+  (function checkupDansLOutil(){
+    const fs = require('fs');
+    const html = fs.readFileSync('bilan_economique.html', 'utf8');
+    const shell = fs.readFileSync('spk-shell.js', 'utf8');
+    const echecs = [];
+    if (html.indexOf('id="checkupPanel"') === -1) echecs.push('le panneau checkupPanel a disparu');
+    if (shell.indexOf('ouvrirCheckup') === -1) echecs.push('le menu Outils n a plus d entree Checkup');
+    const i = html.indexOf('v4.163 — CHECKUP'), j = html.indexOf('v4.161 — MOTEUR');
+    const bloc = (i > -1 && j > i) ? html.slice(i, j).toLowerCase() : '';
+    if (!bloc) echecs.push('le bloc Checkup est introuvable');
+    if (bloc.indexOf('ceramtec') !== -1) echecs.push('mention de la marque dans le bloc Checkup');
+    if (bloc.indexOf('spk') !== -1) echecs.push('mention SPK dans le bloc Checkup');
+    if (bloc.indexOf('p_req') !== -1) echecs.push('la puissance apparait dans le bloc Checkup');
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'checkup 4.163 : panneau, entree du menu Outils, bloc sans marque ni puissance' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   if (typeof (__DIAG__) !== 'undefined') (__DIAG__)(A);
 
   /* v4.80 — LE VERDICT FINAL TIENT COMPTE DES GARDE-FOUS.

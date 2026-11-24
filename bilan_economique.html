@@ -315,6 +315,40 @@ table .num, table td.num{ text-align:right; font-variant-numeric:tabular-nums;
 .simul-table td.mono, .simul-table tfoot td { font-family:var(--font-mono); }
 .simul-table tfoot td { font-weight:600; border-top:2px solid #d6d9de; }
 .simul-actions { display:flex; gap:8px; margin-bottom:10px; }
+/* v4.163 — Checkup : les relevés de charnières de l'atelier (jetons du thème, aucune couleur en dur sauf le rouge d'alerte du DS) */
+.ck-kpis { display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:12px; margin:0 0 16px; }
+.ck-kpi { background:var(--surface); border:1px solid var(--border); border-top:3px solid var(--blue); border-radius:var(--radius); padding:12px 14px; box-shadow:var(--shadow-card); }
+.ck-kpi.ck-alerte { border-top-color:var(--red); }
+.ck-k-l { font-size:12px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-faint); }
+.ck-k-v { font-family:var(--font-disp, inherit); font-size:34px; font-weight:700; line-height:1.15; color:var(--ink); font-variant-numeric:tabular-nums; }
+.ck-k-v small { font-size:15px; font-weight:600; color:var(--ink-soft); }
+.ck-k-s { font-size:13px; color:var(--ink-soft); margin-top:2px; }
+.ck-k-l2 { font-size:12px; color:var(--ink-faint); margin-top:6px; line-height:1.5; }
+.ck-filtres { display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px; margin:0 0 12px; }
+.ck-f { display:flex; flex-direction:column; gap:3px; font-size:12px; color:var(--ink-faint); font-weight:600; }
+.ck-f select { font-size:14px; min-height:36px; }
+.ck-actions { align-items:center; flex-wrap:wrap; }
+.ck-bascule { display:inline-flex; gap:0; }
+.ck-bascule button.ck-on { background:var(--blue); color:var(--on-accent, #fff); border-color:var(--blue); }
+.ck-vide { background:var(--surface-alt); border:1px dashed var(--border); border-radius:var(--radius); padding:18px 20px; color:var(--ink-soft); }
+.ck-vide b { color:var(--ink); font-size:15px; }
+.ck-vide p { margin:6px 0 0; font-size:13.5px; }
+.ck-g { border:1px solid var(--border); border-radius:var(--radius); margin:0 0 10px; background:var(--surface); }
+.ck-g > summary { cursor:pointer; padding:10px 14px; display:flex; justify-content:space-between; gap:12px; font-size:15px; list-style:none; }
+.ck-g > summary::-webkit-details-marker { display:none; }
+.ck-g > summary span, .ck-op > summary span { font-size:12.5px; color:var(--ink-faint); font-weight:600; }
+.ck-g em, .ck-op em { font-style:normal; color:var(--red); font-weight:700; }
+.ck-ref { padding:2px 14px 8px; }
+.ck-ref-t { font-size:12px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-faint); padding:6px 0 4px; }
+.ck-op { border-top:1px solid var(--border); }
+.ck-op > summary { cursor:pointer; padding:8px 0; display:flex; justify-content:space-between; gap:12px; font-weight:600; font-size:14px; list-style:none; }
+.ck-op > summary::-webkit-details-marker { display:none; }
+.ck-scroll { overflow-x:auto; }
+.ck-table td.ck-com { max-width:340px; color:var(--ink-soft); }
+.ck-table tr.ck-ec td { background:var(--amber-bg); }
+.ck-table tr.ck-an td { color:var(--ink-faint); text-decoration:line-through; }
+.ck-st { font-weight:700; font-size:12.5px; }
+.ck-table tr.ck-ec .ck-st { color:var(--amber); }
 .simul-resultat { margin-top:16px; padding:13px 16px; background:#f0f7ee; border:1px solid #cfe3c8; border-radius:4px; font-size:15px; }
 /* v4.87 — plein écran GÉNÉRIQUE : tout .panel peut passer maxi (accueil,
    simulateur, plan, catalogue) — et les polices montent avec la surface. */
@@ -2558,6 +2592,7 @@ input[type="number"]{ -moz-appearance:textfield; appearance:textfield; }
   <div class="panel panel-large" id="cataloguePanel" hidden></div>
   <div class="panel panel-large" id="economiePanel" hidden></div>
   <div class="panel panel-large" id="volumesPanel" hidden></div>
+  <div class="panel panel-large" id="checkupPanel" hidden></div>
   <div class="panel panel-large" id="planPanel" hidden></div>
   <div class="panel panel-large" id="visitePanel" hidden></div>
   <div class="panel panel-large" id="memoirePanel" hidden></div>
@@ -15339,6 +15374,10 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.163.0", date:"24/11/2026", points:[
+    "<b>Nouveau : Outils › Checkup.</b> Les relevés faits à l'atelier au début de chaque équipe (la charnière de chaque logement, le potentiomètre) se lisent maintenant ici, en direct depuis le cloud : trois cartes (écarts actifs, contrôles réalisés par équipe et par ligne, récidives), des filtres (ligne, référence, OP, équipe, statut, période) et deux vues — classée par ligne, référence et OP, ou tableau plat.",
+    "<b>Export Excel.</b> Le bouton « Exporter Excel » télécharge les relevés filtrés dans un vrai fichier .xlsx : date, heure, équipe, ligne, référence, OP, type, élément, attendu, relevé, écart, statut, commentaire, version de référence. Lecture seule : le journal ne se modifie pas ici."
+  ]},
   { version:"4.162.5", date:"24/11/2026", points:[
     "<b>Un scénario dupliqué recalcule ses temps de coupe.</b> Quand tu changes la Vc, l'avance ou les tr/min d'un logement, un temps resté identique à celui de la référence (copié à la duplication) est recalculé. Un temps que tu as saisi toi-même reste prioritaire."
   ]},
@@ -16308,7 +16347,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.162.5";
+const TOOL_VERSION = "4.163.0";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -20745,6 +20784,433 @@ function ouvrirVolumes(){
   ouvrirPanneau("volumesPanel");
   renderVolumes();
 }
+
+/* v4.163 — CHECKUP : les relevés de charnières faits à l'atelier, lus dans le cloud.
+   Source : public.checkup_journal (Supabase), table append-only alimentée par l'application « Contrôle de
+   prise de poste » ; lecture réservée aux membres du suivi (cloudSession). Rien n'est écrit ici : l'écran
+   consulte, filtre et exporte. Les fonctions « checkup* » sont PURES (ni DOM, ni réseau, ni horloge : `now`
+   est passé en paramètre) pour être testées ; seuls checkupCharger / renderCheckup / checkupExporter touchent
+   au monde. Jamais de K ni de P ici, jamais de coût : seulement ce que l'atelier a relevé. */
+const CHECKUP_LIGNES  = ["EMAG 1", "EMAG 2", "EMAG 3", "HESSAPP", "WEISSER 1", "WEISSER 2", "WEISSER 3", "WEISSER 4", "PCI 4", "PCI 5"];
+const CHECKUP_EQUIPES = ["Matin", "Après-midi", "Nuit"];
+const CHECKUP_COLONNES = ["Date", "Heure", "Équipe", "Ligne", "Référence", "OP", "Type", "Élément", "Attendu", "Relevé", "Écart", "Statut", "Commentaire", "Version réf."];
+const CHECKUP_PERIODES = [["auj", "Aujourd'hui"], ["7j", "7 jours"], ["30j", "30 jours"], ["tout", "Tout"]];
+const CHECKUP_STATUTS  = [["", "Tous"], ["ecart", "Écarts seuls"], ["ok", "Conformes"], ["annule", "Annulés"]];
+let checkupEtat = { rows: null, chargement: false, erreur: "", charge: null, vue: "classee",
+                    f: { ligne: "", reference: "", op: "", equipe: "", statut: "", periode: "30j" } };
+
+/* ---------- lecture de valeurs ---------- */
+function checkupNombre(s){
+  if(s === null || s === undefined) return null;
+  const t = String(s).replace(/\s/g, "").replace(",", ".");
+  if(t === "" || !/^-?\d+(\.\d+)?$/.test(t)) return null;
+  return parseFloat(t);
+}
+/* relevé − attendu, quand les deux sont des nombres ; sinon null (« — ») */
+function checkupDelta(attendu, releve){
+  const a = checkupNombre(attendu), r = checkupNombre(releve);
+  if(a === null || r === null) return null;
+  return Math.round((r - a) * 1e9) / 1e9;
+}
+function checkupLibStatut(s){ return s === "ecart" ? "Écart" : s === "annule" ? "Annulé" : s === "ok" ? "Conforme" : String(s || ""); }
+function checkupLibType(t){ return t === "potentiometre" ? "Potentiomètre" : t === "charniere" ? "Charnière" : String(t || ""); }
+function checkupLibElement(r){ return r.type === "potentiometre" || r.element === "pot" ? "Potentiomètre" : String(r.element || ""); }
+function checkupDeltaTexte(d){ return d === null ? "—" : d > 0 ? "+" + d : d < 0 ? "−" + Math.abs(d) : "0"; }
+function checkupCle(r){ return [r.ligne, r.reference, r.op, r.element].join("|"); }
+
+/* ---------- temps : tout se lit à l'heure LOCALE de l'appareil (l'atelier est en France) ---------- */
+function checkupPad(n){ return String(n).padStart(2, "0"); }
+function checkupDateLocale(ts){
+  const d = new Date(ts);
+  if(isNaN(d.getTime())) return null;
+  return d;
+}
+/* le « jour d'équipe » : la nuit (21 h → 5 h) appartient au jour où elle a commencé, comme dans l'application atelier */
+function checkupJourEquipe(ts){
+  const d = checkupDateLocale(ts);
+  if(!d) return "";
+  const j = new Date(d.getTime());
+  if(j.getHours() < 5) j.setDate(j.getDate() - 1);
+  return j.getFullYear() + "-" + checkupPad(j.getMonth() + 1) + "-" + checkupPad(j.getDate());
+}
+function checkupDebutPeriode(periode, now){
+  const n = new Date(now);
+  if(periode === "auj") return new Date(n.getFullYear(), n.getMonth(), n.getDate()).getTime();
+  if(periode === "7j") return n.getTime() - 7 * 86400000;
+  if(periode === "30j") return n.getTime() - 30 * 86400000;
+  return null;
+}
+function checkupFiltrer(rows, f, now){
+  const debut = checkupDebutPeriode(f.periode, now);
+  return (rows || []).filter(r => {
+    if(f.ligne && r.ligne !== f.ligne) return false;
+    if(f.reference && r.reference !== f.reference) return false;
+    if(f.op && r.op !== f.op) return false;
+    if(f.equipe && r.equipe !== f.equipe) return false;
+    if(f.statut && r.statut !== f.statut) return false;
+    if(debut !== null){ const d = checkupDateLocale(r.ts); if(!d || d.getTime() < debut) return false; }
+    return true;
+  });
+}
+function checkupTrier(rows){        /* le plus récent d'abord */
+  return (rows || []).slice().sort((a, b) => {
+    const x = new Date(a.ts).getTime(), y = new Date(b.ts).getTime();
+    return (y - x) || ((b.id || 0) - (a.id || 0));
+  });
+}
+
+/* ---------- synthèse ---------- */
+function checkupKpi(rows){
+  const tries = checkupTrier(rows);
+  const relevesUtiles = tries.filter(r => r.statut === "ok" || r.statut === "ecart");
+  /* écart actif = le DERNIER relevé de cet élément (hors annulation) est un écart */
+  const dernier = new Map();
+  tries.forEach(r => { if(r.statut !== "annule" && !dernier.has(checkupCle(r))) dernier.set(checkupCle(r), r); });
+  const actifs = [...dernier.values()].filter(r => r.statut === "ecart");
+  const ecartsTous = relevesUtiles.filter(r => r.statut === "ecart");
+  /* un contrôle = une OP, un jour d'équipe, une équipe */
+  const controles = new Map();
+  relevesUtiles.forEach(r => {
+    const k = [checkupJourEquipe(r.ts), r.equipe, r.ligne, r.reference, r.op].join("|");
+    if(!controles.has(k)) controles.set(k, r);
+  });
+  const parEquipe = { "Matin": 0, "Après-midi": 0, "Nuit": 0 };
+  const opsParLigne = new Map();
+  const opsDistinctes = new Set();
+  controles.forEach(r => {
+    if(parEquipe[r.equipe] !== undefined) parEquipe[r.equipe]++;
+    const k = [r.ligne, r.reference, r.op].join("|");
+    opsDistinctes.add(k);
+    if(!opsParLigne.has(r.ligne)) opsParLigne.set(r.ligne, new Set());
+    opsParLigne.get(r.ligne).add(k);
+  });
+  const lignes = [...opsParLigne.entries()].map(([ligne, s]) => ({ ligne, ops: s.size }))
+    .sort((a, b) => (CHECKUP_LIGNES.indexOf(a.ligne) + 1 || 99) - (CHECKUP_LIGNES.indexOf(b.ligne) + 1 || 99) || a.ligne.localeCompare(b.ligne, "fr"));
+  /* récidives : le même élément sorti en écart au moins deux fois */
+  const rec = new Map();
+  ecartsTous.forEach(r => {
+    const k = checkupCle(r);
+    if(!rec.has(k)) rec.set(k, { ligne: r.ligne, reference: r.reference, op: r.op, element: checkupLibElement(r), n: 0, dernier: r.ts });
+    rec.get(k).n++;
+  });
+  const recidives = [...rec.values()].filter(x => x.n >= 2).sort((a, b) => b.n - a.n || String(b.dernier).localeCompare(String(a.dernier))).slice(0, 5);
+  return {
+    releves: relevesUtiles.length,
+    ecartsTotal: ecartsTous.length,
+    actifs: actifs.length,
+    actifsCharnieres: actifs.filter(r => r.type !== "potentiometre").length,
+    actifsPotentiometres: actifs.filter(r => r.type === "potentiometre").length,
+    controles: controles.size, opsControlees: opsDistinctes.size, parEquipe, lignes, recidives
+  };
+}
+
+/* ---------- classement Ligne › Référence › OP ---------- */
+function checkupGrouper(rows){
+  const nat = (a, b) => String(a).localeCompare(String(b), "fr", { numeric: true });
+  const L = new Map();
+  checkupTrier(rows).forEach(r => {
+    if(!L.has(r.ligne)) L.set(r.ligne, new Map());
+    const R = L.get(r.ligne);
+    if(!R.has(r.reference)) R.set(r.reference, new Map());
+    const O = R.get(r.reference);
+    if(!O.has(r.op)) O.set(r.op, []);
+    O.get(r.op).push(r);
+  });
+  const rang = n => (CHECKUP_LIGNES.indexOf(n) + 1) || 99;
+  return [...L.entries()].sort((a, b) => rang(a[0]) - rang(b[0]) || nat(a[0], b[0])).map(([ligne, R]) => ({
+    ligne,
+    refs: [...R.entries()].sort((a, b) => nat(a[0], b[0])).map(([reference, O]) => ({
+      reference,
+      ops: [...O.entries()].sort((a, b) => nat(a[0], b[0])).map(([op, entrees]) => ({ op, entrees }))
+    }))
+  }));
+}
+
+/* ---------- export Excel : un vrai .xlsx (OOXML minimal, zip sans compression) ---------- */
+let CHECKUP_CRC_TABLE = null;
+function checkupCrc32(octets){
+  if(!CHECKUP_CRC_TABLE){
+    CHECKUP_CRC_TABLE = new Uint32Array(256);
+    for(let n = 0; n < 256; n++){ let c = n; for(let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); CHECKUP_CRC_TABLE[n] = c >>> 0; }
+  }
+  let crc = 0xFFFFFFFF;
+  for(let i = 0; i < octets.length; i++) crc = CHECKUP_CRC_TABLE[(crc ^ octets[i]) & 0xFF] ^ (crc >>> 8);
+  return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+function checkupOctets(texte){ return new TextEncoder().encode(texte); }
+/* entrées : [{ nom, octets }] → Uint8Array du zip (méthode « stored », noms UTF-8, horodatage fixe = résultat reproductible) */
+function checkupZip(entrees){
+  const parts = [], centrales = [];
+  let decalage = 0;
+  entrees.forEach(e => {
+    const nom = checkupOctets(e.nom), crc = checkupCrc32(e.octets), n = e.octets.length;
+    const loc = new DataView(new ArrayBuffer(30));
+    loc.setUint32(0, 0x04034b50, true); loc.setUint16(4, 20, true); loc.setUint16(6, 0x0800, true); loc.setUint16(8, 0, true);
+    loc.setUint16(10, 0, true); loc.setUint16(12, 0x0021, true);
+    loc.setUint32(14, crc, true); loc.setUint32(18, n, true); loc.setUint32(22, n, true); loc.setUint16(26, nom.length, true); loc.setUint16(28, 0, true);
+    parts.push(new Uint8Array(loc.buffer), nom, e.octets);
+    const cen = new DataView(new ArrayBuffer(46));
+    cen.setUint32(0, 0x02014b50, true); cen.setUint16(4, 20, true); cen.setUint16(6, 20, true); cen.setUint16(8, 0x0800, true); cen.setUint16(10, 0, true);
+    cen.setUint16(12, 0, true); cen.setUint16(14, 0x0021, true);
+    cen.setUint32(16, crc, true); cen.setUint32(20, n, true); cen.setUint32(24, n, true); cen.setUint16(28, nom.length, true);
+    cen.setUint16(30, 0, true); cen.setUint16(32, 0, true); cen.setUint16(34, 0, true); cen.setUint16(36, 0, true); cen.setUint32(38, 0, true); cen.setUint32(42, decalage, true);
+    centrales.push(new Uint8Array(cen.buffer), nom);
+    decalage += 30 + nom.length + n;
+  });
+  const tailleCentrale = centrales.reduce((s, p) => s + p.length, 0);
+  const fin = new DataView(new ArrayBuffer(22));
+  fin.setUint32(0, 0x06054b50, true); fin.setUint16(8, entrees.length, true); fin.setUint16(10, entrees.length, true);
+  fin.setUint32(12, tailleCentrale, true); fin.setUint32(16, decalage, true);
+  const tout = parts.concat(centrales, [new Uint8Array(fin.buffer)]);
+  const out = new Uint8Array(tout.reduce((s, p) => s + p.length, 0));
+  let o = 0;
+  tout.forEach(p => { out.set(p, o); o += p.length; });
+  return out;
+}
+function checkupXml(s){
+  return String(s === null || s === undefined ? "" : s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "")
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function checkupColonne(i){ return String.fromCharCode(65 + i); }   /* 14 colonnes : A..N */
+/* numéro de série Excel d'un instant, à l'heure locale (1900 = 1 ; 25569 = 01/01/1970) */
+function checkupSerieExcel(ts){
+  const d = checkupDateLocale(ts);
+  if(!d) return { date: null, heure: null };
+  const jours = Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000) + 25569;
+  const sec = d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
+  return { date: jours, heure: Math.round(sec / 86400 * 1e9) / 1e9 };
+}
+/* une ligne d'export : 14 cellules typées { v, t } avec t = "n" (nombre), "d" (date), "h" (heure), "s" (texte) */
+function checkupLigneExport(r){
+  const s = checkupSerieExcel(r.ts), delta = checkupDelta(r.attendu, r.releve);
+  const na = checkupNombre(r.attendu), nr = checkupNombre(r.releve);
+  return [
+    s.date === null ? { v: "", t: "s" } : { v: s.date, t: "d" },
+    s.heure === null ? { v: "", t: "s" } : { v: s.heure, t: "h" },
+    { v: r.equipe, t: "s" }, { v: r.ligne, t: "s" }, { v: r.reference, t: "s" }, { v: r.op, t: "s" },
+    { v: checkupLibType(r.type), t: "s" }, { v: checkupLibElement(r), t: "s" },
+    na === null ? { v: r.attendu || "", t: "s" } : { v: na, t: "n" },
+    nr === null ? { v: r.releve || "", t: "s" } : { v: nr, t: "n" },
+    delta === null ? { v: "", t: "s" } : { v: delta, t: "n" },
+    { v: checkupLibStatut(r.statut), t: "s" }, { v: r.commentaire || "", t: "s" },
+    r.version_reference === null || r.version_reference === undefined ? { v: "", t: "s" } : { v: r.version_reference, t: "n" }
+  ];
+}
+function checkupFeuilleXml(rows){
+  const lignes = checkupTrier(rows);
+  const cellule = (c, i, n) => {
+    const ref = checkupColonne(i) + n;
+    if(c.t === "n") return '<c r="' + ref + '"><v>' + c.v + '</v></c>';
+    if(c.t === "d") return '<c r="' + ref + '" s="1"><v>' + c.v + '</v></c>';
+    if(c.t === "h") return '<c r="' + ref + '" s="2"><v>' + c.v + '</v></c>';
+    return c.v === "" ? "" : '<c r="' + ref + '" t="inlineStr"><is><t xml:space="preserve">' + checkupXml(c.v) + '</t></is></c>';
+  };
+  const entete = '<row r="1">' + CHECKUP_COLONNES.map((t, i) => '<c r="' + checkupColonne(i) + '1" s="3" t="inlineStr"><is><t>' + checkupXml(t) + '</t></is></c>').join("") + '</row>';
+  const corps = lignes.map((r, k) => '<row r="' + (k + 2) + '">' + checkupLigneExport(r).map((c, i) => cellule(c, i, k + 2)).join("") + '</row>').join("");
+  const largeurs = [11, 9, 12, 12, 16, 9, 14, 16, 10, 10, 8, 11, 44, 11];
+  const fin = "A1:" + checkupColonne(CHECKUP_COLONNES.length - 1) + (lignes.length + 1);
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+    '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>' +
+    '<cols>' + largeurs.map((w, i) => '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>').join("") + '</cols>' +
+    '<sheetData>' + entete + corps + '</sheetData><autoFilter ref="' + fin + '"/></worksheet>';
+}
+const CHECKUP_FEUILLE_NOM = "Relevés charnières";
+function checkupXlsx(rows){
+  const n = (rows || []).length;
+  const types = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>';
+  const relsRacine = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>';
+  const classeur = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="' + checkupXml(CHECKUP_FEUILLE_NOM) + '" sheetId="1" r:id="rId1"/></sheets>' +
+    '<definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="0" hidden="1">\'' + checkupXml(CHECKUP_FEUILLE_NOM) + '\'!$A$1:$' + checkupColonne(CHECKUP_COLONNES.length - 1) + '$' + (n + 1) + '</definedName></definedNames></workbook>';
+  const relsClasseur = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
+  const styles = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<' + 'styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts>' +
+    '<fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF2F4159"/><bgColor indexed="64"/></patternFill></fill></fills>' +
+    '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+    '<cellXfs count="4"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="14" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="21" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs>' +
+    '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+  return checkupZip([
+    { nom: "[Content_Types].xml", octets: checkupOctets(types) },
+    { nom: "_rels/.rels", octets: checkupOctets(relsRacine) },
+    { nom: "xl/workbook.xml", octets: checkupOctets(classeur) },
+    { nom: "xl/_rels/workbook.xml.rels", octets: checkupOctets(relsClasseur) },
+    { nom: "xl/styles.xml", octets: checkupOctets(styles) },
+    { nom: "xl/worksheets/sheet1.xml", octets: checkupOctets(checkupFeuilleXml(rows)) }
+  ]);
+}
+function checkupNomFichier(now){
+  const d = new Date(now);
+  return "checkup_releves_" + d.getFullYear() + "-" + checkupPad(d.getMonth() + 1) + "-" + checkupPad(d.getDate()) + ".xlsx";
+}
+
+/* ---------- lecture dans le cloud ---------- */
+const CHECKUP_COLS_CLOUD = "id,ts,recu_le,equipe,ligne,reference,op,type,element,attendu,releve,statut,commentaire,version_reference,id_local";
+async function checkupCharger(){
+  checkupEtat.erreur = "";
+  if(!cloudSession){ checkupEtat.rows = null; checkupEtat.erreur = "hors-connexion"; return; }
+  checkupEtat.chargement = true;
+  renderCheckup();
+  try{
+    if(!(await cloudRafraichirSession())){ checkupEtat.rows = null; checkupEtat.erreur = "hors-connexion"; return; }
+    const tout = [], PAGE = 1000;
+    for(let off = 0; off < 50000; off += PAGE){
+      const r = await cloudFetch(CLOUD_URL + "/rest/v1/checkup_journal?select=" + CHECKUP_COLS_CLOUD + "&order=ts.desc,id.desc&limit=" + PAGE + "&offset=" + off,
+        { headers: cloudEntetes() }, 20000);
+      if(r.status === 401 || r.status === 403){ checkupEtat.rows = null; checkupEtat.erreur = "refuse"; return; }
+      if(r.status === 404){ checkupEtat.rows = null; checkupEtat.erreur = "table"; return; }
+      if(!r.ok) throw new Error("journal (" + r.status + ")");
+      const lot = await r.json();
+      if(!Array.isArray(lot)) throw new Error("réponse illisible");
+      lot.forEach(x => tout.push(x));
+      if(lot.length < PAGE) break;
+    }
+    checkupEtat.rows = tout;
+    checkupEtat.charge = Date.now();
+  }catch(e){
+    checkupEtat.rows = null;
+    checkupEtat.erreur = "reseau:" + (e && e.message ? e.message : "échec");
+  }finally{
+    checkupEtat.chargement = false;
+    renderCheckup();
+  }
+}
+
+/* ---------- l'écran ---------- */
+function checkupOptions(rows, champ, filtresAmont){
+  const s = new Set();
+  (rows || []).forEach(r => {
+    for(const k in filtresAmont){ if(filtresAmont[k] && r[k] !== filtresAmont[k]) return; }
+    if(r[champ]) s.add(r[champ]);
+  });
+  const nat = (a, b) => String(a).localeCompare(String(b), "fr", { numeric: true });
+  const liste = [...s];
+  return champ === "ligne" ? CHECKUP_LIGNES.concat(liste.filter(x => CHECKUP_LIGNES.indexOf(x) < 0).sort(nat)) : liste.sort(nat);
+}
+function checkupSelect(cle, libelle, options, valeur, toutLib){
+  return `<label class="ck-f"><span>${escapeAttr(libelle)}</span><select data-ckf="${cle}">` +
+    options.map(o => { const v = Array.isArray(o) ? o[0] : o, l = Array.isArray(o) ? o[1] : o; return `<option value="${escapeAttr(v)}"${v === valeur ? " selected" : ""}>${escapeAttr(l)}</option>`; }).join("") +
+    `</select></label>`;
+}
+function checkupMessageEtat(etat){
+  const e = etat.erreur;
+  if(e === "hors-connexion") return `<div class="ck-vide"><b>Connexion au cloud requise.</b><p>Le journal de l'atelier se lit dans le cloud. Connecte-toi avec ton compte du suivi (pastille cloud, en haut de l'écran), puis reviens ici.</p></div>`;
+  if(e === "refuse") return `<div class="ck-vide"><b>Lecture refusée.</b><p>Ce compte n'est pas membre du suivi : seuls les membres lisent le journal de l'atelier.</p></div>`;
+  if(e === "table") return `<div class="ck-vide"><b>Journal introuvable.</b><p>La table du journal n'existe pas encore dans le cloud.</p></div>`;
+  if(e) return `<div class="ck-vide"><b>Lecture impossible.</b><p>${escapeAttr(e.replace(/^reseau:/, ""))}. Vérifie la connexion puis relance.</p></div>`;
+  return "";
+}
+/* l'écran entier, en texte, à partir de l'état et de « maintenant » : testable sans DOM */
+function checkupVueHTML(etat, now){
+  const titre = `<h3>✅ Checkup — relevés de charnières de l'atelier</h3>`;
+  const bouton = `<button class="ghost small" data-ck="recharger"${etat.chargement ? " disabled" : ""}>${etat.chargement ? "Lecture…" : "↻ Actualiser"}</button>`;
+  const hint = `<p class="panel-hint">Ce que l'atelier a relevé au début de chaque équipe : la charnière (pièces par arête) de chaque logement, et le potentiomètre. Lecture seule — le journal ne se modifie pas.</p>`;
+  if(etat.erreur || etat.rows === null){
+    const msg = etat.chargement ? `<div class="ck-vide"><b>Lecture du journal…</b></div>` : checkupMessageEtat(etat) || `<div class="ck-vide"><b>Journal non chargé.</b></div>`;
+    return titre + hint + `<div class="simul-actions">${bouton}</div>` + msg;
+  }
+  if(!etat.rows.length){
+    return titre + hint + `<div class="simul-actions">${bouton}</div><div class="ck-vide"><b>Aucun relevé pour l'instant.</b><p>L'application « Contrôle de prise de poste » n'a encore rien envoyé. Dès qu'une équipe valide ou signale une charnière, elle apparaît ici.</p></div>`;
+  }
+  const f = etat.f;
+  const filtres = checkupFiltrer(etat.rows, f, now);
+  const k = checkupKpi(filtres);
+  const optL = [["", "Toutes les lignes"]].concat(checkupOptions(etat.rows, "ligne", {}).map(x => [x, x]));
+  const optR = [["", "Toutes"]].concat(checkupOptions(etat.rows, "reference", { ligne: f.ligne }).map(x => [x, x]));
+  const optO = [["", "Toutes"]].concat(checkupOptions(etat.rows, "op", { ligne: f.ligne, reference: f.reference }).map(x => [x, x]));
+  const optE = [["", "Toutes"]].concat(CHECKUP_EQUIPES.map(x => [x, x]));
+  const barre = `<div class="ck-filtres">` +
+    checkupSelect("ligne", "Ligne", optL, f.ligne) + checkupSelect("reference", "Référence", optR, f.reference) + checkupSelect("op", "OP", optO, f.op) +
+    checkupSelect("equipe", "Équipe", optE, f.equipe) + checkupSelect("statut", "Statut", CHECKUP_STATUTS, f.statut) + checkupSelect("periode", "Période", CHECKUP_PERIODES, f.periode) + `</div>`;
+  const kpis = `<div class="ck-kpis">` +
+    `<div class="ck-kpi${k.actifs ? " ck-alerte" : ""}"><div class="ck-k-l">Écarts actifs</div><div class="ck-k-v">${k.actifs}<small> / ${k.releves} relevé${k.releves > 1 ? "s" : ""}</small></div>` +
+      `<div class="ck-k-s">${k.actifsCharnieres} charnière${k.actifsCharnieres > 1 ? "s" : ""} · ${k.actifsPotentiometres} potentiomètre${k.actifsPotentiometres > 1 ? "s" : ""}${k.ecartsTotal > k.actifs ? " · " + k.ecartsTotal + " écart" + (k.ecartsTotal > 1 ? "s" : "") + " au total" : ""}</div></div>` +
+    `<div class="ck-kpi"><div class="ck-k-l">Contrôles réalisés</div><div class="ck-k-v">${k.controles}<small> · ${k.opsControlees} OP</small></div>` +
+      `<div class="ck-k-s">${CHECKUP_EQUIPES.map(e => escapeAttr(e) + " " + k.parEquipe[e]).join(" · ")}</div>` +
+      (k.lignes.length ? `<div class="ck-k-l2">${k.lignes.map(x => escapeAttr(x.ligne) + " " + x.ops + " OP").join(" · ")}</div>` : "") + `</div>` +
+    `<div class="ck-kpi${k.recidives.length ? " ck-alerte" : ""}"><div class="ck-k-l">Récidives</div><div class="ck-k-v">${k.recidives.length}<small> élément${k.recidives.length > 1 ? "s" : ""}</small></div>` +
+      (k.recidives.length ? `<div class="ck-k-s">${k.recidives.map(x => escapeAttr(x.ligne) + " › " + escapeAttr(x.op) + " · " + escapeAttr(x.element) + " ×" + x.n).join("<br>")}</div>` : `<div class="ck-k-s">Aucun élément sorti plus d'une fois.</div>`) + `</div>` +
+    `</div>`;
+  const bascule = `<div class="ck-bascule" role="group" aria-label="Vue">` +
+    `<button class="ghost small${etat.vue === "classee" ? " ck-on" : ""}" data-ck="vue-classee">Classée</button><button class="ghost small${etat.vue === "plate" ? " ck-on" : ""}" data-ck="vue-plate">Tableau plat</button></div>`;
+  const actions = `<div class="simul-actions ck-actions">${bouton}${bascule}<span style="flex:1"></span>` +
+    `<button class="primary small" data-ck="export"${filtres.length ? "" : " disabled"}>⤓ Exporter Excel (${filtres.length})</button></div>`;
+  let corps;
+  if(!filtres.length){
+    corps = `<div class="ck-vide"><b>Aucun relevé avec ces filtres.</b><p>Élargis la période ou remets « Toutes » sur un filtre.</p></div>`;
+  } else if(etat.vue === "plate"){
+    corps = `<div class="ck-scroll"><table class="simul-table ck-table"><thead><tr>${["Date", "Équipe", "Ligne", "Référence", "OP", "Élément", "Attendu", "Relevé", "Écart", "Statut", "Commentaire", "Réf."].map(h => `<th>${h}</th>`).join("")}</tr></thead><tbody>` +
+      checkupTrier(filtres).map(r => checkupLigneHTML(r, true)).join("") + `</tbody></table></div>`;
+  } else {
+    const ouvert = filtres.length <= 60 ? " open" : "";
+    corps = checkupGrouper(filtres).map(g => {
+      const nL = g.refs.reduce((s, r) => s + r.ops.reduce((t, o) => t + o.entrees.length, 0), 0);
+      const nE = g.refs.reduce((s, r) => s + r.ops.reduce((t, o) => t + o.entrees.filter(x => x.statut === "ecart").length, 0), 0);
+      return `<details class="ck-g"${ouvert}><summary><b>${escapeAttr(g.ligne)}</b><span>${nL} relevé${nL > 1 ? "s" : ""}${nE ? ` · <em>${nE} écart${nE > 1 ? "s" : ""}</em>` : ""}</span></summary>` +
+        g.refs.map(rf => `<div class="ck-ref"><div class="ck-ref-t">${escapeAttr(rf.reference)}</div>` +
+          rf.ops.map(o => `<details class="ck-op"${ouvert}><summary>${escapeAttr(o.op)}<span>${o.entrees.length} relevé${o.entrees.length > 1 ? "s" : ""}${o.entrees.some(x => x.statut === "ecart") ? ` · <em>${o.entrees.filter(x => x.statut === "ecart").length} écart${o.entrees.filter(x => x.statut === "ecart").length > 1 ? "s" : ""}</em>` : ""}</span></summary>` +
+            `<div class="ck-scroll"><table class="simul-table ck-table"><thead><tr>${["Date", "Équipe", "Élément", "Attendu", "Relevé", "Écart", "Statut", "Commentaire", "Réf."].map(h => `<th>${h}</th>`).join("")}</tr></thead><tbody>` +
+            o.entrees.map(r => checkupLigneHTML(r, false)).join("") + `</tbody></table></div></details>`).join("") + `</div>`).join("") + `</details>`;
+    }).join("");
+  }
+  return titre + hint + kpis + barre + actions + corps;
+}
+function checkupDateTexte(ts){
+  const d = checkupDateLocale(ts);
+  return d ? checkupPad(d.getDate()) + "/" + checkupPad(d.getMonth() + 1) + "/" + d.getFullYear() + " " + checkupPad(d.getHours()) + ":" + checkupPad(d.getMinutes()) : "—";
+}
+function checkupLigneHTML(r, plat){
+  const d = checkupDelta(r.attendu, r.releve);
+  const cls = r.statut === "ecart" ? "ck-ec" : r.statut === "annule" ? "ck-an" : "";
+  return `<tr class="${cls}"><td class="mono">${escapeAttr(checkupDateTexte(r.ts))}</td><td>${escapeAttr(r.equipe)}</td>` +
+    (plat ? `<td>${escapeAttr(r.ligne)}</td><td>${escapeAttr(r.reference)}</td><td>${escapeAttr(r.op)}</td>` : "") +
+    `<td>${escapeAttr(checkupLibElement(r))}</td><td class="mono num">${escapeAttr(r.attendu || "—")}</td><td class="mono num">${escapeAttr(r.releve || "—")}</td>` +
+    `<td class="mono num">${checkupDeltaTexte(d)}</td><td><span class="ck-st">${escapeAttr(checkupLibStatut(r.statut))}</span></td><td class="ck-com">${escapeAttr(r.commentaire || "")}</td><td class="mono num">${escapeAttr(r.version_reference == null ? "" : r.version_reference)}</td></tr>`;
+}
+function renderCheckup(){
+  const wrap = document.getElementById("checkupPanel");
+  if(!wrap) return;
+  const actif = document.activeElement && document.activeElement.getAttribute ? document.activeElement.getAttribute("data-ckf") : null;
+  wrap.innerHTML = checkupVueHTML(checkupEtat, Date.now());
+  if(actif){ const s = wrap.querySelector('select[data-ckf="' + actif + '"]'); if(s) s.focus(); }
+}
+function checkupExporter(){
+  const lignes = checkupFiltrer(checkupEtat.rows, checkupEtat.f, Date.now());
+  if(!lignes.length) return;
+  const blob = new Blob([checkupXlsx(lignes)], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = checkupNomFichier(Date.now());
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+function ouvrirCheckup(){
+  fermerPanneaux();
+  ouvrirPanneau("checkupPanel");
+  renderCheckup();
+  checkupCharger();
+}
+(function(){
+  let wrap = null;
+  try{ wrap = document.getElementById("checkupPanel"); }catch(e){}
+  if(!wrap || typeof wrap.addEventListener !== "function") return;
+  wrap.addEventListener("change", e => {
+    const s = e.target.closest("select[data-ckf]");
+    if(!s) return;
+    const f = checkupEtat.f, cle = s.getAttribute("data-ckf");
+    f[cle] = s.value;
+    /* un filtre en amont qui change remet à « Toutes » ceux qui en dépendent */
+    if(cle === "ligne"){ f.reference = ""; f.op = ""; }
+    if(cle === "reference"){ f.op = ""; }
+    renderCheckup();
+  });
+  wrap.addEventListener("click", e => {
+    const b = e.target.closest("[data-ck]");
+    if(!b || b.disabled) return;
+    const a = b.getAttribute("data-ck");
+    if(a === "recharger") checkupCharger();
+    else if(a === "vue-classee"){ checkupEtat.vue = "classee"; renderCheckup(); }
+    else if(a === "vue-plate"){ checkupEtat.vue = "plate"; renderCheckup(); }
+    else if(a === "export") checkupExporter();
+  });
+})();
 
 /* v4.161 — MOTEUR ÉCONOMIQUE DE LA LIGNE (ex-prototype « V2 »). Fonctions pures uniquement : ni DOM, ni stockage, ni horloge.
    Tout chiffre affiché par V2 doit sortir d'ici (spec V2 §3). Lot 1 : la
@@ -25210,6 +25676,7 @@ const PROMESSES_UI = [
   { porte:"💰 Simulateur prix (accueil)", fns:["ouvrirSimul", "renderSimul", "plaquettesCommunes", "simulHTML", "simulRecalcul"] },
   { porte:"⇄ Réattribuer un essai", fns:["reattribuerEssai"] },
   { porte:"💶 Économie de la ligne (Outils)", fns:["ouvrirEconomie", "renderEconomie", "economieModele", "economieEcrire", "economieSaisies"] },
+  { porte:"✅ Checkup (Outils) : consulter, filtrer, exporter Excel", fns:["ouvrirCheckup", "renderCheckup", "checkupCharger", "checkupVueHTML", "checkupFiltrer", "checkupKpi", "checkupGrouper", "checkupExporter", "checkupXlsx"] },
   { porte:"📚 Catalogue (accueil)", fns:["ouvrirCatalogue", "renderCatalogue", "catalogueSeed", "catalogueAppliquer", "catalogueCSV", "catalogueDepuisCSV"] },
   { porte:"⚔️ Plan de conversion (accueil)", fns:["ouvrirPlan", "renderPlan", "planLignes", "planHTML", "planCSV"] },
   { porte:"Carte atelier (barre, accueil, fiche)", fns:["ouvrirCarte", "renderCarte", "scenariosPostes", "renderFichePoste", "ouvrirPosteDepuisFiche"] },
@@ -26385,6 +26852,101 @@ function runTests(){
           data = dSave;
         }
       }
+    }
+
+    /* ---- v4.163 : Checkup — le journal de l'atelier, consulté, filtré, exporté ---- */
+    {
+      const T0 = new Date(2026, 10, 24, 9, 30, 0).getTime();                 /* 24/11/2026 09:30, heure locale */
+      const ts = (j, h, m) => new Date(2026, 10, j, h, m, 0).toISOString();
+      const R = (id, o) => Object.assign({ id, ts: ts(24, 6, 10), equipe:"Matin", ligne:"EMAG 1", reference:"356x26 RPI", op:"OP10", type:"charniere",
+        element:"T517·D2", attendu:"600", releve:"600", statut:"ok", commentaire:"", version_reference:1 }, o);
+      const J = [
+        R(1, { statut:"ecart", releve:"300", commentaire:"réglage changé par la nuit & à vérifier <urgent>" }),
+        R(2, { ts: ts(24, 14, 0), equipe:"Après-midi" }),
+        R(3, { ts: ts(24, 6, 12), element:"T519·D1", statut:"ecart", releve:"900" }),
+        R(4, { ts: ts(24, 6, 15), type:"potentiometre", element:"pot", attendu:"120", releve:"100", statut:"ecart" }),
+        R(5, { ts: ts(23, 6, 0), ligne:"EMAG 2", reference:"330x14", op:"OP20", element:"T521·D1", statut:"ecart", releve:"2400", attendu:"150" }),
+        R(6, { ts: ts(24, 6, 5), ligne:"EMAG 2", reference:"330x14", op:"OP20", element:"T521·D1", statut:"ecart", releve:"2400", attendu:"150" }),
+        R(7, { ts: ts(24, 1, 0), equipe:"Nuit", ligne:"PCI 4", reference:"268x12", op:"OP10", element:"T6103·T0303", attendu:"150", releve:"150" }),
+        R(8, { ts: ts(24, 6, 20), ligne:"EMAG 3", reference:"330x14", op:"OP10", element:"T1·D1", attendu:"150", releve:"150" }),
+        R(9, { ts: ts(24, 6, 25), ligne:"EMAG 3", reference:"330x14", op:"OP10", element:"T1·D1", attendu:"150", releve:"", statut:"annule" })
+      ];
+      /* valeurs */
+      ok("checkup : nombres lus (espace, virgule) ; le reste = null", [checkupNombre("1 500"), checkupNombre("12,5"), checkupNombre("abc"), checkupNombre("")], [1500, 12.5, null, null]);
+      ok("checkup : écart = relevé − attendu ; sans nombre -> null", [checkupDelta("600", "300"), checkupDelta("120", "100"), checkupDelta("600", ""), checkupDelta("150", "150")], [-300, -20, null, 0]);
+      ok("checkup : écart affiché (+, − typographique, 0, —)", [checkupDeltaTexte(30), checkupDeltaTexte(-50), checkupDeltaTexte(0), checkupDeltaTexte(null)], ["+30", "−50", "0", "—"]);
+      ok("checkup : la nuit appartient au jour où elle commence",
+         [checkupJourEquipe(ts(24, 2, 0)), checkupJourEquipe(ts(24, 4, 59)), checkupJourEquipe(ts(24, 5, 0)), checkupJourEquipe(ts(24, 23, 0))], ["2026-11-23", "2026-11-23", "2026-11-24", "2026-11-24"]);
+      /* filtres */
+      const idsDe = (rows) => rows.map(r => r.id).sort((a, b) => a - b);
+      ok("checkup : période « Aujourd'hui » = depuis minuit local", idsDe(checkupFiltrer(J, { periode: "auj" }, T0)), [1, 2, 3, 4, 6, 7, 8, 9]);
+      ok("checkup : période « Tout »", idsDe(checkupFiltrer(J, { periode: "tout" }, T0)).length, 9);
+      ok("checkup : période « 7 jours » garde la veille", idsDe(checkupFiltrer(J, { periode: "7j" }, T0)).length, 9);
+      ok("checkup : filtre ligne + statut", idsDe(checkupFiltrer(J, { ligne: "EMAG 2", statut: "ecart", periode: "tout" }, T0)), [5, 6]);
+      ok("checkup : filtre équipe", idsDe(checkupFiltrer(J, { equipe: "Nuit", periode: "tout" }, T0)), [7]);
+      ok("checkup : filtre statut « Annulés »", idsDe(checkupFiltrer(J, { statut: "annule", periode: "tout" }, T0)), [9]);
+      ok("checkup : filtre référence + OP", idsDe(checkupFiltrer(J, { reference: "330x14", op: "OP10", periode: "tout" }, T0)), [8, 9]);
+      /* synthèse */
+      const K = checkupKpi(J);
+      ok("checkup KPI : relevés = conformes + écarts (les annulés ne comptent pas)", K.releves, 8);
+      ok("checkup KPI : écarts au total / actifs (le dernier relevé de l'élément décide)", [K.ecartsTotal, K.actifs], [5, 3]);
+      ok("checkup KPI : actifs = 2 charnières + 1 potentiomètre", [K.actifsCharnieres, K.actifsPotentiometres], [2, 1]);
+      ok("checkup KPI : contrôles = OP × équipe × jour d'équipe ; OP distinctes", [K.controles, K.opsControlees], [6, 4]);
+      ok("checkup KPI : contrôles par équipe", K.parEquipe, { "Matin": 4, "Après-midi": 1, "Nuit": 1 });
+      ok("checkup KPI : couverture par ligne dans l'ordre des lignes", K.lignes.map(x => x.ligne + ":" + x.ops), ["EMAG 1:1", "EMAG 2:1", "EMAG 3:1", "PCI 4:1"]);
+      ok("checkup KPI : récidive = même élément en écart au moins deux fois", K.recidives.map(x => x.ligne + "|" + x.op + "|" + x.element + "|" + x.n), ["EMAG 2|OP20|T521·D1|2"]);
+      ok("checkup KPI : sans relevé, tout à zéro", [checkupKpi([]).releves, checkupKpi([]).actifs, checkupKpi([]).controles, checkupKpi([]).recidives.length], [0, 0, 0, 0]);
+      /* classement */
+      const G = checkupGrouper(J);
+      ok("checkup : classement Ligne › Référence › OP, lignes dans l'ordre de l'atelier", G.map(g => g.ligne), ["EMAG 1", "EMAG 2", "EMAG 3", "PCI 4"]);
+      ok("checkup : dans une OP, le plus récent d'abord", G[0].refs[0].ops[0].entrees.map(e => e.id), [2, 4, 3, 1]);
+      /* export : zip + OOXML */
+      ok("checkup : CRC-32 de « 123456789 » = CBF43926", checkupCrc32(new TextEncoder().encode("123456789")).toString(16).toUpperCase(), "CBF43926");
+      ok("checkup : 24/11/2026 09:30 -> numéro de série Excel 46350 + 0,3958333", [checkupSerieExcel(new Date(T0).toISOString()).date, Math.round(checkupSerieExcel(new Date(T0).toISOString()).heure * 1e7) / 1e7], [46350, 0.3958333]);
+      const MARQUE_RE = new RegExp(["cera", "mtec"].join("") + "|" + ["s", "pk"].join(""), "i");   /* le mot lui-même ne doit pas figurer dans le source (porte 4.138.1) */
+      const lire = (octets) => {                          /* petit lecteur de zip « stored » : vérifie aussi les CRC */
+        const dv = new DataView(octets.buffer, octets.byteOffset, octets.byteLength), td = new TextDecoder(), out = {};
+        let o = 0, crcOk = true;
+        while(o + 4 <= octets.length && dv.getUint32(o, true) === 0x04034b50){
+          const crc = dv.getUint32(o + 14, true), n = dv.getUint32(o + 18, true), nl = dv.getUint16(o + 26, true);
+          const nom = td.decode(octets.subarray(o + 30, o + 30 + nl)), data = octets.subarray(o + 30 + nl, o + 30 + nl + n);
+          if(checkupCrc32(data) !== crc) crcOk = false;
+          out[nom] = td.decode(data); o += 30 + nl + n;
+        }
+        return { fichiers: out, crcOk, finOk: dv.getUint32(octets.length - 22, true) === 0x06054b50, nbCentral: dv.getUint16(octets.length - 22 + 10, true) };
+      };
+      const X = checkupXlsx(checkupFiltrer(J, { periode: "tout" }, T0));
+      const Z = lire(X);
+      ok("checkup export : c'est un zip (signature PK) de 6 parties, CRC corrects, répertoire final", [X[0], X[1], Object.keys(Z.fichiers).length, Z.crcOk, Z.finOk, Z.nbCentral], [0x50, 0x4B, 6, true, true, 6]);
+      ok("checkup export : les parties d'un classeur Excel y sont", Object.keys(Z.fichiers).sort(), ["[Content_Types].xml", "_rels/.rels", "xl/_rels/workbook.xml.rels", "xl/styles.xml", "xl/workbook.xml", "xl/worksheets/sheet1.xml"]);
+      const feuille = Z.fichiers["xl/worksheets/sheet1.xml"];
+      ok("checkup export : les 14 en-têtes, dans l'ordre demandé", CHECKUP_COLONNES.every(c => feuille.indexOf(">" + c + "<") > -1) && feuille.indexOf(">Date<") < feuille.indexOf(">Version réf.<"), true);
+      ok("checkup export : 9 relevés + l'en-tête = 10 lignes, filtre auto sur A1:N10", [(feuille.match(/<row /g) || []).length, feuille.indexOf('<autoFilter ref="A1:N10"/>') > -1], [10, true]);
+      ok("checkup export : l'écart est un NOMBRE (−300), la date un numéro de série à style date", [feuille.indexOf("<v>-300</v>") > -1, feuille.indexOf('s="1"><v>46350') > -1 || feuille.indexOf('s="1"><v>46349') > -1], [true, true]);
+      ok("checkup export : commentaire protégé (&, <, >)", feuille.indexOf("réglage changé par la nuit &amp; à vérifier &lt;urgent&gt;") > -1, true);
+      ok("checkup export : le potentiomètre est nommé, pas « pot »", [feuille.indexOf(">Potentiomètre<") > -1, feuille.indexOf(">pot<") === -1], [true, true]);
+      ok("checkup export : une feuille vide reste ouvrable (en-tête seul)", (lire(checkupXlsx([])).fichiers["xl/worksheets/sheet1.xml"].match(/<row /g) || []).length, 1);
+      ok("checkup export : nom du fichier daté", checkupNomFichier(T0), "checkup_releves_2026-11-24.xlsx");
+      /* l'écran */
+      const etat0 = { rows: null, chargement: false, erreur: "hors-connexion", charge: null, vue: "classee", f: { ligne: "", reference: "", op: "", equipe: "", statut: "", periode: "tout" } };
+      ok("checkup écran : pas connecté -> message clair, pas de tableau", [checkupVueHTML(etat0, T0).indexOf("Connexion au cloud requise") > -1, checkupVueHTML(etat0, T0).indexOf("<table") === -1], [true, true]);
+      ok("checkup écran : compte non membre -> lecture refusée dite", checkupVueHTML(Object.assign({}, etat0, { erreur: "refuse" }), T0).indexOf("Lecture refusée") > -1, true);
+      ok("checkup écran : journal vide -> « Aucun relevé pour l'instant »", checkupVueHTML(Object.assign({}, etat0, { erreur: "", rows: [] }), T0).indexOf("Aucun relevé pour l'instant") > -1, true);
+      const etatP = Object.assign({}, etat0, { erreur: "", rows: J });
+      const hC = checkupVueHTML(etatP, T0), hP = checkupVueHTML(Object.assign({}, etatP, { vue: "plate" }), T0);
+      ok("checkup écran : trois cartes (écarts actifs, contrôles, récidives) et le bouton d'export compte les lignes filtrées",
+         [hC.indexOf("Écarts actifs") > -1, hC.indexOf("Contrôles réalisés") > -1, hC.indexOf("Récidives") > -1, hC.indexOf("Exporter Excel (9)") > -1], [true, true, true, true]);
+      ok("checkup écran : vue classée = dépliants par ligne ; vue plate = un seul tableau avec Ligne / Référence / OP",
+         [hC.indexOf("<details") > -1, hP.indexOf("<details") === -1, (hP.match(/<table/g) || []).length, hP.indexOf("<th>Référence</th>") > -1], [true, true, 1, true]);
+      ok("checkup écran : filtre Écarts seuls -> le bouton d'export suit", checkupVueHTML(Object.assign({}, etatP, { f: Object.assign({}, etat0.f, { statut: "ecart" }) }), T0).indexOf("Exporter Excel (5)") > -1, true);
+      ok("checkup écran : aucun résultat -> message + export désactivé",
+         [checkupVueHTML(Object.assign({}, etatP, { f: Object.assign({}, etat0.f, { ligne: "WEISSER 1" }) }), T0).indexOf("Aucun relevé avec ces filtres") > -1,
+          /data-ck="export" disabled/.test(checkupVueHTML(Object.assign({}, etatP, { f: Object.assign({}, etat0.f, { ligne: "WEISSER 1" }) }), T0))], [true, true]);
+      ok("checkup écran : les OP proposées dépendent de la ligne et de la référence choisies",
+         [checkupOptions(J, "op", { ligne: "EMAG 2" }), checkupOptions(J, "reference", { ligne: "EMAG 1" })], [["OP20"], ["356x26 RPI"]]);
+      ok("checkup écran : le commentaire d'un relevé est protégé dans la page", hP.indexOf("&lt;urgent>") > -1 && hP.indexOf("<urgent>") === -1, true);
+      ok("checkup : aucune mention de marque ni de K / P dans l'écran ni dans l'export",
+         [MARQUE_RE.test(hC + hP), MARQUE_RE.test(Object.values(Z.fichiers).join("")), /\bK\s*=|P_req/.test(hC + hP + feuille)], [false, false, false]);
     }
 
     /* ---- v4.49.1 : fusion insensible a l'ordre des clés ---- */
