@@ -6,7 +6,7 @@
 
 ---
 
-| **Verrou du checkup** | `checkup.html`, `checkup.webmanifest`, `checkup-version.json`, `icons/checkup-*` : **libre** — même règle, un seul auteur à la fois (front séparé de `bilan_economique.html`). **Reprise : lire `BRIEFING_CHECKUP_TIMON_HERMES.md`.** |
+| **Verrou du checkup** | **Pris par SeptFons-Dev (TIMON) le 24/11/2026** — `checkup.html`, `checkup-version.json` (`2026-11-24.5`) : motifs rapides en 1 tap + paramètre URL `?ligne=` pour QR codes atelier. (`bilan_economique.html` non touché.) |
 
 ---
 
