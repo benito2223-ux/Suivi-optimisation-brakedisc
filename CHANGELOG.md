@@ -5,6 +5,10 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.162.2] — 2026-11-24 · le temps de coupe pure a sa tuile sur le scénario · Claude
+
+Retour Benjamin sur 4.162.1 : la ligne était dans un dépliant, invisible. Une tuile « Temps de coupe pure » rejoint la bande de chiffres du scénario (à côté du gain annuel) : valeur de l'OP, écart à la référence, chaque OP de la ligne (l'OP affichée soulignée), total par disque. Incomplet : « — » et le nombre de logements manquants. Affichage seul. 952 tests | 0 échec. Non déployé.
+
 ## [4.162.1] — 2026-11-24 · le temps de coupe pure est dit comme tel, OP par OP + total · Claude
 
 Demande Benjamin (24/11), après la saisie des temps de coupe EMAG 2 / 356x26 : quand le « cycle » d'une OP vient des temps de coupe saisis, la fiche doit le dire et montrer la coupe de chaque OP et le total.

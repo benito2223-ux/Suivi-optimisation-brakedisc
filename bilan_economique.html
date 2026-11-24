@@ -9261,6 +9261,33 @@ function scenarioBlockHTML(sc, interactive){
      en tête (coût, validation, gain). Le champ cycle garde sa classe
      cell-cycle : le re-rendu recâble ses listeners. Les lignes foot-sub du
      cycle deviennent .fs-sub (même div, autre classe). */
+  /* v4.162.2 — Benjamin, 24/11 : la coupe pure doit se lire d'un coup d'oeil sur la tuile du scénario :
+     valeur de l'OP, écart à la référence, puis chaque OP de la référence et le total par disque. */
+  const tcCell = (() => {
+    if(!stCycle.filled) return "";
+    const t = tempsCoupeParOp(sc);
+    const val = stCycle.complete ? fmt(stCycle.secs,1) : "—";
+    let delta = "";
+    if(!sc.baseline && base && stCycle.complete){
+      const sb = cycleDetailStatus(base, config);
+      if(sb.complete){
+        const d = stCycle.secs - sb.secs;
+        const cls = d > 0.05 ? "pos" : d < -0.05 ? "neg" : "zero";
+        delta = `<span class="delta ${cls}" title="Écart de temps de coupe pure avec la référence">${d>0?"+":""}${fmt(d,1)} s vs réf.</span>`;
+      }
+    }
+    const ops = t ? t.lignes.map(l => `<span${l.courante ? ' style="font-weight:700;text-decoration:underline;"' : ""}>${escapeAttr(l.nom)} ${l.secs === null ? "—" : fmt(l.secs,1)}</span>`).join(" · ") : "";
+    const tot = t ? (t.total !== null ? `<div class="foot-sub"><b>Total ligne : ${fmt(t.total,1)} s</b> par disque</div>` : `<div class="foot-sub" style="color:var(--on-fill-warn);">total non calculable — à renseigner : ${t.manquantes.map(escapeAttr).join(", ")}</div>`) : "";
+    return `
+      <div class="foot-cell foot-cell-tc" title="Temps de coupe pure d'après les programmes CN : sans chargement, rapides ni changement d'outil, donc plus court que le cycle relevé au pupitre.">
+        <div class="l">Temps de coupe pure${stCycle.complete ? "" : " — incomplet"}</div>
+        <div class="v">${val}<small>s</small></div>
+        ${delta}
+        ${stCycle.complete ? "" : `<div class="foot-sub" style="color:var(--on-fill-warn);">${stCycle.filled}/${stCycle.total} logements renseignés</div>`}
+        ${ops ? `<div class="foot-sub">${ops}</div>` : ""}
+        ${tot}
+      </div>`;
+  })();
   const fs = t => t.split('<div class="foot-sub"').join('<div class="fs-sub"');
   const foot = `
     <div class="scenario-foot">
@@ -9268,6 +9295,7 @@ function scenarioBlockHTML(sc, interactive){
       ${coutCell}
       ${validationCell}
       ${annuelCell}
+      ${tcCell}
       <div class="foot-second">
         <div class="fs-item">
           <div class="fs-l">Durée de vie visée</div>
@@ -15244,6 +15272,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.162.2", date:"24/11/2026", points:[
+    "<b>Le temps de coupe pure a sa tuile.</b> Sur le scénario, une tuile affiche le temps de coupe de l'OP, l'écart à la référence, le temps de chaque OP de la ligne et le total par disque."
+  ]},
   { version:"4.162.1", date:"24/11/2026", points:[
     "<b>Le temps de coupe pure est dit comme tel.</b> Quand les temps de coupe d'une OP sont saisis, la fiche annonce que ce temps tient lieu de cycle (sans chargement, rapides ni changement d'outil) et ne parle plus de « mesures machine ».",
     "Une ligne « Coupe pure par OP » affiche le temps de chaque OP de la référence et le total par disque."
@@ -16199,7 +16230,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.162.1";
+const TOOL_VERSION = "4.162.2";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
