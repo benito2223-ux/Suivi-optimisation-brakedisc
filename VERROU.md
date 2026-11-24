@@ -1,8 +1,8 @@
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`.* |
+| **Auteur** | **Claude** |
+| **Pris le** | 24/11/2026 (soir) |
+| **Écrit dans** | `bilan_economique.html`, `CHANGELOG.md`, `version.json`/`dist/` (build), `ECHANGES.md` |
+| **Version visée** | **4.163.0** |
+| **Sujet** | **Gel levé par Benjamin pour CE chantier seulement** : section « Checkup » dans l'outil principal — lecture de `public.checkup_journal`, KPI, filtres, vues classée/plate, export Excel. Hors de ce périmètre, l'outil reste gelé. |
 
 ---
 
