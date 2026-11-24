@@ -7466,3 +7466,6 @@ Spec `SPEC_VUE_PLAQUETTE_GLOBALE_2026-11-10.md` (décisions Benjamin prises dans
 
 ### 24/11/2026 — Claude : 4.162.1, la coupe pure est dite comme telle (OP par OP + total)
 Demande de Benjamin après la saisie des temps de coupe EMAG 2 : le statut du scénario annonce « temps de coupe pure » (plus « mesures machine ») avec la mise en garde « plus court que le pupitre », et une ligne « Coupe pure par OP » donne chaque OP de la référence + le total. Affichage seul, aucune donnée touchée, verrou pris et libéré, 952 tests | 0 échec. **Non commité, non déployé** (dist et Surge intacts). Vérifié sur un jeu simulé dans le navigateur (l'instance locale n'a que l'exemple) ; à revoir à l'écran sur les vraies données une fois déployé en DEV.
+
+### Faits extérieurs — 24/11/2026 (publication)
+**DEV + PROD 4.162.1** (phrase de Benjamin : « commit et deploie ») sur suivi-optimisation-projet.surge.sh et suivi-optimisation-septfons.surge.sh. curl : `version.json` = 4.162.1 et `bilan_economique.html` identique au `dist/` (`d54889af…`) sur les deux domaines. Vérification à l'écran sur les vraies données : non faite.
