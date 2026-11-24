@@ -7540,3 +7540,9 @@ Le checkup envoie maintenant `id_local` (son `localId`) avec chaque ligne du jou
 
 ### Faits extérieurs — 24/11/2026 (checkup 2026-11-24.4, publication Surge)
 **Publication de `checkup.html` 2026-11-24.4** (commit `916e82f`, phrase de Benjamin : « Oui, déploie ») sur suivi-optimisation-septfons.surge.sh : le checkup envoie `id_local` (anti-doublon du journal). Dossier de préparation = les 10 fichiers en ligne (curl) + 6 du checkup, supprimé après. curl : **10 fichiers de l'outil principal identiques octet pour octet** avant/après ; 6 fichiers du checkup en 200 et identiques au local ; `checkup-version.json` = 2026-11-24.4 ; VERROU / ECHANGES / BRIEFING / migrations en 404. Non vérifié sur un téléphone.
+
+### 24/11/2026 — SeptFons-Dev (TIMON) : checkup `2026-11-24.5` — motifs rapides 1 tap + QR codes `?ligne=` (non déployé)
+Demande de Benjamin : ajouter 5 motifs rapides cliquables sur la feuille d'écart (`Usure / casse`, `Vibration`, `Bruts`, `Essai en cours`, `Défaut disques`), préparer les QR codes des 10 lignes, envoyer le récap à Matis sur Teams Pro et préparer le prompt Claude Code pour la section Checkup dans `bilan_economique.html`.
+- `checkup.html` (`BUILD 2026-11-24.5`) : 5 boutons motifs rapides (toggle 1 tap, cibles gants, pré-remplissent `#fc` tout en laissant le texte libre éditable) + support `?ligne=<NOM>` (ouvre directement la bonne ligne et préserve `ligne` lors du rechargement hors-cache `checkup-version.json`). Vérifié : `node --check` OK, 102 accolades CSS équilibrées, 0 mention CeramTec/SPK, `BUILD` === `checkup-version.json`.
+- `checkup_qrcodes_lignes.html` : planche A4 imprimable prête à découper/plastifier avec 10 QR codes SVG (`EMAG 1–3` 120 %, `HESSAPP`, `WEISSER 1–4`, `PCI 4–5` 100 %) pointant vers `https://suivi-optimisation-septfons.surge.sh/checkup.html?ligne=…`.
+- **`bilan_economique.html` non touché** ; **PROD / Surge : rien** (attend feu vert explicite de Benjamin pour pousser `2026-11-24.5`).

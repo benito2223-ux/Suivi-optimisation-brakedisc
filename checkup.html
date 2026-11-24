@@ -255,12 +255,19 @@ main{padding:14px}
 }
 .sheet{
   background:var(--surface);color:var(--ink);
-  width:100%;max-width:760px;
+  width:100%;max-width:760px;max-height:92vh;overflow-y:auto;
   border-radius:var(--radius-lg) var(--radius-lg) 0 0;
   padding:20px 16px calc(20px + env(safe-area-inset-bottom));
   border-top:4px solid var(--blue);
   box-shadow:var(--shadow-pop);
 }
+.motifs{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 10px}
+.motif{
+  min-height:54px;padding:8px 14px;font-size:18px;font-weight:700;
+  background:var(--surface-alt);border:2px solid var(--bord-atelier);
+  color:var(--ink);border-radius:var(--radius);
+}
+.motif.on{background:var(--amber-bg);border-color:var(--amber);color:var(--amber)}
 .sheet.ec{border-top-color:var(--amber)}
 .sheet h2{margin:0 0 6px;font-size:28px;color:var(--ink)}
 .sheet .ref{color:var(--ink-soft);font-size:18px;margin-bottom:12px}
@@ -865,14 +872,17 @@ function ecranJournal(){
 }
 
 /* ====== Feuilles modales ====== */
+const MOTIFS_RAPIDES = ["Usure / casse", "Vibration", "Bruts", "Essai en cours", "Défaut disques"];
 function feuilleEcart(id){
   const pot = id === "pot";
   const r = pot ? null : curOp().rows.find(x => rowId(x) === id);
   const att = pot ? (potRef() + " %") : ((r[4] !== "" ? r[4] : "—") + " pièces / arête");
+  const chips = MOTIFS_RAPIDES.map(m => '<button type="button" class="motif" data-act="motif" data-m="' + esc(m) + '">' + esc(m) + '</button>').join("");
   $("sh").innerHTML = '<div class="sheet-bg"><div class="sheet ec"><h2>' + (pot ? "Potentiomètre modifié" : esc(id) + " — charnière modifiée") + '</h2>' +
     '<div class="ref">Référence : <b>' + esc(att) + '</b></div>' +
     '<label for="fv">' + (pot ? "Valeur lue (%)" : "Nouvelle charnière lue (pièces / arête)") + '</label><input id="fv" type="number" inputmode="numeric" min="0" autocomplete="off">' +
-    '<label for="fc">Commentaire</label><textarea id="fc" placeholder="Pourquoi ? Qui est prévenu ?"></textarea>' +
+    '<label>Motif rapide (1 tap)</label><div class="motifs">' + chips + '</div>' +
+    '<label for="fc">Commentaire</label><textarea id="fc" placeholder="Précision libre (facultatif si motif choisi)"></textarea>' +
     '<div class="err" id="fe"></div><div class="acts"><button class="ghost" data-act="fermer">Annuler</button><button class="bec" data-act="enreg" data-id="' + esc(id) + '">Enregistrer</button></div></div></div>';
   setTimeout(() => { const el = $("fv"); if(el) el.focus(); }, 50);
 }
@@ -947,6 +957,19 @@ document.addEventListener("click", async e => {
     save("cu_checks", checks);
   }
   else if(a === "ecart"){ feuilleEcart(id); return; }
+  else if(a === "motif"){
+    const m = b.getAttribute("data-m") || "";
+    const ta = $("fc");
+    if(ta && m){
+      const on = b.classList.toggle("on");
+      const parts = ta.value.split(" · ").map(x => x.trim()).filter(Boolean);
+      const idx = parts.indexOf(m);
+      if(on && idx === -1) parts.unshift(m);
+      else if(!on && idx !== -1) parts.splice(idx, 1);
+      ta.value = parts.join(" · ");
+    }
+    return;
+  }
   else if(a === "enreg"){
     const pot = id === "pot", r = pot ? null : curOp().rows.find(x => rowId(x) === id);
     const att = pot ? String(potRef()) : String(r[4]);
@@ -979,15 +1002,36 @@ document.addEventListener("pointerup", () => {
   save("cu_order", ordre);
 });
 
+/* ====== Ouverture directe sur une ligne via QR code (?ligne=EMAG%201) ====== */
+let urlLigneAppliquee = false;
+function appliquerUrlLigne(){
+  if(urlLigneAppliquee || V.ligneIdx != null) return;
+  const p = new URLSearchParams(location.search);
+  const cible = (p.get("ligne") || "").trim().toUpperCase();
+  if(!cible) { urlLigneAppliquee = true; return; }
+  const L = curLignes();
+  if(!L.length) return;
+  const idx = L.findIndex(l => String(l.nom || "").trim().toUpperCase() === cible);
+  if(idx !== -1){
+    V.ligneIdx = idx;
+    V.refIdx = L[idx].refs.length === 1 ? 0 : null;
+    V.opIdx = null;
+    urlLigneAppliquee = true;
+  }
+}
+
+appliquerUrlLigne();
 rendre();
-synchroniser(Boolean(snapshot));
+synchroniser(Boolean(snapshot)).then(() => { appliquerUrlLigne(); rendre(); });
 
 /* ====== PWA : installation, hors ligne, mise à jour ====== */
-const BUILD = "2026-11-24.4";
+const BUILD = "2026-11-24.5";
 if("serviceWorker" in navigator){ navigator.serviceWorker.register("./service-worker.js", { updateViaCache: "none" }).catch(() => {}); }
 fetch("checkup-version.json", { cache: "no-store" }).then(r => r.ok ? r.json() : null).then(j => {
   if(j && j.build && j.build !== BUILD && location.search.indexOf("b=" + j.build) === -1){
-    location.replace("checkup.html?b=" + encodeURIComponent(j.build));
+    const p = new URLSearchParams(location.search);
+    p.set("b", j.build);
+    location.replace("checkup.html?" + p.toString());
   }
 }).catch(() => {});
 </script>
