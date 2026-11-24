@@ -6,7 +6,11 @@
 
 ---
 
-| **Verrou du checkup** | **Pris par SeptFons-Dev (TIMON) le 24/11/2026** — `checkup.html`, `checkup.webmanifest`, `checkup-version.json` : branchement Supabase 10 lignes + alignement design system sur `bilan_economique.html`. (`bilan_economique.html` non touché.) |
+| **Verrou du checkup** | `checkup.html`, `checkup.webmanifest`, `checkup-version.json`, `icons/checkup-*` : **libre** — même règle, un seul auteur à la fois (front séparé de `bilan_economique.html`). **Reprise : lire `BRIEFING_CHECKUP_TIMON_HERMES.md`.** |
+
+---
+
+✅ **Verrou checkup pris puis libéré par SeptFons-Dev (TIMON) le 24/11/2026** (branche `ux-rail`, **checkup `2026-11-24.2`, commit `361be2d`** — 10 lignes branchées sur Supabase en double voie `checkup_reference` + `sync_pull` prod, parcours Ligne → Référence → OP → Charnières, file hors-ligne `cu_queue` → `checkup_journal`, suppression des données réelles codées en dur, design system aligné sur `bilan_economique.html` avec polices embarquées et bascule clair/nuit). **`bilan_economique.html` non touché** (4.162.5, gelé). **PROD / Surge : rien** (attend le feu vert explicite de Benjamin). Passation mise à jour dans `BRIEFING_CHECKUP_TIMON_HERMES.md` et `ECHANGES.md` pour Hermes et tous les CLI.
 
 ---
 
