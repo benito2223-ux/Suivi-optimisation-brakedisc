@@ -7469,3 +7469,5 @@ Demande de Benjamin après la saisie des temps de coupe EMAG 2 : le statut du sc
 
 ### Faits extérieurs — 24/11/2026 (publication)
 **DEV + PROD 4.162.1** (phrase de Benjamin : « commit et deploie ») sur suivi-optimisation-projet.surge.sh et suivi-optimisation-septfons.surge.sh. curl : `version.json` = 4.162.1 et `bilan_economique.html` identique au `dist/` (`d54889af…`) sur les deux domaines. Vérification à l'écran sur les vraies données : non faite.
+
+**DEV + PROD 4.162.2** (phrase de Benjamin : « commit et deploie bro ») : tuile « Temps de coupe pure » sur le scénario. curl : version 4.162.2 et `bilan_economique.html` identique au dist (`55c3cbb8…`) sur les deux domaines. Pas vérifié à l écran sur les vraies données.
