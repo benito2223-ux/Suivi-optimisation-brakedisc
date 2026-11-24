@@ -6,6 +6,14 @@
 
 ---
 
+| **Verrou du checkup** | `checkup.html`, `checkup.webmanifest`, `checkup-version.json`, `icons/checkup-*` : **libre** — même règle, un seul auteur à la fois (front séparé de `bilan_economique.html`). **Reprise : lire `BRIEFING_CHECKUP_TIMON_HERMES.md`.** |
+
+---
+
+✅ **Verrou pris puis libéré par Claude le 24/11/2026** (branche `ux-rail`, **checkup, commit `e25e631`** — nouveau front « Contrôle de prise de poste » : maquette PWA, charnière = pièces par arête, potentiomètre 100 % / 120 % sur les lignes EMAG, journal local). **`bilan_economique.html` non touché** (outil principal inchangé : 4.162.5, gelé). **Déployé sur suivi-optimisation-septfons.surge.sh/checkup.html sur ordre de Benjamin**, avec les 10 fichiers de l'outil principal re-publiés **tels qu'en ligne** (identiques octet pour octet ; le `bilan_economique.html` local diffère de la PROD : **ne jamais déployer depuis la racine**). Passation à TIMON AI / Hermes : `BRIEFING_CHECKUP_TIMON_HERMES.md`.
+
+---
+
 ✅ **Verrou pris puis libéré par Claude le 24/11/2026** (v4.162.5) — temps copiés recalculés. 960 tests | 0 échec. DEV + PROD publiées.
 
 ---
