@@ -6,7 +6,7 @@
 
 ---
 
-| **Verrou du checkup** | `checkup.html`, `checkup.webmanifest`, `checkup-version.json`, `icons/checkup-*` : **libre** — même règle, un seul auteur à la fois (front séparé de `bilan_economique.html`). **Reprise : lire `BRIEFING_CHECKUP_TIMON_HERMES.md`.** |
+| **Verrou du checkup** | **Pris par SeptFons-Dev (TIMON) le 24/11/2026** — `checkup.html`, `checkup.webmanifest`, `checkup-version.json` : branchement Supabase 10 lignes + alignement design system sur `bilan_economique.html`. (`bilan_economique.html` non touché.) |
 
 ---
 
