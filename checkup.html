@@ -465,9 +465,20 @@ function normRow(x){
 }
 function garantir10Lignes(lignes){
   const parNom = new Map();
+  /* Deux lignes de même nom (ex. deux « EMAG 1 » dans l'arborescence) sont FUSIONNÉES : leurs références
+     s'additionnent, et deux références de même nom réunissent leurs OP. Avant, la dernière écrasait la
+     première et la ligne perdait ses OP (bug du 24/11). */
+  const cle = x => String(x || "").trim().toUpperCase();
   lignes.forEach(l => {
-    const k = String(l.nom || "").trim();
-    if(k) parNom.set(k.toUpperCase(), l);
+    const k = cle(l.nom);
+    if(!k) return;
+    const cur = parNom.get(k);
+    if(!cur){ parNom.set(k, { nom: l.nom, refs: (l.refs || []).map(r => ({ nom: r.nom, ops: (r.ops || []).slice() })) }); return; }
+    (l.refs || []).forEach(r => {
+      const dest = cur.refs.find(x => cle(x.nom) === cle(r.nom));
+      if(!dest){ cur.refs.push({ nom: r.nom, ops: (r.ops || []).slice() }); return; }
+      (r.ops || []).forEach(o => { if(!dest.ops.some(x => cle(x.nom) === cle(o.nom))) dest.ops.push(o); });
+    });
   });
   const out = [];
   LIGNES_ATELIER.forEach(nom => {
@@ -972,7 +983,7 @@ rendre();
 synchroniser(Boolean(snapshot));
 
 /* ====== PWA : installation, hors ligne, mise à jour ====== */
-const BUILD = "2026-11-24.2";
+const BUILD = "2026-11-24.3";
 if("serviceWorker" in navigator){ navigator.serviceWorker.register("./service-worker.js", { updateViaCache: "none" }).catch(() => {}); }
 fetch("checkup-version.json", { cache: "no-store" }).then(r => r.ok ? r.json() : null).then(j => {
   if(j && j.build && j.build !== BUILD && location.search.indexOf("b=" + j.build) === -1){
