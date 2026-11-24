@@ -7161,10 +7161,15 @@ function cycleDetailStatus(sc, cfg){
     (o.logements||[]).forEach(l => {
       total++;
       let c = parseFloat(l.tempsCoupe);
-      if(isNaN(c) && baseRef){
+      if(baseRef){
         const d = tempsCoupeDeduit(baseRef, o, l, (baseRef.outils||[]).length === outils.length ? oi : undefined);
-        if(d.secs !== null){ c = d.secs; calcules++; }
-        else if(d.raison) incomputables.push((o.numero || "?") + " " + (l.nom || "") + " — " + d.raison);
+        /* v4.162.5 : un temps strictement égal à celui de la référence alors que les conditions ont changé est une
+           COPIE (scénario dupliqué), pas une mesure : on le recalcule. Un temps différent reste une saisie, prioritaire. */
+        const copie = !isNaN(c) && d.origine === "calcule" && Math.abs(c - d.t0) < 1e-9;
+        if(isNaN(c) || copie){
+          if(d.secs !== null){ c = d.secs; calcules++; }
+          else if(isNaN(c) && d.raison) incomputables.push((o.numero || "?") + " " + (l.nom || "") + " — " + d.raison);
+        }
       }
       if(!isNaN(c)){ filled++; s += c; }
     });
@@ -7190,18 +7195,18 @@ function tempsCoupeDeduit(base, o, l, rang){
   if(!lb) return { secs:null, raison:"" };
   const t0 = parseFloat(lb.tempsCoupe);
   if(isNaN(t0)) return { secs:null, raison:"" };
-  if(l.suiviTolerance === false) return { secs:t0, origine:"copie" };
+  if(l.suiviTolerance === false) return { secs:t0, t0, origine:"copie" };
   const n = v => { const x = parseFloat(v); return isNaN(x) ? null : x; };
   const m0 = lb.modeVitesse === "G97" ? "G97" : "G96", m1 = l.modeVitesse === "G97" ? "G97" : "G96";
   const vc0 = n(lb.vc), vc1 = n(l.vc), f0 = n(lb.f), f1 = n(l.f), s0 = n(lb.sBroche), s1 = n(l.sBroche);
   if(m0 === "G96" && m1 === "G96"){
-    if(vc0 === vc1 && f0 === f1) return { secs:t0, origine:"copie" };
+    if(vc0 === vc1 && f0 === f1) return { secs:t0, t0, origine:"copie" };
     if(!vc0 || !vc1 || !f0 || !f1) return { secs:null, raison:"Vc / f à renseigner" };
-    return { secs: t0 * (f0*vc0) / (f1*vc1), origine:"calcule" };
+    return { secs: t0 * (f0*vc0) / (f1*vc1), t0, origine:"calcule" };
   }
-  if(m0 === m1 && vc0 === vc1 && f0 === f1 && s0 === s1) return { secs:t0, origine:"copie" };
+  if(m0 === m1 && vc0 === vc1 && f0 === f1 && s0 === s1) return { secs:t0, t0, origine:"copie" };
   if(!s0 || !s1 || !f0 || !f1) return { secs:null, raison:"G97 : tr/min de la référence et de l'essai à renseigner" };
-  return { secs: t0 * (f0*s0) / (f1*s1), origine:"calcule" };
+  return { secs: t0 * (f0*s0) / (f1*s1), t0, origine:"calcule" };
 }
 /* statut affiché sous la composition du scenario : dit clairement quel calcul est
    REELLEMENT utilise pour ce scenario, puisque le detail par logement retombe
@@ -15334,6 +15339,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.162.5", date:"24/11/2026", points:[
+    "<b>Un scénario dupliqué recalcule ses temps de coupe.</b> Quand tu changes la Vc, l'avance ou les tr/min d'un logement, un temps resté identique à celui de la référence (copié à la duplication) est recalculé. Un temps que tu as saisi toi-même reste prioritaire."
+  ]},
   { version:"4.162.4", date:"24/11/2026", points:[
     "<b>Les temps de coupe des scénarios d'essai se calculent tout seuls.</b> Logement non suivi ou mêmes conditions que la référence : même temps. Vc ou avance différents : le temps est recalculé. Valable aussi pour les essais déjà saisis, rien n'est écrasé.",
     "En G97, l'outil demande les tr/min de la référence et de l'essai avant de calculer ; sans eux il le dit au lieu de deviner. La tuile indique combien de logements sont calculés."
@@ -16300,7 +16308,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.162.4";
+const TOOL_VERSION = "4.162.5";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -26367,6 +26375,15 @@ function runTests(){
         const bs2 = { outils:[{ numero:"T549", logements:[{ nom:"D1", f:"0.3", sBroche:"600", tempsCoupe:"20" }] }] };
         ok("4.162.4 : G97 avec les deux tr/min -> t × (f0·S0)/(f1·S1)", Math.round(tempsCoupeDeduit(bs2, oo, { nom:"D1", f:"0.25", modeVitesse:"G97", sBroche:"700" }).secs*100)/100, 20.57);
         ok("4.162.4 : logement absent de la référence -> rien", d({ nom:"D9", vc:"600", f:"0.3" }).secs, null);
+        {
+          const sbase = { baseline:true, outils:[{ numero:"T549", logements:[{ nom:"D1", vc:"600", f:"0.3", tempsCoupe:"21.8" }] }] };
+          const scop = { outils:[{ numero:"T549", logements:[{ nom:"D1", vc:"700", f:"0.25", tempsCoupe:"21.8" }] }] };
+          const ssai = { outils:[{ numero:"T549", logements:[{ nom:"D1", vc:"700", f:"0.25", tempsCoupe:"30" }] }] };
+          const dSave = data; data = [sbase, scop, ssai];
+          ok("4.162.5 : temps copié de la référence + conditions changées -> recalculé", Math.round(cycleDetailStatus(scop, {}).secs*10)/10, 22.4);
+          ok("4.162.5 : temps saisi différent de la référence -> prioritaire", cycleDetailStatus(ssai, {}).secs, 30);
+          data = dSave;
+        }
       }
     }
 

@@ -5,6 +5,10 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.162.5] — 2026-11-24 · un scénario dupliqué recalcule ses temps de coupe · Claude
+
+Retour Benjamin : un scénario EMAG2 dupliqué avec des Vc bien plus hautes sur T521 gardait les temps de la référence. Cause : la duplication copie `tempsCoupe`, que 4.162.4 prenait pour une saisie prioritaire. Règle : un temps strictement égal à celui du logement de la référence, alors que Vc / f / tr/min ont changé, est une copie et se recalcule ; un temps différent reste une saisie. Aucune donnée modifiée. 960 tests | 0 échec (+2).
+
 ## [4.162.4] — 2026-11-24 · les temps de coupe des essais se déduisent de la référence · Claude
 
 Décision Benjamin (24/11) : le trajet de l'outil ne change jamais, seul le rythme change ; la broche n'est jamais limitée ; le G97 exige les tr/min. Un logement de scénario d'essai sans temps saisi prend : le temps de la référence (logement non suivi ou mêmes conditions) ; t × (f0·Vc0)/(f1·Vc1) en G96 ; t × (f0·S0)/(f1·S1) dès qu'un côté est en G97 si les deux tr/min sont saisis, sinon rien et la raison est affichée sur la tuile. Rien n'est stocké (calcul à l'affichage) : les scénarios déjà saisis en profitent d'office, un temps saisi à la main prime toujours. La tuile dit « ≈ n logements calculés depuis la référence ». Appariement par numéro d'outil + nom de logement. 958 tests | 0 échec (+6). Non déployé.

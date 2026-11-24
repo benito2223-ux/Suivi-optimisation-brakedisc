@@ -7,7 +7,9 @@ def num(s):
 SKIP = ('WHEN', 'DEF ', 'E_STEP', 'E_JUMP', 'E_STRADDLE', 'CR_BD', 'STOPRE', 'SETMS',
         'LABEL', 'REPEAT', '$P_UIFR', 'R102', 'R125', 'RET', 'MSG')
 
-def run(path):
+def run(path, balises_commentees=False):
+    """balises_commentees : les programmes EMAG 1 ont leurs M870/M890/H81 en commentaire (;M870) — la
+    fenetre de coupe est alors definie par ces repères commentés, au même endroit qu'une balise active."""
     prog = os.path.basename(path)
     st = dict(T='?', D=1, h81=0, mode='G0', spin='G97', S=0.0, F=0.0, X=None, Z=None,
               mon=False, lims=1e9)
@@ -18,6 +20,16 @@ def run(path):
         code, _, com = line.partition(';')
         ag = re.findall(r'AG\d+\.\d+', com)
         code = code.strip()
+        com_off = False
+        if st.get('off_next'):          # un M890 commenté de la ligne précédente ferme la fenêtre
+            st['mon'] = False; st['off_next'] = False
+        if balises_commentees:
+            cm = re.findall(r'M(870|890)', com)
+            if '870' in cm: st['mon'] = True
+            com_off = '890' in cm
+            mh = re.search(r'H81=(\d+)', com)
+            if mh: st['h81'] = int(mh.group(1))
+        st['off_next'] = com_off
         if not code:
             continue
         m = re.search(r'T="T(\d+S?)_"', code)
@@ -101,7 +113,7 @@ if __name__ == '__main__':
     out = {}
     for f in sorted(os.listdir(d)):
         if f.upper().endswith('.SPF'):
-            out[f] = run(os.path.join(d, f))
+            out[f] = run(os.path.join(d, f), len(sys.argv) > 3 and sys.argv[3] == '--balises-commentees')
     json.dump(out, open(sys.argv[2], 'w'), indent=1)
     for f, (segs, dwell, hors) in out.items():
         print('=====', f)

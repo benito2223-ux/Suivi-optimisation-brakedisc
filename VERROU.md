@@ -6,6 +6,10 @@
 
 ---
 
+✅ **Verrou pris puis libéré par Claude le 24/11/2026** (v4.162.5) — temps copiés recalculés. 960 tests | 0 échec. DEV + PROD publiées.
+
+---
+
 ✅ **Verrou pris puis libéré par Claude le 24/11/2026** (v4.162.4) — temps de coupe des essais déduits de la référence. 958 tests | 0 échec. Non déployé.
 
 ---
