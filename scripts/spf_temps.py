@@ -7,9 +7,10 @@ def num(s):
 SKIP = ('WHEN', 'DEF ', 'E_STEP', 'E_JUMP', 'E_STRADDLE', 'CR_BD', 'STOPRE', 'SETMS',
         'LABEL', 'REPEAT', '$P_UIFR', 'R102', 'R125', 'RET', 'MSG')
 
-def run(path, balises_commentees=False):
+def run(path, balises_commentees=False, ouvre_extra=()):
     """balises_commentees : les programmes EMAG 1 ont leurs M870/M890/H81 en commentaire (;M870) — la
-    fenetre de coupe est alors definie par ces repères commentés, au même endroit qu'une balise active."""
+    fenetre de coupe est alors definie par ces repères commentés, au même endroit qu'une balise active.
+    ouvre_extra : codes M traites comme M870 (coquilles de programme, ex. M700 / M670 pour M870)."""
     prog = os.path.basename(path)
     st = dict(T='?', D=1, h81=0, mode='G0', spin='G97', S=0.0, F=0.0, X=None, Z=None,
               mon=False, lims=1e9)
@@ -42,12 +43,13 @@ def run(path, balises_commentees=False):
         if m:
             st['h81'] = int(m.group(1)); code = code.replace(m.group(0), '')
         code = re.sub(r'M1=\d+', '', code)
+        code = re.sub(r'(=[-+]?[\d.]+(?:[-+][\d.]+)*)\s+([-+][\d.]+)', lambda m: m.group(1) + m.group(2), code)   # « Z=-18.839 +0.3 »
         code = re.sub(r'^N\d+\s*', '', code)
         toks = TOK.findall(code)
         if not toks:
             continue
         mcodes = re.findall(r'\bM(\d+)\b', code)
-        if '870' in mcodes:
+        if '870' in mcodes or any(m in mcodes for m in ouvre_extra):
             st['mon'] = True
         new = {}
         gs = []
