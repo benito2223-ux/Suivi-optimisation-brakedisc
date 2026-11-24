@@ -24,34 +24,36 @@ Le fichier de **journal est stocké dans une section dédiée de l'outil princip
 | **Potentiomètre** | doit être à **100 %** (« charnières figées »). **Exception : lignes EMAG = 120 %** (= valeurs nominales). |
 | **Écart** | une valeur **nouvelle charnière** ET un **commentaire** doivent exister sur la feuille d'écart. |
 | **Ce que voit l'opérateur** | la **valeur de référence** + boutons **✓** (conforme) et **≠** (modifiée). Pas de saisie systématique. (Vision de Claude, validée par Benjamin.) |
-| **Ergonomie** | gros caractères, **gants**, faible luminosité → thème nuit, cibles ≥ 72 px, texte ≥ 22 px. |
-| **Design** | design system de l'outil principal (jetons thème nuit, rayon 3 px, rouge = accent seulement, Open Sans / Open Sans Condensed). |
+| **Ergonomie** | gros caractères, **gants**, cibles ≥ 72 px, chiffres tabulaires lisibles, bascule clair/nuit mémorisée. |
+| **Design** | **design system exact de `bilan_economique.html`** (thème clair par défaut `#e8eaed` / cartes `#FFFFFF` / en-tête navy `#2F4159` / bleu `#1B5EA6` / rouge `#E2001A` alerte seule + thème nuit `#0f1317` / `#181d22` / `#5ba4f5`, rayon 3/4 px, polices `Open Sans` + `Open Sans Condensed` embarquées en base64). |
 | **Marque / IP** | **aucune mention CeramTec ni SPK dans l'application.** Uniquement le rappel : « Conception et développement : Benjamin Rouquette · © 2026 — tous droits réservés · contenu confidentiel ». Ne **jamais** écrire dans l'app « écrit hors temps de travail / moyens personnels » (c'est dans le commentaire de code de l'outil principal, pas à l'écran). |
 | **Adresse** | `https://suivi-optimisation-septfons.surge.sh/checkup.html` (même domaine que la PROD de l'outil principal). Installable en PWA. |
 | **Recommandations de Claude acceptées** | pas de bouton « tout valider » (un ✓ par rangée) ; référence **publiée explicitement** pour l'atelier (« Publier pour l'atelier »), pas lue en direct dans les scénarios ; ordre réglé en mode « Organiser » ; journal en **table à part**, append-only ; on journalise **aussi les ✓** (preuve que le contrôle a été fait) ; **équipe (Matin/Après-midi/Nuit), pas de nom de personne** (sensibilité CSE) ; écran atelier **sans identifiant** (lien/code), droits Supabase minimaux ; **hors ligne** (file d'attente) ; alerte immédiate à Matis = phase 2. |
 
-## 3. État au 24/11/2026 (commit `e25e631`, branche `ux-rail`, rien poussé sur GitHub)
+## 3. État au 24/11/2026 (mise à jour `BUILD 2026-11-24.2`, branche `ux-rail`, non déployé)
 
-**C'est une MAQUETTE.** Fichiers (tous à la racine, sauf icônes) :
+**Front branché sur Supabase (10 lignes) et aligné sur le design system de `bilan_economique.html`.** Fichiers (tous à la racine, sauf icônes) :
 
 | Fichier | Rôle |
 |---|---|
-| `checkup.html` | l'application complète (HTML+CSS+JS, un seul fichier), ~315 lignes. Données de **démo embarquées** (`const DATA`). |
-| `checkup.webmanifest` | manifeste PWA : `id` `checkup-septfons`, `scope` `./checkup.html` (volontairement étroit pour ne pas se mélanger à l'outil principal), `start_url` `./checkup.html`. |
-| `checkup-version.json` | `{"build":"2026-11-24.1"}` — signal de mise à jour (voir §6). **Ignoré par `.gitignore` (`*version.json`) : `git add -f`.** |
+| `checkup.html` | l'application complète (HTML+CSS+JS + polices `Open Sans` / `Open Sans Condensed` embarquées en base64, ~132 Ko). **Zéro donnée confidentielle codée en dur** (`const DATA` supprimé). |
+| `checkup.webmanifest` | manifeste PWA : `id` `checkup-septfons`, `scope` `./checkup.html`, `start_url` `./checkup.html`, `theme_color` `#2F4159`, `background_color` `#e8eaed`. |
+| `checkup-version.json` | `{"build":"2026-11-24.2"}` — signal de mise à jour (voir §6). **Ignoré par `.gitignore` (`*version.json`) : `git add -f`.** |
 | `icons/checkup-192.png`, `-512.png`, `-512-maskable.png` | icônes (anneau bleu + coche verte), générées par script Pillow (non versionné). |
 | `.surgeignore` | liste blanche étendue aux 6 fichiers ci-dessus. |
 
-Ce que fait la maquette : écrans Ligne → OP → liste (potentiomètre + rangées outil·logement), `✓` / `≠` (feuille avec valeur +
-commentaire, refuse une valeur identique à la référence), détail au tap (plaquette, MABEC, Vc, f ou G97 tr/min), mode « Organiser »
-(poignée ≡, glisser), équipe déduite de l'heure (5-13 Matin, 13-21 Après-midi, 21-5 Nuit — la nuit appartient au jour de son début),
-avancement par OP (« 3/7 », « ⚠ »), « Journal des écarts (aperçu) ». **Tout est local** (`localStorage` : `cu_checks`, `cu_order`,
-`cu_log`) ; **rien n'est envoyé nulle part**.
+Ce que fait `checkup.html` (`2026-11-24.2`) :
+- **Parcours 4 niveaux** : **Ligne** (les 10 lignes canoniques : `EMAG 1..3`, `HESSAPP`, `WEISSER 1..4`, `PCI 4..5`) → **Référence** (saut direct si 1 seule réf ; état vide clair si 0 réf) → **OP** → **Potentiomètre + Charnières** par outil·logement.
+- **Branchement Supabase (`cxjfyaorkkxemjnollnj.supabase.co`) en double voie** :
+  1. **Voie V1 prioritaire (sans identifiant)** : lit `GET /rest/v1/checkup_reference` dès qu'Hermes aura créé la table et publié des snapshots.
+  2. **Voie cloud directe (active dès aujourd'hui)** : si `checkup_reference` renvoie 404 ou est vide, réutilise la session Supabase partagée avec `bilan_economique.html` (même domaine) ou propose une feuille « Connexion Supabase » pour tirer `POST /rest/v1/rpc/sync_pull` (`p_espace: "prod"`) et assembler les 10 lignes en direct.
+  3. **Cache hors-ligne** (`cu_snapshot_v1`) + **file d'attente journal** (`cu_queue`) qui flushe automatiquement vers `POST /rest/v1/checkup_journal` dès que la table existe et que le réseau est là.
+- **Design system identique à `bilan_economique.html`** : thème clair par défaut (`#e8eaed` / `#FFFFFF` / en-tête navy `#2F4159` / bleu `#1B5EA6`), thème nuit identique (`#0f1317` / `#181d22` / `#5ba4f5`) avec bascule `☀/☾` en en-tête, polices embarquées hors ligne, cibles gants ≥ 72 px, zéro mention CeramTec/SPK, pied de page IP Benjamin Rouquette conservé.
+- **Fonctions atelier** : `✓` / `≠` (valeur ≠ référence + commentaire), détail au tap (plaquette, MABEC, Vc ou G97 `sBroche`, f), mode « Organiser » (poignée `≡`, glisser), équipe 3×8 automatique, avancement par OP / référence / ligne, potentiomètre 120 % EMAG / 100 % autres lignes.
 
-Données de démo = vraies charnières « Classeur Matis » de **EMAG 1 / 356x26 RPI** (OP10-OP40) et **PCI 4 / 268x12** (OP10-OP40),
-lues dans le cloud le 24/11 (shards `sc:<op>:s-<…>`, `base=true`).
+**Non testé** : glisser-déposer sur un vrai téléphone / avec gants ; installation PWA sur un vrai téléphone ; déploiement Surge (attend le feu vert explicite de Benjamin).
 
-**Non testé** : glisser-déposer sur un vrai téléphone / avec gants ; installation PWA sur un vrai téléphone ; offline réel.
+**Pour Hermes (prochaine étape immédiate)** : `checkup.html` est déjà prêt côté client pour `checkup_reference` (GET) et `checkup_journal` (POST). Il suffit d'appliquer la migration SQL du §5 sur une branche Supabase puis prod (avec RLS + GRANT) : dès que les tables existent, `checkup.html` y basculera automatiquement sans retoucher son code.
 
 ## 4. À faire — dans cet ordre
 
