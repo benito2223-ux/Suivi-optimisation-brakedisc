@@ -1,0 +1,4 @@
+-- Appliquee le 24/11/2026 sur cxjfyaorkkxemjnollnj (migration « checkup_journal_et_reference »).
+-- Controle de prise de poste : instantane publie pour l'atelier + journal append-only. RLS + GRANT.
+-- Atelier (anon) : lit checkup_reference, INSERE dans checkup_journal. Membres (suivi_est_membre) : lisent le journal,
+-- ecrivent la reference. Personne ne modifie ni ne supprime le journal.
