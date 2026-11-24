@@ -6,7 +6,11 @@
 
 ---
 
-| **Verrou du checkup** | **Pris par SeptFons-Dev (TIMON) le 24/11/2026** — `checkup.html`, `checkup-version.json` (`2026-11-24.5`) : motifs rapides en 1 tap + paramètre URL `?ligne=` pour QR codes atelier. (`bilan_economique.html` non touché.) |
+| **Verrou du checkup** | `checkup.html`, `checkup.webmanifest`, `checkup-version.json`, `icons/checkup-*` : **libre** — même règle, un seul auteur à la fois (front séparé de `bilan_economique.html`). **Reprise : lire `BRIEFING_CHECKUP_TIMON_HERMES.md`.** |
+
+---
+
+✅ **Verrou checkup pris puis libéré par SeptFons-Dev (TIMON) le 24/11/2026** (branche `ux-rail`, **checkup `2026-11-24.5`, commit `50d52b2`** — motifs rapides 1 tap sur feuille d'écart + support `?ligne=` pour ouverture directe par QR code + planche A4 `checkup_qrcodes_lignes.html` pour les 10 lignes). **`bilan_economique.html` non touché** (4.162.5, gelé). **PROD / Surge : rien** (attend feu vert explicite de Benjamin).
 
 ---
 
