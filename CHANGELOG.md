@@ -5,6 +5,14 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.162.1] — 2026-11-24 · le temps de coupe pure est dit comme tel, OP par OP + total · Claude
+
+Demande Benjamin (24/11), après la saisie des temps de coupe EMAG 2 / 356x26 : quand le « cycle » d'une OP vient des temps de coupe saisis, la fiche doit le dire et montrer la coupe de chaque OP et le total.
+
+- La ligne de statut du scénario ne parle plus de « mesures machine » : « temps de coupe pure de l'OP : X s », avec la mise en garde (ni chargement, ni rapides, ni changement d'outil, donc plus court que le pupitre). La cellule cycle du scénario dit « temps de coupe pure (n/n logements) ».
+- Nouvelle ligne « Coupe pure par OP » : chaque OP de la référence (l'OP affichée soulignée), puis le total par disque ; si une OP n'est pas renseignée, « total non calculable » et l'OP nommée. Les autres OP comptent avec leur scénario de référence.
+- Affichage seul : aucun calcul de gain, aucune donnée modifiée. 952 tests | 0 échec (+1). Non déployé.
+
 ## [4.162.0] — 2026-11-12 · le temps machine et le rebut quittent la fiche du poste · Claude
 
 Décision Benjamin (12/11) : séparer le travail du quotidien (prix plaquette contre concurrent, charnière, essais) de la vue d'ensemble. La fiche redevient purement « plaquette » (outillage + pièces détachées) ; le temps machine et le coût du rebut dépendent de la ligne entière et seront chiffrés en un seul endroit, le moteur de la ligne (Outils › Économie de la ligne), au lot 2. Sans ça, l'outil aurait eu deux façons de chiffrer le rebut et le temps, dont une sur des bases fausses (32 €/h non qualifié, « coût disque » qui ne suit pas la gamme).

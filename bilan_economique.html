@@ -1450,6 +1450,8 @@ tr.row-bad td{background:var(--gray-50);}
 .panel h3{font-family:var(--font-disp); font-weight:800; font-size:21px; color:var(--ink); margin:0 0 4px; text-transform:none; letter-spacing:0;}
 .panel-hint{font-size:13px; color:var(--ink-faint); margin:0 0 18px;}
 .cycle-detail-ok{color:var(--green); margin:6px 2px 0;}
+.tc-op-cur{text-decoration:underline; text-underline-offset:3px;}
+.tc-op-tot{font-weight:700;}
 .cycle-detail-ko{color:var(--amber); margin:6px 2px 0;}
 .opt-row{display:grid; grid-template-columns:20px 1fr; gap:11px; align-items:start; padding:11px 0; border-top:1px solid var(--border); cursor:pointer;}
 .opt-row.simple{align-items:center;}
@@ -7177,8 +7179,35 @@ function cycleDetailStatusHTML(sc){
     ? st.nbGroupes + " groupe" + (st.nbGroupes>1?"s":"") + " d'outils simultanés — cycle = somme des groupes, chaque groupe valant son outil le plus long"
     : "outils en série — cycle = somme des temps";
   return st.complete
-    ? `<p class="panel-hint cycle-detail-ok">✓ ${st.filled}/${st.total} logements renseignés — temps de cycle calculé sur mesures machine (${fmt(st.secs,1)} s · ${mode}).</p>`
+    ? `<p class="panel-hint cycle-detail-ok">✓ ${st.filled}/${st.total} logements renseignés — temps de coupe pure de l'OP : ${fmt(st.secs,1)} s (${mode}). Ce temps tient lieu de cycle pour cet outil : il ne contient ni chargement, ni rapides, ni changement d'outil, donc il est plus court que le cycle relevé au pupitre.</p>${tempsCoupeParOpHTML(sc)}`
     : `<p class="panel-hint cycle-detail-ko">⚠ ${st.filled}/${st.total} logements renseignés (temps de coupe) — incomplet, ce scénario retombe sur l'indice base 100 tant que tous les logements ne sont pas renseignés.</p>`;
+}
+/* v4.162.1 — Benjamin, 24/11 : quand le « cycle » vient des temps de coupe saisis (programmes CN),
+   le dire, et montrer la coupe pure de chaque OP de la référence + le total. L'OP affichée compte
+   avec le scénario affiché ; les autres OP comptent avec leur scénario de référence. */
+function tempsCoupeParOp(sc){
+  const ref = getActiveReference(), opAct = getActiveOp();
+  if(!ref || !(ref.ops||[]).length) return null;
+  const lignes = ref.ops.map(op => {
+    const s = (op === opAct) ? sc : ((op.scenarios||[]).find(x => x.baseline) || (op.scenarios||[])[0]);
+    const st = s ? cycleDetailStatus(s, config) : null;
+    return { nom: op.nom || op.name || "OP", secs: (st && st.complete) ? st.secs : null, courante: op === opAct };
+  });
+  const manquantes = lignes.filter(l => l.secs === null).map(l => l.nom);
+  const total = manquantes.length ? null : lignes.reduce((a,l) => a + l.secs, 0);
+  return { lignes, manquantes, total };
+}
+function tempsCoupeParOpHTML(sc){
+  const t = tempsCoupeParOp(sc);
+  if(!t || t.lignes.every(l => l.secs === null)) return "";
+  const cells = t.lignes.map(l => {
+    const v = l.secs === null ? "—" : fmt(l.secs,1) + " s";
+    return `<span class="tc-op${l.courante ? " tc-op-cur" : ""}">${escapeAttr(l.nom)} <b>${v}</b></span>`;
+  }).join(" · ");
+  const fin = t.total !== null
+    ? ` · <span class="tc-op tc-op-tot">total <b>${fmt(t.total,1)} s</b> par disque</span>`
+    : ` · total non calculable (à renseigner : ${t.manquantes.map(escapeAttr).join(", ")})`;
+  return `<p class="panel-hint cycle-detail-ok">Coupe pure par OP — ${cells}${fin}</p>`;
 }
 function cycleSecondes(sc, cfg){
   cfg = cfg || config;
@@ -9134,7 +9163,7 @@ function scenarioBlockHTML(sc, interactive){
      simultané), et ce qu'il coûte en machine — AFFICHÉ dès que le taux horaire existe,
      la pondération dans le coût pièce restant de son côté décidée par l'option. */
   const stCycle = cycleDetailStatus(sc, config);
-  const cycleSecLine = `<div class="foot-sub">${secs === null ? "—" : fmt(secs,1)+" s"}${cadence ? " · " + fmt(cadence,0) + " p/h" : ""}${stCycle.complete ? ` · mesures machine (${stCycle.filled}/${stCycle.total} logements)` : ""}</div>`;
+  const cycleSecLine = `<div class="foot-sub">${secs === null ? "—" : fmt(secs,1)+" s"}${cadence ? " · " + fmt(cadence,0) + " p/h" : ""}${stCycle.complete ? ` · temps de coupe pure (${stCycle.filled}/${stCycle.total} logements)` : ""}</div>`;
   const cycleModeLine = stCycle.total > 1 && stCycle.nbOutils > 1
     ? `<div class="foot-sub">${stCycle.nbGroupes < stCycle.nbOutils
         ? stCycle.nbGroupes + " groupe" + (stCycle.nbGroupes>1?"s":"") + " d'outils simultanés — chaque groupe vaut son outil le plus long"
@@ -15215,6 +15244,10 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.162.1", date:"24/11/2026", points:[
+    "<b>Le temps de coupe pure est dit comme tel.</b> Quand les temps de coupe d'une OP sont saisis, la fiche annonce que ce temps tient lieu de cycle (sans chargement, rapides ni changement d'outil) et ne parle plus de « mesures machine ».",
+    "Une ligne « Coupe pure par OP » affiche le temps de chaque OP de la référence et le total par disque."
+  ]},
   { version:"4.162.0", date:"12/11/2026", points:[
     "<b>La fiche du poste redevient « plaquette ».</b> Elle compare l'outillage : prix, arêtes, charnière, pièces détachées. Le temps machine et le coût du rebut n'y sont plus chiffrés.",
     "Pourquoi : ces deux coûts dépendent de toute la ligne (coût horaire complet, goulot, stock entre les OP, valeur du disque à chaque OP). Ils seront chiffrés à un seul endroit, Outils › Économie de la ligne, pour qu'il n'y ait jamais deux chiffres différents pour la même chose.",
@@ -16166,7 +16199,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.162.0";
+const TOOL_VERSION = "4.162.1";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -26220,6 +26253,8 @@ function runTests(){
          mig.outils.map(o => !!o.simultaneAvecPrecedent), [false, true, true]);
       ok("cycleDetailStatusHTML : nomme le nombre de groupes d'outils simultanes",
          /1 groupe d.outils simultanés/.test(cycleDetailStatusHTML(mig)), true);
+      ok("4.162.1 : le statut dit « temps de coupe pure » et plus « mesures machine »",
+         /temps de coupe pure de l.OP : 10,0 s/.test(cycleDetailStatusHTML(mig)) && !/mesures machine/.test(cycleDetailStatusHTML(mig)), true);
     }
 
     /* ---- v4.49.1 : fusion insensible a l'ordre des clés ---- */

@@ -6,6 +6,10 @@
 
 ---
 
+✅ **Verrou pris puis libéré par Claude le 24/11/2026** (v4.162.1, branche `ux-rail`) — le statut du scénario dit « temps de coupe pure » et affiche la coupe de chaque OP + le total (demande de Benjamin). 952 tests | 0 échec. Non déployé, non commité. **Outil toujours gelé** hors cette demande.
+
+---
+
 ✅ **Verrou pris puis libéré par Claude le 12/11/2026** (Tour 137, branche `ux-rail`, v4.162.0 —
 les axes temps machine et rebut quittent la fiche du poste ; **gel de l'outil** décidé par Benjamin,
 voir Tour 137). 951 tests | 0 échec. **DEV + PROD publiées en 4.162.0 sur le feu vert de Benjamin et vérifiées curl** (voir Faits extérieurs). **Outil gelé** : correctifs bloquants seulement, chacun avec son verrou ; reprise = lot 2.
