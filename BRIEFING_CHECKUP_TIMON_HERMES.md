@@ -30,7 +30,7 @@ Le fichier de **journal est stocké dans une section dédiée de l'outil princip
 | **Adresse** | `https://suivi-optimisation-septfons.surge.sh/checkup.html` (même domaine que la PROD de l'outil principal). Installable en PWA. |
 | **Recommandations de Claude acceptées** | pas de bouton « tout valider » (un ✓ par rangée) ; référence **publiée explicitement** pour l'atelier (« Publier pour l'atelier »), pas lue en direct dans les scénarios ; ordre réglé en mode « Organiser » ; journal en **table à part**, append-only ; on journalise **aussi les ✓** (preuve que le contrôle a été fait) ; **équipe (Matin/Après-midi/Nuit), pas de nom de personne** (sensibilité CSE) ; écran atelier **sans identifiant** (lien/code), droits Supabase minimaux ; **hors ligne** (file d'attente) ; alerte immédiate à Matis = phase 2. |
 
-## 3. État au 24/11/2026 (mise à jour `BUILD 2026-11-24.2`, branche `ux-rail`, non déployé)
+## 3. État au 24/11/2026 (`BUILD 2026-11-24.2`, commit `361be2d`, branche `ux-rail`, **déployé sur `suivi-optimisation-septfons.surge.sh/checkup.html`**)
 
 **Front branché sur Supabase (10 lignes) et aligné sur le design system de `bilan_economique.html`.** Fichiers (tous à la racine, sauf icônes) :
 
