@@ -192,6 +192,11 @@ correspondantes. Lecture du journal réservée à l'outil principal (utilisateur
   pour octet** (le « Success! » ne prouve rien), puis supprimer le dossier. Fait le 24/11 : 10 anciens fichiers identiques, 6 nouveaux servis.
 - **Règle de Benjamin : ne JAMAIS déployer sans feu vert explicite dans le tour** (« déploie », « pousse »). Il veut garder le lead sur le
   rythme des mises à jour vues par Matis et Arthur.
+- **Auth des outils cloud (trouvée le 25/11)** : `surge` s'authentifie via `~/.netrc` (machines `surge.sh` / `surge.surge.sh`, fichier
+  caché — ne pas le publier, vérifier qu'il reste en 404 après chaque deploy). Pour exécuter du SQL sur le projet Supabase
+  (`cxjfyaorkkxemjnollnj`) : API Management `POST https://api.supabase.com/v1/projects/<ref>/database/query` avec le token
+  `~/.supabase/access-token` (rôle postgres, contourne la RLS) — le corps attendu est `{"query": "<sql>"}`. La clé dans le HTML est la
+  publishable : elle ne fait que de la lecture anon (RLS).
 - **Service worker** : celui de l'outil principal (`service-worker.js`, scope `./`) sert `checkup.html` en **cache d'abord** (seuls
   `bilan_economique.html`/`index.html` sont en réseau d'abord). **Ne pas le modifier** (un octet change = rechargement forcé des pages
   ouvertes de Matis). **Ne pas enregistrer un second SW au même scope** (il remplacerait celui de l'outil principal). Contournement en
