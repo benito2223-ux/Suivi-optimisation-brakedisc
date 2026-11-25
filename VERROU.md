@@ -10,7 +10,7 @@
 
 ---
 
-| **Verrou du checkup** | `checkup.html`, `checkup.webmanifest`, `checkup-version.json`, `icons/checkup-*` : **libre** — même règle, un seul auteur à la fois (front séparé de `bilan_economique.html`). **Reprise : lire `BRIEFING_CHECKUP_TIMON_HERMES.md`.** |
+| **Verrou du checkup** | **Pris par Claude le 25/11/2026** — `checkup.html`, `checkup-version.json` (build `2026-11-25.1`) : correctifs de robustesse (session propre, ✓ sur écart = remis conforme, rangées sans référence bloquées, ✓ / ≠ écartés, purge des ✓ anciens). `bilan_economique.html` non touché. |
 
 ---
 
