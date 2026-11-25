@@ -12,9 +12,9 @@ téléphones) : tout ce qui suit doit rester vrai le jour où l'app sort du tél
 **En ligne (PROD, `suivi-optimisation-septfons.surge.sh`)**
 - Outil principal **4.163.0** (DEV identique) : nouvelle entrée **Outils › Checkup** = lecture de `checkup_journal`, 3 cartes
   (écarts actifs, contrôles, récidives), filtres, vue classée / plate, **export .xlsx**. Outil principal **de nouveau gelé**.
-- `checkup.html` **build `2026-11-24.5`** (TIMON : motifs rapides en 1 tap + `?ligne=` pour QR codes ; planche
-  `checkup_qrcodes_lignes.html`).
-- **Build `2026-11-25.1` DÉPLOYÉ en PROD le 25/11** (remplace le `.5`) (correctifs de robustesse, voir ci-dessous). Déployer seulement sur
+- `checkup.html` **build `2026-11-25.3` DÉPLOYÉ en PROD le 25/11** (remplace `.2` → `.1` → `.5`) — safe-area iOS (`env(safe-area-inset-top)`
+  sur l'en-tête), flash visuel sur ✓/≠ (iOS ne vibre pas), et **amorçage `checkup_reference` exécuté** (118 réf., lecture anon vérifiée :
+  le checkup fonctionne sans compte membre). Déployer seulement sur
   feu vert explicite de Benjamin, avec la procédure du §6 (dossier de préparation = fichiers en ligne + fichiers du checkup ;
   pour l'outil principal, `dist/` **sans** son `.surgeignore` ni son `CNAME`).
 
@@ -37,7 +37,7 @@ téléphones) : tout ce qui suit doit rester vrai le jour où l'app sort du tél
    réduites — avant, le titre « Potentiomètre » passait sous le bouton ≠ sur un téléphone de 375 px.
 5. **Purge** des ✓ locaux de plus de 3 jours d'équipe.
 
-**Build 2026-11-25.2 (Nova / TIMON, 25/11) — lots 2 et 3, COMMITÉ, NON DÉPLOYÉ** (feu vert de Benjamin requis)
+**Build 2026-11-25.2 (Nova / TIMON, 25/11) — lots 2 et 3, DÉPLOYÉ en PROD le 25/11** (puis remplacé par le `.3` le jour même)
 Décision de Benjamin le 25/11 : **Matis est le seul utilisateur** → lots 2 (fiabiliser) et 3 (confort) seulement ; pas de
 « Publier pour l'atelier » ; horaires d'équipe **confirmés** (5 h / 13 h / 21 h). `bilan_economique.html` non touché.
 - **Envoi du journal** : un relevé refusé par le serveur (400) ne bloque plus les autres — le lot est coupé en deux jusqu'à
