@@ -14,7 +14,7 @@ téléphones) : tout ce qui suit doit rester vrai le jour où l'app sort du tél
   (écarts actifs, contrôles, récidives), filtres, vue classée / plate, **export .xlsx**. Outil principal **de nouveau gelé**.
 - `checkup.html` **build `2026-11-24.5`** (TIMON : motifs rapides en 1 tap + `?ligne=` pour QR codes ; planche
   `checkup_qrcodes_lignes.html`).
-- **Local, commité, NON déployé : build `2026-11-25.1`** (correctifs de robustesse, voir ci-dessous). Déployer seulement sur
+- **Build `2026-11-25.1` DÉPLOYÉ en PROD le 25/11** (remplace le `.5`) (correctifs de robustesse, voir ci-dessous). Déployer seulement sur
   feu vert explicite de Benjamin, avec la procédure du §6 (dossier de préparation = fichiers en ligne + fichiers du checkup ;
   pour l'outil principal, `dist/` **sans** son `.surgeignore` ni son `CNAME`).
 
@@ -38,7 +38,7 @@ téléphones) : tout ce qui suit doit rester vrai le jour où l'app sort du tél
 5. **Purge** des ✓ locaux de plus de 3 jours d'équipe.
 
 **Prochaines étapes (ordre recommandé par Claude, validé dans l'esprit par Benjamin)**
-1. **Déployer 2026-11-25.1** (feu vert Benjamin).
+1. ~~Déployer 2026-11-25.1~~ — fait le 25/11.
 2. **« Publier pour l'atelier »** dans l'outil principal (nécessite de lever le gel) : écrit `checkup_reference` (une ligne par
    ligne/référence/OP, version incrémentée, `publie_par`) ; le checkup la lit déjà en priorité. **Obligatoire avant tout
    utilisateur autre que Matis** : sinon un moniteur d'atelier doit être connecté avec un compte membre, qui peut lire ET
