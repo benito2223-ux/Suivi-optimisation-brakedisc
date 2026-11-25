@@ -7593,3 +7593,6 @@ Demande de Benjamin après revue d'audit : « lots 2 et 3 uniquement, Matis seul
 
 ### Faits extérieurs — 25/11/2026 (checkup 2026-11-25.2, publication PROD)
 **Publication de `checkup.html` `2026-11-25.2`** (commit `829416a`, phrase de Benjamin : « déploie en prod et commit et push ») sur `suivi-optimisation-septfons.surge.sh`. Dossier de préparation = les 10 fichiers de l'outil principal **tels qu'en ligne** (4.163.0, curl) + les 6 fichiers du checkup ; `.surgeignore` non copié ; dossier supprimé après. curl après coup : **les 16 fichiers identiques octet pour octet** ; `checkup-version.json` = 2026-11-25.2 ; outil principal toujours 4.163.0 ; VERROU / ECHANGES / BRIEFING / planche QR en 404. Les téléphones passent en `.2` à leur prochaine ouverture en ligne. Non vérifié sur le téléphone de Matis (glisser, vibration, bouton retour Android).
+
+### 25/11/2026 — SeptFons-Dev (TIMON) — checkup `2026-11-25.3` (commité, NON déployé)
+Demande Gemini/Benjamin : (1) en-tête iOS `env(safe-area-inset-top)` ; (3) flash visuel sur ✓ (iOS ne vibre pas) ; (2) `checkup_reference` toujours VIDE (vérifié en lecture anon : `[]`) — pas d'accès Supabase écriture depuis ce backend : script prêt `supabase_migrations/2026-11-25_checkup_reference_amorcage.sql` (à coller dans le SQL Editor, non testé). `bilan_economique.html` non touché. PROD = 2026-11-25.2.

@@ -135,7 +135,7 @@ button.danger:hover{background:var(--red-bg)}
 header{
   position:sticky;top:0;z-index:10;
   background:var(--head);color:var(--head-ink);
-  padding:0 10px;
+  padding:env(safe-area-inset-top) calc(10px + env(safe-area-inset-right)) 0 calc(10px + env(safe-area-inset-left));  /* 2026-11-25.3 iPhone : sous la Dynamic Island */
   border-bottom:1px solid var(--head-line);
   display:flex;gap:6px;align-items:center;
   box-shadow:var(--shadow-card);
@@ -261,6 +261,13 @@ main{padding:14px}
 /* 2026-11-25.2 — le glyphe prend la couleur d'encre des surfaces colorées du design system
    (--on-accent). En mode nuit, ✓ et ≠ étaient blancs sur vert et orange clairs : 2,1:1,
    illisibles ; ils passent à 9:1. Le thème clair ne change pas (encre blanche). */
+/* 2026-11-25.3 — iOS ne vibre pas : retour visuel immédiat et net sur ✓ / ≠ (flash plein + rebond) */
+@keyframes flashok{0%{box-shadow:0 0 0 0 rgba(46,160,67,.9);transform:scale(.88)}40%{box-shadow:0 0 0 18px rgba(46,160,67,0);transform:scale(1.08)}100%{box-shadow:0 0 0 0 rgba(46,160,67,0);transform:scale(1)}}
+@keyframes flashrow{0%{background:var(--green);}100%{}}
+.row.flash,.pot.flash{animation:flashrow .55s ease-out}
+.row.flash .bok,.pot.flash .bok{animation:flashok .45s ease-out}
+.bok:active,.bec:active{transform:scale(.92);filter:brightness(1.15)}
+@media (prefers-reduced-motion:reduce){.row.flash,.pot.flash,.row.flash .bok,.pot.flash .bok{animation:none}}
 .bok{background:var(--green);border-color:var(--green);color:var(--on-accent)}
 .bec{background:var(--amber);border-color:var(--amber);color:var(--on-accent)}
 .row.s-ok .bok,.pot.s-ok .bok{background:var(--surface);color:var(--green);border:3px solid var(--green)}
@@ -1208,6 +1215,7 @@ function vibrer(motif){ try{ if(navigator.vibrate) navigator.vibrate(motif); }ca
 document.addEventListener("click", async e => {
   const b = e.target.closest("[data-act]"); if(!b) return;
   const a = b.getAttribute("data-act"), id = b.getAttribute("data-id");
+  let flashId = null;
 
   if(a === "theme"){ toggleTheme(); return; }
   if(a === "sync"){ synchroniser(false); return; }
@@ -1273,7 +1281,7 @@ document.addEventListener("click", async e => {
       checks[k] = { statut: "ok", corrige: true }; trace(typ, id, att, att, "ok", "Remis conforme (écart corrigé)");
     }
     else { checks[k] = { statut: "ok" }; trace(typ, id, att, att, "ok"); }
-    if(checks[k]) vibrer(30);                         /* validation : le téléphone confirme (Android) */
+    if(checks[k]){ vibrer(30); flashId = id; }                         /* validation : le téléphone confirme (Android) */
     save("cu_checks", checks);
     const apres = avancementOp(curLigne(), curRef(), curOp());
     V.finOp = apres.total > 0 && apres.fait === apres.total && avant < apres.total;   /* la dernière rangée vient d'être validée */
@@ -1311,6 +1319,10 @@ document.addEventListener("click", async e => {
     fermerFeuille();                                 /* l'écran se redessine au retour du navigateur */
   }
   rendre();
+  if(flashId){   /* 2026-11-25.3 retour visuel (iOS ne vibre pas) */
+    const el = flashId === "pot" ? document.querySelector(".pot") : [...document.querySelectorAll(".row")].find(x => x.getAttribute("data-id") === flashId);
+    if(el) el.classList.add("flash");
+  }
 });
 
 /* ====== Glisser-déposer (mode Organiser) ====== */
@@ -1366,7 +1378,7 @@ armerInactivite();
 synchroniser(Boolean(snapshot)).then(() => { appliquerUrlLigne(); rendre(); });
 
 /* ====== PWA : installation, hors ligne, mise à jour ====== */
-const BUILD = "2026-11-25.2";
+const BUILD = "2026-11-25.3";
 if("serviceWorker" in navigator){ navigator.serviceWorker.register("./service-worker.js", { updateViaCache: "none" }).catch(() => {}); }
 fetch("checkup-version.json", { cache: "no-store" }).then(r => r.ok ? r.json() : null).then(j => {
   if(j && j.build && j.build !== BUILD && location.search.indexOf("b=" + j.build) === -1){
