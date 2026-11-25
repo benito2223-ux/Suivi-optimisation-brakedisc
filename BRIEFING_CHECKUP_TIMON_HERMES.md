@@ -1,8 +1,62 @@
 # BRIEFING — « Contrôle de prise de poste » (checkup) — passation à TIMON AI / Hermes
 
-> Auto-contenu : ce fichier suffit pour reprendre le travail. Écrit le 24/11/2026 par Claude, sur demande de Benjamin
+> Auto-contenu : ce fichier suffit pour reprendre le travail. Écrit le 24/11/2026 par Claude, **mis à jour le 25/11/2026 (§0)**, sur demande de Benjamin
 > (« confier la suite à TIMON AI et à Hermes »). Ordre de lecture : `VERROU.md` → ce briefing → dernier tour de `ECHANGES.md`.
 > Langue de travail avec Benjamin : français. Il écrit en dictée vocale. Il attend une direction assumée, pas un catalogue d'options.
+
+## 0. OÙ ON EN EST — 25/11/2026 (à lire d'abord : prime sur les §3 à §5, écrits avant)
+
+**Utilisateurs.** Aujourd'hui **Matis seul** (son téléphone). **Demain peut-être d'autres** (moniteurs d'atelier, autres
+téléphones) : tout ce qui suit doit rester vrai le jour où l'app sort du téléphone de Matis.
+
+**En ligne (PROD, `suivi-optimisation-septfons.surge.sh`)**
+- Outil principal **4.163.0** (DEV identique) : nouvelle entrée **Outils › Checkup** = lecture de `checkup_journal`, 3 cartes
+  (écarts actifs, contrôles, récidives), filtres, vue classée / plate, **export .xlsx**. Outil principal **de nouveau gelé**.
+- `checkup.html` **build `2026-11-24.5`** (TIMON : motifs rapides en 1 tap + `?ligne=` pour QR codes ; planche
+  `checkup_qrcodes_lignes.html`).
+- **Local, commité, NON déployé : build `2026-11-25.1`** (correctifs de robustesse, voir ci-dessous). Déployer seulement sur
+  feu vert explicite de Benjamin, avec la procédure du §6 (dossier de préparation = fichiers en ligne + fichiers du checkup ;
+  pour l'outil principal, `dist/` **sans** son `.surgeignore` ni son `CNAME`).
+
+**Supabase (`cxjfyaorkkxemjnollnj`) — FAIT le 24/11** (le §5 décrit le schéma, il est appliqué)
+- `checkup_journal` : append-only ; anon/authenticated = INSERT seulement ; lecture = membres (`suivi_est_membre()`) ;
+  trigger `checkup_journal_doublon` (un `id_local` déjà reçu est ignoré). Migrations : `supabase_migrations/`.
+- `checkup_reference` : créée, lisible par anon, **VIDE** (aucune publication encore) → le checkup lit donc l'outil principal
+  via `sync_pull`, **ce qui exige une connexion avec un compte membre**.
+- Le journal contient de vrais relevés (premiers tests de Matis, 24/11).
+
+**Build 2026-11-25.1 (Claude) — ce qui a changé**
+1. **Session** : le checkup ne renouvelle **plus jamais** la session de l'outil principal (même téléphone, clé partagée) —
+   Supabase change le jeton de renouvellement à chaque usage et l'outil principal aurait été déconnecté. Session partagée
+   expirée → demande d'une connexion propre au checkup (`cu_cloud_session`).
+2. **✓ sur une rangée en écart = « remis conforme »** (statut `ok`, commentaire « Remis conforme (écart corrigé) ») ; avant,
+   c'était une annulation et la section Checkup gardait l'écart actif. ✓ sur un ✓ = annulation (inchangé).
+3. **Rangée sans charnière de référence** (HESSAPP ×40, EMAG 2 DP 290 ×15…) : plus de ✓ / ≠, cadre « Référence à
+   renseigner », et elle ne compte plus dans l'avancement de l'OP.
+4. **✓ et ≠ écartés** (gants) : ≠ plus étroit à gauche, 28 px d'écart, ✓ large à droite ; sur écran ≤ 420 px, tailles
+   réduites — avant, le titre « Potentiomètre » passait sous le bouton ≠ sur un téléphone de 375 px.
+5. **Purge** des ✓ locaux de plus de 3 jours d'équipe.
+
+**Prochaines étapes (ordre recommandé par Claude, validé dans l'esprit par Benjamin)**
+1. **Déployer 2026-11-25.1** (feu vert Benjamin).
+2. **« Publier pour l'atelier »** dans l'outil principal (nécessite de lever le gel) : écrit `checkup_reference` (une ligne par
+   ligne/référence/OP, version incrémentée, `publie_par`) ; le checkup la lit déjà en priorité. **Obligatoire avant tout
+   utilisateur autre que Matis** : sinon un moniteur d'atelier doit être connecté avec un compte membre, qui peut lire ET
+   modifier tout le suivi (essais, coûts…). Une fois publié : l'atelier n'a plus besoin de compte.
+3. **Mode kiosque** (retour à l'écran de la ligne après inactivité, ligne figée par le QR code) + **écran de fin d'OP**
+   (« OP10 contrôlée à 06:12, équipe Matin, 0 écart ») + thème nuit par défaut la nuit.
+4. **État partagé entre appareils** pour l'équipe en cours (aujourd'hui les ✓ vivent dans chaque appareil ; le journal
+   serveur est complet) : fonction serveur qui renvoie les statuts du jour, sans les commentaires.
+5. **Alerte immédiate à Matis** sur un écart (phase 2 ; canal à choisir par Benjamin).
+6. **Données** : renseigner les charnières manquantes dans l'outil principal (HESSAPP 266x13 / 266x22 / 283x26,
+   EMAG 2 DP 290x12) ; faire confirmer **T521 D1 = 2400** (EMAG 1 356 OP20).
+
+**Points de vigilance connus (non corrigés)** : un compte connecté non membre voit « Aucun relevé » dans Outils › Checkup
+(la règle de lecture renvoie 0 ligne, pas une erreur) ; n'importe qui ayant l'adresse peut AJOUTER des lignes au journal
+(pas les lire) ; l'équipe dépend de l'horloge du téléphone (`recu_le` serveur permet le contrôle) ; le service worker de
+l'outil principal sert `checkup.html` en cache d'abord — la mise à jour passe par `checkup-version.json` (changer `BUILD`
+dans `checkup.html` ET `checkup-version.json`), et **pour tester en local, désenregistrer le service worker** (sinon on
+regarde l'ancienne version).
 
 ## 1. Le but (mots de Benjamin)
 
@@ -70,7 +124,7 @@ Ce que fait `checkup.html` (`2026-11-24.2`) :
 5. **Ordre pupitre partagé** : enregistrer l'ordre (poignée ≡) **par ligne+OP côté serveur**, pas par téléphone (aujourd'hui `localStorage`).
 6. Phase 2 : alerte à Matis (mail/notification) sur un écart ; export du journal.
 
-## 5. Schéma Supabase proposé (NON appliqué — à valider)
+## 5. Schéma Supabase (APPLIQUÉ le 24/11/2026 — voir §0 et `supabase_migrations/`)
 
 Projet **`cxjfyaorkkxemjnollnj`**. L'outil principal stocke ses données dans `public.sync_shards(espace, id, kind, body jsonb, rev, seq,
 supprime, modifie_par, modifie_le)`. **Ne pas y mettre le journal** : table dédiée.

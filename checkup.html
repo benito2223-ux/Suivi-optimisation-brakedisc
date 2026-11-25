@@ -217,8 +217,13 @@ main{padding:14px}
 .rv{font-size:18px;color:var(--ink-soft);margin-top:2px}
 .rv b{font-size:38px;color:var(--ink);margin-right:6px;line-height:1}
 .rv .old{text-decoration:line-through;font-size:20px;margin-left:8px;color:var(--ink-faint)}
-.rbtn{display:flex;gap:10px;flex-shrink:0}
+.rbtn{display:flex;gap:28px;flex-shrink:0;align-items:center}
 .rbtn button{min-width:82px;min-height:72px;font-size:34px;font-weight:800;padding:0;border-width:2px}
+.rbtn .bec{min-width:68px;font-size:30px}
+.rbtn .bok{min-width:104px}
+.rinfo{min-width:0}.rn{overflow-wrap:break-word}
+@media (max-width:420px){.rn{font-size:22px}.rbtn{gap:16px}.rbtn .bec{min-width:56px}.rbtn .bok{min-width:84px}}
+.sansref{flex-shrink:0;font-size:14px;font-weight:700;line-height:1.25;text-align:center;color:var(--ink-faint, #888);border:2px dashed var(--border, #ccc);border-radius:var(--radius, 3px);padding:10px 12px}
 .bok{background:var(--green);border-color:var(--green);color:#ffffff}
 .bec{background:var(--amber);border-color:var(--amber);color:#ffffff}
 .row.s-ok .bok,.pot.s-ok .bok{background:var(--surface);color:var(--green);border:3px solid var(--green)}
@@ -380,6 +385,12 @@ function fmtDate(iso){
 /* ====== État ====== */
 let snapshot = load("cu_snapshot_v1", null); /* { source, syncedAt, lignes:[{nom, refs:[{nom, ops:[{nom, version, pot, ordre, rows}]}]}] } */
 let checks   = load("cu_checks", {});         /* { cleEquipe|opId|id : {statut, releve, comm} } */
+(function purgerChecks(){                     /* 2026-11-25.1 : seuls les 3 derniers jours d'équipe restent sur l'appareil */
+  const limite = new Date(Date.now() - 3 * 86400000), lim = limite.getFullYear() + "-" + String(limite.getMonth() + 1).padStart(2, "0") + "-" + String(limite.getDate()).padStart(2, "0");
+  let n = 0;
+  Object.keys(checks).forEach(k => { const j = k.slice(0, 10); if(/^\d{4}-\d{2}-\d{2}$/.test(j) && j < lim){ delete checks[k]; n++; } });
+  if(n){ try{ localStorage.setItem("cu_checks", JSON.stringify(checks)); }catch(e){} }
+})();
 let ordre    = load("cu_order", {});          /* { opId : [ids] } */
 let journal  = load("cu_log", []);            /* historique local d'aperçu */
 let queue    = load("cu_queue", []);          /* file d'attente d'envoi vers Supabase checkup_journal */
@@ -415,6 +426,11 @@ async function ensureValidToken(){
   if(!s) return null;
   const d = s.data;
   if(!d.expires_at || Date.now() < d.expires_at - 60000) return d.access_token;
+  /* 2026-11-25.1 — la session de l'outil principal (même téléphone) n'est JAMAIS renouvelée ici :
+     Supabase change le jeton de renouvellement à chaque usage ; si le checkup le consommait, l'outil
+     principal se retrouverait avec un jeton révoqué et déconnecté. Expirée → on demande une connexion
+     propre au checkup (clé cu_cloud_session), indépendante. */
+  if(s.key === SHARED_SESSION_KEY) return null;
   if(!d.refresh_token) return d.access_token;
   try{
     const r = await fetch(CLOUD_URL + "/auth/v1/token?grant_type=refresh_token", {
@@ -712,8 +728,9 @@ function lignesOp(){
   base.forEach(r => { if(!saved.includes(rowId(r))) out.push(r); });
   return out;
 }
+const sansRef = r => r[4] === "" || r[4] === null || r[4] === undefined;
 function avancementOp(ligne, ref, op){
-  const ids = op.rows.map(rowId).concat(["pot"]);
+  const ids = op.rows.filter(r => !sansRef(r)).map(rowId).concat(["pot"]);
   let ok = 0, ec = 0;
   ids.forEach(i => { const c = checks[kkOp(ligne, ref, op, i)]; if(c){ if(c.statut === "ok") ok++; else ec++; } });
   return { fait: ok + ec, total: ids.length, ec };
@@ -828,10 +845,11 @@ function ligneHTML(r){
            (r[6] !== "" ? (' · f <b>' + esc(String(r[6]).replace(".", ",")) + '</b> mm/tr') : "") + '</div>';
   }
   const refCh = r[4] !== "" ? r[4] : "—";
-  let val = '<b>' + esc(refCh) + '</b> pièces / arête';
+  let val = sansRef(r) ? '<b>—</b> charnière absente de l\'outil principal' : '<b>' + esc(refCh) + '</b> pièces / arête';
   if(c && c.statut === "ecart") val = '<b style="color:var(--amber)">' + esc(c.releve) + '</b> relevé<span class="old">' + esc(refCh) + '</span>';
   const note = (c && c.statut === "ecart" && c.comm) ? '<div class="note">« ' + esc(c.comm) + ' »</div>' : "";
   const btns = V.organiser ? '<div class="handle" data-handle="1" aria-label="Déplacer">≡</div>' :
+    sansRef(r) ? '<div class="sansref">Référence<br>à renseigner</div>' :
     '<div class="rbtn"><button class="bec" data-act="ecart" data-id="' + esc(id) + '" aria-label="Charnière modifiée">≠</button><button class="bok" data-act="ok" data-id="' + esc(id) + '" aria-label="Conforme">✓</button></div>';
   return '<div class="row ' + s + '" data-id="' + esc(id) + '"><div class="rtop"><div class="rinfo" data-act="detail" data-id="' + esc(id) + '"><div class="rn">' + esc(r[0]) + ' · ' + esc(r[1]) + '</div><div class="rv">' + val + '</div></div>' + btns + '</div>' + note + cond + '</div>';
 }
@@ -951,9 +969,16 @@ document.addEventListener("click", async e => {
   else if(a === "organiser"){ V.organiser = !V.organiser; }
   else if(a === "ok"){
     const k = kk(id), pot = id === "pot", r = pot ? null : curOp().rows.find(x => rowId(x) === id);
+    if(!pot && (!r || sansRef(r))) return;                       /* rien à contrôler sans référence */
     const att = pot ? (potRef() + " %") : String(r[4]);
-    if(checks[k]){ delete checks[k]; trace(pot ? "potentiometre" : "charniere", id, att, "", "annule"); }
-    else { checks[k] = { statut: "ok" }; trace(pot ? "potentiometre" : "charniere", id, att, att, "ok"); }
+    const typ = pot ? "potentiometre" : "charniere";
+    if(checks[k] && checks[k].statut === "ok"){ delete checks[k]; trace(typ, id, att, "", "annule"); }
+    else if(checks[k] && checks[k].statut === "ecart"){
+      /* 2026-11-25.1 — ✓ sur un écart = la valeur est revenue à la référence : c'est un relevé conforme,
+         plus une annulation (avant, la section Checkup gardait l'écart « actif ») */
+      checks[k] = { statut: "ok", corrige: true }; trace(typ, id, att, att, "ok", "Remis conforme (écart corrigé)");
+    }
+    else { checks[k] = { statut: "ok" }; trace(typ, id, att, att, "ok"); }
     save("cu_checks", checks);
   }
   else if(a === "ecart"){ feuilleEcart(id); return; }
@@ -1025,7 +1050,7 @@ rendre();
 synchroniser(Boolean(snapshot)).then(() => { appliquerUrlLigne(); rendre(); });
 
 /* ====== PWA : installation, hors ligne, mise à jour ====== */
-const BUILD = "2026-11-24.5";
+const BUILD = "2026-11-25.1";
 if("serviceWorker" in navigator){ navigator.serviceWorker.register("./service-worker.js", { updateViaCache: "none" }).catch(() => {}); }
 fetch("checkup-version.json", { cache: "no-store" }).then(r => r.ok ? r.json() : null).then(j => {
   if(j && j.build && j.build !== BUILD && location.search.indexOf("b=" + j.build) === -1){
