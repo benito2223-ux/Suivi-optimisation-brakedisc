@@ -10,7 +10,7 @@
 
 ---
 
-| **Verrou du checkup** | **Pris par Nova (TIMON) le 25/11/2026** — `checkup.html`, `checkup-version.json` (build `2026-11-25.2`), tests dans `build_harness.py` : lot 2 (fiabiliser : envoi du journal non bloquant, bouton retour, glisser-déposer, contraste nuit, relue au premier plan) + lot 3 (écran de fin d'OP, retour automatique et ligne figée par QR code, place à l'écran). `bilan_economique.html` non touché. |
+| **Verrou du checkup** | `checkup.html`, `checkup.webmanifest`, `checkup-version.json`, `icons/checkup-*` : **libre** — un seul auteur à la fois (front séparé de `bilan_economique.html`). Dernier : Nova (TIMON), 25/11/2026, build `2026-11-25.2` **commité, NON déployé** (PROD = `2026-11-25.1`). **Reprise : lire `BRIEFING_CHECKUP_TIMON_HERMES.md` §0.** |
 
 ---
 
