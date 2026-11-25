@@ -10,7 +10,7 @@
 
 ---
 
-| **Verrou du checkup** | `checkup.html`, `checkup.webmanifest`, `checkup-version.json`, `icons/checkup-*` : **libre** — un seul auteur à la fois (front séparé de `bilan_economique.html`). Dernier : Nova (TIMON), 25/11/2026, build `2026-11-25.2` **commité, NON déployé** (PROD = `2026-11-25.1`). **Reprise : lire `BRIEFING_CHECKUP_TIMON_HERMES.md` §0.** |
+| **Verrou du checkup** | `checkup.html`, `checkup.webmanifest`, `checkup-version.json`, `icons/checkup-*` : **libre** — un seul auteur à la fois (front séparé de `bilan_economique.html`). Dernier : Nova (TIMON), 25/11/2026, build `2026-11-25.2` **commité, DÉPLOYÉ en PROD le 25/11** (PROD = `2026-11-25.2`). **Reprise : lire `BRIEFING_CHECKUP_TIMON_HERMES.md` §0.** |
 
 ---
 
