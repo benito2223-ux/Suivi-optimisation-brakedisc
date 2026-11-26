@@ -400,6 +400,38 @@ tr.pc-grp .pc-grp-tot{ float:right; font-family:var(--font-mono); font-weight:60
 .pc-auteurs li{ display:flex; gap:7px; align-items:baseline; font-size:12.5px; }
 .pc-auteurs li span{ color:var(--ink-faint); font-size:11.5px; }
 .pc-chrono{ min-width:0; }
+/* v4.164 — Conditions de coupe : simulateur local (champs >= 16 px, 4 couleurs de zone + neutre) */
+.cc-wrap{ max-width:920px; margin:0 auto; }
+.cc-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; flex-wrap:wrap; }
+.cc-head h3{ margin:0; font-size:20px; }
+.cc-card{ background:var(--surface,#fff); border:1px solid var(--border); border-radius:var(--radius,8px); padding:14px 16px; margin-bottom:14px; }
+.cc-card-t{ font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--label,var(--ink-soft)); margin:0 0 10px; }
+.cc-grid-sel{ display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px; }
+.cc-grid-in{ display:grid; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); gap:10px; }
+.cc-field{ display:flex; flex-direction:column; gap:4px; }
+.cc-field label{ font-size:12.5px; font-weight:600; color:var(--ink-soft); }
+.cc-field input,.cc-field select{ font-size:16px; padding:9px 10px; border:1px solid var(--border); border-radius:6px; background:var(--surface,#fff); color:var(--ink); min-height:42px; box-sizing:border-box; width:100%; }
+.cc-seg{ display:inline-flex; gap:6px; margin-bottom:12px; }
+.cc-seg button{ font-size:15px; font-weight:600; padding:8px 16px; border-radius:6px; border:1px solid var(--border); background:var(--surface-alt,#f4f5f7); color:var(--ink-soft); cursor:pointer; }
+.cc-seg button.actif{ background:var(--accent,#1B5EA6); color:#fff; border-color:var(--accent,#1B5EA6); }
+.cc-presets{ display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; align-items:center; }
+.cc-presets-lab{ font-size:12px; color:var(--ink-faint); margin-right:4px; }
+.cc-chip{ font-size:13px; padding:5px 10px; border-radius:999px; border:1px solid var(--border); background:var(--surface-alt,#f4f5f7); color:var(--ink); cursor:pointer; }
+.cc-chip:hover{ border-color:var(--accent,#1B5EA6); }
+.cc-meta{ font-size:12.5px; color:var(--ink-faint); margin-top:8px; }
+.cc-res{ border-radius:10px; padding:18px 20px; border:2px solid var(--border); transition:background .15s,border-color .15s; }
+.cc-res.z-vert{ background:#ecfdf3; border-color:#15803d; color:#14532d; }
+.cc-res.z-bleu{ background:#eff6ff; border-color:#1d4ed8; color:#1e3a8a; }
+.cc-res.z-rose{ background:#fdf2f8; border-color:#db2777; color:#831843; }
+.cc-res.z-rouge{ background:#fef2f2; border-color:#dc2626; color:#7f1d1d; }
+.cc-res.z-neutre{ background:var(--surface-alt,#f4f5f7); border-color:var(--border); color:var(--ink); }
+.cc-res-top{ display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:10px; }
+.cc-badge{ display:inline-flex; align-items:center; gap:8px; font-size:16px; font-weight:800; letter-spacing:.01em; }
+.cc-dot{ width:14px; height:14px; border-radius:50%; display:inline-block; background:currentColor; }
+.cc-hm{ font-size:14px; font-weight:700; padding:6px 12px; border-radius:6px; background:rgba(255,255,255,.72); border:1px solid rgba(0,0,0,.1); color:#111827; }
+.cc-fleche{ font-size:18px; font-weight:700; margin:4px 0 6px; }
+.cc-phrase{ font-size:15px; margin:0; line-height:1.4; }
+.cc-closing{ margin-top:14px; padding-top:10px; border-top:1px solid rgba(0,0,0,.1); font-size:13px; font-weight:600; opacity:.9; }
 @media print{
   .pc-bandeau{ grid-template-columns:repeat(2,1fr); }
   .pc-graphs{ grid-template-columns:1fr; }
@@ -2593,6 +2625,7 @@ input[type="number"]{ -moz-appearance:textfield; appearance:textfield; }
   <div class="panel panel-large" id="economiePanel" hidden></div>
   <div class="panel panel-large" id="volumesPanel" hidden></div>
   <div class="panel panel-large" id="checkupPanel" hidden></div>
+  <div class="panel panel-large" id="conditionsCoupePanel" hidden></div>
   <div class="panel panel-large" id="planPanel" hidden></div>
   <div class="panel panel-large" id="visitePanel" hidden></div>
   <div class="panel panel-large" id="memoirePanel" hidden></div>
@@ -6261,11 +6294,11 @@ function kvfDe(logement){
    Au-dela de cette transition, l'arete droite domine et l'angle reste kappa_r nominal. */
 function kappaEffectif(logement){
   const kr = parseFloat(logement.kappaR);
-  if(isNaN(kr)) return null;
+  if(isNaN(kr) || kr <= 0) return null;
   const re = parseFloat(logement.rayonBec), ap = parseFloat(logement.apPiste);
   if(isNaN(re) || re <= 0 || isNaN(ap) || ap < 0) return kr; // pas assez de donnees pour affiner
-  const krRad = kr * Math.PI / 180;
-  const apTransition = re * (1 - Math.cos(krRad));
+  const krArcRad = Math.min(kr, 90) * Math.PI / 180;
+  const apTransition = re * (1 - Math.cos(krArcRad));
   if(ap >= apTransition) return kr; // coupe au-dela du bec, l'arete droite domine
   const ratio = Math.max(0, Math.min(1, ap / re));
   return Math.acos(1 - ratio) * 180 / Math.PI; // coupe uniquement sur le bec arrondi
@@ -11564,7 +11597,7 @@ function logementBlocHTML(sc, o, l, showFrFa, showCycleDetail){
   const coupe = [
     champLog("vitesse", () => num(vitCh, vitLab, "10")),
     champLog("f", () => num("f", "f <span>mm/tr</span>", "0.01")),
-    champLog("kappaR", () => num("kappaR", "κr <span>°</span>", "1", 'min="0" max="90"', "Angle de direction d'arête : alimente le rapport Fr/Fa et le suivi thermique.")),
+    champLog("kappaR", () => num("kappaR", "κr <span>°</span>", "1", 'min="0" max="100"', "Angle de direction d'arête : alimente le rapport Fr/Fa et le suivi thermique.")),
     showFrFa ? champLog("rayonBec", () => num("rayonBec", "rε <span>mm</span>", "0.1", 'min="0"', "Rayon de bec — affine le κr effectif quand la coupe se fait sur le bec.")) : "",
     showFrFa ? champLog("apPiste", () => num("apPiste", "ap <span>mm</span>", "0.1", 'min="0"', "Profondeur de passe — affine le κr effectif.")) : "",
     num("tempsCoupe", "Temps de coupe <span>s</span>", "0.1", 'min="0"')
@@ -15374,6 +15407,10 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.164.0", date:"26/11/2026", points:[
+    "<b>Nouveau : Outils › Conditions de coupe.</b> Un simulateur local pour vérifier en direct un réglage (ébauche ou finition : Vc, avance, profondeur de passe, rayon de bec, angle κr) : épaisseur de copeau réelle, couleur de zone (bleu trop froid, vert conseillé, rose vibrations, rouge trop chaud) et direction d'ajustement.",
+    "<b>Sélecteur atelier intégré.</b> Choisis une ligne, un disque, une OP et un logement pour pré-remplir automatiquement les conditions et les angles issus des plans d'outillage, puis ajuste librement à la main pour tester un réglage."
+  ]},
   { version:"4.163.0", date:"24/11/2026", points:[
     "<b>Nouveau : Outils › Checkup.</b> Les relevés faits à l'atelier au début de chaque équipe (la charnière de chaque logement, le potentiomètre) se lisent maintenant ici, en direct depuis le cloud : trois cartes (écarts actifs, contrôles réalisés par équipe et par ligne, récidives), des filtres (ligne, référence, OP, équipe, statut, période) et deux vues — classée par ligne, référence et OP, ou tableau plat.",
     "<b>Export Excel.</b> Le bouton « Exporter Excel » télécharge les relevés filtrés dans un vrai fichier .xlsx : date, heure, équipe, ligne, référence, OP, type, élément, attendu, relevé, écart, statut, commentaire, version de référence. Lecture seule : le journal ne se modifie pas ici."
@@ -16347,7 +16384,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.163.0";
+const TOOL_VERSION = "4.164.0";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -20784,6 +20821,488 @@ function ouvrirVolumes(){
   ouvrirPanneau("volumesPanel");
   renderVolumes();
 }
+
+/* v4.164 — MOTEUR CONDITIONS DE COUPE — constantes pilotées par Benjamin/Hermes/Claude.
+   Calcul local purement consultatif, zéro écriture cloud, zéro fuite de formule/seuil/indice interne. */
+const MoteurConditionsCoupe = (function(){
+  "use strict";
+
+  const CONFIG_ZONES = {
+    ebauche: {
+      kMin: 150,
+      kMax: 450,
+      vcMin: 315,
+      froidSi: (k, vc) => (k < 150 || vc < 315),
+      chaudSi: (k) => (k > 450)
+    },
+    finition: {
+      kMin: 110,
+      kMaxVib: 185,
+      kMaxChaud: 220,
+      froidSi: (k) => (k < 110),
+      vibrationsSi: (k) => (k > 185 && k <= 220),
+      chaudSi: (k) => (k > 220)
+    },
+    chanfreinKrMax: 50,
+    // Point d'extension v2 (hors v1) : la maturité du brut ne déplace jamais les zones,
+    // futur bandeau texte consultatif uniquement.
+    maturiteBrut: null
+  };
+
+  const CLOSING = "Pour la préconisation chiffrée, contacter Benjamin Rouquette.";
+
+  function parseNumFR(v){
+    if(v === null || v === undefined) return NaN;
+    const s = String(v).trim().replace(/\s+/g, "").replace(",", ".");
+    if(!s) return NaN;
+    return parseFloat(s);
+  }
+
+  /* Angle effectif unifié (45°–95° + plaquettes rondes via κr=90° et rε=D/2) :
+     l'arc de bec raccorde l'arête droite à ap_transition = rε × (1 - cos(min(κr, 90°))). */
+  function kappaEffDeg(ap, rEps, kappaNominalDeg){
+    const kr = isNaN(kappaNominalDeg) || kappaNominalDeg <= 0 ? 90 : kappaNominalDeg;
+    if(!isNaN(rEps) && rEps > 0 && !isNaN(ap) && ap >= 0){
+      const krArcRad = Math.min(kr, 90) * Math.PI / 180;
+      const apTrans = rEps * (1 - Math.cos(krArcRad));
+      if(ap < apTrans){
+        const ratio = Math.max(0, Math.min(1, ap / rEps));
+        return Math.acos(1 - ratio) * 180 / Math.PI;
+      }
+    }
+    return kr;
+  }
+
+  function epaisseurCopeau(f, ap, rEps, kappaNominalDeg){
+    const krEff = kappaEffDeg(ap, rEps, kappaNominalDeg);
+    return f * Math.sin(krEff * Math.PI / 180);
+  }
+
+  /* Déduit (mode, kr, re, ap, source, horsTournage) d'après le plan d'outillage
+     lorsqu'un logement n'a pas encore ses champs remplis. */
+  function infererDepuisLogement(ligneNom, refNom, opNom, outilNum, log){
+    const L = String(ligneNom || "").toUpperCase();
+    const R = String(refNom || "").toUpperCase();
+    const O = String(opNom || "").toUpperCase();
+    const T = String(outilNum || "").toUpperCase().replace(/\s+/g, "");
+    const N = String((log && log.nom) || "").toUpperCase();
+    const P = String((log && log.ref) || "").toUpperCase();
+
+    const estWeisser = L.indexOf("WEISSER") >= 0;
+    const estHessapp = L.indexOf("HESSAPP") >= 0;
+    const estPci = L.indexOf("PCI") >= 0;
+    const estPlein = /268|290|330X14|266X13|249/.test(R);
+
+    // Perçage / fraisurage OP30 sur EMAG et PCI : hors tournage céramique
+    if(!estWeisser && !estHessapp && (/OP\s*30/.test(O) || /EMBOUT|PERC|KTFSS|TPGX|FRAISUR/.test(P))){
+      return { mode: "ebauche", horsTournage: true, source: "perçage / fraisurage (hors tournage céramique)" };
+    }
+
+    const estFinition = /OP\s*40/.test(O) || ((estWeisser || estHessapp) && /OP\s*30/.test(O)) || /FINITION/.test(O);
+    const mode = estFinition ? "finition" : "ebauche";
+    let kr = null, re = null, ap = estFinition ? (estPlein ? 0.35 : 0.65) : 2.5;
+    let source = estPci ? "estimation d'après les plans d'outillage" : "pré-rempli d'après le plan d'outillage";
+
+    // 1. Rayon de bec d'après le code ISO de la plaquette
+    if(/RCGX\s*09/.test(P)) { kr = 90; re = 4.76; source += " (plaquette ronde Ø 9,52)"; }
+    else if(/RBGN\s*08|A4R08|LBMP12A08/.test(P)) { kr = 90; re = 4.0; source += " (plaquette ronde / gorge Ø 8)"; }
+    else if(/120716|090416|160416|110416|120416/.test(P)) re = 1.6;
+    else if(/090412|160412/.test(P)) re = 1.2;
+    else if(/090408|1743941/.test(P)) re = 0.8;
+
+    // 2. Angle κr d'après l'outil / logement (si non déjà fixé par plaquette ronde)
+    if(kr === null){
+      if(estFinition){
+        if(/TNGN\s*1604/.test(P)) kr = 93;
+        else if(/TNGN\s*1104/.test(P)) kr = /T547/.test(T) ? 95 : 93;
+        else if(/CNMX|CNMA|T546|T413|T08|T6403/.test(T + " " + P) && !/SNGN|SCGN/.test(P)) kr = 95;
+        else kr = 85;
+      } else if(estWeisser){
+        if(/T3011|^T1$/.test(T)) kr = (/D1|1/.test(N) && /SNMX|SNGX/.test(P)) ? 45 : (/304/.test(R) ? 95 : 85);
+        else if(/T4012|^T2$/.test(T)) kr = /CNMX/.test(P) ? 95 : 85;
+        else if(/T13|^T3/.test(T)) kr = /D1/.test(N) ? 75 : 95;
+        else if(/T21|^T4$/.test(T)) kr = 45;
+        else if(/T322|T5A/.test(T)) kr = /D1/.test(N) ? 75 : 95;
+        else if(/T4025|T7/.test(T)) kr = 95;
+        else kr = /CNMX/.test(P) ? 95 : 85;
+      } else if(estHessapp){
+        if(/T6|T7/.test(T)) kr = 85;
+        else if(/T8/.test(T)) kr = 95;
+        else if(/TNGN/.test(P)) kr = 93;
+        else kr = 85;
+      } else if(estPci){
+        if(/T6101/.test(T)) kr = /0101|D1/.test(N) ? 85 : 95;
+        else if(/T6103/.test(T)) kr = /0303|D1/.test(N) ? 75 : 95;
+        else if(/T6105/.test(T)) kr = 85;
+        else if(/T6201/.test(T)) kr = 45;
+        else if(/T6203/.test(T)) kr = /0303|D1/.test(N) ? 75 : 95;
+        else if(/T6207/.test(T)) kr = 85;
+        else kr = /CNMX/.test(P) ? 75 : 85;
+      } else {
+        // EMAG 1 / 2 / 3 (3027-Toollayout-Rev08)
+        if(/T511|T515|T517|T519/.test(T)) kr = /D1/.test(N) ? (/T511|T515/.test(T) ? 45 : 85) : (/302/.test(R) ? 85 : 95);
+        else if(/T513|T50013|T413/.test(T)) kr = /SNMX|SNGX/.test(P) ? 85 : (/D2/.test(N) ? 75 : 95);
+        else if(/T521/.test(T)) kr = 45;
+        else if(/T523|T529|T423/.test(T)) kr = /D2/.test(N) ? 75 : 95;
+        else if(/T527|T5211/.test(T)) kr = 95;
+        else kr = /CNMX|CNGX/.test(P) ? 75 : 85;
+      }
+    }
+
+    // Priorité absolue aux valeurs déjà saisies dans le logement
+    const vcLog = log && log.vc !== "" && log.vc != null ? String(log.vc) : "";
+    const fLog  = log && log.f  !== "" && log.f  != null ? String(log.f)  : "";
+    const krLog = log && log.kappaR   !== "" && log.kappaR   != null ? parseNumFR(log.kappaR)   : NaN;
+    const reLog = log && log.rayonBec !== "" && log.rayonBec != null ? parseNumFR(log.rayonBec) : NaN;
+    const apLog = log && log.apPiste  !== "" && log.apPiste  != null ? parseNumFR(log.apPiste)  : NaN;
+
+    const depuisLog = !isNaN(krLog);
+    return {
+      mode,
+      vc: vcLog,
+      f: fLog,
+      ap: !isNaN(apLog) ? apLog : ap,
+      re: !isNaN(reLog) ? reLog : (re !== null ? re : 1.6),
+      kr: !isNaN(krLog) ? krLog : kr,
+      horsTournage: false,
+      source: depuisLog ? "lu directement sur le logement" : source
+    };
+  }
+
+  /* Fonction principale exportée : évalue un réglage sans jamais exposer K ni seuil. */
+  function evaluer(params){
+    const p = params || {};
+    const mode = p.mode === "finition" ? "finition" : "ebauche";
+    if(p.horsTournage){
+      return {
+        zone: "hors_tournage",
+        couleur: "neutre",
+        libelle: "Hors tournage céramique",
+        hm: null,
+        fleche: "Opération non couverte",
+        phrase: "Ce poste correspond à du perçage ou fraisurage : le simulateur couvre le tournage céramique.",
+        closing: CLOSING
+      };
+    }
+    const vc = parseNumFR(p.vc);
+    const f  = parseNumFR(p.f);
+    const ap = parseNumFR(p.ap);
+    const re = parseNumFR(p.re);
+    const kr = parseNumFR(p.kr);
+
+    if(isNaN(vc) || isNaN(f) || isNaN(ap) || isNaN(kr) || vc <= 0 || f <= 0 || ap <= 0 || kr <= 0 || kr >= 180 || (!isNaN(re) && re < 0)){
+      return {
+        zone: "incomplet",
+        couleur: "neutre",
+        libelle: "Saisie incomplète",
+        hm: null,
+        fleche: "Complète les champs",
+        phrase: "Renseigne Vc, avance, profondeur de passe et angle κr (valeurs positives) pour évaluer le régime.",
+        closing: CLOSING
+      };
+    }
+
+    const hm = epaisseurCopeau(f, ap, isNaN(re) ? 0 : re, kr);
+
+    // Chanfrein (κr <= 50°) : épaisseur affichée, badge neutre (pas de fausse alerte froid)
+    if(kr <= CONFIG_ZONES.chanfreinKrMax){
+      return {
+        zone: "chanfrein",
+        couleur: "neutre",
+        libelle: "Opération de chanfrein",
+        hm,
+        fleche: "Passe courte de chanfreinage",
+        phrase: "Angle de chanfrein détecté : l'épaisseur de copeau réelle est indiquée à titre consultatif.",
+        closing: CLOSING
+      };
+    }
+
+    const charge = vc * hm; // interne uniquement — jamais retourné ni affiché
+
+    if(mode === "ebauche"){
+      // Priorité au chaud en cas de conflit (ex. très forte avance à basse vitesse)
+      if(CONFIG_ZONES.ebauche.chaudSi(charge)){
+        return {
+          zone: "chaud",
+          couleur: "rouge",
+          libelle: "Trop chaud — usure",
+          hm,
+          fleche: "↓ Réduire la vitesse",
+          phrase: "Zone chaude : la vie de l'arête s'écroule à ce régime.",
+          closing: CLOSING
+        };
+      }
+      if(CONFIG_ZONES.ebauche.froidSi(charge, vc)){
+        return {
+          zone: "froid",
+          couleur: "bleu",
+          libelle: "Trop froid",
+          hm,
+          fleche: "↑ Augmenter la vitesse ou l'épaisseur de copeau",
+          phrase: "Zone froide : l'arête râpe au lieu de couper.",
+          closing: CLOSING
+        };
+      }
+      return {
+        zone: "conseille",
+        couleur: "vert",
+        libelle: "Domaine conseillé",
+        hm,
+        fleche: "→ Régime tenable",
+        phrase: "Domaine conseillé : régime éprouvé.",
+        closing: CLOSING
+      };
+    }
+
+    // Mode finition
+    if(CONFIG_ZONES.finition.chaudSi(charge)){
+      return {
+        zone: "chaud",
+        couleur: "rouge",
+        libelle: "Trop chaud — usure",
+        hm,
+        fleche: "↓ Réduire nettement la vitesse",
+        phrase: "Zone trop chaude : usure accélérée et dérive d'état de surface.",
+        closing: CLOSING
+      };
+    }
+    if(CONFIG_ZONES.finition.vibrationsSi(charge)){
+      return {
+        zone: "vibrations",
+        couleur: "rose",
+        libelle: "Risque de vibrations",
+        hm,
+        fleche: "↓ Réduire la vitesse",
+        phrase: "Zone haute en finition : risque de vibrations et Ra qui dérive.",
+        closing: CLOSING
+      };
+    }
+    if(CONFIG_ZONES.finition.froidSi(charge)){
+      return {
+        zone: "froid",
+        couleur: "bleu",
+        libelle: "Trop froid",
+        hm,
+        fleche: "↑ Augmenter la vitesse",
+        phrase: "Zone froide : ça patine — frottement, pas de gain de vie.",
+        closing: CLOSING
+      };
+    }
+    return {
+      zone: "conseille",
+      couleur: "vert",
+      libelle: "Domaine conseillé",
+      hm,
+      fleche: "→ Régime tenable",
+      phrase: "Domaine conseillé : régime éprouvé.",
+      closing: CLOSING
+    };
+  }
+
+  return { CONFIG_ZONES, evaluer, kappaEffDeg, epaisseurCopeau, infererDepuisLogement, parseNumFR };
+})();
+
+const ccEtat = {
+  ligneId: "", refId: "", opId: "", logKey: "",
+  mode: "ebauche", vc: "850", f: "0,50", ap: "2,5", re: "1,6", kr: "85",
+  source: "", horsTournage: false
+};
+
+function ccOptionsAtelier(){
+  const lignes = (allData && Array.isArray(allData.lignes)) ? allData.lignes : [];
+  const ligne = lignes.find(l => l.id === ccEtat.ligneId) || null;
+  const refs = ligne && Array.isArray(ligne.references) ? ligne.references : [];
+  const ref = refs.find(r => r.id === ccEtat.refId) || null;
+  const ops = ref && Array.isArray(ref.ops) ? ref.ops : [];
+  const op = ops.find(o => o.id === ccEtat.opId) || null;
+  const logs = [];
+  if(op){
+    const sc = (op.scenarios || []).find(s => s.baseline) || (op.scenarios || [])[0];
+    if(sc && Array.isArray(sc.outils)){
+      sc.outils.forEach((o, oi) => {
+        (o.logements || []).forEach((lg, li) => {
+          const key = oi + ":" + li;
+          const lab = (o.numero || "Outil") + " · " + (lg.nom || ("Log. " + (li + 1))) + (lg.ref ? " (" + lg.ref + ")" : "");
+          logs.push({ key, lab, outil: o, log: lg });
+        });
+      });
+    }
+  }
+  return { lignes, ligne, refs, ref, ops, op, logs };
+}
+
+function ccAppliquerLogement(){
+  const ctx = ccOptionsAtelier();
+  const item = ctx.logs.find(x => x.key === ccEtat.logKey);
+  if(!item) return;
+  const inf = MoteurConditionsCoupe.infererDepuisLogement(
+    ctx.ligne ? ctx.ligne.nom : "",
+    ctx.ref ? ctx.ref.nom : "",
+    ctx.op ? ctx.op.nom : "",
+    item.outil ? item.outil.numero : "",
+    item.log
+  );
+  ccEtat.horsTournage = !!inf.horsTournage;
+  ccEtat.source = inf.source || "";
+  if(!inf.horsTournage){
+    ccEtat.mode = inf.mode;
+    if(inf.vc !== "") ccEtat.vc = String(inf.vc).replace(".", ",");
+    if(inf.f  !== "") ccEtat.f  = String(inf.f).replace(".", ",");
+    if(inf.ap != null) ccEtat.ap = String(inf.ap).replace(".", ",");
+    if(inf.re != null) ccEtat.re = String(inf.re).replace(".", ",");
+    if(inf.kr != null) ccEtat.kr = String(inf.kr).replace(".", ",");
+  }
+}
+
+function ccResultatHTML(){
+  const res = MoteurConditionsCoupe.evaluer(ccEtat);
+  const hmTxt = (res.hm !== null && !isNaN(res.hm)) ? fmt(res.hm, 2) + " mm" : "—";
+  return `
+    <div class="cc-res z-${res.couleur}" role="status" aria-live="polite">
+      <div class="cc-res-top">
+        <span class="cc-badge"><span class="cc-dot"></span>${escapeHTML(res.libelle)}</span>
+        <span class="cc-hm">Épaisseur de copeau : ${escapeHTML(hmTxt)}</span>
+      </div>
+      <div class="cc-fleche">${escapeHTML(res.fleche)}</div>
+      <p class="cc-phrase">${escapeHTML(res.phrase)}</p>
+      <div class="cc-closing">${escapeHTML(res.closing)}</div>
+    </div>
+  `;
+}
+
+function renderConditionsCoupe(){
+  const wrap = document.getElementById("conditionsCoupePanel");
+  if(!wrap) return;
+  const ctx = ccOptionsAtelier();
+  const opt = (arr, sel, fnVal, fnLab, vide) =>
+    `<option value="">${escapeHTML(vide)}</option>` +
+    arr.map(x => `<option value="${escapeAttr(fnVal(x))}"${fnVal(x) === sel ? " selected" : ""}>${escapeHTML(fnLab(x))}</option>`).join("");
+
+  wrap.innerHTML = `
+    <div class="cc-wrap">
+      <div class="cc-head">
+        <h3>Conditions de coupe</h3>
+        <button type="button" class="ghost" data-cc-act="fermer">Fermer</button>
+      </div>
+
+      <div class="cc-card">
+        <div class="cc-card-t">Pré-remplir depuis une ligne et un disque (optionnel)</div>
+        <div class="cc-grid-sel">
+          <div class="cc-field">
+            <label for="ccSelLigne">Ligne</label>
+            <select id="ccSelLigne" data-cc-sel="ligne">${opt(ctx.lignes, ccEtat.ligneId, x => x.id, x => x.nom, "— Choisir une ligne —")}</select>
+          </div>
+          <div class="cc-field">
+            <label for="ccSelRef">Disque</label>
+            <select id="ccSelRef" data-cc-sel="ref"${ctx.refs.length ? "" : " disabled"}>${opt(ctx.refs, ccEtat.refId, x => x.id, x => x.nom, "— Choisir un disque —")}</select>
+          </div>
+          <div class="cc-field">
+            <label for="ccSelOp">OP</label>
+            <select id="ccSelOp" data-cc-sel="op"${ctx.ops.length ? "" : " disabled"}>${opt(ctx.ops, ccEtat.opId, x => x.id, x => x.nom, "— Choisir une OP —")}</select>
+          </div>
+          <div class="cc-field">
+            <label for="ccSelLog">Logement / outil</label>
+            <select id="ccSelLog" data-cc-sel="log"${ctx.logs.length ? "" : " disabled"}>${opt(ctx.logs, ccEtat.logKey, x => x.key, x => x.lab, "— Choisir un logement —")}</select>
+          </div>
+        </div>
+        ${ccEtat.source ? `<div class="cc-meta">Source des valeurs : ${escapeHTML(ccEtat.source)} (modifiable librement ci-dessous).</div>` : ""}
+      </div>
+
+      <div class="cc-card">
+        <div class="cc-card-t">Paramètres de coupe</div>
+        <div class="cc-seg" role="group" aria-label="Type d'opération">
+          <button type="button" data-cc-mode="ebauche" class="${ccEtat.mode === "ebauche" ? "actif" : ""}">Ébauche</button>
+          <button type="button" data-cc-mode="finition" class="${ccEtat.mode === "finition" ? "actif" : ""}">Finition</button>
+        </div>
+        <div class="cc-grid-in">
+          <div class="cc-field">
+            <label for="ccInVc">Vc (m/min)</label>
+            <input id="ccInVc" type="text" inputmode="decimal" data-cc-in="vc" value="${escapeAttr(ccEtat.vc)}" placeholder="ex. 850">
+          </div>
+          <div class="cc-field">
+            <label for="ccInF">Avance f (mm/tr)</label>
+            <input id="ccInF" type="text" inputmode="decimal" data-cc-in="f" value="${escapeAttr(ccEtat.f)}" placeholder="ex. 0,50">
+          </div>
+          <div class="cc-field">
+            <label for="ccInAp">Profondeur ap (mm)</label>
+            <input id="ccInAp" type="text" inputmode="decimal" data-cc-in="ap" value="${escapeAttr(ccEtat.ap)}" placeholder="ex. 2,5">
+          </div>
+          <div class="cc-field">
+            <label for="ccInRe">Rayon de bec rε (mm)</label>
+            <input id="ccInRe" type="text" inputmode="decimal" data-cc-in="re" value="${escapeAttr(ccEtat.re)}" placeholder="ex. 1,6">
+          </div>
+          <div class="cc-field">
+            <label for="ccInKr">Angle κr (°)</label>
+            <input id="ccInKr" type="text" inputmode="decimal" data-cc-in="kr" value="${escapeAttr(ccEtat.kr)}" placeholder="ex. 85">
+          </div>
+        </div>
+        <div class="cc-presets">
+          <span class="cc-presets-lab">Angles courants :</span>
+          <button type="button" class="cc-chip" data-cc-preset="45|1,6">45° (chanfrein)</button>
+          <button type="button" class="cc-chip" data-cc-preset="75|1,6">75° (piste C)</button>
+          <button type="button" class="cc-chip" data-cc-preset="85|1,6">85° (piste S)</button>
+          <button type="button" class="cc-chip" data-cc-preset="85|0,8">85° rε 0,8</button>
+          <button type="button" class="cc-chip" data-cc-preset="93|1,2">93° (triang.)</button>
+          <button type="button" class="cc-chip" data-cc-preset="95|1,6">95° (Z)</button>
+          <button type="button" class="cc-chip" data-cc-preset="90|4,0">Ronde Ø 8</button>
+          <button type="button" class="cc-chip" data-cc-preset="90|4,76">Ronde Ø 9,52</button>
+        </div>
+      </div>
+
+      <div id="ccResultatZone">${ccResultatHTML()}</div>
+    </div>
+  `;
+}
+
+function ouvrirConditionsCoupe(){
+  fermerPanneaux();
+  // Si aucune ligne encore choisie, pré-sélectionner la ligne active
+  if(!ccEtat.ligneId && allData && allData.activeLigneId){
+    ccEtat.ligneId = allData.activeLigneId;
+    if(allData.activeRefId) ccEtat.refId = allData.activeRefId;
+    if(allData.activeOpId) ccEtat.opId = allData.activeOpId;
+  }
+  ouvrirPanneau("conditionsCoupePanel");
+  renderConditionsCoupe();
+}
+window.ouvrirConditionsCoupe = ouvrirConditionsCoupe;
+
+(function(){
+  let wrap = null;
+  try{ wrap = document.getElementById("conditionsCoupePanel"); }catch(e){}
+  if(!wrap || typeof wrap.addEventListener !== "function") return;
+  wrap.addEventListener("input", e => {
+    const inp = e.target.closest("input[data-cc-in]");
+    if(!inp) return;
+    ccEtat[inp.getAttribute("data-cc-in")] = inp.value;
+    ccEtat.horsTournage = false;
+    const rz = document.getElementById("ccResultatZone");
+    if(rz) rz.innerHTML = ccResultatHTML();
+  });
+  wrap.addEventListener("change", e => {
+    const sel = e.target.closest("select[data-cc-sel]");
+    if(!sel) return;
+    const k = sel.getAttribute("data-cc-sel");
+    if(k === "ligne"){ ccEtat.ligneId = sel.value; ccEtat.refId = ""; ccEtat.opId = ""; ccEtat.logKey = ""; ccEtat.source = ""; ccEtat.horsTournage = false; }
+    else if(k === "ref"){ ccEtat.refId = sel.value; ccEtat.opId = ""; ccEtat.logKey = ""; ccEtat.source = ""; ccEtat.horsTournage = false; }
+    else if(k === "op"){ ccEtat.opId = sel.value; ccEtat.logKey = ""; ccEtat.source = ""; ccEtat.horsTournage = false; }
+    else if(k === "log"){ ccEtat.logKey = sel.value; ccAppliquerLogement(); }
+    renderConditionsCoupe();
+  });
+  wrap.addEventListener("click", e => {
+    const fer = e.target.closest("[data-cc-act='fermer']");
+    if(fer){ fermerPanneaux(); return; }
+    const mb = e.target.closest("[data-cc-mode]");
+    if(mb){ ccEtat.mode = mb.getAttribute("data-cc-mode"); ccEtat.horsTournage = false; renderConditionsCoupe(); return; }
+    const pr = e.target.closest("[data-cc-preset]");
+    if(pr){
+      const [kr, re] = pr.getAttribute("data-cc-preset").split("|");
+      ccEtat.kr = kr; ccEtat.re = re; ccEtat.horsTournage = false;
+      renderConditionsCoupe();
+    }
+  });
+})();
+/* FIN MOTEUR CONDITIONS DE COUPE */
 
 /* v4.163 — CHECKUP : les relevés de charnières faits à l'atelier, lus dans le cloud.
    Source : public.checkup_journal (Supabase), table append-only alimentée par l'application « Contrôle de
@@ -30301,6 +30820,53 @@ function runTests(){
     ok("4.162 : les réglages d'avant restent dans les données (rien de perdu)", [cfgOn.coutMachineActif, cfgOn.coutRebutActif, cfgOn.coutDisque], [true, true, "14"]);
   } finally {
     AXES_LIGNE_DANS_FICHE = axesAvantTests;
+  }
+
+  // ---- v4.164 : moteur Conditions de coupe (κr 45°-95° + rondes, arc ébauche/finition, 4 couleurs, secret) ----
+  {
+    const MC = MoteurConditionsCoupe;
+    // Vérifications numériques §2 (corrigées)
+    const krArc = MC.kappaEffDeg(0.34, 1.2, 85);
+    ok("4.164 : κr effectif sur bec (ap 0,34 / rε 1,2) ≈ 44,2°", Math.abs(krArc - 44.22) < 0.15, true);
+    const hm1 = MC.epaisseurCopeau(0.4, 0.34, 1.2, 85);
+    ok("4.164 : épaisseur de copeau sur bec (f 0,4 / ap 0,34 / rε 1,2) ≈ 0,279 mm", Math.abs(hm1 - 0.279) < 0.002, true);
+    ok("4.164 : κr nominal 75° ne dépasse jamais 75° quand ap=1,4 < rε=1,6", MC.kappaEffDeg(1.4, 1.6, 75), 75);
+    ok("4.164 : κr nominal 95° conservé au-delà du bec (ap=2,5 / rε=1,6)", MC.kappaEffDeg(2.5, 1.6, 95), 95);
+    ok("4.164 : kappaEffectif aligné sur 95°", kappaEffectif({ kappaR:"95", rayonBec:"1.6", apPiste:"2.5" }), 95);
+    ok("4.164 : plaquette ronde Ø 9,52 (rε 4,76, ap 1,5) → κr_eff ≈ 46,8°", Math.abs(MC.kappaEffDeg(1.5, 4.76, 90) - 46.8) < 0.2, true);
+    // Pins §6 + décisions couleurs (bleu froid, vert OK, rose vibrations, rouge chaud)
+    const e1 = MC.evaluer({ mode:"ebauche", vc:"850", f:"0,50", ap:"4", re:"1,6", kr:"90" });
+    ok("4.164 : ébauche 850/0,50 (ap 4, κr 90) → conseillé vert, Hm=0,50", [e1.zone, e1.couleur, Math.round(e1.hm*100)], ["conseille", "vert", 50]);
+    const e2 = MC.evaluer({ mode:"ebauche", vc:"900", f:"0,60", ap:"4", re:"1,6", kr:"90" });
+    ok("4.164 : ébauche 900/0,60 → chaud rouge", [e2.zone, e2.couleur], ["chaud", "rouge"]);
+    const eConflit = MC.evaluer({ mode:"ebauche", vc:"300", f:"1,60", ap:"4", re:"1,6", kr:"90" });
+    ok("4.164 : conflit chaud/froid ébauche → chaud l'emporte", [eConflit.zone, eConflit.couleur], ["chaud", "rouge"]);
+    const eFroidVc = MC.evaluer({ mode:"ebauche", vc:"300", f:"0,60", ap:"4", re:"1,6", kr:"90" });
+    ok("4.164 : ébauche Vc < 315 → froid bleu", [eFroidVc.zone, eFroidVc.couleur], ["froid", "bleu"]);
+    const f1 = MC.evaluer({ mode:"finition", vc:"700", f:"0,25", ap:"1", re:"1,6", kr:"85" });
+    ok("4.164 : finition 700/0,25 (ap 1, rε 1,6) → conseillé vert", [f1.zone, f1.couleur], ["conseille", "vert"]);
+    const fSl500 = MC.evaluer({ mode:"finition", vc:"700", f:"0,25", ap:"0,65", re:"1,6", kr:"85" });
+    ok("4.164 : finition SL500 -F validée (700/0,25, ap 0,65, rε 1,6) → conseillé vert", [fSl500.zone, fSl500.couleur], ["conseille", "vert"]);
+    const fPci = MC.evaluer({ mode:"finition", vc:"400", f:"0,40", ap:"0,34", re:"1,2", kr:"85" });
+    ok("4.164 : finition PCI 4 (400/0,40, ap 0,34, rε 1,2) → conseillé vert", [fPci.zone, fPci.couleur], ["conseille", "vert"]);
+    const fVib = MC.evaluer({ mode:"finition", vc:"800", f:"0,25", ap:"0,65", re:"0,8", kr:"85" });
+    ok("4.164 : finition vibrée (800/0,25, ap 0,65, rε 0,8) → vibrations rose", [fVib.zone, fVib.couleur], ["vibrations", "rose"]);
+    const fChaud = MC.evaluer({ mode:"finition", vc:"950", f:"0,30", ap:"1", re:"0,8", kr:"85" });
+    ok("4.164 : finition surchauffe sévère → chaud rouge", [fChaud.zone, fChaud.couleur], ["chaud", "rouge"]);
+    const f2 = MC.evaluer({ mode:"finition", vc:"400", f:"0,15", ap:"1", re:"1,2", kr:"85" });
+    ok("4.164 : finition 400/0,15 (ap 1, rε 1,2) → froid bleu", [f2.zone, f2.couleur], ["froid", "bleu"]);
+    const ch = MC.evaluer({ mode:"ebauche", vc:"650", f:"0,35", ap:"2", re:"1,6", kr:"45" });
+    ok("4.164 : chanfrein 45° → badge neutre chanfrein (pas de fausse alerte froid)", [ch.zone, ch.couleur], ["chanfrein", "neutre"]);
+    const inc = MC.evaluer({ mode:"ebauche", vc:"", f:"0,4", ap:"2", re:"1,6", kr:"85" });
+    ok("4.164 : saisie vide → incomplet neutre", [inc.zone, inc.couleur], ["incomplet", "neutre"]);
+    const infPiste = MC.infererDepuisLogement("EMAG 2", "356x26 RPI", "OP10", "T513", { nom:"D2", ref:"CNMX120716T03030", vc:"900", f:"0.5" });
+    ok("4.164 : inférence EMAG T513 D2 → ébauche, κr=75°, rε=1,6", [infPiste.mode, infPiste.kr, infPiste.re], ["ebauche", 75, 1.6]);
+    const infPerc = MC.infererDepuisLogement("PCI 4", "268x12", "OP30", "T6305", { nom:"Logement 1", ref:"EMBOUT D8,6" });
+    ok("4.164 : inférence OP30 perçage → horsTournage", infPerc.horsTournage, true);
+    // Secret : aucune fuite de K ni de seuil dans les textes affichés
+    const dump = [e1, e2, f1, fVib, f2, ch, inc].map(x => [x.libelle, x.fleche, x.phrase, x.closing].join(" ")).join(" | ");
+    ok("4.164 : zéro fuite de seuil (150/450/185/315) ni de K dans la sortie",
+       /(\bK\s*=|\b150\b|\b450\b|\b185\b|\b315\b)/i.test(dump), false);
   }
 
   /* v4.66.0 — on RECALCULE le nombre d'échecs au moment du retour.

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Conditions de coupe — Simulateur atelier</title>
+<style>
+  :root{
+    --bg:#f4f5f7; --surface:#ffffff; --surface-alt:#f8fafc; --ink:#111827; --ink-soft:#4b5563;
+    --ink-faint:#6b7280; --border:#d1d5db; --accent:#1B5EA6; --radius:10px;
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); padding:16px; }
+  .cc-wrap{ max-width:860px; margin:0 auto; }
+  .cc-head{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:14px; flex-wrap:wrap; }
+  .cc-head h1{ margin:0; font-size:22px; color:#0f172a; }
+  .cc-sub{ font-size:13px; color:var(--ink-faint); }
+  .cc-card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px; margin-bottom:14px; box-shadow:0 1px 2px rgba(0,0,0,.04); }
+  .cc-card-t{ font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft); margin:0 0 10px; }
+  .cc-grid-sel{ display:grid; grid-template-columns:repeat(auto-fit,minmax(175px,1fr)); gap:10px; }
+  .cc-grid-in{ display:grid; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); gap:10px; }
+  .cc-field{ display:flex; flex-direction:column; gap:4px; }
+  .cc-field label{ font-size:13px; font-weight:600; color:var(--ink-soft); }
+  .cc-field input,.cc-field select{ font-size:16px; padding:10px 11px; border:1px solid var(--border); border-radius:7px; background:#fff; color:var(--ink); min-height:44px; width:100%; }
+  .cc-seg{ display:inline-flex; gap:6px; margin-bottom:12px; }
+  .cc-seg button{ font-size:15px; font-weight:600; padding:9px 18px; border-radius:7px; border:1px solid var(--border); background:var(--surface-alt); color:var(--ink-soft); cursor:pointer; }
+  .cc-seg button.actif{ background:var(--accent); color:#fff; border-color:var(--accent); }
+  .cc-presets{ display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; align-items:center; }
+  .cc-presets-lab{ font-size:12.5px; color:var(--ink-faint); margin-right:4px; }
+  .cc-chip{ font-size:13px; padding:6px 11px; border-radius:999px; border:1px solid var(--border); background:var(--surface-alt); color:var(--ink); cursor:pointer; }
+  .cc-chip:hover{ border-color:var(--accent); }
+  .cc-meta{ font-size:12.5px; color:var(--ink-faint); margin-top:8px; }
+  .cc-res{ border-radius:12px; padding:20px 22px; border:2px solid var(--border); transition:background .15s,border-color .15s; }
+  .cc-res.z-vert{ background:#ecfdf3; border-color:#15803d; color:#14532d; }
+  .cc-res.z-bleu{ background:#eff6ff; border-color:#1d4ed8; color:#1e3a8a; }
+  .cc-res.z-rose{ background:#fdf2f8; border-color:#db2777; color:#831843; }
+  .cc-res.z-rouge{ background:#fef2f2; border-color:#dc2626; color:#7f1d1d; }
+  .cc-res.z-neutre{ background:var(--surface-alt); border-color:var(--border); color:var(--ink); }
+  .cc-res-top{ display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:10px; }
+  .cc-badge{ display:inline-flex; align-items:center; gap:9px; font-size:17px; font-weight:800; }
+  .cc-dot{ width:15px; height:15px; border-radius:50%; display:inline-block; background:currentColor; }
+  .cc-hm{ font-size:14.5px; font-weight:700; padding:6px 12px; border-radius:7px; background:rgba(255,255,255,.78); border:1px solid rgba(0,0,0,.1); color:#111827; }
+  .cc-fleche{ font-size:19px; font-weight:700; margin:4px 0 6px; }
+  .cc-phrase{ font-size:15.5px; margin:0; line-height:1.45; }
+  .cc-closing{ margin-top:14px; padding-top:10px; border-top:1px solid rgba(0,0,0,.1); font-size:13.5px; font-weight:600; opacity:.92; }
+</style>
+</head>
+<body>
+<div class="cc-wrap" id="app"></div>
+<script>
+(function(){
+  "use strict";
+
+  /* MOTEUR CONDITIONS DE COUPE — version autonome hors-ligne (v4.164.0) */
+  const CONFIG_ZONES = {
+    ebauche:  { froidSi: (k, vc) => (k < 150 || vc < 315), chaudSi: (k) => (k > 450) },
+    finition: { froidSi: (k) => (k < 110), vibrationsSi: (k) => (k > 185 && k <= 220), chaudSi: (k) => (k > 220) },
+    chanfreinKrMax: 50
+  };
+  const CLOSING = "Pour la préconisation chiffrée, contacter Benjamin Rouquette.";
+
+  const PRESETS_ATELIER = [
+    { ligne:"EMAG 1 / 2 / 3", disque:"356x26 RPI", op:"OP10", poste:"T513 · D2 — Ébauche grande face piste (CNMX)", mode:"ebauche", vc:"900", f:"0,50", ap:"2,5", re:"1,6", kr:"75" },
+    { ligne:"EMAG 1 / 2 / 3", disque:"356x26 RPI", op:"OP10", poste:"T50013 · D2 — Ébauche grande face piste (SNMX)", mode:"ebauche", vc:"900", f:"0,50", ap:"2,5", re:"1,6", kr:"85" },
+    { ligne:"EMAG 1 / 2 / 3", disque:"356x26 RPI", op:"OP10", poste:"T511A · D1/D2 — Bol intérieur (95° / 85°)", mode:"ebauche", vc:"750", f:"0,50", ap:"2,5", re:"1,6", kr:"95" },
+    { ligne:"EMAG 1 / 2 / 3", disque:"356x26 RPI", op:"OP20", poste:"T523A · D2 — Ébauche 2e face piste", mode:"ebauche", vc:"850", f:"0,50", ap:"2,5", re:"1,6", kr:"75" },
+    { ligne:"EMAG 1 / 2 / 3", disque:"356x26 RPI", op:"OP20", poste:"T525 · D1 — Gorge / congé (ronde Ø 9,52)", mode:"ebauche", vc:"700", f:"0,40", ap:"1,5", re:"4,76", kr:"90" },
+    { ligne:"EMAG 1 / 2 / 3", disque:"356x26 RPI", op:"OP20", poste:"T521 · D1/D2 — Chanfrein / Ø ext (45°)", mode:"ebauche", vc:"800", f:"0,35", ap:"2,0", re:"1,6", kr:"45" },
+    { ligne:"EMAG 1 / 2 / 3", disque:"356x26 RPI", op:"OP40", poste:"T548 / T549 — Finition pistes (rε 0,8)", mode:"finition", vc:"700", f:"0,25", ap:"0,65", re:"0,8", kr:"85" },
+    { ligne:"EMAG 1 / 2 / 3", disque:"356x26 RPI", op:"OP40", poste:"T548 / T549 — Finition pistes (essai rε 1,6)", mode:"finition", vc:"700", f:"0,25", ap:"0,65", re:"1,6", kr:"85" },
+    { ligne:"EMAG 1 / 2 / 3", disque:"330x14 (plein)", op:"OP40", poste:"T541 / T542 — Finition pistes plein (rε 0,8)", mode:"finition", vc:"700", f:"0,25", ap:"0,50", re:"0,8", kr:"85" },
+    { ligne:"EMAG 1 / 2 / 3", disque:"302x26 RPI", op:"OP10", poste:"T413 · Pos 5 — Ébauche piste (75°)", mode:"ebauche", vc:"850", f:"0,50", ap:"2,5", re:"1,6", kr:"75" },
+    { ligne:"EMAG 1 / 2 / 3", disque:"302x26 RPI", op:"OP20", poste:"T525 · Pos 7 — Gorge (ronde Ø 8)", mode:"ebauche", vc:"700", f:"0,40", ap:"1,5", re:"4,0", kr:"90" },
+    { ligne:"WEISSER 2 / 3", disque:"304x28 RPE K0", op:"OP10", poste:"T13 · Pos 5 — Ébauche piste (75°)", mode:"ebauche", vc:"850", f:"0,50", ap:"2,5", re:"1,6", kr:"75" },
+    { ligne:"WEISSER 2 / 3", disque:"304x28 RPE K0", op:"OP20", poste:"T322 · Pos 4 — Ébauche 2e face piste (75°)", mode:"ebauche", vc:"850", f:"0,50", ap:"2,5", re:"1,6", kr:"75" },
+    { ligne:"WEISSER 2 / 3", disque:"304x28 RPE K0", op:"OP30", poste:"T32 / T33 — Finition pistes (85°, rε 0,8)", mode:"finition", vc:"700", f:"0,25", ap:"0,65", re:"0,8", kr:"85" },
+    { ligne:"HESSAPP", disque:"283x26 / 302x26", op:"OP20", poste:"T6 / T7 — Ébauche (85°, rε 1,6)", mode:"ebauche", vc:"800", f:"0,45", ap:"2,5", re:"1,6", kr:"85" },
+    { ligne:"PCI 4 / 5 (est.)", disque:"DP 268x12", op:"OP10", poste:"T6103 · T0303 — Ébauche piste int.", mode:"ebauche", vc:"750", f:"0,50", ap:"2,0", re:"1,6", kr:"75" },
+    { ligne:"PCI 4 / 5 (est.)", disque:"DP 268x12", op:"OP40", poste:"T6407 / T6417 — Finition pistes", mode:"finition", vc:"400", f:"0,40", ap:"0,34", re:"1,2", kr:"85" }
+  ];
+
+  const etat = { ligne:"", disque:"", posteIdx:"", mode:"ebauche", vc:"850", f:"0,50", ap:"2,5", re:"1,6", kr:"85" };
+
+  function parseNumFR(v){
+    if(v === null || v === undefined) return NaN;
+    const s = String(v).trim().replace(/\s+/g, "").replace(",", ".");
+    return s ? parseFloat(s) : NaN;
+  }
+  function kappaEffDeg(ap, rEps, krNom){
+    const kr = isNaN(krNom) || krNom <= 0 ? 90 : krNom;
+    if(!isNaN(rEps) && rEps > 0 && !isNaN(ap) && ap >= 0){
+      const apTrans = rEps * (1 - Math.cos(Math.min(kr, 90) * Math.PI / 180));
+      if(ap < apTrans) return Math.acos(1 - Math.max(0, Math.min(1, ap / rEps))) * 180 / Math.PI;
+    }
+    return kr;
+  }
+  function evaluer(p){
+    const vc = parseNumFR(p.vc), f = parseNumFR(p.f), ap = parseNumFR(p.ap), re = parseNumFR(p.re), kr = parseNumFR(p.kr);
+    if(isNaN(vc) || isNaN(f) || isNaN(ap) || isNaN(kr) || vc <= 0 || f <= 0 || ap <= 0 || kr <= 0 || kr >= 180 || (!isNaN(re) && re < 0)){
+      return { couleur:"neutre", libelle:"Saisie incomplète", hm:null, fleche:"Complète les champs", phrase:"Renseigne Vc, avance, profondeur de passe et angle κr (valeurs positives) pour évaluer le régime." };
+    }
+    const hm = f * Math.sin(kappaEffDeg(ap, isNaN(re) ? 0 : re, kr) * Math.PI / 180);
+    if(kr <= CONFIG_ZONES.chanfreinKrMax){
+      return { couleur:"neutre", libelle:"Opération de chanfrein", hm, fleche:"Passe courte de chanfreinage", phrase:"Angle de chanfrein détecté : l'épaisseur de copeau réelle est indiquée à titre consultatif." };
+    }
+    const charge = vc * hm;
+    if(p.mode === "ebauche"){
+      if(CONFIG_ZONES.ebauche.chaudSi(charge)) return { couleur:"rouge", libelle:"Trop chaud — usure", hm, fleche:"↓ Réduire la vitesse", phrase:"Zone chaude : la vie de l'arête s'écroule à ce régime." };
+      if(CONFIG_ZONES.ebauche.froidSi(charge, vc)) return { couleur:"bleu", libelle:"Trop froid", hm, fleche:"↑ Augmenter la vitesse ou l'épaisseur de copeau", phrase:"Zone froide : l'arête râpe au lieu de couper." };
+      return { couleur:"vert", libelle:"Domaine conseillé", hm, fleche:"→ Régime tenable", phrase:"Domaine conseillé : régime éprouvé." };
+    }
+    if(CONFIG_ZONES.finition.chaudSi(charge)) return { couleur:"rouge", libelle:"Trop chaud — usure", hm, fleche:"↓ Réduire nettement la vitesse", phrase:"Zone trop chaude : usure accélérée et dérive d'état de surface." };
+    if(CONFIG_ZONES.finition.vibrationsSi(charge)) return { couleur:"rose", libelle:"Risque de vibrations", hm, fleche:"↓ Réduire la vitesse", phrase:"Zone haute en finition : risque de vibrations et Ra qui dérive." };
+    if(CONFIG_ZONES.finition.froidSi(charge)) return { couleur:"bleu", libelle:"Trop froid", hm, fleche:"↑ Augmenter la vitesse", phrase:"Zone froide : ça patine — frottement, pas de gain de vie." };
+    return { couleur:"vert", libelle:"Domaine conseillé", hm, fleche:"→ Régime tenable", phrase:"Domaine conseillé : régime éprouvé." };
+  }
+  function esc(s){ return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
+  function fmt2(n){ return n.toFixed(2).replace(".", ","); }
+
+  function renderResult(){
+    const res = evaluer(etat);
+    const hmTxt = res.hm !== null ? fmt2(res.hm) + " mm" : "—";
+    return `
+      <div class="cc-res z-${res.couleur}" role="status" aria-live="polite">
+        <div class="cc-res-top">
+          <span class="cc-badge"><span class="cc-dot"></span>${esc(res.libelle)}</span>
+          <span class="cc-hm">Épaisseur de copeau : ${esc(hmTxt)}</span>
+        </div>
+        <div class="cc-fleche">${esc(res.fleche)}</div>
+        <p class="cc-phrase">${esc(res.phrase)}</p>
+        <div class="cc-closing">${esc(CLOSING)}</div>
+      </div>`;
+  }
+
+  function render(){
+    const lignes = [...new Set(PRESETS_ATELIER.map(x => x.ligne))];
+    const disques = etat.ligne ? [...new Set(PRESETS_ATELIER.filter(x => x.ligne === etat.ligne).map(x => x.disque))] : [];
+    const postes = (etat.ligne && etat.disque) ? PRESETS_ATELIER.map((x, i) => ({ x, i })).filter(o => o.x.ligne === etat.ligne && o.x.disque === etat.disque) : [];
+    const app = document.getElementById("app");
+    app.innerHTML = `
+      <div class="cc-head">
+        <h1>Conditions de coupe</h1>
+        <span class="cc-sub">Simulateur consultatif hors-ligne</span>
+      </div>
+      <div class="cc-card">
+        <div class="cc-card-t">Pré-remplir depuis un poste atelier (optionnel)</div>
+        <div class="cc-grid-sel">
+          <div class="cc-field">
+            <label for="sLigne">Ligne</label>
+            <select id="sLigne"><option value="">— Choisir —</option>${lignes.map(l => `<option value="${esc(l)}"${l === etat.ligne ? " selected" : ""}>${esc(l)}</option>`).join("")}</select>
+          </div>
+          <div class="cc-field">
+            <label for="sDisque">Disque</label>
+            <select id="sDisque"${disques.length ? "" : " disabled"}><option value="">— Choisir —</option>${disques.map(d => `<option value="${esc(d)}"${d === etat.disque ? " selected" : ""}>${esc(d)}</option>`).join("")}</select>
+          </div>
+          <div class="cc-field">
+            <label for="sPoste">Poste / OP</label>
+            <select id="sPoste"${postes.length ? "" : " disabled"}><option value="">— Choisir —</option>${postes.map(o => `<option value="${o.i}"${String(o.i) === etat.posteIdx ? " selected" : ""}>${esc(o.x.op + " · " + o.x.poste)}</option>`).join("")}</select>
+          </div>
+        </div>
+      </div>
+      <div class="cc-card">
+        <div class="cc-card-t">Paramètres de coupe</div>
+        <div class="cc-seg">
+          <button type="button" data-m="ebauche" class="${etat.mode === "ebauche" ? "actif" : ""}">Ébauche</button>
+          <button type="button" data-m="finition" class="${etat.mode === "finition" ? "actif" : ""}">Finition</button>
+        </div>
+        <div class="cc-grid-in">
+          <div class="cc-field"><label for="iVc">Vc (m/min)</label><input id="iVc" type="text" inputmode="decimal" data-k="vc" value="${esc(etat.vc)}"></div>
+          <div class="cc-field"><label for="iF">Avance f (mm/tr)</label><input id="iF" type="text" inputmode="decimal" data-k="f" value="${esc(etat.f)}"></div>
+          <div class="cc-field"><label for="iAp">Profondeur ap (mm)</label><input id="iAp" type="text" inputmode="decimal" data-k="ap" value="${esc(etat.ap)}"></div>
+          <div class="cc-field"><label for="iRe">Rayon de bec rε (mm)</label><input id="iRe" type="text" inputmode="decimal" data-k="re" value="${esc(etat.re)}"></div>
+          <div class="cc-field"><label for="iKr">Angle κr (°)</label><input id="iKr" type="text" inputmode="decimal" data-k="kr" value="${esc(etat.kr)}"></div>
+        </div>
+        <div class="cc-presets">
+          <span class="cc-presets-lab">Angles courants :</span>
+          <button type="button" class="cc-chip" data-p="45|1,6">45° (chanfrein)</button>
+          <button type="button" class="cc-chip" data-p="75|1,6">75° (piste C)</button>
+          <button type="button" class="cc-chip" data-p="85|1,6">85° (piste S)</button>
+          <button type="button" class="cc-chip" data-p="85|0,8">85° rε 0,8</button>
+          <button type="button" class="cc-chip" data-p="93|1,2">93° (triang.)</button>
+          <button type="button" class="cc-chip" data-p="95|1,6">95° (Z)</button>
+          <button type="button" class="cc-chip" data-p="90|4,0">Ronde Ø 8</button>
+          <button type="button" class="cc-chip" data-p="90|4,76">Ronde Ø 9,52</button>
+        </div>
+      </div>
+      <div id="resZone">${renderResult()}</div>`;
+  }
+
+  document.getElementById("app").addEventListener("input", e => {
+    const inp = e.target.closest("input[data-k]");
+    if(!inp) return;
+    etat[inp.getAttribute("data-k")] = inp.value;
+    document.getElementById("resZone").innerHTML = renderResult();
+  });
+  document.getElementById("app").addEventListener("change", e => {
+    if(e.target.id === "sLigne"){ etat.ligne = e.target.value; etat.disque = ""; etat.posteIdx = ""; render(); }
+    else if(e.target.id === "sDisque"){ etat.disque = e.target.value; etat.posteIdx = ""; render(); }
+    else if(e.target.id === "sPoste"){
+      etat.posteIdx = e.target.value;
+      const p = PRESETS_ATELIER[Number(e.target.value)];
+      if(p){ etat.mode = p.mode; etat.vc = p.vc; etat.f = p.f; etat.ap = p.ap; etat.re = p.re; etat.kr = p.kr; }
+      render();
+    }
+  });
+  document.getElementById("app").addEventListener("click", e => {
+    const m = e.target.closest("button[data-m]");
+    if(m){ etat.mode = m.getAttribute("data-m"); render(); return; }
+    const p = e.target.closest("button[data-p]");
+    if(p){ const [kr, re] = p.getAttribute("data-p").split("|"); etat.kr = kr; etat.re = re; render(); }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

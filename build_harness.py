@@ -2601,6 +2601,25 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'checkup 4.163 : panneau, entree du menu Outils, bloc sans marque ni puissance' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  /* v4.164.0 — LE MOTEUR CONDITIONS DE COUPE EST CABLE, SANS MARQUE ET SANS FUITE.
+     Le panneau existe, le menu Outils l ouvre, le bloc est isole et ne mentionne aucune marque. */
+  (function conditionsCoupeDansLOutil(){
+    const fs = require('fs');
+    const html = fs.readFileSync('bilan_economique.html', 'utf8');
+    const shell = fs.readFileSync('spk-shell.js', 'utf8');
+    const echecs = [];
+    if (html.indexOf('id="conditionsCoupePanel"') === -1) echecs.push('le panneau conditionsCoupePanel a disparu');
+    if (shell.indexOf('ouvrirConditionsCoupe') === -1) echecs.push('le menu Outils n a plus d entree Conditions de coupe');
+    const i = html.indexOf('v4.164 — MOTEUR CONDITIONS DE COUPE'), j = html.indexOf('FIN MOTEUR CONDITIONS DE COUPE');
+    const bloc = (i > -1 && j > i) ? html.slice(i, j).toLowerCase() : '';
+    if (!bloc) echecs.push('le bloc Moteur Conditions de coupe est introuvable');
+    if (bloc.indexOf('ceramtec') !== -1) echecs.push('mention de la marque dans le bloc Conditions de coupe');
+    if (bloc.indexOf('spk') !== -1) echecs.push('mention SPK dans le bloc Conditions de coupe');
+    if (bloc.indexOf('p_req') !== -1) echecs.push('la puissance apparait dans le bloc Conditions de coupe');
+    if (echecs.length) r.echecs += echecs.length;
+    console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'conditions de coupe 4.164 : panneau, menu Outils, bloc isole sans marque' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
+  })();
+
   /* 2026-11-25 — LE CONTROLE DE PRISE DE POSTE (checkup.html) A SES PROPRES TESTS.
      Equipes, envoi du journal (releve refuse, reseau coupe, 404, 403), fichier livre : scripts/test_checkup.js.
      Ecrit sans antislash : ce bloc traverse une chaine Python. */

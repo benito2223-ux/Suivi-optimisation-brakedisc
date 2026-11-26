@@ -466,6 +466,7 @@ setTimeout(function(){ requestAnimationFrame(function(){ requestAnimationFrame(f
       { lib: "Catalogue", sous: "un MABEC = un prix ; import / export CSV", f: () => window.ouvrirCatalogue && window.ouvrirCatalogue() },
       { lib: "Volumes disques", sous: "fichier central, deux années ; import / export CSV", f: () => window.ouvrirVolumes && window.ouvrirVolumes() },
       { lib: "Checkup", sous: "les charnières relevées à l'atelier ; filtres, export Excel", f: () => window.ouvrirCheckup && window.ouvrirCheckup() },
+      { lib: "Conditions de coupe", sous: "vérifier un réglage Vc / f / ap / κr par ligne et disque", f: () => window.ouvrirConditionsCoupe && window.ouvrirConditionsCoupe() },
       { lib: "Plan de conversion", sous: "article par article, la cible et le gain", f: () => window.ouvrirPlan && window.ouvrirPlan() },
       { lib: "Dossier de visite", sous: "ce qui s'est passé depuis la dernière visite", f: () => window.ouvrirVisite && window.ouvrirVisite() }
     ];

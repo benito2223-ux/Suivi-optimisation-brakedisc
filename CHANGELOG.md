@@ -5,6 +5,16 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.164.0] — 2026-11-26 · moteur Conditions de coupe (κr 45°–95° + rondes, sélecteur atelier) · SeptFons-Dev
+
+Demande Benjamin (26/11), gel levé pour ce chantier : nouvelle section autonome **Outils › Conditions de coupe** pour guider toute l'équipe technique sur les réglages de tournage céramique (ébauche et finition), calcul 100 % local et consultatif.
+
+- **Moteur unifié (`MoteurConditionsCoupe`)** : bloc `CONFIG_ZONES` unique et isolé, formule d'angle effectif corrigée sur le rayon de bec valable de $45^\circ$ à $95^\circ$ + plaquettes rondes (`RCGX 090700` Ø 9,52 / `RBGN 0804M0` Ø 8), correction d'arc active en ébauche et en finition. `kappaEffectif` existant aligné pour $95^\circ$, champ `kappaR` des logements ouvert à `max="100"`.
+- **Sélecteur atelier `Ligne › Disque › OP › Logement`** : branché en direct sur les données de l'outil, complété par un catalogue intégré des plans d'outillage (EMAG 1-2-3, WEISSER, HESSAPP + estimation PCI 4-5) pour pré-remplir mode, Vc, f, ap, rε et κr dès aujourd'hui. Tout reste modifiable à la main pour simuler.
+- **Affichage clair et sans fuite** : 4 couleurs de zone (**Bleu** = trop froid, **Vert** = domaine conseillé, **Rose** = risque de vibrations, **Rouge** = trop chaud / usure) + badge neutre **Opération de chanfrein** ($\kappa_r \le 50^\circ$) et **Hors tournage céramique** (OP30 perçage). Affiche l'épaisseur de copeau réelle (en mm), la flèche directionnelle, une phrase courte et le closing *« Pour la préconisation chiffrée, contacter Benjamin Rouquette »*. Aucun indice interne, aucune formule, aucun seuil, aucune mention de marque.
+- **Ergonomie mobile** : tous les champs de saisie en $\ge 16\text{ px}$, virgule décimale française tolérée, raccourcis 1-clic ($\kappa_r$ 45° / 75° / 85° / 93° / 95° / Ronde Ø8 / Ronde Ø9,52).
+- **Tests** : cas unitaires complets dans la suite intégrée + porte hors-suite dans `build_harness.py`.
+
 ## [4.163.0] — 2026-11-24 · section Checkup : les relevés de charnières de l'atelier, consultés et exportés en Excel · Claude
 
 Demande Benjamin (24/11), gel de l'outil levé pour ce seul chantier : l'application « Contrôle de prise de poste » enregistre chaque ✓ / écart dans `public.checkup_journal` ; l'outil principal doit permettre de le consulter, le filtrer et l'exporter.
