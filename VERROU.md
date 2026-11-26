@@ -1,8 +1,12 @@
-| **Auteur** | **SeptFons-Dev (TIMON)** |
-| **Pris le** | 26/11/2026 |
-| **Écrit dans** | `bilan_economique.html`, `spk-shell.js`, `CHANGELOG.md`, `build_harness.py` |
-| **Version visée** | `4.164.0` (branche `ux-rail`) |
-| **Sujet** | *Moteur « Conditions de coupe » (calcul κr_eff unifié 45°–95° + rondes, correction d'arc ébauche/finition, sélecteur Ligne/Disque/OP/Logement + catalogue layouts, épaisseur de copeau, lampes 4 couleurs, tests). Gel levé par Benjamin pour ce chantier ; déploiement Surge DEV uniquement.* |
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`. Outil gelé à nouveau (le gel n'était levé que pour la section Conditions de coupe, livrée en 4.164.0).* |
+
+---
+
+✅ **Verrou pris puis libéré par SeptFons-Dev (TIMON) le 26/11/2026** (v4.164.0, branche `ux-rail`, commit `e5ccb92`) — moteur **Conditions de coupe** (Outils › Conditions de coupe : κr_eff unifié 45°–95° + plaquettes rondes, correction d'arc ébauche/finition, 4 couleurs bleu/vert/rose/rouge + neutre chanfrein/perçage, épaisseur de copeau affichée, sélecteur Ligne › Disque › OP › Logement + catalogue des plans d'outillage). 1032 tests | 0 échec + porte hors-suite `conditions de coupe 4.164`. **DEV déployée (`suivi-optimisation-projet.surge.sh`, md5 `661584cb8257`, vérifiée octet pour octet) ; PROD : rien (4.163.0 inchangée).** HTML autonome (`conditions_coupe_standalone.html`) et tableau de mapping (`MAPPING_KR_LOGEMENTS_2026-11-26.md`) livrés. Gel remis en place.
 
 ---
 
