@@ -5,6 +5,16 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.165.0] — 2026-11-26 · Conditions de coupe : les postes mixtes (T521) ont un vrai verdict · SeptFons-Dev
+
+Demande Benjamin (26/11) : un outil à 45° comme T521 ne fait pas que des chanfreins (le programme L120_1 l'utilise aussi en « ROUGH TURNING OUTER DIAMETER » et en intérieur). Avant, `evaluer()` renvoyait le badge neutre « Opération de chanfrein » pour tout κr ≤ 50°, avant tout verdict de zone : un poste d'ébauche réel à 45° n'avait jamais de verdict.
+
+- **Ébauche + κr ≤ 50° = poste mixte** : vrai verdict de zone d'ébauche (la passe d'ébauche est l'engagement dominant, le chanfrein est thermiquement négligeable — leçon T521 du 26/11). Phrase : « Poste mixte (ébauche + chanfreins) : verdict porté par la passe d'ébauche. » ; hm et closing inchangés.
+- **Finition + κr ≤ 50°** : badge neutre « chanfrein » conservé (vrai chanfrein de finition, consultatif). Perçage (OP30) : inchangé.
+- Repères terrain (304x28 T521) : côté 2 (800 / 0,30 / 45°, K 170) = vert ; côté 1 essai (1500 / 0,35 / 45°, K 371) = vert.
+- Tests : le test « chanfrein 45° → neutre » devient trois tests (ébauche 800/0,30 → vert ; ébauche 1500/0,35 → vert ; finition 45° → neutre) + test de la phrase ; « zéro fuite de seuil » étendu aux nouvelles sorties.
+- `conditions_coupe_standalone.html` : même changement moteur, marqueur v4.165.0. Aucune donnée cloud touchée.
+
 ## [4.164.1] — 2026-11-26 · correctif bloquant : le lien « Conditions de coupe » ne s'ouvrait pas · Brad
 
 Remontée Benjamin (26/11) : sur le DEV 4.164.0, l'entrée **Outils › Conditions de coupe** ne faisait rien.

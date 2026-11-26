@@ -51,7 +51,7 @@
 (function(){
   "use strict";
 
-  /* MOTEUR CONDITIONS DE COUPE — version autonome hors-ligne (v4.164.1) */
+  /* MOTEUR CONDITIONS DE COUPE — version autonome hors-ligne (v4.165.0) */
   const CONFIG_ZONES = {
     ebauche:  { froidSi: (k, vc) => (k < 150 || vc < 315), chaudSi: (k) => (k > 450) },
     finition: { froidSi: (k) => (k < 110), vibrationsSi: (k) => (k > 185 && k <= 220), chaudSi: (k) => (k > 220) },
@@ -106,14 +106,16 @@
       return { couleur:"neutre", libelle:"Saisie incomplète", hm:null, fleche:"Complète les champs", phrase:"Renseigne Vc, avance, profondeur de passe et angle κr (valeurs positives) pour évaluer le régime." };
     }
     const hm = f * Math.sin(kappaEffDeg(ap, isNaN(re) ? 0 : re, kr) * Math.PI / 180);
-    if(kr <= CONFIG_ZONES.chanfreinKrMax){
+    const mixte = (kr <= CONFIG_ZONES.chanfreinKrMax && p.mode === "ebauche"); // v4.165.0 : poste mixte (T521) = vrai verdict
+    const PHRASE_MIXTE = "Poste mixte (ébauche + chanfreins) : verdict porté par la passe d'ébauche.";
+    if(kr <= CONFIG_ZONES.chanfreinKrMax && !mixte){
       return { couleur:"neutre", libelle:"Opération de chanfrein", hm, fleche:"Passe courte de chanfreinage", phrase:"Angle de chanfrein détecté : l'épaisseur de copeau réelle est indiquée à titre consultatif." };
     }
     const charge = vc * hm;
     if(p.mode === "ebauche"){
-      if(CONFIG_ZONES.ebauche.chaudSi(charge)) return { couleur:"rouge", libelle:"Trop chaud — usure", hm, fleche:"↓ Réduire la vitesse", phrase:"Zone chaude : la vie de l'arête s'écroule à ce régime." };
-      if(CONFIG_ZONES.ebauche.froidSi(charge, vc)) return { couleur:"bleu", libelle:"Trop froid", hm, fleche:"↑ Augmenter la vitesse ou l'épaisseur de copeau", phrase:"Zone froide : l'arête râpe au lieu de couper." };
-      return { couleur:"vert", libelle:"Domaine conseillé", hm, fleche:"→ Régime tenable", phrase:"Domaine conseillé : régime éprouvé." };
+      if(CONFIG_ZONES.ebauche.chaudSi(charge)) return { couleur:"rouge", libelle:"Trop chaud — usure", hm, fleche:"↓ Réduire la vitesse", phrase: mixte ? PHRASE_MIXTE : "Zone chaude : la vie de l'arête s'écroule à ce régime." };
+      if(CONFIG_ZONES.ebauche.froidSi(charge, vc)) return { couleur:"bleu", libelle:"Trop froid", hm, fleche:"↑ Augmenter la vitesse ou l'épaisseur de copeau", phrase: mixte ? PHRASE_MIXTE : "Zone froide : l'arête râpe au lieu de couper." };
+      return { couleur:"vert", libelle:"Domaine conseillé", hm, fleche:"→ Régime tenable", phrase: mixte ? PHRASE_MIXTE : "Domaine conseillé : régime éprouvé." };
     }
     if(CONFIG_ZONES.finition.chaudSi(charge)) return { couleur:"rouge", libelle:"Trop chaud — usure", hm, fleche:"↓ Réduire nettement la vitesse", phrase:"Zone trop chaude : usure accélérée et dérive d'état de surface." };
     if(CONFIG_ZONES.finition.vibrationsSi(charge)) return { couleur:"rose", libelle:"Risque de vibrations", hm, fleche:"↓ Réduire la vitesse", phrase:"Zone haute en finition : risque de vibrations et Ra qui dérive." };

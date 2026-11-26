@@ -2,7 +2,16 @@
 | **Pris le** | — |
 | **Écrit dans** | — |
 | **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`. Outil gelé à nouveau (le gel n'était levé que pour la section Conditions de coupe, livrée en 4.164.0).* |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`. Outil gelé à nouveau (le gel n'était levé que pour Conditions de coupe : 4.164.0, 4.164.1, 4.165.0).* |
+
+---
+
+
+✅ **Verrou pris puis libéré par SeptFons-Dev (TIMON) le 26/11/2026** (v4.165.0, branche `ux-rail`) — Conditions de coupe : les postes mixtes ébauche + chanfreins (T521) ont un vrai verdict de zone ; finition ≤ 50° garde le badge neutre. 1037 tests | 0 échec (×2). **DEV déployée (md5 `ea0c674f6924`, vérifiée octet pour octet) ; PROD : rien (4.163.0).** Gel remis en place.
+
+---
+
+✅ **Verrou pris puis libéré le 26/11/2026** (patch SeptFons-Dev / TIMON, finalisation build + déploiement Brad / TIMON) — **4.165.0** : les postes mixtes ébauche+chanfreins (κr ≤ 50°, ex. T521 qui ébauche aussi le Ø ext) ont le **vrai verdict de zone** au lieu du badge neutre « chanfrein » ; le badge neutre ne reste que pour un chanfrein de FINITION. Phrase « Poste mixte (ébauche + chanfreins) : verdict porté par la passe d'ébauche. » Écrits : `bilan_economique.html`, `conditions_coupe_standalone.html` (même moteur), CHANGELOG 4.165.0, NOUVEAUTES. **Harnais 1037 tests | 0 échec (×2)** ; parcours validé au navigateur (ébauche 45° à 1500/0,35 → vert « Domaine conseillé » + phrase Poste mixte ; finition 45° → neutre chanfrein ; zéro erreur). **Déployé DEV 4.165.0** (md5 `ea0c674f…` == dist, version.json servi 4.165.0) ; **PROD : rien** (4.163.0). Demandé par Benjamin : « le point de départ de nos améliorations dans toute l'usine ».
 
 ---
 
