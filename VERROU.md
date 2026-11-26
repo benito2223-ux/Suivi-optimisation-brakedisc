@@ -10,6 +10,10 @@
 
 ---
 
+✅ **Verrou pris puis libéré par Brad (TIMON) le 26/11/2026** — vérification du 4.164.0 demandée par Benjamin (le disque 304x28 manquait sur EMAG). **`bilan_economique.html` NON touché** (gel respecté ; Surge PROD/DEV non redéployées). Écrits : `conditions_coupe_standalone.html` v4.164.1 (6 rangées EMAG 1 · 304x28 RPE dans `PRESETS_ATELIER`, syntaxe node --check OK) + `IMPORT_EMAG1_304.json` (import fusion DEV — **ne jamais l'importer en PROD**, fusion par id → doublon de ligne) + **injection SQL de 5 shards dans l'espace `dev`** de `sync_shards` (seq 1304-1308 : `tree` 1 ligne EMAG 1 · 304x28 RPE + 4 scénarios ; round-trip `syAssembler` vérifié 10/10 ; **aucune donnée prod copiée**, voir ECHANGES 26/11 Brad). Cause racine documentée dans ECHANGES. Gel remis en place.
+
+---
+
 ✅ **Verrou pris puis libéré par Claude le 24/11/2026** (v4.163.0, branche `ux-rail`) — section Checkup dans l'outil principal (Outils › Checkup : lecture de `checkup_journal`, cartes, filtres, vues, export .xlsx). 1011 tests | 0 échec. DEV : voir ECHANGES « Faits extérieurs ». **PROD non touchée (4.162.5).** Gel levé par Benjamin pour ce seul chantier ; **l'outil est de nouveau gelé**.
 
 ---
