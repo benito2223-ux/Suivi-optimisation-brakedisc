@@ -1,8 +1,8 @@
-| **Auteur** | *(libre)* |
-| **Pris le** | — |
-| **Écrit dans** | — |
-| **Version visée** | — |
-| **Sujet** | *Personne n'écrit dans `bilan_economique.html`. Outil gelé à nouveau (le gel n'était levé que pour la section Checkup, livrée en 4.163.0).* |
+| **Auteur** | **SeptFons-Dev (TIMON)** |
+| **Pris le** | 26/11/2026 |
+| **Écrit dans** | `bilan_economique.html`, `spk-shell.js`, `CHANGELOG.md`, `build_harness.py` |
+| **Version visée** | `4.164.0` (branche `ux-rail`) |
+| **Sujet** | *Moteur « Conditions de coupe » (calcul κr_eff unifié 45°–95° + rondes, correction d'arc ébauche/finition, sélecteur Ligne/Disque/OP/Logement + catalogue layouts, épaisseur de copeau, lampes 4 couleurs, tests). Gel levé par Benjamin pour ce chantier ; déploiement Surge DEV uniquement.* |
 
 ---
 
