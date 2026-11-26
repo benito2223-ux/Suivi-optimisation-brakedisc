@@ -2613,6 +2613,9 @@ try {
     const i = html.indexOf('v4.164 — MOTEUR CONDITIONS DE COUPE'), j = html.indexOf('FIN MOTEUR CONDITIONS DE COUPE');
     const bloc = (i > -1 && j > i) ? html.slice(i, j).toLowerCase() : '';
     if (!bloc) echecs.push('le bloc Moteur Conditions de coupe est introuvable');
+    /* v4.164.1 — incident du 26/11 : la livraison référençait `allData`, globale inexistante
+       (l arbre s appelle `lignes`) → ReferenceError silencieuse, le lien mourait. Interdit. */
+    if (bloc.indexOf('alldata') !== -1) echecs.push('allData (globale inexistante) dans le bloc Conditions de coupe');
     if (bloc.indexOf('ceramtec') !== -1) echecs.push('mention de la marque dans le bloc Conditions de coupe');
     if (bloc.indexOf('spk') !== -1) echecs.push('mention SPK dans le bloc Conditions de coupe');
     if (bloc.indexOf('p_req') !== -1) echecs.push('la puissance apparait dans le bloc Conditions de coupe');

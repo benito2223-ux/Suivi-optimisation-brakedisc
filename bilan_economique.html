@@ -15407,6 +15407,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.164.1", date:"26/11/2026", points:[
+    "<b>Corrigé : Outils › Conditions de coupe s'ouvre de nouveau.</b> Le lien de la 4.164.0 ne répondait pas au clic (une variable mal nommée dans la livraison d'hier). Le sélecteur Ligne › Disque › OP › Logement et le pré-remplissage fonctionnent ; rien d'autre n'a changé."
+  ]},
   { version:"4.164.0", date:"26/11/2026", points:[
     "<b>Nouveau : Outils › Conditions de coupe.</b> Un simulateur local pour vérifier en direct un réglage (ébauche ou finition : Vc, avance, profondeur de passe, rayon de bec, angle κr) : épaisseur de copeau réelle, couleur de zone (bleu trop froid, vert conseillé, rose vibrations, rouge trop chaud) et direction d'ajustement.",
     "<b>Sélecteur atelier intégré.</b> Choisis une ligne, un disque, une OP et un logement pour pré-remplir automatiquement les conditions et les angles issus des plans d'outillage, puis ajuste librement à la main pour tester un réglage."
@@ -16384,7 +16387,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.164.0";
+const TOOL_VERSION = "4.164.1";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -21108,9 +21111,19 @@ const ccEtat = {
   source: "", horsTournage: false
 };
 
+/* v4.164.1 : échappement texte local au bloc — l'app n'a pas d'`escapeHTML` global
+   (la 4.164.0 l'appelait : le panneau s'ouvrait vide, 2e bug masqué par le 1er). */
+function ccTexte(s){
+  return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
 function ccOptionsAtelier(){
-  const lignes = (allData && Array.isArray(allData.lignes)) ? allData.lignes : [];
-  const ligne = lignes.find(l => l.id === ccEtat.ligneId) || null;
+  /* v4.164.1 : la globale de l arbre est `lignes` — la 4.164.0 référençait une globale
+     inexistante (incident 26/11 : ReferenceError silencieuse au clic, le panneau ne
+     s ouvrait jamais). Le local s appelle `lignesArbre` pour ne pas masquer la globale
+     dans son propre initialiseur (TDZ). */
+  const lignesArbre = Array.isArray(lignes) ? lignes : [];
+  const ligne = lignesArbre.find(l => l.id === ccEtat.ligneId) || null;
   const refs = ligne && Array.isArray(ligne.references) ? ligne.references : [];
   const ref = refs.find(r => r.id === ccEtat.refId) || null;
   const ops = ref && Array.isArray(ref.ops) ? ref.ops : [];
@@ -21160,12 +21173,12 @@ function ccResultatHTML(){
   return `
     <div class="cc-res z-${res.couleur}" role="status" aria-live="polite">
       <div class="cc-res-top">
-        <span class="cc-badge"><span class="cc-dot"></span>${escapeHTML(res.libelle)}</span>
-        <span class="cc-hm">Épaisseur de copeau : ${escapeHTML(hmTxt)}</span>
+        <span class="cc-badge"><span class="cc-dot"></span>${ccTexte(res.libelle)}</span>
+        <span class="cc-hm">Épaisseur de copeau : ${ccTexte(hmTxt)}</span>
       </div>
-      <div class="cc-fleche">${escapeHTML(res.fleche)}</div>
-      <p class="cc-phrase">${escapeHTML(res.phrase)}</p>
-      <div class="cc-closing">${escapeHTML(res.closing)}</div>
+      <div class="cc-fleche">${ccTexte(res.fleche)}</div>
+      <p class="cc-phrase">${ccTexte(res.phrase)}</p>
+      <div class="cc-closing">${ccTexte(res.closing)}</div>
     </div>
   `;
 }
@@ -21175,8 +21188,8 @@ function renderConditionsCoupe(){
   if(!wrap) return;
   const ctx = ccOptionsAtelier();
   const opt = (arr, sel, fnVal, fnLab, vide) =>
-    `<option value="">${escapeHTML(vide)}</option>` +
-    arr.map(x => `<option value="${escapeAttr(fnVal(x))}"${fnVal(x) === sel ? " selected" : ""}>${escapeHTML(fnLab(x))}</option>`).join("");
+    `<option value="">${ccTexte(vide)}</option>` +
+    arr.map(x => `<option value="${escapeAttr(fnVal(x))}"${fnVal(x) === sel ? " selected" : ""}>${ccTexte(fnLab(x))}</option>`).join("");
 
   wrap.innerHTML = `
     <div class="cc-wrap">
@@ -21205,7 +21218,7 @@ function renderConditionsCoupe(){
             <select id="ccSelLog" data-cc-sel="log"${ctx.logs.length ? "" : " disabled"}>${opt(ctx.logs, ccEtat.logKey, x => x.key, x => x.lab, "— Choisir un logement —")}</select>
           </div>
         </div>
-        ${ccEtat.source ? `<div class="cc-meta">Source des valeurs : ${escapeHTML(ccEtat.source)} (modifiable librement ci-dessous).</div>` : ""}
+        ${ccEtat.source ? `<div class="cc-meta">Source des valeurs : ${ccTexte(ccEtat.source)} (modifiable librement ci-dessous).</div>` : ""}
       </div>
 
       <div class="cc-card">
@@ -21257,10 +21270,11 @@ function renderConditionsCoupe(){
 function ouvrirConditionsCoupe(){
   fermerPanneaux();
   // Si aucune ligne encore choisie, pré-sélectionner la ligne active
-  if(!ccEtat.ligneId && allData && allData.activeLigneId){
-    ccEtat.ligneId = allData.activeLigneId;
-    if(allData.activeRefId) ccEtat.refId = allData.activeRefId;
-    if(allData.activeOpId) ccEtat.opId = allData.activeOpId;
+  // (v4.164.1 : les sélections actives sont des globales — activeLigneId/activeReferenceId/activeOpId)
+  if(!ccEtat.ligneId && activeLigneId){
+    ccEtat.ligneId = activeLigneId;
+    if(activeReferenceId) ccEtat.refId = activeReferenceId;
+    if(activeOpId) ccEtat.opId = activeOpId;
   }
   ouvrirPanneau("conditionsCoupePanel");
   renderConditionsCoupe();
@@ -30867,6 +30881,32 @@ function runTests(){
     const dump = [e1, e2, f1, fVib, f2, ch, inc].map(x => [x.libelle, x.fleche, x.phrase, x.closing].join(" ")).join(" | ");
     ok("4.164 : zéro fuite de seuil (150/450/185/315) ni de K dans la sortie",
        /(\bK\s*=|\b150\b|\b450\b|\b185\b|\b315\b)/i.test(dump), false);
+    // v4.164.1 — LE LIEN : ccOptionsAtelier lit les VRAIES globales de l app.
+    // Incident du 26/11 : la livraison référençait une globale inexistante pour l arbre
+    // (il s appelle `lignes`) → ReferenceError silencieuse au clic sur Outils › Conditions
+    // de coupe, le panneau ne s ouvrait jamais. La suite n exerçait AUCUN de ces chemins.
+    try {
+      const svL = lignes, svLig = activeLigneId, svRef = activeReferenceId, svOp = activeOpId;
+      const svCc = JSON.parse(JSON.stringify(ccEtat));
+      lignes = [ normalizeLigne({ id:"l-ccx", nom:"EMAG 1", references:[
+        normalizeReference({ id:"r-ccx", nom:"304x28 RPE", ops:[
+          normalizeOp({ id:"o-ccx", nom:"OP20", ordre:20, scenarios:[
+            normalizeScenario({ id:"s-ccx", name:"Prod côté 2", baseline:true, outils:[
+              normalizeOutil({ numero:"T521", logements:[ normalizeLogement({ nom:"D2", vc:"800", f:"0,30", kappaR:"45", rayonBec:"1,6" }) ] }) ] }) ] }) ] }) ] }) ];
+      ccEtat.ligneId = "l-ccx"; ccEtat.refId = "r-ccx"; ccEtat.opId = "o-ccx";
+      activeLigneId = "l-ccx"; activeReferenceId = "r-ccx"; activeOpId = "o-ccx";
+      const ctxCc = ccOptionsAtelier();
+      ok("4.164.1 : ccOptionsAtelier lit les vraies globales (lignes + actives)",
+         [ctxCc.ligne && ctxCc.ligne.nom, ctxCc.ref && ctxCc.ref.nom, ctxCc.op && ctxCc.op.nom, ctxCc.logs.length],
+         ["EMAG 1", "304x28 RPE", "OP20", 1]);
+      const infCc = MoteurConditionsCoupe.infererDepuisLogement("EMAG 1", "304x28 RPE", "OP20", "T521", ctxCc.logs[0].log);
+      ok("4.164.1 : le logement T521·D2 pré-remplit le simulateur (κr lu du logement)",
+         [infCc.kr, infCc.mode, infCc.vc, infCc.f], [45, "ebauche", "800", "0,30"]);
+      lignes = svL; activeLigneId = svLig; activeReferenceId = svRef; activeOpId = svOp;
+      ccEtat.ligneId = svCc.ligneId; ccEtat.refId = svCc.refId; ccEtat.opId = svCc.opId; ccEtat.logKey = svCc.logKey;
+    } catch(e) {
+      ok("4.164.1 : ccOptionsAtelier doit lire les globales réelles sans ReferenceError", e.message, null);
+    }
   }
 
   /* v4.66.0 — on RECALCULE le nombre d'échecs au moment du retour.

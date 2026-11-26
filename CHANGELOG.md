@@ -5,6 +5,17 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.164.1] — 2026-11-26 · correctif bloquant : le lien « Conditions de coupe » ne s'ouvrait pas · Brad
+
+Remontée Benjamin (26/11) : sur le DEV 4.164.0, l'entrée **Outils › Conditions de coupe** ne faisait rien.
+
+- **Cause** : la livraison référençait une globale `allData` qui n'existe pas dans l'outil (l'arbre s'appelle `lignes`, les sélections `activeLigneId` / `activeReferenceId` / `activeOpId`) → `ReferenceError` silencieuse au clic dans `ouvrirConditionsCoupe`, le panneau ne s'ouvrait jamais, sur toutes les données.
+- **Deuxième bug, masqué par le premier** : le bloc appelait aussi un helper d'échappement `escapeHTML` inexistant dans l'app — le panneau s'ouvrait alors **vide**. Repéré au test réel du rendu (après correction du premier). Correctif : helper local `ccTexte` propre au bloc, qui reste autonome.
+- **Correctif** : les deux fonctions du bloc (`ccOptionsAtelier`, `ouvrirConditionsCoupe`) lisent les vraies globales ; renommage du local `lignes` → `lignesArbre` pour éviter l'auto-référence TDZ ; `escapeHTML` → `ccTexte` (8 occurrences).
+- **Pourquoi la suite n'avait rien vu** : aucun test n'exerçait ces chemins (1032 tests = la suite existante ; la porte hors-suite ne vérifiait que des chaînes). **Refermé** : 2 tests en-suite qui montent un arbre dans les globales réelles et appellent `ccOptionsAtelier` + l'inférence du logement ; et la porte hors-suite interdit désormais toute occurrence d'`allData` dans le bloc Conditions de coupe.
+- **Vérification** : harnais **1034 tests | 0 échec** (×2), puis parcours complet au navigateur sur le build et sur le site DEV en ligne : menu Outils → clic → panneau rendu, sélecteurs peuplés, zone verte, épaisseur de copeau affichée, **zéro erreur console**. Fichier servi identique octet pour octet (md5 `981c76a0…`), fichiers sensibles en 404.
+- **Déploiement** : DEV uniquement (4.164.1). PROD non concernée (4.163.0 ne porte pas la fonctionnalité).
+
 ## [4.164.0] — 2026-11-26 · moteur Conditions de coupe (κr 45°–95° + rondes, sélecteur atelier) · SeptFons-Dev
 
 Demande Benjamin (26/11), gel levé pour ce chantier : nouvelle section autonome **Outils › Conditions de coupe** pour guider toute l'équipe technique sur les réglages de tournage céramique (ébauche et finition), calcul 100 % local et consultatif.
