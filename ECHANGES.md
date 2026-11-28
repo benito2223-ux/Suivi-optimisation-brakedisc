@@ -7693,3 +7693,6 @@ Faits extérieurs : `suivi-optimisation-septfons.surge.sh` (PROD) ET `suivi-opti
 
 ### 28/11/2026 — Claude Code — prod-163-hotfix = branche COURANTE du dossier principal
 Le dossier principal est maintenant sur `prod-163-hotfix` (4.163.1, checkup 2026-11-25.3, tous les documents). `ux-rail` (165) reste sur GitHub, mise de côté. Plus de worktree `.worktrees/prod163`.
+
+### 28/11/2026 — Claude Code — sauvegarde automatique Supabase mise en place (demande Benjamin)
+Tâche Windows « SeptFons Backup Supabase » (12h30, 18h30, ouverture de session, rattrapage) → `scripts/backup_supabase_auto.py` : dump complet vérifié (13 tables, 1253 lignes, 5,7 Mo gz) vers `C:\Users\Admin\SeptFons_Backups_local` ET Google Drive `CERAMTEC/Suivi optimisation Sept Fons - Sauvegardes/auto` (LATEST remplacé à chaque fois, 14 récents + 12 mensuels). Voir `BACKUP_AUTOMATIQUE.md`. **Ne jamais pousser ces sauvegardes sur GitHub (dépôt public).** Autre fait : cloud DEV — 3 shards EMAG1 304x28 (OP10/20/40) restaurés depuis la PROD après réécriture du 28/11 17h30 ; anciennes révisions dans `sync_historique`.
