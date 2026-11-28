@@ -6,3 +6,6 @@ compte_rendu_OP10.html
 README.txt
 # Build de deploiement (reconstruit par outils/build-coque.mjs) : jamais versionne
 dist/
+
+# Cache Python compile (regenerable)
+__pycache__/

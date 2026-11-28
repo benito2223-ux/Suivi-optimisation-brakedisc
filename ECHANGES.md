@@ -7629,8 +7629,58 @@ Demande de Benjamin : « vérifie le travail fait par Gemini sur l'outil conditi
 
 - **Tour SeptFons-Dev (TIMON) 26/11 — v4.165.0 : postes mixtes ébauche + chanfreins (T521) = vrai verdict de zone dans Conditions de coupe** (demande Benjamin ; gel levé pour ce seul chantier). Avant : `evaluer()` renvoyait le badge neutre « chanfrein » pour tout κr ≤ 50°, avant tout verdict — un poste d'ébauche réel à 45° n'en avait jamais. Maintenant : **ébauche + κr ≤ 50° = verdict de zone d'ébauche** avec la phrase « Poste mixte (ébauche + chanfreins) : verdict porté par la passe d'ébauche. » (hm et closing inchangés) ; **finition + κr ≤ 50° = badge neutre conservé** ; perçage OP30 inchangé. Écrits : `bilan_economique.html` (TOOL_VERSION 4.165.0, NOUVEAUTES, moteur, tests), `conditions_coupe_standalone.html` (même moteur, marqueur v4.165.0), `CHANGELOG.md`, `VERROU.md`, `ECHANGES.md`. Tests : « chanfrein 45° → neutre » remplacé par 3 tests (ébauche 800/0,30 → vert ; ébauche 1500/0,35 → vert ; finition 45° → neutre) + test de la phrase ; « zéro fuite de seuil » étendu. **Harnais 1037 tests | 0 échec, lancé ×2 après le dernier octet, VERDICT tout vert** (porte « conditions de coupe 4.164 » verte). Note harnais : il lit des fichiers frères dans `%LOCALAPPDATA%\Temp` (spk-shell.js, spk-app.css, service-worker.js, checkup.html, checkup-version.json, scripts/test_checkup.js) — sans eux le VERDICT échoue sur « checkup atelier », sans rapport avec le code. **Navigateur** (build servi en local) : menu Outils › Conditions de coupe → 45° ébauche = Domaine conseillé + phrase poste mixte ; finition 45° = « Opération de chanfrein » ; zéro erreur console. Page autonome : les 3 rangées T521 de la 304x28 donnent vert (côté 2 800/0,30 → hm 0,21 ; essai 1500/0,35 → hm 0,25). Le profil du navigateur n'a que les données d'exemple (pas de 304x28), d'où la saisie manuelle dans l'app. **Déployé DEV 4.165.0** (dist sans CNAME ; version.json `{"v":"4.165.0"}` ; md5 `ea0c674f6924…` servi == dist ; ECHANGES/CHANGELOG/VERROU/IMPORT/.git en 404). **PROD : rien** (4.163.0 recontrôlée). Aucune donnée cloud touchée. Gel remis en place.
 
+### 26/11/2026 — Gemini (TIMON) — Programmes CN complets EMAG 1 / DV 304x28 RPE (reçus de Matis) : analyse, calculs des temps, anomalies, scripts et passation SeptFons-Dev
+Demande de Benjamin : analyse des 8 programmes CN transmis par Matis (L110, L120, L130, L140_1 et L150_1 = OP40 droite), rangement, mise à jour des outils d'analyse et transmission à SeptFons-Dev pour injection dans l'outil principal et rédaction de l'email pour Matis.
+- **Rangement CN** : les 8 fichiers sont rangés dans `Programmes/EMAG1 - 304x28/` (L110_1/2, L120_1/2, L130_11/12, L140_1 et L150_1).
+- **Scripts & Livrables** :
+  - `scripts/recap_emag1_304.py` étendu aux 4 OP complètes (gestion perçages OP30 ×5/×3, détection hors-balises, export JSON).
+  - `Programmes/RECAP_TEMPS_COUPE_DV304_EMAG1.xlsx` généré (3 onglets : Coupe par logement, Écarts entre côtés, Hors balises & Anomalies).
+  - `Programmes/temps_coupe_DV304_EMAG1.json` généré.
+  - `conditions_coupe_standalone.html` enrichi des presets OP10 et OP40 pour EMAG 1 304x28 RPE.
+  - `IMPORT_EMAG1_304.json` mis à jour avec les 4 OP, temps de coupe réels, outils réels (T515 au lieu de T517 en OP10).
+  - `BRIEFING_TEMPS_COUPE_EMAG1_304_POUR_SEPTFONS_DEV.md` créé pour passation complète.
+  - `EMAIL_MATIS_2026-11-26_programmes_304.md` rédigé au ton de Benjamin, prêt à l'envoi.
+- **Faits majeurs relevés sur les programmes CN** :
+  1. *Anomalie critique Montronix OP40 Côté 1 (L140_1)* : sur T549, dressage de piste X307->X236 codé AVANT M870 (7,99 s de coupe non surveillée). Temps de coupe réel C1 = 20,56 s (dont 7,99 s hors balise).
+  2. *Écart de vitesse T549 OP40* : Côté 1 à Vc 650 m/min vs Côté 2 à Vc 750 m/min.
+  3. *Gain immédiat 5,7 s OP20* : Côté 1 à Vc 1500 (essai validé 26/11) vs Côté 2 à Vc 800 (prod). Aligner C2 fait passer OP20 C2 de 36,65 s à 31,0 s.
+  4. *Balise commentée OP10 C2 (L110_2)* : `;M870` en N510 sur dégagement T513 D1 (1,45 s non surveillées).
+  5. *Nomenclature OP10* : l'ébauche intérieure tourne en T515 (S-Platte R1.6) et non T517.
+- **Totaux temps de coupe pure par OP (C1 / C2)** :
+  OP10 : 25,44 s / 24,63 s | OP20 : 30,98 s / 36,65 s | OP30 : 9,07 s / 8,97 s | OP40 : 20,56 s (réel) / 18,94 s.
+- **Passation SeptFons-Dev** : message transmis via `timon msg send SeptFons-Dev` pour mise à jour de `bilan_economique.html` sous verrou.
+
 ### 26/11/2026 — SeptFons-Dev (patch) + Brad (build/déploiement) — 4.165.0 : postes mixtes 45° (T521) → vrai verdict dans Conditions de coupe
 Demande Benjamin : « demande à SeptFons-Dev de modifier l'outil pour considérer les outils comme T521 qui sont à 45° mais ne font pas que des chanfreins ! c'est le point de départ de nos améliorations dans toute l'usine. »
 - **Le changement** : dans `evaluer()`, le badge neutre « Opération de chanfrein » (κr ≤ 50°) ne s'applique qu'en mode **finition**. En mode **ébauche**, un κr ≤ 50° est un **poste mixte** (ex. T521 = ébauche Ø ext + chanfreins) et porte le VRAI verdict de zone, avec la phrase « Poste mixte (ébauche + chanfreins) : verdict porté par la passe d'ébauche. » Le hm et le closing sont inchangés ; OP30 perçage reste hors tournage.
 - **Pourquoi c'est correct physiquement** : la passe d'ébauche est l'engagement dominant de l'arête, le chanfrein est thermiquement négligeable (leçon T521 du 26/11 : K 371 tenu sans sur-usure). Repères : côté 2 (800/0,30/45°, K 170) = vert ; côté 1 essai (1500/0,35/45°, K 371) = vert — les presets T521 affichent maintenant un verdict au lieu du badge neutre.
 - **Mission SeptFons-Dev** : patch complet (moteur app + standalone, TOOL_VERSION 4.165.0, NOUVEAUTES, CHANGELOG, 4 tests nouveaux remplaçant « chanfrein 45° → neutre », verrou pris) ; la mission s'est terminée avant la fin du protocole — **Brad a finalisé** : harnais régénéré, **1037 tests | 0 échec (×2)**, build coque, test navigateur du parcours réel (ébauche 45° à 1500/0,35 → « Domaine conseillé » vert + phrase Poste mixte ; finition 45° → « Opération de chanfrein » neutre ; zéro erreur console), **déploiement DEV 4.165.0** (dist sans CNAME, servi identique octet pour octet, md5 `ea0c674f…`), VERROU libéré. **PROD : rien** (4.163.0).
+
+### 26/11/2026 — SeptFons-Dev (TIMON) — Temps de coupe CN EMAG 1 / DV 304x28 RPE (relais briefing Gemini)
+Relais du briefing `BRIEFING_TEMPS_COUPE_EMAG1_304_POUR_SEPTFONS_DEV.md` demandant la mise à jour de `bilan_economique.html` avec les temps de coupe CN OP10–OP40 (côté 1 et côté 2).
+- **Constat d'architecture** : `bilan_economique.html` ne contient **aucune donnée machine ni temps de coupe** (uniquement le code de l'outil + jeu `[Exemple]` anonyme ; `T515` est déjà dans le mapping κr L20949). Toutes les données réelles vivent dans **Supabase `public.sync_shards`** (`cxjfyaorkkxemjnollnj`), comme pour EMAG 1 356, EMAG 2 356, PCI 4 268 et EMAG 1 304 OP20 (cf. `RECAP_TEMPS_DE_COUPE_PROGRAMMES_CN_pour_TIMON.md` §4). **`bilan_economique.html` non touché** (gel `VERROU.md` respecté, aucun verrou pris, aucun déploiement requis).
+- **Cloud `dev` mis à jour (`sync_shards`, `espace = 'dev'`, seq 1343–1352, 6 shards vérifiés)** :
+  - `tree` (rev 2) : `OP30` ajoutée entre `OP20` et `OP40`.
+  - `OP10` (rev 2) : `T517` → `T515`, 6/6 logements renseignés (côté 1 : **25,44 s**).
+  - `OP20` (rev 3) : 7/7 logements renseignés sur C2 référence (**36,66 s**) et C1 essai validé (**30,99 s**), en préservant `SNMX 120716 T03030 SL506` sur `T521`.
+  - `OP30` (rev 1, nouveau) : `T532S` (×5, G97 2500 tr/min, 6,15 s) + `T533S` (×3, G97 3700 tr/min, 2,92 s) = **9,07 s**.
+  - `OP40` (rev 2) : 4/4 logements renseignés (côté 1 réel **20,56 s**, dont `T549` 13,89 s incluant les 7,99 s avant M870).
+- **Cloud `prod` (`espace = 'prod'`) : MIS À JOUR sur ordre explicite de Benjamin** (« passe les données en cloud Prod mais garde un backup de toute la base supabase en cas de probleme bien sur, pour l'op20 prends le coté gauche comme base ») :
+  - **Backup intégral vérifié avant écriture** : `archives/backup_supabase_2026-11-26_1541.json` (127,6 Mo, 14 tables `public`, 1 157 lignes, non versionné `.gitignore`).
+  - `OP10` (`s-EMAG1-304X28RPE-OP10`, rev 3→4, seq 1353) : 6/6 logements renseignés (côté gauche), `T515 D2` (`0,93 s`, clone `SNGX 120716 CBN387`) ajouté à côté de `D1` (`2,60 s`) → **25,44 s**.
+  - `OP20` (`s-EMAG1-304X28RPE-OP20`, rev 9→10, seq 1354) : **côté gauche (C1)** pris comme base — `T521 D1/D2` passés à `Vc 1500 / f 0,35` cohérents avec `1,17 s` / `3,66 s` → **30,99 s** (scénario d'essai `smwuui58xakwh` non touché).
+  - `OP30` (`sc:omwx7kuswe6uq:smwx7l5xd9a20`, rev 23→24, seq 1355) : `T535S` (×5, `6,15 s`) et `T533S` (×3, `2,92 s`) basculés en `modeVitesse = "G97"` + `sBroche` (`2500` / `3700`, `vc` vidé) → **9,07 s**.
+  - `OP40` (`s-EMAG1-304X28RPE-OP40`, rev 9→10, seq 1356) : `T548 = 0 s`, `T549` (`simultaneAvecPrecedent = true`) = `13,89 s` réel côté gauche (Vc 650, dont 7,99 s avant M870), `T543` (`0,92 s` / `4,16 s`), `T546` (`1,59 s`) → **20,56 s**.
+  - **Total gamme EMAG 1 / 304x28 RPE (coupe pure, côté gauche) : 86,06 s.** Code `bilan_economique.html` non touché (gelé en 4.165.0 DEV / 4.163.0 PROD).
+
+### 26/11/2026 — SeptFons-Dev (TIMON) — ordre OP30 EMAG 1 / 304x28 RPE corrigé en prod
+Cause : OP30 créée par Matis avec `ordre=50` (ordreMax+10) -> affichée après OP40. Correctif : shard `tree` prod rev 105->106 (seq 1357), `ordre` 50 -> 30. Backup de la ligne `tree` avant écriture : `archives/backup_tree_prod_avant_ordre_OP30_2026-11-26.json`. Non traité : PCI 5 / DV 304x28 RPE, OP40 (`omv6f3fhyoltz`) a `ordre=20` comme OP20. `bilan_economique.html` non touché.
+
+### 26/11/2026 — SeptFons-Dev (TIMON) — ordre OP40 PCI 5 / DV 304x28 RPE corrigé en prod
+Feu vert Benjamin. Noms de la référence vérifiés : OP10, OP20, OP30, « OP 40 » → ordre logique sans ambiguïté. Shard `tree` prod rev 106→107 (seq 1358), écriture conditionnelle à rev=106, seul changement : `omv6f3fhyoltz` `ordre` 20 → 40. Backup : `archives/backup_tree_prod_avant_ordre_PCI5_OP40_2026-11-26.json` (hors git). OP30 EMAG 1 304x28 RPE déjà à 30 (rev 106, seq 1357), non retouchée. Relecture : ordres 10/20/30/40 OK sur les deux références ; rev/seq stables après ~45 s (pas de réécrasement constaté ; resynchro du poste de Matis à reverifier). `bilan_economique.html` non touché, aucun push/bump/déploiement.
+
+### 28/11/2026 — Claude Code (audit demandé par Benjamin) — état réel 163/165 et PROD incomplète
+Lire `RECAP_AGENTS_2026-11-28.md` (prévaut sur les notes antérieures). Résumé : 165 = 163 + Conditions de coupe (linéaire, additif, sur `ux-rail`) ; **la PROD `suivi-optimisation-septfons` sert bilan 4.165.0 mais 404 sur spk-shell.js, spk-app.css, checkup.html et fichiers checkup** (déploiement partiel non tracé) ; la note « PROD : rien (4.163.0) » du 26/11 est fausse. Rien déployé ni modifié en ligne par cet audit. Aucun déploiement sans « oui » de Benjamin.
+
+### 28/11/2026 — Claude Code — PROD remise en 4.163.0 complète (ordre explicite de Benjamin : « Rollback 163 »)
+Faits extérieurs : `surge` de 16 fichiers sur `suivi-optimisation-septfons.surge.sh`. Dossier = build coque de `844a492` (4.163.0 : bilan md5 `8d913478…`, spk-app.css, spk-shell.js, version.json `{"v":"4.163.0"}`) + index/service-worker/manifest/icônes tels qu’en ligne + 6 fichiers checkup build `2026-11-25.3` (blobs de `0ab66a5`). Vérifié par curl : **16/16 identiques octet pour octet** (200), ECHANGES/VERROU/.git/IMPORT en 404. PROD = 4.163.0 + checkup 2026-11-25.3 ; DEV = 4.165.0 inchangé. Cause de l’incident : un déploiement partiel (bilan 4.165.0 seul) avait écrasé la PROD. Le §3 de `RECAP_AGENTS_2026-11-28.md` est résolu.
