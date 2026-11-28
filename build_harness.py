@@ -2601,6 +2601,21 @@ try {
     console.log((echecs.length ? '  ECHEC ' : '  ok  ') + 'checkup 4.163 : panneau, entree du menu Outils, bloc sans marque ni puissance' + (echecs.length ? ' — ' + echecs.join(' ; ') : ''));
   })();
 
+  /* 2026-11-25 — LE CONTROLE DE PRISE DE POSTE (checkup.html) A SES PROPRES TESTS.
+     Equipes, envoi du journal (releve refuse, reseau coupe, 404, 403), fichier livre : scripts/test_checkup.js.
+     Ecrit sans antislash : ce bloc traverse une chaine Python. */
+  (function checkupAtelier(){
+    const cp = require('child_process');
+    let sortie = '', passe = true;
+    try { sortie = cp.execFileSync('node', ['scripts/test_checkup.js'], { encoding: 'utf8', timeout: 60000 }); }
+    catch (e) { passe = false; sortie = String(e.stdout || '') + String(e.stderr || ''); }
+    const nl = String.fromCharCode(10);
+    const lignes = sortie.split(nl).filter(l => l.indexOf('ECHEC') !== -1);
+    if (!passe) r.echecs += Math.max(1, lignes.length);
+    const resume = sortie.trim().split(nl).pop().trim();
+    console.log((passe ? '  ok  ' : '  ECHEC ') + 'checkup atelier : ' + (passe ? resume.replace(/^ok +/, '') : lignes.join(' ; ')));
+  })();
+
   if (typeof (__DIAG__) !== 'undefined') (__DIAG__)(A);
 
   /* v4.80 — LE VERDICT FINAL TIENT COMPTE DES GARDE-FOUS.

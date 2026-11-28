@@ -1,12 +1,37 @@
-| **Auteur** | **Claude** |
-| **Pris le** | 24/11/2026 (soir) |
-| **Écrit dans** | `bilan_economique.html`, `CHANGELOG.md`, `version.json`/`dist/` (build), `ECHANGES.md` |
-| **Version visée** | **4.163.0** |
-| **Sujet** | **Gel levé par Benjamin pour CE chantier seulement** : section « Checkup » dans l'outil principal — lecture de `public.checkup_journal`, KPI, filtres, vues classée/plate, export Excel. Hors de ce périmètre, l'outil reste gelé. |
+> **28/11/2026 — LIRE `RECAP_AGENTS_2026-11-28.md` AVANT TOUT.** Ligne de production = branche `prod-163-hotfix` (worktree `.worktrees/prod163`), 4.163.1 en PROD et DEV. La 165 (`ux-rail`) est abandonnée : ne pas la déployer.
+
+| **Auteur** | *(libre)* |
+| **Pris le** | — |
+| **Écrit dans** | — |
+| **Version visée** | — |
+| **Sujet** | *Personne n'écrit dans `bilan_economique.html`. Outil gelé à nouveau (le gel n'était levé que pour Conditions de coupe : 4.164.0, 4.164.1, 4.165.0).* |
 
 ---
 
-| **Verrou du checkup** | `checkup.html`, `checkup.webmanifest`, `checkup-version.json`, `icons/checkup-*` : **libre** — même règle, un seul auteur à la fois (front séparé de `bilan_economique.html`). **Reprise : lire `BRIEFING_CHECKUP_TIMON_HERMES.md`.** |
+
+✅ **Verrou pris puis libéré par SeptFons-Dev (TIMON) le 26/11/2026** (v4.165.0, branche `ux-rail`) — Conditions de coupe : les postes mixtes ébauche + chanfreins (T521) ont un vrai verdict de zone ; finition ≤ 50° garde le badge neutre. 1037 tests | 0 échec (×2). **DEV déployée (md5 `ea0c674f6924`, vérifiée octet pour octet) ; PROD : rien (4.163.0).** Gel remis en place.
+
+---
+
+✅ **Verrou pris puis libéré le 26/11/2026** (patch SeptFons-Dev / TIMON, finalisation build + déploiement Brad / TIMON) — **4.165.0** : les postes mixtes ébauche+chanfreins (κr ≤ 50°, ex. T521 qui ébauche aussi le Ø ext) ont le **vrai verdict de zone** au lieu du badge neutre « chanfrein » ; le badge neutre ne reste que pour un chanfrein de FINITION. Phrase « Poste mixte (ébauche + chanfreins) : verdict porté par la passe d'ébauche. » Écrits : `bilan_economique.html`, `conditions_coupe_standalone.html` (même moteur), CHANGELOG 4.165.0, NOUVEAUTES. **Harnais 1037 tests | 0 échec (×2)** ; parcours validé au navigateur (ébauche 45° à 1500/0,35 → vert « Domaine conseillé » + phrase Poste mixte ; finition 45° → neutre chanfrein ; zéro erreur). **Déployé DEV 4.165.0** (md5 `ea0c674f…` == dist, version.json servi 4.165.0) ; **PROD : rien** (4.163.0). Demandé par Benjamin : « le point de départ de nos améliorations dans toute l'usine ».
+
+---
+
+✅ **Verrou pris puis libéré par SeptFons-Dev (TIMON) le 26/11/2026** (v4.164.0, branche `ux-rail`, commit `e5ccb92`) — moteur **Conditions de coupe** (Outils › Conditions de coupe : κr_eff unifié 45°–95° + plaquettes rondes, correction d'arc ébauche/finition, 4 couleurs bleu/vert/rose/rouge + neutre chanfrein/perçage, épaisseur de copeau affichée, sélecteur Ligne › Disque › OP › Logement + catalogue des plans d'outillage). 1032 tests | 0 échec + porte hors-suite `conditions de coupe 4.164`. **DEV déployée (`suivi-optimisation-projet.surge.sh`, md5 `661584cb8257`, vérifiée octet pour octet) ; PROD : rien (4.163.0 inchangée).** HTML autonome (`conditions_coupe_standalone.html`) et tableau de mapping (`MAPPING_KR_LOGEMENTS_2026-11-26.md`) livrés. Gel remis en place.
+
+---
+
+✅ **Verrou pris puis libéré par Brad (TIMON) le 26/11/2026** — deux temps sous le même verrou :
+1. **Vérification du 4.164.0** demandée par Benjamin (le disque 304x28 manquait sur EMAG). Écrits : `conditions_coupe_standalone.html` v4.164.1 (6 rangées EMAG 1 · 304x28 RPE dans `PRESETS_ATELIER`) + `IMPORT_EMAG1_304.json` (hors dépôt, **ne jamais l'importer en PROD** — fusion par id → doublon de ligne) + **injection SQL de 5 shards dans l'espace `dev`** de `sync_shards` (seq 1304-1308 ; round-trip `syAssembler` vérifié 10/10 ; aucune donnée prod copiée).
+2. **Correctif bloquant v4.164.1** (remontée Benjamin : le lien Conditions de coupe ne faisait rien sur le DEV). Deux bugs de la livraison 4.164.0 : globale `allData` inexistante (ReferenceError silencieuse) + helper `escapeHTML` inexistant (panneau ouvert vide). Correctifs + 2 tests en-suite + porte hors-suite renforcée. **1034 tests | 0 échec (×2)** ; parcours complet validé au navigateur (build puis DEV en ligne) ; **déployé DEV 4.164.1** (md5 `981c76a0…` identique octet pour octet). **PROD : rien** (4.163.0). Gel remis en place. Détails dans ECHANGES 26/11 Brad et CHANGELOG 4.164.1.
+
+---
+
+✅ **Verrou pris puis libéré par Claude le 24/11/2026** (v4.163.0, branche `ux-rail`) — section Checkup dans l'outil principal (Outils › Checkup : lecture de `checkup_journal`, cartes, filtres, vues, export .xlsx). 1011 tests | 0 échec. DEV : voir ECHANGES « Faits extérieurs ». **PROD non touchée (4.162.5).** Gel levé par Benjamin pour ce seul chantier ; **l'outil est de nouveau gelé**.
+
+---
+
+| **Verrou du checkup** | `checkup.html`, `checkup.webmanifest`, `checkup-version.json`, `icons/checkup-*` : **libre** — un seul auteur à la fois (front séparé de `bilan_economique.html`). Dernier : SeptFons-Dev (code, `2026-11-25.3`, commit `0ab66a5`) puis Bengenieur (TIMON), 25/11/2026 — build `2026-11-25.3` **DÉPLOYÉ en PROD le 25/11** (PROD = `2026-11-25.3` ; amorçage `checkup_reference` exécuté, 118 réf., lecture anon OK). **Reprise : lire `BRIEFING_CHECKUP_TIMON_HERMES.md` §0.** |
 
 ---
 

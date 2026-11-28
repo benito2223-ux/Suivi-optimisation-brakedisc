@@ -1,0 +1,89 @@
+NOTES RAPIDES - 24/11 - temps de coupe EMAG 1 (DV356) + PCI 4 (DP268)
+(a garder pour parler avec Matis)
+
+------------------------------------------------------------
+CE QUI EST FAIT
+------------------------------------------------------------
+- EMAG 1 DV356 : 18 logements saisis (cote 1 seulement)
+  OP10 38,65 s / OP20 24,93 s / OP30 15,45 s / OP40 33,47 s
+- PCI 4 DP268 : 19 logements saisis
+  OP10 19,83 s / OP20 14,91 s / OP30 14,32 s / OP40 20,28 s (T6407+T6417 simultanes)
+  -> ligne PCI4 a peu pres 69,3 s
+- Rien vu a l'ecran encore sur les vraies donnees -> Ctrl+F5 et regarder les tuiles
+- Excel : RECAP_..._DV356_EMAG1.xlsx, RECAP_..._DP268_PCI4.xlsx (dans Programmes/)
+
+------------------------------------------------------------
+A VERIFIER AVEC MATIS (hypotheses que j'ai prises)
+------------------------------------------------------------
+EMAG 1
+1. T548 existe dans le suivi mais PAS dans les programmes EMAG 1 -> mis a 0 s
+   (sinon OP40 incomplete). Il a un autre programme ?
+2. T5211 : le suivi n'a que D2 (plaquette CNMX), le programme travaille en D1
+   -> j'ai mis 4,46 s sur le D2. Inversion D1/D2 ? (deja dans mes questions)
+3. Cote 2 pas saisi (pas de place dans l'outil, mono-ligne). Reference = cote 1.
+4. T50013 D2 : le recap disait "2 vitesses" -> en fait approche 0,5 mm a Vc 900
+   (0,08 s) puis la coupe a Vc 500 / f 0,35 (22,6 s). Saisi : Vc 500 / f 0,35.
+5. En-tete de L110_1 parle encore de DV304X28 alors que le titre dit 356x26
+6. L140_2 : coquille "M770" a confirmer
+PCI 4
+7. T6203 / T0313 jamais appele dans O2682 (OP20) -> mis a 0 s
+8. OP40 piste : 2 passes identiques de 14,54 s dans le programme, une par outil
+   (T6407 / T6417), simultanes (confirme par moi). Mais le programme les fait l'une
+   apres l'autre -> verifier que c'est bien le meme prog sur la machine
+9. OP30 : la fenetre Montronix ne couvre qu'UN trou par outil (le dernier).
+   J'ai compte tous les trous (2 en D8,5 et 4 en D13,2). Percage = Logement 1,
+   fraisurage = Logement 2 -> OK comme decoupage ?
+General
+10. Vc / f saisis = la condition qui pese le plus en temps du logement (un seul
+    couple Vc/f par logement dans l'outil). Approximation quand il y en a plusieurs
+    (T543 D1 : 700 puis 600 ; T529 : f 0,6 puis 0,3...)
+11. G97 : tr/min saisis (T519 D2 EMAG1, T533/T535, T6201, OP30 PCI4). Si on change
+    Vc/f en essai, le calcul auto marche, mais en G97 il faut le tr/min de l'essai.
+12. Ce sont des temps de COUPE PURE (fenetre balises), pas le cycle pupitre.
+    Rapides, chargement, changements d'outil = hors.
+
+------------------------------------------------------------
+ECARTS EMAG 1 cote 1 vs cote 2 (seconde)
+------------------------------------------------------------
+Totaux OP : OP10 38,65 / 39,82 - OP20 24,93 / 23,35 - OP30 15,45 / 14,38 - OP40 33,47 / 36,88
+Les gros :
+- T546 (OP40) : 9,77 s cote 1 (G96 Vc 400) / 13,74 s cote 2 (G97 650 tr/min, f 0,25)
+  -> cote 2 plus lent de 4 s, a creuser (piste d'optimisation)
+- T525 (OP20) : 6,33 s (Vc 650, f 0,3) / 4,73 s (Vc 750, f 0,35) -> cote 2 plus rapide
+- T533 (OP30) : 6,81 s (3700 tr/min) / 5,74 s (4500 tr/min)
+- T50013 D1 (OP10) : 4,06 / 4,89 (f 0,45 / 0,35)
+- T543 D1 : 5,34 / 4,95
+- le reste : ecarts < 1 s (avances/cotes d'arret differentes)
+
+------------------------------------------------------------
+ECARTS EMAG 1 (cote 1) vs EMAG 2 (calcul du 23/11)
+------------------------------------------------------------
+- T50013 D2 / T513 EMAG 2 : 22,69 s vs 11,1 s -> EMAG 1 deux fois plus long (Vc 500 f 0,35 chez EMAG 1)
+- T549 (OP40) : 17,38 vs 21,8 -> EMAG 1 plus court
+- T529 (OP20) : 7,64 vs 10,3
+- T525 : 6,33 vs 7,9
+- T519 D1 : 3,01 vs 4,7
+- T546 : 9,77 vs 8,3 -> EMAG 1 plus long
+- T517 D1 : 4,06 vs 5,2
+- les autres : a moins de 1 s
+(a prendre avec prudence : EMAG 2 = T548 simultane de T549, pas cumule)
+
+------------------------------------------------------------
+LIMITE DE BROCHE (LIMS / G50)
+------------------------------------------------------------
+- Atteinte sur les petits diametres. Effet sur le temps : faible (jusqu'a 0,4 s).
+- Vc reelle plus basse que la Vc programmee sur ces zones
+- EMAG 1 : LIMS 2300 (OP10), 2800 (OP20), 3000 (OP40)
+- PCI 4 : G50 2500 (OP10), 1633 puis 2000 (OP20), 2000 puis 1593 (OP40)
+
+------------------------------------------------------------
+RESTE A FAIRE / QUESTIONS OUVERTES
+------------------------------------------------------------
+- Lot 2 : champ "hors temps de coupe" par OP (pour remplir la partie hachuree des
+  barres) + gain base sur le goulot. Attend les reponses de Matis (D1, D2, D4)
+- Questions Matis en attente : T548 simultane ? / OP30 EMAG 2 : cycle / cycle propre
+  sans attente par OP / DWG conso pour le 356 seul
+- PCI 5 268 a les memes outils que PCI 4 268 mais pas de programmes ici -> pas de
+  temps saisis. Idem les autres PCI (283, 302, 304).
+- Rien n'est pousse sur GitHub. Scripts scripts/fanuc_temps.py et recap_pci4_268.py
+  pas commites. Programmes + Excel = propriete Stellantis, JAMAIS dans le depot.

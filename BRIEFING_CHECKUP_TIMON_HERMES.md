@@ -1,8 +1,86 @@
 # BRIEFING — « Contrôle de prise de poste » (checkup) — passation à TIMON AI / Hermes
 
-> Auto-contenu : ce fichier suffit pour reprendre le travail. Écrit le 24/11/2026 par Claude, sur demande de Benjamin
+> Auto-contenu : ce fichier suffit pour reprendre le travail. Écrit le 24/11/2026 par Claude, **mis à jour le 25/11/2026 (§0)**, sur demande de Benjamin
 > (« confier la suite à TIMON AI et à Hermes »). Ordre de lecture : `VERROU.md` → ce briefing → dernier tour de `ECHANGES.md`.
 > Langue de travail avec Benjamin : français. Il écrit en dictée vocale. Il attend une direction assumée, pas un catalogue d'options.
+
+## 0. OÙ ON EN EST — 25/11/2026 (à lire d'abord : prime sur les §3 à §5, écrits avant)
+
+**Utilisateurs.** Aujourd'hui **Matis seul** (son téléphone). **Demain peut-être d'autres** (moniteurs d'atelier, autres
+téléphones) : tout ce qui suit doit rester vrai le jour où l'app sort du téléphone de Matis.
+
+**En ligne (PROD, `suivi-optimisation-septfons.surge.sh`)**
+- Outil principal **4.163.0** (DEV identique) : nouvelle entrée **Outils › Checkup** = lecture de `checkup_journal`, 3 cartes
+  (écarts actifs, contrôles, récidives), filtres, vue classée / plate, **export .xlsx**. Outil principal **de nouveau gelé**.
+- `checkup.html` **build `2026-11-25.3` DÉPLOYÉ en PROD le 25/11** (remplace `.2` → `.1` → `.5`) — safe-area iOS (`env(safe-area-inset-top)`
+  sur l'en-tête), flash visuel sur ✓/≠ (iOS ne vibre pas), et **amorçage `checkup_reference` exécuté** (118 réf., lecture anon vérifiée :
+  le checkup fonctionne sans compte membre). Déployer seulement sur
+  feu vert explicite de Benjamin, avec la procédure du §6 (dossier de préparation = fichiers en ligne + fichiers du checkup ;
+  pour l'outil principal, `dist/` **sans** son `.surgeignore` ni son `CNAME`).
+
+**Supabase (`cxjfyaorkkxemjnollnj`) — FAIT le 24/11** (le §5 décrit le schéma, il est appliqué)
+- `checkup_journal` : append-only ; anon/authenticated = INSERT seulement ; lecture = membres (`suivi_est_membre()`) ;
+  trigger `checkup_journal_doublon` (un `id_local` déjà reçu est ignoré). Migrations : `supabase_migrations/`.
+- `checkup_reference` : créée, lisible par anon, **VIDE** (aucune publication encore) → le checkup lit donc l'outil principal
+  via `sync_pull`, **ce qui exige une connexion avec un compte membre**.
+- Le journal contient de vrais relevés (premiers tests de Matis, 24/11).
+
+**Build 2026-11-25.1 (Claude) — ce qui a changé**
+1. **Session** : le checkup ne renouvelle **plus jamais** la session de l'outil principal (même téléphone, clé partagée) —
+   Supabase change le jeton de renouvellement à chaque usage et l'outil principal aurait été déconnecté. Session partagée
+   expirée → demande d'une connexion propre au checkup (`cu_cloud_session`).
+2. **✓ sur une rangée en écart = « remis conforme »** (statut `ok`, commentaire « Remis conforme (écart corrigé) ») ; avant,
+   c'était une annulation et la section Checkup gardait l'écart actif. ✓ sur un ✓ = annulation (inchangé).
+3. **Rangée sans charnière de référence** (HESSAPP ×40, EMAG 2 DP 290 ×15…) : plus de ✓ / ≠, cadre « Référence à
+   renseigner », et elle ne compte plus dans l'avancement de l'OP.
+4. **✓ et ≠ écartés** (gants) : ≠ plus étroit à gauche, 28 px d'écart, ✓ large à droite ; sur écran ≤ 420 px, tailles
+   réduites — avant, le titre « Potentiomètre » passait sous le bouton ≠ sur un téléphone de 375 px.
+5. **Purge** des ✓ locaux de plus de 3 jours d'équipe.
+
+**Build 2026-11-25.2 (Nova / TIMON, 25/11) — lots 2 et 3, DÉPLOYÉ en PROD le 25/11** (puis remplacé par le `.3` le jour même)
+Décision de Benjamin le 25/11 : **Matis est le seul utilisateur** → lots 2 (fiabiliser) et 3 (confort) seulement ; pas de
+« Publier pour l'atelier » ; horaires d'équipe **confirmés** (5 h / 13 h / 21 h). `bilan_economique.html` non touché.
+- **Envoi du journal** : un relevé refusé par le serveur (400) ne bloque plus les autres — le lot est coupé en deux jusqu'à
+  l'isoler ; il est marqué « refusé », sorti de la file, conservé sur l'appareil, et l'écran le dit. Réseau, 5xx, 429 : tout
+  reste en file (temporisation 15 s). 404 et 403 : tout reste, message affiché, nouvel essai à 5 min. Bouton retour du réseau : renvoi immédiat.
+- **Bouton retour d'Android** : chaque écran est une entrée d'historique (`pile`, `popstate`) ; une feuille ouverte se ferme
+  par le retour sans quitter l'OP.
+- **Glisser-déposer** : un glisser interrompu (`pointercancel`, `lostpointercapture`) est rattrapé.
+- **Mode nuit** : ✓ / ≠ à l'encre `--on-accent` (contraste 9:1 au lieu de 2,1:1).
+- **Premier plan** : l'app relit les références au retour au premier plan (au plus toutes les 30 s).
+- **Valeur d'écart** : comparée comme un nombre (« 2400.0 » pour une référence à 2400 n'est plus un écart), refusée si négative.
+- **Écran de fin d'OP** (✓ « OP10 contrôlée à 06:12, équipe Matin, 0 écart ») + « OP suivante » / « Revoir l'OP ».
+- **Retour automatique** à l'écran de la ligne après 3 min sans toucher l'écran ; **ligne figée** quand l'app s'ouvre par un QR
+  code (`?ligne=`), avec « Choisir une autre ligne » en pied. Vibration à chaque ✓ (Android ; iOS l'ignore).
+- **Place à l'écran** (mesuré à 390 px) : les 10 lignes tiennent sans défiler (grille 2 colonnes, 6 avant) ; « Organiser » (↕)
+  passe dans l'en-tête, plus de pied fixe : 5 rangées visibles sur l'écran de contrôle au lieu de 3 ; boutons d'en-tête et
+  motifs rapides à 72 px de haut ; le titre de l'écran racine devient « Prise de poste » (il était coupé).
+- **Tests** : `scripts/test_checkup.js` (23 vérifications : équipes, envoi du journal dans 5 scénarios, contrôles du fichier),
+  branché dans `build_harness.py` → le verdict global les compte. Vérifié qu'ils échouent sur une copie volontairement cassée.
+- **Hors lot, volontairement** : le service worker (double chargement) n'est PAS touché — gel de l'outil principal.
+- **Pour tester en local sans toucher la production** : copier `checkup.html` en remplaçant `CLOUD_URL` / `CLOUD_KEY` par une
+  adresse morte, le servir sur 127.0.0.1 (le navigateur intégré de Timon refuse le domaine Surge, pas localhost).
+
+**Prochaines étapes (ordre recommandé par Claude, validé dans l'esprit par Benjamin)**
+1. ~~Déployer 2026-11-25.1~~ — fait le 25/11. **2026-11-25.2 : prêt, à déployer sur « Déploie ».**
+2. **« Publier pour l'atelier »** dans l'outil principal (nécessite de lever le gel) : écrit `checkup_reference` (une ligne par
+   ligne/référence/OP, version incrémentée, `publie_par`) ; le checkup la lit déjà en priorité. **Obligatoire avant tout
+   utilisateur autre que Matis** : sinon un moniteur d'atelier doit être connecté avec un compte membre, qui peut lire ET
+   modifier tout le suivi (essais, coûts…). Une fois publié : l'atelier n'a plus besoin de compte.
+3. **Mode kiosque** (retour à l'écran de la ligne après inactivité, ligne figée par le QR code) + **écran de fin d'OP**
+   (« OP10 contrôlée à 06:12, équipe Matin, 0 écart ») + thème nuit par défaut la nuit.
+4. **État partagé entre appareils** pour l'équipe en cours (aujourd'hui les ✓ vivent dans chaque appareil ; le journal
+   serveur est complet) : fonction serveur qui renvoie les statuts du jour, sans les commentaires.
+5. **Alerte immédiate à Matis** sur un écart (phase 2 ; canal à choisir par Benjamin).
+6. **Données** : renseigner les charnières manquantes dans l'outil principal (HESSAPP 266x13 / 266x22 / 283x26,
+   EMAG 2 DP 290x12). ~~Faire confirmer T521 D1 = 2400~~ — **confirmé par Benjamin le 25/11 : valeur correcte** (un chanfrein uniquement).
+
+**Points de vigilance connus (non corrigés)** : un compte connecté non membre voit « Aucun relevé » dans Outils › Checkup
+(la règle de lecture renvoie 0 ligne, pas une erreur) ; n'importe qui ayant l'adresse peut AJOUTER des lignes au journal
+(pas les lire) ; l'équipe dépend de l'horloge du téléphone (`recu_le` serveur permet le contrôle) ; le service worker de
+l'outil principal sert `checkup.html` en cache d'abord — la mise à jour passe par `checkup-version.json` (changer `BUILD`
+dans `checkup.html` ET `checkup-version.json`), et **pour tester en local, désenregistrer le service worker** (sinon on
+regarde l'ancienne version).
 
 ## 1. Le but (mots de Benjamin)
 
@@ -70,7 +148,7 @@ Ce que fait `checkup.html` (`2026-11-24.2`) :
 5. **Ordre pupitre partagé** : enregistrer l'ordre (poignée ≡) **par ligne+OP côté serveur**, pas par téléphone (aujourd'hui `localStorage`).
 6. Phase 2 : alerte à Matis (mail/notification) sur un écart ; export du journal.
 
-## 5. Schéma Supabase proposé (NON appliqué — à valider)
+## 5. Schéma Supabase (APPLIQUÉ le 24/11/2026 — voir §0 et `supabase_migrations/`)
 
 Projet **`cxjfyaorkkxemjnollnj`**. L'outil principal stocke ses données dans `public.sync_shards(espace, id, kind, body jsonb, rev, seq,
 supprime, modifie_par, modifie_le)`. **Ne pas y mettre le journal** : table dédiée.
@@ -114,6 +192,11 @@ correspondantes. Lecture du journal réservée à l'outil principal (utilisateur
   pour octet** (le « Success! » ne prouve rien), puis supprimer le dossier. Fait le 24/11 : 10 anciens fichiers identiques, 6 nouveaux servis.
 - **Règle de Benjamin : ne JAMAIS déployer sans feu vert explicite dans le tour** (« déploie », « pousse »). Il veut garder le lead sur le
   rythme des mises à jour vues par Matis et Arthur.
+- **Auth des outils cloud (trouvée le 25/11)** : `surge` s'authentifie via `~/.netrc` (machines `surge.sh` / `surge.surge.sh`, fichier
+  caché — ne pas le publier, vérifier qu'il reste en 404 après chaque deploy). Pour exécuter du SQL sur le projet Supabase
+  (`cxjfyaorkkxemjnollnj`) : API Management `POST https://api.supabase.com/v1/projects/<ref>/database/query` avec le token
+  `~/.supabase/access-token` (rôle postgres, contourne la RLS) — le corps attendu est `{"query": "<sql>"}`. La clé dans le HTML est la
+  publishable : elle ne fait que de la lecture anon (RLS).
 - **Service worker** : celui de l'outil principal (`service-worker.js`, scope `./`) sert `checkup.html` en **cache d'abord** (seuls
   `bilan_economique.html`/`index.html` sont en réseau d'abord). **Ne pas le modifier** (un octet change = rechargement forcé des pages
   ouvertes de Matis). **Ne pas enregistrer un second SW au même scope** (il remplacerait celui de l'outil principal). Contournement en
@@ -134,8 +217,8 @@ correspondantes. Lecture du journal réservée à l'outil principal (utilisateur
 
 ## 7. Anomalie de données à faire vérifier avant la première publication
 
-EMAG 1 / 356x26 / OP20 : **T521 D1 a une charnière de 2400** alors que T521 D2 est à 150 et les autres logements à 150 ou moins. Probable coquille
-de saisie dans l'outil principal (ou plaquette à très longue durée de vie). **Ne pas publier à l'atelier sans que Matis confirme.**
+EMAG 1 / 356x26 / OP20 : **T521 D1 a une charnière de 2400** alors que T521 D2 est à 150 et les autres logements à 150 ou moins.
+**CONFIRMÉ CORRECT par Benjamin le 25/11/2026** : T521 D1 ne fait qu'un chanfrein, donc une durée de vie très longue. Ne plus le signaler.
 Autres valeurs inhabituelles à relire : OP30 EMAG 1 (T533 = 1500, T535 = 4000, perçages) et OP30 PCI 4 (1500 partout).
 
 ## 8. Décisions qui restent à Benjamin (ne pas trancher à sa place)

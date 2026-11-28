@@ -1,10 +1,10 @@
-"""Recap Excel EMAG 1 / DV304x28 — OP20 seulement, côtés 1 et 2 (L120_1 / L120_2).
-Les balises M870 sont écrites M700 / M670 sur T521 (coquilles) : on les lit comme M870 (voir l'onglet Anomalies).
+"""Recap Excel EMAG 1 / DV304x28 — OP10, OP20, OP30, OP40, côtés 1 et 2 (Lignes complètes).
+Les balises M870 sont écrites M700 / M670 sur T521 (coquilles) : on les lit comme M870 (ouvre_extra).
+Sur OP40 côté 2, le fichier est nommé L150_1.SPF sur la machine (confirmé par Matis).
 
-Usage : python scripts/recap_emag1_304.py "Programmes/EMAG1 - 304x28" Programmes/RECAP_TEMPS_COUPE_DV304_EMAG1_OP20.xlsx
-        (ajouter --json pour imprimer les valeurs à saisir dans le suivi)
+Usage : python scripts/recap_emag1_304.py "Programmes/EMAG1 - 304x28" Programmes/RECAP_TEMPS_COUPE_DV304_EMAG1.xlsx [--json]
 """
-import os, sys, json
+import os, re, sys, json, shutil, tempfile
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import spf_temps
 from openpyxl import Workbook
@@ -13,82 +13,97 @@ from openpyxl.utils import get_column_letter
 
 D = sys.argv[1]
 OUT = sys.argv[2]
-FILES = (('L120_1.SPF', 1), ('L120_2.SPF', 2))
+FILES = {
+    10: ('L110_1_CBN.SPF', 'L110_2_CBN.SPF'),
+    20: ('L120_1.SPF', 'L120_2.SPF'),
+    30: ('L130_11_S.SPF', 'L130_12_S.SPF'),
+    40: ('L140_1.SPF', 'L150_1.SPF')
+}
 ALIAS = ('700', '670')
-ORDRE = [('T521', 2), ('T521', 1), ('T523', 2), ('T523', 1), ('T527', 1), ('T527', 2), ('T525', 1)]
-LABEL = {('T521', 2): 'ébauche diamètre extérieur', ('T521', 1): 'chanfreins haut et bas (« FASE OBEN / UNTEN »)',
-         ('T523', 2): 'ébauche (Ø intérieur, congé)', ('T523', 1): 'ébauche face',
-         ('T527', 1): 'finition Ø, gorge et face', ('T527', 2): 'finition fond de gorge',
-         ('T525', 1): "gorge d'isolation thermique (R4,76)"}
+HOLES = {'T532S': 5, 'T533S': 3}
 
+LABEL = {
+    (10, 'T511', 1): 'Chanfrein alésage / face (S-Platte R1.6)',
+    (10, 'T511', 2): 'Ébauche Ø intérieur (C-Platte R1.6)',
+    (10, 'T513', 2): 'Ébauche grande face et Ø int (C-Platte R1.6)',
+    (10, 'T513', 1): 'Dégagement bol / épaulement (C-Platte R1.6)',
+    (10, 'T515', 2): 'Ébauche (S-Platte R1.6)',
+    (10, 'T515', 1): 'Ébauche (S-Platte R1.6)',
+    (20, 'T521', 2): 'Ébauche diamètre extérieur (SNMX 120716)',
+    (20, 'T521', 1): 'Chanfreins haut et bas (« FASE OBEN / UNTEN »)',
+    (20, 'T523', 2): 'Ébauche (Ø intérieur, congé)',
+    (20, 'T523', 1): 'Ébauche face',
+    (20, 'T525', 1): "Gorge d'isolation thermique (R4,76)",
+    (20, 'T527', 1): 'Finition Ø, gorge et face',
+    (20, 'T527', 2): 'Finition fond de gorge',
+    (30, 'T532S', 1): 'Foret carbure monobloc D13,1 (5 trous)',
+    (30, 'T533S', 1): 'Foret D8,6 (3 trous)',
+    (40, 'T543', 2): 'Finition alésage D71,05',
+    (40, 'T543', 1): 'Finition face / chanfrein',
+    (40, 'T546', 1): 'Finition rayon R8 (C-Platte R1.6)',
+    (40, 'T549', 1): 'Finition pistes (straddle S-Platte R0.8)'
+}
 
-def lire(sans_limite=False):
+def lire(nolimit=False):
     res = {}
-    for f, side in FILES:
-        path = os.path.join(D, f)
-        if sans_limite:
-            import re, tempfile
-            t = open(path, encoding='latin-1').read()
-            tmp = os.path.join(tempfile.mkdtemp(dir=os.path.dirname(os.path.abspath(OUT))), f)
-            open(tmp, 'w', encoding='latin-1').write(re.sub(r'LIMS\s*=\s*\d+', 'LIMS=1000000', t))
-            path = tmp
-        segs, dwell, hors = spf_temps.run(path, False, ALIAS)
-        res[side] = (segs, dwell, hors)
-        if sans_limite:
-            import shutil
-            shutil.rmtree(os.path.dirname(path))
+    tmp = None
+    src = D
+    if nolimit:
+        tmp = tempfile.mkdtemp(dir=os.path.dirname(os.path.abspath(OUT)))
+        for f in os.listdir(D):
+            if f.upper().endswith('.SPF'):
+                t = open(os.path.join(D, f), encoding='latin-1').read()
+                open(os.path.join(tmp, f), 'w', encoding='latin-1').write(re.sub(r'LIMS\s*=\s*\d+', 'LIMS=1000000', t))
+        src = tmp
+    for op, fs in FILES.items():
+        for side, f in enumerate(fs, 1):
+            res[(op, side)] = spf_temps.run(os.path.join(src, f), balises_commentees=False, ouvre_extra=ALIAS)
+    if tmp:
+        shutil.rmtree(tmp)
     return res
-
 
 cap = lire()
 nol = lire(True)
 
-
 def agg(res):
     out = {}
-    for side, (segs, dwell, hors) in res.items():
+    for (op, side), (segs, dwell, hors) in res.items():
         for s in segs:
-            g = out.setdefault((s['T'], s['D'], side), dict(t=0.0, c={}, segs=[]))
+            k = (op, s['T'], s['D'])
+            g = out.setdefault(k, {}).setdefault(side, dict(t=0.0, cond=[], seg=[]))
             g['t'] += s['t']
-            g['segs'].append(s)
-            key = (s['Vc'], s['F'])
-            g['c'][key] = g['c'].get(key, 0) + s['t']
+            g['seg'].append(s)
+            c = ('G96 Vc %g' % s['Vc']) if s['Vc'] is not None else ('G97 %d tr/min' % round(s['N']))
+            if (c, s['F']) not in g['cond']:
+                g['cond'].append((c, s['F']))
         for d in dwell:
             if d['mon']:
-                k = (d['T'], d['D'], side)
-                if k in out:
-                    out[k]['t'] += d['t']
+                k = (op, d['T'], d['D'])
+                if k in out and side in out[k]:
+                    out[k][side]['t'] += d['t']
+    for (op, T, Dd), sides in out.items():
+        for sd in sides.values():
+            sd['t'] *= HOLES.get(T, 1)
     return out
 
-
 A = agg(cap)
-N = agg(nol)
 
-
-def dom(g):
-    return max(g['c'], key=g['c'].get)
-
-
-def txt(g):
-    vs, fs = [], []
-    for (vc, f) in g['c']:
-        if vc not in vs:
-            vs.append(vc)
+def condtxt(g):
+    if not g: return ''
+    modes = []
+    fs = []
+    for c, f in g['cond']:
+        if c not in modes:
+            modes.append(c)
         if f not in fs:
             fs.append(f)
-    return 'G96 Vc ' + ' / '.join('%g' % v for v in vs) + ' · f ' + ' / '.join(('%g' % f).replace('.', ',') for f in fs)
-
-
-if '--json' in sys.argv:
-    print(json.dumps({'%s %d' % (T, d): dict(t=round(A[(T, d, 1)]['t'], 2), vc=dom(A[(T, d, 1)])[0], f=dom(A[(T, d, 1)])[1],
-                                              t2=round(A[(T, d, 2)]['t'], 2)) for T, d in ORDRE}, indent=1))
+    return ' / '.join(modes) + ' · f ' + ' / '.join(('%g' % f).replace('.', ',') for f in fs)
 
 H = PatternFill('solid', fgColor='1F4E8C')
 HF = Font(bold=True, color='FFFFFF')
 B = Font(bold=True)
 thin = Side(style='thin', color='BBBBBB')
 BD = Border(left=thin, right=thin, top=thin, bottom=thin)
-
 
 def head(ws, row, cols):
     for i, c in enumerate(cols, 1):
@@ -99,98 +114,150 @@ def head(ws, row, cols):
         x.border = BD
     ws.row_dimensions[row].height = 46
 
-
 def widths(ws, w):
     for i, v in enumerate(w, 1):
         ws.column_dimensions[get_column_letter(i)].width = v
 
-
 wb = Workbook()
 ws = wb.active
 ws.title = 'Coupe par logement'
-ws['A1'] = 'DV304x28 — EMAG 1, OP20 : temps de coupe pur par disque et par côté, depuis les programmes CN'
+ws['A1'] = 'DV304x28 — EMAG 1 (ligne double) : temps de coupe pur par disque et par côté, depuis les programmes CN'
 ws['A1'].font = Font(bold=True, size=13)
-ws['A2'] = ("Côté 1 = L120_1, côté 2 = L120_2 (droite / gauche à rattacher). Fenêtre de coupe = M870 → M890, avec M700 / M670 lus comme M870 "
-            "sur T521 (coquilles, voir « Anomalies »). Limite de broche LIMS=2800 appliquée. Hors rapides, chargement, changements d'outil.")
-ws['A2'].alignment = Alignment(wrap_text=True, vertical='top')
-ws.merge_cells('A2:J2')
-ws.row_dimensions[2].height = 46
-head(ws, 4, ['OP', 'Outil', 'Logement', 'Opération', 'Côté 1 (s)', 'Conditions côté 1', 'Côté 2 (s)', 'Conditions côté 2',
-             'Écart côté 2 − côté 1 (s)', 'Écart (%)'])
+ws['A2'] = ("Côté 1 = L110_1 / L120_1 / L130_11_S / L140_1 ; côté 2 = L110_2 / L120_2 / L130_12_S / L150_1. "
+            "Les balises M870/M890 sont actives (coquilles M700/M670 sur T521 lues comme M870). "
+            "Limite de broche LIMS appliquée. Hors rapides, chargement, changements d'outil.")
+
+head(ws, 4, ['OP', 'Outil', 'Logement', 'Opération', 'Côté 1 (s)', 'Conditions côté 1', 'Côté 2 (s)',
+             'Conditions côté 2', 'Écart côté 2 − côté 1 (s)', 'Écart (%)'])
+
+order = []
+for op in (10, 20, 30, 40):
+    for s in cap[(op, 1)][0]:
+        k = (op, s['T'], s['D'])
+        if k not in order:
+            order.append(k)
+    for k in A:
+        if k[0] == op and k not in order:
+            order.append(k)
+
 r = 5
-first = r
-for T, d in ORDRE:
-    g1, g2 = A[(T, d, 1)], A[(T, d, 2)]
-    vals = [20, T, 'D%d' % d, LABEL[(T, d)], round(g1['t'], 2), txt(g1), round(g2['t'], 2), txt(g2),
-            '=G%d-E%d' % (r, r), '=IF(E%d<>0,(G%d-E%d)/E%d,"")' % (r, r, r, r)]
-    for i, x in enumerate(vals, 1):
-        c = ws.cell(r, i, x)
-        c.border = BD
-    ws.cell(r, 5).number_format = '0.00'
-    ws.cell(r, 7).number_format = '0.00'
-    ws.cell(r, 9).number_format = '0.00'
+for k in order:
+    op, T, Dd = k
+    g1 = A[k].get(1)
+    g2 = A[k].get(2)
+    vals = [op, T, 'D%d' % Dd, LABEL.get(k, ''), round(g1['t'], 2) if g1 else None,
+            condtxt(g1) if g1 else '', round(g2['t'], 2) if g2 else None, condtxt(g2) if g2 else '']
+    for i, v in enumerate(vals, 1):
+        ws.cell(r, i, v).border = BD
+    ws.cell(r, 9, f'=IF(AND(ISNUMBER(E{r}),ISNUMBER(G{r})),G{r}-E{r},"")').border = BD
+    ws.cell(r, 10, f'=IF(AND(ISNUMBER(E{r}),ISNUMBER(G{r}),E{r}<>0),(G{r}-E{r})/E{r},"")').border = BD
     ws.cell(r, 10).number_format = '0%'
+    for c in (5, 7, 9):
+        ws.cell(r, c).number_format = '0.00'
     r += 1
+
 last = r - 1
 r += 1
-ws.cell(r, 1, 'OP20 (somme, outils en série)').font = B
-ws.cell(r, 5, '=SUM(E%d:E%d)' % (first, last)).number_format = '0.00'
-ws.cell(r, 7, '=SUM(G%d:G%d)' % (first, last)).number_format = '0.00'
-ws.cell(r, 9, '=G%d-E%d' % (r, r)).number_format = '0.00'
-for c in (5, 7, 9):
-    ws.cell(r, c).font = B
-r += 2
-for n in ("Seul T521 diffère vraiment : côté 1 en G96 Vc 1500 / f 0,35, côté 2 en G96 Vc 800 / f 0,30 (ébauche) — c'est tout l'écart de l'OP. "
-          "T523, T525 et T527 sont identiques aux 0,1 s près (côté 2 : rayon 2,5 au lieu de 2,3 sur T523 D2).",
-          "T525 (gorge) : trois avances successives (0,15 / 0,1 / 0,3) ; T527 D1 : limite de broche atteinte sur la face (voir l'onglet « Limite broche »).",
-          "Tous les logements travaillent en G96. Aucune comparaison EMAG 2 : cette référence (304x28) n'a pas de programme EMAG 2 ici."):
-    ws.cell(r, 1, n).alignment = Alignment(wrap_text=True, vertical='top')
-    ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=10)
-    ws.row_dimensions[r].height = 34
+ws.cell(r, 1, 'Total par OP').font = B
+r += 1
+t0 = r
+for op in (10, 20, 30, 40):
+    ws.cell(r, 1, f'OP{op}').font = B
+    for col, L in ((5, 'E'), (7, 'G')):
+        c = ws.cell(r, col, f'=SUMIF($A$5:$A${last},{op},{L}$5:{L}${last})')
+        c.number_format = '0.0'
+        c.font = B
+    ws.cell(r, 9, f'=G{r}-E{r}').number_format = '0.0'
+    ws.cell(r, 10, f'=(G{r}-E{r})/E{r}').number_format = '0%'
     r += 1
-widths(ws, [8, 9, 10, 40, 11, 30, 11, 30, 14, 10])
-ws.freeze_panes = 'A5'
 
-# limite de broche
-w2 = wb.create_sheet('Limite broche')
-w2['A1'] = 'Opérations où la limite de broche LIMS=2800 est atteinte'
+ws.cell(r, 1, 'Ligne (4 OP)').font = B
+for col, L in ((5, 'E'), (7, 'G')):
+    c = ws.cell(r, col, f'=SUM({L}{t0}:{L}{r - 1})')
+    c.number_format = '0.0'
+    c.font = B
+ws.cell(r, 9, f'=G{r}-E{r}').number_format = '0.0'
+ws.cell(r, 10, f'=(G{r}-E{r})/E{r}').number_format = '0%'
+
+ws.cell(r + 2, 1, "OP30 : perçages multipliés par le nombre de trous (5 et 3). "
+                  "OP40 côté 2 : programme nommé L150_1.SPF sur CN (expliqué par Matis). "
+                  "Attention : sur L140_1 (OP40 côté 1), la passe d'ébauche/finition T549 de X307 à X236 a son M870 placé après (7,99 s hors balises).")
+
+widths(ws, [6, 9, 10, 38, 12, 32, 12, 32, 14, 10])
+ws.freeze_panes = 'E5'
+
+# Sheet 2 : Écarts
+w2 = wb.create_sheet('Écarts entre côtés')
+w2['A1'] = 'Logements dont les conditions ou le temps diffèrent entre les deux côtés — DV304x28'
 w2['A1'].font = Font(bold=True, size=13)
-head(w2, 3, ['Côté', 'Outil', 'Logement', 'Ø mini (mm)', 'Ø maxi (mm)', 'Vc programmée', 'tr/min demandé au Ø mini', 'LIMS (tr/min)',
-             'Temps avec limite (s)', 'Temps sans limite (s)', 'Écart (s)', 'Vc réelle au Ø mini', 'Vc réelle au plus grand Ø'])
+head(w2, 3, ['OP', 'Outil', 'Logement', 'Opération', 'Conditions côté 1', 'Conditions côté 2', 'Côté 1 (s)',
+             'Côté 2 (s)', 'Écart (s)', 'Plus rapide'])
 r = 4
-for (T, d, side), g in sorted(A.items(), key=lambda k: (k[0][2], ORDRE.index((k[0][0], k[0][1])))):
-    if not any(s['capped'] for s in g['segs']):
-        continue
-    gn = N[(T, d, side)]
-    vc = dom(g)[0]
-    dmin = min(min(s['x0'], s['x1']) for s in g['segs'])
-    dmax = max(max(s['x0'], s['x1']) for s in g['segs'])
-    vals = [side, T, 'D%d' % d, round(dmin, 1), round(dmax, 1), vc, '=ROUND(1000*F%d/(PI()*D%d),0)' % (r, r), 2800,
-            round(g['t'], 2), round(gn['t'], 2), '=J%d-I%d' % (r, r), '=ROUND(MIN(F%d,PI()*D%d*H%d/1000),0)' % (r, r, r),
-            '=ROUND(MIN(F%d,PI()*E%d*H%d/1000),0)' % (r, r, r)]
-    for i, x in enumerate(vals, 1):
-        w2.cell(r, i, x).border = BD
+for k in order:
+    op, T, Dd = k
+    g1 = A[k].get(1)
+    g2 = A[k].get(2)
+    if not (g1 and g2): continue
+    if condtxt(g1) == condtxt(g2) and abs(g1['t'] - g2['t']) < 0.1: continue
+    vals = [op, T, 'D%d' % Dd, LABEL.get(k, ''), condtxt(g1), condtxt(g2), round(g1['t'], 2), round(g2['t'], 2)]
+    for i, v in enumerate(vals, 1):
+        w2.cell(r, i, v).border = BD
+    w2.cell(r, 9, f'=H{r}-G{r}').number_format = '0.00'
+    w2.cell(r, 10, f'=IF(ABS(I{r})<0.005,"=",IF(I{r}<0,"côté 2","côté 1"))')
+    for c in (7, 8):
+        w2.cell(r, c).number_format = '0.00'
     r += 1
-widths(w2, [7, 9, 10, 11, 11, 12, 14, 12, 12, 12, 10, 12, 14])
 
-# anomalies
-w3 = wb.create_sheet('Anomalies programmes')
-w3['A1'] = 'À signaler aux méthodes'
+widths(w2, [6, 9, 10, 34, 34, 34, 11, 11, 10, 11])
+w2.freeze_panes = 'A4'
+
+# Sheet 3 : Hors balises
+w3 = wb.create_sheet('Hors balises & Anomalies')
+w3['A1'] = 'Avances et temporisations en dehors des fenêtres de coupe M870-M890'
 w3['A1'].font = Font(bold=True, size=13)
-head(w3, 3, ['Programme', 'Ligne', 'Constat', 'Conséquence'])
-rows = [
-    ('L120_1', 'N110', "T521 D2 : « G1 X300 F0.35 H5002 M700 » — M700 au lieu de M870", "la surveillance Montronix ne démarre pas sur T521 D2 (le M890 de fin est bien là)"),
-    ('L120_1', 'N190', "T521 D1 : « M670 » au lieu de M870 sur le chanfrein haut", "idem pour T521 D1"),
-    ('L120_2', 'N110 / N190', "mêmes coquilles : M670 sur les deux lignes de T521", "idem côté 2"),
-    ('L120_1 / L120_2', 'N700', "« G4F0.2 » (soufflage) hors fenêtre : 0,2 s non comptée", "aucune"),
-    ('L120_1 / L120_2', 'T521', "côté 1 en Vc 1500 / f 0,35, côté 2 en Vc 800 / f 0,30 sur l'ébauche du Ø extérieur", "3,66 s contre 8,15 s : à confirmer lequel est la bonne référence"),
-]
-for i, rw in enumerate(rows, 4):
-    for j, x in enumerate(rw, 1):
-        c = w3.cell(i, j, x)
-        c.border = BD
-        c.alignment = Alignment(wrap_text=True, vertical='top')
-widths(w3, [18, 14, 70, 60])
+head(w3, 3, ['OP', 'Côté', 'Outil', 'Logement', 'Nature', 'Longueur (mm)', 'Avance (mm/tr)', 'Temps (s)', 'Commentaire / Impact'])
+r = 4
+for (op, side), (segs, dwell, hors) in cap.items():
+    for h in hors:
+        com = ""
+        if op == 40 and h['T'] == 'T549':
+            com = "COQUILLE MAJEURE : M870 placé après la passe X307->X236 (7,99s de coupe non surveillée)"
+        elif op == 10 and h['T'] == 'T513':
+            com = ";M870 commenté en ligne N510 (1,45s non surveillée)"
+        for i, x in enumerate([op, side, h['T'], 'D%d' % h['D'], 'avance hors balises', round(h['L'], 2), h['F'],
+                               round(h['t'], 2), com], 1):
+            w3.cell(r, i, x).border = BD
+        r += 1
+widths(w3, [6, 7, 9, 10, 30, 14, 14, 10, 50])
+w3.freeze_panes = 'A4'
 
 wb.save(OUT)
-print('OK', OUT)
+print(f"Excel généré : {OUT}")
+
+# Dump JSON if requested
+json_data = {}
+for op in (10, 20, 30, 40):
+    json_data[f"OP{op}"] = {}
+    for (o, T, Dd), sides in A.items():
+        if o == op:
+            g1 = sides.get(1, {'t': 0.0, 'cond': []})
+            g2 = sides.get(2, {'t': 0.0, 'cond': []})
+            json_data[f"OP{op}"][f"{T}_D{Dd}"] = {
+                "label": LABEL.get((o, T, Dd), ''),
+                "t_cote1": round(g1['t'], 2),
+                "cond_cote1": condtxt(g1),
+                "t_cote2": round(g2['t'], 2),
+                "cond_cote2": condtxt(g2)
+            }
+
+json_path = os.path.join(os.path.dirname(OUT), "temps_coupe_DV304_EMAG1.json")
+with open(json_path, 'w', encoding='utf-8') as jf:
+    json.dump(json_data, jf, indent=2, ensure_ascii=False)
+print(f"JSON généré : {json_path}")
+
+tot = {}
+for k, sides in A.items():
+    for s, g in sides.items():
+        tot[(k[0], s)] = tot.get((k[0], s), 0) + g['t']
+print("Totaux temps par OP et côté :")
+print({k: round(v, 2) for k, v in sorted(tot.items())})

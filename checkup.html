@@ -101,7 +101,10 @@ html,body{
   -webkit-font-smoothing:antialiased;
   font-variant-numeric:tabular-nums;
 }
-body{padding-bottom:112px;max-width:760px;margin:0 auto}
+/* 2026-11-25.2 — la marge de bas de page ne sert qu'à dégager un pied FIXE ; elle n'est posée
+   que lorsqu'il y en a un (body.pied, voir mettrePied). */
+body{max-width:760px;margin:0 auto}
+body.pied{padding-bottom:112px}
 
 button{
   font:inherit;
@@ -126,16 +129,19 @@ button.danger:hover{background:var(--red-bg)}
 .rn,.big,.t1,.rv b,.sheet h2,.sec-title{font-family:var(--font-disp);font-weight:700}
 
 /* En-tête navy identique à bilan_economique.html */
+/* 2026-11-25.2 — en-tête compacte : boutons de 48 x 72 (cible gants >= 72 px, sans en-tête plus
+   haute qu'avant) et moins d'air entre eux. Sur un écran de 375 px, le titre d'OP (« OP10 »)
+   passait sous le badge « Après-midi » pendant toute l'équipe de l'après-midi. */
 header{
   position:sticky;top:0;z-index:10;
   background:var(--head);color:var(--head-ink);
-  padding:10px 14px;
+  padding:env(safe-area-inset-top) calc(10px + env(safe-area-inset-right)) 0 calc(10px + env(safe-area-inset-left));  /* 2026-11-25.3 iPhone : sous la Dynamic Island */
   border-bottom:1px solid var(--head-line);
-  display:flex;gap:10px;align-items:center;
+  display:flex;gap:6px;align-items:center;
   box-shadow:var(--shadow-card);
 }
 header .hbtn{
-  min-width:56px;min-height:56px;padding:0 10px;
+  min-width:48px;min-height:72px;padding:0 6px;
   background:rgba(255,255,255,.10);
   border:1px solid var(--head-line);
   color:var(--head-ink);
@@ -143,15 +149,17 @@ header .hbtn{
   display:inline-flex;align-items:center;justify-content:center;
 }
 header .hbtn:hover{background:rgba(255,255,255,.18)}
-header .back{min-width:64px;font-size:32px}
+header .hbtn.on{background:var(--blue);border-color:var(--blue);color:var(--on-accent)}
+header .back{min-width:48px;font-size:32px}
 header .ttl{flex:1;min-width:0}
 header .t1{font-size:26px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--head-ink)}
 header .t2{font-size:15px;color:var(--head-ink-soft);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+@media (max-width:420px){ header.dense .badge-eq{display:none} }
 .badge-eq{
   background:rgba(255,255,255,.14);
   border:1px solid var(--head-line);
   border-radius:var(--radius);
-  padding:6px 10px;font-size:15px;font-weight:700;
+  padding:4px 8px;font-size:14px;font-weight:700;
   color:var(--head-ink);white-space:nowrap;
 }
 
@@ -168,29 +176,37 @@ main{padding:14px}
 .status-bar.warn{border-left-color:var(--amber);background:var(--amber-bg);color:var(--ink)}
 .status-bar.err{border-left-color:var(--red);background:var(--red-bg);color:var(--ink)}
 .status-bar b{color:var(--ink)}
-.status-bar .sact{min-height:44px;padding:0 12px;font-size:15px;font-weight:700}
+/* 2026-11-25.2 — zone tactile de 72 px de haut (gants), sans allonger le bandeau d'état. */
+.status-bar .sact{position:relative;min-height:48px;padding:0 12px;font-size:15px;font-weight:700}
+.status-bar .sact::after{content:"";position:absolute;left:0;right:0;top:-12px;bottom:-12px}
 
 .sec-title{
   font-size:18px;letter-spacing:.04em;text-transform:uppercase;
   color:var(--ink-faint);margin:4px 0 10px;
 }
 
-/* Cartes de sélection (Lignes / Références / OP) */
+/* Cartes de sélection (Lignes / Références / OP).
+   2026-11-25.2 — le contenu de la carte est posé sur une grille (nom, sous-titre, état) :
+   en liste, même aspect qu'avant ; sur l'écran des lignes, la grille .grille met deux cartes
+   par rangée dès 360 px de large : les 10 lignes tiennent à l'écran (5 visibles avant).
+   La grille est dans un span enfant, pas sur le bouton lui-même (rendu incertain sur
+   anciens Safari). */
 .big{
-  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  display:flex;align-items:center;
   width:100%;min-height:88px;margin-bottom:12px;padding:12px 16px;
   background:var(--surface);border:2px solid var(--bord-atelier);
   border-radius:var(--radius-lg);box-shadow:var(--shadow-card);
   font-size:28px;text-align:left;color:var(--ink);
 }
-.big:hover{border-color:var(--blue);background:var(--blue-bg)}
-.big .bmain{flex:1;min-width:0}
-.big small{
-  display:block;font-family:var(--font-body);
+.big .bin{flex:1;min-width:0;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"nom st" "sous st";column-gap:12px;align-items:center}
+.big .bnom{grid-area:nom;min-width:0}
+.big .bsous{
+  grid-area:sous;min-width:0;font-family:var(--font-body);
   font-size:15px;color:var(--ink-soft);font-weight:600;margin-top:3px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
-.big .st{font-size:24px;font-weight:700;min-width:86px;text-align:right;color:var(--ink-soft);white-space:nowrap}
+.big .st{grid-area:st;font-size:24px;font-weight:700;min-width:0;text-align:right;color:var(--ink-soft);white-space:nowrap}
+.big:hover{border-color:var(--blue);background:var(--blue-bg)}
 .big.done{background:var(--green-bg);border-color:var(--green)}
 .big.done .st{color:var(--green)}
 .big.partial{border-color:var(--blue)}
@@ -199,6 +215,24 @@ main{padding:14px}
 .big.alert .st{color:var(--amber)}
 .big.empty{opacity:.68;border-style:dashed}
 .big.empty:hover{opacity:.9}
+.grille{display:grid;grid-template-columns:1fr;gap:10px}
+.grille .big{margin-bottom:0}
+@media (min-width:360px){
+  .grille{grid-template-columns:1fr 1fr}
+  .grille .big{min-height:84px;padding:10px 12px;font-size:24px}
+  .grille .big .bin{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"nom nom" "st sous";column-gap:8px;row-gap:2px}
+  .grille .big .st{font-size:22px;text-align:left;align-self:end}
+  .grille .big .bsous{font-size:14px;margin-top:0;align-self:end;justify-self:end}
+}
+.grille .big .blong{display:none}
+@media (max-width:359px){   /* écran très étroit : une carte par rangée, le sous-titre complet d'avant */
+  .grille .big .bsous{display:none}
+  .grille .big .blong{
+    display:block;grid-area:sous;min-width:0;font-family:var(--font-body);
+    font-size:15px;color:var(--ink-soft);font-weight:600;margin-top:3px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+}
 
 /* Cartes Potentiomètre & Rangées charnières */
 .pot,.row{
@@ -217,10 +251,25 @@ main{padding:14px}
 .rv{font-size:18px;color:var(--ink-soft);margin-top:2px}
 .rv b{font-size:38px;color:var(--ink);margin-right:6px;line-height:1}
 .rv .old{text-decoration:line-through;font-size:20px;margin-left:8px;color:var(--ink-faint)}
-.rbtn{display:flex;gap:10px;flex-shrink:0}
+.rbtn{display:flex;gap:28px;flex-shrink:0;align-items:center}
 .rbtn button{min-width:82px;min-height:72px;font-size:34px;font-weight:800;padding:0;border-width:2px}
-.bok{background:var(--green);border-color:var(--green);color:#ffffff}
-.bec{background:var(--amber);border-color:var(--amber);color:#ffffff}
+.rbtn .bec{min-width:68px;font-size:30px}
+.rbtn .bok{min-width:104px}
+.rinfo{min-width:0}.rn{overflow-wrap:break-word}
+@media (max-width:420px){.rn{font-size:22px}.rbtn{gap:16px}.rbtn .bec{min-width:56px}.rbtn .bok{min-width:84px}}
+.sansref{flex-shrink:0;font-size:14px;font-weight:700;line-height:1.25;text-align:center;color:var(--ink-faint, #888);border:2px dashed var(--border, #ccc);border-radius:var(--radius, 3px);padding:10px 12px}
+/* 2026-11-25.2 — le glyphe prend la couleur d'encre des surfaces colorées du design system
+   (--on-accent). En mode nuit, ✓ et ≠ étaient blancs sur vert et orange clairs : 2,1:1,
+   illisibles ; ils passent à 9:1. Le thème clair ne change pas (encre blanche). */
+/* 2026-11-25.3 — iOS ne vibre pas : retour visuel immédiat et net sur ✓ / ≠ (flash plein + rebond) */
+@keyframes flashok{0%{box-shadow:0 0 0 0 rgba(46,160,67,.9);transform:scale(.88)}40%{box-shadow:0 0 0 18px rgba(46,160,67,0);transform:scale(1.08)}100%{box-shadow:0 0 0 0 rgba(46,160,67,0);transform:scale(1)}}
+@keyframes flashrow{0%{background:var(--green);}100%{}}
+.row.flash,.pot.flash{animation:flashrow .55s ease-out}
+.row.flash .bok,.pot.flash .bok{animation:flashok .45s ease-out}
+.bok:active,.bec:active{transform:scale(.92);filter:brightness(1.15)}
+@media (prefers-reduced-motion:reduce){.row.flash,.pot.flash,.row.flash .bok,.pot.flash .bok{animation:none}}
+.bok{background:var(--green);border-color:var(--green);color:var(--on-accent)}
+.bec{background:var(--amber);border-color:var(--amber);color:var(--on-accent)}
 .row.s-ok .bok,.pot.s-ok .bok{background:var(--surface);color:var(--green);border:3px solid var(--green)}
 .row.s-ec .bec,.pot.s-ec .bec{background:var(--surface);color:var(--amber);border:3px solid var(--amber)}
 
@@ -244,7 +293,7 @@ main{padding:14px}
   position:fixed;left:0;right:0;bottom:0;z-index:8;
   background:linear-gradient(transparent,var(--bg) 34%);
   padding:14px 14px calc(12px + env(safe-area-inset-bottom));
-  max-width:760px;margin:0 auto;display:flex;gap:10px;
+  max-width:760px;margin:0 auto;display:flex;flex-wrap:wrap;gap:10px;
 }
 .foot button{flex:1}
 
@@ -261,9 +310,10 @@ main{padding:14px}
   border-top:4px solid var(--blue);
   box-shadow:var(--shadow-pop);
 }
-.motifs{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 10px}
+.motifs{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 8px}
+/* 2026-11-25.2 — cible gants : 54 -> 72 px de haut. */
 .motif{
-  min-height:54px;padding:8px 14px;font-size:18px;font-weight:700;
+  min-height:72px;padding:6px 14px;font-size:18px;font-weight:700;
   background:var(--surface-alt);border:2px solid var(--bord-atelier);
   color:var(--ink);border-radius:var(--radius);
 }
@@ -271,7 +321,7 @@ main{padding:14px}
 .sheet.ec{border-top-color:var(--amber)}
 .sheet h2{margin:0 0 6px;font-size:28px;color:var(--ink)}
 .sheet .ref{color:var(--ink-soft);font-size:18px;margin-bottom:12px}
-.sheet label{display:block;font-size:17px;color:var(--ink-soft);margin:12px 0 6px;font-weight:700}
+.sheet label{display:block;font-size:17px;color:var(--ink-soft);margin:8px 0 2px;font-weight:700}
 .sheet input,.sheet textarea{
   width:100%;font-family:var(--font-body);font-size:22px;font-weight:700;
   color:var(--ink);background:var(--surface-alt);
@@ -304,6 +354,24 @@ main{padding:14px}
 }
 .log .tag.ok{background:var(--green-bg);color:var(--green)}
 .log .tag.wait{background:var(--amber-bg);color:var(--amber)}
+.log .tag.refus{background:var(--red-bg);color:var(--red)}
+.log.rf{border-left-color:var(--red)}
+
+/* 2026-11-25.2 — écran de fin d'OP : la dernière rangée vient d'être validée. */
+.fin{
+  background:var(--surface);border:2px solid var(--green);border-radius:var(--radius-lg);
+  padding:18px 16px;margin:14px 0 12px;text-align:center;box-shadow:var(--shadow-card);
+}
+.fin.av{border-color:var(--amber)}
+.fin-ico{font-size:72px;line-height:1;color:var(--green)}
+.fin.av .fin-ico{color:var(--amber)}
+.fin-t{font-family:var(--font-disp);font-weight:700;font-size:34px;color:var(--ink);margin-top:8px}
+.fin-s{font-size:20px;color:var(--ink-soft);margin-top:6px}
+.fin-s b{color:var(--ink)}
+.fin-e{margin-top:14px;padding-top:12px;border-top:1px dashed var(--bord-atelier);text-align:left;font-size:18px;line-height:1.5;color:var(--ink)}
+.fin-e b{color:var(--amber)}
+.fin-acts{display:grid;gap:10px}
+.fin-acts button{width:100%;font-size:22px;font-weight:700}
 
 /* Carte d'état vide / connexion */
 .card-box{
@@ -363,9 +431,9 @@ function toggleTheme(){
 }
 initTheme();
 
-/* ====== Équipe (3x8) ====== */
-function equipe(){
-  const d = new Date(), h = d.getHours();
+/* ====== Équipe (3x8). Horaires confirmés par Benjamin le 25/11/2026 ====== */
+function equipe(dans){ /* dans : instant à tester (harnais) ; par défaut, maintenant */
+  const d = dans ? new Date(dans) : new Date(), h = d.getHours();
   const nom = h >= 5 && h < 13 ? "Matin" : h >= 13 && h < 21 ? "Après-midi" : "Nuit";
   const j = new Date(d); if(h < 5) j.setDate(j.getDate() - 1);
   return { nom, cle: j.getFullYear() + "-" + pad(j.getMonth() + 1) + "-" + pad(j.getDate()) + "|" + nom };
@@ -380,11 +448,26 @@ function fmtDate(iso){
 /* ====== État ====== */
 let snapshot = load("cu_snapshot_v1", null); /* { source, syncedAt, lignes:[{nom, refs:[{nom, ops:[{nom, version, pot, ordre, rows}]}]}] } */
 let checks   = load("cu_checks", {});         /* { cleEquipe|opId|id : {statut, releve, comm} } */
+(function purgerChecks(){                     /* 2026-11-25.1 : seuls les 3 derniers jours d'équipe restent sur l'appareil */
+  const limite = new Date(Date.now() - 3 * 86400000), lim = limite.getFullYear() + "-" + String(limite.getMonth() + 1).padStart(2, "0") + "-" + String(limite.getDate()).padStart(2, "0");
+  let n = 0;
+  Object.keys(checks).forEach(k => { const j = k.slice(0, 10); if(/^\d{4}-\d{2}-\d{2}$/.test(j) && j < lim){ delete checks[k]; n++; } });
+  if(n){ try{ localStorage.setItem("cu_checks", JSON.stringify(checks)); }catch(e){} }
+})();
 let ordre    = load("cu_order", {});          /* { opId : [ids] } */
 let journal  = load("cu_log", []);            /* historique local d'aperçu */
 let queue    = load("cu_queue", []);          /* file d'attente d'envoi vers Supabase checkup_journal */
-let V = { ligneIdx: null, refIdx: null, opIdx: null, organiser: false, ouvert: null, journal: false };
+let V = { ligneIdx: null, refIdx: null, opIdx: null, organiser: false, ouvert: null, journal: false, finOp: false };
 let syncState = { loading: false, err: "", needAuth: false, journalInfo: "" };
+
+/* 2026-11-25.2 — historique du navigateur et téléphone laissé ouvert.
+   pile : un état d'écran par entrée d'historique depuis le chargement (pile[0] = écran racine).
+   Le bouton retour d'Android, le ‹ de l'en-tête et la fermeture d'une feuille passent par popstate. */
+let pile = [];                 /* [{ ligneIdx, refIdx, opIdx, journal }] */
+let feuille = null;            /* "ecart" | "login" | null : feuille modale ouverte */
+let ligneFigee = false;        /* ouverture par QR code (?ligne=) : on ne change pas de ligne par accident */
+let retourAutoDemande = false; /* un retour automatique attend son popstate */
+let derniereSynchro = 0;       /* dernière lecture des références, même refusée : on ne relit pas au premier plan avant 30 s */
 
 const curLignes = () => (snapshot && Array.isArray(snapshot.lignes)) ? snapshot.lignes : [];
 const curLigne  = () => V.ligneIdx != null ? curLignes()[V.ligneIdx] || null : null;
@@ -415,6 +498,11 @@ async function ensureValidToken(){
   if(!s) return null;
   const d = s.data;
   if(!d.expires_at || Date.now() < d.expires_at - 60000) return d.access_token;
+  /* 2026-11-25.1 — la session de l'outil principal (même téléphone) n'est JAMAIS renouvelée ici :
+     Supabase change le jeton de renouvellement à chaque usage ; si le checkup le consommait, l'outil
+     principal se retrouverait avec un jeton révoqué et déconnecté. Expirée → on demande une connexion
+     propre au checkup (clé cu_cloud_session), indépendante. */
+  if(s.key === SHARED_SESSION_KEY) return null;
   if(!d.refresh_token) return d.access_token;
   try{
     const r = await fetch(CLOUD_URL + "/auth/v1/token?grant_type=refresh_token", {
@@ -629,6 +717,7 @@ async function synchroniser(silencieux){
     syncState.err = navigator.onLine ? ("Sync impossible : " + e.message) : "Hors ligne — données en cache utilisées.";
   }finally{
     syncState.loading = false;
+    derniereSynchro = Date.now();
     rendre();
   }
   flusherJournal();
@@ -661,18 +750,29 @@ function trace(type, id, attendu, releve, statut, comm){
   flusherJournal();
 }
 
-let flushing = false;
-async function flusherJournal(){
-  if(flushing || !queue.length || !navigator.onLine) return;
-  flushing = true;
+/* 2026-11-25.2 — l'envoi ne peut plus se bloquer en silence.
+   Avant : un lot refusé (400, 422…) repartait à l'identique, indéfiniment, et l'écran ne
+   disait que « N en attente d'envoi ». Or l'insertion d'un lot est atomique côté serveur :
+   UN relevé refusé suffisait à retenir toute la file.
+   - lot refusé en 4xx : on le coupe en deux jusqu'à isoler les relevés refusés ; les autres
+     partent, les refusés sortent la file et restent sur l'appareil, marqués « refusé » ;
+   - rien n'est passé : le refus est global (table, contraintes), pas la faute d'un relevé —
+     rien ne sort de la file, tout repartira quand le serveur sera réparé ;
+   - 401 / 403 : un nouvel essai sans session (l'insertion est permise à l'atelier) ;
+   - réseau, 5xx, 429 : tout reste en file, nouvel essai après une temporisation. */
+const LOT_MAX = 50, TENTATIVE_RAPIDE = 15000, TENTATIVE_LONGUE = 300000;
+let flushing = false, prochainEssai = 0, essaiMinuteur = null;
+function payloadDe(batch){
+  return batch.map(e => ({
+    id_local: e.localId, ts: e.ts, equipe: e.equipe, ligne: e.ligne, reference: e.reference, op: e.op,
+    type: e.type, element: e.element, attendu: e.attendu, releve: e.releve,
+    statut: e.statut, commentaire: e.commentaire || "", version_reference: e.version_reference || 1
+  }));
+}
+/* Un POST. Répond { ok, statut } ou { reseau: true } ; ne rejette jamais. */
+async function posterLot(batch, sansSession){
   try{
-    const batch = queue.slice(0, 50);
-    const payload = batch.map(e => ({
-      id_local: e.localId, ts: e.ts, equipe: e.equipe, ligne: e.ligne, reference: e.reference, op: e.op,
-      type: e.type, element: e.element, attendu: e.attendu, releve: e.releve,
-      statut: e.statut, commentaire: e.commentaire || "", version_reference: e.version_reference || 1
-    }));
-    const token = await ensureValidToken();
+    const token = sansSession ? null : await ensureValidToken();
     const res = await fetch(CLOUD_URL + "/rest/v1/checkup_journal", {
       method: "POST",
       headers: {
@@ -681,26 +781,87 @@ async function flusherJournal(){
         "Content-Type": "application/json",
         "Prefer": "return=minimal"
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payloadDe(batch))
     });
-    if(res.ok){
-      const sentIds = new Set(batch.map(x => x.localId));
-      queue = queue.filter(x => !sentIds.has(x.localId));
-      journal.forEach(x => { if(sentIds.has(x.localId)) x.sent = true; });
-      save("cu_queue", queue);
-      save("cu_log", journal);
-      syncState.journalInfo = "";
-      rendre();
-    } else if(res.status === 404){
-      syncState.journalInfo = "Table journal Supabase en attente de mise en service (enregistré localement).";
-    }
+    return { ok: res.ok, statut: res.status };
   }catch(e){
-    /* hors ligne : reste en file */
-  }finally{
-    flushing = false;
+    return { ok: false, statut: 0, reseau: true };
   }
 }
-window.addEventListener("online", () => { flusherJournal(); synchroniser(true); });
+/* Un refus qui peut venir d'UN relevé (pas de la table ni des droits). */
+const refusImputable = r => r.statut >= 400 && r.statut < 500 && [401, 403, 404, 408, 429].indexOf(r.statut) === -1;
+/* Coupe le lot jusqu'à séparer ce que le serveur prend de ce qu'il refuse.
+   `deja` : réponse du POST du lot entier, quand on l'a déjà. */
+async function isolerRefuses(lot, deja){
+  const r = deja || await posterLot(lot);
+  if(r.ok) return { acceptes: lot, refuses: [], restent: [], statut: 0 };
+  if(!refusImputable(r)) return { acceptes: [], refuses: [], restent: lot, statut: 0 };
+  if(lot.length === 1) return { acceptes: [], refuses: lot, restent: [], statut: r.statut };
+  const mi = Math.floor(lot.length / 2), a = await isolerRefuses(lot.slice(0, mi)), b = await isolerRefuses(lot.slice(mi));
+  return { acceptes: a.acceptes.concat(b.acceptes), refuses: a.refuses.concat(b.refuses), restent: a.restent.concat(b.restent), statut: b.statut || a.statut };
+}
+const nbRefuses = () => journal.reduce((n, x) => n + (x.refuse ? 1 : 0), 0);
+/* Ce que l'écran doit dire de l'envoi du journal. */
+function infoJournal(){
+  if(syncState.journalInfo) return syncState.journalInfo;
+  const n = nbRefuses();
+  return n ? (n + " relevé" + (n > 1 ? "s" : "") + " refusé" + (n > 1 ? "s" : "") + " par le serveur : non transmis, conservé" + (n > 1 ? "s" : "") + " sur l'appareil.") : "";
+}
+function marquerEnvoyes(batch){
+  const ids = new Set(batch.map(x => x.localId));
+  queue = queue.filter(x => !ids.has(x.localId));
+  journal.forEach(x => { if(ids.has(x.localId)){ x.sent = true; x.refuse = false; } });
+}
+function marquerRefuses(batch){
+  const ids = new Set(batch.map(x => x.localId));
+  queue = queue.filter(x => !ids.has(x.localId));
+  journal.forEach(x => { if(ids.has(x.localId)){ x.refuse = true; x.sent = false; } });
+}
+function reporter(delais){
+  prochainEssai = Date.now() + delais;
+  clearTimeout(essaiMinuteur);
+  essaiMinuteur = setTimeout(() => { flusherJournal(true); }, delais);
+}
+/* force : ignore la temporisation (bouton « Envoyer », retour du réseau). */
+async function flusherJournal(force){
+  if(flushing || !queue.length || !navigator.onLine) return;
+  if(!force && Date.now() < prochainEssai) return;   /* le minuteur du report retentera */
+  flushing = true;
+  try{
+    const batch = queue.slice(0, LOT_MAX);
+    let r = await posterLot(batch, false);
+    if(r.statut === 401 || r.statut === 403) r = await posterLot(batch, true);
+    if(r.ok){
+      marquerEnvoyes(batch);
+      syncState.journalInfo = "";
+    } else if(r.statut === 404){
+      syncState.journalInfo = "Table journal Supabase en attente de mise en service (relevés conservés sur l'appareil).";
+      reporter(TENTATIVE_LONGUE);
+    } else if(!refusImputable(r)){
+      reporter(TENTATIVE_RAPIDE);                    /* réseau, 5xx, 429 : rien n'est perdu */
+    } else {
+      const v = await isolerRefuses(batch, r);
+      const toutRefuse = v.refuses.length && !v.acceptes.length && !v.restent.length;
+      if(toutRefuse){
+        syncState.journalInfo = "Le serveur refuse l'envoi des relevés (" + v.statut + "). " + queue.length + " conservé" + (queue.length > 1 ? "s" : "") + " sur l'appareil.";
+        reporter(TENTATIVE_LONGUE);
+      } else {
+        marquerEnvoyes(v.acceptes);
+        marquerRefuses(v.refuses);
+        syncState.journalInfo = "";
+        if(v.restent.length) reporter(TENTATIVE_RAPIDE);
+      }
+    }
+  }catch(e){
+    /* rien n'est sorti de la file : tout repartira */
+  }finally{
+    flushing = false;
+    save("cu_queue", queue);
+    save("cu_log", journal);
+    rendre();
+  }
+}
+window.addEventListener("online", () => { flusherJournal(true); synchroniser(true); });
 
 /* ====== Ordre pupitre & avancement ====== */
 function lignesOp(){
@@ -712,8 +873,9 @@ function lignesOp(){
   base.forEach(r => { if(!saved.includes(rowId(r))) out.push(r); });
   return out;
 }
+const sansRef = r => r[4] === "" || r[4] === null || r[4] === undefined;
 function avancementOp(ligne, ref, op){
-  const ids = op.rows.map(rowId).concat(["pot"]);
+  const ids = op.rows.filter(r => !sansRef(r)).map(rowId).concat(["pot"]);
   let ok = 0, ec = 0;
   ids.forEach(i => { const c = checks[kkOp(ligne, ref, op, i)]; if(c){ if(c.statut === "ok") ok++; else ec++; } });
   return { fait: ok + ec, total: ids.length, ec };
@@ -730,31 +892,136 @@ function avancementLigne(ligne){
 }
 
 /* ====== Rendu des écrans ====== */
-function header(t1, t2, back){
+function barreEtatHTML(){
+  const nbQ = queue.length, info = infoJournal();
+  const qTxt = nbQ ? (' · <b>' + nbQ + '</b> en attente d\'envoi') : '';
+  const iTxt = info ? ('<br><b>' + esc(info) + '</b>') : '';   /* relevés refusés ou serveur qui refuse : l'écran le dit */
+  if(syncState.err){
+    return '<div class="status-bar ' + (snapshot ? 'warn' : 'err') + '"><span>' + esc(syncState.err) + qTxt + iTxt + '</span>' +
+      (syncState.needAuth ? '<button class="primary sact" data-act="login-open">Connexion</button>' : '<button class="ghost sact" data-act="sync">Réessayer</button>') + '</div>';
+  }
+  if(snapshot){
+    return '<div class="status-bar ' + (info ? 'warn' : 'ok') + '"><span><b>' + esc(snapshot.source) + '</b> · ' + fmtDate(snapshot.syncedAt) + qTxt + iTxt + '</span>' +
+      (syncState.needAuth ? '<button class="ghost sact" data-act="login-open">Connexion</button>' : '') + '</div>';
+  }
+  return '<div class="status-bar ' + (info ? 'warn' : '') + '"><span>' + (syncState.loading ? 'Chargement des 10 lignes depuis Supabase…' : 'En attente de synchronisation Supabase.') + iTxt + '</span></div>';
+}
+
+function header(t1, t2, back, org){
   const q = equipe();
+  $("hd").classList.toggle("dense", Boolean(org));   /* écran de contrôle : 4 boutons, le sous-titre prime sur le badge */
   $("hd").innerHTML =
     (back ? '<button class="hbtn back" data-act="back" aria-label="Retour">‹</button>' : "") +
     '<div class="ttl"><div class="t1">' + esc(t1) + '</div><div class="t2">' + esc(t2) + '</div></div>' +
     '<span class="badge-eq">' + esc(q.nom) + '</span>' +
+    /* 2026-11-25.2 — « Organiser » est dans l'en-tête : le pied fixe reprenait une rangée entière */
+    (org ? '<button class="hbtn' + (V.organiser ? " on" : "") + '" data-act="organiser" aria-label="Organiser l\'ordre pupitre" title="Organiser l\'ordre pupitre">↕</button>' : "") +
     '<button class="hbtn" data-act="sync" aria-label="Actualiser depuis Supabase" title="Actualiser">' + (syncState.loading ? "…" : "↻") + '</button>' +
     '<button class="hbtn" data-act="theme" aria-label="Basculer thème clair/nuit" title="Thème">' + (isDark() ? "☀" : "☾") + '</button>';
 }
 
-function barreEtatHTML(){
-  const nbQ = queue.length;
-  const qTxt = nbQ ? (' · <b>' + nbQ + '</b> en attente d\'envoi') : '';
-  if(syncState.err){
-    return '<div class="status-bar ' + (snapshot ? 'warn' : 'err') + '"><span>' + esc(syncState.err) + qTxt + '</span>' +
-      (syncState.needAuth ? '<button class="primary sact" data-act="login-open">Connexion</button>' : '<button class="ghost sact" data-act="sync">Réessayer</button>') + '</div>';
-  }
-  if(snapshot){
-    return '<div class="status-bar ok"><span><b>' + esc(snapshot.source) + '</b> · ' + fmtDate(snapshot.syncedAt) + qTxt + '</span>' +
-      (syncState.needAuth ? '<button class="ghost sact" data-act="login-open">Connexion</button>' : '') + '</div>';
-  }
-  return '<div class="status-bar"><span>' + (syncState.loading ? 'Chargement des 10 lignes depuis Supabase…' : 'En attente de synchronisation Supabase.') + '</span></div>';
+/* ====== Navigation et historique (2026-11-25.2) ======
+   Le bouton retour d'Android quittait l'app au lieu de revenir à l'écran précédent.
+   Chaque écran est une entrée d'historique ; `pile` en garde l'état. */
+const etatVue = () => ({ ligneIdx: V.ligneIdx, refIdx: V.refIdx, opIdx: V.opIdx, journal: V.journal });
+function poserRacine(){
+  pile = [etatVue()];
+  try{ history.replaceState({ cu: true, i: 0 }, ""); }catch(e){}
 }
+function empiler(patch){          /* entrer dans un écran */
+  Object.assign(V, patch, { organiser: false, ouvert: null, finOp: false });
+  pile.push(etatVue());
+  try{ history.pushState({ cu: true, i: pile.length - 1 }, ""); }catch(e){}
+  rendre();
+}
+function remplacerEcran(patch){   /* changer d'écran sans ajouter d'entrée (OP suivante) */
+  Object.assign(V, patch, { organiser: false, ouvert: null, finOp: false });
+  pile[pile.length - 1] = etatVue();
+  try{ history.replaceState({ cu: true, i: pile.length - 1 }, ""); }catch(e){}
+  rendre();
+}
+let feuilleEmpilee = false;       /* la feuille ouverte a son entrée d'historique */
+function ouvrirFeuille(kind, html){
+  if(feuille) return;
+  $("sh").innerHTML = html;
+  feuille = kind;
+  feuilleEmpilee = false;
+  try{ history.pushState({ cu: true, i: pile.length, feuille: true }, ""); feuilleEmpilee = true; }catch(e){}
+}
+function fermerFeuilleDom(){ feuille = null; feuilleEmpilee = false; $("sh").innerHTML = ""; }
+function fermerFeuille(){         /* par le retour du navigateur : l'entrée de la feuille saute */
+  if(feuille && feuilleEmpilee){ try{ history.back(); return; }catch(e){} }
+  fermerFeuilleDom();
+}
+function restaurer(e){
+  if(drag) finirGlisser();
+  Object.assign(V, e, { organiser: false, ouvert: null, finOp: false });
+  fermerFeuilleDom();
+  rendre();
+}
+/* L'écran d'où l'on part pour contrôler une ligne : ses références (ses OP si une seule). */
+function vueLigne(){
+  const l = curLigne();
+  return { ligneIdx: V.ligneIdx, refIdx: (l && l.refs.length === 1) ? 0 : null, opIdx: null, journal: false };
+}
+window.addEventListener("popstate", e => {
+  const s = e.state || {}, i = s.i;
+  if(retourAutoDemande){
+    /* retour automatique à l'écran de la ligne (téléphone laissé ouvert) */
+    retourAutoDemande = false;
+    restaurer(vueLigne());
+    poserRacine();
+    return;
+  }
+  if(s.feuille){                   /* « avancer » vers une feuille déjà refermée : on ne la rouvre pas */
+    try{ history.back(); }catch(err){}
+    return;
+  }
+  if(typeof i !== "number" || i < 0 || i >= pile.length) return;   /* entrée inconnue (page rechargée) */
+  restaurer(pile[i]);
+  pile = pile.slice(0, i + 1);
+});
 
+/* ====== Téléphone laissé ouvert : retour à l'écran de la ligne (2026-11-25.2) ====== */
+const INACTIVITE_MS = 3 * 60000;   /* 3 minutes sans toucher l'écran */
+let derniereActivite = Date.now(), minuteurInactivite = null;
+function retourALaLigne(){
+  if(retourAutoDemande) return;
+  const aDepiler = (pile.length - 1) + (feuille ? 1 : 0);
+  if(aDepiler <= 0){
+    if(V.opIdx == null && !V.journal && !V.organiser && !V.finOp) return;   /* déjà sur l'écran de la ligne */
+    restaurer(vueLigne());
+    poserRacine();
+    return;
+  }
+  retourAutoDemande = true;
+  setTimeout(() => { retourAutoDemande = false; }, 1500);   /* garde : pas de popstate = on n'insiste pas */
+  try{ history.go(-aDepiler); }catch(e){ retourAutoDemande = false; restaurer(vueLigne()); poserRacine(); }
+}
+function armerInactivite(){ clearTimeout(minuteurInactivite); minuteurInactivite = setTimeout(retourALaLigne, INACTIVITE_MS); }
+function noterActivite(){ derniereActivite = Date.now(); armerInactivite(); }
+["pointerdown", "keydown", "touchstart", "click"].forEach(t => document.addEventListener(t, noterActivite, { passive: true }));
+document.addEventListener("visibilitychange", () => {
+  if(document.hidden) return;
+  armerInactivite();               /* le minuteur est suspendu en arrière-plan : on repart du réel */
+  if(Date.now() - derniereActivite >= INACTIVITE_MS){ derniereActivite = Date.now(); retourALaLigne(); }
+  /* Les références ont pu changer pendant l'absence (une charnière modifiée dans l'outil
+     principal) : on relit, au plus tard 30 s après la dernière lecture. */
+  if(Date.now() - derniereSynchro >= 30000) synchroniser(true);
+});
+
+/* ====== Rendu des écrans ====== */
+function mettrePied(html){         /* un pied fixe recouvre le bas de la page : la marge ne suit que lui */
+  $("ft").innerHTML = html || "";
+  document.body.classList.toggle("pied", Boolean(html));
+}
+function revaliderSelection(){     /* les références viennent d'être relues : les rangées ont pu bouger */
+  if(V.ligneIdx != null && !curLigne()){ Object.assign(V, { ligneIdx: null, refIdx: null, opIdx: null, finOp: false }); }
+  if(V.refIdx != null && !curRef()){ Object.assign(V, { refIdx: null, opIdx: null, finOp: false }); }
+  if(V.opIdx != null && !curOp()){ Object.assign(V, { opIdx: null, finOp: false }); }
+}
 function rendre(){
+  revaliderSelection();
   if(V.journal) return ecranJournal();
   if(V.ligneIdx == null) return ecranLignes();
   if(V.refIdx == null) return ecranRefs();
@@ -762,8 +1029,17 @@ function rendre(){
   return ecranListe();
 }
 
+function carteBig(cls, acte, i, nom, sous, st){
+  return '<button class="big ' + cls + '" data-act="' + acte + '" data-i="' + i + '"><span class="bin"><span class="bnom">' + esc(nom) +
+    '</span><span class="bsous">' + esc(sous) + '</span><span class="st">' + st + '</span></span></button>';
+}
+/* Pied du mode « ligne figée par QR code » : sans lui, on ne pourrait jamais changer de ligne. */
+function piedLigneFigee(){
+  return (ligneFigee && pile.length === 1) ? '<div class="foot"><button class="ghost" data-act="autre-ligne">Choisir une autre ligne</button></div>' : "";
+}
+
 function ecranLignes(){
-  header("Contrôle de prise de poste", "Choisir la ligne (10 lignes)", false);
+  header("Prise de poste", "Contrôle · choisir la ligne", false);   /* titre court : « Contrôle de prise de poste » était coupé à 390 px */
   const L = curLignes();
   let html = barreEtatHTML();
   if(!L.length){
@@ -771,51 +1047,55 @@ function ecranLignes(){
       '<p>Aucune référence n\'est encore en cache sur cet appareil. Connectez-vous une première fois pour charger les 10 lignes depuis Supabase (puis utilisable hors ligne).</p>' +
       '<button class="primary" data-act="login-open">Se connecter à Supabase</button></div>';
   } else {
-    html += L.map((l, i) => {
+    html += '<div class="grille">' + L.map((l, i) => {
       const a = avancementLigne(l);
       const vide = l.refs.length === 0;
       const cls = vide ? "empty" : (a.total && a.fait === a.total ? (a.ec ? "alert" : "done") : (a.fait ? "partial" : ""));
-      const sous = vide ? "Aucune référence renseignée" : (l.refs.length === 1 ? l.refs[0].nom : l.refs.length + " références · " + l.refs.map(r => r.nom).join(" · "));
-      const st = vide ? "—" : (a.fait ? ((a.fait === a.total ? (a.ec ? "⚠ " : "✓ ") : "") + a.fait + "/" + a.total) : l.refs.length + " réf.");
-      return '<button class="big ' + cls + '" data-act="ligne" data-i="' + i + '"><span class="bmain">' + esc(l.nom) + '<small>' + esc(sous) + '</small></span><span class="st">' + st + '</span></button>';
-    }).join("");
+      const nbRef = l.refs.length + " réf.";
+      /* l'état n'affiche que l'avancement : le nombre de références est déjà dans le sous-titre (pas de doublon) */
+      const st = vide ? "—" : (a.fait ? ((a.fait === a.total ? (a.ec ? "⚠ " : "✓ ") : "") + a.fait + "/" + a.total) : "");
+      const court = vide ? "vide" : (l.refs.length === 1 ? l.refs[0].nom : nbRef);
+      const long = vide ? "Aucune référence renseignée" : (l.refs.length === 1 ? l.refs[0].nom : l.refs.length + " références · " + l.refs.map(r => r.nom).join(" · "));
+      return '<button class="big ' + cls + '" data-act="ligne" data-i="' + i + '"><span class="bin"><span class="bnom">' + esc(l.nom) +
+        '</span><span class="bsous">' + esc(court) + '</span><span class="blong">' + esc(long) + '</span><span class="st">' + st + '</span></span></button>';
+    }).join("") + "</div>";
   }
   html += IP;
   $("mn").innerHTML = html;
   const nbQ = queue.length;
-  $("ft").innerHTML = '<div class="foot"><button class="ghost" data-act="journal">Journal des contrôles' + (nbQ ? ' (' + nbQ + ' en file)' : '') + '</button></div>';
+  mettrePied('<div class="foot"><button class="ghost" data-act="journal">Journal des contrôles' + (nbQ ? ' (' + nbQ + ' en file)' : '') + '</button></div>');
 }
 
 function ecranRefs(){
   const l = curLigne();
-  header(l.nom, "Choisir la référence", true);
+  header(l.nom, ligneFigee ? "Ligne du QR code — choisir la référence" : "Choisir la référence", pile.length > 1);
   if(!l.refs.length){
-    $("mn").innerHTML = '<div class="card-box"><h2>' + esc(l.nom) + '</h2><p>Aucune référence avec charnières n\'est encore renseignée pour cette ligne dans Supabase.</p><button class="ghost" data-act="back">Retour aux lignes</button></div>';
-    $("ft").innerHTML = "";
+    $("mn").innerHTML = '<div class="card-box"><h2>' + esc(l.nom) + '</h2><p>Aucune référence avec charnières n\'est encore renseignée pour cette ligne dans Supabase.</p>' +
+      (ligneFigee ? "" : '<button class="ghost" data-act="back">Retour aux lignes</button>') + '</div>';
+    mettrePied(piedLigneFigee());
     return;
   }
   $("mn").innerHTML = '<div class="sec-title">' + l.refs.length + ' références</div>' +
     l.refs.map((ref, i) => {
       const a = avancementRef(l, ref);
       const cls = a.total && a.fait === a.total ? (a.ec ? "alert" : "done") : (a.fait ? "partial" : "");
-      return '<button class="big ' + cls + '" data-act="ref" data-i="' + i + '"><span class="bmain">' + esc(ref.nom) +
-        '<small>' + ref.ops.length + ' OP</small></span><span class="st">' +
-        (a.fait === a.total && a.total ? (a.ec ? "⚠ " : "✓ ") : "") + a.fait + '/' + a.total + '</span></button>';
+      return carteBig(cls, "ref", i, ref.nom, ref.ops.length + " OP",
+        (a.fait === a.total && a.total ? (a.ec ? "⚠ " : "✓ ") : "") + a.fait + '/' + a.total);
     }).join("");
-  $("ft").innerHTML = "";
+  mettrePied(piedLigneFigee());
 }
 
 function ecranOps(){
   const l = curLigne(), ref = curRef();
-  header(l.nom, ref.nom + " — choisir l'OP", true);
+  header(l.nom, ref.nom + " — choisir l'OP", pile.length > 1);
   $("mn").innerHTML = ref.ops.map((op, i) => {
     const a = avancementOp(l, ref, op);
     const cls = a.fait === a.total ? (a.ec ? "alert" : "done") : (a.fait ? "partial" : "");
-    return '<button class="big ' + cls + '" data-act="op" data-i="' + i + '"><span class="bmain">' + esc(op.nom) +
-      '<small>' + op.rows.length + ' logements</small></span><span class="st">' +
-      (a.fait === a.total ? (a.ec ? "⚠ " : "✓ ") : "") + a.fait + '/' + a.total + '</span></button>';
+    const sans = op.rows.filter(sansRef).length;
+    return carteBig(cls, "op", i, op.nom, op.rows.length + " logements" + (sans ? " · " + sans + " sans référence" : ""),
+      (a.fait === a.total ? (a.ec ? "⚠ " : "✓ ") : "") + a.fait + '/' + a.total);
   }).join("");
-  $("ft").innerHTML = "";
+  mettrePied("");
 }
 
 function ligneHTML(r){
@@ -828,10 +1108,11 @@ function ligneHTML(r){
            (r[6] !== "" ? (' · f <b>' + esc(String(r[6]).replace(".", ",")) + '</b> mm/tr') : "") + '</div>';
   }
   const refCh = r[4] !== "" ? r[4] : "—";
-  let val = '<b>' + esc(refCh) + '</b> pièces / arête';
+  let val = sansRef(r) ? '<b>—</b> charnière absente de l\'outil principal' : '<b>' + esc(refCh) + '</b> pièces / arête';
   if(c && c.statut === "ecart") val = '<b style="color:var(--amber)">' + esc(c.releve) + '</b> relevé<span class="old">' + esc(refCh) + '</span>';
   const note = (c && c.statut === "ecart" && c.comm) ? '<div class="note">« ' + esc(c.comm) + ' »</div>' : "";
   const btns = V.organiser ? '<div class="handle" data-handle="1" aria-label="Déplacer">≡</div>' :
+    sansRef(r) ? '<div class="sansref">Référence<br>à renseigner</div>' :
     '<div class="rbtn"><button class="bec" data-act="ecart" data-id="' + esc(id) + '" aria-label="Charnière modifiée">≠</button><button class="bok" data-act="ok" data-id="' + esc(id) + '" aria-label="Conforme">✓</button></div>';
   return '<div class="row ' + s + '" data-id="' + esc(id) + '"><div class="rtop"><div class="rinfo" data-act="detail" data-id="' + esc(id) + '"><div class="rn">' + esc(r[0]) + ' · ' + esc(r[1]) + '</div><div class="rv">' + val + '</div></div>' + btns + '</div>' + note + cond + '</div>';
 }
@@ -846,29 +1127,60 @@ function potHTML(){
 }
 
 function ecranListe(){
-  const l = curLigne(), ref = curRef(), op = curOp();
-  header(op.nom, l.nom + " › " + ref.nom, true);
+  const l = curLigne(), ref = curRef(), op = curOp(), a = avancementOp(l, ref, op);
+  if(V.finOp && a.total && a.fait === a.total) return ecranFinOp();
+  V.finOp = false;
+  header(op.nom, l.nom + " › " + ref.nom, pile.length > 1, true);
   $("mn").innerHTML = (V.organiser ? '<div class="status-bar warn"><span>Mode « Organiser » : tenir <b>≡</b> et glisser pour ranger comme au pupitre.</span></div>' : potHTML()) +
     '<div id="lst">' + lignesOp().map(ligneHTML).join("") + '</div>';
-  $("ft").innerHTML = '<div class="foot"><button class="' + (V.organiser ? 'primary' : 'ghost') + '" data-act="organiser">' + (V.organiser ? "✔ Terminer l'organisation" : "↕ Organiser l'ordre pupitre") + '</button></div>';
+  mettrePied(V.organiser ? '<div class="foot"><button class="ghost" data-act="ordre-origine">↺ Ordre d\'origine</button><button class="primary" data-act="organiser">✔ Terminer</button></div>' : "");
+}
+
+/* 2026-11-25.2 — écran de fin d'OP : la dernière rangée vient d'être validée.
+   Il ne s'affiche qu'à ce moment-là : une OP déjà contrôlée, rouverte, montre sa liste
+   (on peut y remettre un écart à conforme). */
+function ecranFinOp(){
+  const l = curLigne(), ref = curRef(), op = curOp(), q = equipe(), a = avancementOp(l, ref, op);
+  const dernier = journal[journal.length - 1], d = dernier ? new Date(dernier.ts) : new Date();
+  const ecarts = [];
+  op.rows.forEach(r => { const c = checks[kk(rowId(r))]; if(c && c.statut === "ecart") ecarts.push(esc(rowId(r)) + ' : <b>' + esc(c.releve) + '</b> pièces / arête (réf. ' + esc(r[4]) + ')'); });
+  const cp = checks[kk("pot")];
+  if(cp && cp.statut === "ecart") ecarts.push('Potentiomètre : <b>' + esc(cp.releve) + ' %</b> (attendu ' + potRef() + ' %)');
+  let suivante = null;              /* prochaine OP de la référence qui n'est pas terminée */
+  for(let k = 1; k <= ref.ops.length; k++){
+    const i = (V.opIdx + k) % ref.ops.length, s = avancementOp(l, ref, ref.ops[i]);
+    if(s.total && s.fait < s.total){ suivante = i; break; }
+  }
+  header(op.nom, l.nom + " › " + ref.nom, pile.length > 1);
+  $("mn").innerHTML = '<div class="fin ' + (a.ec ? "av" : "") + '"><div class="fin-ico">' + (a.ec ? "⚠" : "✓") + '</div>' +
+    '<div class="fin-t">' + esc(op.nom) + ' contrôlée</div>' +
+    '<div class="fin-s">à ' + fmtDate(d && !isNaN(d) ? d.toISOString() : null) + ' · équipe ' + esc(q.nom) +
+    (a.ec ? ' · <b>' + a.ec + ' écart' + (a.ec > 1 ? "s" : "") + '</b>' : ' · aucun écart') + '</div>' +
+    (ecarts.length ? '<div class="fin-e">' + ecarts.join("<br>") + '</div>' : '') + '</div>' +
+    '<div class="fin-acts">' +
+      (suivante !== null ? '<button class="primary" data-act="op-suivante" data-i="' + suivante + '">OP suivante ›</button>' : '<button class="primary" data-act="back">Retour aux OP</button>') +
+      '<button class="ghost" data-act="revoir">Revoir l\'OP</button>' +
+    '</div>' + IP;
+  mettrePied("");
 }
 
 function ecranJournal(){
-  header("Journal des contrôles", queue.length ? (queue.length + " en attente d'envoi Supabase") : "Synchronisé", true);
-  const L = journal.slice().reverse();
-  let html = syncState.journalInfo ? '<div class="status-bar warn"><span>' + esc(syncState.journalInfo) + '</span></div>' : '';
+  header("Journal des contrôles", queue.length ? (queue.length + " en attente d'envoi Supabase") : "Synchronisé", pile.length > 1);
+  const L = journal.slice().reverse(), nR = nbRefuses(), info = infoJournal();
+  let html = info ? '<div class="status-bar warn"><span>' + esc(info) + '</span></div>' : '';
   html += L.length ? L.map(e => {
     const cls = e.statut === "ecart" ? "ec" : e.statut === "annule" ? "an" : "";
     const t = e.statut === "ecart" ? "ÉCART " : e.statut === "annule" ? "Annulé " : "Conforme ";
-    const tag = e.sent ? '<span class="tag ok">Supabase</span>' : '<span class="tag wait">En file</span>';
-    return '<div class="log ' + cls + '"><b>' + t + esc(e.element) + '</b>' + tag + ' — ' + esc(e.ligne) + ' › ' + esc(e.reference) + ' › ' + esc(e.op) +
+    const tag = e.refuse ? '<span class="tag refus">Refusé par le serveur</span>' : e.sent ? '<span class="tag ok">Supabase</span>' : '<span class="tag wait">En file</span>';
+    return '<div class="log ' + cls + (e.refuse ? " rf" : "") + '"><b>' + t + esc(e.element) + '</b>' + tag + ' — ' + esc(e.ligne) + ' › ' + esc(e.reference) + ' › ' + esc(e.op) +
       '<div class="m">' + fmtDate(e.ts) + ' · équipe ' + esc(e.equipe) + (e.statut === "ecart" ? ' · attendu ' + esc(e.attendu) + ' → relevé ' + esc(e.releve) : "") + '</div>' +
       (e.commentaire ? '<div>« ' + esc(e.commentaire) + ' »</div>' : "") + '</div>';
   }).join("") : '<div class="card-box"><p>Aucun contrôle enregistré pour l\'instant.</p></div>';
   $("mn").innerHTML = html;
-  $("ft").innerHTML = '<div class="foot">' +
+  mettrePied('<div class="foot">' +
     (queue.length ? '<button class="primary" data-act="flush">Envoyer (' + queue.length + ')</button>' : '') +
-    '<button class="danger" data-act="vider">Effacer l\'historique local</button></div>';
+    (nR ? '<button class="ghost" data-act="reessayer-refuses">Réessayer (' + nR + ' refusé' + (nR > 1 ? "s" : "") + ')</button>' : '') +
+    '<button class="danger" data-act="vider">Effacer l\'historique local</button></div>');
 }
 
 /* ====== Feuilles modales ====== */
@@ -878,83 +1190,101 @@ function feuilleEcart(id){
   const r = pot ? null : curOp().rows.find(x => rowId(x) === id);
   const att = pot ? (potRef() + " %") : ((r[4] !== "" ? r[4] : "—") + " pièces / arête");
   const chips = MOTIFS_RAPIDES.map(m => '<button type="button" class="motif" data-act="motif" data-m="' + esc(m) + '">' + esc(m) + '</button>').join("");
-  $("sh").innerHTML = '<div class="sheet-bg"><div class="sheet ec"><h2>' + (pot ? "Potentiomètre modifié" : esc(id) + " — charnière modifiée") + '</h2>' +
+  ouvrirFeuille("ecart", '<div class="sheet-bg"><div class="sheet ec"><h2>' + (pot ? "Potentiomètre modifié" : esc(id) + " — charnière modifiée") + '</h2>' +
     '<div class="ref">Référence : <b>' + esc(att) + '</b></div>' +
     '<label for="fv">' + (pot ? "Valeur lue (%)" : "Nouvelle charnière lue (pièces / arête)") + '</label><input id="fv" type="number" inputmode="numeric" min="0" autocomplete="off">' +
     '<label>Motif rapide (1 tap)</label><div class="motifs">' + chips + '</div>' +
     '<label for="fc">Commentaire</label><textarea id="fc" placeholder="Précision libre (facultatif si motif choisi)"></textarea>' +
-    '<div class="err" id="fe"></div><div class="acts"><button class="ghost" data-act="fermer">Annuler</button><button class="bec" data-act="enreg" data-id="' + esc(id) + '">Enregistrer</button></div></div></div>';
+    '<div class="err" id="fe"></div><div class="acts"><button class="ghost" data-act="fermer">Annuler</button><button class="bec" data-act="enreg" data-id="' + esc(id) + '">Enregistrer</button></div></div></div>');
   setTimeout(() => { const el = $("fv"); if(el) el.focus(); }, 50);
 }
 
 function feuilleLogin(){
   const s = getSession();
   const mail = (s && s.data && s.data.email) || "";
-  $("sh").innerHTML = '<div class="sheet-bg"><div class="sheet"><h2>Connexion Supabase</h2>' +
+  ouvrirFeuille("login", '<div class="sheet-bg"><div class="sheet"><h2>Connexion Supabase</h2>' +
     '<div class="ref">Même compte que l\'outil principal (charge les 10 lignes en cache hors ligne).</div>' +
     '<label for="le">Email</label><input id="le" type="email" autocomplete="username" value="' + esc(mail) + '">' +
     '<label for="lp">Mot de passe</label><input id="lp" type="password" autocomplete="current-password">' +
-    '<div class="err" id="lerr"></div><div class="acts"><button class="ghost" data-act="fermer">Annuler</button><button class="primary" data-act="login-go">Connecter</button></div></div></div>';
+    '<div class="err" id="lerr"></div><div class="acts"><button class="ghost" data-act="fermer">Annuler</button><button class="primary" data-act="login-go">Connecter</button></div></div></div>');
   setTimeout(() => { const el = mail ? $("lp") : $("le"); if(el) el.focus(); }, 50);
 }
 
 /* ====== Actions ====== */
+function vibrer(motif){ try{ if(navigator.vibrate) navigator.vibrate(motif); }catch(e){} }   /* Android ; iOS ignore */
 document.addEventListener("click", async e => {
   const b = e.target.closest("[data-act]"); if(!b) return;
   const a = b.getAttribute("data-act"), id = b.getAttribute("data-id");
+  let flashId = null;
 
   if(a === "theme"){ toggleTheme(); return; }
   if(a === "sync"){ synchroniser(false); return; }
-  if(a === "flush"){ flusherJournal(); return; }
+  if(a === "flush"){ flusherJournal(true); return; }
   if(a === "login-open"){ feuilleLogin(); return; }
-  if(a === "fermer"){ $("sh").innerHTML = ""; return; }
+  if(a === "fermer"){ fermerFeuille(); return; }
   if(a === "login-go"){
     const em = ($("le").value || "").trim(), pw = $("lp").value || "";
     if(!em || !pw){ $("lerr").textContent = "Email et mot de passe requis."; return; }
     b.disabled = true; b.textContent = "Connexion…";
     try{
       await loginCloud(em, pw);
-      $("sh").innerHTML = "";
+      fermerFeuille();
       await synchroniser(false);
     }catch(err){
-      $("lerr").textContent = err.message || "Connexion refusée.";
       b.disabled = false; b.textContent = "Connecter";
+      if(feuille) $("lerr").textContent = err.message || "Connexion refusée.";
     }
     return;
   }
 
   if(a === "ligne"){
-    V.ligneIdx = +b.getAttribute("data-i");
-    const l = curLigne();
-    V.refIdx = (l && l.refs.length === 1) ? 0 : null;
-    V.opIdx = null;
+    const i = +b.getAttribute("data-i"), l = curLignes()[i];
+    empiler({ ligneIdx: i, refIdx: (l && l.refs.length === 1) ? 0 : null, opIdx: null, journal: false });
+    return;
   }
-  else if(a === "ref"){ V.refIdx = +b.getAttribute("data-i"); V.opIdx = null; }
-  else if(a === "op"){ V.opIdx = +b.getAttribute("data-i"); V.organiser = false; V.ouvert = null; }
-  else if(a === "back"){
-    if(V.journal) V.journal = false;
-    else if(V.opIdx != null){ V.opIdx = null; V.organiser = false; }
-    else if(V.refIdx != null){
-      const l = curLigne();
-      if(l && l.refs.length === 1){ V.refIdx = null; V.ligneIdx = null; }
-      else V.refIdx = null;
-    }
-    else V.ligneIdx = null;
+  if(a === "ref"){ empiler({ refIdx: +b.getAttribute("data-i"), opIdx: null }); return; }
+  if(a === "op"){ empiler({ opIdx: +b.getAttribute("data-i") }); return; }
+  if(a === "op-suivante"){ remplacerEcran({ opIdx: +b.getAttribute("data-i") }); return; }
+  if(a === "back"){ if(pile.length > 1) history.back(); return; }   /* racine d'une ligne figée : pas de ‹ */
+  if(a === "journal"){ empiler({ journal: true }); return; }
+  if(a === "autre-ligne"){          /* on quitte la ligne imposée par le QR code */
+    ligneFigee = false;
+    restaurer({ ligneIdx: null, refIdx: null, opIdx: null, journal: false });
+    poserRacine();
+    return;
   }
-  else if(a === "journal"){ V.journal = true; }
-  else if(a === "vider"){
+  if(a === "vider"){
     if(confirm("Effacer les ✓ locaux et l'aperçu du journal de cet appareil ?")){
-      checks = {}; journal = []; save("cu_checks", checks); save("cu_log", journal);
+      checks = {}; journal = []; V.finOp = false; save("cu_checks", checks); save("cu_log", journal);
     }
+  }
+  else if(a === "reessayer-refuses"){   /* serveur réparé : les relevés refusés repartent en file */
+    journal.forEach(x => { if(x.refuse){ x.refuse = false; queue.push(x); } });
+    save("cu_queue", queue); save("cu_log", journal);
+    prochainEssai = 0;
+    flusherJournal(true);
   }
   else if(a === "detail"){ V.ouvert = V.ouvert === id ? null : id; }
   else if(a === "organiser"){ V.organiser = !V.organiser; }
+  else if(a === "ordre-origine"){ delete ordre[opId()]; save("cu_order", ordre); }
+  else if(a === "revoir"){ V.finOp = false; }
   else if(a === "ok"){
     const k = kk(id), pot = id === "pot", r = pot ? null : curOp().rows.find(x => rowId(x) === id);
+    if(!pot && (!r || sansRef(r))) return;                       /* rien à contrôler sans référence */
     const att = pot ? (potRef() + " %") : String(r[4]);
-    if(checks[k]){ delete checks[k]; trace(pot ? "potentiometre" : "charniere", id, att, "", "annule"); }
-    else { checks[k] = { statut: "ok" }; trace(pot ? "potentiometre" : "charniere", id, att, att, "ok"); }
+    const typ = pot ? "potentiometre" : "charniere";
+    const avant = avancementOp(curLigne(), curRef(), curOp()).fait;   /* sert à l'écran de fin d'OP */
+    if(checks[k] && checks[k].statut === "ok"){ delete checks[k]; trace(typ, id, att, "", "annule"); }
+    else if(checks[k] && checks[k].statut === "ecart"){
+      /* 2026-11-25.1 — ✓ sur un écart = la valeur est revenue à la référence : c'est un relevé conforme,
+         plus une annulation (avant, la section Checkup gardait l'écart « actif ») */
+      checks[k] = { statut: "ok", corrige: true }; trace(typ, id, att, att, "ok", "Remis conforme (écart corrigé)");
+    }
+    else { checks[k] = { statut: "ok" }; trace(typ, id, att, att, "ok"); }
+    if(checks[k]){ vibrer(30); flashId = id; }                         /* validation : le téléphone confirme (Android) */
     save("cu_checks", checks);
+    const apres = avancementOp(curLigne(), curRef(), curOp());
+    V.finOp = apres.total > 0 && apres.fait === apres.total && avant < apres.total;   /* la dernière rangée vient d'être validée */
   }
   else if(a === "ecart"){ feuilleEcart(id); return; }
   else if(a === "motif"){
@@ -973,14 +1303,26 @@ document.addEventListener("click", async e => {
   else if(a === "enreg"){
     const pot = id === "pot", r = pot ? null : curOp().rows.find(x => rowId(x) === id);
     const att = pot ? String(potRef()) : String(r[4]);
-    const v = $("fv").value.trim(), c = $("fc").value.trim();
-    if(v === "" || isNaN(Number(v))){ $("fe").textContent = "Saisir la valeur lue."; return; }
-    if(v === att){ $("fe").textContent = "Identique à la référence : utiliser ✓."; return; }
-    checks[kk(id)] = { statut: "ecart", releve: v, comm: c };
-    trace(pot ? "potentiometre" : "charniere", id, att, v, "ecart", c);
-    save("cu_checks", checks); $("sh").innerHTML = "";
+    const v = $("fv").value.trim(), c = $("fc").value.trim(), n = Number(v);
+    if(v === "" || !isFinite(n)){ $("fe").textContent = "Saisir la valeur lue."; return; }
+    if(n < 0){ $("fe").textContent = "La valeur lue ne peut pas être négative."; return; }
+    /* 2026-11-25.2 — comparaison de nombres : « 2400.0 » tapé pour une référence à 2400 partait
+       en écart. La valeur relevée est rangée sans zéro de tête ni décimale inutile. */
+    if(n === Number(att)){ $("fe").textContent = "Identique à la référence : utiliser ✓."; return; }
+    const avant = avancementOp(curLigne(), curRef(), curOp()).fait, releve = String(n);
+    checks[kk(id)] = { statut: "ecart", releve: releve, comm: c };
+    trace(pot ? "potentiometre" : "charniere", id, att, releve, "ecart", c);
+    save("cu_checks", checks);
+    vibrer([40, 70, 40]);                            /* écart enregistré : double vibration (Android) */
+    const apres = avancementOp(curLigne(), curRef(), curOp());
+    V.finOp = apres.total > 0 && apres.fait === apres.total && avant < apres.total;
+    fermerFeuille();                                 /* l'écran se redessine au retour du navigateur */
   }
   rendre();
+  if(flashId){   /* 2026-11-25.3 retour visuel (iOS ne vibre pas) */
+    const el = flashId === "pot" ? document.querySelector(".pot") : [...document.querySelectorAll(".row")].find(x => x.getAttribute("data-id") === flashId);
+    if(el) el.classList.add("flash");
+  }
 });
 
 /* ====== Glisser-déposer (mode Organiser) ====== */
@@ -995,37 +1337,48 @@ document.addEventListener("pointermove", e => {
   const after = rows.find(x => { const r = x.getBoundingClientRect(); return e.clientY < r.top + r.height / 2; });
   if(after) lst.insertBefore(drag, after); else lst.appendChild(drag);
 });
-document.addEventListener("pointerup", () => {
+/* 2026-11-25.2 — un glisser interrompu (appel, notification, doigt qui glisse) laissait la
+   rangée « accrochée » : le prochain mouvement la déplaçait sans tenir la poignée.
+   Toute fin de glisser, normale ou interrompue, range l'ordre affiché. */
+function finirGlisser(){
   if(!drag) return;
+  const lst = $("lst");
   drag.classList.remove("drag"); drag = null;
-  ordre[opId()] = [...$("lst").children].map(x => x.getAttribute("data-id"));
+  if(!lst) return;                  /* l'écran a déjà changé : on ne range pas un ordre fantôme */
+  ordre[opId()] = [...lst.children].map(x => x.getAttribute("data-id"));
   save("cu_order", ordre);
-});
+}
+document.addEventListener("pointerup", finirGlisser);
+document.addEventListener("pointercancel", finirGlisser);
+document.addEventListener("lostpointercapture", finirGlisser);
 
-/* ====== Ouverture directe sur une ligne via QR code (?ligne=EMAG%201) ====== */
+/* ====== Ouverture directe sur une ligne via QR code (?ligne=EMAG%201) ======
+   2026-11-25.2 — la ligne du QR code est figée : c'est l'écran racine, sans ‹ ; on en sort
+   par « Choisir une autre ligne ». Un moniteur ne peut pas se tromper de ligne. */
 let urlLigneAppliquee = false;
 function appliquerUrlLigne(){
   if(urlLigneAppliquee || V.ligneIdx != null) return;
+  urlLigneAppliquee = true;
   const p = new URLSearchParams(location.search);
   const cible = (p.get("ligne") || "").trim().toUpperCase();
-  if(!cible) { urlLigneAppliquee = true; return; }
+  if(!cible) return;
   const L = curLignes();
-  if(!L.length) return;
+  if(!L.length){ urlLigneAppliquee = false; return; }   /* rien en cache : on réessaiera après la lecture */
   const idx = L.findIndex(l => String(l.nom || "").trim().toUpperCase() === cible);
-  if(idx !== -1){
-    V.ligneIdx = idx;
-    V.refIdx = L[idx].refs.length === 1 ? 0 : null;
-    V.opIdx = null;
-    urlLigneAppliquee = true;
-  }
+  if(idx === -1) return;
+  Object.assign(V, { ligneIdx: idx, refIdx: L[idx].refs.length === 1 ? 0 : null, opIdx: null });
+  ligneFigee = true;
+  poserRacine();
 }
 
 appliquerUrlLigne();
+poserRacine();
 rendre();
+armerInactivite();
 synchroniser(Boolean(snapshot)).then(() => { appliquerUrlLigne(); rendre(); });
 
 /* ====== PWA : installation, hors ligne, mise à jour ====== */
-const BUILD = "2026-11-24.5";
+const BUILD = "2026-11-25.3";
 if("serviceWorker" in navigator){ navigator.serviceWorker.register("./service-worker.js", { updateViaCache: "none" }).catch(() => {}); }
 fetch("checkup-version.json", { cache: "no-store" }).then(r => r.ok ? r.json() : null).then(j => {
   if(j && j.build && j.build !== BUILD && location.search.indexOf("b=" + j.build) === -1){

@@ -41,6 +41,12 @@ TOS 2000…) et SMTG restent dans le log skill `ceramic-cutting-references`.
 
 ## Les essais (récent → ancien)
 
+### 2026-11-26 — PCI · 268x12 · chaîne sur-épaisseurs + correction programme finition pistes (S=500)
+
+- **Chaîne de passes** : brut **17 mm ±0,3** → OP10 **15 mm** → OP20 **13 mm** → OP40 **12 mm ±0,1** (5 mm enlèvement total).
+- **⚠ Correction Julien (26/11)** : le programme transmis donnait S=400 sur la finition des pistes — la vraie valeur est **S = 500 tr/min** → à Ø 268, Vc ≈ 421 m/min (à recalculer au Ø piste réel). Toute analyse fondée sur S=400 est à refaire.
+- **Status** : données de référence, pas un essai.
+
 ### 2026-11-16 — EMAG 2 · OP20 gorge plongée · DV356x26 RPI · RCGX 090700 T03030 SL500 — sujet ouvert : usure abrasive saine, écart charnière 300/150 jamais creusé
 
 - **Contexte** : action « Follow the RCGX 090700 » du rapport de visite 9-10/11. Même article aux deux logements (Z000 544 318, 13,67 €, 2 arêtes) : **T5211 D1 charnière 300 vs T525 D1 charnière 150** — écart ×2 d'origine **historique, jamais creusé**. Vc/f **non relevés** (champs vides dans l'outil rev435) ; extraction du programme 356 déjà chez Matis.
