@@ -11616,6 +11616,20 @@ function logementBlocHTML(sc, o, l, showFrFa, showCycleDetail){
    par logement, avec ce qu'on va vraiment chercher du regard — quelle plaquette, quelle
    duree de vie, a quelles conditions, pour combien. Ce qui manque est signale ici plutot
    que decouvert plus tard dans un calcul qui ne tombe pas. */
+/* v4.163.1 — le temps de coupe EFFECTIF d'un logement, pour la tuile : la même règle que cycleDetailStatus
+   (un temps saisi prime ; sur un scénario d'essai, un temps absent ou simplement copié de la référence se
+   déduit de la référence). Rend { secs, calcule } ou null si rien n'est connu. Lecture seule. */
+function tempsCoupeEffectifLogement(sc, o, l){
+  let c = parseFloat(l.tempsCoupe), calcule = false;
+  const baseRef = (!sc.baseline && typeof data !== "undefined" && Array.isArray(data) && data.includes(sc)) ? baselineScenario() : null;
+  if(baseRef){
+    const oi = (sc.outils||[]).indexOf(o);
+    const d = tempsCoupeDeduit(baseRef, o, l, (baseRef.outils||[]).length === (sc.outils||[]).length ? oi : undefined);
+    const copie = !isNaN(c) && d.origine === "calcule" && Math.abs(c - d.t0) < 1e-9;
+    if((isNaN(c) || copie) && d.secs !== null){ c = d.secs; calcule = true; }
+  }
+  return isNaN(c) ? null : { secs: c, calcule };
+}
 function apercuLogementHTML(sc, o, l, couleur, oi, volume, totalAnnuel, partRef, vp, ajoutCoutEur, sortieInfos){
   /* v4.155 — ce que cet essai change par rapport à la référence ★ (lecture seule) */
   const ecRef = scenarioReferenceDe(data);
@@ -11673,6 +11687,7 @@ function apercuLogementHTML(sc, o, l, couleur, oi, volume, totalAnnuel, partRef,
      une estimation, distincte de la mesure). Rappelle aussi pourquoi le scénario ignore
      éventuellement les mesures : elles ne comptent que complètes, jamais un mélange. */
   const coupe = parseFloat(l.tempsCoupe);
+  const tcEff = tempsCoupeEffectifLogement(sc, o, l);
   const stC = cycleDetailStatus(sc, config);
   const cycPart = (!isNaN(coupe) && stC.complete && stC.secs > 0) ? coupe / stC.secs : null;
   /* v4.111 — l'indice vient de l'APARIEMENT PAR NUMÉRO (verdictParOutil),
@@ -11722,6 +11737,14 @@ function apercuLogementHTML(sc, o, l, couleur, oi, volume, totalAnnuel, partRef,
         : (vpLog.simultane && !vpLog.bottleneck ? `<div class="ap-detail-l"><span>Levier productivité</span><b>porté par l'outil le plus long du groupe simultané</b></div>` : "")}
       ${vpLog.bottleneck && vpLog.prodOutil !== null ? `<div class="ap-detail-l"><span>Levier productivité — Δ temps machine × taux horaire${vpLog.simultane ? " (groupe simultané : le plus long pilote)" : ""}</span><b>${vpLog.prodOutil >= 0 ? "−" : "+"} ${escapeAttr(fmtEuroCourt(Math.abs(vpLog.prodOutil)))}/an</b></div>` : ""}
       ${vpLog.gainOutil !== null ? `<div class="ap-detail-l ap-detail-total"><span>Gain de l'outil — somme des leviers disponibles</span><b>${vpLog.gainOutil >= 0 ? "−" : "+"} ${escapeAttr(fmtEuroCourt(Math.abs(vpLog.gainOutil)))}/an</b></div>` : ""}` : "";
+  /* v4.163.1 — la plaquette au complet quand on déplie : code MABEC (article) + libellé du catalogue + ISO */
+  const codeMabec = String(l.codeArticle || "").trim();
+  const entCat = codeMabec ? catalogueSuggestion(codeMabec) : null;
+  const detailPlaquette = `
+      <div class="ap-detail-sep">Plaquette</div>
+      <div class="ap-detail-l"><span>MABEC (code article)</span><b>${codeMabec ? escapeAttr(codeMabec) + (mabecEstProvisoire(codeMabec) ? " · provisoire" : "") : "— non renseigné"}</b></div>
+      ${entCat && entCat.libelle ? `<div class="ap-detail-l"><span>Désignation catalogue</span><b>${escapeAttr(entCat.libelle)}</b></div>` : ""}
+      <div class="ap-detail-l"><span>Référence ISO</span><b>${l.ref ? escapeAttr(l.ref) : "— non renseignée"}</b></div>`;
   const detailCycle = `
       <div class="ap-detail-sep">Cycle</div>
       <div class="ap-detail-l"><span>Temps de coupe (mesure machine)</span><b>${isNaN(coupe) ? "—" : fmt(coupe,1)+" s"}</b></div>
@@ -11746,10 +11769,12 @@ function apercuLogementHTML(sc, o, l, couleur, oi, volume, totalAnnuel, partRef,
           ${reel ? `<span class="ap-reel ${!reel.borneInf && !isNaN(parseFloat(l.charniere)) && reel.moyenne < parseFloat(l.charniere) - 0.5 ? "bad" : ""}">${reel.borneInf ? "≥ " : ""}${fmt(reel.moyenne,0)} réel</span>` : ""}</div>
         <div class="ap-c"><span class="ap-l">Plaquette</span><span class="ap-v">${l.prix === "" || l.prix == null ? "—" : fmt(parseFloat(l.prix),2)}<small>€</small></span>
           <span class="ap-reel">${l.aretes === "" || l.aretes == null ? "— arête" : l.aretes + " arêtes"}</span></div>
+        <div class="ap-c ap-tcoupe"><span class="ap-l">Cycle</span><span class="ap-v">${tcEff === null ? "—" : fmt(tcEff.secs,1) + "<small>s</small>"}</span>
+          <span class="ap-reel" title="${tcEff === null ? "Aucun temps de coupe saisi pour ce logement" : tcEff.calcule ? "Calculé depuis la référence (rythme Vc·f ou tr/min) — rien n'est stocké" : "Temps de coupe saisi (mesure machine / programme)"}">${tcEff === null ? "coupe — non saisi" : tcEff.calcule ? "coupe · calculé" : "coupe · mesuré"}</span></div>
         <div class="ap-c ap-cout"><span class="ap-l">Coût</span><span class="ap-v">${pc === null ? "—" : fmt(pc,4)}<small>€/pièce</small></span>
           ${annuel !== null ? `<span class="ap-annuel" style="color:${couleurAnnuelle};" title="≈ ${escapeAttr(libelleAnnuel(annuel))} sur l'année (${pctPart} % du coût outillage) — la couleur compare la part de ce logement aux autres : vert = mineur, rouge = majeur, à cibler en priorité.">${escapeAttr(libelleAnnuel(annuel))}</span>` : ""}</div>
       </div>
-      <div class="ap-detail"${detailOuvert ? "" : " hidden"}>${detailCalc}${detailCycle}</div>
+      <div class="ap-detail"${detailOuvert ? "" : " hidden"}>${detailPlaquette}<div class="ap-detail-sep">Coût</div>${detailCalc}${detailCycle}</div>
       ${cond ? `<div class="ap-cond">${escapeAttr(cond)}</div>` : ""}
       ${manque.length ? `<div class="ap-manque">Manque : ${escapeAttr(manque.join(", "))}</div>` : ""}
       ${bloquant.length ? `<div class="ap-manque ap-bloquant" title="Le coût pièce ne peut pas être calculé tant que cette valeur reste telle quelle.">Coût non calculable : ${escapeAttr(bloquant.join(", "))}</div>` : ""}
@@ -15374,6 +15399,11 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.163.1", date:"28/11/2026", points:[
+    "<b>Les tuiles logement affichent le temps de cycle</b> (coupe), mesuré ou calculé depuis la référence, sans avoir à déplier.",
+    "<b>Le dépliant d'une tuile logement donne la plaquette complète</b> : code MABEC, désignation du catalogue, référence ISO.",
+    "<b>Les tuiles réagissent au survol</b> : elles se soulèvent en douceur, s'enfoncent au clic, et le détail apparaît en fondu."
+  ]},
   { version:"4.163.0", date:"24/11/2026", points:[
     "<b>Nouveau : Outils › Checkup.</b> Les relevés faits à l'atelier au début de chaque équipe (la charnière de chaque logement, le potentiomètre) se lisent maintenant ici, en direct depuis le cloud : trois cartes (écarts actifs, contrôles réalisés par équipe et par ligne, récidives), des filtres (ligne, référence, OP, équipe, statut, période) et deux vues — classée par ligne, référence et OP, ou tableau plat.",
     "<b>Export Excel.</b> Le bouton « Exporter Excel » télécharge les relevés filtrés dans un vrai fichier .xlsx : date, heure, équipe, ligne, référence, OP, type, élément, attendu, relevé, écart, statut, commentaire, version de référence. Lecture seule : le journal ne se modifie pas ici."
@@ -16347,7 +16377,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.163.0";
+const TOOL_VERSION = "4.163.1";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -26849,6 +26879,13 @@ function runTests(){
           const dSave = data; data = [sbase, scop, ssai];
           ok("4.162.5 : temps copié de la référence + conditions changées -> recalculé", Math.round(cycleDetailStatus(scop, {}).secs*10)/10, 22.4);
           ok("4.162.5 : temps saisi différent de la référence -> prioritaire", cycleDetailStatus(ssai, {}).secs, 30);
+          /* v4.163.1 — le temps de cycle (coupe) de la tuile logement suit la même règle */
+          const te = (sc) => tempsCoupeEffectifLogement(sc, sc.outils[0], sc.outils[0].logements[0]);
+          const sc0 = te(sbase), sc1 = te(scop), sc2 = te(ssai);
+          ok("4.163.1 tuile : la référence affiche son temps mesuré", [sc0.secs, sc0.calcule], [21.8, false]);
+          ok("4.163.1 tuile : un essai au temps copié affiche le temps recalculé (étiqueté calculé)", [Math.round(sc1.secs*10)/10, sc1.calcule], [22.4, true]);
+          ok("4.163.1 tuile : un essai au temps saisi garde sa mesure", [sc2.secs, sc2.calcule], [30, false]);
+          ok("4.163.1 tuile : sans aucun temps -> null (la tuile affiche —)", tempsCoupeEffectifLogement({ baseline:true, outils:[{ numero:"T1", logements:[{ nom:"D1" }] }] }, { numero:"T1" }, { nom:"D1" }), null);
           data = dSave;
         }
       }

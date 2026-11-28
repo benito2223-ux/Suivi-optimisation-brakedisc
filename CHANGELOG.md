@@ -5,6 +5,15 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.163.1] — 2026-11-28 · tuiles logement : temps de cycle, plaquette MABEC au dépliant, survol « Apple » · Claude Code
+
+Correctif-évolution posé sur la **4.163.0 (celle de la PROD)**, pas sur la 165 (branche `prod-163-hotfix`).
+
+- **Tuile logement** : un chiffre « Cycle » (temps de coupe, en s) visible sans déplier, étiqueté « mesuré » ou « calculé » (même règle que le cycle : un temps saisi prime ; sur un essai, un temps absent ou copié de la référence se déduit de la référence — `tempsCoupeEffectifLogement`, lecture seule).
+- **Dépliant** : rubrique « Plaquette » en tête — code MABEC (article, « provisoire » si PLA…), désignation du catalogue, référence ISO.
+- **Survol** : la tuile se soulève avec un ressort doux (ombre en deux couches, liseré de la couleur d'outil), s'enfonce au clic, la pastille grossit, le détail apparaît en fondu. Réservé aux pointeurs fins (souris) ; rien ne bouge au toucher ; supprimé sous `prefers-reduced-motion`. CSS dans `spk-app.css`.
+- Tests : +4 (référence = mesuré ; essai copié = recalculé « calculé » ; essai saisi = prioritaire ; sans temps = null).
+
 ## [4.163.0] — 2026-11-24 · section Checkup : les relevés de charnières de l'atelier, consultés et exportés en Excel · Claude
 
 Demande Benjamin (24/11), gel de l'outil levé pour ce seul chantier : l'application « Contrôle de prise de poste » enregistre chaque ✓ / écart dans `public.checkup_journal` ; l'outil principal doit permettre de le consulter, le filtrer et l'exporter.
