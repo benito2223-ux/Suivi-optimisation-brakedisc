@@ -1,3 +1,5 @@
+> **28/11/2026 — LIRE `RECAP_AGENTS_2026-11-28.md` AVANT TOUT.** Ligne de production = branche `prod-163-hotfix` (worktree `.worktrees/prod163`), 4.163.1 en PROD et DEV. La 165 (`ux-rail`) est abandonnée : ne pas la déployer.
+
 | **Auteur** | *(libre)* |
 | **Pris le** | — |
 | **Écrit dans** | — |

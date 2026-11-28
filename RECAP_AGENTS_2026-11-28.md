@@ -1,34 +1,57 @@
-# RECAP POUR TOUS LES AGENTS — état réel au 28/11/2026 (audit Claude Code, demande Benjamin)
+# RECAP POUR TOUS LES AGENTS — état réel au 28/11/2026 (soir)
 
-**À lire avant toute écriture / tout déploiement. En cas de doute entre ce fichier et un VERROU/ECHANGES plus ancien : ce fichier prévaut (il est vérifié par curl + git).**
+**À lire AVANT toute écriture et tout déploiement. Ce fichier prévaut sur tout VERROU / ECHANGES / briefing antérieur en cas de contradiction (il est vérifié par curl + git). Rédigé par Claude Code sur demande de Benjamin.**
 
-## 1. Une seule base de code, pas de « vieille version »
-- Le dépôt de référence est `C:\Users\Admin\Desktop\Stellantis_SeptFons`, **branche `ux-rail`**, HEAD = `0ace22c` (4.165.0), identique à `origin/ux-rail` sur GitHub.
-- La 165 est **linéaire** sur la 163 : `844a492` (4.163.0) → `e5ccb92` (4.164.0) → `4022c01` (4.164.1) → `0ace22c` (4.165.0). Aucune branche parallèle, aucun retour en arrière.
-- `C:\Users\Admin\Documents\CeramTec\Suivi-optimisation-brakedisc` = **ancien clone figé en 4.28.0 (septembre)**. Il n'a rien reçu depuis le 24/09 (reflog vérifié). **Ne jamais y écrire ni en déployer.** Idem `.worktrees/v2` (4.160.3, prototype abandonné) et `_prod_ref` (4.129.1).
-- `main` et `dev` sur GitHub sont **périmés (4.146.0)** : tout le travail récent n'existe que sur `ux-rail`.
+## 0. En une phrase
+La **PROD et le DEV servent la même version : 4.163.1** (= la 4.163.0 que Benjamin avait validée + 3 évolutions + 6 finitions sur les tuiles logement). **La 165 est abandonnée** (Benjamin développe en parallèle un moteur dédié « Conditions de coupe » ; on verra plus tard s'il s'intègre).
 
-## 2. Ce que contient la 165 par rapport à la 163 (tout est additif)
-- **4.164.0** : nouvelle section *Outils › Conditions de coupe* (moteur κr 45°–95° + plaquettes rondes, 4 couleurs de zone, épaisseur de copeau, sélecteur Ligne › Disque › OP › Logement). Une ligne ajoutée dans `spk-shell.js` (entrée de menu).
-- **4.164.1** : correctif bloquant du lien Conditions de coupe (globale `allData` inexistante, helper `escapeHTML` inexistant).
-- **4.165.0** : postes mixtes ébauche + chanfreins (T521, κr ≤ 50°) = vrai verdict de zone ; finition ≤ 50° garde le badge neutre.
-- Seul code existant touché : `kappaEffectif` et le `max` du champ κr (90 → 100). **Comportement identique pour 0 < κr ≤ 90°** ; la section Checkup 4.163 est intacte. +623 / −5 lignes dans `bilan_economique.html`.
-- **Verdict : la 165 est une 163 + Conditions de coupe, pas une régression.** Harnais annoncé 1037 | 0 échec (non rejoué par moi).
+## 1. Ce qui s'est passé (chronologie)
+1. 26/11 : des agents ont construit 4.164.0 → 4.164.1 → 4.165.0 (module *Outils › Conditions de coupe*) **sur la 163**, sans l'annoncer comme un déploiement PROD (VERROU/ECHANGES disaient « PROD : rien (4.163.0) »).
+2. 28/11 (audit) : en réalité la **PROD servait `bilan_economique.html` 4.165.0 SEUL** — `spk-shell.js`, `spk-app.css`, `checkup.html`, `checkup.webmanifest`, `checkup-version.json`, icônes checkup = **404**. Un déploiement partiel avait écrasé la PROD (les QR codes des 10 lignes menaient à une 404 ; la PWA de Benjamin affichait encore la 163 grâce au cache du service worker).
+3. 28/11 : **rollback 163 ordonné par Benjamin** → jeu complet de 16 fichiers publié, vérifié 16/16 par curl.
+4. 28/11 : Benjamin demande 3 évolutions + finitions **sur la 163** → 4.163.1, déployée DEV puis PROD (16/16 vérifiés, voir §3).
+5. La 165 (et son correctif de mise en page 4.165.1) reste dans l'historique de `ux-rail` mais **n'est PAS la ligne de production**.
 
-## 3. ✅ RÉSOLU le 28/11 (rollback 163 ordonné par Benjamin) — PROBLÈME constaté en ligne (curl, 28/11)
-**État actuel PROD : 4.163.0 + checkup 2026-11-25.3, 16/16 fichiers vérifiés. La 165 n'est que sur DEV.** Ce qui suit décrit l'incident, pour mémoire :
-`https://suivi-optimisation-septfons.surge.sh` (PROD) :
-- `bilan_economique.html` = **4.165.0** (md5 `ea0c674f…`, identique à `dist/` et au DEV) — alors que VERROU/ECHANGES disent « PROD : rien (4.163.0) ». **Quelqu'un a publié la 165 sur la PROD** (non tracé dans ECHANGES).
-- **404** sur `spk-shell.js`, `spk-app.css`, `checkup.html`, `checkup.webmanifest`, `checkup-version.json`, `icons/checkup-*`, `fonts/`. La procédure documentée (10 fichiers de `dist/` + 6 fichiers du checkup) n'a pas été respectée : un déploiement partiel a écrasé la PROD.
-- Conséquences : **les QR codes des 10 lignes (`checkup.html?ligne=`) mènent à une 404** ; un nouvel utilisateur / une nouvelle installation PWA charge l'outil sans coque ni CSS. La PWA de Benjamin affiche encore la 163 grâce au cache du service worker — elle basculera sur le site cassé à la prochaine mise à jour.
-- DEV (`suivi-optimisation-projet.surge.sh`) : 4.165.0, complet, rien à faire.
+## 2. OÙ SONT LES VERSIONS (important)
+| Quoi | Où | État |
+|---|---|---|
+| **Ligne de PRODUCTION (4.163.1)** | branche **`prod-163-hotfix`** (GitHub), commit `0bc8bbd` ; **worktree local `C:\Users\Admin\Desktop\Stellantis_SeptFons\.worktrees\prod163`** | = ce qui est en ligne sur PROD et DEV |
+| 4.163.0 d'origine (ancienne PROD) | commit `844a492` (branche `ux-rail`) | base de `prod-163-hotfix` |
+| Moteur Conditions de coupe 4.164.0 → 4.165.1 | branche **`ux-rail`** (`961cbf1` sur GitHub) | **MIS DE CÔTÉ, ne pas déployer, ne pas fusionner dans la prod** |
+| Données atelier non versionnées avant (programmes CN, xlsm, xlsx, planche QR, tolérances…) | branche **`sauvegarde-donnees-atelier`** (`798ced0`) | sauvegarde, **GitHub public** (voir §5) |
+| `main` / `dev` sur GitHub | `42f903c` (4.146.0) | **périmés**, ne pas s'y fier |
+| Anciens clones | `Documents\CeramTec\Suivi-optimisation-brakedisc` (4.28.0, figé 24/09), `.worktrees\v2` (4.160.3, abandonné), `_prod_ref` (4.129.1) | **ne jamais écrire ni déployer depuis ces dossiers** |
+| Backups Supabase + archives (195 Mo) | `archives/` (hors git) **et copie Google Drive** : `Mon Drive/CERAMTEC/Suivi optimisation Sept Fons - Sauvegardes/archives_2026-11-28` (33 fichiers, tailles et md5 vérifiés) | à recopier à chaque nouveau backup |
+| Sites | **PROD** `https://suivi-optimisation-septfons.surge.sh` · **DEV** `https://suivi-optimisation-projet.surge.sh` | 4.163.1 partout, checkup `2026-11-25.3` en PROD |
 
-## 4. Règles jusqu'à nouvel ordre
-1. **Aucun déploiement Surge sans « oui » explicite de Benjamin, à chaque fois.** Pas de déploiement sur `-septfons` sans lui.
-2. Réparation PROD (à faire sur accord de Benjamin, par UN seul agent) : choisir 163 (rollback) **ou** 165, puis publier le **jeu complet** : 10 fichiers de `dist/` (`node outils/build-coque.mjs`) + 6 fichiers checkup tels qu'en ligne/commités (`checkup.html`, `checkup.webmanifest`, `checkup-version.json`, `icons/checkup-*`). Vérifier ensuite par curl chaque fichier (200 + md5).
-3. Ne jamais déployer depuis la racine du dépôt (cf. VERROU). Ne jamais importer `IMPORT_EMAG1_304.json` en PROD.
-4. Outil toujours **gelé** (`bilan_economique.html`) sauf demande explicite de Benjamin.
-5. Toute publication doit être **écrite dans ECHANGES « Faits extérieurs » AVANT l'acte** (et corrige l'erreur du 26/11 : la PROD y est annoncée à 4.163.0).
+**Pour travailler sur la production : se placer dans `.worktrees\prod163` (branche `prod-163-hotfix`). Ne PAS partir de `ux-rail`** (elle contient la 165).
 
-## 5. Non sauvegardé sur GitHub (au 28/11)
-Modifs non commitées : `ECHANGES.md`, `RESULTATS_ESSAIS.md`, `conditions_coupe_standalone.html`, `scripts/recap_emag1_304.py`. Fichiers non suivis : programmes CN (`Programmes/…`), recaps xlsx, emails Matis, briefing temps de coupe 304, `RECAP_ESSAIS_DISQUES_POUR_TIMON.md`, xlsm/xlsx de suivi. Les backups Supabase (`archives/`, 127 Mo) sont volontairement hors git (`.gitignore`).
+## 3. Contenu de la 4.163.1 (par rapport à la 163 validée)
+- Tuile logement : chiffre **« Cycle » (temps de coupe, s)** visible sans déplier, étiqueté « mesuré » / « calculé » (même règle que le calcul du cycle ; fonction `tempsCoupeEffectifLogement`, lecture seule).
+- Dépliant de la tuile : rubrique **« Plaquette »** (code MABEC, « provisoire » si PLA…, désignation catalogue, ISO).
+- Survol « Apple » (soulèvement, ombre, enfoncement au clic, fondu du détail) — CSS dans `spk-app.css`, pointeurs fins uniquement, coupé sous `prefers-reduced-motion`.
+- 6 finitions : coins/filets, hiérarchie (coût mis en avant), chevron qui pivote + rubriques nettes, focus clavier (Entrée/Espace), fondus courts panneaux/onglets, chiffres tabulaires.
+- Tests : **1015 | 0 échec (×2)**. Détail : `CHANGELOG.md` de la branche, entrée 4.163.1.
+
+## 4. PRÉCAUTIONS (règles ferme)
+1. **Aucun déploiement Surge sans « oui » explicite de Benjamin, à chaque fois.** Il garde le rythme des mises à jour vues par Matis et Arthur.
+2. **Un seul agent à la fois** écrit dans `bilan_economique.html` / déploie. Prendre le verrou (`VERROU.md`) et le libérer. L'outil est **gelé** sauf demande explicite.
+3. **`surge` REMPLACE TOUT le site.** Toujours publier le **jeu complet de 16 fichiers** : 10 de la coque (`bilan_economique.html`, `index.html`, `version.json`, `spk-app.css`, `spk-shell.js`, `manifest.webmanifest`, `service-worker.js`, `icons/icon-192.png`, `icon-512.png`, `icon-512-maskable.png`) + **6 du checkup** (`checkup.html`, `checkup.webmanifest`, `checkup-version.json`, `icons/checkup-192.png`, `checkup-512.png`, `checkup-512-maskable.png`, build `2026-11-25.3`, blobs du commit `0ab66a5`). Un déploiement partiel = site cassé (c'est l'incident du 26-28/11).
+4. **Procédure** : build `node outils/build-coque.mjs` dans le worktree (créer un dossier `fonts/` vide avant) → dossier de préparation avec les 10 + 6 fichiers → `surge <dossier> <domaine>` → **vérifier par curl les 16 fichiers (200 + md5 identiques)**. « Success! » ne prouve rien. Vérifier aussi que `ECHANGES.md`, `VERROU.md`, `.git/config`, `IMPORT_*.json` restent en 404.
+5. **Ne jamais déployer depuis la racine du dépôt**, ni depuis un ancien clone. Ne jamais importer `IMPORT_EMAG1_304.json` en PROD.
+6. **Tests = barrière avant tout déploiement** : `python build_harness.py <sortie.js>` puis `node <sortie.js>` **depuis la racine du worktree** ; le VERDICT doit être « tout est vert », deux fois. **Ne jamais enchaîner build + déploiement sans condition sur le résultat des tests** (un déploiement DEV est parti à tort le 28/11 pour cette raison). Le harnais lit les fichiers frères dans le dépôt courant.
+7. **Tracer la publication dans ECHANGES « Faits extérieurs » AVANT l'acte**, et dire la vérité sur la PROD (la note du 26/11 était fausse).
+8. **K, P_req** : jamais en sortie visible (règle SPK). Nuances = noms SPK. Voir AGENTS.md §2.
+
+## 5. Sécurité des données — le dépôt GitHub est PUBLIC
+`benito2223-ux/Suivi-optimisation-brakedisc` est **lisible sans authentification**. Il contient déjà des xlsm/xlsx de consommation réelle (EMAG, PCI, Pareto) ; Benjamin a **choisi de pousser aussi** la branche `sauvegarde-donnees-atelier` (programmes CN, WEISSER xlsm, tolérances disques…). **Ne rien pousser de plus de sensible sans lui demander** ; envisager de passer le dépôt en privé (réglage GitHub, par Benjamin).
+
+## 6. Comportement à connaître (pas un bug) — temps de cycle
+- Un **temps de coupe saisi** sur un logement **prime toujours** : changer Vc/f ne change pas le cycle.
+- **Référence** = ancre mesurée (comme le classeur de Matis) : son temps ne se recalcule jamais. **Scénario d'essai** : temps absent ou copié de la référence → recalculé depuis la référence (G96 : t×(f0·Vc0)/(f1·Vc1) ; G97 : avec les tr/min).
+- Depuis le 26/11 des temps issus des programmes CN sont saisis en cloud (EMAG 1 304x28 OP10–40, etc.) : ces logements restent figés sur la mesure. Évolution possible (non faite) : mémoriser les Vc/f/tr/min au moment de la mesure et recalculer si ils changent.
+
+## 7. État du travail en cours / ouvert
+- Moteur « Conditions de coupe » : **développé en parallèle par Benjamin**, intégration éventuelle plus tard ; la 165 n'est qu'une base de réflexion (`ux-rail`).
+- Notes de Gemini/Brad/SeptFons-Dev du 26/11 (CN, ordres OP30/OP40 corrigés en prod cloud, `bilan_economique.html` non touché) : toujours valables, sauf toute phrase qui suppose la 164/165 en ligne.
+- Backups avant écriture cloud : `archives/backup_supabase_2026-11-26_1541.json` et `backup_tree_prod_*` (copiés sur le Drive).
