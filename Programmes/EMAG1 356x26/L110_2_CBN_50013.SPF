@@ -1,0 +1,147 @@
+;%_N_L110_2_SPF
+;$PATH=/_N_WKS_DIR/_N_DV356X26_848515480_WPD
+;                - EMAG -
+;------------------------------------------------
+;// PROGRAM OP10
+;------------------------------------------------
+;WORKPIECE NO.: - DISQUE VENTILE 356x26
+;CLAMPING PRESSURE: 40 BAR
+;ZERO POINT: BRAKEING SURFACE
+;MACHINE: P-30140237.02
+;CREATOR: JLT/MPM 
+;MONTRONICS: 
+;H80=1  Programmaufruf 1 fuer Ws9684116680
+;H81=11 Definition der Werkzeuge die erste Zahl 1 
+;       steht fuer das erste Werkzeug und die zweite
+;       Zahl steht fuer den Arbeitsgang.
+;Beispiel:H81=12 --> 1 fuer erstes Werkzeug und zwei fuer  
+;         den zweiten Arbeitsgang 
+;M870    starten der Ueberwachung
+;M890    Ende der Ueberwachung
+;------------------------------------------------
+$P_UIFR[1,Z,FI]=_CORR1[4]
+LIMS=2300
+N04 H5002
+N05 ;H80=1;MTX PROG PCE1   PROGRAMMAUFRUF
+N10 E_JUMP
+N210 L_1:E_STEP(1)
+N220 MSG ("T517/D1-S-Platte R1.6")
+N220 MSG ("T517/D2-C-Platte R1.6")
+N230 MSG ("EBAUCHE INTERIEURE")
+;-------------------------------------------------
+M1=38
+N240 T="T517_"<<$P_CHANNO D1 G0 G18 G97 S1200 X152.93 M3 M1=39 ;AN42
+     ;H81=11                                                   ; MONT NUMERO OUTIL
+N242 G0 Z4.08 H5008 G96 S900 
+     WHEN TRUE DO $R922=1
+     ;M870                                                     ;MONT ACTIVER SURVEILLANCE OUTIL
+N244 G3 X225.76 Z13.56 F0.48 CR=115.5;CR=116.5                 ; AG1.1 
+N246 G0 X156.9                                                 
+N250 G0 Z5.5                                       
+     G1 Z-9.97 F.7                                             ;AG1.2
+     G0 X154.9 Z-9                                             
+     ;M890                                                     ;MONT DESACTIVER SURVEILLANCE OUTIL
+N80 WHEN TRUE DO $R922=0
+N240 D2 G97 S2040 X-68.18
+     ;H81=12                                                   ; MONT NUMERO OUTIL
+N300 G0 Z-13.9 G96 S900                                        
+N270 WHEN TRUE DO $R922=2
+     ;M870                                                     ;MONT ACTIVER SURVEILLANCE OUTIL
+N310 G1 X-150.06 F0.43                                         ;AG2.1 
+N320 G1 X-156.9 Z-10.48
+N340 G1 Z-13.9                                                 
+     ;M890                                                     ;MONT DESACTIVER SURVEILLANCE OUTIL
+N345                                                           
+N350 G0 X-155.4 Z-13.685                                       
+N380 G1 X-79.598
+N385 G96 S900 ;H81=13                                          ;MONT NUMERO OUTIL 
+    ;M870                                                      ;MONT ACTIVER SURVEILLANCE OUTIL
+     G1 X-64.35 Z-21.58 F0.2                                   ;F0.4    AG2.2
+     ;M890                                                     ;MONT DESACTIVER SURVEILLANCE OUTIL                                                 
+N80  WHEN TRUE DO $R922=0
+     G0 Z100 G97 S850
+;
+;------------------------------------------------
+N400 L_2:E_STEP(2)
+N410 MSG ("T513/D1-C-Platte R1.6")
+N420 MSG ("T513/D2-C-Platte R1.6")
+N430 MSG ("EBAUCHE PISTE ET FINITION INTERIEURE")
+;-------------------------------------------------
+M1=38
+N440 T="T50013_"<<$P_CHANNO D2 G0 G18 G97 S800 X362.84 M3 M1=39
+      ;H81=11                                                   ;MONT NUMERO OUTI
+N450 G0 Z14.6 G96 S900 H5008                                    
+      ;M870                                                     ;MONT ACTIVER SURVEILLANCE OUTIL  
+N270 WHEN TRUE DO $R922=3
+N460 G1 Z=13.6+0.5 F0.5                                                        
+N465 G1 X218.3 S500 F0.35						
+      ;M890                                                     ;MONT DESACTIVER SURVEILLANCE OUTIL                                           
+N80 WHEN TRUE DO $R922=0
+N490 D1 G0 G97 S1713 X158
+      ;H81=22                                                   ;MONT NUMERO OUTIL
+N500 G0 Z6.00 G96 S900                                          
+N270 WHEN TRUE DO $R922=4
+      ;M870                                                     ;MONT ACTIVER SURVEILLANCE OUTIL  
+N510 G1 Z-13.29 F0.45                                            ;AG4.1
+      ;M890                                                     ;MONT DESACTIVER SURVEILLANCE OUTIL
+N520 G0 X156 Z-12.13                                            
+N530 G0 X73.7                                                    
+N540 G0 Z-14.5                                                   
+      ;H81=22 M870                                               ; MONT NUMERO OUTIL + ACTIVER SURVEILLANCE OUTIL
+N550 G1 X158 F0.35                                                ;AG4.2
+N560 G1 Z-12.8 F0.35
+N570   ;M890                                                     ;MONT DESACTIVER SURVEILLANCE OUTIL                                                           
+N600 G0 X156
+N80 WHEN TRUE DO $R922=0
+G0 Z130 G97 S2200
+
+;-------------------------------------------------
+N20 L_3:E_STEP(3)
+N30 MSG ("T519/D1-S-Platte R1.6")
+N40 MSG ("ALESAGE MOYEUX ET FACE ARRIERE MOYEU EBAUCHE")
+;------------------------------------------------
+M1=38
+N50 T="T519_"<<$P_CHANNO D2 G0 G18 G97 X-70.1 S2200 M3 M1=39
+STOPRE
+N490 R102=$AA_IW[X]
+       ;H81=22                                                   ;MONT NUMERO OUTIL
+N60 G0 Z-15.56 H5008                                             
+N80 WHEN TRUE DO $R922=5
+       ;M870                                                     ;MONT ACTIVER SURVEILLANCE OUTIL 
+N90 G1 Z-27.46 F0.43                                             ;AG5.1
+       ;M890                                                     ;MONT DESACTIVER SURVEILLANCE OUTIL
+N110 WHEN TRUE DO $R922=0
+N120 D1 G0 G96 S800 
+       ;H81=32                                                   ;MONT NUMERO OUTIL
+N130 G1 Z-21.44                                                  
+     G1 X68.4 F.3                                              ;Approche
+N140 STOPRE
+N150 WHEN TRUE DO $R922=6
+       ;M870                                                     ;MONT ACTIVER SURVEILLANCE OUTIL 
+N160 G1 X75.07 Z-24.5 F0.6                                       ;AG6.1
+     G1 X170 F0.6
+     G1 X175 F0.4
+N170 G1 X172 Z-25.0                                                
+       ;M890                                                     ;MONT DESACTIVER SURVEILLANCE OUTIL
+N210 G0 X69.4 Z=-25.0 S20   ;X69.8
+     H5010 H5002                                                 ;MARCHE SOUFFLAGE EXTERIEURE MANDRIN
+   ;  G0 X69.8 S20
+N80 WHEN TRUE DO $R922=0
+;
+;POSITIONS SOUFFLAGE EN ORIGINE MACHINE AXE Z
+;--------------------------------------------
+;LA POSITION X EN OM = 38.00
+N500 M4 S10 ;S60
+N500 D0 G53 G0 Z480         ;POSITION BLOW-OFF MORS
+N500 G4F0.2 ;F1
+N500 D0 G53 G0 Z500         ;POSITION BLOW-OFF AILLETTES
+N500 G4F0.2 ;F1.3 G4F2.7 AVEC UNE SEULE TEMPO ET UN SEUL Z500
+N500 H5003 H5009 H5011
+N500 M5
+N500 D0 G53 G0 Z600
+;---------------------------------------------
+N990 MSG("")
+N1000 L_0:E_STEP(0)
+N1010 RET
+
+
