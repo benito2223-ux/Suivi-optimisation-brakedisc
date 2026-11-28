@@ -7690,3 +7690,6 @@ Demande Benjamin (« la 165 a un problème de mise en page »). Cause : titre da
 
 ### 28/11/2026 — Claude Code — 4.163.1 en PROD + DEV (ordre explicite de Benjamin : « Oui, PROD ») ; 165 abandonnée
 Faits extérieurs : `suivi-optimisation-septfons.surge.sh` (PROD) ET `suivi-optimisation-projet.surge.sh` (DEV) = **4.163.1** (bilan md5 `3f3f7970ee05`, version.json `{"v":"4.163.1"}`). PROD : jeu complet de 16 fichiers (10 coque + 6 checkup `2026-11-25.3`), **16/16 identiques octet pour octet** par curl, fichiers privés en 404. Code sur la branche **`prod-163-hotfix`** (commit `0bc8bbd`, worktree `.worktrees/prod163`) — **ligne de production**. La 165 (`ux-rail`) est mise de côté (moteur Conditions de coupe en développement parallèle chez Benjamin). **Lire `RECAP_AGENTS_2026-11-28.md` (versions, précautions, procédure de déploiement).**
+
+### 28/11/2026 — Claude Code — prod-163-hotfix = branche COURANTE du dossier principal
+Le dossier principal est maintenant sur `prod-163-hotfix` (4.163.1, checkup 2026-11-25.3, tous les documents). `ux-rail` (165) reste sur GitHub, mise de côté. Plus de worktree `.worktrees/prod163`.

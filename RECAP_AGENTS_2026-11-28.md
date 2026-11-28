@@ -15,7 +15,7 @@ La **PROD et le DEV servent la même version : 4.163.1** (= la 4.163.0 que Benja
 ## 2. OÙ SONT LES VERSIONS (important)
 | Quoi | Où | État |
 |---|---|---|
-| **Ligne de PRODUCTION (4.163.1)** | branche **`prod-163-hotfix`** (GitHub), commit `0bc8bbd` ; **worktree local `C:\Users\Admin\Desktop\Stellantis_SeptFons\.worktrees\prod163`** | = ce qui est en ligne sur PROD et DEV |
+| **Ligne de PRODUCTION (4.163.1)** | branche **`prod-163-hotfix`** (GitHub), commit `0bc8bbd` ; **dossier principal `C:\Users\Admin\Desktop\Stellantis_SeptFons` (branche courante)** | = ce qui est en ligne sur PROD et DEV |
 | 4.163.0 d'origine (ancienne PROD) | commit `844a492` (branche `ux-rail`) | base de `prod-163-hotfix` |
 | Moteur Conditions de coupe 4.164.0 → 4.165.1 | branche **`ux-rail`** (`961cbf1` sur GitHub) | **MIS DE CÔTÉ, ne pas déployer, ne pas fusionner dans la prod** |
 | Données atelier non versionnées avant (programmes CN, xlsm, xlsx, planche QR, tolérances…) | branche **`sauvegarde-donnees-atelier`** (`798ced0`) | sauvegarde, **GitHub public** (voir §5) |
@@ -24,7 +24,7 @@ La **PROD et le DEV servent la même version : 4.163.1** (= la 4.163.0 que Benja
 | Backups Supabase + archives (195 Mo) | `archives/` (hors git) **et copie Google Drive** : `Mon Drive/CERAMTEC/Suivi optimisation Sept Fons - Sauvegardes/archives_2026-11-28` (33 fichiers, tailles et md5 vérifiés) | à recopier à chaque nouveau backup |
 | Sites | **PROD** `https://suivi-optimisation-septfons.surge.sh` · **DEV** `https://suivi-optimisation-projet.surge.sh` | 4.163.1 partout, checkup `2026-11-25.3` en PROD |
 
-**Pour travailler sur la production : se placer dans `.worktrees\prod163` (branche `prod-163-hotfix`). Ne PAS partir de `ux-rail`** (elle contient la 165).
+**Pour travailler sur la production : la branche `prod-163-hotfix` est désormais la branche COURANTE du dossier principal `C:\Users\Admin\Desktop\Stellantis_SeptFons` (plus de worktree à part). Elle contient le code 4.163.1, le checkup `2026-11-25.3` réellement en ligne, et TOUS les documents (ECHANGES, VERROU, briefings, scripts, données versionnées) repris de `ux-rail`. Ne PAS repartir de `ux-rail`** (elle contient la 165). `main`/`dev` GitHub restent périmés ; le réglage « branche par défaut » du dépôt sur GitHub est à changer par Benjamin (Settings › Branches).
 
 ## 3. Contenu de la 4.163.1 (par rapport à la 163 validée)
 - Tuile logement : chiffre **« Cycle » (temps de coupe, s)** visible sans déplier, étiqueté « mesuré » / « calculé » (même règle que le calcul du cycle ; fonction `tempsCoupeEffectifLogement`, lecture seule).
