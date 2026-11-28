@@ -4419,3 +4419,45 @@ body.atelier-on #bandeauPremiere, body.atelier-on .spk-conseil-ios{ display:none
   .ap-tuile[data-cle-detail]:hover, .ap-tuile[data-cle-detail]:active { transform: none; }
   .ap-tuile .ap-detail:not([hidden]) { animation: none; }
 }
+
+/* ==========================================================================
+   v4.163.1 — finitions cosmétiques des tuiles logement et de la fiche
+   ========================================================================== */
+/* 1. Fil de fer : coins plus doux, filet entre les chiffres (hors mobile, où ils passent à la ligne) */
+.ap-grille .ap-tuile { border-radius: 10px; }
+@media (min-width: 481px) {
+  .ap-tuile .ap-chiffres { gap: 0; }
+  .ap-tuile .ap-chiffres .ap-c { padding: 0 16px; border-left: 1px solid var(--border); }
+  .ap-tuile .ap-chiffres .ap-c:first-child { padding-left: 0; border-left: 0; }
+}
+/* 2. Hiérarchie : le coût d'abord, le reste en retrait */
+.ap-tuile .ap-c .ap-v { font-size: 17px; color: var(--ink-soft); }
+.ap-tuile .ap-c.ap-cout .ap-v { font-size: 24px; color: var(--blue); }
+.ap-tuile .ap-c .ap-v small { font-size: 10.5px; }
+/* 3. Dépliant : chevron qui pivote, rubriques nettes, valeurs lisibles */
+.ap-tuile .ap-chevron {
+  margin-left: auto; font-size: 18px; line-height: 1; color: var(--ink-faint);
+  transition: transform .3s cubic-bezier(.22, 1, .36, 1), color .2s ease;
+}
+.ap-tuile:hover .ap-chevron { color: var(--blue); }
+.ap-tuile:has(.ap-detail:not([hidden])) .ap-chevron { transform: rotate(90deg); color: var(--blue); }
+.ap-tuile .ap-detail { gap: 5px; }
+.ap-tuile .ap-detail-l { font-size: 11.5px; }
+.ap-tuile .ap-detail-sep { font-size: 10.5px; color: var(--ink-soft); letter-spacing: .1em; }
+/* 4. Focus clavier */
+.ap-tuile[data-cle-detail]:focus { outline: none; }
+.ap-tuile[data-cle-detail]:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+/* 5. Fondus courts : panneau plein écran, contenu d'onglet */
+@keyframes spkFondu { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.panel.panel-large:not([hidden]) { animation: spkFondu .2s cubic-bezier(.22, 1, .36, 1) both; }
+.scenario[data-onglet="essais"] > [data-dans-onglet="essais"],
+.scenario[data-onglet="composition"] > [data-dans-onglet="composition"],
+.scenario[data-onglet="suivi"] > [data-dans-onglet="suivi"] { animation: spkFondu .18s ease-out both; }
+.spk-onglets button { transition: color .2s ease, border-color .25s ease; }
+/* 6. Chiffres tabulaires : les colonnes ne dansent plus */
+.ap-v, .ap-reel, .ap-annuel, .ap-cond, .ap-detail-l b, .oc-calc, input[type="number"], .cell { font-variant-numeric: tabular-nums; }
+@media (prefers-reduced-motion: reduce) {
+  .panel.panel-large:not([hidden]),
+  .scenario[data-onglet] > [data-dans-onglet],
+  .ap-tuile .ap-chevron, .spk-onglets button { animation: none; transition: none; }
+}

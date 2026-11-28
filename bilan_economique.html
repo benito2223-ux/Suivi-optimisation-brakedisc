@@ -11753,13 +11753,14 @@ function apercuLogementHTML(sc, o, l, couleur, oi, volume, totalAnnuel, partRef,
       ${vpLog && vpLog.pctCycle !== null ? `<div class="ap-detail-l"><span>Cycle estimé vs base — ratio des temps à géométrie égale (jamais des secondes)</span><b>${vpLog.pctCycle > 0 ? "−" + vpLog.pctCycle + " % (plus rapide)" : vpLog.pctCycle < 0 ? "+" + Math.abs(vpLog.pctCycle) + " % (plus lent)" : "= base"}</b></div>` : ""}
       ${!stC.complete ? `<div class="ap-detail-l"><span>Pris en compte dans le cycle</span><b>non — ${stC.filled}/${stC.total} logements renseignés, l'indice global s'applique</b></div>` : ""}${detailVerdict}`;
   return `
-    <div class="ap-tuile${detailOuvert ? " ouvert" : ""}" data-cle-detail="${escapeAttr(cleDetail)}" title="Cliquer pour déplier le détail du calcul${annuel !== null ? " du coût annuel" : ""}" style="--outil-couleur:${couleur};${gainCouleur ? "--gain-coul:" + gainCouleur + ";" : ""}"${gainCouleur ? ` data-gain="1"` : ""}>
+    <div class="ap-tuile${detailOuvert ? " ouvert" : ""}" tabindex="0" role="button" aria-expanded="${detailOuvert ? "true" : "false"}" data-cle-detail="${escapeAttr(cleDetail)}" title="Cliquer pour déplier le détail du calcul${annuel !== null ? " du coût annuel" : ""}" style="--outil-couleur:${couleur};${gainCouleur ? "--gain-coul:" + gainCouleur + ";" : ""}"${gainCouleur ? ` data-gain="1"` : ""}>
       <div class="ap-tete">
         <span class="ap-pastille">${oi + 1}</span>
         <span class="ap-outil">${escapeAttr(o.numero || "outil sans n°")}</span>
         <span class="ap-sep">·</span>
         <span class="ap-logement">${escapeAttr(l.nom || "logement sans nom")}</span>
         ${l.suiviTolerance === false ? `<span class="ap-flag" title="Ce logement ne suit que la charnière : ses mesures ne font pas échouer un essai sur la tolérance.">charnière seule</span>` : ""}
+        <span class="ap-chevron" aria-hidden="true">›</span>
       </div>
       <div class="ap-ref">${l.ref ? escapeAttr(l.ref) : `<em>référence plaquette non renseignée</em>`}${ecLog && ecLog.rl && ecLog.champs.indexOf("ref") !== -1 ? ` <span class="ec-ancienne">(réf. : ${escapeAttr(ecLog.rl.ref || "—")})</span>` : ""}</div>
       ${apBadges.length ? `<div class="ap-badges">${apBadges.join("")}</div>` : ""}
@@ -14342,6 +14343,12 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
       if(!det) return;
       if(det.hidden){ det.hidden = false; apDetailsOuverts.add(cle); }
       else { det.hidden = true; apDetailsOuverts.delete(cle); }
+      tuile.setAttribute("aria-expanded", det.hidden ? "false" : "true");
+    });
+    /* v4.163.1 — au clavier : Entrée ou Espace déplie / replie la tuile (la tuile elle-même, jamais un champ) */
+    tuile.addEventListener("keydown", e => {
+      if(e.target !== tuile) return;
+      if(e.key === "Enter" || e.key === " "){ e.preventDefault(); tuile.click(); }
     });
   });
   /* v4.29 — détail du coût annuel GÉNÉRAL (pied de scénario) */
@@ -15402,7 +15409,8 @@ const NOUVEAUTES = [
   { version:"4.163.1", date:"28/11/2026", points:[
     "<b>Les tuiles logement affichent le temps de cycle</b> (coupe), mesuré ou calculé depuis la référence, sans avoir à déplier.",
     "<b>Le dépliant d'une tuile logement donne la plaquette complète</b> : code MABEC, désignation du catalogue, référence ISO.",
-    "<b>Les tuiles réagissent au survol</b> : elles se soulèvent en douceur, s'enfoncent au clic, et le détail apparaît en fondu."
+    "<b>Les tuiles réagissent au survol</b> : elles se soulèvent en douceur, s'enfoncent au clic, et le détail apparaît en fondu.",
+    "<b>Finitions</b> : coût mis en avant sur la tuile, filets entre les chiffres, chevron qui pivote au dépliage, focus clavier (Entrée / Espace déplient), fondus courts à l'ouverture des panneaux et des onglets, chiffres alignés."
   ]},
   { version:"4.163.0", date:"24/11/2026", points:[
     "<b>Nouveau : Outils › Checkup.</b> Les relevés faits à l'atelier au début de chaque équipe (la charnière de chaque logement, le potentiomètre) se lisent maintenant ici, en direct depuis le cloud : trois cartes (écarts actifs, contrôles réalisés par équipe et par ligne, récidives), des filtres (ligne, référence, OP, équipe, statut, période) et deux vues — classée par ligne, référence et OP, ou tableau plat.",
