@@ -5,6 +5,15 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.163.2] — 2026-11-28 · onglets de la fiche visibles, bandeau de chiffres rééquilibré, survol · Claude Code
+
+Demande Benjamin (28/11). Ligne de production `prod-163-hotfix`.
+
+- **Onglets Essais · Composition · Suivi** : le fond blanc les rendait imperceptibles. Barre teintée (`--surface-alt`) avec filet bleu, onglets en relief (coins hauts arrondis), actif plein bleu, survol teinté + liseré. Thème sombre compris (variables).
+- **Bandeau de chiffres du scénario** : le temps de coupe pure (`foot-cell-tc`, celui qui sert) passe à `flex: 3 1 400px` ; la référence de production (verdict) à `1 1 210px` (au lieu de `2 1 340px`) ; coût et validation à `1 1 150px`.
+- **Survol** de chaque partie du bandeau : teinte, liseré bleu de 4 px en haut, ombre douce, chiffre qui grossit ; la boîte de coupe pure se cercle. Pointeurs fins seulement, supprimé sous `prefers-reduced-motion`.
+- CSS uniquement (`spk-app.css`) ; aucun changement de calcul.
+
 ## [4.163.1] — 2026-11-28 · tuiles logement : temps de cycle, plaquette MABEC au dépliant, survol « Apple » · Claude Code
 
 Correctif-évolution posé sur la **4.163.0 (celle de la PROD)**, pas sur la 165 (branche `prod-163-hotfix`).

@@ -4461,3 +4461,64 @@ body.atelier-on #bandeauPremiere, body.atelier-on .spk-conseil-ios{ display:none
   .scenario[data-onglet] > [data-dans-onglet],
   .ap-tuile .ap-chevron, .spk-onglets button { animation: none; transition: none; }
 }
+
+/* ==========================================================================
+   v4.163.2 — onglets de la fiche bien visibles + bandeau de chiffres rééquilibré
+   ========================================================================== */
+/* A. Onglets Essais · Composition · Suivi : plus de blanc sur blanc. Barre teintée,
+   onglets en relief, l'actif plein bleu. */
+.spk-onglets{
+  background: var(--surface-alt); gap: 6px; padding: 10px 18px 0; margin: 8px 0 0;
+  border-bottom: 3px solid var(--blue);
+}
+.spk-onglets button{
+  background: color-mix(in srgb, var(--ink) 8%, var(--surface-alt)); color: var(--ink);
+  border: 1px solid var(--border); border-bottom: 0; border-radius: 10px 10px 0 0;
+  padding: 12px 20px 11px; margin-bottom: -3px; font-size: 14px; font-weight: 800;
+  transition: background-color .2s ease, color .2s ease, transform .25s cubic-bezier(.22, 1, .36, 1), box-shadow .25s ease;
+}
+.spk-onglets button:hover{
+  background: color-mix(in srgb, var(--blue) 14%, var(--surface)); color: var(--blue);
+  box-shadow: 0 -3px 0 var(--blue) inset;
+}
+.spk-onglets button.is-on{
+  background: var(--blue); color: var(--surface); border-color: var(--blue); box-shadow: none;
+}
+.spk-onglets button.is-on .spk-onglet-n{ background: var(--surface); color: var(--blue); }
+@media (max-width: 480px){ .spk-onglets{ padding: 8px 6px 0; gap: 4px; } .spk-onglets button{ padding: 12px 4px 11px; font-size: 12.5px; } }
+
+/* B. Bandeau de chiffres : la coupe pure est celle qui sert — elle prend la place ;
+   la référence de production (verdict) et la validation se font plus compactes. */
+#scenarioDetail .scenario-foot > .foot-verdict{ flex: 1 1 210px; }
+#scenarioDetail .scenario-foot > .foot-cell{ flex: 1 1 150px; }
+#scenarioDetail .scenario-foot > .foot-cell-tc{ flex: 3 1 400px; }
+#scenarioDetail .scenario-foot > .foot-cell-tc .l{ font-size: 12px; letter-spacing: .08em; }
+#scenarioDetail .scenario-foot > .foot-cell-tc > div:nth-child(2){ padding: 12px 14px; }
+
+/* C. Survol : chaque partie du bandeau se met en valeur (teinte, liseré haut, chiffre qui grossit). */
+@media (hover: hover) and (pointer: fine){
+  #scenarioDetail .scenario-foot > .foot-verdict,
+  #scenarioDetail .scenario-foot > .foot-cell{
+    transition: background-color .3s ease, box-shadow .3s cubic-bezier(.22, 1, .36, 1);
+  }
+  #scenarioDetail .scenario-foot > .foot-verdict:hover,
+  #scenarioDetail .scenario-foot > .foot-cell:hover{
+    background: color-mix(in srgb, var(--blue) 6%, var(--surface));
+    box-shadow: inset 0 4px 0 var(--blue), 0 10px 24px -12px rgba(15, 20, 25, .35);
+    position: relative; z-index: 1;
+  }
+  #scenarioDetail .scenario-foot > .foot-cell .v,
+  #scenarioDetail .scenario-foot > .foot-verdict .fv-titre{
+    transform-origin: left center; transition: transform .3s cubic-bezier(.22, 1, .36, 1);
+  }
+  #scenarioDetail .scenario-foot > .foot-cell:hover .v{ transform: scale(1.06); }
+  #scenarioDetail .scenario-foot > .foot-verdict:hover .fv-titre{ transform: scale(1.03); }
+  #scenarioDetail .scenario-foot > .foot-cell-tc:hover > div:nth-child(2){
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--blue) 45%, transparent), 0 8px 22px -10px rgba(15, 20, 25, .35);
+  }
+  #scenarioDetail .scenario-foot > .foot-cell-tc > div:nth-child(2){ transition: box-shadow .3s ease; }
+}
+@media (prefers-reduced-motion: reduce){
+  .spk-onglets button, #scenarioDetail .scenario-foot > *, #scenarioDetail .scenario-foot .v, #scenarioDetail .scenario-foot .fv-titre{ transition: none; }
+  #scenarioDetail .scenario-foot > .foot-cell:hover .v, #scenarioDetail .scenario-foot > .foot-verdict:hover .fv-titre{ transform: none; }
+}

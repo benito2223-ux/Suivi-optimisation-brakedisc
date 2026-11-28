@@ -15406,6 +15406,11 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.163.2", date:"28/11/2026", points:[
+    "<b>Les onglets Essais · Composition · Suivi se voient enfin</b> : barre teintée, onglets en relief, l'onglet actif plein bleu, survol marqué.",
+    "<b>Le bandeau de chiffres du scénario est rééquilibré</b> : le temps de coupe pure (celui qui sert) prend la place, la référence de production et la validation se font plus compactes.",
+    "<b>Chaque partie du bandeau réagit au survol</b> : teinte, liseré bleu en haut, chiffre qui grossit."
+  ]},
   { version:"4.163.1", date:"28/11/2026", points:[
     "<b>Les tuiles logement affichent le temps de cycle</b> (coupe), mesuré ou calculé depuis la référence, sans avoir à déplier.",
     "<b>Le dépliant d'une tuile logement donne la plaquette complète</b> : code MABEC, désignation du catalogue, référence ISO.",
@@ -16385,7 +16390,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.163.1";
+const TOOL_VERSION = "4.163.2";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
