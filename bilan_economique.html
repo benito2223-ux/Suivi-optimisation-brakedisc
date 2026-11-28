@@ -402,8 +402,6 @@ tr.pc-grp .pc-grp-tot{ float:right; font-family:var(--font-mono); font-weight:60
 .pc-chrono{ min-width:0; }
 /* v4.164 — Conditions de coupe : simulateur local (champs >= 16 px, 4 couleurs de zone + neutre) */
 .cc-wrap{ max-width:920px; margin:0 auto; }
-.cc-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; flex-wrap:wrap; }
-.cc-head h3{ margin:0; font-size:20px; }
 .cc-card{ background:var(--surface,#fff); border:1px solid var(--border); border-radius:var(--radius,8px); padding:14px 16px; margin-bottom:14px; }
 .cc-card-t{ font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--label,var(--ink-soft)); margin:0 0 10px; }
 .cc-grid-sel{ display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px; }
@@ -15407,6 +15405,9 @@ Le fichier reste dans le dossier local, seul le lien est supprimé.` : ""), { ti
    A CHAQUE VERSION : ajouter une entree en tete, 3 a 5 points lisibles par quelqu'un qui
    n'a pas suivi le developpement. Le CHANGELOG est trop technique pour cet usage. */
 const NOUVEAUTES = [
+  { version:"4.165.1", date:"28/11/2026", points:[
+    "<b>Conditions de coupe : mise en page corrigée.</b> Le panneau avait son propre bouton « Fermer » caché sous le bouton « Retour », et son titre collait au bord haut sans la barre de titre des autres panneaux. Il se présente maintenant comme eux (barre de titre, un seul bouton Retour)."
+  ]},
   { version:"4.165.0", date:"26/11/2026", points:[
     "<b>Conditions de coupe : les postes mixtes ébauche + chanfreins (ex. T521) ont maintenant un vrai verdict de zone</b> au lieu du badge neutre « chanfrein ». Le badge neutre ne reste que pour un vrai chanfrein de finition."
   ]},
@@ -16390,7 +16391,7 @@ const NOUVEAUTES = [
   ]}
 ];
 
-const TOOL_VERSION = "4.165.0";
+const TOOL_VERSION = "4.165.1";
 /* v4.104 — le logo ne s'affiche plus dans l'outil (demande Benjamin) ; il reste
    embarqué ici uniquement pour brander les rapports A4 (template de rapport). */
 const LOGO_RAPPORT_SRC = "";   /* v4.138.1 : plus de logo de marque sur les rapports */
@@ -21198,12 +21199,11 @@ function renderConditionsCoupe(){
     `<option value="">${ccTexte(vide)}</option>` +
     arr.map(x => `<option value="${escapeAttr(fnVal(x))}"${fnVal(x) === sel ? " selected" : ""}>${ccTexte(fnLab(x))}</option>`).join("");
 
+  /* v4.165.1 — le titre est un ENFANT DIRECT du panneau : la coque (feuille de style de la coque, regle `.panel.panel-large > h3`)
+     en fait la barre de titre collante, avec la place du bouton Retour. Dans le cc-wrap il collait au bord. */
   wrap.innerHTML = `
+    <h3>Conditions de coupe</h3>
     <div class="cc-wrap">
-      <div class="cc-head">
-        <h3>Conditions de coupe</h3>
-        <button type="button" class="ghost" data-cc-act="fermer">Fermer</button>
-      </div>
 
       <div class="cc-card">
         <div class="cc-card-t">Pré-remplir depuis une ligne et un disque (optionnel)</div>

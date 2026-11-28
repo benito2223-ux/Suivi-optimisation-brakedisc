@@ -5,6 +5,13 @@ page dans l'outil (`Suivi_optimisation_SPK vX.Y.Z`).
 
 Format des versions : `MAJEUR.MINEUR.CORRECTIF` (voir explication du vocabulaire donné à part).
 
+## [4.165.1] — 2026-11-28 · Conditions de coupe : mise en page du panneau corrigée · Claude Code
+
+Constat Benjamin (28/11) : la 165 a un défaut de mise en page. Cause : le panneau Conditions de coupe portait son propre en-tête (`cc-head`) avec un bouton « Fermer » en doublon du bouton « Retour » de la coque (`spk-workspace-close`) — le « Fermer » restait caché dessous — et son titre collait au bord haut, contrairement aux autres panneaux (simple `<h3>`).
+
+- En-tête remplacé par un `<h3>` **enfant direct du panneau** (la coque stylise `.panel.panel-large > h3` en barre de titre collante avec la place du Retour ; dans le `cc-wrap` il en était privé) ; bouton « Fermer » du panneau retiré (le « Retour » de la coque ferme le panneau) ; CSS `.cc-head` retirée. Aucun changement de moteur ni de calcul.
+- DEV uniquement. PROD : 4.163.0 inchangée.
+
 ## [4.165.0] — 2026-11-26 · Conditions de coupe : les postes mixtes (T521) ont un vrai verdict · SeptFons-Dev
 
 Demande Benjamin (26/11) : un outil à 45° comme T521 ne fait pas que des chanfreins (le programme L120_1 l'utilise aussi en « ROUGH TURNING OUTER DIAMETER » et en intérieur). Avant, `evaluer()` renvoyait le badge neutre « Opération de chanfrein » pour tout κr ≤ 50°, avant tout verdict de zone : un poste d'ébauche réel à 45° n'avait jamais de verdict.
